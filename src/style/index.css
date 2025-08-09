@@ -1,0 +1,30 @@
+@import "tailwindcss";
+
+
+@font-face {
+  font-family: 'Inter';
+  src: url('src/assets/font/Inter.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Bebas Neue';
+  src: url('src/assets/font/BebasNeue-Regular.ttf') format('truetype');
+}
+
+
+@theme {
+  --color-red: #990D35;
+  --color-yellow: #F5B700;
+  --color-white: #F5FBEF;
+  --color-black: #050505;
+  --font-inter: "Inter", sans-serif;
+  --font-bebas: "Bebas Neue", sans-serif;
+  --text-judul: 109.66px;
+  --text-h2: 41.89px;
+  --text-h3: 25.89px;
+  --test-isi: 16px;
+
+
+}
+html{
+  scroll-behavior: smooth;
+}
