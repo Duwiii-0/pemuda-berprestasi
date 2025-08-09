@@ -7,6 +7,7 @@ import Navbar from './components/navbar';
 // Pages
 import Login from './pages/login';
 import Register from './pages/register';
+import RegisterDojang from './pages/registerDojang';
 import Home from './pages/home'
 import Event from './pages/event';
 import NotFound from './pages/notFound';
@@ -31,6 +32,7 @@ export default function App() {
         <Routes location={location} key={location.pathname}>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/registerdojang" element={<RegisterDojang />} />
           
           <Route element={<MainLayout />}>
             <Route path="/" element={<Home />} />
