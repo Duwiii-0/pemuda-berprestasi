@@ -12,7 +12,7 @@ const Hero = () => {
                     </div>
                 </div>
                 <div className="pl-6">
-                    <GeneralButton className="text-xl border-2 border-white"> See Our Competitions</GeneralButton>
+                    <GeneralButton className="text-xl border-2 border-white text-white"> See Our Competitions</GeneralButton>
                 </div>
             </div>
         </div>
