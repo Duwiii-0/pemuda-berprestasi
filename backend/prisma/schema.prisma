@@ -1,0 +1,162 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Club {
+  id_club    Int      @id @default(autoincrement())
+  nama_club  String   @db.VarChar(150)
+  alamat     String?  @db.Text
+  kota       String?  @db.VarChar(100)
+  provinsi   String?  @db.VarChar(100)
+  no_telp    String?  @db.VarChar(20)
+  email      String?  @db.VarChar(150)
+  created_at DateTime @default(now()) @db.Timestamp(0)
+  updated_at DateTime @default(now()) @updatedAt @db.Timestamp(0)
+
+  // Relations
+  atlet   Atlet[]
+  pelatih Pelatih[]
+
+  @@map("tb_club")
+}
+
+model Atlet {
+  id_atlet      Int      @id @default(autoincrement())
+  id_club       Int
+  nama_atlet    String   @db.VarChar(150)
+  jenis_kelamin JenisKelamin
+  tanggal_lahir DateTime? @db.Date
+  tinggi_cm     Int?
+  berat_kg      Int?
+  created_at    DateTime @default(now()) @db.Timestamp(0)
+  updated_at    DateTime @default(now()) @updatedAt @db.Timestamp(0)
+
+  // Relations
+  club              Club                @relation(fields: [id_club], references: [id_club])
+  peserta_kompetisi PesertaKompetisi[]
+
+  @@map("tb_atlet")
+}
+
+model Pelatih {
+  id_pelatih Int      @id @default(autoincrement())
+  id_club    Int
+  nama_pelatih String @db.VarChar(150)
+  no_telp    String?  @db.VarChar(20)
+  email      String?  @db.VarChar(150)
+  created_at DateTime @default(now()) @db.Timestamp(0)
+  updated_at DateTime @default(now()) @updatedAt @db.Timestamp(0)
+
+  // Relations
+  club Club @relation(fields: [id_club], references: [id_club])
+
+  @@map("tb_pelatih")
+}
+
+model Wasit {
+  id_wasit   Int      @id @default(autoincrement())
+  nama_wasit String   @db.VarChar(150)
+  no_telp    String?  @db.VarChar(20)
+  email      String?  @db.VarChar(150)
+  created_at DateTime @default(now()) @db.Timestamp(0)
+  updated_at DateTime @default(now()) @updatedAt @db.Timestamp(0)
+
+  // Relations
+  pertandingan Pertandingan[]
+
+  @@map("tb_wasit")
+}
+
+model Kompetisi {
+  id_kompetisi    Int      @id @default(autoincrement())
+  nama_kompetisi  String   @db.VarChar(150)
+  lokasi          String?  @db.VarChar(150)
+  tanggal_mulai   DateTime? @db.Date
+  tanggal_selesai DateTime? @db.Date
+  tipe_kompetisi  String   @db.VarChar(150)
+  created_at      DateTime @default(now()) @db.Timestamp(0)
+  updated_at      DateTime @default(now()) @updatedAt @db.Timestamp(0)
+
+  // Relations
+  peserta_kompetisi PesertaKompetisi[]
+  pertandingan      Pertandingan[]
+
+  @@map("tb_kompetisi")
+}
+
+model PesertaKompetisi {
+  id_peserta    Int      @id @default(autoincrement())
+  id_atlet      Int
+  id_kompetisi  Int
+  kategori_usia String?  @db.VarChar(50)
+  kelas_berat   String?  @db.VarChar(50)
+  klasifikasi   Klasifikasi
+  created_at    DateTime @default(now()) @db.Timestamp(0)
+  updated_at    DateTime @default(now()) @updatedAt @db.Timestamp(0)
+
+  // Relations
+  atlet             Atlet             @relation(fields: [id_atlet], references: [id_atlet])
+  kompetisi         Kompetisi         @relation(fields: [id_kompetisi], references: [id_kompetisi])
+  hasil_pertandingan HasilPertandingan[]
+
+  @@map("tb_peserta_kompetisi")
+}
+
+model Pertandingan {
+  id_pertandingan Int      @id @default(autoincrement())
+  id_kompetisi    Int
+  id_wasit        Int
+  ronde           Int?
+  tanggal         DateTime? @db.Date
+  waktu           DateTime? @db.Time(0)
+  lokasi          String?  @db.VarChar(150)
+  created_at      DateTime @default(now()) @db.Timestamp(0)
+  updated_at      DateTime @default(now()) @updatedAt @db.Timestamp(0)
+
+  // Relations
+  kompetisi          Kompetisi          @relation(fields: [id_kompetisi], references: [id_kompetisi])
+  wasit              Wasit              @relation(fields: [id_wasit], references: [id_wasit])
+  hasil_pertandingan HasilPertandingan[]
+
+  @@map("tb_pertandingan")
+}
+
+model HasilPertandingan {
+  id_hasil        Int      @id @default(autoincrement())
+  id_pertandingan Int
+  id_peserta      Int
+  skor            Int?
+  hasil           HasilEnum?
+  created_at      DateTime @default(now()) @db.Timestamp(0)
+  updated_at      DateTime @default(now()) @updatedAt @db.Timestamp(0)
+
+  // Relations
+  pertandingan      Pertandingan     @relation(fields: [id_pertandingan], references: [id_pertandingan])
+  peserta_kompetisi PesertaKompetisi @relation(fields: [id_peserta], references: [id_peserta])
+
+  @@map("tb_hasil_pertandingan")
+}
+
+// Enums
+enum JenisKelamin {
+  Laki_laki @map("Laki-laki")
+  Perempuan
+}
+
+enum Klasifikasi {
+  Kyorugi
+  Poomsae
+}
+
+enum HasilEnum {
+  Menang
+  Kalah
+}
