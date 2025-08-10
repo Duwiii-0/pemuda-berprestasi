@@ -1,5 +1,5 @@
-import GeneralButton from "../components/generalButton";
-import TextInput from "../components/textInput";
+import GeneralButton from "../../components/generalButton";
+import TextInput from "../../components/textInput";
 import { Mail, Home, User, Phone, Lock } from 'lucide-react';
 import { Link } from "react-router-dom";
 
@@ -62,10 +62,7 @@ const RegisterDojang = () => {
         </div>
       </div>
     <div className="w-full flex flex-col gap-2">
-      <GeneralButton className="w-full bg-red border-2 border-red h-12 text-white rounded-lg font-semibold">
-        Register
-      </GeneralButton>
-
+      <GeneralButton label="Register" type="link" className="w-full bg-red border-2 border-red h-12 text-white rounded-lg font-semibold"/>
       <Link to="/login" className="underline text-red hover:text-red-600">
         Login here
       </Link>

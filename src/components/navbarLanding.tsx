@@ -4,7 +4,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useState } from "react";
 
 
-const Navbar = () => {
+const NavbarLanding = () => {
   const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -14,17 +14,14 @@ const Navbar = () => {
     location.pathname === "/"
       ? "white" // warna untuk Home
       : "red" // warna untuk Event
-  const warnaJudul = 
-    location.pathname === '/'
-      ? "yellow"
-      : "red"
 
     return (
         <div className={`absolute top-0 left-1/2 transform -translate-x-1/2 h-24 w-[90vw] border-b-2 border-${Warna} flex justify-between items-center pt-4 md:px-2 lg:px-12`}>
-            <a href="/" className={`text-h3 text-${warnaJudul} font-bebas tracking-wider uppercase`}>pemuda berprestasi</a>
+            <Link to="/" className={`text-h3 text-red font-bebas tracking-wider uppercase`}>pemuda berprestasi</Link>
             <div className="hidden md:flex md:gap-6 lg:gap-10 xl:gap-20 items-center">
                 <Link to="/" className={`text-lg text-${Warna} font-inter`}>Home</Link>
                 <Link to="/event" className={`text-lg text-${Warna} font-inter`}>Event</Link>
+                <Link to="/dashboard/peserta/dojang" className={`text-lg text-${Warna} font-inter`}>dashboard</Link>
                 <div className="relative">
                <button
                  onClick={() => setShowDropdown(!showDropdown)}
@@ -45,7 +42,7 @@ const Navbar = () => {
                      Dojang
                    </Link>
                    <Link
-                     to="/register/peserta"
+                     to="/registerpeserta"
                      className="block px-4 py-2 hover:bg-red/10"
                      onClick={() => setShowDropdown(false)}
                    >
@@ -54,7 +51,7 @@ const Navbar = () => {
                  </div>
                )}
               </div>
-              <GeneralButton className={`h-12 text-lg border-2 border-${Warna} text-${Warna} font-inter`}>Login</GeneralButton>
+              <GeneralButton type="link" to="/login" label="Login" className={`h-12 text-lg border-2 border-${Warna} text-${Warna} font-inter`}/>
             </div>
 
 
@@ -109,4 +106,4 @@ const Navbar = () => {
 
 }
 
-export default Navbar;
+export default NavbarLanding;

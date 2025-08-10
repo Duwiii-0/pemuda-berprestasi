@@ -3,11 +3,11 @@
 
 @font-face {
   font-family: 'Inter';
-  src: url('src/assets/font/Inter.ttf') format('truetype');
+  src: url('/src/assets/font/Inter.ttf') format('truetype');
 }
 @font-face {
   font-family: 'Bebas Neue';
-  src: url('src/assets/font/BebasNeue-Regular.ttf') format('truetype');
+  src: url('/src/assets/font/BebasNeue-Regular.ttf') format('truetype');
 }
 
 
@@ -27,4 +27,5 @@
 }
 html{
   scroll-behavior: smooth;
+  background-color: #F5FBEF;
 }

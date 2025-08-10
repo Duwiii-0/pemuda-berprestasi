@@ -1,9 +1,10 @@
 import React from "react";
 
 type TextProps = {
-  placeholder: string;
+  placeholder?: string;
   className?: string;
   icon?: React.ReactNode;
+  value?: String;
 };
 
 const TextInput = ({ placeholder, className, icon }: TextProps) => {

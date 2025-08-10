@@ -1,4 +1,4 @@
-import CompCard from "../components/compCard";
+import CompCard from "../../components/compCard";
 
 const Event = () => {
 
