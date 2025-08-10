@@ -5,16 +5,16 @@ import morgan from 'morgan';
 
 const app = express();
 
-// Helmet Middleware
+// Security middleware
 app.use(helmet());
 
-// CORS untuk narik API dari backend buat frontend
+// CORS configuration
 app.use(cors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
-    credentials: true,
+  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  credentials: true
 }));
 
-// Logging Middleware (Cek log di terminal)
+// Logging middleware
 app.use(morgan('combined'));
 
 // Body parsing middleware
@@ -43,14 +43,6 @@ app.get('/api', (req, res) => {
   });
 });
 
-// 404 handler
-app.use('*', (req, res) => {
-  res.status(404).json({
-    error: 'Not Found',
-    message: `Route ${req.originalUrl} not found`
-  });
-});
-
 // Error handling middleware
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error(err.stack);
@@ -62,4 +54,3 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 });
 
 export default app;
-
