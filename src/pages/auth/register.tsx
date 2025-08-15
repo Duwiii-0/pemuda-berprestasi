@@ -4,8 +4,9 @@ import GeneralButton from "../../components/generalButton";
 import TextInput from "../../components/textInput";
 import { Mail, User, Phone, Lock, IdCard } from "lucide-react";
 import { Link } from "react-router-dom";
+import type RegisterDojang from "./registerDojang";
 
-const RegisterPeserta = () => {
+const Register = () => {
 
     const [selectedDojang, setSelectedDojang] = useState<OptionType | null>(null);
     type OptionType = { value: string; label: string };
@@ -33,7 +34,7 @@ const RegisterPeserta = () => {
       style={{ backgroundImage: "url('src/assets/photos/login.jpg')" }}
     >
       <div className="px-20 bg-white h-screen md:h-[72vh] w-full md:w-[72vw] lg:w-[56vw] xl:w-[42vw] rounded-xl flex flex-col justify-start items-center gap-8 border-3 border-yellow py-10 overflow-y-scroll font-inter">
-        <div className="font-bebas text-6xl">Register Peserta</div>
+        <div className="font-bebas text-6xl">Register Pelatih</div>
 
         <div className="w-full flex flex-col gap-4">
           {/* Nama */}
@@ -130,10 +131,13 @@ const RegisterPeserta = () => {
           <Link to="/login" className="underline text-red hover:text-red-600">
             Login here
           </Link>
+          <Link to="/registerdojang" className="underline text-red hover:text-red-600">
+            register your dojang
+          </Link>
         </div>
       </div>
     </div>
   );
 };
 
-export default RegisterPeserta;
+export default Register;

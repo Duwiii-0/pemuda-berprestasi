@@ -13,8 +13,8 @@ const NavbarDashboard: React.FC<NavbarDashboardProps> = ({ mobile = false, onClo
   const [isOpen, setIsOpen] = useState(false);
 
   const menuItems = [
-    { name: "Dojang", path: "/dashboard/peserta/dojang" },
-    { name: "Data Diri", path: "/dashboard/peserta/profile" },
+    { name: "Data Dojang", path: "/dashboard/peserta/dojang" },
+    { name: "Data Atlit", path: "/dashboard/peserta/profile" },
     { name: "Riwayat Pertandingan", path: "/dashboard/peserta/riwayatpertandingan" },
     { name: "Ganti Password", path: "/dashboard/peserta/changepassword" },
   ];
@@ -69,10 +69,10 @@ const NavbarDashboard: React.FC<NavbarDashboardProps> = ({ mobile = false, onClo
   return (
     <div className="hidden lg:flex fixed left-3 top-1/2 -translate-y-1/2 h-[95vh] lg:w-[27vw] xl:w-[20vw] border-2 border-red flex-col justify-start items-center py-t pb-0 z-50 bg-white rounded-2xl shadow-2xl">
       <div className="text-center font-bebas text-5xl px-20 py-20">
-        Pemuda Berprestasi
+        logo
       </div>
-      <div className="text-center font-bebas text-3xl px-20 pb-4">
-        dashboard anggota
+      <div className="text-center font-bebas text-5xl px-20 pb-4">
+        dashboard 
       </div>
 
       <nav className="flex flex-col gap-4 w-full px-6 text-inter text-center">

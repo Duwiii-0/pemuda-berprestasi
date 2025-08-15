@@ -21,14 +21,6 @@ const RegisterDojang = () => {
           />
         </div>
         <div>
-          <label className="pl-2">Nama Pelatih</label>
-          <TextInput
-            className="h-12 placeholder:text-red border-red"
-            placeholder="Nama Pelatih"
-            icon={<User className="text-red" size={20} />}
-          />
-        </div>
-        <div>
           <label className="pl-2">No Hp</label>
           <TextInput
             className="h-12 placeholder:text-red border-red"

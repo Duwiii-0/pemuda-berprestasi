@@ -8,19 +8,22 @@ import LandingLayout from "./layouts/landingLayout";
 import PesertaLayout from "./layouts/pesertaLayout";
 
 // Landing Pages
-import Login from "./pages/landingPage/login";
-import Register from "./pages/landingPage/register";
-import RegisterDojang from "./pages/landingPage/registerDojang";
-import RegisterPeserta from "./pages/landingPage/registerPeserta";
+import Login from "./pages/auth/login";
+import RegisterDojang from "./pages/auth/registerDojang";
+import Register from "./pages/auth/register";
 import Home from "./pages/landingPage/home";
 import Event from "./pages/landingPage/event";
-import NotFound from "./pages/landingPage/notFound";
+import NotFound from "./pages/notFound";
 
-// Dashboard Peserta
-import ChangePassword from "./pages/peserta/changePassword";
-import Dojang from "./pages/peserta/dojang";
-import Profile from "./pages/peserta/profilePage";
-import MatchHistory from "./pages/peserta/matchHistory";
+// Dashboard
+import ChangePassword from "./pages/dashboard/changePassword";
+import Atlit from "./pages/dashboard/dataAtlit";
+import Dojang from "./pages/dashboard/dataDojang";
+import MatchHistory from "./pages/dashboard/matchHistory";
+
+// data atlit
+import Profile from "./pages/atlit/profilePage";
+
 
 export default function AppRoutes() {
   return (
@@ -31,7 +34,6 @@ export default function AppRoutes() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/registerdojang" element={<RegisterDojang />} />
-        <Route path="/registerpeserta" element={<RegisterPeserta />} />
 
         {/* Landing pages */}
         <Route element={<LandingLayout />}>
@@ -40,9 +42,10 @@ export default function AppRoutes() {
         </Route>
 
         {/* Dashboard Peserta */}
-        <Route path="dashboard/peserta" element={<PesertaLayout />}>
+        <Route path="dashboard" element={<PesertaLayout />}>
           <Route path="dojang" element={<Dojang />} />
-          <Route path="profile" element={<Profile />} />
+          <Route path="atlit" element={<Atlit />} />
+          <Route path="profilepeserta" element={<Profile />} />
           <Route path="changepassword" element={<ChangePassword />} />
           <Route path="riwayatpertandingan" element={<MatchHistory />} />
         </Route>
