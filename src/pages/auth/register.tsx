@@ -4,7 +4,6 @@ import GeneralButton from "../../components/generalButton";
 import TextInput from "../../components/textInput";
 import { Mail, User, Phone, Lock, IdCard } from "lucide-react";
 import { Link } from "react-router-dom";
-import type RegisterDojang from "./registerDojang";
 
 const Register = () => {
 
@@ -33,8 +32,12 @@ const Register = () => {
       className="h-screen w-full flex items-center justify-center bg-cover bg-center"
       style={{ backgroundImage: "url('src/assets/photos/login.jpg')" }}
     >
-      <div className="px-20 bg-white h-screen md:h-[72vh] w-full md:w-[72vw] lg:w-[56vw] xl:w-[42vw] rounded-xl flex flex-col justify-start items-center gap-8 border-3 border-yellow py-10 overflow-y-scroll font-inter">
-        <div className="font-bebas text-6xl">Register Pelatih</div>
+      <div className="px-25 bg-gradient-to-b from-white/90 to-white/80 h-screen md:h-[80vh] w-full md:w-[72vw] lg:w-[56vw] xl:w-[35vw] rounded-xl flex flex-col justify-start items-center gap-8 py-10 overflow-y-scroll font-inter">
+        <div className="flex flex-col gap-2 justify-center items-center">
+            <img src="src/assets/logo/taekwondo.png" alt="taekwondo logo" className="h-50 w-50"/>
+            <p className="text-inter text-black text-lg pb-8">Digital Taekwondo Indonesia</p>
+            <label className="font-bebas text-6xl text-red">registrasi</label>
+        </div>
 
         <div className="w-full flex flex-col gap-4">
           {/* Nama */}
@@ -43,7 +46,7 @@ const Register = () => {
             <TextInput
               className="h-12 placeholder:text-red border-red"
               placeholder="Nama"
-              icon={<User className="text-red" size={20} />}
+              icon={<User className="text-black" size={20} />}
             />
           </div>
 
@@ -53,7 +56,7 @@ const Register = () => {
             <TextInput
               className="h-12 placeholder:text-red border-red"
               placeholder="Email"
-              icon={<Mail className="text-red" size={20} />}
+              icon={<Mail className="text-black" size={20} />}
             />
           </div>
 
@@ -63,7 +66,7 @@ const Register = () => {
             <TextInput
               className="h-12 placeholder:text-red border-red"
               placeholder="NIK"
-              icon={<IdCard className="text-red" size={20} />}
+              icon={<IdCard className="text-black" size={20} />}
             />
           </div>
 
@@ -73,7 +76,7 @@ const Register = () => {
             <TextInput
               className="h-12 placeholder:text-red border-red"
               placeholder="Nomor Telepon"
-              icon={<Phone className="text-red" size={20} />}
+              icon={<Phone className="text-black" size={20} />}
             />
           </div>
 
@@ -83,7 +86,7 @@ const Register = () => {
             <TextInput
               className="h-12 placeholder:text-red border-red"
               placeholder="Password"
-              icon={<Lock className="text-red" size={20} />}
+              icon={<Lock className="text-black" size={20} />}
             />
           </div>
 
@@ -93,7 +96,7 @@ const Register = () => {
             <TextInput
               className="h-12 placeholder:text-red border-red"
               placeholder="Confirm Password"
-              icon={<Lock className="text-red" size={20} />}
+              icon={<Lock className="text-black" size={20} />}
             />
           </div>
 
@@ -109,7 +112,7 @@ const Register = () => {
               isSearchable
               classNames={{
                   control: () =>
-                  "border-2 border-red rounded-lg h-12 px-2  hover:border-yellow text-inter",
+                  "border-2 border-red rounded-lg h-12 px-2 text-inter",
                   valueContainer: () => "px-2",
                   placeholder: () => "text-red/50 text-inter",
                   menu: () => "border-2 border-red bg-white rounded-lg shadow-lg mt-1",

@@ -1,4 +1,4 @@
-import Navbardashboard from "../../components/navbarDashboard";
+import Navbardashboard from "../../components/navbar/navbarDashboard";
 import TextInput from "../../components/textInput";
 import { Mail, Phone, User, CalendarFold, IdCard, MapPinned, Map, VenusAndMars, Scale, Menu, X } from 'lucide-react';
 import { useState, useEffect } from "react";

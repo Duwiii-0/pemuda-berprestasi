@@ -1,4 +1,4 @@
-import Navbardashboard from "../../components/navbarDashboard";
+import Navbardashboard from "../../components/navbar/navbarDashboard";
 
 const MatchHistory = () => {
 

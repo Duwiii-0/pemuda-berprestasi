@@ -4,8 +4,9 @@ import './style/index.css';
 
 
 // Layouts
-import LandingLayout from "./layouts/landingLayout";
+import LandingLayout from "./layouts/layout";
 import PesertaLayout from "./layouts/pesertaLayout";
+import LombaLayout from "./layouts/lombaLayout";
 
 // Landing Pages
 import Login from "./pages/auth/login";
@@ -23,6 +24,12 @@ import MatchHistory from "./pages/dashboard/matchHistory";
 
 // data atlit
 import Profile from "./pages/atlit/profilePage";
+
+// lomba
+
+import LandingPage from "./lombaLayout/home";
+import Timeline from "./lombaLayout/timeline";
+import FAQ from "./lombaLayout/faq";
 
 
 export default function AppRoutes() {
@@ -49,6 +56,13 @@ export default function AppRoutes() {
           <Route path="changepassword" element={<ChangePassword />} />
           <Route path="riwayatpertandingan" element={<MatchHistory />} />
         </Route>
+
+        <Route path="lomba" element={<LombaLayout/>}>
+          <Route path="home" element={<LandingPage />} />
+          <Route path="faq" element={<FAQ />} />
+          <Route path="timeline" element={<Timeline />} />
+        </Route>
+
 
         {/* 404 */}
         <Route path="*" element={<NotFound />} />

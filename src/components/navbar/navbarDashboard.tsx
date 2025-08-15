@@ -1,7 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { useState } from "react";
 import { X } from "lucide-react";
-import GeneralButton from "./generalButton";
+import GeneralButton from "../generalButton";
 
 interface NavbarDashboardProps {
   mobile?: boolean;
@@ -13,10 +13,10 @@ const NavbarDashboard: React.FC<NavbarDashboardProps> = ({ mobile = false, onClo
   const [isOpen, setIsOpen] = useState(false);
 
   const menuItems = [
-    { name: "Data Dojang", path: "/dashboard/peserta/dojang" },
-    { name: "Data Atlit", path: "/dashboard/peserta/profile" },
-    { name: "Riwayat Pertandingan", path: "/dashboard/peserta/riwayatpertandingan" },
-    { name: "Ganti Password", path: "/dashboard/peserta/changepassword" },
+    { name: "Data Dojang", path: "/dashboard/dojang" },
+    { name: "Data Atlit", path: "/dashboard/dataAtlit" },
+    { name: "Riwayat Pertandingan", path: "/dashboard/riwayatpertandingan" },
+    { name: "Ganti Password", path: "/dashboard/changepassword" },
   ];
 
   // Versi Mobile

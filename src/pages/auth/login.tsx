@@ -25,27 +25,29 @@ const Login = () => {
       className="h-screen w-full flex items-center justify-center bg-cover bg-center"
       style={{ backgroundImage: "url('src/assets/photos/login.jpg')" }}
     >
-      <div className="px-20 bg-white h-screen md:h-[50vh] w-full md:w-[72vw] lg:w-[56vw] xl:w-[42vw] rounded-xl flex flex-col justify-center items-center gap-8 border-3 border-yellow py-10 font-inter">
-        <label className="font-bebas text-6xl">login</label>
+      <div className="px-25 bg-gradient-to-b from-white/90 to-white/80 h-screen md:h-[80vh] w-full md:w-[72vw] lg:w-[56vw] xl:w-[32vw] rounded-xl flex flex-col justify-center items-center gap-8 pt-0 font-inter ">
+        <div className="flex flex-col gap-2 justify-center items-center">
+            <img src="src/assets/logo/taekwondo.png" alt="taekwondo logo" className="h-50 w-50"/>
+            <p className="text-inter text-black text-lg pb-8">Digital Taekwondo Indonesia</p>
+            <label className="font-bebas text-6xl text-red">Masuk</label>
+        </div>
 
         <div className="w-full flex flex-col gap-4">
           <div className="w-full">
-            <label className="pl-2">Email address</label>
             <TextInput
               className="h-12 placeholder-red"
               placeholder="your email address"
-              icon={<Mail className="text-red" size={20} />}
+              icon={<Mail className="text-black" size={20} />}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
           </div>
 
           <div className="w-full">
-            <label className="pl-2">Password</label>
             <TextInput
               className="h-12 placeholder:text-cyan-300"
               placeholder="your password"
-              icon={<KeyRound className="text-red" size={20} />}
+              icon={<KeyRound className="text-black" size={20} />}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />

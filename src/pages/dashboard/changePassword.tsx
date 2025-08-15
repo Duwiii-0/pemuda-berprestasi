@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import Navbardashboard from "../../components/navbarDashboard";
+import Navbardashboard from "../../components/navbar/navbarDashboard";
 import TextInput from "../../components/textInput";
 import GeneralButton from "../../components/generalButton";
 import { KeyRound } from "lucide-react";

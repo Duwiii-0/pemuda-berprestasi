@@ -1,5 +1,5 @@
 import { Outlet } from "react-router-dom";
-import NavbarLanding from "../components/navbarLanding";
+import NavbarLanding from "../components/navbar/navbarLanding";
 import Footer from "../components/footer";
 
 export default function LandingLayout() {
