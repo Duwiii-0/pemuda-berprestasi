@@ -27,14 +27,14 @@ export default function Timeline() {
   return (
     <div className="relative w-full min-h-screen flex flex-col items-center pt-40 pb-10 px-4 md:px-20">
       {/* Title */}
-      <h1 className="text-6xl md:text-8xl text-red font-bebas leading-[80%] uppercase mb-20">
+      <h1 className="text-6xl md:text-8xl text-red font-bebas uppercase mb-20">
         Timeline
       </h1>
 
       {/* Timeline Sections */}
       {Object.entries(groupedEvents).map(([month, monthEvents]) => (
         <div key={month} className="w-full flex flex-col items-center justify-center gap-10 mb-24">
-          <h2 className="text-3xl md:text-5xl text-red font-bebas capitalize mb-10">{month}</h2>
+          <h2 className="text-3xl md:text-6xl text-black font-bebas capitalize mb-10">{month}</h2>
           <div className="relative w-full h-full flex flex-col items-center justify-center">
             {/* Events */}
             <div className="flex flex-col min-w-full justify-start items-center">

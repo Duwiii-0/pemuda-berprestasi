@@ -14,7 +14,7 @@ const NavbarDashboard: React.FC<NavbarDashboardProps> = ({ mobile = false, onClo
 
   const menuItems = [
     { name: "Data Dojang", path: "/dashboard/dojang" },
-    { name: "Data Atlit", path: "/dashboard/dataAtlit" },
+    { name: "Data Atlit", path: "/dashboard/Atlit" },
     { name: "Riwayat Pertandingan", path: "/dashboard/riwayatpertandingan" },
     { name: "Ganti Password", path: "/dashboard/changepassword" },
   ];
