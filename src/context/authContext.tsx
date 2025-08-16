@@ -1,8 +1,8 @@
 // src/context/AuthContext.tsx
 import { createContext, useContext, useState } from "react";
 import type { ReactNode } from "react";
-import { dummyAccounts } from "../dummy/rafif";
-import type { DummyAccount } from "../dummy/rafif";
+import { dummyAccounts } from "../dummy/dummyAccount";
+import type { DummyAccount } from "../dummy/dummyAccount";
 
 interface AuthContextType {
   user: DummyAccount | null;

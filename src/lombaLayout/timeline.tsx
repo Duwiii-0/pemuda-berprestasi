@@ -34,7 +34,7 @@ export default function Timeline() {
       {/* Timeline Sections */}
       {Object.entries(groupedEvents).map(([month, monthEvents]) => (
         <div key={month} className="w-full flex flex-col items-center justify-center gap-10 mb-24">
-          <h2 className="text-3xl md:text-6xl text-black font-bebas capitalize mb-10">{month}</h2>
+          <h2 className="text-3xl md:text-6xl text-yellow font-bebas capitalize mb-10">{month}</h2>
           <div className="relative w-full h-full flex flex-col items-center justify-center">
             {/* Events */}
             <div className="flex flex-col min-w-full justify-start items-center">

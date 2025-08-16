@@ -6,29 +6,36 @@ import { useAuth } from "../../context/authContext";
 
 const NavbarLanding = () => {
   const location = useLocation();
+  const isSettings = location.pathname.startsWith("/settings");
+
   const { user } = useAuth(); // Ambil dari AuthContext
   const [isOpen, setIsOpen] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
 
-  const Warna = location.pathname === "/" ? "white" : "red";
+  const Warna = location.pathname === "/event" ? "red" : "white";
 
   return (
     <div
       className={`absolute top-0 left-1/2 transform -translate-x-1/2 h-24 w-[90vw] border-b-2 border-${Warna} flex justify-between items-center pt-4 md:px-2 lg:px-12`}
     >
-      <Link
+      { !isSettings ? <Link
         to="/"
         className={`text-h3 text-red font-bebas tracking-wider uppercase`}
       >
         pemuda berprestasi
-      </Link>
+      </Link> : <Link
+        to="/"
+        className={`text-h3 text-yellow font-bebas tracking-wider uppercase`}
+      >
+        pemuda berprestasi
+      </Link> }
 
       <div className="hidden md:flex md:gap-6 lg:gap-10 xl:gap-20 items-center">
         <Link to="/" className={`text-lg text-${Warna} font-inter`}>
           Beranda
         </Link>
         <Link to="/lomba/home" className={`text-lg text-${Warna} font-inter`}>
-          lomba
+          Beranda
         </Link>
         <Link to="/event" className={`text-lg text-${Warna} font-inter`}>
           Event

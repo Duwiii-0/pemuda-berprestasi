@@ -31,4 +31,6 @@ export const dummyAccounts: DummyAccount[] = [
     gender: 'Laki-Laki',
     umur: 53   
   }
+
+  
 ];
