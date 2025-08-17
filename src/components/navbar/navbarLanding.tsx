@@ -4,7 +4,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useState } from "react";
 import { useAuth } from "../../context/authContext";
 
-const NavbarLanding = () => {
+const NavbarLanding = ({ onLogoutRequest }: { onLogoutRequest: () => void }) => {
   const location = useLocation();
   const isSettings = location.pathname.startsWith("/settings");
 
@@ -92,14 +92,13 @@ const NavbarLanding = () => {
                 Settings
               </Link>
               <button
-                onClick={() => {
-                  setShowDropdown(false);
-                  localStorage.removeItem("loggedUser"); // logout manual
-                  window.location.href = "/"; // redirect ke home
-                }}
-                className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100"
-              >
-                Logout
+                  onClick={() => {
+                    setShowDropdown(false);
+                    onLogoutRequest(); // ✅ trigger modal open from parent
+                  }}
+                  className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100"
+                >
+                  Logout
               </button>
             </div>
           )}
