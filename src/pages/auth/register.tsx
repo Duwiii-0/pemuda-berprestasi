@@ -15,16 +15,7 @@ const Register = () => {
     { value: "dojangA", label: "Dojang A" },
     { value: "dojangB", label: "Dojang B" },
     { value: "dojangC", label: "Dojang C" },
-    { value: "dojangC", label: "Dojang C" },
-    { value: "dojangC", label: "Dojang C" },
-    { value: "dojangC", label: "Dojang C" },
-    { value: "dojangC", label: "Dojang C" },
-    { value: "dojangC", label: "Dojang C" },
-    { value: "dojangC", label: "Dojang C" },
-    { value: "dojangC", label: "Dojang C" },
-    { value: "dojangC", label: "Dojang C" },
-    { value: "dojangC", label: "Dojang C" },
-
+ 
   ];
 
   return (

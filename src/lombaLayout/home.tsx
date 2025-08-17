@@ -5,8 +5,17 @@ import TextArea from "../components/textArea";
 import { Mail, User, PenLine, MapPin, Phone, } from 'lucide-react';
 import sriwijaya from "../assets/logo/sriwijaya.png";
 import heroLomba from "../assets/photos/heroLomba.jpg";
+import Style from "../components/registrationSteps/styleType";
+import Category from "../components/registrationSteps/category";
+import Daftar from "../components/registrationSteps/daftar";
+import { use, useState } from "react";
 
 const LandingPage = () => {
+  const [open, setOpen] = useState(false);
+  const [step, setStep] = useState<"style" | "category" | "daftar" | null>(null);
+  const [styleType, setStyleType] = useState<"kyorugi" | "poomsae" | null>(null);
+  const [categoryType, setCategoryType] = useState <'prestasi' | 'pemula' | null>(null);
+
 
     const registerStep = [
       {
@@ -49,7 +58,13 @@ const LandingPage = () => {
                           </div>
                       </div>
                       <div className="flex justify-center items-center md:justify-start md:items-start">
-                          <GeneralButton label="Join the Competitions" type="action" to="" className="h-12 md:text-lg xl:text-xl border-2 border-white text-white"/>
+                           <GeneralButton 
+                              label="Join the Competitions" 
+                              type="action" 
+                              to="" 
+                              className="h-12 md:text-lg xl:text-xl border-2 border-white text-white"
+                              onClick={() => setStep("style")}
+                            />
                       </div>
                   </div>
               </div>
@@ -150,6 +165,35 @@ const LandingPage = () => {
                   </div>
                 </div>  
             </div>
+
+            {/* panggil modal Style */}
+            <Style
+              isOpen={step === "style"}
+              onSelect={(type) => {
+                  setStyleType(type); 
+                  setStep("category");
+                }}
+
+              onBack={() => setStep(null)}
+            />
+            
+            {/* Modal Category */}
+            <Category
+              isOpen={step === "category"}
+onSelect={(category) => { // asumsi onSelect Category kirim kategori
+    setCategoryType(category); 
+    setStep("daftar");
+  }}              onBack={() => setStep("style")}
+            />
+
+            {/* Modal Daftar */}
+            <Daftar
+  isOpen={step === "daftar"}
+  onBack={() => setStep("category")}
+  styleType={styleType}
+  categoryType={categoryType} // ✅ wajib
+/>
+
         </div>
     )
 }
