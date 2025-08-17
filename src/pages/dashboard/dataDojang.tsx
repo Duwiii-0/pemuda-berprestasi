@@ -184,19 +184,19 @@ const Dojang = () => {
               {!isEditing ? (
                 <GeneralButton
                   label="Ubah Data Dojang"
-                  className="text-white bg-gradient-to-r from-red to-red/80 hover:from-red/90 hover:to-red/70 border-0 shadow-lg flex items-center gap-2"
+                  className="cursor-pointer text-white bg-gradient-to-r from-red to-red/80 hover:from-red/90 hover:to-red/70 border-0 shadow-lg flex items-center gap-2"
                   onClick={() => setIsEditing(true)}
                 />
               ) : (
                 <div className="flex gap-3">
                   <GeneralButton
                     label="Batal"
-                    className="text-red bg-white hover:bg-red/5 border-2 border-red/30 hover:border-red/50"
+                    className="cursor-pointer text-red bg-white hover:bg-red/5 border-2 border-red/30 hover:border-red/50"
                     onClick={handleCancel}
                   />
                   <GeneralButton
                     label="Simpan"
-                    className="text-white bg-gradient-to-r from-red to-red/80 hover:from-red/90 hover:to-red/70 border-0 shadow-lg flex items-center gap-2"
+                    className="cursor-pointer text-white bg-gradient-to-r from-red to-red/80 hover:from-red/90 hover:to-red/70 border-0 shadow-lg flex items-center gap-2"
                     onClick={handleUpdate}
                   />
                 </div>

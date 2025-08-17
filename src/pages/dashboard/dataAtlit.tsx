@@ -9,11 +9,10 @@ interface StatsCardProps {
   title: string;
   value: string;
   color: string;
-  trend?: string;
 }
 
 
-const StatsCard: React.FC<StatsCardProps> = ({ icon: Icon, title, value, color, trend }) => (
+const StatsCard: React.FC<StatsCardProps> = ({ icon: Icon, title, value, color }) => (
   <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-white/50">
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-4">
@@ -25,11 +24,6 @@ const StatsCard: React.FC<StatsCardProps> = ({ icon: Icon, title, value, color, 
           <p className="font-bebas text-2xl text-black/80">{value}</p>
         </div>
       </div>
-      {trend && (
-        <div className="text-right">
-          <span className="text-xs font-inter text-green-600">{trend}</span>
-        </div>
-      )}
     </div>
   </div>
 );
@@ -102,7 +96,6 @@ const DataAtlit = () => {
                   title="Total Atlet"
                   value={totalAtlits.toString()}
                   color="bg-gradient-to-br from-red to-red/80"
-                  trend="+12% bulan ini"
                 />
                 <StatsCard 
                   icon={Award}
@@ -148,7 +141,7 @@ const DataAtlit = () => {
               <div className="flex gap-2">
                 <button
                   onClick={() => setGenderFilter("all")}
-                  className={`px-4 py-3 rounded-xl font-inter text-sm transition-all duration-300 ${
+                  className={`cursor-pointer px-4 py-3 rounded-xl font-inter text-sm transition-all duration-300 ${
                     genderFilter === "all"
                       ? "bg-red text-white"
                       : "bg-white/50 text-red border border-red/20 hover:bg-red/5"
@@ -158,7 +151,7 @@ const DataAtlit = () => {
                 </button>
                 <button
                   onClick={() => setGenderFilter("Laki-Laki")}
-                  className={`px-4 py-3 rounded-xl font-inter text-sm transition-all duration-300 ${
+                  className={`cursor-pointer px-4 py-3 rounded-xl font-inter text-sm transition-all duration-300 ${
                     genderFilter === "Laki-Laki"
                       ? "bg-blue-500 text-white"
                       : "bg-white/50 text-blue-500 border border-blue-500/20 hover:bg-blue-500/5"
@@ -168,7 +161,7 @@ const DataAtlit = () => {
                 </button>
                 <button
                   onClick={() => setGenderFilter("Perempuan")}
-                  className={`px-4 py-3 rounded-xl font-inter text-sm transition-all duration-300 ${
+                  className={`cursor-pointer px-4 py-3 rounded-xl font-inter text-sm transition-all duration-300 ${
                     genderFilter === "Perempuan"
                       ? "bg-pink-500 text-white"
                       : "bg-white/50 text-pink-500 border border-pink-500/20 hover:bg-pink-500/5"

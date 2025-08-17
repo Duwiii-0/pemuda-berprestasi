@@ -22,6 +22,8 @@ import NotFound from "./pages/notFound";
 // Dashboard
 import DataAtlit from "./pages/dashboard/dataAtlit";
 import Dojang from "./pages/dashboard/dataDojang";
+import TambahAtlit from "./pages/dashboard/TambahAtlit";
+import DataKompetisi from "./pages/dashboard/dataKompetisi";
 
 // data atlit
 import Profile from "./pages/atlit/profilePage";
@@ -61,6 +63,9 @@ export default function AppRoutes() {
           <Route path="dojang" element={<Dojang />} />
           <Route path="atlit" element={<DataAtlit />} />
           <Route path="atlit/:id" element={<Profile />} />
+          <Route path="atlit/add" element={<TambahAtlit />} />
+          <Route path="dataKompetisi" element={<DataKompetisi/>} />
+
         </Route>
 
 

@@ -143,7 +143,7 @@ const Settings = () => {
                 <div className="flex gap-3">
                    {!isEditing ? (
                      <GeneralButton
-                       label="Ubah Data Dojang"
+                       label="Ubah Data Diri"
                        className="text-white bg-gradient-to-r from-red to-red/80 hover:from-red/90 hover:to-red/70 border-0 shadow-lg flex items-center gap-2"
                        onClick={() => setIsEditing(true)}
                      />

@@ -519,7 +519,7 @@ const DataKompetisi = () => {
               <div className="flex gap-2">
                 <button
                   onClick={() => setStatusFilter("all")}
-                  className={`px-4 py-3 rounded-xl font-inter text-sm transition-all duration-300 ${
+                  className={`cursor-pointer px-4 py-3 rounded-xl font-inter text-sm transition-all duration-300 ${
                     statusFilter === "all"
                       ? "bg-red text-white"
                       : "bg-white/50 text-red border border-red/20 hover:bg-red/5"
@@ -529,7 +529,7 @@ const DataKompetisi = () => {
                 </button>
                 <button
                   onClick={() => setStatusFilter("Aktif")}
-                  className={`px-4 py-3 rounded-xl font-inter text-sm transition-all duration-300 ${
+                  className={`cursor-pointer px-4 py-3 rounded-xl font-inter text-sm transition-all duration-300 ${
                     statusFilter === "Aktif"
                       ? "bg-green-500 text-white"
                       : "bg-white/50 text-green-500 border border-green-500/20 hover:bg-green-500/5"
@@ -539,7 +539,7 @@ const DataKompetisi = () => {
                 </button>
                 <button
                   onClick={() => setStatusFilter("Akan Datang")}
-                  className={`px-4 py-3 rounded-xl font-inter text-sm transition-all duration-300 ${
+                  className={`cursor-pointer px-4 py-3 rounded-xl font-inter text-sm transition-all duration-300 ${
                     statusFilter === "Akan Datang"
                       ? "bg-blue-500 text-white"
                       : "bg-white/50 text-blue-500 border border-blue-500/20 hover:bg-blue-500/5"
@@ -549,7 +549,7 @@ const DataKompetisi = () => {
                 </button>
                 <button
                   onClick={() => setStatusFilter("Selesai")}
-                  className={`px-4 py-3 rounded-xl font-inter text-sm transition-all duration-300 ${
+                  className={`cursor-pointer px-4 py-3 rounded-xl font-inter text-sm transition-all duration-300 ${
                     statusFilter === "Selesai"
                       ? "bg-gray-500 text-white"
                       : "bg-white/50 text-gray-500 border border-gray-500/20 hover:bg-gray-500/5"

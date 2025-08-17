@@ -373,13 +373,11 @@ const TambahAtlit: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-white via-red/5 to-yellow/10">
-      {/* Desktop Navbar */}
-      <NavbarDashboard />
+<div className="min-h-screen w-full bg-gradient-to-br from-white via-red/5 to-yellow/10 flex justify-center items-center">
 
       {/* Main Content */}
-      <div className="lg:ml-64 min-h-screen">
-        <div className="overflow-y-auto bg-white/40 backdrop-blur-md border-white/30 w-full min-h-screen flex flex-col gap-8 pt-8 pb-12 px-4 md:px-8">
+      <div className="min-h-screen py-10">
+        <div className="overflow-y-auto bg-white/40 backdrop-blur-md border-white/30 w-full min-h-screen flex flex-col gap-8 pt-8 pb-12 px-4 md:px-8 rounded-lg">
 
           {/* Success Message */}
           {submitSuccess && (
@@ -681,7 +679,7 @@ const TambahAtlit: React.FC = () => {
                 <button 
                   type="button"
                   onClick={handleBack}
-                  className="px-6 py-3 rounded-xl bg-gray-500 text-white hover:bg-gray-600 transition-all duration-300 shadow-lg font-inter disabled:opacity-50"
+                  className="cursor-pointer px-6 py-3 rounded-xl bg-gray-500 text-white hover:bg-gray-600 transition-all duration-300 shadow-lg font-inter disabled:opacity-50"
                   disabled={isSubmitting}
                 >
                   Batal
@@ -689,11 +687,11 @@ const TambahAtlit: React.FC = () => {
                 <button 
                   type="submit"
                   disabled={isSubmitting}
-                  className="flex items-center justify-center gap-2 px-8 py-3 rounded-xl bg-red text-white hover:bg-red/90 transition-all duration-300 shadow-lg font-inter disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="cursor-pointer flex items-center justify-center gap-2 px-8 py-3 rounded-xl bg-red text-white hover:bg-red/90 transition-all duration-300 shadow-lg font-inter disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isSubmitting ? (
                     <>
-                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                      <div className="cursor-default animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
                       Menyimpan...
                     </>
                   ) : (

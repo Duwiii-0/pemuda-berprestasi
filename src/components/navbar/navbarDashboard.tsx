@@ -36,18 +36,18 @@ const NavbarDashboard: React.FC<NavbarProps> = ({ mobile, onClose }) => {
       <div className="p-6">
         <button 
           onClick={() => navigate('/')}
-          className="text-red hover:text-red/80 font-inter mb-4 flex items-center gap-2 transition-colors"
+          className="cursor-pointer text-red hover:text-red/80 font-inter mb-4 flex items-center gap-2 transition-colors"
         >
           <ArrowLeft size={20} />
         </button>        
-        <div className="font-bebas text-xl mb-8">DASHBOARD</div>
+        <div className="font-bebas text-3xl mb-8 text-center pt-10">DASHBOARD<br/>pelatih</div>
         
         <nav className="space-y-2">
           {navItems.map((item) => (
             <button 
               key={item.path}
               onClick={() => handleNavigation(item.path)}
-              className={`w-full text-left block p-3 rounded-lg font-inter transition-all duration-300 ${
+              className={` cursor-pointer w-full text-left block p-3 rounded-lg font-inter transition-all duration-300 ${
                 isActive(item.path)
                   ? 'bg-red text-white'
                   : 'hover:bg-red/10 text-red border border-red/20'
@@ -61,7 +61,7 @@ const NavbarDashboard: React.FC<NavbarProps> = ({ mobile, onClose }) => {
         <div className="absolute bottom-6 left-6 right-6">
           <button 
             onClick={() => handleNavigation('/login')}
-            className="w-full p-3 rounded-lg border border-red/20 text-red hover:bg-red/5 font-inter transition-all duration-300"
+            className="cursor-pointer w-full p-3 rounded-lg border border-red/20 text-red hover:bg-red-700 hover:text-white font-inter transition-all duration-300"
           >
             Logout
           </button>
