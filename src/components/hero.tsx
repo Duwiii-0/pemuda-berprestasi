@@ -1,4 +1,5 @@
 import GeneralButton from "./generalButton";
+import { Link } from "react-router-dom";
 
 const Hero = () => {
 
@@ -14,7 +15,9 @@ const Hero = () => {
                     </div>
                 </div>
                 <div className="pl-6 flex justify-center items-center md:justify-start md:items-start">
+                <Link to="/event">
                     <GeneralButton label="Join Our Competitions" type="scroll" to="" className="h-12 md:text-lg xl:text-xl border-2 border-white text-white"/>
+                </Link>
                 </div>
             </div>
         </div>
