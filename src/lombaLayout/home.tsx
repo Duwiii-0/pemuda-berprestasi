@@ -46,7 +46,7 @@ const LandingPage = () => {
     return(
         <div className="min-h-screen w-full">
             {/*hero*/}
-              <div className="h-screen w-full bg-black flex items-center justify-center bg-cover bg-center 2xl:bg-top"
+              <div className="h-screen w-full  flex items-center justify-center bg-cover bg-center 2xl:bg-top"
                       style={{ backgroundImage: `url(${heroLomba})` }}
                       >
                   <div className=" w-[80vw] h-[40vh] md:h-[80vh] flex flex-col justify-center items-center gap-8">
@@ -77,10 +77,10 @@ const LandingPage = () => {
                     </div>
                 </div>
                 <div className="w-1/2 h-full hidden md:block">
-                    <div className="md:w-full xl:w-2/3 h-full flex flex-col justify-center items-center  bg-green-200">
-                      <div className="flex flex-col w-66 gap-4 justify-center items-center">
-                        <img src="src/assets/logo/taekwondo.png" alt="foto bapak" className="rounded-lg border-2 border-yellow shadow-xl h-68 w-51 xl:w-66 xl:h-88 bg-blue-100"/>
-                        <div className="text-center">
+                    <div className="md:w-full xl:w-2/3 h-full flex flex-col justify-center items-center">
+                      <div className="group flex flex-col w-66 gap-4 justify-center items-center">
+                        <img src="src/assets/logo/taekwondo.png" alt="foto bapak" className="group-hover:scale-103 transition-discrete duration-300 rounded-lg border-2 border-yellow shadow-xl h-68 w-51 xl:w-66 xl:h-88 bg-blue-100"/>
+                        <div className="text-center group-hover:scale-108 transition-discrete duration-300">
                             <div className="font-bebas text-3xl text-red">
                               Muhammad Rafif Dwiarka
                             </div>
@@ -97,7 +97,7 @@ const LandingPage = () => {
             <div className="min-h-screen w-full bg-white flex flex-col justify-center items-center gap-4">
                 <div className="text-6xl lg:text-8xl font-bebas text-red leading-none text-center"> Tata cara mendaftar</div>
                 <div className="text-lg md:text-xl px-10 xl:px-0 font-inter text-black max-w-7xl text-center">Tata Cara Pendaftaran Peserta Kejuaraan Taekwondo Sriwijaya Competition Tahun 2025, Meliputi Pengisian Formulir, Pengiriman Dokumen, dan Proses Verifikasi</div>
-                <div className="h-full w-full lg:w-1/2 flex flex-col gap-8 py-20 bg-purple-400 px-4">
+                <div className="h-full w-full lg:w-1/2 flex flex-col gap-8 py-20 px-4">
                   {registerStep.map((step) => (
                     <Steps
                       key={step.number}
@@ -110,14 +110,14 @@ const LandingPage = () => {
             </div>
 
             {/* contact us */}
-            <div className="min-h- w-full flex flex-col justify-center items-center gap-4 py-20 bg-red-100 px-10 lg:px-0">
+            <div className="min-h- w-full flex flex-col justify-center items-center gap-4 py-20  px-10 lg:px-0">
                 <div className="text-6xl lg:text-8xl font-bebas text-red leading-none text-center"> Punya pertanyaan?</div>
                 <div className="text-lg md:text-xl font-inter  xl:px-0 text-black max-w-7xl text-center">Jangan ragu untuk menghubungi kami melalui formulir atau kontak yang tersedia untuk mendapatkan informasi lebih lanjut.</div>
 
-                <div className="border-3 gap-4 xl:gap-0 flex flex-col xl:flex-row bg-white border-yellow h-full w-full xl:h-[56vh] lg:w-[65vw] rounded-2xl mt-20 py-8 shadow-2xl">
-                  <div  className=" w-full xl:w-1/2 h-full flex flex-col items-center gap-6 bg-purple-300">
+                <div className="hover:scale-102 transition-all duration-300 border-3 gap-4 xl:gap-0 flex flex-col xl:flex-row bg-white border-yellow h-full w-full xl:h-[56vh] lg:w-[65vw] rounded-2xl mt-20 py-8 shadow-2xl">
+                  <div  className=" w-full xl:w-1/2 h-full flex flex-col items-center gap-6 ">
                     <div className="font-bebas text-red text-4xl">Contact Us</div>
-                    <div className="flex justify-center w-full gap-2 px-12 bg-red-100">
+                    <div className="flex justify-center w-full gap-2 px-12 ">
                             <TextInput
                             className="h-12 placeholder-red flex-1"
                             placeholder="your name"
@@ -137,7 +137,7 @@ const LandingPage = () => {
                         />
                     </div>
                   </div>
-                  <div className="w-full xl:w-1/2 h-full flex flex-col items-center gap-5 bg-green-500 px-12 pb-4">
+                  <div className="w-full xl:w-1/2 h-full flex flex-col items-center gap-5 px-12 pb-4">
                     <div className="font-bebas text-red text-4xl text-center">Sriwijaya Championship</div>
                     <div className="flex flex-col justify-center items-center gap-2">
                         <div className="flex gap-2 items-start justify-start"><MapPin size={20} className="text-black"/> Jl.Puri Depok Mas Blok L no.15 pancoran mas, Depok  </div>

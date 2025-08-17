@@ -31,7 +31,7 @@ const CompCard = () => {
 
         {/* Button */}
         <div className="w-full flex justify-center md:justify-end mt-4 md:mt-0">
-          <GeneralButton onClick={() => navigate("/lomba/home")} label="Join the Competition" type="action" className="h-10 xl:h-12 bg-red text-white rounded-lg text-sm md:text-base px-4 md:px-6 py-2"/>
+          <GeneralButton to="/lomba/home" label="Join the Competition" type="link" className="h-10 xl:h-12 bg-red text-white rounded-lg text-sm md:text-base px-4 md:px-6 py-2"/>
         </div>
       </div> 
     </div>

@@ -27,40 +27,51 @@ export default function Timeline() {
   return (
     <div className="relative w-full min-h-screen flex flex-col items-center pt-40 pb-10 px-4 md:px-20">
       {/* Title */}
-      <h1 className="text-6xl md:text-8xl text-red font-bebas uppercase mb-20">
+      <h1 className="text-5xl md:text-7xl lg:text-judul text-red font-bebas uppercase mb-20">
         Timeline
       </h1>
 
       {/* Timeline Sections */}
       {Object.entries(groupedEvents).map(([month, monthEvents]) => (
-        <div key={month} className="w-full flex flex-col items-center justify-center gap-10 mb-24">
-          <h2 className="text-3xl md:text-6xl text-yellow font-bebas capitalize mb-10">{month}</h2>
+        <div 
+          key={month} 
+          className="w-full flex flex-col items-center justify-center gap-10 mb-24 transition-all duration-300"
+        >
+          <h2 className="text-3xl md:text-6xl text-yellow font-bebas capitalize mb-10 transition-transform duration-300">
+            {month}
+          </h2>
+          
           <div className="relative w-full h-full flex flex-col items-center justify-center">
             {/* Events */}
-            <div className="flex flex-col min-w-full justify-start items-center">
+            <div className="flex flex-col min-w-full justify-start items-center ">
               {monthEvents.map((item, index) => (
-                <div key={index}>
+                <div key={index}  >
                   {/* Desktop Layout */}
-                  <div className="hidden sm:flex min-w-full items-start justify-center relative">
+                  <div className="hidden sm:flex min-w-full items-start justify-center relative group">
                     {/* Left Card */}
                     <div className={`w-1/2 flex justify-end pr-10 sm:pr-13 md:pr-15 lg:pr-25 xl:pr-30 ${item.side === 'left' ? '' : 'invisible'}`}>
-                      <TimelineCardKiri event={item.event} time={item.time} />
+                      <div className="group-hover:scale-105 group-hover:shadow-lg group-hover:rotate-3 transition-all duration-300">
+                        <TimelineCardKiri event={item.event} time={item.time} />
+                      </div>
                     </div>
 
                     {/* Dot + Conditional Vertical Line */}
                     <div className="relative flex flex-col items-center justify-start gap-10 w-10 pt-10">
-                      {/* Dot */}
-                      <div className="w-10 h-10 bg-red rounded-full shadow-md" />
+                      {/* Dot with pulsing animation on group hover */}
+                      <div className="w-10 h-10 bg-red rounded-full shadow-md transition-all duration-300 group-hover:animate-ping group-hover:scale-110" />
+                      <div className="absolute w-10 h-10 bg-red rounded-full shadow-md transition-all duration-300 group-hover:scale-110" />
 
                       {/* Line - Only show if not last item */}
                       {index !== monthEvents.length - 1 && (
-                        <div className=" w-[2px] h-30 bg-black mt-1 z-0" />
+                        <div className="w-[2px] h-30 bg-black mt-1 z-0 group-hover:bg-red transition-colors duration-300" />
                       )}
                     </div>
 
                     {/* Right Card */}
                     <div className={`w-1/2 flex justify-start pl-10 sm:pl-13 md:pl-15 lg:pl-25 xl:pl-30 ${item.side === 'right' ? '' : 'invisible'}`}>
-                      <TimelineCardKanan event={item.event} time={item.time} />
+                      <div className="group-hover:scale-105 group-hover:shadow-lg group-hover:-rotate-3 transition-all duration-300">
+                        <TimelineCardKanan event={item.event} time={item.time} />
+                      </div>
                     </div>
                   </div>
 
@@ -68,18 +79,20 @@ export default function Timeline() {
                   <div className="sm:hidden flex justify-start items-start gap-15 px-4">
                     {/* Dot + Conditional Vertical Line */}
                     <div className="relative flex flex-col items-center justify-start gap-5 w-10 pt-7">
-                      {/* Dot */}
-                      <div className="w-7 h-7 bg-red rounded-full shadow-md" />
+                      {/* Dot with pulsing animation on group hover */}
+                      <div className="w-7 h-7 bg-red rounded-full shadow-md transition-all duration-300 group-hover:animate-pulse group-hover:shadow-lg group-hover:shadow-red-500/50 group-hover:scale-110" />
 
                       {/* Line - Only show if not last item */}
                       {index !== monthEvents.length - 1 && (
-                        <div className="w-[2px] h-25 bg-white mt-1 7" />
+                        <div className="w-[2px] h-25 bg-white mt-1 group-hover:bg-red transition-colors duration-300" />
                       )}
                     </div>
 
                     {/* Card */}
                     <div className="flex-2 w-full h-full">
-                      <TimelineCardKanan event={item.event} time={item.time} />
+                      <div className="group-hover:scale-105 group-hover:shadow-lg transition-all duration-300">
+                        <TimelineCardKanan event={item.event} time={item.time} />
+                      </div>
                     </div>
                   </div>
                 </div>

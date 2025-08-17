@@ -14,7 +14,7 @@ const Modal = ({ children, isOpen }: ModalProps) => {
       <div className="absolute inset-0 bg-black/50 pointer-events-none"></div>
 
       {/* isi modal */}
-      <div className="relative z-10 border-2 border-yellow bg-white rounded-2xl shadow-lg p-6">
+      <div className="relative z-10  rounded-2xl shadow-lg p-6">
         {children}
       </div>
     </div>

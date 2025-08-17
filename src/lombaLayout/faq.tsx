@@ -5,7 +5,7 @@ const FAQ = () => {
     return(
         <div className="flex flex-col min-h-screen">
             <div className="h-full w-full  pt-40 flex gap-20 flex-col justify-start items-center" >
-                <h1 className="text-6xl md:text-8xl max-w-3xl text-center text-red font-bebas leading-[80%] uppercase ">
+                <h1 className="text-5xl md:text-7xl lg:text-judul max-w-4xl text-center text-red font-bebas leading-[80%] uppercase ">
                   Frequently ask questions
                 </h1>
                 <div className="h-full w-full flex py-20">

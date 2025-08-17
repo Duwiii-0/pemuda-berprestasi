@@ -60,7 +60,6 @@ const Login = () => {
         <div className="w-full flex flex-col gap-2">
           <GeneralButton
             label="Login"
-            type="action"
             onClick={handleLogin}
             className="w-full bg-red border-2 border-red h-12 text-white round-lg font-semibold"
           />

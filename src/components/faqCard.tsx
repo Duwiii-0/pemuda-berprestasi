@@ -10,13 +10,13 @@ const FaqCard = ({ question, answer }: FaqCardProps) => {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <div className="w-full border-b-2 border-yellow px-8 py-5 cursor-pointer">
+    <div className="w-full border-b-2 border-yellow px-8 py-5 cursor-pointer group">
       {/* Header */}
       <div
         className="flex justify-between items-center"
         onClick={() => setIsOpen(!isOpen)}
       >
-        <div className="font-bebas text-red text-4xl leading-none">
+        <div className="font-bebas text-red text-4xl leading-none group-hover:scale-103 transition-discrete duration-300">
           {question}
         </div>
         <div

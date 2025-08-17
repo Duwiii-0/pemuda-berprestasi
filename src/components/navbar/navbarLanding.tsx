@@ -13,6 +13,7 @@ const NavbarLanding = () => {
   const [showDropdown, setShowDropdown] = useState(false);
 
   const Warna = location.pathname === "/event" ? "red" : "white";
+  const tulisan = location.pathname === "/event" ? "white" : "black";
 
   return (
     <div
@@ -57,7 +58,7 @@ const NavbarLanding = () => {
               type="link"
               to="/login"
               label="Login"
-              className={`h-12 text-lg border-2 border-${Warna} text-${Warna} font-inter`}
+              className={`h-12 text-lg px-8 border-2 border-${Warna} text-${tulisan} bg-${Warna} font-inter`}
             />
         </div>
       ) : (

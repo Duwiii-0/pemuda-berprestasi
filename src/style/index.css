@@ -29,3 +29,13 @@ html{
   scroll-behavior: smooth;
   background-color: #F5FBEF;
 }
+
+/* Untuk Chrome, Edge, Safari */
+::-webkit-scrollbar {
+  display: none;
+}
+
+/* Untuk Firefox */
+html {
+  scrollbar-width: none; 
+}
