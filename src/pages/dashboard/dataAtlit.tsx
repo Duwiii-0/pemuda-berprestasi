@@ -1,12 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Menu, Users, Award, TrendingUp, Search, Filter, Eye, Edit, UserPlus } from 'lucide-react';
-
-// Types
-interface NavbarProps {
-  mobile?: boolean;
-  onClose?: () => void;
-}
+import { Menu, Users, Award, TrendingUp, Search, Eye, Edit, UserPlus } from 'lucide-react';
+import NavbarDashboard from "../../components/navbar/navbarDashboard"
 
 interface AtlitData {
   id: number;
@@ -39,35 +34,6 @@ const dummyAtlits: AtlitData[] = [
   { id: 5, name: "Budi Santoso", provinsi: "Jawa Tengah", gender: "Laki-Laki", umur: 22, belt: "hitam" },
   { id: 6, name: "Maya Sari", provinsi: "Jawa Timur", gender: "Perempuan", umur: 18, belt: "putih" },
 ];
-
-// Mock components - replace with your actual imports
-const NavbarDashboard: React.FC<NavbarProps> = ({ mobile, onClose }) => (
-  <div className={mobile ? "fixed left-0 top-0 h-full w-64 bg-white shadow-lg z-50" : "hidden lg:block w-64 h-screen bg-white shadow-lg fixed left-0 top-0"}>
-    {mobile && (
-      <button onClick={onClose} className="absolute top-4 right-4 p-2">
-        <Menu size={24} />
-      </button>
-    )}
-    <div className="p-6">
-      <div className="font-bebas text-2xl text-center mb-8 text-red">LOGO</div>
-      <div className="font-bebas text-xl mb-8">DASHBOARD</div>
-      
-      <nav className="space-y-2">
-        <a href="#" className="block p-3 rounded-lg hover:bg-red/10 text-red border border-red/20 font-inter">Data Dojang</a>
-        <a href="#" className="block p-3 rounded-lg bg-red text-white font-inter">Data Atlit</a>
-        <a href="#" className="block p-3 rounded-lg hover:bg-red/10 text-red border border-red/20 font-inter">Riwayat Pertandingan</a>
-        <a href="#" className="block p-3 rounded-lg hover:bg-red/10 text-red border border-red/20 font-inter">Ganti Password</a>
-      </nav>
-      
-      <div className="absolute bottom-6 left-6 right-6">
-        <button className="w-full p-3 rounded-lg border border-red/20 text-red hover:bg-red/5 font-inter">
-          Logout
-        </button>
-        <p className="text-center text-sm text-gray-500 mt-4">© 2025 apani</p>
-      </div>
-    </div>
-  </div>
-);
 
 const StatsCard: React.FC<StatsCardProps> = ({ icon: Icon, title, value, color, trend }) => (
   <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-white/50">
@@ -120,7 +86,7 @@ const DataAtlit = () => {
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-white via-red/5 to-yellow/10">
-      {/* Desktop Navbar */}
+      {/* Desktop Navbar - Tinggal panggil aja */}
       <NavbarDashboard />
 
       {/* Main Content */}
@@ -183,7 +149,10 @@ const DataAtlit = () => {
 
             {/* Action Buttons */}
             <div className="flex gap-3">
-              <button className="p-3 rounded-xl bg-red text-white hover:bg-red/90 transition-all duration-300 shadow-lg">
+              <button 
+                onClick={() => navigate('/dashboard/atlit/add')}
+                className="p-3 rounded-xl bg-red text-white hover:bg-red/90 transition-all duration-300 shadow-lg"
+              >
                 <UserPlus size={20} />
               </button>
             </div>
@@ -344,7 +313,7 @@ const DataAtlit = () => {
         </div>
       </div>
 
-      {/* Mobile Sidebar Overlay */}
+      {/* Mobile Sidebar Overlay - Tinggal panggil aja */}
       {sidebarOpen && (
         <>
           <div

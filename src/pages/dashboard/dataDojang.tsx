@@ -1,12 +1,8 @@
 import { useState, useEffect } from "react";
 import { Phone, Mail, MapPin, Map, Building, Flag, Menu, Edit3, Award, Users, Calendar } from 'lucide-react';
+import NavbarDashboard from "../../components/navbar/navbarDashboard"; // Import NavbarDashboard
 
 // Types untuk components
-interface NavbarProps {
-  mobile?: boolean;
-  onClose?: () => void;
-}
-
 interface TextInputProps {
   placeholder?: string;
   className?: string;
@@ -28,37 +24,6 @@ interface StatsCardProps {
   value: string;
   color: string;
 }
-
-// Mock components - replace with your actual imports
-const Navbardashboard: React.FC<NavbarProps> = ({ mobile, onClose }) => (
-  <div className={mobile ? "fixed left-0 top-0 h-full w-64 bg-white shadow-lg z-50" : "hidden lg:block w-64 h-screen bg-white shadow-lg fixed left-0 top-0"}>
-    {mobile && (
-      <button onClick={onClose} className="absolute top-4 right-4 p-2">
-        <Menu size={24} />
-      </button>
-    )}
-    <div className="p-6">
-      <div className="font-bebas text-2xl text-center mb-8 text-red">LOGO</div>
-      <div className="font-bebas text-xl mb-8">DASHBOARD</div>
-      
-      {/* Navigation Items */}
-      <nav className="space-y-2">
-        <a href="#" className="block p-3 rounded-lg bg-red text-white font-inter">Data Dojang</a>
-        <a href="#" className="block p-3 rounded-lg hover:bg-red/10 text-red border border-red/20 font-inter">Data Atlit</a>
-        <a href="#" className="block p-3 rounded-lg hover:bg-red/10 text-red border border-red/20 font-inter">Riwayat Pertandingan</a>
-        <a href="#" className="block p-3 rounded-lg hover:bg-red/10 text-red border border-red/20 font-inter">Ganti Password</a>
-      </nav>
-      
-      {/* Logout Button */}
-      <div className="absolute bottom-6 left-6 right-6">
-        <button className="w-full p-3 rounded-lg border border-red/20 text-red hover:bg-red/5 font-inter">
-          Logout
-        </button>
-        <p className="text-center text-sm text-gray-500 mt-4">© 2025 apani</p>
-      </div>
-    </div>
-  </div>
-);
 
 const TextInput: React.FC<TextInputProps> = ({ placeholder, className, icon, value, disabled, onChange }) => {
   return (
@@ -137,8 +102,8 @@ const Dojang = () => {
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-white via-red/5 to-yellow/10">
-      {/* Desktop Navbar - Always visible */}
-      <Navbardashboard />
+      {/* Desktop Navbar - Tinggal panggil aja */}
+      <NavbarDashboard />
 
       {/* Main Content - Adjusted for sidebar */}
       <div className="lg:ml-64 min-h-screen">
@@ -375,7 +340,7 @@ const Dojang = () => {
         </div>
       </div>
 
-      {/* Mobile Sidebar Overlay */}
+      {/* Mobile Sidebar Overlay - Tinggal panggil aja */}
       {sidebarOpen && (
         <>
           <div
@@ -383,7 +348,7 @@ const Dojang = () => {
             onClick={() => setSidebarOpen(false)}
           />
           <div className="lg:hidden z-50">
-            <Navbardashboard mobile onClose={() => setSidebarOpen(false)} />
+            <NavbarDashboard mobile onClose={() => setSidebarOpen(false)} />
           </div>
         </>
       )}

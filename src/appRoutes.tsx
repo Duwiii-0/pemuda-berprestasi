@@ -23,7 +23,7 @@ import NotFound from "./pages/notFound";
 import ChangePassword from "./pages/dashboard/changePassword";
 import DataAtlit from "./pages/dashboard/dataAtlit";
 import Dojang from "./pages/dashboard/dataDojang";
-import MatchHistory from "./pages/dashboard/matchHistory";
+import MatchHistory from "./pages/dashboard/dataKompetisi";
 
 // data atlit
 import Profile from "./pages/atlit/profilePage";
@@ -64,7 +64,7 @@ export default function AppRoutes() {
           <Route path="atlit" element={<DataAtlit />} />
           <Route path="atlit/:id" element={<Profile />} />
           <Route path="changepassword" element={<ChangePassword />} />
-          <Route path="riwayatpertandingan" element={<MatchHistory />} />
+          <Route path="dataKompetisi" element={<MatchHistory />} />
         </Route>
 
 

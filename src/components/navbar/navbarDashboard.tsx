@@ -1,105 +1,66 @@
-import { Link, useLocation } from "react-router-dom";
-import { useState } from "react";
-import { X } from "lucide-react";
-import GeneralButton from "../generalButton";
+import { useNavigate, useLocation } from "react-router-dom";
+import { Menu } from 'lucide-react';
 
-interface NavbarDashboardProps {
+interface NavbarProps {
   mobile?: boolean;
   onClose?: () => void;
 }
 
-const NavbarDashboard: React.FC<NavbarDashboardProps> = ({ mobile = false, onClose }) => {
+const NavbarDashboard: React.FC<NavbarProps> = ({ mobile, onClose }) => {
+  const navigate = useNavigate();
   const location = useLocation();
-  const [isOpen, setIsOpen] = useState(false);
 
-  const menuItems = [
-    { name: "Data Dojang", path: "/dashboard/dojang" },
-    { name: "Data Atlit", path: "/dashboard/Atlit" },
-    { name: "Riwayat Pertandingan", path: "/dashboard/riwayatpertandingan" },
-    { name: "Ganti Password", path: "/dashboard/changepassword" },
+  const handleNavigation = (path: string) => {
+    navigate(path);
+    if (onClose) onClose(); // Close mobile menu after navigation
+  };
+
+  const isActive = (path: string) => {
+    return location.pathname.includes(path);
+  };
+
+  const navItems = [
+    { path: '/dashboard/dojang', label: 'Data Dojang' },
+    { path: '/dashboard/atlit', label: 'Data Atlit' },
+    { path: '/dashboard/dataKompetisi', label: 'Data Kompetisi' }
   ];
 
-  // Versi Mobile
-  if (mobile) {
-    return (
-      <div className="lg:hidden fixed top-0 right-0 h-full w-92 bg-white border-r-2 border-red z-50 shadow-2xl flex flex-col">
-        <div className="flex items-end justify-between p-4 border-b">
-          <div className="font-bebas text-red text-2xl">Menu</div>
-          <button onClick={onClose}>
-            <X size={28} />
-          </button>
-        </div>
-
-        <div className="text-center font-bebas text-3xl px-4 py-4">
-          dashboard anggota
-        </div>
-
-        <nav className="flex flex-col gap-4 w-full px-4 text-inter text-center py-4">
-          {menuItems.map((item) => (
-            <Link
+  return (
+    <div className={mobile ? "fixed left-0 top-0 h-full w-64 bg-white shadow-lg z-50" : "hidden lg:block w-64 h-screen bg-white shadow-lg fixed left-0 top-0"}>
+      {mobile && (
+        <button onClick={onClose} className="absolute top-4 right-4 p-2">
+          <Menu size={24} />
+        </button>
+      )}
+      <div className="p-6">
+        <div className="font-bebas text-2xl text-center mb-8 text-red">LOGO</div>
+        <div className="font-bebas text-xl mb-8">DASHBOARD</div>
+        
+        <nav className="space-y-2">
+          {navItems.map((item) => (
+            <button 
               key={item.path}
-              to={item.path}
-              className={`block px-4 py-2 rounded-lg text-lg font-inter transition-colors duration-200
-                ${
-                  location.pathname === item.path
-                    ? "bg-red text-white"
-                    : "text-black hover:bg-yellow/10 border-1 border-red"
-                }`}
-              onClick={onClose}
+              onClick={() => handleNavigation(item.path)}
+              className={`w-full text-left block p-3 rounded-lg font-inter transition-all duration-300 ${
+                isActive(item.path)
+                  ? 'bg-red text-white'
+                  : 'hover:bg-red/10 text-red border border-red/20'
+              }`}
             >
-              {item.name}
-            </Link>
+              {item.label}
+            </button>
           ))}
         </nav>
-
-        <div className="mt-auto flex flex-col gap-4 px-4 pb-6">
-          <GeneralButton
-            type="link"
-            to="/login"
-            label="Logout"
-            className="rounded-2xl h-12 w-full text-lg border-2 border-red-500 text-red-500 font-inter hover:bg-red-500 hover:text-white transition-colors duration-200 ease-in-out"
-          />
-          <div className="text-sm text-gray-500 text-center">© 2025 apani</div>
-        </div>
-      </div>
-    );
-  }
-
-  // Versi Desktop
-  return (
-    <div className="hidden lg:flex fixed left-3 top-1/2 -translate-y-1/2 h-[95vh] lg:w-[27vw] xl:w-[20vw] border-2 border-red flex-col justify-start items-center py-t pb-0 z-50 bg-white rounded-2xl shadow-2xl">
-      <div className="text-center font-bebas text-5xl px-20 py-20">
-        logo
-      </div>
-      <div className="text-center font-bebas text-5xl px-20 pb-4">
-        dashboard 
-      </div>
-
-      <nav className="flex flex-col gap-4 w-full px-6 text-inter text-center">
-        {menuItems.map((item) => (
-          <Link
-            key={item.path}
-            to={item.path}
-            className={`block px-4 py-2 rounded-lg text-lg font-inter transition-colors duration-200
-              ${
-                location.pathname === item.path
-                  ? "bg-red text-white"
-                  : "text-black hover:bg-yellow/10 border-1 border-red"
-              }`}
+        
+        <div className="absolute bottom-6 left-6 right-6">
+          <button 
+            onClick={() => handleNavigation('/login')}
+            className="w-full p-3 rounded-lg border border-red/20 text-red hover:bg-red/5 font-inter transition-all duration-300"
           >
-            {item.name}
-          </Link>
-        ))}
-      </nav>
-
-      <div className="h-full w-full flex flex-col justify-end items-center gap-4 px-6">
-        <GeneralButton
-          type="link"
-          to="/login"
-          label="Logout"
-          className="rounded-2xl h-12 w-full text-lg border-2 border-red-500 text-red-500 font-inter hover:bg-red-500 hover:text-white transition-colors duration-200 ease-in-out"
-        />
-        <div className="text-sm text-gray-500 pb-4">© 2025 apani</div>
+            Logout
+          </button>
+          <p className="text-center text-sm text-gray-500 mt-4">© 2025 apani</p>
+        </div>
       </div>
     </div>
   );
