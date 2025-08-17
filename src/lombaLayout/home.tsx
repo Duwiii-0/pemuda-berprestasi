@@ -8,7 +8,7 @@ import heroLomba from "../assets/photos/heroLomba.jpg";
 import Style from "../components/registrationSteps/styleType";
 import Category from "../components/registrationSteps/category";
 import Daftar from "../components/registrationSteps/daftar";
-import { use, useState } from "react";
+import { use, useState, useEffect } from "react";
 
 const LandingPage = () => {
   const [open, setOpen] = useState(false);
@@ -16,6 +16,18 @@ const LandingPage = () => {
   const [styleType, setStyleType] = useState<"kyorugi" | "poomsae" | null>(null);
   const [categoryType, setCategoryType] = useState <'prestasi' | 'pemula' | null>(null);
 
+    useEffect(() => {
+    if (step !== null) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "auto";
+    }
+
+    // cleanup (biar ga bug kalau unmount)
+    return () => {
+      document.body.style.overflow = "auto";
+    };
+  }, [step]);
 
     const registerStep = [
       {
@@ -174,20 +186,20 @@ const LandingPage = () => {
             {/* Modal Category */}
             <Category
               isOpen={step === "category"}
-onSelect={(category) => { // asumsi onSelect Category kirim kategori
-    setCategoryType(category); 
-    setStep("daftar");
-  }}              onBack={() => setStep("style")}
+              onSelect={(category) => { // asumsi onSelect Category kirim kategori
+                  setCategoryType(category); 
+                  setStep("daftar");
+                }}             
+                onBack={() => setStep("style")}
             />
 
             {/* Modal Daftar */}
             <Daftar
-  isOpen={step === "daftar"}
-  onBack={() => setStep("category")}
-  styleType={styleType}
-  categoryType={categoryType} // ✅ wajib
-/>
-
+              isOpen={step === "daftar"}
+              onBack={() => setStep("category")}
+              styleType={styleType}
+              categoryType={categoryType} // ✅ wajib
+            />
         </div>
     )
 }

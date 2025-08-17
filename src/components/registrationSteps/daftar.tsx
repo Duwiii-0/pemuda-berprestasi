@@ -4,6 +4,9 @@ import GeneralButton from "../../components/generalButton";
 import { dummyAtlits } from "../../dummy/dummyAtlit";
 import Modal from "../modal";
 import TextInput from "../textInput";
+import toast from "react-hot-toast";
+import { LockedSelect } from "../lockSelect";
+import { ArrowLeft } from 'lucide-react';
 
 type DaftarProps = {
   isOpen: boolean;
@@ -77,17 +80,27 @@ const Daftar = ({ isOpen, onBack, styleType, categoryType }: DaftarProps) => {
 
   return (
     <Modal isOpen={isOpen}>
-      <div className="px-25 bg-gradient-to-b from-white/90 to-white/80 h-screen md:h-[80vh] w-full md:w-[72vw] lg:w-[56vw] xl:w-[35vw] rounded-xl flex flex-col justify-center items-center gap-8 py-10 overflow-y-scroll font-inter">
+      <div className="bg-gradient-to-b from-white/90 to-white/80 h-screen md:h-[80vh] w-full md:w-[72vw] lg:w-[56vw] xl:w-[35vw] rounded-xl flex flex-col justify-start items-center gap-8 py-10 overflow-y-scroll font-inter">
+        <div className="w-full flex px-10">
+        <button
+          onClick={onBack}
+          className="cursor-pointer font-inter flex items-center gap-2 text-black/30 hover:text-black/60 transition-colors duration-300"
+        >
+          <ArrowLeft size={30} />
+          <span className="text-xl">Back</span>
+        </button>
+        </div>
+        <div className="w-full px-25">
         <div className="flex flex-col gap-2 justify-center items-center">
           <label className="font-bebas text-6xl text-red">Registrasi Atlit</label>
         </div>
 
         <div className="w-full flex flex-col gap-4">
-          {/* Hanya tampil when kategori bkn pemula */}
+          {/* Kelas Umur */}
           {categoryType !== "pemula" && (
             <div>
               <label className="pl-2">Kelas Umur</label>
-              <Select
+              <LockedSelect
                 unstyled
                 options={ageOptions}
                 value={selectedDojang}
@@ -95,15 +108,17 @@ const Daftar = ({ isOpen, onBack, styleType, categoryType }: DaftarProps) => {
                 placeholder="Pilih kelas umur..."
                 isSearchable
                 classNames={selectClassNames}
+                disabled={false}
+                message=""
               />
             </div>
           )}
 
-          {/* Berat - jika Kyorugi Prestasi */}
+          {/* Kelas Berat */}
           {styleType === "kyorugi" && categoryType === "prestasi" && (
             <div>
               <label className="pl-2">Kelas Berat</label>
-              <Select
+              <LockedSelect
                 unstyled
                 options={weightOptions}
                 value={selectedBerat}
@@ -111,28 +126,37 @@ const Daftar = ({ isOpen, onBack, styleType, categoryType }: DaftarProps) => {
                 placeholder="Pilih kelas berat..."
                 isSearchable={false}
                 classNames={selectClassNames}
+                disabled={!selectedDojang}
+                message="Harap pilih kelas umur terlebih dahulu"
               />
             </div>
           )}
 
+
           {/*  Gender */}
           <div>
-            <label className="pl-2">Jenis Kelamin</label>
-            <Select
-              unstyled
-              options={genderOptions}
-              value={selectedGender}
-              onChange={setSelectedGender}
-              placeholder="Pilih gender..."
-              isSearchable={false}
-              classNames={selectClassNames}
-            />
-          </div>
+              <label className="pl-2">Jenis Kelamin</label>
+              <LockedSelect
+                unstyled
+                options={genderOptions}
+                value={selectedGender}
+                onChange={setSelectedGender}
+                placeholder="Pilih jenis kelamin..."
+                isSearchable={false}
+                classNames={selectClassNames}
+              disabled={
+                categoryType !== "pemula"
+                  ? !selectedDojang // jika ada kelas umur wajib dipilih dulu
+                  : false
+              }
+                message="Harap pilih kelas berat terlebih dahulu"
+              />
+            </div>
 
           {/* Nama  */}
           <div>
             <label className="pl-2">Nama Atlit</label>
-            <Select
+            <LockedSelect
               unstyled
               options={atlitOptions}
               value={selectedAtlit}
@@ -140,6 +164,8 @@ const Daftar = ({ isOpen, onBack, styleType, categoryType }: DaftarProps) => {
               placeholder="Pilih nama atlit..."
               isSearchable
               classNames={selectClassNames}
+              disabled={!selectedGender}
+              message="Harap pilih gender terlebih dahulu"
             />
           </div>
 
@@ -147,10 +173,11 @@ const Daftar = ({ isOpen, onBack, styleType, categoryType }: DaftarProps) => {
           <div>
             <label className="pl-2">Berat Badan (kg)</label>
             <TextInput
-              disabled
               value={selectedAtlitData?.bb.toString() || ""}
               placeholder="Berat badan"
               className="h-12 w-full"
+              onChange={() => toast.error("Berat badan tidak bisa diedit, silahkan edit di dalam data atlit")}
+              onClick={() => toast.error("Berat badan tidak bisa diedit, silahkan edit di dalam data atlit")}
             />
           </div>
 
@@ -158,19 +185,22 @@ const Daftar = ({ isOpen, onBack, styleType, categoryType }: DaftarProps) => {
           <div>
             <label className="pl-2">Tinggi Badan (cm)</label>
             <TextInput
-              disabled
               value={selectedAtlitData?.tb.toString() || ""}
               placeholder="Tinggi badan"
               className="h-12 w-full"
+              onChange={() => toast.error("Tinggi badan tidak bisa diedit, silahkan edit di dalam data atlit")}
+              onClick={() => toast.error("Tinggi badan tidak bisa diedit, silahkan edit di dalam data atlit")}
+
             />
           </div>
         </div>
 
-        <div className="w-full flex flex-col gap-2">
+        <div className="w-full flex flex-col gap-2 pt-8">
           <GeneralButton
             label="Daftar"
             className="w-full bg-red border-2 border-red h-12 text-white rounded-lg font-semibold"
           />
+        </div>
         </div>
       </div>
     </Modal>

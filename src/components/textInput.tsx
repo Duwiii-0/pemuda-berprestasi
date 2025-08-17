@@ -7,10 +7,11 @@ type TextProps = {
   disabled?: boolean;
   value?: string;
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onClick?: () => void;
 
 };
 
-const TextInput = ({ placeholder, className, icon, value, disabled, onChange }: TextProps) => {
+const TextInput = ({ placeholder, className, icon, value, disabled, onChange ,onClick }: TextProps) => {
   return (
     <div className={`flex items-center border-2 border-red rounded-md px-2 gap-2 ${className}`}>
       {icon && <span>{icon}</span>}
@@ -21,6 +22,7 @@ const TextInput = ({ placeholder, className, icon, value, disabled, onChange }: 
         placeholder={placeholder}
         type="text"
         className="w-full outline-none bg-transparent placeholder-red/50"
+        onClick={onClick}
       />
     </div>
   );

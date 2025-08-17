@@ -22,7 +22,6 @@ import NotFound from "./pages/notFound";
 // Dashboard
 import DataAtlit from "./pages/dashboard/dataAtlit";
 import Dojang from "./pages/dashboard/dataDojang";
-import MatchHistory from "./pages/dashboard/dataKompetisi";
 
 // data atlit
 import Profile from "./pages/atlit/profilePage";
@@ -34,13 +33,12 @@ import FAQ from "./lombaLayout/faq";
 
 // settings
 import Settings from "./pages/settings/settings";
-import TambahAtlit from "./pages/dashboard/TambahAtlit";
 
 
 export default function AppRoutes() {
   return (
     <>
-      <Toaster />
+      <Toaster position="top-right" reverseOrder={false}  />
       <Routes>
         {/* Auth routes */}
         <Route path="/login" element={<Login />} />
@@ -63,8 +61,6 @@ export default function AppRoutes() {
           <Route path="dojang" element={<Dojang />} />
           <Route path="atlit" element={<DataAtlit />} />
           <Route path="atlit/:id" element={<Profile />} />
-          <Route path="atlit/add" element={<TambahAtlit />} />
-          <Route path="dataKompetisi" element={<MatchHistory />} />
         </Route>
 
 

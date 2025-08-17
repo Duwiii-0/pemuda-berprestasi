@@ -31,7 +31,7 @@ const NavbarLanding = () => {
         pemuda berprestasi
       </Link> }
 
-      <div className="hidden md:flex md:gap-6 lg:gap-10 xl:gap-20 items-center">
+      <div className="absolute left-1/2 transform -translate-x-1/2 hidden md:flex md:gap-6 lg:gap-10 xl:gap-20 items-center">
         <Link to="/" className={`text-lg text-${Warna} font-inter`}>
           Beranda
         </Link>

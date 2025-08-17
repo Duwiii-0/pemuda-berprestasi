@@ -13,7 +13,7 @@ const Style = ({ isOpen, onBack, onSelect }: StyleProps) => {
       <div className="flex flex-col gap-6 pb-20 px-8">
         <button
           onClick={onBack}
-          className="cursor-pointer font-inter flex items-center gap-2 text-white"
+          className="cursor-pointer font-inter flex items-center gap-2 text-white hover:text-white/70"
         >
           <ArrowLeft size={30} />
           <span className="text-xl">Back</span>
