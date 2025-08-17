@@ -20,7 +20,6 @@ import Event from "./pages/landingPage/event";
 import NotFound from "./pages/notFound";
 
 // Dashboard
-import ChangePassword from "./pages/dashboard/changePassword";
 import DataAtlit from "./pages/dashboard/dataAtlit";
 import Dojang from "./pages/dashboard/dataDojang";
 import MatchHistory from "./pages/dashboard/dataKompetisi";
@@ -35,6 +34,7 @@ import FAQ from "./lombaLayout/faq";
 
 // settings
 import Settings from "./pages/settings/settings";
+import TambahAtlit from "./pages/dashboard/TambahAtlit";
 
 
 export default function AppRoutes() {
@@ -63,7 +63,7 @@ export default function AppRoutes() {
           <Route path="dojang" element={<Dojang />} />
           <Route path="atlit" element={<DataAtlit />} />
           <Route path="atlit/:id" element={<Profile />} />
-          <Route path="changepassword" element={<ChangePassword />} />
+          <Route path="atlit/add" element={<TambahAtlit />} />
           <Route path="dataKompetisi" element={<MatchHistory />} />
         </Route>
 
