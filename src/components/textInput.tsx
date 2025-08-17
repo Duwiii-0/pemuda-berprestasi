@@ -20,7 +20,7 @@ const TextInput = ({ placeholder, className, icon, value, disabled, onChange }: 
         disabled={disabled}
         placeholder={placeholder}
         type="text"
-        className="flex-1 outline-none bg-transparent placeholder-red/50"
+        className="w-full outline-none bg-transparent placeholder-red/50"
       />
     </div>
   );

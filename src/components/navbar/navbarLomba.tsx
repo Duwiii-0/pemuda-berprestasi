@@ -12,7 +12,7 @@ const NavbarLomba = () => {
 
   return (
     <div
-      className={`bg-red fixed top-0 left-0 transform h-24 w-full flex justify-between items-center md:px-2 lg:px-12 z-50`}
+      className={`bg-red absolute top-0 transform h-24 w-full flex justify-between items-center md:px-2 lg:px-12 z-50`}
     >
       <Link
         to="/"

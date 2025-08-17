@@ -6,7 +6,7 @@ import FooterLomba from '../components/footerLomba'
 export default function LombaLayout() {
   console.log('lombalayout dipakai')
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col overflow-x-hidden">
       <NavbarLomba />
       <main>
         <Outlet />

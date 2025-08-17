@@ -14,8 +14,8 @@ const Steps: React.FC<StepsProps> = ({ number, title, desc }) => {
         <div className="text-black/30 text-xl font-inter">Step</div>
       </div>
 
-      <div className="flex flex-col gap-4 bg-white shadow-2xl rounded-xl w-3/4 px-8 py-8 border-2 border-yellow">
-        <div className="font-bebas text-red text-4xl pl-4">{title}</div>
+      <div className="flex flex-col gap-2 sm:gap-4 bg-white shadow-2xl rounded-xl w-3/4 px-8 py-4 sm:py-8 border-2 border-yellow">
+        <div className="font-bebas text-red text-3xl md:text-4xl md:pl-4">{title}</div>
         <div className="font-inter text-black text-lg">{desc}</div>
       </div>
     </div>
