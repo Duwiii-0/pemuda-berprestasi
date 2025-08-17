@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Phone, User, CalendarFold, IdCard, MapPinned, Scale, Ruler, Save, ArrowLeft } from "lucide-react";
 import NavbarDashboard from "../../components/navbar/navbarDashboard";
+import type { DummyAtlit } from "../../dummy/dummyAtlit";
+
 
 // Import your existing components
 // import TextInput from "../../components/textInput";
@@ -157,18 +159,6 @@ const Select: React.FC<SelectProps> = ({
   );
 };
 
-interface AtlitFormData {
-  name: string;
-  provinsi: string;
-  gender: "Laki-Laki" | "Perempuan" | "";
-  umur: number | "";
-  belt: string;
-  phone: string;
-  alamat: string;
-  nik: string;
-  bb: number | "";
-  tb: number | "";
-}
 
 interface FormErrors {
   name?: string;
@@ -181,6 +171,10 @@ interface FormErrors {
   nik?: string;
   bb?: string;
   tb?: string;
+  tglLahir? : string;
+  kota?: string;
+  id?: string;
+  photo?: string;
 }
 
 const TambahAtlit: React.FC = () => {
@@ -189,17 +183,20 @@ const TambahAtlit: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [submitSuccess, setSubmitSuccess] = useState<boolean>(false);
   
-  const [formData, setFormData] = useState<AtlitFormData>({
-    name: "",
-    provinsi: "",
-    gender: "",
-    umur: "",
-    belt: "",
-    phone: "",
-    alamat: "",
-    nik: "",
-    bb: "",
-    tb: "",
+  const [formData, setFormData] = useState<DummyAtlit>({
+  name: "",
+  phone: "",
+  nik: "",
+  tglLahir: "",
+  alamat: "",
+  kota: "",
+  provinsi: "",
+  bb: 0,
+  tb: 0,
+  gender: '',
+  umur: 0,
+  belt: "",
+
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
@@ -329,15 +326,17 @@ const TambahAtlit: React.FC = () => {
       setTimeout(() => {
         setFormData({
           name: "",
-          provinsi: "",
-          gender: "",
-          umur: "",
-          belt: "",
           phone: "",
-          alamat: "",
           nik: "",
-          bb: "",
-          tb: "",
+          tglLahir: "",
+          alamat: "",
+          kota: "",
+          provinsi: "",
+          bb: 0,
+          tb: 0,
+          gender: '',
+          umur: 0,
+          belt: "",
         });
         setDocuments({
           akteKelahiran: null,
@@ -356,7 +355,7 @@ const TambahAtlit: React.FC = () => {
     }
   };
 
-  const handleInputChange = (field: keyof AtlitFormData, value: string | number) => {
+  const handleInputChange = (field: keyof DummyAtlit, value: string | number) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     
     // Clear error when user starts typing
@@ -411,7 +410,7 @@ const TambahAtlit: React.FC = () => {
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-8">
             {/* Data Pribadi */}
-            <div className="bg-white/60 backdrop-blur-sm rounded-3xl p-6 md:p-8 shadow-xl border border-white/50">
+            <div className="bg-white/60 backdrop-blur-sm rounded-3xl p-6 md:p-8 shadow-xl border border-white/50 z-10">
               <div className="flex items-center gap-3 mb-6">
                 <div className="p-2 bg-red/10 rounded-xl">
                   <User className="text-red" size={20} />
@@ -542,7 +541,7 @@ const TambahAtlit: React.FC = () => {
                     onChange={(selected) => handleInputChange('belt', selected?.value || '')}
                     options={beltOptions}
                     placeholder="Pilih tingkat sabuk"
-                    className={`bg-white/50 backdrop-blur-sm focus:border-red transition-all duration-300 ${
+                    className={`bg-white/50 backdrop-blur-sm focus:border-red transition-all duration-300 z-auto ${
                       errors.belt ? 'border-red-500' : 'border-red/20'
                     }`}
                   />
@@ -554,7 +553,7 @@ const TambahAtlit: React.FC = () => {
             </div>
 
             {/* Data Fisik */}
-            <div className="bg-white/60 backdrop-blur-sm rounded-3xl p-6 md:p-8 shadow-xl border border-white/50">
+            <div className="bg-white/60 backdrop-blur-sm rounded-3xl p-6 md:p-8 shadow-xl border border-white/50 z-auto">
               <div className="flex items-center gap-3 mb-6">
                 <div className="p-2 bg-blue-500/10 rounded-xl">
                   <Scale className="text-blue-500" size={20} />
@@ -569,10 +568,10 @@ const TambahAtlit: React.FC = () => {
                 <div className="space-y-2">
                   <label className="block font-inter font-medium text-black/70">Berat Badan (kg)</label>
                   <TextInput
-                    type="number"
+                    type="number"   
                     min="10"
                     max="300"
-                    step="0.1"
+                    step="1"
                     className={`h-12 bg-white/50 backdrop-blur-sm rounded-xl focus:border-red transition-all duration-300 ${
                       errors.bb ? 'border-red-500' : 'border-red/20'
                     }`}

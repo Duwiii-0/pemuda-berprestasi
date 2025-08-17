@@ -1,5 +1,5 @@
 export interface DummyAtlit {
-  id: number;
+  id?: number;
   name: string;
   photo?: string;
   phone: string;
@@ -10,7 +10,7 @@ export interface DummyAtlit {
   provinsi: string;
   bb: number;
   tb: number;
-  gender: 'Laki-Laki' | 'Perempuan';
+  gender: 'Laki-Laki' | 'Perempuan' | '';
   umur: number;
   belt: string;
 }

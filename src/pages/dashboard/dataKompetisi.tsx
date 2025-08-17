@@ -36,7 +36,6 @@ interface StatsCardProps {
   title: string;
   value: string;
   color: string;
-  trend?: string;
 }
 
 // Mock data kompetisi
@@ -86,7 +85,7 @@ const dummyAtlits: AtlitData[] = [
   { id: 6, name: "Maya Sari", provinsi: "Jawa Timur", gender: "Perempuan", umur: 18, belt: "putih", kompetisiId: 3 },
 ];
 
-const StatsCard: React.FC<StatsCardProps> = ({ icon: Icon, title, value, color, trend }) => (
+const StatsCard: React.FC<StatsCardProps> = ({ icon: Icon, title, value, color }) => (
   <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-white/50">
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-4">
@@ -98,11 +97,6 @@ const StatsCard: React.FC<StatsCardProps> = ({ icon: Icon, title, value, color, 
           <p className="font-bebas text-2xl text-black/80">{value}</p>
         </div>
       </div>
-      {trend && (
-        <div className="text-right">
-          <span className="text-xs font-inter text-green-600">{trend}</span>
-        </div>
-      )}
     </div>
   </div>
 );
@@ -479,7 +473,6 @@ const DataKompetisi = () => {
                   title="Total Kompetisi"
                   value={totalKompetisi.toString()}
                   color="bg-gradient-to-br from-red to-red/80"
-                  trend="+5% bulan ini"
                 />
                 <StatsCard 
                   icon={Calendar}
@@ -502,15 +495,7 @@ const DataKompetisi = () => {
               </div>
             </div>
 
-            {/* Action Buttons */}
-            <div className="flex gap-3">
-              <button 
-                onClick={() => navigate('/dashboard/kompetisi/add')}
-                className="p-3 rounded-xl bg-red text-white hover:bg-red/90 transition-all duration-300 shadow-lg"
-              >
-                <Plus size={20} />
-              </button>
-            </div>
+            
           </div>
 
           {/* Search and Filter Section */}

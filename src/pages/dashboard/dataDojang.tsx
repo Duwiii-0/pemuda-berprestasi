@@ -25,7 +25,7 @@ interface StatsCardProps {
   color: string;
 }
 
-const TextInput: React.FC<TextInputProps> = ({ placeholder, className, icon, value, disabled, onChange }) => {
+export const TextInput: React.FC<TextInputProps> = ({ placeholder, className, icon, value, disabled, onChange }) => {
   return (
     <div className={`relative group ${className}`}>
       <div className="flex items-center border-2 border-red/20 hover:border-red/40 focus-within:border-red rounded-xl px-4 py-3 gap-3 bg-white/80 backdrop-blur-sm transition-all duration-300 hover:shadow-lg">
@@ -44,7 +44,7 @@ const TextInput: React.FC<TextInputProps> = ({ placeholder, className, icon, val
   );
 };
 
-const GeneralButton: React.FC<GeneralButtonProps> = ({ label, className, onClick }) => (
+export const GeneralButton: React.FC<GeneralButtonProps> = ({ label, className, onClick }) => (
   <button
     onClick={onClick}
     className={`font-inter font-medium px-6 py-3 rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-lg active:scale-95 ${className}`}
@@ -93,6 +93,7 @@ const Dojang = () => {
 
   const handleCancel = () => {
     setIsEditing(false);
+    setFormData(formData);
   };
 
   const handleUpdate = () => {
@@ -156,7 +157,29 @@ const Dojang = () => {
               </div>
             </div>
 
-            {/* Action Buttons */}
+            
+          </div>
+
+          {/* Form Section */}
+          <div className="bg-white/60 backdrop-blur-sm rounded-3xl p-8 shadow-xl border border-white/50">
+            <div className="flex items-center gap-3 mb-8">
+              <div className="p-2 bg-red/10 rounded-xl">
+                <Building className="text-red" size={20} />
+              </div>
+              <h2 className="font-bebas text-2xl text-black/80 tracking-wide">
+                INFORMASI DOJANG
+              </h2>
+              {/* Action Buttons */}
+              <div className="flex ml-auto gap-4">
+                 {isEditing && (
+                <div className="">
+                  <div className="flex items-center justify-center text-center gap-2 bg-yellow/20 text-yellow px-3 py-1 rounded-full text-sm font-inter">
+                    <Edit3 size={14} />
+                    Mode Edit
+                  </div>
+                </div>
+              )}
+              </div>
             <div className="flex gap-3">
               {!isEditing ? (
                 <GeneralButton
@@ -179,25 +202,7 @@ const Dojang = () => {
                 </div>
               )}
             </div>
-          </div>
-
-          {/* Form Section */}
-          <div className="bg-white/60 backdrop-blur-sm rounded-3xl p-8 shadow-xl border border-white/50">
-            <div className="flex items-center gap-3 mb-8">
-              <div className="p-2 bg-red/10 rounded-xl">
-                <Building className="text-red" size={20} />
-              </div>
-              <h2 className="font-bebas text-2xl text-black/80 tracking-wide">
-                INFORMASI DOJANG
-              </h2>
-              {isEditing && (
-                <div className="ml-auto">
-                  <div className="flex items-center gap-2 bg-yellow/20 text-yellow px-3 py-1 rounded-full text-sm font-inter">
-                    <Edit3 size={14} />
-                    Mode Edit
-                  </div>
-                </div>
-              )}
+             
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

@@ -66,7 +66,7 @@ const Login = () => {
 
           <GeneralButton
             label="Login"
-            type={"submit" as any} // 🔥 hack cepat biar langsung bisa
+            type={"submit" as any}
             className="w-full bg-red border-2 border-red h-12 text-white round-lg font-semibold"
           />
         </form>

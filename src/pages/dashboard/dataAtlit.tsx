@@ -2,20 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Menu, Users, Award, TrendingUp, Search, Eye, Edit, UserPlus } from 'lucide-react';
 import NavbarDashboard from "../../components/navbar/navbarDashboard"
-
-interface AtlitData {
-  id: number;
-  name: string;
-  provinsi: string;
-  gender: "Laki-Laki" | "Perempuan";
-  umur: number;
-  belt?: string;
-  phone?: string;
-  alamat?: string;
-  nik?: string;
-  bb?: number;
-  tb?: number;
-}
+import { dummyAtlits } from "../../dummy/dummyAtlit";
 
 interface StatsCardProps {
   icon: React.ComponentType<{ size?: number; className?: string }>;
@@ -25,15 +12,6 @@ interface StatsCardProps {
   trend?: string;
 }
 
-// Mock data - replace with your actual data
-const dummyAtlits: AtlitData[] = [
-  { id: 1, name: "Rizky Purnama", provinsi: "Jawa Barat", gender: "Laki-Laki", umur: 20, belt: "hitam" },
-  { id: 2, name: "Aulia", provinsi: "DKI Jakarta", gender: "Perempuan", umur: 19, belt: "putih" },
-  { id: 3, name: "Andi", provinsi: "DKI Jakarta", gender: "Laki-Laki", umur: 20, belt: "hitam" },
-  { id: 4, name: "Siti", provinsi: "Jawa Barat", gender: "Perempuan", umur: 21, belt: "putih" },
-  { id: 5, name: "Budi Santoso", provinsi: "Jawa Tengah", gender: "Laki-Laki", umur: 22, belt: "hitam" },
-  { id: 6, name: "Maya Sari", provinsi: "Jawa Timur", gender: "Perempuan", umur: 18, belt: "putih" },
-];
 
 const StatsCard: React.FC<StatsCardProps> = ({ icon: Icon, title, value, color, trend }) => (
   <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-white/50">
@@ -141,21 +119,12 @@ const DataAtlit = () => {
                 <StatsCard 
                   icon={TrendingUp}
                   title="Rata-rata Umur"
-                  value={`${avgAge} thn`}
+                  value={`${avgAge} Tahun`}
                   color="bg-gradient-to-br from-yellow to-yellow/80"
                 />
               </div>
             </div>
-
-            {/* Action Buttons */}
-            <div className="flex gap-3">
-              <button 
-                onClick={() => navigate('/dashboard/atlit/add')}
-                className="p-3 rounded-xl bg-red text-white hover:bg-red/90 transition-all duration-300 shadow-lg"
-              >
-                <UserPlus size={20} />
-              </button>
-            </div>
+            
           </div>
 
           {/* Search and Filter Section */}
@@ -213,13 +182,26 @@ const DataAtlit = () => {
 
           {/* Table Section */}
           <div className="bg-white/60 backdrop-blur-sm rounded-3xl p-8 shadow-xl border border-white/50">
-            <div className="flex items-center gap-3 mb-6">
+            <div className="flex items-center justify-between gap-3 mb-6">
+              <div className="flex gap-4 items-center">
               <div className="p-2 bg-red/10 rounded-xl">
                 <Users className="text-red" size={20} />
               </div>
               <h2 className="font-bebas text-2xl text-black/80 tracking-wide">
                 DAFTAR ATLET ({filteredAtlits.length})
               </h2>
+              </div>
+              {/* Action Buttons */}
+              <div className="flex gap-3 pr-12">
+                <button 
+                  onClick={() => navigate('/dashboard/atlit/add')}
+                  className="font-inter font-medium px-6 py-3 rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-lg active:scale-95 flex justify-center items-center cursor-pointer text-white bg-gradient-to-r from-red to-red/80 hover:from-red/90 hover:to-red/70 border-0 shadow-lg gap-2"
+                >
+                  <UserPlus size={20} />
+                  Tambah Atlit
+
+                </button>
+              </div>
             </div>
 
             {/* Table */}
@@ -270,7 +252,7 @@ const DataAtlit = () => {
                           </span>
                         </td>
                         <td className="px-6 py-4 text-center">
-                          <span className="font-inter font-medium text-black/70">{atlit.umur} thn</span>
+                          <span className="font-inter font-medium text-black/70">{atlit.umur} Tahun</span>
                         </td>
                         <td className="px-6 py-4 text-center">
                           <div className="flex justify-center gap-2">
