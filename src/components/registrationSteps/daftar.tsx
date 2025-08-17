@@ -3,12 +3,13 @@ import Select from "react-select";
 import GeneralButton from "../../components/generalButton";
 import { dummyAtlits } from "../../dummy/dummyAtlit";
 import Modal from "../modal";
+import TextInput from "../textInput";
 
 type DaftarProps = {
   isOpen: boolean;
   onBack: () => void;
   styleType: "kyorugi" | "poomsae" | null;
-  categoryType: "prestasi" | "pemula" | null; // <-- prop baru
+  categoryType: "prestasi" | "pemula" | null;
 };
 
 const Daftar = ({ isOpen, onBack, styleType, categoryType }: DaftarProps) => {
@@ -17,11 +18,16 @@ const Daftar = ({ isOpen, onBack, styleType, categoryType }: DaftarProps) => {
   const [selectedDojang, setSelectedDojang] = useState<OptionType | null>(null);
   const [selectedAtlit, setSelectedAtlit] = useState<OptionType | null>(null);
   const [selectedGender, setSelectedGender] = useState<OptionType | null>(null);
+  const [selectedBerat, setSelectedBerat] = useState<OptionType | null>(null);
 
   const atlitOptions: OptionType[] = dummyAtlits.map((a) => ({
     value: a.name,
     label: a.name,
   }));
+
+  const selectedAtlitData = dummyAtlits.find(
+    (a) => a.name === selectedAtlit?.value
+  );
 
   const genderOptions: OptionType[] = [
     { value: "Laki-Laki", label: "Laki-Laki" },
@@ -41,6 +47,18 @@ const Daftar = ({ isOpen, onBack, styleType, categoryType }: DaftarProps) => {
           { value: "Junior", label: "Junior" },
           { value: "Senior", label: "Senior" },
         ];
+
+  // contoh kelas berat statis (nanti bisa kamu pecah per gender/umur)
+  const weightOptions: OptionType[] = [
+    { value: "-54", label: "Under 54 kg" },
+    { value: "-58", label: "Under 58 kg" },
+    { value: "-63", label: "Under 63 kg" },
+    { value: "-68", label: "Under 68 kg" },
+    { value: "-74", label: "Under 74 kg" },
+    { value: "-80", label: "Under 80 kg" },
+    { value: "-87", label: "Under 87 kg" },
+    { value: "+87", label: "Over 87 kg" },
+  ];
 
   const selectClassNames = {
     control: () => "border-2 border-red rounded-lg h-12 px-2 text-inter",
@@ -65,7 +83,7 @@ const Daftar = ({ isOpen, onBack, styleType, categoryType }: DaftarProps) => {
         </div>
 
         <div className="w-full flex flex-col gap-4">
-          {/* Hanya tampilkan jika kategori BUKAN pemula */}
+          {/* Hanya tampil when kategori bkn pemula */}
           {categoryType !== "pemula" && (
             <div>
               <label className="pl-2">Kelas Umur</label>
@@ -81,7 +99,37 @@ const Daftar = ({ isOpen, onBack, styleType, categoryType }: DaftarProps) => {
             </div>
           )}
 
-          {/* Select Nama Atlit */}
+          {/* Berat - jika Kyorugi Prestasi */}
+          {styleType === "kyorugi" && categoryType === "prestasi" && (
+            <div>
+              <label className="pl-2">Kelas Berat</label>
+              <Select
+                unstyled
+                options={weightOptions}
+                value={selectedBerat}
+                onChange={setSelectedBerat}
+                placeholder="Pilih kelas berat..."
+                isSearchable={false}
+                classNames={selectClassNames}
+              />
+            </div>
+          )}
+
+          {/*  Gender */}
+          <div>
+            <label className="pl-2">Jenis Kelamin</label>
+            <Select
+              unstyled
+              options={genderOptions}
+              value={selectedGender}
+              onChange={setSelectedGender}
+              placeholder="Pilih gender..."
+              isSearchable={false}
+              classNames={selectClassNames}
+            />
+          </div>
+
+          {/* Nama  */}
           <div>
             <label className="pl-2">Nama Atlit</label>
             <Select
@@ -95,17 +143,25 @@ const Daftar = ({ isOpen, onBack, styleType, categoryType }: DaftarProps) => {
             />
           </div>
 
-          {/* Select Gender */}
+          {/* bb */}
           <div>
-            <label className="pl-2">Jenis Kelamin</label>
-            <Select
-              unstyled
-              options={genderOptions}
-              value={selectedGender}
-              onChange={setSelectedGender}
-              placeholder="Pilih gender..."
-              isSearchable={false}
-              classNames={selectClassNames}
+            <label className="pl-2">Berat Badan (kg)</label>
+            <TextInput
+              disabled
+              value={selectedAtlitData?.bb.toString() || ""}
+              placeholder="Berat badan"
+              className="h-12 w-full"
+            />
+          </div>
+
+          {/* tb */}
+          <div>
+            <label className="pl-2">Tinggi Badan (cm)</label>
+            <TextInput
+              disabled
+              value={selectedAtlitData?.tb.toString() || ""}
+              placeholder="Tinggi badan"
+              className="h-12 w-full"
             />
           </div>
         </div>
@@ -113,7 +169,6 @@ const Daftar = ({ isOpen, onBack, styleType, categoryType }: DaftarProps) => {
         <div className="w-full flex flex-col gap-2">
           <GeneralButton
             label="Daftar"
-            type="action"
             className="w-full bg-red border-2 border-red h-12 text-white rounded-lg font-semibold"
           />
         </div>

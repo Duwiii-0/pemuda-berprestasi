@@ -55,7 +55,6 @@ const Dojang = () => {
               {!isEditing ? (
                 <GeneralButton
                   label="Ubah Data Dojang"
-                  type='action'
                   className="hidden md:block h-12 text-white border-2 border-green-600 bg-green-600 hover:bg-green-700"
                   onClick={() => setIsEditing(true)}
                 />
@@ -63,13 +62,11 @@ const Dojang = () => {
                 <>
                   <GeneralButton
                     label="Cancel"
-                    type='action'
                     className="hidden md:block h-12 text-white border-2 border-gray-500 bg-gray-500 hover:bg-gray-600"
                     onClick={handleCancel}
                   />
                   <GeneralButton
                     label="Update"
-                    type='action'
                     className="hidden md:block h-12 text-white border-2 border-green-600 bg-green-600 hover:bg-green-700"
                     onClick={handleUpdate}
                   />
@@ -96,7 +93,6 @@ const Dojang = () => {
               {!isEditing ? (
                 <GeneralButton
                   label="Ubah Data Dojang"
-                  type='action'
                   className="h-12 w-40 text-white border-2 border-green-600 bg-green-600 hover:bg-green-700"
                   onClick={() => setIsEditing(true)}
                 />
@@ -104,13 +100,11 @@ const Dojang = () => {
                 <>
                   <GeneralButton
                     label="Cancel"
-                    type='action'
                     className="h-12 text-white border-2 border-gray-500 bg-gray-500 hover:bg-gray-600"
                     onClick={handleCancel}
                   />
                   <GeneralButton
                     label="Update"
-                    type='action'
                     className="h-12 text-white border-2 border-green-600 bg-green-600 hover:bg-green-700"
                     onClick={handleUpdate}
                   />

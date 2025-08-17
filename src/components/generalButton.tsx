@@ -39,7 +39,7 @@ const GeneralButton: React.FC<GeneralButtonProps> = ({ label, type, to, onClick,
   }
     return (
       <button
-        className={`btn px-6 rounded-sm font-inter flex justify-center items-center cursor-pointer ${className}`}
+        className={`btn px-6 rounded-sm font-inter flex justify-center items-center cursor-pointer ${className} `} onClick={onClick}
       >
         {label}
       </button>
