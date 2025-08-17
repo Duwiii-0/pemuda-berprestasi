@@ -9,14 +9,16 @@ export interface DummyAtlit {
   kota: string;
   provinsi: string;
   bb: number;
+  tb: number;
   gender: 'Laki-Laki' | 'Perempuan';
   umur: number;
+  belt: string;
 }
 
 export const dummyAtlits: DummyAtlit[] = [
   {
     id: 1,
-    name: "Rizky",
+    name: "Rizky Purnama ",
     phone: "081234567890",
     nik: "3172061507050001",
     tglLahir: "15 Juli 2005",
@@ -24,8 +26,10 @@ export const dummyAtlits: DummyAtlit[] = [
     kota: "Depok",
     provinsi: "Jawa Barat",
     bb: 60,
+    tb: 170,
     gender: "Laki-Laki",
-    umur: 20
+    umur: 20,
+    belt: 'putih'
   },
   {
     id: 2,
@@ -37,8 +41,10 @@ export const dummyAtlits: DummyAtlit[] = [
     kota: "Jakarta",
     provinsi: "DKI Jakarta",
     bb: 55,
+    tb: 170,
     gender: "Perempuan",
-    umur: 19
+    umur: 19,
+    belt: 'hitam'
   },
   {
     id: 3,
@@ -50,8 +56,11 @@ export const dummyAtlits: DummyAtlit[] = [
     kota: "Jakarta",
     provinsi: "DKI Jakarta",
     bb: 65,
+    tb: 170,
     gender: "Laki-Laki",
-    umur: 20
+    umur: 20,
+    belt: 'putih'
+
   },
   {
     id: 4,
@@ -63,8 +72,9 @@ export const dummyAtlits: DummyAtlit[] = [
     kota: "Bandung",
     provinsi: "Jawa Barat",
     bb: 50,
+    tb: 170,
     gender: "Perempuan",
-    umur: 21
+    umur: 21,
+    belt: 'hitam'
   }
 ];
-    

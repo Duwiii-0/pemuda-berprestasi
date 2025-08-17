@@ -3,6 +3,8 @@ import Steps from "../components/howTo";
 import TextInput from "../components/textInput";
 import TextArea from "../components/textArea";  
 import { Mail, User, PenLine, MapPin, Phone, } from 'lucide-react';
+import sriwijaya from "../assets/logo/sriwijaya.png";
+import heroLomba from "../assets/photos/heroLomba.jpg";
 
 const LandingPage = () => {
 
@@ -35,11 +37,11 @@ const LandingPage = () => {
     return(
         <div className="min-h-screen w-full">
             {/*hero*/}
-              <div className="h-[60vh] sm:h-screen w-full bg-red flex items-center justify-center bg-cover bg-center 2xl:bg-top"
-                    style={{backgroundImage: "url('src/assets/photos/hero.png')",
-                     }}>
+              <div className="h-[60vh] sm:h-screen w-full bg-black flex items-center justify-center bg-cover bg-center 2xl:bg-top"
+                      style={{ backgroundImage: `url(${heroLomba})` }}
+                      >
                   <div className=" w-[80vw] h-[40vh] md:h-[80vh] flex flex-col justify-center items-center gap-8">
-                      <img src="src/assets/logo/sriwijaya.png" alt="sriwijaya logo" className=" bg-green-200 h-70 w-70"/>
+                      <img src={sriwijaya} alt="sriwijaya logo" className=" h-100 w-100"/>
                       <div className="flex flex-col justify-center items-center gap-5">
                           <div className="text-5xl md:text-8xl xl:text-5xl font-bebas text-yellow leading-none text-center md:text-left">Sriwijawa international taekwondo championship 2025</div>
                           <div className="text-lg font-inter font-semibold text-white text-center">Lorem ipsum dolor sit amet, consectetur adipiscing elit. 

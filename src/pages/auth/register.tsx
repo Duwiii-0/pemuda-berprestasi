@@ -35,7 +35,6 @@ const Register = () => {
       <div className="px-25 bg-gradient-to-b from-white/90 to-white/80 h-screen md:h-[80vh] w-full md:w-[72vw] lg:w-[56vw] xl:w-[35vw] rounded-xl flex flex-col justify-start items-center gap-8 py-10 overflow-y-scroll font-inter">
         <div className="flex flex-col gap-2 justify-center items-center">
             <img src="src/assets/logo/taekwondo.png" alt="taekwondo logo" className="h-50 w-50"/>
-            <p className="text-inter text-black text-lg pb-8">Digital Taekwondo Indonesia</p>
             <label className="font-bebas text-6xl text-red">registrasi</label>
         </div>
 

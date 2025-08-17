@@ -34,19 +34,15 @@ const NavbarLanding = () => {
         <Link to="/" className={`text-lg text-${Warna} font-inter`}>
           Beranda
         </Link>
-        <Link to="/lomba/home" className={`text-lg text-${Warna} font-inter`}>
-          Beranda
-        </Link>
         <Link to="/event" className={`text-lg text-${Warna} font-inter`}>
           Event
         </Link>
-
-        <Link
-          to="/dashboard/dojang"
-          className={`text-lg text-${Warna} font-inter`}
-        >
-          Dashboard
+        <Link to="/lomba/home" className={`text-lg text-${Warna} font-inter`}>
+          Tutorial
         </Link>
+
+
+        
       </div>
       {!user ? (
       <div className="flex gap-10">

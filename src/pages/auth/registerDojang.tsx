@@ -1,6 +1,6 @@
 import GeneralButton from "../../components/generalButton";
 import TextInput from "../../components/textInput";
-import { Mail, Home, User, Phone, Lock } from 'lucide-react';
+import { Home, Phone, MapPin, Map } from 'lucide-react';
 import { Link } from "react-router-dom";
 
 const RegisterDojang = () => {
@@ -9,8 +9,11 @@ const RegisterDojang = () => {
   <div className="h-screen w-full flex items-center justify-center bg-cover bg-center"
               style={{backgroundImage: "url('src/assets/photos/login.jpg')",
         }}>
-    <div className="px-20 bg-white h-screen md:h-[72vh] w-full md:w-[72vw] lg:w-[56vw] xl:w-[42vw] rounded-xl flex flex-col justify-start items-center gap-8 border-3 border-yellow py-10 overflow-y-scroll font-inter">
-      <div className="font-bebas text-6xl">Register dojang</div>
+      <div className="px-25 bg-gradient-to-b from-white/90 to-white/80 h-screen md:h-[80vh] w-full md:w-[72vw] lg:w-[56vw] xl:w-[35vw] rounded-xl flex flex-col justify-start items-center gap-8 py-10 overflow-y-scroll font-inter">
+        <div className="flex flex-col gap-2 justify-center items-center">
+            <img src="src/assets/logo/taekwondo.png" alt="taekwondo logo" className="h-50 w-50"/>
+            <label className="font-bebas text-6xl text-red">registrasi Dojang</label>
+        </div>
       <div className="w-full flex flex-col gap-4">
         <div>
           <label className="pl-2">Nama Dojang</label>
@@ -29,27 +32,43 @@ const RegisterDojang = () => {
           />
         </div>
         <div>
-          <label className="pl-2">Alamat Email</label>
+          <label className="pl-2">Alamat Lengkap</label>
           <TextInput
             className="h-12 placeholder:text-red border-red"
-            placeholder="Email"
-            icon={<Mail className="text-red" size={20} />}
+            placeholder="alamat"
+            icon={<MapPin className="text-red" size={20} />}
           />
         </div>
         <div>
-          <label className="pl-2">Password</label>
+          <label className="pl-2">Kecamatan</label>
           <TextInput
             className="h-12 placeholder:text-red border-red"
-            placeholder="password"
-            icon={<Lock className="text-red" size={20} />}
+            placeholder="kecamatan"
+            icon={<Map className="text-red" size={20} />}
           />
         </div>
         <div>
-          <label className="pl-2">Konfirmasi Password</label>
+          <label className="pl-2">Kabupaten/Kota</label>
           <TextInput
             className="h-12 placeholder:text-red border-red"
-            placeholder="password"
-            icon={<Lock className="text-red" size={20} />}
+            placeholder="kabupaten/kota"
+            icon={<Map className="text-red" size={20} />}
+          />
+        </div>
+        <div>
+          <label className="pl-2">Provinsi</label>
+          <TextInput
+            className="h-12 placeholder:text-red border-red"
+            placeholder="provinsi"
+            icon={<Map className="text-red" size={20} />}
+          />
+        </div>
+        <div>
+          <label className="pl-2">Negara</label>
+          <TextInput
+            className="h-12 placeholder:text-red border-red"
+            placeholder="Negara"
+            icon={<Map className="text-red" size={20} />}
           />
         </div>
       </div>

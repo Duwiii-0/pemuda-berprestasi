@@ -146,28 +146,17 @@ const Dojang = () => {
           </div>
 
           <div>
-            <label className="block mb-1">Email Dojang</label>
+            <label className="block mb-1">Kecamatan</label>
             <TextInput
               className="h-12 placeholder:text-red border-red"
-              onChange={(e) => setFormData({ ...formData, emailDojang: e.target.value })}
+              onChange={(e) => setFormData({ ...formData, kecamatan: e.target.value })}
               disabled={!isEditing}
-              value={formData.emailDojang}
+              value={formData.kecamatan}
               placeholder=""
-              icon={<Mail className="text-red" size={20} />}
+              icon={<Map className="text-red" size={20} />}
             />
           </div>
 
-          <div>
-            <label className="block mb-1">Negara</label>
-            <TextInput
-              className="h-12 placeholder:text-red border-red"
-              onChange={(e) => setFormData({ ...formData, negara: e.target.value })}
-              disabled={!isEditing}
-              value={formData.negara}
-              placeholder=""
-              icon={<Flag className="text-red" size={20} />}
-            />
-          </div>
 
           <div>
             <label className="block mb-1">Provinsi</label>
@@ -176,18 +165,6 @@ const Dojang = () => {
               onChange={(e) => setFormData({ ...formData, provinsi: e.target.value })}
               disabled={!isEditing}
               value={formData.provinsi}
-              placeholder=""
-              icon={<Map className="text-red" size={20} />}
-            />
-          </div>
-
-          <div>
-            <label className="block mb-1">Kecamatan</label>
-            <TextInput
-              className="h-12 placeholder:text-red border-red"
-              onChange={(e) => setFormData({ ...formData, kecamatan: e.target.value })}
-              disabled={!isEditing}
-              value={formData.kecamatan}
               placeholder=""
               icon={<Map className="text-red" size={20} />}
             />
@@ -206,16 +183,17 @@ const Dojang = () => {
           </div>
 
           <div>
-            <label className="block mb-1">Kelurahan</label>
+            <label className="block mb-1">Negara</label>
             <TextInput
               className="h-12 placeholder:text-red border-red"
-              onChange={(e) => setFormData({ ...formData, kelurahan: e.target.value })}
+              onChange={(e) => setFormData({ ...formData, negara: e.target.value })}
               disabled={!isEditing}
-              value={formData.kelurahan}
+              value={formData.negara}
               placeholder=""
-              icon={<MapPin className="text-red" size={20} />}
+              icon={<Flag className="text-red" size={20} />}
             />
           </div>
+
 
           <div className="lg:col-span-2">
             <label className="block mb-1">Alamat</label>

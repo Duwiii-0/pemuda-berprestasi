@@ -1,7 +1,7 @@
 // src/pages/Profile.tsx
 import { useParams } from "react-router-dom";
 import { useState } from "react";
-import { Phone, User, CalendarFold, IdCard, MapPinned, Map, VenusAndMars, Scale } from "lucide-react";
+import { Phone, User, CalendarFold, IdCard, MapPinned, Map, VenusAndMars, Scale, Ruler } from "lucide-react";
 import TextInput from "../../components/textInput";
 import FileInput from "../../components/fileInput";
 import GeneralButton from "../../components/generalButton";
@@ -21,6 +21,11 @@ const Profile = () => {
   { value: "Perempuan", label: "Perempuan" },
 ];
 
+  const beltOptions = [
+  { value: "hitam", label: "hitam" },
+  { value: "putih", label: "putih" },
+];
+
   if (!formData) {
     return <div className="p-6 text-red-600">Data Atlit tidak ditemukan</div>;
   }
@@ -37,6 +42,8 @@ const Profile = () => {
 
         <div className="flex flex-col gap-4">
           {/* Nama */}
+          <div>
+          <label className="block mb-1">Nama Lengkap</label>
           <TextInput
             className="h-12 border-red"
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -45,8 +52,11 @@ const Profile = () => {
             placeholder="Nama"
             icon={<User className="text-red" size={20} />}
           />
+          </div>
 
           {/* No HP */}
+          <div>
+          <label className="block mb-1">No.Telpon</label>
           <TextInput
             className="h-12 border-red"
             onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
@@ -55,8 +65,11 @@ const Profile = () => {
             placeholder="No HP"
             icon={<Phone className="text-red" size={20} />}
           />
+          </div>
 
           {/* Alamat */}
+          <div>
+          <label className="block mb-1">Alamat</label>
           <TextInput
             className="h-12 border-red"
             onChange={(e) => setFormData({ ...formData, alamat: e.target.value })}
@@ -65,8 +78,11 @@ const Profile = () => {
             placeholder="Alamat"
             icon={<MapPinned className="text-red" size={20} />}
           />
+          </div>
 
           {/* Provinsi */}
+          <div>
+          <label className="block mb-1">Provinsi</label>
           <TextInput
             className="h-12 border-red"
             onChange={(e) => setFormData({ ...formData, provinsi: e.target.value })}
@@ -75,33 +91,65 @@ const Profile = () => {
             placeholder="Provinsi"
             icon={<Map className="text-red" size={20} />}
           />
+          </div>
 
           {/* Gender */}
+          <div>
+          <label className="block mb-1">Gender</label>
           <Select
-                            unstyled
-                            isDisabled={!isEditing}
-                            value={genderOptions.find(opt => opt.value === formData.gender) || null}
-                            onChange={(selected) =>
-                                setFormData({ ...formData, gender: selected?.value as "Laki-Laki" | "Perempuan" })
-                            }
-                            options={genderOptions}
-                            classNames={{
-                                control: () =>
-                                "border-2 border-red rounded-lg h-12 px-2 text-inter",
-                                valueContainer: () => "px-2",
-                                placeholder: () => "text-red/50 text-inter",
-                                menu: () => "border-2 border-red bg-white rounded-lg shadow-lg mt-1",
-                                menuList: () => "max-h-40 overflow-y-scroll",
-                                option: ({ isFocused, isSelected }) =>
-                                [
-                                    "px-4 py-2 cursor-pointer",
-                                    isFocused ? "bg-yellow/10 text-black" : "text-black",
-                                    isSelected ? "bg-red text-white" : "text-black"
-                                ].join(" "),
-                            }}
-                            />
+            unstyled
+            isDisabled={!isEditing}
+            value={genderOptions.find(opt => opt.value === formData.gender) || null}
+            onChange={(selected) =>
+                setFormData({ ...formData, gender: selected?.value as "Laki-Laki" | "Perempuan" })
+            }
+            options={genderOptions}
+            classNames={{
+                control: () =>
+                "border-2 border-red rounded-lg h-12 px-2 text-inter",
+                valueContainer: () => "px-2",
+                placeholder: () => "text-red/50 text-inter",
+                menu: () => "border-2 border-red bg-white rounded-lg shadow-lg mt-1",
+                menuList: () => "max-h-40 overflow-y-scroll",
+                option: ({ isFocused, isSelected }) =>
+                [
+                    "px-4 py-2 cursor-pointer",
+                    isFocused ? "bg-yellow/10 text-black" : "text-black",
+                    isSelected ? "bg-red text-white" : "text-black"
+                ].join(" "),
+            }}
+            />
+            </div>
+          <div>
+          <label className="block mb-1">Sabuk</label>
+            <Select
+            unstyled
+            isDisabled={!isEditing}
+            value={beltOptions.find(opt => opt.value === formData.belt) || null}
+            onChange={(selected) =>
+                setFormData({ ...formData, belt: selected?.value as "Laki-Laki" | "Perempuan" })
+            }
+            options={beltOptions}
+            classNames={{
+                control: () =>
+                "border-2 border-red rounded-lg h-12 px-2 text-inter",
+                valueContainer: () => "px-2",
+                placeholder: () => "text-red/50 text-inter",
+                menu: () => "border-2 border-red bg-white rounded-lg shadow-lg mt-1",
+                menuList: () => "max-h-40 overflow-y-scroll",
+                option: ({ isFocused, isSelected }) =>
+                [
+                    "px-4 py-2 cursor-pointer",
+                    isFocused ? "bg-yellow/10 text-black" : "text-black",
+                    isSelected ? "bg-red text-white" : "text-black"
+                ].join(" "),
+            }}
+            />
+            </div>
 
           {/* Umur */}
+          <div>
+          <label className="block mb-1">Umur</label>
           <TextInput
             className="h-12 border-red"
             onChange={(e) => setFormData({ ...formData, umur: Number(e.target.value) })}
@@ -110,8 +158,11 @@ const Profile = () => {
             placeholder="Umur"
             icon={<CalendarFold className="text-red" size={20} />}
           />
+          </div>
 
           {/* Berat Badan */}
+          <div>
+          <label className="block mb-1">Berat badan</label>
           <TextInput
             className="h-12 border-red"
             onChange={(e) => setFormData({ ...formData, bb: Number(e.target.value) })}
@@ -120,8 +171,24 @@ const Profile = () => {
             placeholder="Berat Badan"
             icon={<Scale className="text-red" size={20} />}
           />
+          </div>
+
+          {/* Berat Badan */}
+          <div>
+          <label className="block mb-1">Tinggi badan</label>
+          <TextInput
+            className="h-12 border-red"
+            onChange={(e) => setFormData({ ...formData, tb: Number(e.target.value) })}
+            disabled={!isEditing}
+            value={formData.tb.toString()}
+            placeholder="Berat Badan"
+            icon={<Ruler className="text-red" size={20} />}
+          />
+          </div>
 
           {/* NIK */}
+          <div>
+          <label className="block mb-1">NIK</label>
           <TextInput
             className="h-12 border-red"
             onChange={(e) => setFormData({ ...formData, nik: e.target.value })}
@@ -130,6 +197,7 @@ const Profile = () => {
             placeholder="NIK"
             icon={<IdCard className="text-red" size={20} />}
           />
+          </div>
 
           {/* Upload File */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-12 gap-y-6 justify-start font-inter">
