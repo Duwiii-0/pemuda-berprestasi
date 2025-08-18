@@ -33,8 +33,8 @@ const GeneralButton: React.FC<GeneralButtonProps> = ({ label, type, to, onClick,
       return (
         <button className={`relative group hover:scale-105 hover:border-0 duration-300 w-64 flex items-center overflow-hidden btn px-6 rounded-lg font-inter cursor-pointer ${className}`} onClick={onClick}>
           <span></span>
-          <span className='absolute transition-transform duration-400 group-hover:-translate-y-10'>{label}</span>
-          <span className='absolute text-black transition-transform duration-400 translate-y-10 group-hover:translate-y-0 z-10'>{label}</span>
+          <span className='text-xl absolute transition-transform duration-400 group-hover:-translate-y-10'>{label}</span>
+          <span className='text-xl absolute text-black transition-transform duration-400 translate-y-10 group-hover:translate-y-0 z-10'>{label}</span>
 
           <span className='absolute inset-0 bg-white transition-transform duration-400 -translate-y-11 group-hover:translate-y-0 group-hover:scale-105 w-full h-full'/>
         </button>

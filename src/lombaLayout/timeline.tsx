@@ -90,7 +90,7 @@ export default function Timeline() {
 
                     {/* Card */}
                     <div className="flex-2 w-full h-full">
-                      <div className="group-hover:scale-105 group-hover:shadow-lg transition-all duration-300">
+                      <div className="">
                         <TimelineCardKanan event={item.event} time={item.time} />
                       </div>
                     </div>

@@ -12,7 +12,7 @@ const CompCard = () => {
       <img 
         src="src/assets/logo/sriwijaya.png" 
         alt="tes tes" 
-        className="h-48 w-48 lg:w-48 lg:h-48 xl:w-56 xl:h-56 shrink-0 object-contain  " 
+        className="h-30 w-30 sm:h-50 sm:w-50 xl:w-56 xl:h-56 shrink-0 object-contain  " 
       />
       
       {/* Content */}
