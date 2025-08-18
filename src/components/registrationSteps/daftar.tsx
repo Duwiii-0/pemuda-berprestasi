@@ -177,7 +177,6 @@ const Daftar = ({ isOpen, onBack, styleType, categoryType }: DaftarProps) => {
               placeholder="Berat badan"
               className="h-12 w-full"
               onChange={() => toast.error("Berat badan tidak bisa diedit, silahkan edit di dalam data atlit")}
-              onClick={() => toast.error("Berat badan tidak bisa diedit, silahkan edit di dalam data atlit")}
             />
           </div>
 
@@ -189,7 +188,6 @@ const Daftar = ({ isOpen, onBack, styleType, categoryType }: DaftarProps) => {
               placeholder="Tinggi badan"
               className="h-12 w-full"
               onChange={() => toast.error("Tinggi badan tidak bisa diedit, silahkan edit di dalam data atlit")}
-              onClick={() => toast.error("Tinggi badan tidak bisa diedit, silahkan edit di dalam data atlit")}
 
             />
           </div>

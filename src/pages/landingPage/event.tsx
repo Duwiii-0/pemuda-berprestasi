@@ -8,9 +8,6 @@ const Event = () => {
                 <div className="text-5xl md:text-7xl lg:text-judul font-bebas text-red leading-none">our competitions</div>
                 <div className="flex flex-col gap-8">
                     <CompCard/>
-                    <CompCard/>
-                    <CompCard/>
-                    <CompCard/>
                 </div>
             </div>
         </div>

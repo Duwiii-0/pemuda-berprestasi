@@ -7,9 +7,21 @@ import sriwijaya from "../assets/logo/sriwijaya.png";
 import heroLomba from "../assets/photos/heroLomba.jpg";
 import UnifiedRegistration from "../components/registrationSteps/UnifiedRegistration";
 import { useState, useEffect } from "react";
+import { useAuth } from "../context/authContext";
+import toast from 'react-hot-toast';
 
 const LandingPage = () => {
   const [isRegistrationOpen, setIsRegistrationOpen] = useState(false);
+  const { user } = useAuth();
+
+  const handleJoinClick = () => {
+    if (!user) {
+      toast.error("Anda harus login terlebih dahulu!");
+      return;
+    }
+    setIsRegistrationOpen(true);
+  };
+
 
   useEffect(() => {
     if (isRegistrationOpen) {
@@ -53,28 +65,37 @@ const LandingPage = () => {
 
   return(
     <div className="min-h-screen w-full">
-      {/*hero*/}
-      <div className="h-screen w-full  flex items-center justify-center bg-cover bg-center 2xl:bg-top"
-              style={{ backgroundImage: `url(${heroLomba})` }}
-              >
-          <div className=" w-[80vw] h-[40vh] md:h-[80vh] flex flex-col justify-center items-center gap-8">
-              <img src={sriwijaya} alt="sriwijaya logo" className="h-80 w-80 md:h-100 md:w-100"/>
-              <div className="flex flex-col justify-center items-center gap-5">
-                  <div className="text-4xl md:text-5xl font-bebas text-yellow leading-none text-center">Sriwijawa international taekwondo championship 2025</div>
-                  <div className="text-md md:text-lg font-inter font-semibold text-white text-center">Lorem ipsum dolor sit amet, consectetur adipiscing elit. 
-                      Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris 
-                  </div>
-              </div>
-              <div className="flex justify-center items-center md:justify-start md:items-start">
-                   <GeneralButton 
-                      label="Join the Competitions" 
-                      type="action" 
-                      to="" 
-                      className="h-12 md:text-lg xl:text-xl border-2 border-white text-white"
-                      onClick={() => setIsRegistrationOpen(true)}
-                    />
-              </div>
+      {/* hero */}
+      <div
+        className="h-screen w-full flex items-center justify-center bg-cover bg-center 2xl:bg-top"
+        style={{ backgroundImage: `url(${heroLomba})` }}
+      >
+        <div className="w-[80vw] h-[40vh] md:h-[80vh] flex flex-col justify-center items-center gap-8">
+          <img
+            src={sriwijaya}
+            alt="sriwijaya logo"
+            className="h-80 w-80 md:h-100 md:w-100"
+          />
+          <div className="flex flex-col justify-center items-center gap-5">
+            <div className="text-4xl md:text-5xl font-bebas text-yellow leading-none text-center">
+              Sriwijawa international taekwondo championship 2025
+            </div>
+            <div className="text-md md:text-lg font-inter font-semibold text-white text-center">
+              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do
+              eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut
+              enim ad minim veniam, quis nostrud exercitation ullamco laboris
+            </div>
           </div>
+          <div className="flex justify-center items-center md:justify-start md:items-start">
+            <GeneralButton
+              label="Join the Competitions"
+              type="action"
+              to=""
+              className="h-12 md:text-lg xl:text-xl border-2 border-white text-white"
+              onClick={handleJoinClick} 
+            />
+          </div>
+        </div>
       </div>
 
       {/* About */}

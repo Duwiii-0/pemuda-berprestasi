@@ -6,6 +6,7 @@ import { GeneralButton } from '../dashboard/dataDojang';
 import { TextInput } from '../dashboard/dataDojang';
 import { useAuth } from "../../context/authContext";
 import Select from "react-select";
+import toast from 'react-hot-toast';
 
 const Settings = () => {
   const { user } = useAuth();
@@ -52,6 +53,7 @@ const Settings = () => {
 
   useEffect(() => {
     if (!user) {
+      toast.error("Anda harus login terlebih dahulu ")  
       navigate("/", { replace: true });
     }
   }, [user, navigate]);
@@ -93,7 +95,7 @@ const Settings = () => {
             <div className="bg-white/40 rounded-2xl p-6 shadow-lg border border-gray-100">
               <div className="text-center">
                 <div className="relative inline-block mb-4">
-                  <div className='h-24 w-24 rounded-xl overflow-hidden border-2 border-red/20 shadow-sm bg-gray-50 mx-auto'>
+                  <div   onClick={() => toast.error("Fitur ini akan segera hadir")} className='h-24 w-24 rounded-xl overflow-hidden border-2 border-red/20 shadow-sm bg-gray-50 mx-auto'>
                     {user.photo ? (
                       <img src={user.photo} alt={user.name} className="w-full h-full object-cover" />
                     ) : (
@@ -116,7 +118,7 @@ const Settings = () => {
                     <Shield size={16} />
                     Ganti Password
                   </button>
-                  <button className="w-full px-4 py-2.5 border border-red text-red hover:bg-red/5 rounded-lg font-inter text-sm transition-colors duration-300">
+                  <button onClick={() => toast.error("Fitur ini akan segera hadir")} className="w-full px-4 py-2.5 border border-red text-red hover:bg-red/5 rounded-lg font-inter text-sm transition-colors duration-300">
                     Hapus Akun
                   </button>
                 </div>

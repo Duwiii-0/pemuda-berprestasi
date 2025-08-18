@@ -1,6 +1,7 @@
 // src/context/registrationContext.tsx
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState } from 'react';
 import toast from 'react-hot-toast';
+import type {ReactNode } from 'react';
 
 export interface RegistrationData {
   id: string;
@@ -14,7 +15,7 @@ export interface RegistrationData {
   ageCategory?: string;
   weightCategory?: string;
   registrationDate: string;
-  status: "registered" | "confirmed" | "cancelled";
+  status: "confirmed" | "cancelled";
   biayaPendaftaran: number;
 }
 
@@ -57,34 +58,7 @@ export const RegistrationProvider = ({ children }: RegistrationProviderProps) =>
       ageCategory: "Senior",
       weightCategory: "-74",
       registrationDate: "2024-11-15",
-      status: "registered",
-      biayaPendaftaran: 150000
-    },
-    {
-      id: "reg-2",
-      atlitId: 2,
-      atlitName: "Aulia",
-      kompetisiId: 1,
-      kompetisiName: "Kejuaraan Karate Nasional 2024",
-      styleType: "poomsae",
-      categoryType: "prestasi",
-      gender: "Perempuan",
-      ageCategory: "Junior",
-      registrationDate: "2024-11-16",
-      status: "registered",
-      biayaPendaftaran: 150000
-    },
-    {
-      id: "reg-3",
-      atlitId: 3,
-      atlitName: "Andi",
-      kompetisiId: 1,
-      kompetisiName: "Kejuaraan Karate Nasional 2024",
-      styleType: "kyorugi",
-      categoryType: "pemula",
-      gender: "Laki-Laki",
-      registrationDate: "2024-11-17",
-      status: "registered",
+      status: "confirmed",
       biayaPendaftaran: 150000
     }
   ]);
@@ -108,7 +82,7 @@ export const RegistrationProvider = ({ children }: RegistrationProviderProps) =>
       ...registrationData,
       id: generateId(),
       registrationDate: new Date().toISOString().split('T')[0],
-      status: "registered"
+      status: "confirmed"
     };
 
     setRegistrations(prev => [...prev, newRegistration]);

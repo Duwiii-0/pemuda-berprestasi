@@ -1,11 +1,13 @@
 // src/pages/dashboard/dataKompetisi.tsx
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Menu, Trophy, Calendar, Users, MapPin, Search, Eye, Edit, Plus, UserPlus, X, CheckCircle, XCircle } from 'lucide-react';
+import { Menu, Trophy, Calendar, Users, MapPin, Search,  UserPlus, CheckCircle, XCircle } from 'lucide-react';
 import NavbarDashboard from "../../components/navbar/navbarDashboard";
-import { useRegistration, RegistrationData } from "../../context/registrationContext";
+import { useRegistration } from "../../context/registrationContext";
+import type { RegistrationData } from "../../context/registrationContext";
 import UnifiedRegistration from "../../components/registrationSteps/UnifiedRegistration";
 import toast from "react-hot-toast";
+import AlertModal from "../../components/alertModal";
 
 interface KompetisiData {
   id: number;
@@ -78,7 +80,9 @@ const StatsCard: React.FC<StatsCardProps> = ({ icon: Icon, title, value, color }
 const DataKompetisi = () => {
   const navigate = useNavigate();
   const { getRegistrationsByKompetisi, updateKompetisiParticipants, cancelRegistration, confirmRegistration } = useRegistration();
-  
+  const [showAlertModal, setShowAlertModal] = useState(false);
+  const [registrationToCancel, setRegistrationToCancel] = useState<string | null>(null);
+
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "Aktif" | "Selesai" | "Akan Datang">("all");
@@ -87,6 +91,24 @@ const DataKompetisi = () => {
   const [genderFilter, setGenderFilter] = useState<"all" | "Laki-Laki" | "Perempuan">("all");
   const [showRegistrationModal, setShowRegistrationModal] = useState(false);
   const [selectedKompetisiForRegistration, setSelectedKompetisiForRegistration] = useState<KompetisiData | null>(null);
+
+  const handleCancelClick = (registrationId: string) => {
+    setRegistrationToCancel(registrationId);
+    setShowAlertModal(true);
+    console.log("open alert", registrationId);
+
+  };
+
+  
+
+  const handleConfirmCancel = () => {
+    if (registrationToCancel !== null) {
+      cancelRegistration(registrationToCancel);
+      toast.success("Atlet berhasil dibatalkan dari kompetisi");
+    }
+    setShowAlertModal(false);
+    setRegistrationToCancel(null);
+  };
 
   useEffect(() => {
     const onResize = () => {
@@ -259,17 +281,6 @@ const DataKompetisi = () => {
                   />
                 </div>
               </div>
-
-              {/* Add Registration Button */}
-              <div className="flex gap-3">
-                <button
-                  onClick={() => handleOpenRegistration(kompetisiTerpilih!)}
-                  className="bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-3 rounded-xl font-inter font-medium hover:shadow-lg transition-all duration-300 flex items-center gap-2"
-                >
-                  <UserPlus size={20} />
-                  Daftar Atlet
-                </button>
-              </div>
             </div>
 
             {/* Search and Filter Section untuk peserta */}
@@ -334,6 +345,16 @@ const DataKompetisi = () => {
                 <h2 className="font-bebas text-2xl text-black/80 tracking-wide">
                   DAFTAR PESERTA ({filteredRegistrations.length})
                 </h2>
+                <div className="flex gap-3 ml-auto mr-1">
+                  <button
+                    onClick={() => handleOpenRegistration(kompetisiTerpilih!)}
+                    className="bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-3 rounded-xl font-inter font-medium hover:shadow-lg transition-all duration-300 flex items-center gap-2"
+                  >
+                    <UserPlus size={20} />
+                    Daftar Atlet
+                  </button>
+                </div>
+
               </div>
 
               {/* Table */}
@@ -353,8 +374,13 @@ const DataKompetisi = () => {
                     <tbody className="divide-y divide-white/30">
                       {filteredRegistrations.map((registration, index) => (
                         <tr
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/dashboard/atlit/${registration.atlitId}`);
+                          }}
+
                           key={registration.id}
-                          className={`transition-all duration-200 hover:bg-white/50 ${
+                          className={`cursor-pointer transition-all duration-200 hover:bg-yellow/5 ${
                             index % 2 === 0 ? "bg-white/20" : "bg-white/10"
                           }`}
                         >
@@ -401,8 +427,7 @@ const DataKompetisi = () => {
                             <span
                               className={`px-3 py-1 rounded-full text-xs font-inter font-medium capitalize ${getRegistrationStatusColor(registration.status)}`}
                             >
-                              {registration.status === 'registered' ? 'Terdaftar' : 
-                               registration.status === 'confirmed' ? 'Terkonfirmasi' : 'Dibatalkan'}
+                               {registration.status === 'confirmed' && 'Terkonfirmasi'}
                             </span>
                           </td>
                           <td className="px-6 py-4 text-center">
@@ -412,40 +437,21 @@ const DataKompetisi = () => {
                           </td>
                           <td className="px-6 py-4 text-center">
                             <div className="flex justify-center gap-2">
-                              {registration.status === 'registered' && (
+                              {registration.status === 'confirmed' && (
                                 <>
                                   <button 
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      confirmRegistration(registration.id);
+                                      handleCancelClick(registration.id);
                                     }}
-                                    className="p-2 rounded-lg bg-green-500/10 text-green-500 hover:bg-green-500/20 transition-all duration-200"
-                                    title="Konfirmasi"
-                                  >
-                                    <CheckCircle size={16} />
-                                  </button>
-                                  <button 
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      cancelRegistration(registration.id);
-                                    }}
-                                    className="p-2 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-all duration-200"
+                                    className="flex items-center gap-4 p-2 px-4 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-all duration-200"
                                     title="Batalkan"
                                   >
                                     <XCircle size={16} />
+                                    <span>Batalkan</span>
                                   </button>
                                 </>
                               )}
-                              <button 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  navigate(`/dashboard/atlit/${registration.atlitId}`);
-                                }}
-                                className="p-2 rounded-lg bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 transition-all duration-200"
-                                title="Lihat Detail Atlet"
-                              >
-                                <Eye size={16} />
-                              </button>
                             </div>
                           </td>
                         </tr>
@@ -479,6 +485,14 @@ const DataKompetisi = () => {
             </div>
           </div>
         </div>
+              <AlertModal
+                isOpen={showAlertModal}
+                onClose={() => setShowAlertModal(false)}
+                onConfirm={handleConfirmCancel}
+                message="Apakah Anda yakin ingin membatalkan atlet ini? Atlet akan dikeluarkan dari kompetisi."
+              />
+
+
       </div>
     );
   }
@@ -632,13 +646,6 @@ const DataKompetisi = () => {
                   DAFTAR KOMPETISI ({filteredKompetisi.length})
                 </h2>
               </div>
-              <button
-                onClick={() => toast.info("Fitur tambah kompetisi akan segera tersedia!")}
-                className="bg-gradient-to-r from-red to-red/80 text-white px-6 py-3 rounded-xl font-inter font-medium hover:shadow-lg transition-all duration-300 flex items-center gap-2"
-              >
-                <Plus size={20} />
-                Tambah Kompetisi
-              </button>
             </div>
 
             {/* Table */}
@@ -662,7 +669,7 @@ const DataKompetisi = () => {
                       return (
                         <tr
                           key={kompetisi.id}
-                          className={`transition-all duration-200 hover:bg-white/50 cursor-pointer ${
+                          className={`transition-all duration-300 hover:bg-yellow/5 cursor-pointer ${
                             index % 2 === 0 ? "bg-white/20" : "bg-white/10"
                           }`}
                           onClick={() => handleKompetisiClick(kompetisi.id)}
@@ -717,32 +724,13 @@ const DataKompetisi = () => {
                               <button 
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleKompetisiClick(kompetisi.id);
-                                }}
-                                className="p-2 rounded-lg bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 transition-all duration-200"
-                                title="Lihat Peserta"
-                              >
-                                <Users size={16} />
-                              </button>
-                              <button 
-                                onClick={(e) => {
-                                  e.stopPropagation();
                                   handleOpenRegistration(kompetisi);
                                 }}
-                                className="p-2 rounded-lg bg-green-500/10 text-green-500 hover:bg-green-500/20 transition-all duration-200"
+                                className=" flex items-center gap-2 p-2 px-4 rounded-lg bg-green-500/10 text-green-500 hover:bg-green-500/20 transition-all duration-200"
                                 title="Daftar Atlet"
                               >
                                 <UserPlus size={16} />
-                              </button>
-                              <button 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  navigate(`/dashboard/kompetisi/${kompetisi.id}`);
-                                }}
-                                className="p-2 rounded-lg bg-orange-500/10 text-orange-500 hover:bg-orange-500/20 transition-all duration-200"
-                                title="Edit Kompetisi"
-                              >
-                                <Edit size={16} />
+                                <span>Tambah Atlit</span>
                               </button>
                             </div>
                           </td>

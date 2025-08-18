@@ -104,10 +104,26 @@ const UnifiedRegistration = ({
   };
 
   const handleNext = () => {
+    if (currentStep === 1 && (!formData.styleType || !formData.categoryType)) {
+      toast.error("Anda harus memilih style dan kategori terlebih dahulu!");
+      return;
+    }
+
+    if (currentStep === 2 && (!formData.selectedGender)){
+      toast.error("Anda harus memilih gender terlebih dahulu");
+      return
+    }
+
+    if (currentStep === 3 && (!formData.selectedGender)){
+      toast.error("Anda harus memilih atlit terlebih dahulu");
+      return
+    }
+
     if (currentStep < totalSteps) {
       setCurrentStep(currentStep + 1);
     }
   };
+
 
   const handleBack = () => {
     if (currentStep > 1) {
@@ -121,6 +137,10 @@ const UnifiedRegistration = ({
     if (!selectedAtlitData || selectedAtlitData.id === undefined) {
       toast.error("Data atlet tidak ditemukan!");
       return;
+    }
+    if (!formData.selectedAtlit){
+      toast.error("Anda harus memilih atlit terlebih dahulu");
+      return
     }
 
     // Validate weight category for kyorugi
@@ -209,14 +229,6 @@ const UnifiedRegistration = ({
                 Pilih Style & Kategori
               </h2>
               <p className="text-black/70 font-inter">Langkah 1 dari {totalSteps}</p>
-              <div className="mt-4 p-4 bg-blue-50 rounded-lg border-l-4 border-blue-400">
-                <p className="font-inter text-blue-700 text-sm">
-                  <strong>Kompetisi:</strong> {kompetisiName}
-                </p>
-                <p className="font-inter text-blue-700 text-sm">
-                  <strong>Biaya Pendaftaran:</strong> {formatRupiah(biayaPendaftaran)}
-                </p>
-              </div>
             </div>
 
             <div className="space-y-8">
@@ -514,7 +526,7 @@ const UnifiedRegistration = ({
             </button>
             
             {/* Progress indicator */}
-            <div className="flex items-center space-x-4">
+            <div className="hidden md:flex items-center space-x-4">
               {[1, 2, 3].map((step) => (
                 <div key={step} className="flex items-center">
                   <div
@@ -571,7 +583,6 @@ const UnifiedRegistration = ({
                       ? 'bg-green-500 border-2 border-green-500 text-white hover:bg-green-600'
                       : 'bg-gray-300 border-2 border-gray-300 text-gray-500 cursor-not-allowed'
                   }`}
-                  disabled={!canSubmit || availableAtlits.length === 0}
                 />
               )}
             </div>

@@ -4,6 +4,7 @@ import type { DummyDojang } from "./dummyDojang";
 export interface DummyAccount {
   id?: number;
   name: string;
+  photo?: string;
   email: string;
   password: string;
   phone: string;

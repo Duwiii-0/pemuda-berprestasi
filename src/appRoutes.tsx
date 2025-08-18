@@ -5,7 +5,7 @@ import './style/index.css';
 
 // Layouts
 import LandingLayout from "./layouts/layout";
-import PesertaLayout from "./layouts/pesertaLayout";
+import DashboardLayout from "./layouts/dashboardLayout";
 import LombaLayout from "./layouts/lombaLayout";
 
 // Auth page
@@ -60,7 +60,7 @@ export default function AppRoutes() {
         <Route path="/settings" element={<Settings />} />
 
         {/* Dashboard */}
-        <Route path="dashboard" element={<PesertaLayout />}>
+        <Route path="dashboard" element={<DashboardLayout  />}>
           <Route index element={<DataAtlit />} />   {/* default */}
           <Route path="dojang" element={<Dojang />} />
           <Route path="atlit" element={<DataAtlit />} />

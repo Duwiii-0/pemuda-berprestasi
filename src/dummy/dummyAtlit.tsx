@@ -1,5 +1,5 @@
 export interface DummyAtlit {
-  id?: number;
+  id: number;
   name: string;
   photo?: string;
   phone: string;

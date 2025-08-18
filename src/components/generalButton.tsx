@@ -6,12 +6,13 @@ interface GeneralButtonProps {
   to?: string;
   onClick?: () => void;
   className?:string;
+  disabled?: boolean;
 }
 
-const GeneralButton: React.FC<GeneralButtonProps> = ({ label, type, to, onClick, className }) => {
+const GeneralButton: React.FC<GeneralButtonProps> = ({ label, type, to, onClick, className, disabled }) => {
   if (type === "link" && to) {
     return <Link to={to}       onClick={() => window.scrollTo(0, 0)} // tambahin ini
-    className={`text-center btn px-6 rounded-lg font-inter flex justify-center items-center cursor-pointer ${className}`}>{label}</Link>; // Bisa diganti Link kalau full page routing
+    className={`py-6 md:py-0 text-center btn px-6 rounded-lg font-inter flex justify-center items-center cursor-pointer ${className}`}>{label}</Link>; // Bisa diganti Link kalau full page routing
   }
   
   if (type === "scroll" && to) {
@@ -21,6 +22,7 @@ const GeneralButton: React.FC<GeneralButtonProps> = ({ label, type, to, onClick,
         onClick={() => {
           document.querySelector(to)?.scrollIntoView({ behavior: "smooth" });
         }}
+        
       >
         {label}
       </button>
@@ -41,6 +43,7 @@ const GeneralButton: React.FC<GeneralButtonProps> = ({ label, type, to, onClick,
     return (
       <button
         className={`btn px-6 rounded-sm font-inter flex justify-center items-center cursor-pointer ${className} `} onClick={onClick}
+        disabled={disabled}
       >
         {label}
       </button>
