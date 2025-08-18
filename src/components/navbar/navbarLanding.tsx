@@ -70,7 +70,7 @@ const NavbarLanding = ({ onLogoutRequest }: { onLogoutRequest: () => void }) => 
           >
             <span className="flex gap-2 items-center justify-center ">
               {user.name}
-              {showDropdown ? <ChevronUp size={26} /> : <ChevronDown size={26} />}
+              {showDropdown ? <ChevronUp size={26} className="rotate-180 transition-all duration-300" /> : <ChevronUp size={26} className="rotate-0 transition-all duration-300" />}
             </span>
           </button>
 
