@@ -3,12 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Phone, User, CalendarFold, IdCard, MapPinned, Scale, Ruler, Save, ArrowLeft } from "lucide-react";
 import NavbarDashboard from "../../components/navbar/navbarDashboard";
 import type { DummyAtlit } from "../../dummy/dummyAtlit";
-
-
-// Import your existing components
-// import TextInput from "../../components/textInput";
-// import FileInput from "../../components/fileInput";
-// import Select from "react-select";
+import { useAtlit } from "../../context/AtlitContext";
 
 // Temporary components - replace with your actual imports
 interface TextInputProps {
@@ -159,44 +154,65 @@ const Select: React.FC<SelectProps> = ({
   );
 };
 
-
 interface FormErrors {
   name?: string;
   provinsi?: string;
   gender?: string;
-  umur?: string;
+  tglLahir?: string;
   belt?: string;
   phone?: string;
   alamat?: string;
   nik?: string;
   bb?: string;
   tb?: string;
-  tglLahir? : string;
   kota?: string;
   id?: string;
   photo?: string;
 }
 
+// Helper function to calculate age from birth date
+const calculateAge = (birthDate: string): number => {
+  if (!birthDate) return 0;
+  const today = new Date();
+  const birth = new Date(birthDate);
+  let age = today.getFullYear() - birth.getFullYear();
+  const monthDiff = today.getMonth() - birth.getMonth();
+  
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+    age--;
+  }
+  
+  return age;
+};
+
+function toMMDDYYYY(dateStr: string): string {
+  // yyyy-mm-dd -> mm/dd/yyyy
+  if (!dateStr) return "";
+  const [year, month, day] = dateStr.split("-");
+  if (!year || !month || !day) return "";
+  return `${month}/${day}/${year}`;
+}
+
 const TambahAtlit: React.FC = () => {
   const navigate = useNavigate();
+  const { addAtlit } = useAtlit();
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [submitSuccess, setSubmitSuccess] = useState<boolean>(false);
   
   const [formData, setFormData] = useState<DummyAtlit>({
-  name: "",
-  phone: "",
-  nik: "",
-  tglLahir: "",
-  alamat: "",
-  kota: "",
-  provinsi: "",
-  bb: 0,
-  tb: 0,
-  gender: '',
-  umur: 0,
-  belt: "",
-
+    name: "",
+    phone: "",
+    nik: "",
+    tglLahir: "",
+    alamat: "",
+    kota: "",
+    provinsi: "",
+    bb: 0,
+    tb: 0,
+    gender: '',
+    umur: 0,
+    belt: "",
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
@@ -247,7 +263,7 @@ const TambahAtlit: React.FC = () => {
     if (!formData.name.trim()) newErrors.name = "Nama harus diisi";
     if (!formData.provinsi) newErrors.provinsi = "Provinsi harus dipilih";
     if (!formData.gender) newErrors.gender = "Gender harus dipilih";
-    if (!formData.umur) newErrors.umur = "Umur harus diisi";
+    if (!formData.tglLahir) newErrors.tglLahir = "Tanggal lahir harus diisi";
     if (!formData.belt) newErrors.belt = "Sabuk harus dipilih";
     if (!formData.phone.trim()) newErrors.phone = "No. telepon harus diisi";
 
@@ -261,11 +277,22 @@ const TambahAtlit: React.FC = () => {
       newErrors.nik = "NIK harus 16 digit angka";
     }
 
-    // Age validation
-    if (formData.umur) {
-      const age = Number(formData.umur);
-      if (isNaN(age) || age < 5 || age > 100) {
-        newErrors.umur = "Umur harus antara 5-100 tahun";
+    // Birth date validation
+    if (formData.tglLahir) {
+      const birthDate = new Date(formData.tglLahir);
+      const today = new Date();
+      const minDate = new Date();
+      minDate.setFullYear(today.getFullYear() - 100); // Maximum 100 years old
+      
+      if (birthDate > today) {
+        newErrors.tglLahir = "Tanggal lahir tidak boleh di masa depan";
+      } else if (birthDate < minDate) {
+        newErrors.tglLahir = "Tanggal lahir tidak valid";
+      } else {
+        const age = calculateAge(formData.tglLahir);
+        if (age < 5) {
+          newErrors.tglLahir = "Umur minimal 5 tahun";
+        }
       }
     }
 
@@ -298,31 +325,21 @@ const TambahAtlit: React.FC = () => {
     setIsSubmitting(true);
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Create FormData for file uploads
-      const submitData = new FormData();
-      
-      // Add form data
-      Object.entries(formData).forEach(([key, value]) => {
-        if (value !== "" && value !== null && value !== undefined) {
-          submitData.append(key, value.toString());
-        }
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Konversi tglLahir ke mm/dd/yyyy sebelum simpan
+      const birthDateMMDDYYYY = toMMDDYYYY(formData.tglLahir);
+      const calculatedAge = calculateAge(birthDateMMDDYYYY);
+
+      addAtlit({
+        ...formData,
+        tglLahir: birthDateMMDDYYYY,
+        gender: formData.gender as "Laki-Laki" | "Perempuan",
+        umur: calculatedAge,
       });
-      
-      // Add documents
-      Object.entries(documents).forEach(([key, file]) => {
-        if (file) {
-          submitData.append(key, file);
-        }
-      });
-      
-      console.log("Data yang akan disimpan:", Object.fromEntries(submitData));
-      
+
       setSubmitSuccess(true);
-      
-      // Reset form after success
+
       setTimeout(() => {
         setFormData({
           name: "",
@@ -345,8 +362,9 @@ const TambahAtlit: React.FC = () => {
           ktp: null,
         });
         setSubmitSuccess(false);
-      }, 3000);
-      
+        navigate("/dashboard/atlit");
+      }, 1200);
+
     } catch (error) {
       console.error('Error submitting form:', error);
       alert('Terjadi kesalahan saat menyimpan data. Silakan coba lagi.');
@@ -356,12 +374,16 @@ const TambahAtlit: React.FC = () => {
   };
 
   const handleInputChange = (field: keyof DummyAtlit, value: string | number) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    
-    // Clear error when user starts typing
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: undefined }));
-    }
+    setFormData(prev => {
+      const updated = { ...prev, [field]: value };
+      
+      // If birth date changes, auto-calculate age
+      if (field === 'tglLahir' && typeof value === 'string') {
+        updated.umur = calculateAge(value);
+      }
+      
+      return updated;
+    });
   };
 
   const handleFileChange = (field: keyof typeof documents, file: File | null) => {
@@ -373,8 +395,7 @@ const TambahAtlit: React.FC = () => {
   };
 
   return (
-<div className="min-h-screen w-full bg-gradient-to-br from-white via-red/5 to-yellow/10 flex justify-center items-center">
-
+    <div className="min-h-screen w-full bg-gradient-to-br from-white via-red/5 to-yellow/10 flex justify-center items-center">
       {/* Main Content */}
       <div className="min-h-screen py-10">
         <div className="overflow-y-auto bg-white/40 backdrop-blur-md border-white/30 w-full min-h-screen flex flex-col gap-8 pt-8 pb-12 px-4 md:px-8 rounded-lg">
@@ -507,25 +528,28 @@ const TambahAtlit: React.FC = () => {
                   )}
                 </div>
 
-                {/* Umur */}
+                {/* Tanggal Lahir */}
                 <div className="space-y-2">
                   <label className="block font-inter font-medium text-black/70">
-                    Umur <span className="text-red">*</span>
+                    Tanggal Lahir <span className="text-red">*</span>
                   </label>
                   <TextInput
-                    type="number"
-                    min="5"
-                    max="100"
+                    type="date"
                     className={`h-12 bg-white/50 backdrop-blur-sm rounded-xl focus:border-red transition-all duration-300 ${
-                      errors.umur ? 'border-red-500' : 'border-red/20'
+                      errors.tglLahir ? 'border-red-500' : 'border-red/20'
                     }`}
-                    value={formData.umur}
-                    onChange={(e) => handleInputChange('umur', Number(e.target.value) || '')}
-                    placeholder="Masukkan umur"
+                    value={formData.tglLahir}
+                    onChange={(e) => handleInputChange('tglLahir', e.target.value)}
                     icon={<CalendarFold className="text-red" size={20} />}
                   />
-                  {errors.umur && (
-                    <p className="text-red-500 text-sm font-inter">{errors.umur}</p>
+                  {errors.tglLahir && (
+                    <p className="text-red-500 text-sm font-inter">{errors.tglLahir}</p>
+                  )}
+                  {/* Display calculated age */}
+                  {formData.tglLahir && !errors.tglLahir && (
+                    <p className="text-green-600 text-sm font-inter">
+                      Umur: {calculateAge(formData.tglLahir)} tahun
+                    </p>
                   )}
                 </div>
 

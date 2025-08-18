@@ -2,18 +2,52 @@
 import { useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { Phone, User, CalendarFold, IdCard, MapPinned, Map, Scale, Ruler, ArrowLeft, Save, X } from "lucide-react";
+import { Phone, User, CalendarFold, IdCard, MapPinned, Map, Scale, Ruler, ArrowLeft } from "lucide-react";
 import TextInput from "../../components/textInput";
 import FileInput from "../../components/fileInput";
-import { dummyAtlits } from "../../dummy/dummyAtlit";
 import type { DummyAtlit } from "../../dummy/dummyAtlit";
 import Select from "react-select";
 import { GeneralButton } from "../dashboard/dataDojang";
+import { useAtlit } from "../../context/AtlitContext";
+
+// Helper function to calculate age from birth date
+const calculateAge = (birthDate: string): number => {
+  if (!birthDate) return 0;
+  const today = new Date();
+  const birth = new Date(birthDate);
+  let age = today.getFullYear() - birth.getFullYear();
+  const monthDiff = today.getMonth() - birth.getMonth();
+  
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+    age--;
+  }
+  
+  return age;
+};
+
+// Convert date from mm/dd/yyyy to yyyy-mm-dd format
+function toInputDateFormat(dateStr: string): string {
+  // mm/dd/yyyy -> yyyy-mm-dd
+  if (!dateStr) return "";
+  const [month, day, year] = dateStr.split("/");
+  if (!month || !day || !year) return "";
+  return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+}
+
+// Convert date from yyyy-mm-dd to mm/dd/yyyy format
+function toMMDDYYYY(dateStr: string): string {
+  // yyyy-mm-dd -> mm/dd/yyyy
+  if (!dateStr) return "";
+  const [year, month, day] = dateStr.split("-");
+  if (!year || !month || !day) return "";
+  return `${month}/${day}/${year}`;
+}
 
 const Profile = () => {
+  const { atlits, updateAtlit } = useAtlit();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  const atlit = dummyAtlits.find((a) => a.id === Number(id)) || null;
+  const atlit = atlits.find((a) => a.id === Number(id)) || null;
 
   const [formData, setFormData] = useState<DummyAtlit | null>(atlit);
   const [isEditing, setIsEditing] = useState(false);
@@ -24,8 +58,28 @@ const Profile = () => {
   };
 
   const handleUpdate = () => {
-    console.log("Data dojang diupdate:", formData);
+    if (formData) {
+      // Calculate age from birth date before updating
+      const calculatedAge = calculateAge(formData.tglLahir);
+      const updatedData = {
+        ...formData,
+        umur: calculatedAge
+      };
+      updateAtlit(updatedData);
+    }
     setIsEditing(false);
+  };
+
+  const handleInputChange = (field: keyof DummyAtlit, value: any) => {
+    if (!formData) return;
+    let updatedData = { ...formData, [field]: value };
+
+    if (field === 'tglLahir' && typeof value === 'string') {
+      updatedData.tglLahir = toMMDDYYYY(value);
+      updatedData.umur = calculateAge(updatedData.tglLahir);
+    }
+
+    setFormData(updatedData);
   };
 
   const genderOptions = [
@@ -34,8 +88,13 @@ const Profile = () => {
   ];
 
   const beltOptions = [
-    { value: "hitam", label: "Hitam" },
     { value: "putih", label: "Putih" },
+    { value: "kuning", label: "Kuning" },
+    { value: "orange", label: "Orange" },
+    { value: "hijau", label: "Hijau" },
+    { value: "biru", label: "Biru" },
+    { value: "coklat", label: "Coklat" },
+    { value: "hitam", label: "Hitam" },
   ];
 
   if (!formData) {
@@ -94,6 +153,10 @@ const Profile = () => {
                 <span className="px-3 py-1 rounded-full text-xs font-inter font-medium bg-yellow/20 text-yellow/80">
                   Sabuk {formData.belt || 'Tidak Ada'}
                 </span>
+                {/* Display calculated age */}
+                <span className="px-3 py-1 rounded-full text-xs font-inter font-medium bg-green-100 text-green-600">
+                  {calculateAge(formData.tglLahir)} tahun
+                </span>
               </div>
             </div>
             {/* Action Buttons */}
@@ -129,7 +192,7 @@ const Profile = () => {
               <div className="relative">
               <TextInput
                 className="h-12 border-red/20 bg-white/50 backdrop-blur-sm rounded-xl focus:border-red transition-all duration-300"
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                onChange={(e) => handleInputChange('name', e.target.value)}
                 disabled={!isEditing}
                 value={formData.name}
                 placeholder="Nama"
@@ -145,7 +208,7 @@ const Profile = () => {
                 <div className="relative">
                 <TextInput
                   className="h-12 border-red/20 bg-white/50 backdrop-blur-sm rounded-xl focus:border-red transition-all duration-300"
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  onChange={(e) => handleInputChange('phone', e.target.value)}
                   disabled={!isEditing}
                   value={formData.phone || ''}
                   placeholder="No HP"
@@ -161,7 +224,7 @@ const Profile = () => {
               <div className="relative">
               <TextInput
                 className="h-12 border-red/20 bg-white/50 backdrop-blur-sm rounded-xl focus:border-red transition-all duration-300"
-                onChange={(e) => setFormData({ ...formData, alamat: e.target.value })}
+                onChange={(e) => handleInputChange('alamat', e.target.value)}
                 disabled={!isEditing}
                 value={formData.alamat || ''}
                 placeholder="Alamat"
@@ -177,7 +240,7 @@ const Profile = () => {
               <div className="relative">
               <TextInput
                 className="h-12 border-red/20 bg-white/50 backdrop-blur-sm rounded-xl focus:border-red transition-all duration-300"
-                onChange={(e) => setFormData({ ...formData, provinsi: e.target.value })}
+                onChange={(e) => handleInputChange('provinsi', e.target.value)}
                 disabled={!isEditing}
                 value={formData.provinsi}
                 placeholder="Provinsi"
@@ -196,7 +259,7 @@ const Profile = () => {
                 isDisabled={!isEditing}
                 value={genderOptions.find(opt => opt.value === formData.gender) || null}
                 onChange={(selected) =>
-                  setFormData({ ...formData, gender: selected?.value as "Laki-Laki" | "Perempuan" })
+                  handleInputChange('gender', selected?.value as "Laki-Laki" | "Perempuan")
                 }
                 options={genderOptions}
                 classNames={{
@@ -227,7 +290,7 @@ const Profile = () => {
                 isDisabled={!isEditing}
                 value={beltOptions.find(opt => opt.value === formData.belt) || null}
                 onChange={(selected) =>
-                  setFormData({ ...formData, belt: selected?.value || '' })
+                  handleInputChange('belt', selected?.value || '')
                 }
                 options={beltOptions}
                 classNames={{
@@ -249,20 +312,27 @@ const Profile = () => {
               </div>
             </div>
 
-            {/* Umur */}
+            {/* Tanggal Lahir */}
             <div className="space-y-2">
-              <label className="block font-inter font-medium text-black/70">Umur</label>
+              <label className="block font-inter font-medium text-black/70">Tanggal Lahir</label>
               <div className="relative">
               <TextInput
+                type="date"
                 className="h-12 border-red/20 bg-white/50 backdrop-blur-sm rounded-xl focus:border-red transition-all duration-300"
-                onChange={(e) => setFormData({ ...formData, umur: Number(e.target.value) })}
+                onChange={(e) => handleInputChange('tglLahir', e.target.value)}
                 disabled={!isEditing}
-                value={formData.umur.toString()}
-                placeholder="Umur"
+                value={toInputDateFormat(formData.tglLahir) || ''}
+                placeholder="Tanggal Lahir"
                 icon={<CalendarFold className="text-red" size={20} />}
               />
               {!isEditing && <div className="absolute inset-0 bg-gray-100/50 rounded-xl" />}
               </div>
+              {/* Display calculated age */}
+              {formData.tglLahir && (
+                <p className="text-green-600 text-sm font-inter">
+                  Umur: {calculateAge(formData.tglLahir)} tahun
+                </p>
+              )}
             </div>
 
             {/* Berat Badan */}
@@ -270,8 +340,9 @@ const Profile = () => {
               <label className="block font-inter font-medium text-black/70">Berat Badan (kg)</label>
               <div className="relative">
               <TextInput
+                type="number"
                 className="h-12 border-red/20 bg-white/50 backdrop-blur-sm rounded-xl focus:border-red transition-all duration-300"
-                onChange={(e) => setFormData({ ...formData, bb: Number(e.target.value) })}
+                onChange={(e) => handleInputChange('bb', Number(e.target.value))}
                 disabled={!isEditing}
                 value={formData.bb?.toString() || ''}
                 placeholder="Berat Badan"
@@ -286,8 +357,9 @@ const Profile = () => {
               <label className="block font-inter font-medium text-black/70">Tinggi Badan (cm)</label>
               <div className="relative">
               <TextInput
+                type="number"
                 className="h-12 border-red/20 bg-white/50 backdrop-blur-sm rounded-xl focus:border-red transition-all duration-300"
-                onChange={(e) => setFormData({ ...formData, tb: Number(e.target.value) })}
+                onChange={(e) => handleInputChange('tb', Number(e.target.value))}
                 disabled={!isEditing}
                 value={formData.tb?.toString() || ''}
                 placeholder="Tinggi Badan"
@@ -303,7 +375,7 @@ const Profile = () => {
               <div className="relative">
               <TextInput
                 className="h-12 border-red/20 bg-white/50 backdrop-blur-sm rounded-xl focus:border-red transition-all duration-300"
-                onChange={(e) => setFormData({ ...formData, nik: e.target.value })}
+                onChange={(e) => handleInputChange('nik', e.target.value)}
                 disabled={!isEditing}
                 value={formData.nik || ''}
                 placeholder="NIK"

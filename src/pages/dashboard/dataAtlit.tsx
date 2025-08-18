@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Menu, Users, Award, TrendingUp, Search, Eye, Edit, UserPlus } from 'lucide-react';
 import NavbarDashboard from "../../components/navbar/navbarDashboard"
-import { dummyAtlits } from "../../dummy/dummyAtlit";
+import { useAtlit } from "../../context/AtlitContext";
 
 interface StatsCardProps {
   icon: React.ComponentType<{ size?: number; className?: string }>;
@@ -10,7 +10,6 @@ interface StatsCardProps {
   value: string;
   color: string;
 }
-
 
 const StatsCard: React.FC<StatsCardProps> = ({ icon: Icon, title, value, color }) => (
   <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-white/50">
@@ -30,6 +29,7 @@ const StatsCard: React.FC<StatsCardProps> = ({ icon: Icon, title, value, color }
 
 const DataAtlit = () => {
   const navigate = useNavigate();
+  const { atlits, updateAtlit } = useAtlit();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [genderFilter, setGenderFilter] = useState<"all" | "Laki-Laki" | "Perempuan">("all");
@@ -43,7 +43,7 @@ const DataAtlit = () => {
   }, []);
 
   // Filter logic
-  const filteredAtlits = dummyAtlits.filter(atlit => {
+  const filteredAtlits = atlits.filter(atlit => {
     const matchesSearch = atlit.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          atlit.provinsi.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesGender = genderFilter === "all" || atlit.gender === genderFilter;
@@ -51,10 +51,10 @@ const DataAtlit = () => {
   });
 
   // Stats calculations
-  const totalAtlits = dummyAtlits.length;
-  const lakiLakiCount = dummyAtlits.filter(a => a.gender === "Laki-Laki").length;
-  const perempuanCount = dummyAtlits.filter(a => a.gender === "Perempuan").length;
-  const avgAge = Math.round(dummyAtlits.reduce((sum, a) => sum + a.umur, 0) / totalAtlits);
+  const totalAtlits = atlits.length;
+  const lakiLakiCount = atlits.filter(a => a.gender === "Laki-Laki").length;
+  const perempuanCount = atlits.filter(a => a.gender === "Perempuan").length;
+  const avgAge = Math.round(atlits.reduce((sum, a) => sum + a.umur, 0) / (atlits.length || 1));
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-white via-red/5 to-yellow/10">

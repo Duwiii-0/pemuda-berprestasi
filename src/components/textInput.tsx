@@ -1,31 +1,41 @@
 import React from "react";
 
-type TextProps = {
-  placeholder?: string;
-  className?: string;
+export interface TextInputProps {
   icon?: React.ReactNode;
-  disabled?: boolean;
-  value?: string;
+  className?: string;
+  value?: string | number;
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onClick?: () => void;
+  placeholder?: string;
+  type?: string; // Pastikan ada ini!
+  disabled?: boolean;
+  min?: string;
+  max?: string;
+  step?: string;
+  maxLength?: number;
+}
 
-};
-
-const TextInput = ({ placeholder, className, icon, value, disabled, onChange ,onClick }: TextProps) => {
-  return (
-    <div className={`flex items-center border-2 border-red rounded-md px-2 gap-2 ${className}`}>
-      {icon && <span>{icon}</span>}
-      <input
-        value={value}
-        onChange={onChange}
-        disabled={disabled}
-        placeholder={placeholder}
-        type="text"
-        className="w-full outline-none bg-transparent placeholder-red/50"
-        onClick={onClick}
-      />
-    </div>
-  );
-};
+const TextInput: React.FC<TextInputProps> = ({
+  icon,
+  className = "",
+  type = "text",
+  disabled = false,
+  ...props
+}) => (
+  <div className="relative">
+    {icon && (
+      <div className="absolute left-3 top-1/2 transform -translate-y-1/2 z-10">
+        {icon}
+      </div>
+    )}
+    <input
+      type={type}
+      disabled={disabled}
+      {...props}
+      className={`w-full ${icon ? 'pl-12' : 'pl-4'} pr-4 py-3 border-2 rounded-xl font-inter transition-all duration-300 focus:outline-none ${
+        disabled ? 'bg-gray-100 cursor-not-allowed' : 'hover:border-red/40'
+      } ${className}`}
+    />
+  </div>
+);
 
 export default TextInput;

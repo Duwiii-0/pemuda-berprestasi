@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Phone, Mail, MapPin, Map, Building, Flag, Menu, Edit3, Award, Users, Calendar } from 'lucide-react';
+import { Phone, Mail, MapPin, Map, Building, Flag, Menu, Award, Users, Calendar } from 'lucide-react';
 import NavbarDashboard from "../../components/navbar/navbarDashboard"; // Import NavbarDashboard
 
 // Types untuk components
@@ -173,10 +173,6 @@ const Dojang = () => {
               <div className="flex ml-auto gap-4">
                  {isEditing && (
                 <div className="">
-                  <div className="flex items-center justify-center text-center gap-2 bg-yellow/20 text-yellow px-3 py-1 rounded-full text-sm font-inter">
-                    <Edit3 size={14} />
-                    Mode Edit
-                  </div>
                 </div>
               )}
               </div>
