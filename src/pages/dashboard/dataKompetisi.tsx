@@ -1,7 +1,11 @@
+// src/pages/dashboard/dataKompetisi.tsx
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Menu, Trophy, Calendar, Users, MapPin, Search, Eye, Edit, Plus } from 'lucide-react';
-import NavbarDashboard from "../../components/navbar/navbarDashboard"
+import { Menu, Trophy, Calendar, Users, MapPin, Search, Eye, Edit, Plus, UserPlus, X, CheckCircle, XCircle } from 'lucide-react';
+import NavbarDashboard from "../../components/navbar/navbarDashboard";
+import { useRegistration, RegistrationData } from "../../context/registrationContext";
+import UnifiedRegistration from "../../components/registrationSteps/UnifiedRegistration";
+import toast from "react-hot-toast";
 
 interface KompetisiData {
   id: number;
@@ -10,25 +14,8 @@ interface KompetisiData {
   lokasi: string;
   kategori: string;
   status: "Aktif" | "Selesai" | "Akan Datang";
-  pesertaTerdaftar: number;
   maxPeserta: number;
   biayaPendaftaran: number;
-}
-
-// Data atlet yang sama seperti di halaman data atlit
-interface AtlitData {
-  id: number;
-  name: string;
-  provinsi: string;
-  gender: "Laki-Laki" | "Perempuan";
-  umur: number;
-  belt?: string;
-  phone?: string;
-  alamat?: string;
-  nik?: string;
-  bb?: number;
-  tb?: number;
-  kompetisiId?: number; // Tambahan untuk relasi kompetisi
 }
 
 interface StatsCardProps {
@@ -47,7 +34,6 @@ const dummyKompetisi: KompetisiData[] = [
     lokasi: "Jakarta", 
     kategori: "Nasional", 
     status: "Akan Datang", 
-    pesertaTerdaftar: 3, 
     maxPeserta: 100, 
     biayaPendaftaran: 150000 
   },
@@ -58,7 +44,6 @@ const dummyKompetisi: KompetisiData[] = [
     lokasi: "Bandung", 
     kategori: "Regional", 
     status: "Aktif", 
-    pesertaTerdaftar: 2, 
     maxPeserta: 80, 
     biayaPendaftaran: 100000 
   },
@@ -69,20 +54,9 @@ const dummyKompetisi: KompetisiData[] = [
     lokasi: "Jakarta", 
     kategori: "Lokal", 
     status: "Selesai", 
-    pesertaTerdaftar: 1, 
     maxPeserta: 50, 
     biayaPendaftaran: 75000 
   },
-];
-
-// Data atlet dengan kompetisi yang mereka ikuti
-const dummyAtlits: AtlitData[] = [
-  { id: 1, name: "Rizky Purnama", provinsi: "Jawa Barat", gender: "Laki-Laki", umur: 20, belt: "hitam", kompetisiId: 1 },
-  { id: 2, name: "Aulia", provinsi: "DKI Jakarta", gender: "Perempuan", umur: 19, belt: "putih", kompetisiId: 1 },
-  { id: 3, name: "Andi", provinsi: "DKI Jakarta", gender: "Laki-Laki", umur: 20, belt: "hitam", kompetisiId: 1 },
-  { id: 4, name: "Siti", provinsi: "Jawa Barat", gender: "Perempuan", umur: 21, belt: "putih", kompetisiId: 2 },
-  { id: 5, name: "Budi Santoso", provinsi: "Jawa Tengah", gender: "Laki-Laki", umur: 22, belt: "hitam", kompetisiId: 2 },
-  { id: 6, name: "Maya Sari", provinsi: "Jawa Timur", gender: "Perempuan", umur: 18, belt: "putih", kompetisiId: 3 },
 ];
 
 const StatsCard: React.FC<StatsCardProps> = ({ icon: Icon, title, value, color }) => (
@@ -103,12 +77,16 @@ const StatsCard: React.FC<StatsCardProps> = ({ icon: Icon, title, value, color }
 
 const DataKompetisi = () => {
   const navigate = useNavigate();
+  const { getRegistrationsByKompetisi, updateKompetisiParticipants, cancelRegistration, confirmRegistration } = useRegistration();
+  
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "Aktif" | "Selesai" | "Akan Datang">("all");
   const [selectedKompetisi, setSelectedKompetisi] = useState<number | null>(null);
   const [showPeserta, setShowPeserta] = useState(false);
   const [genderFilter, setGenderFilter] = useState<"all" | "Laki-Laki" | "Perempuan">("all");
+  const [showRegistrationModal, setShowRegistrationModal] = useState(false);
+  const [selectedKompetisiForRegistration, setSelectedKompetisiForRegistration] = useState<KompetisiData | null>(null);
 
   useEffect(() => {
     const onResize = () => {
@@ -126,11 +104,11 @@ const DataKompetisi = () => {
     return matchesSearch && matchesStatus;
   });
 
-  // Stats calculations
+  // Stats calculations with real-time data
   const totalKompetisi = dummyKompetisi.length;
   const aktifCount = dummyKompetisi.filter(k => k.status === "Aktif").length;
   const akanDatangCount = dummyKompetisi.filter(k => k.status === "Akan Datang").length;
-  const totalPeserta = dummyKompetisi.reduce((sum, k) => sum + k.pesertaTerdaftar, 0);
+  const totalPeserta = dummyKompetisi.reduce((sum, k) => sum + updateKompetisiParticipants(k.id), 0);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -140,6 +118,19 @@ const DataKompetisi = () => {
         return "bg-gray-100 text-gray-600";
       case "Akan Datang":
         return "bg-blue-100 text-blue-600";
+      default:
+        return "bg-gray-100 text-gray-600";
+    }
+  };
+
+  const getRegistrationStatusColor = (status: string) => {
+    switch (status) {
+      case "confirmed":
+        return "bg-green-100 text-green-600";
+      case "registered":
+        return "bg-yellow-100 text-yellow-600";
+      case "cancelled":
+        return "bg-red-100 text-red-600";
       default:
         return "bg-gray-100 text-gray-600";
     }
@@ -165,16 +156,25 @@ const DataKompetisi = () => {
     setShowPeserta(true);
   };
 
-  // Filter atlet berdasarkan kompetisi yang dipilih
-  const atlitKompetisi = selectedKompetisi 
-    ? dummyAtlits.filter(atlit => atlit.kompetisiId === selectedKompetisi)
+  const handleOpenRegistration = (kompetisi: KompetisiData) => {
+    setSelectedKompetisiForRegistration(kompetisi);
+    setShowRegistrationModal(true);
+  };
+
+  const handleCloseRegistration = () => {
+    setShowRegistrationModal(false);
+    setSelectedKompetisiForRegistration(null);
+  };
+
+  // Get registrations for selected competition
+  const selectedKompetisiRegistrations = selectedKompetisi 
+    ? getRegistrationsByKompetisi(selectedKompetisi)
     : [];
 
-  // Filter atlet berdasarkan search dan gender
-  const filteredAtlitKompetisi = atlitKompetisi.filter(atlit => {
-    const matchesSearch = atlit.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         atlit.provinsi.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesGender = genderFilter === "all" || atlit.gender === genderFilter;
+  // Filter registrations based on search and gender
+  const filteredRegistrations = selectedKompetisiRegistrations.filter(registration => {
+    const matchesSearch = registration.atlitName.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesGender = genderFilter === "all" || registration.gender === genderFilter;
     return matchesSearch && matchesGender;
   });
 
@@ -185,10 +185,10 @@ const DataKompetisi = () => {
   // Halaman detail peserta kompetisi
   if (showPeserta && selectedKompetisi) {
     // Stats untuk halaman peserta
-    const totalAtlitKompetisi = atlitKompetisi.length;
-    const lakiLakiCount = atlitKompetisi.filter(a => a.gender === "Laki-Laki").length;
-    const perempuanCount = atlitKompetisi.filter(a => a.gender === "Perempuan").length;
-    const avgAge = totalAtlitKompetisi > 0 ? Math.round(atlitKompetisi.reduce((sum, a) => sum + a.umur, 0) / totalAtlitKompetisi) : 0;
+    const totalRegistrations = selectedKompetisiRegistrations.length;
+    const lakiLakiCount = selectedKompetisiRegistrations.filter(r => r.gender === "Laki-Laki").length;
+    const perempuanCount = selectedKompetisiRegistrations.filter(r => r.gender === "Perempuan").length;
+    const confirmedCount = selectedKompetisiRegistrations.filter(r => r.status === "confirmed").length;
 
     return (
       <div className="min-h-screen w-full bg-gradient-to-br from-white via-red/5 to-yellow/10">
@@ -235,8 +235,8 @@ const DataKompetisi = () => {
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <StatsCard 
                     icon={Users}
-                    title="Total Peserta"
-                    value={totalAtlitKompetisi.toString()}
+                    title="Total Pendaftar"
+                    value={totalRegistrations.toString()}
                     color="bg-gradient-to-br from-red to-red/80"
                   />
                   <StatsCard 
@@ -252,12 +252,23 @@ const DataKompetisi = () => {
                     color="bg-gradient-to-br from-pink-500 to-pink-600"
                   />
                   <StatsCard 
-                    icon={Trophy}
-                    title="Rata-rata Umur"
-                    value={totalAtlitKompetisi > 0 ? `${avgAge} thn` : "0 thn"}
-                    color="bg-gradient-to-br from-yellow to-yellow/80"
+                    icon={CheckCircle}
+                    title="Terkonfirmasi"
+                    value={confirmedCount.toString()}
+                    color="bg-gradient-to-br from-green-500 to-green-600"
                   />
                 </div>
+              </div>
+
+              {/* Add Registration Button */}
+              <div className="flex gap-3">
+                <button
+                  onClick={() => handleOpenRegistration(kompetisiTerpilih!)}
+                  className="bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-3 rounded-xl font-inter font-medium hover:shadow-lg transition-all duration-300 flex items-center gap-2"
+                >
+                  <UserPlus size={20} />
+                  Daftar Atlet
+                </button>
               </div>
             </div>
 
@@ -270,7 +281,7 @@ const DataKompetisi = () => {
                     <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-red/60" size={20} />
                     <input
                       type="text"
-                      placeholder="Cari nama atlet atau provinsi..."
+                      placeholder="Cari nama atlet..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="w-full pl-12 pr-4 py-3 rounded-xl border-2 border-red/20 focus:border-red outline-none bg-white/80 backdrop-blur-sm font-inter"
@@ -321,7 +332,7 @@ const DataKompetisi = () => {
                   <Users className="text-red" size={20} />
                 </div>
                 <h2 className="font-bebas text-2xl text-black/80 tracking-wide">
-                  DAFTAR ATLET PESERTA ({filteredAtlitKompetisi.length})
+                  DAFTAR PESERTA ({filteredRegistrations.length})
                 </h2>
               </div>
 
@@ -331,75 +342,109 @@ const DataKompetisi = () => {
                   <table className="w-full">
                     <thead>
                       <tr className="bg-gradient-to-r from-red to-red/80 text-white">
-                        <th className="px-6 py-4 text-left font-bebas text-lg tracking-wide">NAMA</th>
-                        <th className="px-6 py-4 text-center font-bebas text-lg tracking-wide">PROVINSI</th>
+                        <th className="px-6 py-4 text-left font-bebas text-lg tracking-wide">NAMA ATLET</th>
+                        <th className="px-6 py-4 text-center font-bebas text-lg tracking-wide">KATEGORI</th>
                         <th className="px-6 py-4 text-center font-bebas text-lg tracking-wide">GENDER</th>
-                        <th className="px-6 py-4 text-center font-bebas text-lg tracking-wide">UMUR</th>
-                        <th className="px-6 py-4 text-center font-bebas text-lg tracking-wide">BELT</th>
+                        <th className="px-6 py-4 text-center font-bebas text-lg tracking-wide">STATUS</th>
+                        <th className="px-6 py-4 text-center font-bebas text-lg tracking-wide">TGL DAFTAR</th>
                         <th className="px-6 py-4 text-center font-bebas text-lg tracking-wide">AKSI</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-white/30">
-                      {filteredAtlitKompetisi.map((atlit, index) => (
+                      {filteredRegistrations.map((registration, index) => (
                         <tr
-                          key={atlit.id}
-                          className={`transition-all duration-200 hover:bg-white/50 cursor-pointer ${
+                          key={registration.id}
+                          className={`transition-all duration-200 hover:bg-white/50 ${
                             index % 2 === 0 ? "bg-white/20" : "bg-white/10"
                           }`}
-                          onClick={() => navigate(`/dashboard/atlit/${atlit.id}`)}
                         >
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-3">
                               <div className="w-10 h-10 rounded-full bg-gradient-to-br from-red to-red/80 flex items-center justify-center text-white font-bebas">
-                                {atlit.name.charAt(0)}
+                                {registration.atlitName.charAt(0)}
                               </div>
                               <div>
-                                <p className="font-inter font-semibold text-black/80">{atlit.name}</p>
-                                <p className="font-inter text-sm text-black/60">ID: {atlit.id}</p>
+                                <p className="font-inter font-semibold text-black/80">{registration.atlitName}</p>
+                                <p className="font-inter text-sm text-black/60">ID Atlet: {registration.atlitId}</p>
                               </div>
                             </div>
                           </td>
                           <td className="px-6 py-4 text-center">
-                            <span className="font-inter text-black/70">{atlit.provinsi}</span>
+                            <div className="space-y-1">
+                              <span className="block font-inter text-sm font-medium text-black/80">
+                                {registration.styleType.toUpperCase()} - {registration.categoryType.toUpperCase()}
+                              </span>
+                              {registration.ageCategory && (
+                                <span className="block text-xs text-black/60">
+                                  {registration.ageCategory}
+                                </span>
+                              )}
+                              {registration.weightCategory && (
+                                <span className="block text-xs text-black/60">
+                                  {registration.weightCategory} kg
+                                </span>
+                              )}
+                            </div>
                           </td>
                           <td className="px-6 py-4 text-center">
                             <span
                               className={`px-3 py-1 rounded-full text-xs font-inter font-medium ${
-                                atlit.gender === "Laki-Laki"
+                                registration.gender === "Laki-Laki"
                                   ? "bg-blue-100 text-blue-600"
                                   : "bg-pink-100 text-pink-600"
                               }`}
                             >
-                              {atlit.gender}
+                              {registration.gender}
                             </span>
                           </td>
                           <td className="px-6 py-4 text-center">
-                            <span className="font-inter font-medium text-black/70">{atlit.umur} thn</span>
+                            <span
+                              className={`px-3 py-1 rounded-full text-xs font-inter font-medium capitalize ${getRegistrationStatusColor(registration.status)}`}
+                            >
+                              {registration.status === 'registered' ? 'Terdaftar' : 
+                               registration.status === 'confirmed' ? 'Terkonfirmasi' : 'Dibatalkan'}
+                            </span>
                           </td>
                           <td className="px-6 py-4 text-center">
-                            <span className="px-3 py-1 rounded-full text-xs font-inter font-medium bg-yellow-100 text-yellow-600 capitalize">
-                              {atlit.belt}
+                            <span className="font-inter text-black/70 text-sm">
+                              {formatTanggal(registration.registrationDate)}
                             </span>
                           </td>
                           <td className="px-6 py-4 text-center">
                             <div className="flex justify-center gap-2">
+                              {registration.status === 'registered' && (
+                                <>
+                                  <button 
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      confirmRegistration(registration.id);
+                                    }}
+                                    className="p-2 rounded-lg bg-green-500/10 text-green-500 hover:bg-green-500/20 transition-all duration-200"
+                                    title="Konfirmasi"
+                                  >
+                                    <CheckCircle size={16} />
+                                  </button>
+                                  <button 
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      cancelRegistration(registration.id);
+                                    }}
+                                    className="p-2 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-all duration-200"
+                                    title="Batalkan"
+                                  >
+                                    <XCircle size={16} />
+                                  </button>
+                                </>
+                              )}
                               <button 
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  navigate(`/dashboard/atlit/${atlit.id}`);
+                                  navigate(`/dashboard/atlit/${registration.atlitId}`);
                                 }}
                                 className="p-2 rounded-lg bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 transition-all duration-200"
+                                title="Lihat Detail Atlet"
                               >
                                 <Eye size={16} />
-                              </button>
-                              <button 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  navigate(`/dashboard/atlit/edit/${atlit.id}`);
-                                }}
-                                className="p-2 rounded-lg bg-green-500/10 text-green-500 hover:bg-green-500/20 transition-all duration-200"
-                              >
-                                <Edit size={16} />
                               </button>
                             </div>
                           </td>
@@ -411,17 +456,23 @@ const DataKompetisi = () => {
               </div>
 
               {/* Empty state */}
-              {filteredAtlitKompetisi.length === 0 && (
+              {filteredRegistrations.length === 0 && (
                 <div className="text-center py-12">
                   <Users className="mx-auto text-gray-400 mb-4" size={48} />
                   <p className="font-inter text-gray-500">
-                    {atlitKompetisi.length === 0 
-                      ? "Belum ada atlet yang didaftarkan untuk kompetisi ini"
-                      : "Tidak ada atlet yang sesuai dengan kriteria pencarian"
+                    {selectedKompetisiRegistrations.length === 0 
+                      ? "Belum ada atlet yang mendaftar untuk kompetisi ini"
+                      : "Tidak ada peserta yang sesuai dengan kriteria pencarian"
                     }
                   </p>
-                  {atlitKompetisi.length > 0 && (
-                    <p className="font-inter text-sm text-gray-400 mt-2">Coba ubah kriteria pencarian atau filter</p>
+                  {selectedKompetisiRegistrations.length === 0 && (
+                    <button
+                      onClick={() => handleOpenRegistration(kompetisiTerpilih!)}
+                      className="mt-4 bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-2 rounded-lg font-inter font-medium hover:shadow-lg transition-all duration-300 flex items-center gap-2 mx-auto"
+                    >
+                      <UserPlus size={16} />
+                      Daftar Atlet Sekarang
+                    </button>
                   )}
                 </div>
               )}
@@ -437,6 +488,17 @@ const DataKompetisi = () => {
     <div className="min-h-screen w-full bg-gradient-to-br from-white via-red/5 to-yellow/10">
       {/* Desktop Navbar */}
       <NavbarDashboard />
+
+      {/* Registration Modal */}
+      {showRegistrationModal && selectedKompetisiForRegistration && (
+        <UnifiedRegistration
+          isOpen={showRegistrationModal}
+          onClose={handleCloseRegistration}
+          kompetisiId={selectedKompetisiForRegistration.id}
+          kompetisiName={selectedKompetisiForRegistration.nama}
+          biayaPendaftaran={selectedKompetisiForRegistration.biayaPendaftaran}
+        />
+      )}
 
       {/* Main Content */}
       <div className="lg:ml-64 min-h-screen">
@@ -494,8 +556,6 @@ const DataKompetisi = () => {
                 />
               </div>
             </div>
-
-            
           </div>
 
           {/* Search and Filter Section */}
@@ -563,13 +623,22 @@ const DataKompetisi = () => {
 
           {/* Table Section */}
           <div className="bg-white/60 backdrop-blur-sm rounded-3xl p-8 shadow-xl border border-white/50">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-2 bg-red/10 rounded-xl">
-                <Trophy className="text-red" size={20} />
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-red/10 rounded-xl">
+                  <Trophy className="text-red" size={20} />
+                </div>
+                <h2 className="font-bebas text-2xl text-black/80 tracking-wide">
+                  DAFTAR KOMPETISI ({filteredKompetisi.length})
+                </h2>
               </div>
-              <h2 className="font-bebas text-2xl text-black/80 tracking-wide">
-                DAFTAR KOMPETISI ({filteredKompetisi.length})
-              </h2>
+              <button
+                onClick={() => toast.info("Fitur tambah kompetisi akan segera tersedia!")}
+                className="bg-gradient-to-r from-red to-red/80 text-white px-6 py-3 rounded-xl font-inter font-medium hover:shadow-lg transition-all duration-300 flex items-center gap-2"
+              >
+                <Plus size={20} />
+                Tambah Kompetisi
+              </button>
             </div>
 
             {/* Table */}
@@ -583,76 +652,103 @@ const DataKompetisi = () => {
                       <th className="px-6 py-4 text-center font-bebas text-lg tracking-wide">LOKASI</th>
                       <th className="px-6 py-4 text-center font-bebas text-lg tracking-wide">STATUS</th>
                       <th className="px-6 py-4 text-center font-bebas text-lg tracking-wide">PESERTA</th>
+                      <th className="px-6 py-4 text-center font-bebas text-lg tracking-wide">BIAYA</th>
                       <th className="px-6 py-4 text-center font-bebas text-lg tracking-wide">AKSI</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/30">
-                    {filteredKompetisi.map((kompetisi, index) => (
-                      <tr
-                        key={kompetisi.id}
-                        className={`transition-all duration-200 hover:bg-white/50 cursor-pointer ${
-                          index % 2 === 0 ? "bg-white/20" : "bg-white/10"
-                        }`}
-                        onClick={() => handleKompetisiClick(kompetisi.id)}
-                      >
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-red to-red/80 flex items-center justify-center text-white font-bebas">
-                              {kompetisi.nama.charAt(0)}
+                    {filteredKompetisi.map((kompetisi, index) => {
+                      const pesertaTerdaftar = updateKompetisiParticipants(kompetisi.id);
+                      return (
+                        <tr
+                          key={kompetisi.id}
+                          className={`transition-all duration-200 hover:bg-white/50 cursor-pointer ${
+                            index % 2 === 0 ? "bg-white/20" : "bg-white/10"
+                          }`}
+                          onClick={() => handleKompetisiClick(kompetisi.id)}
+                        >
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-red to-red/80 flex items-center justify-center text-white font-bebas">
+                                {kompetisi.nama.charAt(0)}
+                              </div>
+                              <div>
+                                <p className="font-inter font-semibold text-black/80">{kompetisi.nama}</p>
+                                <p className="font-inter text-sm text-black/60">{kompetisi.kategori}</p>
+                              </div>
                             </div>
-                            <div>
-                              <p className="font-inter font-semibold text-black/80">{kompetisi.nama}</p>
-                              <p className="font-inter text-sm text-black/60">{kompetisi.kategori}</p>
+                          </td>
+                          <td className="px-6 py-4 text-center">
+                            <span className="font-inter text-black/70">{formatTanggal(kompetisi.tanggal)}</span>
+                          </td>
+                          <td className="px-6 py-4 text-center">
+                            <div className="flex items-center justify-center gap-1">
+                              <MapPin size={16} className="text-black/50" />
+                              <span className="font-inter text-black/70">{kompetisi.lokasi}</span>
                             </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 text-center">
-                          <span className="font-inter text-black/70">{formatTanggal(kompetisi.tanggal)}</span>
-                        </td>
-                        <td className="px-6 py-4 text-center">
-                          <div className="flex items-center justify-center gap-1">
-                            <MapPin size={16} className="text-black/50" />
-                            <span className="font-inter text-black/70">{kompetisi.lokasi}</span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 text-center">
-                          <span
-                            className={`px-3 py-1 rounded-full text-xs font-inter font-medium ${getStatusColor(kompetisi.status)}`}
-                          >
-                            {kompetisi.status}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-center">
-                          <span className="font-inter font-medium text-black/70">
-                            {kompetisi.pesertaTerdaftar}/{kompetisi.maxPeserta}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-center">
-                          <div className="flex justify-center gap-2">
-                            <button 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleKompetisiClick(kompetisi.id);
-                              }}
-                              className="p-2 rounded-lg bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 transition-all duration-200"
-                              title="Lihat Peserta"
+                          </td>
+                          <td className="px-6 py-4 text-center">
+                            <span
+                              className={`px-3 py-1 rounded-full text-xs font-inter font-medium ${getStatusColor(kompetisi.status)}`}
                             >
-                              <Users size={16} />
-                            </button>
-                            <button 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                navigate(`/dashboard/kompetisi/${kompetisi.id}`);
-                              }}
-                              className="p-2 rounded-lg bg-green-500/10 text-green-500 hover:bg-green-500/20 transition-all duration-200"
-                              title="Edit Kompetisi"
-                            >
-                              <Edit size={16} />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                              {kompetisi.status}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-center">
+                            <div className="flex flex-col items-center">
+                              <span className="font-inter font-medium text-black/70">
+                                {pesertaTerdaftar}/{kompetisi.maxPeserta}
+                              </span>
+                              <div className="w-16 bg-gray-200 rounded-full h-2 mt-1">
+                                <div 
+                                  className="bg-red h-2 rounded-full transition-all duration-300"
+                                  style={{width: `${Math.min((pesertaTerdaftar / kompetisi.maxPeserta) * 100, 100)}%`}}
+                                ></div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 text-center">
+                            <span className="font-inter font-medium text-black/70 text-sm">
+                              {formatRupiah(kompetisi.biayaPendaftaran)}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-center">
+                            <div className="flex justify-center gap-2">
+                              <button 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleKompetisiClick(kompetisi.id);
+                                }}
+                                className="p-2 rounded-lg bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 transition-all duration-200"
+                                title="Lihat Peserta"
+                              >
+                                <Users size={16} />
+                              </button>
+                              <button 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleOpenRegistration(kompetisi);
+                                }}
+                                className="p-2 rounded-lg bg-green-500/10 text-green-500 hover:bg-green-500/20 transition-all duration-200"
+                                title="Daftar Atlet"
+                              >
+                                <UserPlus size={16} />
+                              </button>
+                              <button 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigate(`/dashboard/kompetisi/${kompetisi.id}`);
+                                }}
+                                className="p-2 rounded-lg bg-orange-500/10 text-orange-500 hover:bg-orange-500/20 transition-all duration-200"
+                                title="Edit Kompetisi"
+                              >
+                                <Edit size={16} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>

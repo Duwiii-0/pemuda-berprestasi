@@ -1,11 +1,11 @@
 export interface DummyDojang {
   id?: number;
-  name: string;       // nama dojang
-  email: string;      // email dojang
-  phone: string;      // nomor telpon
+  name: string;       
+  email: string;      
+  phone: string;      
   negara: string;
   provinsi: string;
-  kota: string;       // kabupaten/kota
+  kota: string;       
   kecamatan: string;
   kelurahan: string;
   alamat: string;
