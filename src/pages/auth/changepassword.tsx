@@ -30,7 +30,7 @@ const ResetPassword = () => {
 
           <div className="w-full">
             <TextInput
-              className="h-12 placeholder:text-cyan-300"
+              className="h-12 placeholder:text-red"
               placeholder="your new password"
               icon={<KeyRound className="text-black" size={20} />}
             />
@@ -44,7 +44,6 @@ const ResetPassword = () => {
         <div className="w-full flex flex-col gap-2">
           <GeneralButton
             label="Reset"
-            type="action"
             className="w-full bg-red border-2 border-red h-12 text-white round-lg font-semibold"
           />
         </div>

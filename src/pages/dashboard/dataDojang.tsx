@@ -1,6 +1,13 @@
 import { useState, useEffect } from "react";
 import { Phone, Mail, MapPin, Map, Building, Flag, Menu, Award, Users, Calendar } from 'lucide-react';
 import NavbarDashboard from "../../components/navbar/navbarDashboard"; // Import NavbarDashboard
+import { useAuth } from "../../context/authContext";
+import { dummyDojangs, type DummyDojang } from "../../dummy/dummyDojang";
+import { useNavigate } from "react-router-dom";  // ⬅️ tambahkan
+
+
+
+export type DojangForm = Omit<DummyDojang, "id">;
 
 // Types untuk components
 interface TextInputProps {
@@ -70,18 +77,48 @@ const StatsCard: React.FC<StatsCardProps> = ({ icon: Icon, title, value, color }
 const Dojang = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  
+  {/* cari dojang by id dojang di user */}
+  const userDojang = dummyDojangs.find(
+    (d) => d.id === user?.dojangId
+  );
 
-  const [formData, setFormData] = useState({
-    namaDojang: "Dojang Pemuda Berprestasi Depok",
-    nomorTelepon: "021-87654321",
-    emailDojang: "depok@pemudaberprestasi.id",
-    negara: "Indonesia",
-    provinsi: "Jawa Barat",
-    kecamatan: "Pancoran Mas",
-    kabupatenKota: "Kota Depok",
-    kelurahan: "Depok",
-    alamat: "Jl. Margonda Raya No. 123, Komplek Pemuda Center"
-  });
+  {/* biar kalo di refresh kan usernya ke logout, jadi redirect ke home */}
+  useEffect(() => {
+    if (!user) {
+      navigate("/", { replace: true });
+    }
+  }, [user, navigate]);
+
+
+  const [formData, setFormData] = useState<DojangForm>(
+    userDojang
+      ? {
+          name: userDojang.name,
+          email: userDojang.email,
+          phone: userDojang.phone,
+          negara: userDojang.negara,
+          provinsi: userDojang.provinsi,
+          kota: userDojang.kota,
+          kecamatan: userDojang.kecamatan,
+          kelurahan: userDojang.kelurahan,
+          alamat: userDojang.alamat,
+        }
+      : {
+          name: "",
+          email: "",
+          phone: "",
+          negara: "",
+          provinsi: "",
+          kota: "",
+          kecamatan: "",
+          kelurahan: "",
+          alamat: "",
+        }
+  );
+
 
   useEffect(() => {
     const onResize = () => {
@@ -201,6 +238,7 @@ const Dojang = () => {
              
             </div>
 
+            {userDojang && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <label className="block font-inter font-medium text-black/70 text-sm">
@@ -208,9 +246,9 @@ const Dojang = () => {
                 </label>
                 <TextInput
                   className="w-full"
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, namaDojang: e.target.value })}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, name: e.target.value })}
                   disabled={!isEditing}
-                  value={formData.namaDojang}
+                  value={formData.name}
                   placeholder="Masukkan nama dojang"
                   icon={<Building className="text-red/60" size={20} />}
                 />
@@ -222,9 +260,9 @@ const Dojang = () => {
                 </label>
                 <TextInput
                   className="w-full"
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, nomorTelepon: e.target.value })}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, phone: e.target.value })}
                   disabled={!isEditing}
-                  value={formData.nomorTelepon}
+                  value={formData.phone}
                   placeholder="Masukkan nomor telepon"
                   icon={<Phone className="text-red/60" size={20} />}
                 />
@@ -236,9 +274,9 @@ const Dojang = () => {
                 </label>
                 <TextInput
                   className="w-full"
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, emailDojang: e.target.value })}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, email: e.target.value })}
                   disabled={!isEditing}
-                  value={formData.emailDojang}
+                  value={formData.email}
                   placeholder="Masukkan email dojang"
                   icon={<Mail className="text-red/60" size={20} />}
                 />
@@ -278,9 +316,9 @@ const Dojang = () => {
                 </label>
                 <TextInput
                   className="w-full"
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, kabupatenKota: e.target.value })}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, kota: e.target.value })}
                   disabled={!isEditing}
-                  value={formData.kabupatenKota}
+                  value={formData.kota}
                   placeholder="Masukkan kabupaten/kota"
                   icon={<Building className="text-red/60" size={20} />}
                 />
@@ -328,6 +366,7 @@ const Dojang = () => {
                 />
               </div>
             </div>
+            )}
 
             {/* Save reminder for mobile */}
             {isEditing && (

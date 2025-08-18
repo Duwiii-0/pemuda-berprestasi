@@ -52,7 +52,7 @@ const Login = () => {
 
           <div className="w-full">
             <TextInput
-              className="h-12 placeholder:text-cyan-300"
+              className="h-12 placeholder:text-red"
               placeholder="your password"
               icon={<KeyRound className="text-black" size={20} />}
               value={password}
@@ -60,7 +60,7 @@ const Login = () => {
             />
           </div>
 
-          <Link to="/" className="flex justify-end hover:text-red underline">
+          <Link to="/resetpassword" className="flex justify-end hover:text-red underline">
             Forgot Password?
           </Link>
 
