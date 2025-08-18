@@ -1,4 +1,4 @@
-import { Menu, X, ChevronUp, ChevronDown } from "lucide-react";
+import { ChevronUp, ChevronDown } from "lucide-react";
 import GeneralButton from "../generalButton";
 import { Link, useLocation } from "react-router-dom";
 import { useState } from "react";
@@ -8,7 +8,7 @@ const NavbarLanding = ({ onLogoutRequest }: { onLogoutRequest: () => void }) => 
   const location = useLocation();
   const isSettings = location.pathname.startsWith("/settings");
 
-  const { user } = useAuth(); // Ambil dari AuthContext
+  const { user } = useAuth(); 
   const [isOpen, setIsOpen] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
 
@@ -38,7 +38,7 @@ const NavbarLanding = ({ onLogoutRequest }: { onLogoutRequest: () => void }) => 
         <Link to="/event" className={`text-lg text-${Warna} font-inter`}>
           Event
         </Link>
-        <Link to="/lomba/home" className={`text-lg text-${Warna} font-inter`}>
+        <Link to="/tutorial" className={`text-lg text-${Warna} font-inter`}>
           Tutorial
         </Link>
 
@@ -94,7 +94,7 @@ const NavbarLanding = ({ onLogoutRequest }: { onLogoutRequest: () => void }) => 
               <button
                   onClick={() => {
                     setShowDropdown(false);
-                    onLogoutRequest(); // ✅ trigger modal open from parent
+                    onLogoutRequest(); 
                   }}
                   className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100"
                 >
