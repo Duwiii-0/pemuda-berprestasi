@@ -11,7 +11,7 @@ interface GeneralButtonProps {
 const GeneralButton: React.FC<GeneralButtonProps> = ({ label, type, to, onClick, className }) => {
   if (type === "link" && to) {
     return <Link to={to}       onClick={() => window.scrollTo(0, 0)} // tambahin ini
-    className={`btn px-6 rounded-lg font-inter flex justify-center items-center cursor-pointer ${className}`}>{label}</Link>; // Bisa diganti Link kalau full page routing
+    className={`text-center btn px-6 rounded-lg font-inter flex justify-center items-center cursor-pointer ${className}`}>{label}</Link>; // Bisa diganti Link kalau full page routing
   }
   
   if (type === "scroll" && to) {
