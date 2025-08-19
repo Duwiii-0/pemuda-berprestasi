@@ -242,7 +242,7 @@ const UnifiedRegistration = ({
                     className={`p-8 rounded-xl border-2 transition-all duration-300 font-bebas text-4xl ${
                       formData.styleType === "kyorugi"
                         ? 'border-red bg-red text-white scale-105'
-                        : 'border-red bg-white text-red hover:bg-red/10'
+                        : 'border-red bg-white text-red hover:bg-[#cec3bd]'
                     }`}
                   >
                     <div>KYORUGI</div>
@@ -253,7 +253,7 @@ const UnifiedRegistration = ({
                     className={`p-8 rounded-xl border-2 transition-all duration-300 font-bebas text-4xl ${
                       formData.styleType === "poomsae"
                         ? 'border-red bg-red text-white scale-105'
-                        : 'border-red bg-white text-red hover:bg-red/10'
+                        : 'border-red bg-white text-red hover:bg-[#cec3bd]'
                     }`}
                   >
                     <div>POOMSAE</div>
@@ -272,7 +272,7 @@ const UnifiedRegistration = ({
                     className={`p-8 rounded-xl border-2 transition-all duration-300 font-bebas text-4xl ${
                       formData.categoryType === "prestasi"
                         ? 'border-red bg-red text-white scale-105'
-                        : 'border-red bg-white text-red hover:bg-red/10'
+                        : 'border-red bg-white text-red hover:bg-[#cec3bd]'
                     }`}
                   >
                     <div>PRESTASI</div>
@@ -283,7 +283,7 @@ const UnifiedRegistration = ({
                     className={`p-8 rounded-xl border-2 transition-all duration-300 font-bebas text-4xl ${
                       formData.categoryType === "pemula"
                         ? 'border-red bg-red text-white scale-105'
-                        : 'border-red bg-white text-red hover:bg-red/10'
+                        : 'border-red bg-white text-red hover:bg-[#cec3bd]'
                     }`}
                   >
                     <div>PEMULA</div>
@@ -513,7 +513,7 @@ const UnifiedRegistration = ({
 
   return (
     <Modal isOpen={isOpen}>
-      <div className="bg-gradient-to-b from-white/90 to-white/80 h-screen md:h-[85vh] w-full md:w-[80vw] lg:w-[70vw] xl:w-[60vw] rounded-xl flex flex-col justify-start items-center overflow-y-scroll font-inter">
+      <div className="bg-gradient-to-b from-white/90 to-white/80 h-screen md:h-[85vh] w-screen md:w-[80vw] lg:w-[70vw] xl:w-[60vw] rounded-xl flex flex-col justify-start items-center overflow-y-scroll font-inter">
         <div className="w-full p-8">
           {/* Header dengan tombol back dan progress */}
           <div className="flex items-center justify-between mb-8">
@@ -568,11 +568,11 @@ const UnifiedRegistration = ({
                     onClick={handleNext}
                     className={`h-12 px-8 rounded-lg font-semibold transition-colors duration-300 ${
                       (currentStep === 1 ? canProceedStep1 : canProceedStep2())
-                        ? 'bg-red border-2 border-red text-white hover:bg-red/90'
+                        ? 'bg-red text-white hover:bg-yellow hover:text-black'
                         : 'bg-gray-300 border-2 border-gray-300 text-gray-500 cursor-not-allowed'
                     }`}
                   />
-                  <ArrowRight size={20} className="text-gray-400" />
+                  <ArrowRight size={20} className="hidden md:block text-gray-400" />
                 </div>
               ) : (
                 <GeneralButton
