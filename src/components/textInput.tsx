@@ -31,7 +31,7 @@ const TextInput: React.FC<TextInputProps> = ({
       type={type}
       disabled={disabled}
       {...props}
-      className={`w-full ${icon ? 'pl-12' : 'pl-4'} pr-4 py-3 border-2 rounded-xl font-inter transition-all duration-300 focus:outline-none ${
+      className={`placeholder-red/50 w-full ${icon ? 'pl-12' : 'pl-4'} pr-4 py-3 border-2 rounded-xl font-inter transition-all duration-300 focus:outline-none ${
         disabled ? 'bg-gray-100 cursor-not-allowed' : 'hover:border-red/40'
       } ${className}`}
     />

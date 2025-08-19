@@ -12,7 +12,7 @@ type TextAreaProps = {
 
 const TextArea = ({ placeholder, className, icon, value, disabled, onChange, rows = 3 }: TextAreaProps) => {
   return (
-    <div className={`flex items-start justify-start border-2 border-red rounded-md px-2 gap-2 ${className}`}>
+    <div className={`flex items-start justify-start border-2 border-red rounded-md px-2 gap-2 font-inter ${className}`}>
       {icon && <span className="pt-2">{icon}</span>}
       <textarea
         value={value}
@@ -20,7 +20,7 @@ const TextArea = ({ placeholder, className, icon, value, disabled, onChange, row
         disabled={disabled}
         placeholder={placeholder}
         rows={rows}
-        className="flex-1 outline-none bg-transparent placeholder-red/50 resize-none"
+        className="flex-1 outline-none bg-transparent placeholder-red/50 resize-none placeholder:pt-1"
       />
     </div>
   );

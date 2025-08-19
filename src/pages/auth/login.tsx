@@ -4,6 +4,7 @@ import { Mail, KeyRound } from "lucide-react";
 import { useAuth } from "../../context/authContext";
 import GeneralButton from "../../components/generalButton";
 import TextInput from "../../components/textInput";
+import toast from "react-hot-toast";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -16,7 +17,7 @@ const Login = () => {
     if (success) {
       navigate("/");
     } else {
-      alert("Email atau password salah!");
+      toast.error('Email atau password salah')
     }
   };
 
@@ -42,7 +43,7 @@ const Login = () => {
         <form onSubmit={handleSubmit} className="w-full flex flex-col gap-4">
           <div className="w-full">
             <TextInput
-              className="h-12 placeholder-red border-red"
+              className="h-12 border-red"
               placeholder="your email address"
               icon={<Mail className="text-black" size={20} />}
               value={email}
@@ -52,7 +53,7 @@ const Login = () => {
 
           <div className="w-full">
             <TextInput
-              className="h-12 placeholder:text-red border-red"
+              className="h-12  border-red"
               placeholder="your password"
               icon={<KeyRound className="text-black" size={20} />}
               value={password}
@@ -60,18 +61,23 @@ const Login = () => {
             />
           </div>
 
-          <Link to="/resetpassword" className="flex justify-end hover:text-red underline">
+          <div className="w-full text-end">
+          <Link to="/resetpassword" className="hover:text-red underline">
             Forgot Password?
           </Link>
+          </div>
           <GeneralButton
             label="Login"
             type={"submit" as any}
-            className="w-full bg-red border-2 border-red h-12 text-white round-lg font-semibold"
+            className="w-full bg-red border-2 border-red h-12 rounded-xl text-white font-semibold hover:scale-101 transition-discrete duration-300 hover:shadow-xl"
           />
+          <span className="text-center">
+            Dont have an account? 
            {/* Register link */}
            <Link to="/register" className="pl-1 underline hover:text-red">
-             Register
+             Register here
            </Link>
+          </span>
         </form>
       </div>
     </div>

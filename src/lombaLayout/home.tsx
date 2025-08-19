@@ -149,12 +149,12 @@ const LandingPage = () => {
               <div className="font-bebas text-red text-4xl">Contact Us</div>
               <div className="flex justify-center w-full gap-2 px-12 ">
                       <TextInput
-                      className="h-12 placeholder-red flex-1"
+                      className="h-12 placeholder-red flex-1 border-red"
                       placeholder="your name"
                       icon={<User className="text-black" size={20} />}
                       />
                       <TextInput
-                      className="h-12 placeholder-red flex-1"
+                      className="h-12 placeholder-red border-red flex-1"
                       placeholder="your email address"
                       icon={<Mail className="text-black" size={20} />}
                       />

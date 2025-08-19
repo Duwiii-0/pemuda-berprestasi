@@ -4,10 +4,17 @@ import GeneralButton from "../../components/generalButton";
 import TextInput from "../../components/textInput";
 import { Mail, User, Phone, Lock, IdCard } from "lucide-react";
 import { Link } from "react-router-dom";
+import toast from "react-hot-toast";
 
 type OptionType = { value: string; label: string };
 
 const Register = () => {
+  const [nama, setNama] = useState("");
+  const [email, setEmail] = useState("");
+  const [nik, setNik] = useState("");
+  const [telepon, setTelepon] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [selectedDojang, setSelectedDojang] = useState<OptionType | null>(null);
 
   const dojangOptions: OptionType[] = [
@@ -18,11 +25,31 @@ const Register = () => {
 
   const handleRegister = () => {
     // TODO: proses registrasi, kirim data ke backend
-    alert("Registrasi berhasil (dummy)!");
+    toast.success("Registrasi berhasil (dummy)!");
   };
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    // ✅ Validasi semua field
+    if (
+      !nama ||
+      !email ||
+      !nik ||
+      !telepon ||
+      !password ||
+      !confirmPassword ||
+      !selectedDojang
+    ) {
+      toast.error("Semua field harus terisi terlebih dahulu");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      toast.error("Password dan konfirmasi password tidak sama");
+      return;
+    }
+
     handleRegister();
   };
 
@@ -31,9 +58,13 @@ const Register = () => {
       className="h-screen w-full flex items-center justify-center bg-cover bg-center"
       style={{ backgroundImage: "url('src/assets/photos/login.jpg')" }}
     >
-      <div className="px-10 sm:px-25 bg-gradient-to-b from-white/90 to-white/80 h-screen md:h-[80vh] w-full md:w-[72vw] lg:w-[56vw] xl:w-[35vw] rounded-xl flex flex-col justify-start items-center gap-8 py-10 overflow-y-scroll font-inter">
+      <div className="px-10 sm:px-25 bg-gradient-to-b from-white/90 to-white/80 h-screen md:h-[80vh] w-full md:w-[72vw] lg:w-[56vw] xl:w-[35vw] rounded-xl flex flex-col justify-start items-center gap-8 py-10 pb-15 overflow-y-scroll font-inter">
         <div className="flex flex-col gap-2 justify-center items-center">
-          <img src="src/assets/logo/taekwondo.png" alt="taekwondo logo" className="h-30 w-30 sm:h-50 sm:w-50"/>
+          <img
+            src="src/assets/logo/taekwondo.png"
+            alt="taekwondo logo"
+            className="h-30 w-30 sm:h-50 sm:w-50"
+          />
           <label className="font-bebas text-6xl text-red">registrasi</label>
         </div>
 
@@ -43,7 +74,9 @@ const Register = () => {
           <div>
             <label className="pl-2">Nama</label>
             <TextInput
-              className="h-12 placeholder:text-red border-red"
+              value={nama}
+              onChange={(e) => setNama(e.target.value)}
+              className="h-12  border-red"
               placeholder="Nama"
               icon={<User className="text-black" size={20} />}
             />
@@ -53,7 +86,9 @@ const Register = () => {
           <div>
             <label className="pl-2">Email</label>
             <TextInput
-              className="h-12 placeholder:text-red border-red"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="h-12  border-red"
               placeholder="Email"
               icon={<Mail className="text-black" size={20} />}
             />
@@ -63,7 +98,9 @@ const Register = () => {
           <div>
             <label className="pl-2">NIK</label>
             <TextInput
-              className="h-12 placeholder:text-red border-red"
+              value={nik}
+              onChange={(e) => setNik(e.target.value)}
+              className="h-12  border-red"
               placeholder="NIK"
               icon={<IdCard className="text-black" size={20} />}
             />
@@ -73,7 +110,9 @@ const Register = () => {
           <div>
             <label className="pl-2">Nomor Telepon</label>
             <TextInput
-              className="h-12 placeholder:text-red border-red"
+              value={telepon}
+              onChange={(e) => setTelepon(e.target.value)}
+              className="h-12  border-red"
               placeholder="Nomor Telepon"
               icon={<Phone className="text-black" size={20} />}
             />
@@ -83,7 +122,10 @@ const Register = () => {
           <div>
             <label className="pl-2">Password</label>
             <TextInput
-              className="h-12 placeholder:text-red border-red"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="h-12  border-red"
               placeholder="Password"
               icon={<Lock className="text-black" size={20} />}
             />
@@ -93,7 +135,10 @@ const Register = () => {
           <div>
             <label className="pl-2">Confirm Password</label>
             <TextInput
-              className="h-12 placeholder:text-red border-red"
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className="h-12  border-red"
               placeholder="Confirm Password"
               icon={<Lock className="text-black" size={20} />}
             />
@@ -127,23 +172,34 @@ const Register = () => {
             />
           </div>
 
+          <div className="w-full text-end">
+          <Link
+            to="/registerdojang"
+            className="underline hover:text-red transition-colors"
+          >
+            register your dojang
+          </Link>
+          </div>
+
           {/* Tombol Register */}
           <GeneralButton
             label="Register"
-            type={"submit" as any} // 🔥 Enter langsung submit form
-            className=" mt-2 w-full bg-red border-2 border-red h-12 text-white rounded-lg font-semibold"
+            type={"submit" as any}
+            className=" mt-2 w-full bg-red border-2 border-red h-12 rounded-xl text-white font-semibold hover:scale-101 transition-discrete duration-300 hover:shadow-xl"
           />
-        </form>
 
-        {/* Link navigasi */}
-        <div className="w-full flex flex-col gap-2">
-          <Link to="/login" className="underline text-red hover:text-red-600">
-            Login here
-          </Link>
-          <Link to="/registerdojang" className="underline text-red hover:text-red-600">
-            register your dojang
-          </Link>
-        </div>
+          <div className="w-full flex flex-col gap-2">
+            <span className="text-center">
+              Already have an account?
+              <Link
+                to="/login"
+                className="pl-1 underline hover:text-red transition-colors"
+              >
+                Login here
+              </Link>
+            </span>
+          </div>
+        </form>
       </div>
     </div>
   );
