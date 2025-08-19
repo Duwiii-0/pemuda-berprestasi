@@ -4,7 +4,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useState } from "react";
 import { useAuth } from "../../context/authContext";
 
-const NavbarLomba = () => {
+const NavbarLomba = ({ onLogoutRequest }: { onLogoutRequest: () => void }) => {
   const location = useLocation();
   const { user } = useAuth();
   const [showDropdown, setShowDropdown] = useState(false);
@@ -24,7 +24,7 @@ const NavbarLomba = () => {
       <div className="hidden md:flex md:gap-10  xl:gap-20 items-center ">
         <Link
           to="/lomba/home"
-          className={`relative text-lg font-plex transition-colors ${
+          className={`active:scale-95 transition-all duration-300 relative text-lg font-plex  ${
             location.pathname === "/lomba/home" ? "text-yellow" : "text-white hover:text-yellow/70"
           }`}
         >
@@ -37,7 +37,7 @@ const NavbarLomba = () => {
         </Link>
         <Link
           to="/lomba/timeline"
-          className={`relative text-lg font-plex transition-colors ${
+          className={`active:scale-95 transition-all duration-300 relative text-lg font-plex  ${
             location.pathname === "/lomba/timeline" ? "text-yellow" : "text-white hover:text-yellow/70"
           }`}
         >
@@ -50,7 +50,7 @@ const NavbarLomba = () => {
         </Link>
         <Link
           to="/lomba/faq"
-          className={`relative text-lg font-plex transition-colors ${
+          className={`active:scale-95 transition-all duration-300 relative text-lg font-plex ${
             location.pathname === "/lomba/faq" ? "text-yellow" : "text-white hover:text-yellow/70"
           }`}
         >
@@ -83,32 +83,32 @@ const NavbarLomba = () => {
         <div className="hidden md:block relative">
           <button
             onClick={() => setShowDropdown((prev) => !prev)}
-            className="h-12 px-6 text-lg border-2 border-white text-white font-plex rounded-lg"
+            className={`${showDropdown && 'border-yellow'} h-12 px-6 text-lg border-2 bg-white border-yellow text-red font-plex rounded-lg transition-all duration-300 ${showDropdown && "rounded-b-none border-b-transparent pt-4"}`}
           >
             <span className="flex gap-2 items-center justify-center">
               <span className="max-w-32 lg:max-w-42 xl:max-w-full truncate">
                 {user.name}
               </span>
               {showDropdown ? (
-                <ChevronUp size={26} className="transition-all duration-300" />
+                <ChevronUp size={26} className="transition-all duration-500" />
               ) : (
-                <ChevronDown size={26} className="transition-all duration-300" />
+                <ChevronUp size={26} className="transition-all duration-500 -rotate-180" />
               )}
             </span>
           </button>
 
           {showDropdown && (
-            <div className="absolute right-0 mt-2 w-48 bg-white shadow-lg rounded-lg border border-gray-200 z-50">
+            <div className={`absolute right-0 -mt-2 bg-white w-full pt-6 shadow-lg rounded-lg rounded-t-none border-2 border-t-transparent border-white ${showDropdown && 'border-yellow'} z-50`}>
               <Link
                 to="/dashboard/dojang"
-                className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
+                className={`text-lg block px-4 py-2 text-red hover:font-semibold transition-all duration-300 hover:text-yellow`} 
                 onClick={() => setShowDropdown(false)}
               >
                 Dashboard
               </Link>
               <Link
                 to="/settings"
-                className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
+                className={`text-lg block px-4 py-2 text-red hover:font-semibold transition-all duration-300 hover:text-yellow`} 
                 onClick={() => setShowDropdown(false)}
               >
                 Settings
@@ -116,10 +116,9 @@ const NavbarLomba = () => {
               <button
                 onClick={() => {
                   setShowDropdown(false);
-                  localStorage.removeItem("loggedUser");
-                  window.location.href = "/";
+                  onLogoutRequest();
                 }}
-                className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100"
+                className={`text-lg w-full text-left px-4 py-2 text-red hover:font-semibold transition-all duration-300 hover:text-yellow`}
               >
                 Logout
               </button>

@@ -3,19 +3,19 @@ import NavbarLanding from "../components/navbar/navbarLanding";
 import Footer from "../components/footer";
 import AlertModal from "../components/alertModal";
 import { useState, useEffect } from "react";
-import { useAuth } from "../context/authContext"; // ⬅️ import AuthContext
+import { useAuth } from "../context/authContext";
 
 export default function LandingLayout() {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const { logout } = useAuth(); // ⬅️ ambil logout dari AuthContext
+  const { logout } = useAuth(); 
   const isSettings = location.pathname.startsWith("/settings");
 
   const handleConfirmLogout = () => {
     setIsOpen(false);
-    logout(); // ⬅️ pakai context logout
-    navigate("/"); // ⬅️ redirect ke halaman utama
+    logout(); 
+    navigate("/"); 
   };
 
   useEffect(() => {

@@ -32,14 +32,33 @@ const NavbarLanding = ({ onLogoutRequest }: { onLogoutRequest: () => void }) => 
 
       {/* Menu Desktop */}
       <div className="hidden md:flex md:gap-20 lg:gap-10 xl:gap-20 items-center">
-        <Link to="/" className={`text-lg text-${Warna} font-plex  `}>
+        <Link to="/" className={`active:scale-95 transition-all duraiton-300 relative text-lg text-${Warna} font-plex 
+        ${location.pathname === "/" ? "text-yellow" : " hover:text-yellow/70"}`}>
           Beranda
+          <span
+            className={`absolute left-0 -bottom-1 h-[2px] bg-yellow transition-all duration-300 ${
+              location.pathname === "/" ? "w-full" : "w-0"
+            }`}
+          />
         </Link>
-        <Link to="/event" className={`text-lg text-${Warna} font-plex `}>
+        <Link to="/event" className={`active:scale-95 transition-all duraiton-300 relative text-lg text-${Warna} font-plex 
+        ${location.pathname === "/event" ? "text-yellow" : " hover:text-yellow/70"}`}>
           Event
+          <span
+            className={`absolute left-0 -bottom-1 h-[2px] bg-yellow transition-all duration-300 ${
+              location.pathname === "/event" ? "w-full" : "w-0"
+            }`}
+          />
+
         </Link>
-        <Link to="/tutorial" className={`text-lg text-${Warna} font-plex`}>
+        <Link to="/tutorial" className={`active:scale-95 transition-all duraiton-300 relative text-lg text-${Warna} font-plex
+        ${location.pathname === "/tutorial" ? "text-yellow" : " hover:text-yellow/70"}`}>
           Tutorial
+          <span
+            className={`absolute left-0 -bottom-1 h-[2px] bg-yellow transition-all duration-300 ${
+              location.pathname === "/tutorial" ? "w-full" : "w-0"
+            }`}
+          />
         </Link>
       </div>
 
@@ -63,32 +82,32 @@ const NavbarLanding = ({ onLogoutRequest }: { onLogoutRequest: () => void }) => 
         <div className="hidden md:block relative">
           <button
             onClick={() => setShowDropdown((prev) => !prev)}
-            className={`h-12 px-6 text-lg border-2 border-${Warna} text-${Warna} font-plex rounded-lg`}
+            className={`h-12 px-6 text-lg border-2 border-${Warna} text-${Warna} font-plex rounded-lg transition-all duration-300 ${showDropdown && "rounded-b-none border-b-transparent pt-4"}`}
           >
             <span className="flex gap-2 items-center justify-center">
               <span className="max-w-32 lg:max-w-42 xl:max-w-full truncate">
                 {user.name}
               </span>
               {showDropdown ? (
-                <ChevronUp size={26} className="transition-all duration-300" />
+                <ChevronUp size={26} className="transition-all duration-500" />
               ) : (
-                <ChevronDown size={26} className="transition-all duration-300" />
+                <ChevronUp size={26} className="transition-all duration-500 rotate-180" />
               )}
             </span>
           </button>
 
           {showDropdown && (
-            <div className="absolute right-0 mt-2 w-48 bg-white shadow-lg rounded-lg border border-gray-200 z-50">
+            <div className={`absolute right-0 -mt-2 w-full pt-6 shadow-lg rounded-lg rounded-t-none border-2 border-t-transparent transition-all duration-300 border-${Warna} z-50`}>
               <Link
                 to="/dashboard/dojang"
-                className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
+                className={`text-lg block px-4 py-2 text-${Warna} hover:font-semibold transition-all duraiton-300 hover:text-yellow`} 
                 onClick={() => setShowDropdown(false)}
               >
                 Dashboard
               </Link>
               <Link
                 to="/settings"
-                className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
+                className={`text-lg block px-4 py-2 text-${Warna} hover:font-semibold transition-all duraiton-300 hover:text-yellow`} 
                 onClick={() => setShowDropdown(false)}
               >
                 Settings
@@ -98,7 +117,7 @@ const NavbarLanding = ({ onLogoutRequest }: { onLogoutRequest: () => void }) => 
                   setShowDropdown(false);
                   onLogoutRequest();
                 }}
-                className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100"
+                className={`text-lg w-full text-left px-4 py-2 text-${Warna} hover:font-semibold transition-all duraiton-300 hover:text-yellow`}
               >
                 Logout
               </button>

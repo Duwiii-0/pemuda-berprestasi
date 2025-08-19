@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Play, Clock, BookOpen, Users, Trophy, PencilLine, CheckCircle, Check } from 'lucide-react';
-import NavbarLanding from '../../components/navbar/navbarLanding';
 
 // Define Tutorial interface
 interface Tutorial {
@@ -24,14 +23,6 @@ interface VideoPlayerProps {
 const TutorialPage = () => {
   const [activeVideo, setActiveVideo] = useState<Tutorial | null>(null);
   const [selectedCategory, setSelectedCategory] = useState('semua');
-
-  // Handle logout request
-  const handleLogoutRequest = () => {
-    // Add your logout logic here
-    console.log('Logout requested');
-    // Example: redirect to login page or clear authentication
-    // window.location.href = '/login';
-  };
 
   // Enhanced tutorial data dengan kategori
   const tutorials = [
@@ -184,14 +175,11 @@ const TutorialPage = () => {
 
   return (
     <div className="min-h-screen bg-white relative">
-      <div className="relative z-50">
-        <NavbarLanding onLogoutRequest={handleLogoutRequest} />
-      </div>
       <div className='pt-40'>
       {/* Category Filter */}
       <div className="max-w-6xl mx-auto px-6 mb-12">
         <div className="text-center mb-8">
-          <h2 className="text-6xl font-['Bebas_Neue'] text-[#990D35] mb-4 inline-block relative">
+          <h2 className="text-6xl font-bebas text-[#990D35] mb-4 inline-block relative">
             Pilih Kategori Tutorial
           </h2>
         </div>
@@ -201,7 +189,7 @@ const TutorialPage = () => {
             <button
               key={category.id}
               onClick={() => setSelectedCategory(category.id)}
-              className={`flex items-center gap-3 px-6 py-3 rounded-2xl font-['Inter'] font-semibold transition-all duration-300 ${
+              className={`flex items-center gap-3 px-6 py-3 rounded-2xl font-plex font-semibold transition-all duration-300 ${
                 selectedCategory === category.id
                   ? 'bg-gradient-to-r from-[#990D35] to-[#990D35]/90 text-[#F5FBEF] shadow-lg scale-105'
                   : 'bg-[#F5FBEF] text-gray-700 hover:bg-[#990D35]/10 hover:text-[#990D35] shadow-md border border-gray-100'
