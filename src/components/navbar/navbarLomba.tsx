@@ -15,21 +15,51 @@ const NavbarLomba = () => {
       {/* Logo */}
       <Link
         to="/"
-        className="block md:hidden lg:block text-h3 text-yellow font-bebas tracking-wider uppercase"
+        className="block md:hidden lg:block text-h3 xl:px-10 text-yellow font-bebas tracking-wider uppercase"
       >
         pemuda berprestasi
       </Link>
 
       {/* Menu Desktop */}
-      <div className="hidden md:flex md:gap-10  xl:gap-20 items-center">
-        <Link to="/lomba/home" className="text-md text-white font-plex">
-          BERANDA
+      <div className="hidden md:flex md:gap-10  xl:gap-20 items-center ">
+        <Link
+          to="/lomba/home"
+          className={`relative text-lg font-plex transition-colors ${
+            location.pathname === "/lomba/home" ? "text-yellow" : "text-white hover:text-yellow/70"
+          }`}
+        >
+          Beranda
+          <span
+            className={`absolute left-0 -bottom-1 h-[2px] bg-yellow transition-all duration-300 ${
+              location.pathname === "/lomba/home" ? "w-full" : "w-0"
+            }`}
+          />
         </Link>
-        <Link to="/lomba/timeline" className="text-md text-white font-plex">
-          TIMELINE
+        <Link
+          to="/lomba/timeline"
+          className={`relative text-lg font-plex transition-colors ${
+            location.pathname === "/lomba/timeline" ? "text-yellow" : "text-white hover:text-yellow/70"
+          }`}
+        >
+          Timeline
+          <span
+            className={`absolute left-0 -bottom-1 h-[2px] bg-yellow transition-all duration-300 ${
+              location.pathname === "/lomba/timeline" ? "w-full" : "w-0"
+            }`}
+          />
         </Link>
-        <Link to="/lomba/faq" className="text-md text-white font-plex">
-          FAQ
+        <Link
+          to="/lomba/faq"
+          className={`relative text-lg font-plex transition-colors ${
+            location.pathname === "/lomba/faq" ? "text-yellow" : "text-white hover:text-yellow/70"
+          }`}
+        >
+          Faq
+          <span
+            className={`absolute left-0 -bottom-1 h-[2px] bg-yellow transition-all duration-300 ${
+              location.pathname === "/lomba/faq" ? "w-full" : "w-0"
+            }`}
+          />
         </Link>
       </div>
 
