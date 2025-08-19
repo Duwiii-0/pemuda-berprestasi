@@ -21,11 +21,11 @@ const NavbarLanding = ({ onLogoutRequest }: { onLogoutRequest: () => void }) => 
     >
       {/* Logo */}
       { !isSettings ? (
-        <Link to="/" className={`sm:block md:hidden lg:block max-w-92 xl:px-10 text-h3 text-yellow font-bebas tracking-wider uppercase`}>
+        <Link to="/" className={`sm:block md:hidden lg:block max-w-92 xl:px-10 text-h3 text-${Warna} font-bebas tracking-wider uppercase`}>
           pemuda berprestasi
         </Link>
       ) : (
-        <Link to="/" className={`sm:block md:hidden lg:block max-w-92 xl:px-10 text-h3 text-yellow font-bebas tracking-wider uppercase`}>
+        <Link to="/" className={`sm:block md:hidden lg:block max-w-92 xl:px-10 text-h3 text-${Warna} font-bebas tracking-wider uppercase`}>
           pemuda berprestasi
         </Link>
       )}
@@ -47,13 +47,13 @@ const NavbarLanding = ({ onLogoutRequest }: { onLogoutRequest: () => void }) => 
       {!user ? (
         <div className="hidden md:flex gap-10">
           <GeneralButton
-            type="link"
+            type="navbar"
             to="/register"
             label="Register"
             className={`h-12 text-lg border-2 border-${Warna} text-${Warna} font-inter`}
           />
           <GeneralButton
-            type="link"
+            type="navbar"
             to="/login"
             label="Login"
             className={`h-12 text-lg px-8 border-2 border-${Warna} text-${tulisan} bg-${Warna} font-inter`}

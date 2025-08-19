@@ -5,7 +5,7 @@ const CompCard = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="bg-white border-2 border-yellow shadow-2xl rounded-lg hover:-translate-y-2 hover:scale-101 transition-all duration-300 ease-in-out 
+    <div className="bg-white border-2 border-yellow shadow-2xl rounded-2xl  hover:-translate-y-2 hover:scale-101 transition-all duration-300 ease-in-out 
                     flex flex-col md:flex-row items-center gap-4 lg:gap-12 px-4 lg:px-12 py-6 md:py-8 md:pb-10 w-[65vw]">
       
       {/* Image */}
@@ -30,8 +30,8 @@ const CompCard = () => {
         </div>
 
         {/* Button */}
-        <div className="w-full flex justify-center md:justify-start lg:justify-end mt-4 md:mt-4 lg:mt-0">
-          <GeneralButton to="/lomba/home" label="Join the Competition" type="link" className="h-10 xl:h-12 bg-red text-white rounded-lg text-sm md:text-base px-4 md:px-6 py-2"/>
+        <div className="w-full flex justify-center md:justify-start lg:justify-end mt-4 md:mt-4 lg:mt-0 ">
+          <GeneralButton to="/lomba/home" label="Join the Competition" type="link" className="hover:shadow-lg shadow-red/30 transition-all duration-300 font-semibold h-10 xl:h-12 bg-red text-white rounded-2xl text-sm md:text-base px-4 md:px-6 py-2"/>
         </div>
       </div> 
     </div>
