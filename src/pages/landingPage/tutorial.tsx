@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Play, Clock, BookOpen, Users, CheckCircle, Shield, Zap, Star } from 'lucide-react';
+import { Play, Clock, BookOpen, Users, Trophy, PencilLine, CheckCircle, Check } from 'lucide-react';
 import NavbarLanding from '../../components/navbar/navbarLanding';
 
 // Define Tutorial interface
@@ -8,12 +8,10 @@ interface Tutorial {
   title: string;
   description: string;
   duration: string;
-  difficulty: string;
   thumbnail: string;
   videoUrl: string;
   steps: string[];
   category: string;
-  views: number;
 }
 
 interface VideoPlayerProps {
@@ -46,7 +44,6 @@ const TutorialPage = () => {
       thumbnail: "/api/placeholder/400/225",
       videoUrl: "#",
       category: "registrasi",
-      views: 1250,
       steps: [
         "Buka halaman registrasi dojang",
         "Isi data lengkap dojang dan pelatih", 
@@ -64,7 +61,6 @@ const TutorialPage = () => {
       thumbnail: "/api/placeholder/400/225",
       videoUrl: "#",
       category: "manajemen",
-      views: 890,
       steps: [
         "Login ke dashboard dojang",
         "Pilih menu 'Tambah Atlet'",
@@ -83,7 +79,6 @@ const TutorialPage = () => {
       thumbnail: "/api/placeholder/400/225",
       videoUrl: "#",
       category: "kompetisi",
-      views: 2100,
       steps: [
         "Pilih kompetisi yang tersedia",
         "Pilih atlet yang akan didaftarkan",
@@ -102,7 +97,6 @@ const TutorialPage = () => {
       thumbnail: "/api/placeholder/400/225",
       videoUrl: "#",
       category: "manajemen",
-      views: 650,
       steps: [
         "Akses menu pengaturan profil",
         "Edit informasi dasar dojang",
@@ -115,9 +109,9 @@ const TutorialPage = () => {
 
   const categories = [
     { id: 'semua', name: 'Semua Tutorial', icon: BookOpen },
-    { id: 'registrasi', name: 'Registrasi', icon: Shield },
+    { id: 'registrasi', name: 'Registrasi', icon: PencilLine },
     { id: 'manajemen', name: 'Manajemen', icon: Users },
-    { id: 'kompetisi', name: 'Kompetisi', icon: CheckCircle }
+    { id: 'kompetisi', name: 'Kompetisi', icon: Trophy }
   ];
 
   const filteredTutorials = selectedCategory === 'semua' 
@@ -131,9 +125,6 @@ const TutorialPage = () => {
           <div className="flex justify-between items-center mb-6">
             <div className="flex items-center gap-4">
               <h3 className="text-3xl font-bebas text-red">{tutorial.title}</h3>
-              <span className="bg-gradient-to-r from-yellow to-yellow/80 text-black px-3 py-1 rounded-full text-sm font-inter font-bold">
-                {tutorial.difficulty}
-              </span>
             </div>
             <button 
               onClick={onClose}
@@ -151,7 +142,6 @@ const TutorialPage = () => {
                 <Play size={40} className="text-white ml-1" />
               </div>
               <p className="text-white font-inter font-semibold text-lg mb-2">Klik untuk memutar video tutorial</p>
-              <p className="text-gray-300 text-sm">Durasi: {tutorial.duration} • {tutorial.views.toLocaleString()} views</p>
             </div>
           </div>
 
@@ -166,10 +156,6 @@ const TutorialPage = () => {
                 <span className="flex items-center gap-2 bg-white/70 backdrop-blur-sm px-4 py-2 rounded-full text-gray-600 border border-gray-200">
                   <Clock size={16} />
                   {tutorial.duration}
-                </span>
-                <span className="flex items-center gap-2 bg-white/70 backdrop-blur-sm px-4 py-2 rounded-full text-gray-600 border border-gray-200">
-                  <Users size={16} />
-                  {tutorial.views.toLocaleString()} views
                 </span>
               </div>
             </div>
@@ -197,109 +183,16 @@ const TutorialPage = () => {
   );
 
   return (
-    <div className="min-h-screen bg-[#F5FBEF] relative">
+    <div className="min-h-screen bg-white relative">
       <div className="relative z-50">
         <NavbarLanding onLogoutRequest={handleLogoutRequest} />
       </div>
-
-      {/* Decorative Elements */}
-      <div className="fixed top-40 left-10 w-20 h-20 bg-[#F5B700]/15 rounded-full blur-xl animate-pulse z-0"></div>
-      <div className="fixed top-60 right-16 w-32 h-32 bg-[#990D35]/10 rounded-full blur-2xl animate-pulse delay-1000 z-0"></div>
-      <div className="fixed bottom-40 left-1/4 w-24 h-24 bg-[#F5B700]/10 rounded-full blur-xl animate-pulse delay-500 z-0"></div>
-
-      {/* Hero Section */}
-      <div className="relative pt-32 pb-20 mb-20 overflow-hidden bg-[#990D35] z-10">
-        {/* Taekwondo themed decorative elements */}
-        <div className="absolute top-10 left-10 opacity-10">
-          <Shield size={120} className="text-white animate-pulse" />
-        </div>
-        <div className="absolute bottom-10 right-10 opacity-10">
-          <CheckCircle size={100} className="text-white animate-pulse delay-1000" />
-        </div>
-        
-        {/* Organic wave */}
-        <div className="absolute inset-0">
-          <svg viewBox="0 0 1440 320" className="absolute bottom-0 w-full h-full">
-            <path 
-              fill="rgba(255,255,255,0.1)" 
-              d="M0,96L48,112C96,128,192,160,288,186.7C384,213,480,235,576,218.7C672,203,768,149,864,128C960,107,1056,117,1152,133.3C1248,149,1344,171,1392,181.3L1440,192L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"
-            ></path>
-          </svg>
-        </div>
-        
-        <div className="relative z-10 max-w-6xl mx-auto px-6 text-center">
-          <div className="mb-6">
-            <span className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm text-white px-6 py-2 rounded-full text-sm font-inter font-semibold">
-              <Star size={16} />
-              Tutorial Resmi Taekwondo Indonesia
-            </span>
-          </div>
-          <h1 className="text-6xl md:text-8xl font-['Bebas_Neue'] text-[#F5FBEF] mb-6 leading-none drop-shadow-2xl">
-            MASTER TAEKWONDO
-            <span className="block text-4xl md:text-6xl text-[#F5B700]">Tutorial Center</span>
-          </h1>
-          <p className="text-xl font-['Inter'] text-[#F5FBEF]/95 max-w-3xl mx-auto leading-relaxed backdrop-blur-sm bg-white/10 rounded-2xl p-8 border border-white/20">
-            Panduan lengkap sistem perlombaan taekwondo untuk pelatih dan pengelola dojang. 
-            Dari registrasi hingga manajemen kompetisi, semua ada di sini!
-          </p>
-          
-          {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
-            <button className="bg-gradient-to-r from-[#F5B700] to-[#F5B700]/90 hover:from-[#F5B700]/90 hover:to-[#F5B700] text-[#050505] font-['Inter'] font-bold px-8 py-4 rounded-2xl transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:-translate-y-1 flex items-center gap-3 justify-center">
-              <Zap size={20} />
-              Mulai Belajar
-            </button>
-            <button className="bg-white/20 backdrop-blur-sm border-2 border-white/30 text-[#F5FBEF] hover:bg-white/30 transition-all duration-300 px-8 py-4 rounded-2xl font-['Inter'] font-bold shadow-xl hover:shadow-2xl transform hover:-translate-y-1 flex items-center gap-3 justify-center">
-              <BookOpen size={20} />
-              Panduan PDF
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Stats Section */}
-      <div className="max-w-7xl mx-auto px-6 mb-20 relative">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-          <div className="bg-[#F5FBEF] rounded-2xl p-6 text-center shadow-xl hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 border border-gray-100">
-            <div className="bg-gradient-to-br from-[#990D35] to-[#990D35]/80 text-[#F5FBEF] rounded-2xl w-14 h-14 flex items-center justify-center mx-auto mb-4 shadow-lg">
-              <BookOpen size={24} />
-            </div>
-            <h3 className="text-2xl font-['Bebas_Neue'] text-[#990D35] mb-2">{tutorials.length}</h3>
-            <p className="text-gray-600 font-['Inter'] text-sm">Video Tutorial</p>
-          </div>
-          
-          <div className="bg-[#F5FBEF] rounded-2xl p-6 text-center shadow-xl hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 border border-gray-100 md:mt-6">
-            <div className="bg-gradient-to-br from-[#F5B700] to-[#F5B700]/80 text-[#050505] rounded-2xl w-14 h-14 flex items-center justify-center mx-auto mb-4 shadow-lg">
-              <Users size={24} />
-            </div>
-            <h3 className="text-2xl font-['Bebas_Neue'] text-[#990D35] mb-2">500+</h3>
-            <p className="text-gray-600 font-['Inter'] text-sm">Pelatih Aktif</p>
-          </div>
-          
-          <div className="bg-[#F5FBEF] rounded-2xl p-6 text-center shadow-xl hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 border border-gray-100">
-            <div className="bg-gradient-to-br from-[#990D35] to-[#990D35]/80 text-[#F5FBEF] rounded-2xl w-14 h-14 flex items-center justify-center mx-auto mb-4 shadow-lg">
-              <CheckCircle size={24} />
-            </div>
-            <h3 className="text-2xl font-['Bebas_Neue'] text-[#990D35] mb-2">50+</h3>
-            <p className="text-gray-600 font-['Inter'] text-sm">Kompetisi</p>
-          </div>
-          
-          <div className="bg-[#F5FBEF] rounded-2xl p-6 text-center shadow-xl hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 border border-gray-100 md:mt-6">
-            <div className="bg-gradient-to-br from-[#F5B700] to-[#F5B700]/80 text-[#050505] rounded-2xl w-14 h-14 flex items-center justify-center mx-auto mb-4 shadow-lg">
-              <Shield size={24} />
-            </div>
-            <h3 className="text-2xl font-['Bebas_Neue'] text-[#990D35] mb-2">100+</h3>
-            <p className="text-gray-600 font-['Inter'] text-sm">Dojang Terdaftar</p>
-          </div>
-        </div>
-      </div>
-
+      <div className='pt-40'>
       {/* Category Filter */}
       <div className="max-w-6xl mx-auto px-6 mb-12">
         <div className="text-center mb-8">
-          <h2 className="text-4xl font-['Bebas_Neue'] text-[#990D35] mb-4 inline-block relative">
+          <h2 className="text-6xl font-['Bebas_Neue'] text-[#990D35] mb-4 inline-block relative">
             Pilih Kategori Tutorial
-            <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-24 h-1 bg-gradient-to-r from-[#F5B700] to-[#990D35] rounded-full"></div>
           </h2>
         </div>
         
@@ -349,7 +242,7 @@ const TutorialPage = () => {
                         <p className="text-gray-700 font-inter font-semibold text-sm">Tonton Tutorial</p>
                       </div>
                     </div>
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-black/10 group-hover:from-red/20 transition-colors duration-500"></div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-black/10 group-hover:from-red/10 transition-colors duration-500"></div>
                   </div>
                   
                   {/* Badges */}
@@ -358,9 +251,6 @@ const TutorialPage = () => {
                   </div>
                   <div className="absolute top-4 right-4 bg-black/70 backdrop-blur-sm text-white px-3 py-1 rounded-full text-xs font-semibold">
                     {tutorial.duration}
-                  </div>
-                  <div className="absolute bottom-4 right-4 bg-white/90 backdrop-blur-sm text-gray-700 px-3 py-1 rounded-full text-xs font-semibold">
-                    {tutorial.views.toLocaleString()} views
                   </div>
                 </div>
 
@@ -402,41 +292,7 @@ const TutorialPage = () => {
             </div>
           ))}
         </div>
-
-        {/* Help Section */}
-        <div className="mt-24 relative">
-          <div className="bg-gradient-to-br from-red/8 via-yellow/8 to-red/5 rounded-[3rem] p-12 text-center relative overflow-hidden border border-gray-100">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-yellow/15 rounded-full blur-2xl"></div>
-            <div className="absolute bottom-0 left-0 w-40 h-40 bg-red/10 rounded-full blur-3xl"></div>
-            <div className="relative z-10">
-              <div className="bg-gradient-to-r from-red to-red/80 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-6 shadow-lg">
-                <Shield size={32} className="text-white" />
-              </div>
-              <h3 className="text-4xl font-bebas text-red mb-6">
-                Butuh Bantuan Lebih Lanjut?
-              </h3>
-              <p className="text-gray-700 font-inter text-lg mb-8 max-w-2xl mx-auto leading-relaxed">
-                Tim support kami siap membantu Anda 24/7. Hubungi kami untuk konsultasi gratis mengenai sistem perlombaan taekwondo.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-6 justify-center">
-                <a 
-                  href="mailto:support@taekwondo-indonesia.com" 
-                  className="bg-gradient-to-r from-red to-red/90 hover:from-red/90 hover:to-red text-white transition-all duration-300 px-8 py-4 rounded-2xl font-inter font-bold shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center gap-3 justify-center"
-                >
-                  <BookOpen size={20} />
-                  Email Support
-                </a>
-                <a 
-                  href="tel:+62123456789" 
-                  className="bg-white border-2 border-red text-red hover:bg-red hover:text-white transition-all duration-300 px-8 py-4 rounded-2xl font-inter font-bold shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center gap-3 justify-center"
-                >
-                  <Shield size={20} />
-                  Hotline 24/7
-                </a>
-              </div>
-            </div>
-          </div>
-        </div>
+      </div>
       </div>
 
       {/* Video Modal */}

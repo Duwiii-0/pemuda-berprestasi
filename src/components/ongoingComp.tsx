@@ -1,3 +1,4 @@
+import toast from "react-hot-toast";
 import CompCard from "./compCard";
 import { ChevronLeft,ChevronRight } from "lucide-react";
 
@@ -14,7 +15,7 @@ const OngoingComp = () => {
             </div>
                 <div className="w-full flex flex-col md:flex-row justify-center items-center gap-4 md:gap-10">
                   {/* Left Arrow — hide on mobile if needed */}
-                  <div className="hidden md:block">
+                  <div className="hidden md:block" onClick={()=> toast.error("hanya ada satu kompetisi untuk sekarang") }>
                     <ChevronLeft size={60} className="text-red hover:text-yellow transition-colors duration-200"/>
                   </div>
 
@@ -24,7 +25,7 @@ const OngoingComp = () => {
                   </div>
 
                   {/* Right Arrow — hide on mobile if needed */}
-                  <div className="hidden md:block">
+                  <div className="hidden md:block" onClick={()=> toast.error("hanya ada satu kompetisi untuk sekarang") }>
                     <ChevronRight size={60} className="text-red hover:text-yellow transition-colors duration-200"/>
                   </div>
                 </div>

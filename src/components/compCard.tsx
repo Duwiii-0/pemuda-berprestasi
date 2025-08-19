@@ -31,7 +31,7 @@ const CompCard = () => {
 
         {/* Button */}
         <div className="w-full flex justify-center md:justify-start lg:justify-end mt-4 md:mt-4 lg:mt-0 ">
-          <GeneralButton to="/lomba/home" label="Join the Competition" type="link" className="hover:shadow-lg shadow-red/30 transition-all duration-300 font-semibold h-10 xl:h-12 bg-red text-white rounded-2xl text-sm md:text-base px-4 md:px-6 py-2"/>
+          <GeneralButton to="/lomba/home" label="Join the Competition" type="link" className="hover:shadow-lg hover:bg-yellow hover:text-black shadow-red/30 transition-all duration-300 font-semibold h-10 xl:h-12 bg-red text-white rounded-2xl text-sm md:text-base px-4 md:px-6 py-2"/>
         </div>
       </div> 
     </div>

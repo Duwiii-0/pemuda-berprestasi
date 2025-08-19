@@ -12,8 +12,8 @@ const NavbarLanding = ({ onLogoutRequest }: { onLogoutRequest: () => void }) => 
   const [showDropdown, setShowDropdown] = useState(false);
   const [isBurgerOpen, setIsBurgerOpen] = useState(false);
 
-  const Warna = location.pathname === "/event" ? "red" : "white";
-  const tulisan = location.pathname === "/event" ? "white" : "black";
+  const Warna = location.pathname === "/" ? "white" : "red";
+  const tulisan = location.pathname === "/" ? "black" : "white";
 
   return (
     <div
