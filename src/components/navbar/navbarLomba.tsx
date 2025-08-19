@@ -70,13 +70,13 @@ const NavbarLomba = ({ onLogoutRequest }: { onLogoutRequest: () => void }) => {
             type="navbar"
             to="/register"
             label="Register"
-            className="h-12 text-lg border-2 border-white text-white font-plex"
+            className="active:scale-95 h-12 text-lg border-2 border-white text-white font-plex"
           />
           <GeneralButton
             type="navbar"
             to="/login"
             label="Login"
-            className="h-12 text-lg border-2 bg-white border-white text-red font-plex"
+            className="active:scale-95 h-12 text-lg border-2 bg-white border-white text-red font-plex"
           />
         </div>
       ) : (

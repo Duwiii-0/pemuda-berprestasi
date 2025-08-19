@@ -131,7 +131,7 @@ const RegisterDojang = () => {
           <GeneralButton
             label="Register"
             type={ "submit" as any }
-            className="mt-2 w-full bg-red border-2 border-red h-12 rounded-xl text-white text-lg font-semibold hover:scale-101 transition-discrete duration-300 hover:shadow-xl"
+            className="active:scale-97 mt-2 w-full bg-red border-2 border-red h-12 rounded-xl text-white text-lg font-semibold hover:scale-101 transition-discrete duration-300 hover:shadow-xl"
           />
 
           <span className="text-center pt-1">

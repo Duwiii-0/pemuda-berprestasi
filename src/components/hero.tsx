@@ -15,7 +15,7 @@ const Hero = () => {
                     </div>
                 </div>
                 <div className="md:pl-6 flex justify-center items-center md:justify-start md:items-start">
-                    <GeneralButton label="See Our Competitions" type="hero" to="/event" className="h-12 md:text-lg xl:text-xl border-2 border-white text-white"/>
+                    <GeneralButton label="See Our Competitions" type="hero" to="/event" className="active:scale-97 h-12 md:text-lg xl:text-xl border-2 border-white text-white"/>
                 </div>
             </div>
         </div>

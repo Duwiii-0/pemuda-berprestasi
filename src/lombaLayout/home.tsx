@@ -91,7 +91,7 @@ const LandingPage = () => {
               label="Join the Competitions"
               type="action"
               to=""
-              className=" text-center h-12 md:text-lg xl:text-xl border-2 border-white text-white"
+              className=" text-center h-12 md:text-lg xl:text-xl border-2 border-white text-white active:scale-97"
               onClick={handleJoinClick} 
             />
           </div>

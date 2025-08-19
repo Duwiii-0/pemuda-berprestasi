@@ -69,13 +69,13 @@ const NavbarLanding = ({ onLogoutRequest }: { onLogoutRequest: () => void }) => 
             type="navbar"
             to="/register"
             label="Register"
-            className={`h-12 text-lg border-2 border-${Warna} text-${Warna} font-plex`}
+            className={`active:scale-95 h-12 text-lg border-2 border-${Warna} text-${Warna} font-plex`}
           />
           <GeneralButton
             type="navbar"
             to="/login"
             label="Login"
-            className={`h-12 text-lg px-8 border-2 border-${Warna} text-${tulisan} bg-${Warna} font-plex`}
+            className={`active:scale-95 h-12 text-lg px-8 border-2 border-${Warna} text-${tulisan} bg-${Warna} font-plex`}
           />
         </div>
       ) : (
