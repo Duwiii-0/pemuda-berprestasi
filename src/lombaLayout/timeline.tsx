@@ -84,7 +84,7 @@ export default function Timeline() {
 
                       {/* Line - Only show if not last item */}
                       {index !== monthEvents.length - 1 && (
-                        <div className="w-[2px] h-25 bg-white mt-1 group-hover:bg-red transition-colors duration-300" />
+                        <div className="w-[2px] h-25 bg-white mt-1" />
                       )}
                     </div>
 

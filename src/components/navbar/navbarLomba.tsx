@@ -37,16 +37,16 @@ const NavbarLomba = () => {
       {!user ? (
         <div className="hidden md:flex gap-10">
           <GeneralButton
-            type="link"
+            type="navbar"
             to="/register"
             label="Register"
             className="h-12 text-lg border-2 border-white text-white font-inter"
           />
           <GeneralButton
-            type="link"
+            type="navbar"
             to="/login"
             label="Login"
-            className="h-12 text-lg border-2 border-white text-white font-inter"
+            className="h-12 text-lg border-2 bg-white border-white text-red font-inter"
           />
         </div>
       ) : (
