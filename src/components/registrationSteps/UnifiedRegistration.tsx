@@ -228,7 +228,7 @@ const UnifiedRegistration = ({
               <h2 className="text-4xl md:text-6xl font-bebas text-red mb-2">
                 Pilih Style & Kategori
               </h2>
-              <p className="text-black/70 font-inter">Langkah 1 dari {totalSteps}</p>
+              <p className="text-black/70 font-plex">Langkah 1 dari {totalSteps}</p>
             </div>
 
             <div className="space-y-8">
@@ -246,7 +246,7 @@ const UnifiedRegistration = ({
                     }`}
                   >
                     <div>KYORUGI</div>
-                    <div className="font-inter text-lg mt-2">(Tarung/Sparring)</div>
+                    <div className="font-plex text-lg mt-2">(Tarung/Sparring)</div>
                   </button>
                   <button
                     onClick={() => setFormData({...formData, styleType: "poomsae", selectedWeight: null})}
@@ -257,7 +257,7 @@ const UnifiedRegistration = ({
                     }`}
                   >
                     <div>POOMSAE</div>
-                    <div className="font-inter text-lg mt-2">(Seni/Forms)</div>
+                    <div className="font-plex text-lg mt-2">(Seni/Forms)</div>
                   </button>
                 </div>
               </div>
@@ -276,7 +276,7 @@ const UnifiedRegistration = ({
                     }`}
                   >
                     <div>PRESTASI</div>
-                    <div className="font-inter text-lg mt-2">(Berpengalaman)</div>
+                    <div className="font-plex text-lg mt-2">(Berpengalaman)</div>
                   </button>
                   <button
                     onClick={() => setFormData({...formData, categoryType: "pemula", selectedAge: null, selectedWeight: null})}
@@ -287,7 +287,7 @@ const UnifiedRegistration = ({
                     }`}
                   >
                     <div>PEMULA</div>
-                    <div className="font-inter text-lg mt-2">(Pemula/Beginner)</div>
+                    <div className="font-plex text-lg mt-2">(Pemula/Beginner)</div>
                   </button>
                 </div>
               </div>
@@ -302,9 +302,9 @@ const UnifiedRegistration = ({
               <h2 className="text-4xl md:text-6xl font-bebas text-red mb-2">
                 Detail Kategori
               </h2>
-              <p className="text-black/70 font-inter">Langkah 2 dari {totalSteps}</p>
+              <p className="text-black/70 font-plex">Langkah 2 dari {totalSteps}</p>
               <div className="mt-4 p-3 bg-green-50 rounded-lg">
-                <p className="font-inter text-green-700 text-sm">
+                <p className="font-plex text-green-700 text-sm">
                   <strong>{formData.styleType?.toUpperCase()}</strong> - <strong>{formData.categoryType?.toUpperCase()}</strong>
                 </p>
               </div>
@@ -313,7 +313,7 @@ const UnifiedRegistration = ({
             <div className="space-y-6">
               {/* Gender - Always first and required */}
               <div>
-                <label className="block text-black mb-3 text-lg font-inter font-semibold pl-2">
+                <label className="block text-black mb-3 text-lg font-plex font-semibold pl-2">
                   Jenis Kelamin <span className="text-red">*</span>
                 </label>
                 <LockedSelect
@@ -332,7 +332,7 @@ const UnifiedRegistration = ({
               {/* Kelas Umur - Only for non-pemula, requires gender first */}
               {formData.categoryType !== "pemula" && (
                 <div>
-                  <label className="block text-black mb-3 text-lg font-inter font-semibold pl-2">
+                  <label className="block text-black mb-3 text-lg font-plex font-semibold pl-2">
                     Kelas Umur <span className="text-red">*</span>
                   </label>
                   <LockedSelect
@@ -352,7 +352,7 @@ const UnifiedRegistration = ({
               {/* Kelas Berat - Only for kyorugi prestasi, requires age first */}
               {formData.styleType === "kyorugi" && formData.categoryType === "prestasi" && (
                 <div>
-                  <label className="block text-black mb-3 text-lg font-inter font-semibold pl-2">
+                  <label className="block text-black mb-3 text-lg font-plex font-semibold pl-2">
                     Kelas Berat <span className="text-red">*</span>
                   </label>
                   <LockedSelect
@@ -382,20 +382,20 @@ const UnifiedRegistration = ({
               <h2 className="text-4xl md:text-6xl font-bebas text-red mb-2">
                 Registrasi Atlit
               </h2>
-              <p className="text-black/70 font-inter">Langkah 3 dari {totalSteps}</p>
+              <p className="text-black/70 font-plex">Langkah 3 dari {totalSteps}</p>
             </div>
 
             <div className="space-y-6">
               {availableAtlits.length === 0 ? (
                 <div className="text-center py-8 bg-yellow-50 rounded-lg">
-                  <p className="font-inter text-yellow-700">
+                  <p className="font-plex text-yellow-700">
                     Semua atlet sudah terdaftar untuk kompetisi ini!
                   </p>
                 </div>
               ) : (
                 <>
                   <div>
-                    <label className="block text-black mb-3 text-lg font-inter font-semibold pl-2">
+                    <label className="block text-black mb-3 text-lg font-plex font-semibold pl-2">
                       Nama Atlit <span className="text-red">*</span>
                     </label>
                     <LockedSelect
@@ -420,7 +420,7 @@ const UnifiedRegistration = ({
                     <>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                          <label className="block text-black mb-3 text-lg font-inter font-semibold pl-2">
+                          <label className="block text-black mb-3 text-lg font-plex font-semibold pl-2">
                             Berat Badan (kg)
                           </label>
                           <TextInput
@@ -433,7 +433,7 @@ const UnifiedRegistration = ({
                         </div>
 
                         <div>
-                          <label className="block text-black mb-3 text-lg font-inter font-semibold pl-2">
+                          <label className="block text-black mb-3 text-lg font-plex font-semibold pl-2">
                             Tinggi Badan (cm)
                           </label>
                           <TextInput
@@ -448,7 +448,7 @@ const UnifiedRegistration = ({
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                          <label className="block text-black mb-3 text-lg font-inter font-semibold pl-2">
+                          <label className="block text-black mb-3 text-lg font-plex font-semibold pl-2">
                             Provinsi
                           </label>
                           <TextInput
@@ -460,7 +460,7 @@ const UnifiedRegistration = ({
                         </div>
 
                         <div>
-                          <label className="block text-black mb-3 text-lg font-inter font-semibold pl-2">
+                          <label className="block text-black mb-3 text-lg font-plex font-semibold pl-2">
                             Belt/Sabuk
                           </label>
                           <TextInput
@@ -478,7 +478,7 @@ const UnifiedRegistration = ({
                        formData.selectedWeight && 
                        selectedAtlitData.bb && (
                         <div className="p-4 bg-orange-50 rounded-lg border-l-4 border-orange-400">
-                          <p className="font-inter text-orange-700 text-sm">
+                          <p className="font-plex text-orange-700 text-sm">
                             <strong>Validasi Berat Badan:</strong> 
                             {(() => {
                               const atlitWeight = selectedAtlitData.bb;
@@ -513,7 +513,7 @@ const UnifiedRegistration = ({
 
   return (
     <Modal isOpen={isOpen}>
-      <div className="bg-gradient-to-b from-white/90 to-white/80 h-screen md:h-[85vh] w-screen md:w-[80vw] lg:w-[70vw] xl:w-[60vw] rounded-xl flex flex-col justify-start items-center overflow-y-scroll font-inter">
+      <div className="bg-gradient-to-b from-white/90 to-white/80 h-screen md:h-[85vh] w-screen md:w-[80vw] lg:w-[70vw] xl:w-[60vw] rounded-xl flex flex-col justify-start items-center overflow-y-scroll font-plex">
         <div className="w-full p-8">
           {/* Header dengan tombol back dan progress */}
           <div className="flex items-center justify-between mb-8">
@@ -522,7 +522,7 @@ const UnifiedRegistration = ({
               className="flex items-center gap-2 text-black/50 hover:text-black transition-colors duration-300"
             >
               <ArrowLeft size={30} />
-              <span className="text-xl font-inter">Back</span>
+              <span className="text-xl font-plex">Back</span>
             </button>
             
             {/* Progress indicator */}

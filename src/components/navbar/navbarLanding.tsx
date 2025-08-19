@@ -32,13 +32,13 @@ const NavbarLanding = ({ onLogoutRequest }: { onLogoutRequest: () => void }) => 
 
       {/* Menu Desktop */}
       <div className="hidden md:flex md:gap-20 lg:gap-10 xl:gap-20 items-center">
-        <Link to="/" className={`text-lg text-${Warna} font-inter`}>
+        <Link to="/" className={`text-lg text-${Warna} font-plex  `}>
           Beranda
         </Link>
-        <Link to="/event" className={`text-lg text-${Warna} font-inter`}>
+        <Link to="/event" className={`text-lg text-${Warna} font-plex `}>
           Event
         </Link>
-        <Link to="/tutorial" className={`text-lg text-${Warna} font-inter`}>
+        <Link to="/tutorial" className={`text-lg text-${Warna} font-plex`}>
           Tutorial
         </Link>
       </div>
@@ -50,20 +50,20 @@ const NavbarLanding = ({ onLogoutRequest }: { onLogoutRequest: () => void }) => 
             type="navbar"
             to="/register"
             label="Register"
-            className={`h-12 text-lg border-2 border-${Warna} text-${Warna} font-inter`}
+            className={`h-12 text-lg border-2 border-${Warna} text-${Warna} font-plex`}
           />
           <GeneralButton
             type="navbar"
             to="/login"
             label="Login"
-            className={`h-12 text-lg px-8 border-2 border-${Warna} text-${tulisan} bg-${Warna} font-inter`}
+            className={`h-12 text-lg px-8 border-2 border-${Warna} text-${tulisan} bg-${Warna} font-plex`}
           />
         </div>
       ) : (
         <div className="hidden md:block relative">
           <button
             onClick={() => setShowDropdown((prev) => !prev)}
-            className={`h-12 px-6 text-lg border-2 border-${Warna} text-${Warna} font-inter rounded-lg`}
+            className={`h-12 px-6 text-lg border-2 border-${Warna} text-${Warna} font-plex rounded-lg`}
           >
             <span className="flex gap-2 items-center justify-center">
               <span className="max-w-32 lg:max-w-42 xl:max-w-full truncate">

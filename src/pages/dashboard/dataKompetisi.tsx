@@ -69,7 +69,7 @@ const StatsCard: React.FC<StatsCardProps> = ({ icon: Icon, title, value, color }
           <Icon size={24} className="text-white" />
         </div>
         <div>
-          <h3 className="font-inter font-medium text-black/60 text-sm">{title}</h3>
+          <h3 className="font-plex font-medium text-black/60 text-sm">{title}</h3>
           <p className="font-bebas text-2xl text-black/80">{value}</p>
         </div>
       </div>
@@ -228,26 +228,26 @@ const DataKompetisi = () => {
                       setSearchTerm("");
                       setGenderFilter("all");
                     }}
-                    className="text-red hover:text-red/80 font-inter mb-4 flex items-center gap-2"
+                    className="text-red hover:text-red/80 font-plex mb-4 flex items-center gap-2"
                   >
                     ← Kembali ke Daftar Kompetisi
                   </button>
                   <h1 className="font-bebas text-4xl lg:text-6xl xl:text-7xl text-black/80 tracking-wider">
                     PESERTA KOMPETISI
                   </h1>
-                  <p className="font-inter text-black/60 text-lg mt-2">
+                  <p className="font-plex text-black/60 text-lg mt-2">
                     {kompetisiTerpilih?.nama}
                   </p>
                   <div className="flex flex-wrap gap-4 mt-3">
-                    <p className="font-inter text-black/50 text-sm flex items-center gap-1">
+                    <p className="font-plex text-black/50 text-sm flex items-center gap-1">
                       <Calendar size={16} />
                       {formatTanggal(kompetisiTerpilih?.tanggal || "")}
                     </p>
-                    <p className="font-inter text-black/50 text-sm flex items-center gap-1">
+                    <p className="font-plex text-black/50 text-sm flex items-center gap-1">
                       <MapPin size={16} />
                       {kompetisiTerpilih?.lokasi}
                     </p>
-                    <span className={`px-3 py-1 rounded-full text-xs font-inter font-medium ${getStatusColor(kompetisiTerpilih?.status || "")}`}>
+                    <span className={`px-3 py-1 rounded-full text-xs font-plex font-medium ${getStatusColor(kompetisiTerpilih?.status || "")}`}>
                       {kompetisiTerpilih?.status}
                     </span>
                   </div>
@@ -295,7 +295,7 @@ const DataKompetisi = () => {
                       placeholder="Cari nama atlet..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full pl-12 pr-4 py-3 rounded-xl border-2 border-red/20 focus:border-red outline-none bg-white/80 backdrop-blur-sm font-inter"
+                      className="w-full pl-12 pr-4 py-3 rounded-xl border-2 border-red/20 focus:border-red outline-none bg-white/80 backdrop-blur-sm font-plex"
                     />
                   </div>
                 </div>
@@ -304,7 +304,7 @@ const DataKompetisi = () => {
                 <div className="flex gap-2">
                   <button
                     onClick={() => setGenderFilter("all")}
-                    className={`px-4 py-3 rounded-xl font-inter text-sm transition-all duration-300 ${
+                    className={`px-4 py-3 rounded-xl font-plex text-sm transition-all duration-300 ${
                       genderFilter === "all"
                         ? "bg-red text-white"
                         : "bg-white/50 text-red border border-red/20 hover:bg-red/5"
@@ -314,7 +314,7 @@ const DataKompetisi = () => {
                   </button>
                   <button
                     onClick={() => setGenderFilter("Laki-Laki")}
-                    className={`px-4 py-3 rounded-xl font-inter text-sm transition-all duration-300 ${
+                    className={`px-4 py-3 rounded-xl font-plex text-sm transition-all duration-300 ${
                       genderFilter === "Laki-Laki"
                         ? "bg-blue-500 text-white"
                         : "bg-white/50 text-blue-500 border border-blue-500/20 hover:bg-blue-500/5"
@@ -324,7 +324,7 @@ const DataKompetisi = () => {
                   </button>
                   <button
                     onClick={() => setGenderFilter("Perempuan")}
-                    className={`px-4 py-3 rounded-xl font-inter text-sm transition-all duration-300 ${
+                    className={`px-4 py-3 rounded-xl font-plex text-sm transition-all duration-300 ${
                       genderFilter === "Perempuan"
                         ? "bg-pink-500 text-white"
                         : "bg-white/50 text-pink-500 border border-pink-500/20 hover:bg-pink-500/5"
@@ -348,7 +348,7 @@ const DataKompetisi = () => {
                 <div className="flex gap-3 ml-auto mr-1">
                   <button
                     onClick={() => handleOpenRegistration(kompetisiTerpilih!)}
-                    className="bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-3 rounded-xl font-inter font-medium hover:shadow-lg transition-all duration-300 flex items-center gap-2"
+                    className="bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-3 rounded-xl font-plex font-medium hover:shadow-lg transition-all duration-300 flex items-center gap-2"
                   >
                     <UserPlus size={20} />
                     Daftar Atlet
@@ -390,14 +390,14 @@ const DataKompetisi = () => {
                                 {registration.atlitName.charAt(0)}
                               </div>
                               <div>
-                                <p className="font-inter font-semibold text-black/80">{registration.atlitName}</p>
-                                <p className="font-inter text-sm text-black/60">ID Atlet: {registration.atlitId}</p>
+                                <p className="font-plex font-semibold text-black/80">{registration.atlitName}</p>
+                                <p className="font-plex text-sm text-black/60">ID Atlet: {registration.atlitId}</p>
                               </div>
                             </div>
                           </td>
                           <td className="px-6 py-4 text-center">
                             <div className="space-y-1">
-                              <span className="block font-inter text-sm font-medium text-black/80">
+                              <span className="block font-plex text-sm font-medium text-black/80">
                                 {registration.styleType.toUpperCase()} - {registration.categoryType.toUpperCase()}
                               </span>
                               {registration.ageCategory && (
@@ -414,7 +414,7 @@ const DataKompetisi = () => {
                           </td>
                           <td className="px-6 py-4 text-center">
                             <span
-                              className={`px-3 py-1 rounded-full text-xs font-inter font-medium ${
+                              className={`px-3 py-1 rounded-full text-xs font-plex font-medium ${
                                 registration.gender === "Laki-Laki"
                                   ? "bg-blue-100 text-blue-600"
                                   : "bg-pink-100 text-pink-600"
@@ -425,13 +425,13 @@ const DataKompetisi = () => {
                           </td>
                           <td className="px-6 py-4 text-center">
                             <span
-                              className={`px-3 py-1 rounded-full text-xs font-inter font-medium capitalize ${getRegistrationStatusColor(registration.status)}`}
+                              className={`px-3 py-1 rounded-full text-xs font-plex font-medium capitalize ${getRegistrationStatusColor(registration.status)}`}
                             >
                                {registration.status === 'confirmed' && 'Terkonfirmasi'}
                             </span>
                           </td>
                           <td className="px-6 py-4 text-center">
-                            <span className="font-inter text-black/70 text-sm">
+                            <span className="font-plex text-black/70 text-sm">
                               {formatTanggal(registration.registrationDate)}
                             </span>
                           </td>
@@ -465,7 +465,7 @@ const DataKompetisi = () => {
               {filteredRegistrations.length === 0 && (
                 <div className="text-center py-12">
                   <Users className="mx-auto text-gray-400 mb-4" size={48} />
-                  <p className="font-inter text-gray-500">
+                  <p className="font-plex text-gray-500">
                     {selectedKompetisiRegistrations.length === 0 
                       ? "Belum ada atlet yang mendaftar untuk kompetisi ini"
                       : "Tidak ada peserta yang sesuai dengan kriteria pencarian"
@@ -474,7 +474,7 @@ const DataKompetisi = () => {
                   {selectedKompetisiRegistrations.length === 0 && (
                     <button
                       onClick={() => handleOpenRegistration(kompetisiTerpilih!)}
-                      className="mt-4 bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-2 rounded-lg font-inter font-medium hover:shadow-lg transition-all duration-300 flex items-center gap-2 mx-auto"
+                      className="mt-4 bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-2 rounded-lg font-plex font-medium hover:shadow-lg transition-all duration-300 flex items-center gap-2 mx-auto"
                     >
                       <UserPlus size={16} />
                       Daftar Atlet Sekarang
@@ -537,7 +537,7 @@ const DataKompetisi = () => {
                 <h1 className="font-bebas text-4xl lg:text-6xl xl:text-7xl text-black/80 tracking-wider">
                   DATA KOMPETISI
                 </h1>
-                <p className="font-inter text-black/60 text-lg mt-2">
+                <p className="font-plex text-black/60 text-lg mt-2">
                   Kelola data kompetisi dan turnamen karate
                 </p>
               </div>
@@ -584,7 +584,7 @@ const DataKompetisi = () => {
                     placeholder="Cari nama kompetisi atau lokasi..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-12 pr-4 py-3 rounded-xl border-2 border-red/20 focus:border-red outline-none bg-white/80 backdrop-blur-sm font-inter"
+                    className="w-full pl-12 pr-4 py-3 rounded-xl border-2 border-red/20 focus:border-red outline-none bg-white/80 backdrop-blur-sm font-plex"
                   />
                 </div>
               </div>
@@ -593,7 +593,7 @@ const DataKompetisi = () => {
               <div className="flex gap-2">
                 <button
                   onClick={() => setStatusFilter("all")}
-                  className={`cursor-pointer px-4 py-3 rounded-xl font-inter text-sm transition-all duration-300 ${
+                  className={`cursor-pointer px-4 py-3 rounded-xl font-plex text-sm transition-all duration-300 ${
                     statusFilter === "all"
                       ? "bg-red text-white"
                       : "bg-white/50 text-red border border-red/20 hover:bg-red/5"
@@ -603,7 +603,7 @@ const DataKompetisi = () => {
                 </button>
                 <button
                   onClick={() => setStatusFilter("Aktif")}
-                  className={`cursor-pointer px-4 py-3 rounded-xl font-inter text-sm transition-all duration-300 ${
+                  className={`cursor-pointer px-4 py-3 rounded-xl font-plex text-sm transition-all duration-300 ${
                     statusFilter === "Aktif"
                       ? "bg-green-500 text-white"
                       : "bg-white/50 text-green-500 border border-green-500/20 hover:bg-green-500/5"
@@ -613,7 +613,7 @@ const DataKompetisi = () => {
                 </button>
                 <button
                   onClick={() => setStatusFilter("Akan Datang")}
-                  className={`cursor-pointer px-4 py-3 rounded-xl font-inter text-sm transition-all duration-300 ${
+                  className={`cursor-pointer px-4 py-3 rounded-xl font-plex text-sm transition-all duration-300 ${
                     statusFilter === "Akan Datang"
                       ? "bg-blue-500 text-white"
                       : "bg-white/50 text-blue-500 border border-blue-500/20 hover:bg-blue-500/5"
@@ -623,7 +623,7 @@ const DataKompetisi = () => {
                 </button>
                 <button
                   onClick={() => setStatusFilter("Selesai")}
-                  className={`cursor-pointer px-4 py-3 rounded-xl font-inter text-sm transition-all duration-300 ${
+                  className={`cursor-pointer px-4 py-3 rounded-xl font-plex text-sm transition-all duration-300 ${
                     statusFilter === "Selesai"
                       ? "bg-gray-500 text-white"
                       : "bg-white/50 text-gray-500 border border-gray-500/20 hover:bg-gray-500/5"
@@ -680,30 +680,30 @@ const DataKompetisi = () => {
                                 {kompetisi.nama.charAt(0)}
                               </div>
                               <div>
-                                <p className="font-inter font-semibold text-black/80">{kompetisi.nama}</p>
-                                <p className="font-inter text-sm text-black/60">{kompetisi.kategori}</p>
+                                <p className="font-plex font-semibold text-black/80">{kompetisi.nama}</p>
+                                <p className="font-plex text-sm text-black/60">{kompetisi.kategori}</p>
                               </div>
                             </div>
                           </td>
                           <td className="px-6 py-4 text-center">
-                            <span className="font-inter text-black/70">{formatTanggal(kompetisi.tanggal)}</span>
+                            <span className="font-plex text-black/70">{formatTanggal(kompetisi.tanggal)}</span>
                           </td>
                           <td className="px-6 py-4 text-center">
                             <div className="flex items-center justify-center gap-1">
                               <MapPin size={16} className="text-black/50" />
-                              <span className="font-inter text-black/70">{kompetisi.lokasi}</span>
+                              <span className="font-plex text-black/70">{kompetisi.lokasi}</span>
                             </div>
                           </td>
                           <td className="px-6 py-4 text-center">
                             <span
-                              className={`px-3 py-1 rounded-full text-xs font-inter font-medium ${getStatusColor(kompetisi.status)}`}
+                              className={`px-3 py-1 rounded-full text-xs font-plex font-medium ${getStatusColor(kompetisi.status)}`}
                             >
                               {kompetisi.status}
                             </span>
                           </td>
                           <td className="px-6 py-4 text-center">
                             <div className="flex flex-col items-center">
-                              <span className="font-inter font-medium text-black/70">
+                              <span className="font-plex font-medium text-black/70">
                                 {pesertaTerdaftar}/{kompetisi.maxPeserta}
                               </span>
                               <div className="w-16 bg-gray-200 rounded-full h-2 mt-1">
@@ -715,7 +715,7 @@ const DataKompetisi = () => {
                             </div>
                           </td>
                           <td className="px-6 py-4 text-center">
-                            <span className="font-inter font-medium text-black/70 text-sm">
+                            <span className="font-plex font-medium text-black/70 text-sm">
                               {formatRupiah(kompetisi.biayaPendaftaran)}
                             </span>
                           </td>
@@ -746,8 +746,8 @@ const DataKompetisi = () => {
             {filteredKompetisi.length === 0 && (
               <div className="text-center py-12">
                 <Trophy className="mx-auto text-gray-400 mb-4" size={48} />
-                <p className="font-inter text-gray-500">Tidak ada kompetisi yang ditemukan</p>
-                <p className="font-inter text-sm text-gray-400 mt-2">Coba ubah kriteria pencarian atau filter</p>
+                <p className="font-plex text-gray-500">Tidak ada kompetisi yang ditemukan</p>
+                <p className="font-plex text-sm text-gray-400 mt-2">Coba ubah kriteria pencarian atau filter</p>
               </div>
             )}
           </div>

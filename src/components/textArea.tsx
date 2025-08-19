@@ -12,7 +12,7 @@ type TextAreaProps = {
 
 const TextArea = ({ placeholder, className, icon, value, disabled, onChange, rows = 3 }: TextAreaProps) => {
   return (
-    <div className={`flex items-start justify-start border-2 border-red rounded-md px-2 gap-2 font-inter ${className}`}>
+    <div className={`flex items-start justify-start border-2 border-red rounded-md px-2 gap-2 font-plex ${className}`}>
       {icon && <span className="pt-2">{icon}</span>}
       <textarea
         value={value}

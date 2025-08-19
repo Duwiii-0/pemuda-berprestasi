@@ -101,7 +101,7 @@ const Profile = () => {
     return (
       <div className="min-h-screen w-full bg-gradient-to-br from-white via-red/5 to-yellow/10 flex items-center justify-center">
         <div className="bg-white/60 backdrop-blur-sm rounded-3xl p-8 shadow-xl border border-white/50">
-          <p className="text-red font-inter text-lg">Data Atlit tidak ditemukan</p>
+          <p className="text-red font-plex text-lg">Data Atlit tidak ditemukan</p>
         </div>
       </div>
     );
@@ -112,7 +112,7 @@ const Profile = () => {
       <div className="overflow-y-auto bg-white/40 backdrop-blur-md border-white/30 w-full h-screen flex flex-col gap-8 pt-8 pb-12 px-8">
         <button 
           onClick={() => {navigate('/dashboard/atlit')}}
-          className="text-red hover:text-red/80 font-inter mb-4 flex items-center gap-2 transition-colors"
+          className="text-red hover:text-red/80 font-plex mb-4 flex items-center gap-2 transition-colors"
         >
           <ArrowLeft size={20} />
           Kembali ke Data Atlit
@@ -124,7 +124,7 @@ const Profile = () => {
             <h1 className="font-bebas text-4xl lg:text-6xl xl:text-7xl text-black/80 tracking-wider">
               PROFIL ATLET
             </h1>
-            <p className="font-inter text-black/60 text-lg">
+            <p className="font-plex text-black/60 text-lg">
               Detail informasi {formData.name}
             </p>
           </div>
@@ -141,20 +141,20 @@ const Profile = () => {
               <h2 className="font-bebas text-3xl text-black/80 tracking-wide">
                 {formData.name}
               </h2>
-              <p className="font-inter text-black/60">ID: {formData.id}</p>
+              <p className="font-plex text-black/60">ID: {formData.id}</p>
               <div className="flex gap-2 mt-2">
-                <span className={`px-3 py-1 rounded-full text-xs font-inter font-medium ${
+                <span className={`px-3 py-1 rounded-full text-xs font-plex font-medium ${
                   formData.gender === "Laki-Laki"
                     ? "bg-blue-100 text-blue-600"
                     : "bg-pink-100 text-pink-600"
                 }`}>
                   {formData.gender}
                 </span>
-                <span className="px-3 py-1 rounded-full text-xs font-inter font-medium bg-yellow/20 text-yellow/80">
+                <span className="px-3 py-1 rounded-full text-xs font-plex font-medium bg-yellow/20 text-yellow/80">
                   Sabuk {formData.belt || 'Tidak Ada'}
                 </span>
                 {/* Display calculated age */}
-                <span className="px-3 py-1 rounded-full text-xs font-inter font-medium bg-green-100 text-green-600">
+                <span className="px-3 py-1 rounded-full text-xs font-plex font-medium bg-green-100 text-green-600">
                   {calculateAge(formData.tglLahir)} tahun
                 </span>
               </div>
@@ -188,7 +188,7 @@ const Profile = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Nama */}
             <div className="space-y-2">
-              <label className="block font-inter font-medium text-black/70">Nama Lengkap</label>
+              <label className="block font-plex font-medium text-black/70">Nama Lengkap</label>
               <div className="relative">
               <TextInput
                 className="h-12 border-red/20 bg-white/50 backdrop-blur-sm rounded-xl focus:border-red transition-all duration-300"
@@ -204,7 +204,7 @@ const Profile = () => {
 
             {/* No HP */}
             <div className="space-y-2">
-              <label className="block font-inter font-medium text-black/70">No. Telepon</label>
+              <label className="block font-plex font-medium text-black/70">No. Telepon</label>
                 <div className="relative">
                 <TextInput
                   className="h-12 border-red/20 bg-white/50 backdrop-blur-sm rounded-xl focus:border-red transition-all duration-300"
@@ -220,7 +220,7 @@ const Profile = () => {
 
             {/* Alamat */}
             <div className="space-y-2 lg:col-span-2">
-              <label className="block font-inter font-medium text-black/70">Alamat</label>
+              <label className="block font-plex font-medium text-black/70">Alamat</label>
               <div className="relative">
               <TextInput
                 className="h-12 border-red/20 bg-white/50 backdrop-blur-sm rounded-xl focus:border-red transition-all duration-300"
@@ -236,7 +236,7 @@ const Profile = () => {
 
             {/* Provinsi */}
             <div className="space-y-2">
-              <label className="block font-inter font-medium text-black/70">Provinsi</label>
+              <label className="block font-plex font-medium text-black/70">Provinsi</label>
               <div className="relative">
               <TextInput
                 className="h-12 border-red/20 bg-white/50 backdrop-blur-sm rounded-xl focus:border-red transition-all duration-300"
@@ -252,7 +252,7 @@ const Profile = () => {
 
             {/* Gender */}
             <div className="space-y-2">
-              <label className="block font-inter font-medium text-black/70">Gender</label>
+              <label className="block font-plex font-medium text-black/70">Gender</label>
               <div className="relative">
               <Select
                 unstyled
@@ -264,14 +264,14 @@ const Profile = () => {
                 options={genderOptions}
                 classNames={{
                   control: () =>
-                    "border-2 border-red/20 bg-white/50 backdrop-blur-sm rounded-xl h-12 px-4 font-inter focus:border-red transition-all duration-300",
+                    "border-2 border-red/20 bg-white/50 backdrop-blur-sm rounded-xl h-12 px-4 font-plex focus:border-red transition-all duration-300",
                   valueContainer: () => "px-2",
-                  placeholder: () => "text-red/50 font-inter",
+                  placeholder: () => "text-red/50 font-plex",
                   menu: () => "border-2 border-red/20 bg-white/90 backdrop-blur-sm rounded-xl shadow-xl mt-2",
                   menuList: () => "max-h-40 overflow-y-auto",
                   option: ({ isFocused, isSelected }) =>
                     [
-                      "px-4 py-3 cursor-pointer font-inter transition-all duration-200",
+                      "px-4 py-3 cursor-pointer font-plex transition-all duration-200",
                       isFocused ? "bg-red/10 text-black" : "text-black",
                       isSelected ? "bg-red text-white" : "text-black"
                     ].join(" "),
@@ -283,7 +283,7 @@ const Profile = () => {
 
             {/* Sabuk */}
             <div className="space-y-2">
-              <label className="block font-inter font-medium text-black/70">Sabuk</label>
+              <label className="block font-plex font-medium text-black/70">Sabuk</label>
               <div className="relative">
               <Select
                 unstyled
@@ -295,14 +295,14 @@ const Profile = () => {
                 options={beltOptions}
                 classNames={{
                   control: () =>
-                    "border-2 border-red/20 bg-white/50 backdrop-blur-sm rounded-xl h-12 px-4 font-inter focus:border-red transition-all duration-300",
+                    "border-2 border-red/20 bg-white/50 backdrop-blur-sm rounded-xl h-12 px-4 font-plex focus:border-red transition-all duration-300",
                   valueContainer: () => "px-2",
-                  placeholder: () => "text-red/50 font-inter",
+                  placeholder: () => "text-red/50 font-plex",
                   menu: () => "border-2 border-red/20 bg-white/90 backdrop-blur-sm rounded-xl shadow-xl mt-2",
                   menuList: () => "max-h-40 overflow-y-auto",
                   option: ({ isFocused, isSelected }) =>
                     [
-                      "px-4 py-3 cursor-pointer font-inter transition-all duration-200",
+                      "px-4 py-3 cursor-pointer font-plex transition-all duration-200",
                       isFocused ? "bg-red/10 text-black" : "text-black",
                       isSelected ? "bg-red text-white" : "text-black"
                     ].join(" "),
@@ -314,7 +314,7 @@ const Profile = () => {
 
             {/* Tanggal Lahir */}
             <div className="space-y-2">
-              <label className="block font-inter font-medium text-black/70">Tanggal Lahir</label>
+              <label className="block font-plex font-medium text-black/70">Tanggal Lahir</label>
               <div className="relative">
               <TextInput
                 type="date"
@@ -329,7 +329,7 @@ const Profile = () => {
               </div>
               {/* Display calculated age */}
               {formData.tglLahir && (
-                <p className="text-green-600 text-sm font-inter">
+                <p className="text-green-600 text-sm font-plex">
                   Umur: {calculateAge(formData.tglLahir)} tahun
                 </p>
               )}
@@ -337,7 +337,7 @@ const Profile = () => {
 
             {/* Berat Badan */}
             <div className="space-y-2">
-              <label className="block font-inter font-medium text-black/70">Berat Badan (kg)</label>
+              <label className="block font-plex font-medium text-black/70">Berat Badan (kg)</label>
               <div className="relative">
               <TextInput
                 type="number"
@@ -354,7 +354,7 @@ const Profile = () => {
 
             {/* Tinggi Badan */}
             <div className="space-y-2">
-              <label className="block font-inter font-medium text-black/70">Tinggi Badan (cm)</label>
+              <label className="block font-plex font-medium text-black/70">Tinggi Badan (cm)</label>
               <div className="relative">
               <TextInput
                 type="number"
@@ -371,7 +371,7 @@ const Profile = () => {
 
             {/* NIK */}
             <div className="space-y-2">
-              <label className="block font-inter font-medium text-black/70">NIK</label>
+              <label className="block font-plex font-medium text-black/70">NIK</label>
               <div className="relative">
               <TextInput
                 className="h-12 border-red/20 bg-white/50 backdrop-blur-sm rounded-xl focus:border-red transition-all duration-300"
@@ -400,7 +400,7 @@ const Profile = () => {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <label className="block font-inter font-medium text-black/70">Akte Kelahiran</label>
+              <label className="block font-plex font-medium text-black/70">Akte Kelahiran</label>
               <div className="relative">
               <FileInput 
                 accept="image/*" 
@@ -412,7 +412,7 @@ const Profile = () => {
             </div>
             
             <div className="space-y-2">
-              <label className="block font-inter font-medium text-black/70">Pas Foto 3x4</label>
+              <label className="block font-plex font-medium text-black/70">Pas Foto 3x4</label>
               <div className="relative">
               <FileInput 
                 accept="image/*" 
@@ -424,7 +424,7 @@ const Profile = () => {
             </div>
             
             <div className="space-y-2">
-              <label className="block font-inter font-medium text-black/70">Sertifikasi Belt</label>
+              <label className="block font-plex font-medium text-black/70">Sertifikasi Belt</label>
               <div className="relative">
               <FileInput 
                 accept="image/*" 
@@ -436,7 +436,7 @@ const Profile = () => {
             </div>
             
             <div className="space-y-2">
-              <label className="block font-inter font-medium text-black/70">KTP (Wajib untuk 17+)</label>
+              <label className="block font-plex font-medium text-black/70">KTP (Wajib untuk 17+)</label>
               <div className="relative">
               <FileInput 
                 accept="image/*" 

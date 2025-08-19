@@ -43,7 +43,7 @@ export const TextInput: React.FC<TextInputProps> = ({ placeholder, className, ic
           disabled={disabled}
           placeholder={placeholder}
           type="text"
-          className="w-full outline-none bg-transparent placeholder-red/30 text-black/80 font-inter"
+          className="w-full outline-none bg-transparent placeholder-red/30 text-black/80 font-plex"
         />
       </div>
       {disabled && <div className="absolute inset-0 bg-gray-100/50 rounded-xl" />}
@@ -54,7 +54,7 @@ export const TextInput: React.FC<TextInputProps> = ({ placeholder, className, ic
 export const GeneralButton: React.FC<GeneralButtonProps> = ({ label, className, onClick }) => (
   <button
     onClick={onClick}
-    className={`font-inter font-medium px-6 py-3 rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-lg active:scale-95 ${className}`}
+    className={`font-plex font-medium px-6 py-3 rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-lg active:scale-95 ${className}`}
   >
     {label}
   </button>
@@ -67,7 +67,7 @@ const StatsCard: React.FC<StatsCardProps> = ({ icon: Icon, title, value, color }
         <Icon size={24} className="text-white" />
       </div>
       <div>
-        <h3 className="font-inter font-medium text-black/60 text-sm">{title}</h3>
+        <h3 className="font-plex font-medium text-black/60 text-sm">{title}</h3>
         <p className="font-bebas text-2xl text-black/80">{value}</p>
       </div>
     </div>
@@ -166,7 +166,7 @@ const Dojang = () => {
                 <h1 className="font-bebas text-4xl lg:text-6xl xl:text-7xl text-black/80 tracking-wider">
                   DATA DOJANG
                 </h1>
-                <p className="font-inter text-black/60 text-lg mt-2">
+                <p className="font-plex text-black/60 text-lg mt-2">
                   Kelola informasi dojang dan lokasi pelatihan
                 </p>
               </div>
@@ -241,7 +241,7 @@ const Dojang = () => {
             {userDojang && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <label className="block font-inter font-medium text-black/70 text-sm">
+                <label className="block font-plex font-medium text-black/70 text-sm">
                   Nama Dojang
                 </label>
                 <TextInput
@@ -255,7 +255,7 @@ const Dojang = () => {
               </div>
 
               <div className="space-y-2">
-                <label className="block font-inter font-medium text-black/70 text-sm">
+                <label className="block font-plex font-medium text-black/70 text-sm">
                   Nomor Telepon
                 </label>
                 <TextInput
@@ -269,7 +269,7 @@ const Dojang = () => {
               </div>
 
               <div className="space-y-2">
-                <label className="block font-inter font-medium text-black/70 text-sm">
+                <label className="block font-plex font-medium text-black/70 text-sm">
                   Email Dojang
                 </label>
                 <TextInput
@@ -283,7 +283,7 @@ const Dojang = () => {
               </div>
 
               <div className="space-y-2">
-                <label className="block font-inter font-medium text-black/70 text-sm">
+                <label className="block font-plex font-medium text-black/70 text-sm">
                   Negara
                 </label>
                 <TextInput
@@ -297,7 +297,7 @@ const Dojang = () => {
               </div>
 
               <div className="space-y-2">
-                <label className="block font-inter font-medium text-black/70 text-sm">
+                <label className="block font-plex font-medium text-black/70 text-sm">
                   Provinsi
                 </label>
                 <TextInput
@@ -311,7 +311,7 @@ const Dojang = () => {
               </div>
 
               <div className="space-y-2">
-                <label className="block font-inter font-medium text-black/70 text-sm">
+                <label className="block font-plex font-medium text-black/70 text-sm">
                   Kabupaten/Kota
                 </label>
                 <TextInput
@@ -325,7 +325,7 @@ const Dojang = () => {
               </div>
 
               <div className="space-y-2">
-                <label className="block font-inter font-medium text-black/70 text-sm">
+                <label className="block font-plex font-medium text-black/70 text-sm">
                   Kecamatan
                 </label>
                 <TextInput
@@ -339,7 +339,7 @@ const Dojang = () => {
               </div>
 
               <div className="space-y-2">
-                <label className="block font-inter font-medium text-black/70 text-sm">
+                <label className="block font-plex font-medium text-black/70 text-sm">
                   Kelurahan
                 </label>
                 <TextInput
@@ -353,7 +353,7 @@ const Dojang = () => {
               </div>
 
               <div className="lg:col-span-2 space-y-2">
-                <label className="block font-inter font-medium text-black/70 text-sm">
+                <label className="block font-plex font-medium text-black/70 text-sm">
                   Alamat Lengkap
                 </label>
                 <TextInput
@@ -371,7 +371,7 @@ const Dojang = () => {
             {/* Save reminder for mobile */}
             {isEditing && (
               <div className="mt-6 p-4 bg-yellow/10 border border-yellow/30 rounded-xl">
-                <p className="text-sm font-inter text-yellow">
+                <p className="text-sm font-plex text-yellow">
                   💡 Jangan lupa untuk menyimpan perubahan setelah selesai mengedit
                 </p>
               </div>

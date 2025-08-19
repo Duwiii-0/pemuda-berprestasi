@@ -39,7 +39,7 @@ const TextInput: React.FC<TextInputProps> = ({
       type={type}
       disabled={disabled}
       {...props}
-      className={`w-full ${icon ? 'pl-12' : 'pl-4'} pr-4 py-3 border-2 rounded-xl font-inter transition-all duration-300 focus:outline-none ${
+      className={`w-full ${icon ? 'pl-12' : 'pl-4'} pr-4 py-3 border-2 rounded-xl font-plex transition-all duration-300 focus:outline-none ${
         disabled ? 'bg-gray-100 cursor-not-allowed' : 'hover:border-red/40'
       } ${className}`}
     />
@@ -81,10 +81,10 @@ const FileInput: React.FC<FileInputProps> = ({
       <div className={`border-2 border-dashed rounded-xl p-4 text-center transition-all duration-300 ${
         disabled ? 'bg-gray-100 cursor-not-allowed' : 'cursor-pointer hover:bg-gray-50 hover:border-red/60'
       }`}>
-        <p className="font-inter text-gray-500">
+        <p className="font-plex text-gray-500">
           {fileName || 'Klik untuk upload file'}
         </p>
-        <p className="font-inter text-sm text-gray-400 mt-1">Format: JPG, PNG, PDF</p>
+        <p className="font-plex text-sm text-gray-400 mt-1">Format: JPG, PNG, PDF</p>
       </div>
     </div>
   );
@@ -120,7 +120,7 @@ const Select: React.FC<SelectProps> = ({
         type="button"
         disabled={disabled}
         onClick={() => !disabled && setIsOpen(!isOpen)}
-        className={`w-full px-4 py-3 border-2 rounded-xl font-inter text-left flex justify-between items-center transition-all duration-300 focus:outline-none ${
+        className={`w-full px-4 py-3 border-2 rounded-xl font-plex text-left flex justify-between items-center transition-all duration-300 focus:outline-none ${
           disabled ? 'bg-gray-100 cursor-not-allowed' : 'hover:border-red/40'
         } ${className}`}
       >
@@ -144,7 +144,7 @@ const Select: React.FC<SelectProps> = ({
                   if (onChange) onChange(option);
                   setIsOpen(false);
                 }}
-                className="w-full px-4 py-3 text-left hover:bg-red/10 transition-colors font-inter"
+                className="w-full px-4 py-3 text-left hover:bg-red/10 transition-colors font-plex"
               >
                 {option.label}
               </button>
@@ -415,7 +415,7 @@ const TambahAtlit: React.FC = () => {
             <div className="space-y-2 flex-1">
               <button 
                 onClick={handleBack}
-                className="text-red hover:text-red/80 font-inter mb-4 flex items-center gap-2 transition-colors"
+                className="text-red hover:text-red/80 font-plex mb-4 flex items-center gap-2 transition-colors"
               >
                 <ArrowLeft size={20} />
                 Kembali ke Data Atlit
@@ -423,7 +423,7 @@ const TambahAtlit: React.FC = () => {
               <h1 className="font-bebas text-4xl lg:text-6xl xl:text-7xl text-black/80 tracking-wider">
                 TAMBAH ATLIT
               </h1>
-              <p className="font-inter text-black/60 text-lg">
+              <p className="font-plex text-black/60 text-lg">
                 Daftarkan atlet baru ke sistem
               </p>
             </div>
@@ -445,7 +445,7 @@ const TambahAtlit: React.FC = () => {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Nama */}
                 <div className="space-y-2">
-                  <label className="block font-inter font-medium text-black/70">
+                  <label className="block font-plex font-medium text-black/70">
                     Nama Lengkap <span className="text-red">*</span>
                   </label>
                   <TextInput
@@ -458,13 +458,13 @@ const TambahAtlit: React.FC = () => {
                     icon={<User className="text-red" size={20} />}
                   />
                   {errors.name && (
-                    <p className="text-red-500 text-sm font-inter">{errors.name}</p>
+                    <p className="text-red-500 text-sm font-plex">{errors.name}</p>
                   )}
                 </div>
 
                 {/* No HP */}
                 <div className="space-y-2">
-                  <label className="block font-inter font-medium text-black/70">
+                  <label className="block font-plex font-medium text-black/70">
                     No. Telepon <span className="text-red">*</span>
                   </label>
                   <TextInput
@@ -477,13 +477,13 @@ const TambahAtlit: React.FC = () => {
                     icon={<Phone className="text-red" size={20} />}
                   />
                   {errors.phone && (
-                    <p className="text-red-500 text-sm font-inter">{errors.phone}</p>
+                    <p className="text-red-500 text-sm font-plex">{errors.phone}</p>
                   )}
                 </div>
 
                 {/* Alamat */}
                 <div className="space-y-2 lg:col-span-2">
-                  <label className="block font-inter font-medium text-black/70">Alamat</label>
+                  <label className="block font-plex font-medium text-black/70">Alamat</label>
                   <TextInput
                     className="h-12 border-red/20 bg-white/50 backdrop-blur-sm rounded-xl focus:border-red transition-all duration-300"
                     value={formData.alamat}
@@ -495,7 +495,7 @@ const TambahAtlit: React.FC = () => {
 
                 {/* Provinsi */}
                 <div className="space-y-2">
-                  <label className="block font-inter font-medium text-black/70">
+                  <label className="block font-plex font-medium text-black/70">
                     Provinsi <span className="text-red">*</span>
                   </label>
                   <Select
@@ -508,13 +508,13 @@ const TambahAtlit: React.FC = () => {
                     }`}
                   />
                   {errors.provinsi && (
-                    <p className="text-red-500 text-sm font-inter">{errors.provinsi}</p>
+                    <p className="text-red-500 text-sm font-plex">{errors.provinsi}</p>
                   )}
                 </div>
 
                 {/* Gender */}
                 <div className="space-y-2">
-                  <label className="block font-inter font-medium text-black/70">
+                  <label className="block font-plex font-medium text-black/70">
                     Gender <span className="text-red">*</span>
                   </label>
                   <Select
@@ -527,13 +527,13 @@ const TambahAtlit: React.FC = () => {
                     }`}
                   />
                   {errors.gender && (
-                    <p className="text-red-500 text-sm font-inter">{errors.gender}</p>
+                    <p className="text-red-500 text-sm font-plex">{errors.gender}</p>
                   )}
                 </div>
 
                 {/* Tanggal Lahir */}
                 <div className="space-y-2">
-                  <label className="block font-inter font-medium text-black/70">
+                  <label className="block font-plex font-medium text-black/70">
                     Tanggal Lahir <span className="text-red">*</span>
                   </label>
                   <TextInput
@@ -546,11 +546,11 @@ const TambahAtlit: React.FC = () => {
                     icon={<CalendarFold className="text-red" size={20} />}
                   />
                   {errors.tglLahir && (
-                    <p className="text-red-500 text-sm font-inter">{errors.tglLahir}</p>
+                    <p className="text-red-500 text-sm font-plex">{errors.tglLahir}</p>
                   )}
                   {/* Display calculated age */}
                   {formData.tglLahir && !errors.tglLahir && (
-                    <p className="text-green-600 text-sm font-inter">
+                    <p className="text-green-600 text-sm font-plex">
                       Umur: {calculateAge(formData.tglLahir)} tahun
                     </p>
                   )}
@@ -558,7 +558,7 @@ const TambahAtlit: React.FC = () => {
 
                 {/* Sabuk */}
                 <div className="space-y-2">
-                  <label className="block font-inter font-medium text-black/70">
+                  <label className="block font-plex font-medium text-black/70">
                     Tingkat Sabuk <span className="text-red">*</span>
                   </label>
                   <Select
@@ -571,7 +571,7 @@ const TambahAtlit: React.FC = () => {
                     }`}
                   />
                   {errors.belt && (
-                    <p className="text-red-500 text-sm font-inter">{errors.belt}</p>
+                    <p className="text-red-500 text-sm font-plex">{errors.belt}</p>
                   )}
                 </div>
               </div>
@@ -591,7 +591,7 @@ const TambahAtlit: React.FC = () => {
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Berat Badan */}
                 <div className="space-y-2">
-                  <label className="block font-inter font-medium text-black/70">Berat Badan (kg)</label>
+                  <label className="block font-plex font-medium text-black/70">Berat Badan (kg)</label>
                   <TextInput
                     type="number"   
                     min="10"
@@ -606,13 +606,13 @@ const TambahAtlit: React.FC = () => {
                     icon={<Scale className="text-red" size={20} />}
                   />
                   {errors.bb && (
-                    <p className="text-red-500 text-sm font-inter">{errors.bb}</p>
+                    <p className="text-red-500 text-sm font-plex">{errors.bb}</p>
                   )}
                 </div>
 
                 {/* Tinggi Badan */}
                 <div className="space-y-2">
-                  <label className="block font-inter font-medium text-black/70">Tinggi Badan (cm)</label>
+                  <label className="block font-plex font-medium text-black/70">Tinggi Badan (cm)</label>
                   <TextInput
                     type="number"
                     min="50"
@@ -626,13 +626,13 @@ const TambahAtlit: React.FC = () => {
                     icon={<Ruler className="text-red" size={20} />}
                   />
                   {errors.tb && (
-                    <p className="text-red-500 text-sm font-inter">{errors.tb}</p>
+                    <p className="text-red-500 text-sm font-plex">{errors.tb}</p>
                   )}
                 </div>
 
                 {/* NIK */}
                 <div className="space-y-2">
-                  <label className="block font-inter font-medium text-black/70">NIK</label>
+                  <label className="block font-plex font-medium text-black/70">NIK</label>
                   <TextInput
                     maxLength={16}
                     className={`h-12 bg-white/50 backdrop-blur-sm rounded-xl focus:border-red transition-all duration-300 ${
@@ -644,7 +644,7 @@ const TambahAtlit: React.FC = () => {
                     icon={<IdCard className="text-red" size={20} />}
                   />
                   {errors.nik && (
-                    <p className="text-red-500 text-sm font-inter">{errors.nik}</p>
+                    <p className="text-red-500 text-sm font-plex">{errors.nik}</p>
                   )}
                 </div>
               </div>
@@ -663,7 +663,7 @@ const TambahAtlit: React.FC = () => {
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label className="block font-inter font-medium text-black/70">Akte Kelahiran</label>
+                  <label className="block font-plex font-medium text-black/70">Akte Kelahiran</label>
                   <FileInput 
                     accept="image/*,application/pdf" 
                     className="border-red/20 bg-white/50 backdrop-blur-sm rounded-xl hover:border-red transition-all duration-300"
@@ -672,7 +672,7 @@ const TambahAtlit: React.FC = () => {
                 </div>
                 
                 <div className="space-y-2">
-                  <label className="block font-inter font-medium text-black/70">Pas Foto 3x4</label>
+                  <label className="block font-plex font-medium text-black/70">Pas Foto 3x4</label>
                   <FileInput 
                     accept="image/*" 
                     className="border-red/20 bg-white/50 backdrop-blur-sm rounded-xl hover:border-red transition-all duration-300"
@@ -681,7 +681,7 @@ const TambahAtlit: React.FC = () => {
                 </div>
                 
                 <div className="space-y-2">
-                  <label className="block font-inter font-medium text-black/70">Sertifikasi Belt</label>
+                  <label className="block font-plex font-medium text-black/70">Sertifikasi Belt</label>
                   <FileInput 
                     accept="image/*,application/pdf" 
                     className="border-red/20 bg-white/50 backdrop-blur-sm rounded-xl hover:border-red transition-all duration-300"
@@ -690,7 +690,7 @@ const TambahAtlit: React.FC = () => {
                 </div>
                 
                 <div className="space-y-2">
-                  <label className="block font-inter font-medium text-black/70">KTP (Wajib untuk 17+)</label>
+                  <label className="block font-plex font-medium text-black/70">KTP (Wajib untuk 17+)</label>
                   <FileInput 
                     accept="image/*,application/pdf" 
                     className="border-red/20 bg-white/50 backdrop-blur-sm rounded-xl hover:border-red transition-all duration-300"
@@ -706,7 +706,7 @@ const TambahAtlit: React.FC = () => {
                 <button 
                   type="button"
                   onClick={handleBack}
-                  className="cursor-pointer px-6 py-3 rounded-xl bg-gray-500 text-white hover:bg-gray-600 transition-all duration-300 shadow-lg font-inter disabled:opacity-50"
+                  className="cursor-pointer px-6 py-3 rounded-xl bg-gray-500 text-white hover:bg-gray-600 transition-all duration-300 shadow-lg font-plex disabled:opacity-50"
                   disabled={isSubmitting}
                 >
                   Batal
@@ -714,7 +714,7 @@ const TambahAtlit: React.FC = () => {
                 <button 
                   type="submit"
                   disabled={isSubmitting}
-                  className="cursor-pointer flex items-center justify-center gap-2 px-8 py-3 rounded-xl bg-red text-white hover:bg-red/90 transition-all duration-300 shadow-lg font-inter disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="cursor-pointer flex items-center justify-center gap-2 px-8 py-3 rounded-xl bg-red text-white hover:bg-red/90 transition-all duration-300 shadow-lg font-plex disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isSubmitting ? (
                     <>

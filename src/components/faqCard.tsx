@@ -39,7 +39,7 @@ const FaqCard = ({ question, answer }: FaqCardProps) => {
           isOpen ? "max-h-40 mt-4" : "max-h-0"
         }`}
       >
-        <div className="text-black font-inter text-sm md:text-lg">
+        <div className="text-black font-plex text-sm md:text-lg">
           {answer}
         </div>
       </div>

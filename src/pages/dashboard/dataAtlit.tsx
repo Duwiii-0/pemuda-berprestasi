@@ -19,7 +19,7 @@ const StatsCard: React.FC<StatsCardProps> = ({ icon: Icon, title, value, color }
           <Icon size={24} className="text-white" />
         </div>
         <div>
-          <h3 className="font-inter font-medium text-black/60 text-sm">{title}</h3>
+          <h3 className="font-plex font-medium text-black/60 text-sm">{title}</h3>
           <p className="font-bebas text-2xl text-black/80">{value}</p>
         </div>
       </div>
@@ -84,7 +84,7 @@ const DataAtlit = () => {
                 <h1 className="font-bebas text-4xl lg:text-6xl xl:text-7xl text-black/80 tracking-wider">
                   DATA ATLIT
                 </h1>
-                <p className="font-inter text-black/60 text-lg mt-2">
+                <p className="font-plex text-black/60 text-lg mt-2">
                   Kelola data dan informasi atlet terdaftar
                 </p>
               </div>
@@ -132,7 +132,7 @@ const DataAtlit = () => {
                     placeholder="Cari nama atlet atau provinsi..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-12 pr-4 py-3 rounded-xl border-2 border-red/20 focus:border-red outline-none bg-white/80 backdrop-blur-sm font-inter"
+                    className="w-full pl-12 pr-4 py-3 rounded-xl border-2 border-red/20 focus:border-red outline-none bg-white/80 backdrop-blur-sm font-plex"
                   />
                 </div>
               </div>
@@ -141,7 +141,7 @@ const DataAtlit = () => {
               <div className="flex gap-2">
                 <button
                   onClick={() => setGenderFilter("all")}
-                  className={`cursor-pointer px-4 py-3 rounded-xl font-inter text-sm transition-all duration-300 ${
+                  className={`cursor-pointer px-4 py-3 rounded-xl font-plex text-sm transition-all duration-300 ${
                     genderFilter === "all"
                       ? "bg-red text-white"
                       : "bg-white/50 text-red border border-red/20 hover:bg-red/5"
@@ -151,7 +151,7 @@ const DataAtlit = () => {
                 </button>
                 <button
                   onClick={() => setGenderFilter("Laki-Laki")}
-                  className={`cursor-pointer px-4 py-3 rounded-xl font-inter text-sm transition-all duration-300 ${
+                  className={`cursor-pointer px-4 py-3 rounded-xl font-plex text-sm transition-all duration-300 ${
                     genderFilter === "Laki-Laki"
                       ? "bg-blue-500 text-white"
                       : "bg-white/50 text-blue-500 border border-blue-500/20 hover:bg-blue-500/5"
@@ -161,7 +161,7 @@ const DataAtlit = () => {
                 </button>
                 <button
                   onClick={() => setGenderFilter("Perempuan")}
-                  className={`cursor-pointer px-4 py-3 rounded-xl font-inter text-sm transition-all duration-300 ${
+                  className={`cursor-pointer px-4 py-3 rounded-xl font-plex text-sm transition-all duration-300 ${
                     genderFilter === "Perempuan"
                       ? "bg-pink-500 text-white"
                       : "bg-white/50 text-pink-500 border border-pink-500/20 hover:bg-pink-500/5"
@@ -188,7 +188,7 @@ const DataAtlit = () => {
               <div className="flex gap-3 pr-12">
                 <button 
                   onClick={() => navigate('/dashboard/atlit/add')}
-                  className="font-inter font-medium px-6 py-3 rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-lg active:scale-95 flex justify-center items-center cursor-pointer text-white bg-gradient-to-r from-red to-red/80 hover:from-red/90 hover:to-red/70 border-0 shadow-lg gap-2"
+                  className="font-plex font-medium px-6 py-3 rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-lg active:scale-95 flex justify-center items-center cursor-pointer text-white bg-gradient-to-r from-red to-red/80 hover:from-red/90 hover:to-red/70 border-0 shadow-lg gap-2"
                 >
                   <UserPlus size={20} />
                   Tambah Atlit
@@ -225,17 +225,17 @@ const DataAtlit = () => {
                               {atlit.name.charAt(0)}
                             </div>
                             <div>
-                              <p className="font-inter font-semibold text-black/80">{atlit.name}</p>
-                              <p className="font-inter text-sm text-black/60">ID: {atlit.id}</p>
+                              <p className="font-plex font-semibold text-black/80">{atlit.name}</p>
+                              <p className="font-plex text-sm text-black/60">ID: {atlit.id}</p>
                             </div>
                           </div>
                         </td>
                         <td className="px-6 py-4 text-center">
-                          <span className="font-inter text-black/70">{atlit.provinsi}</span>
+                          <span className="font-plex text-black/70">{atlit.provinsi}</span>
                         </td>
                         <td className="px-6 py-4 text-center">
                           <span
-                            className={`px-3 py-1 rounded-full text-xs font-inter font-medium ${
+                            className={`px-3 py-1 rounded-full text-xs font-plex font-medium ${
                               atlit.gender === "Laki-Laki"
                                 ? "bg-blue-100 text-blue-600"
                                 : "bg-pink-100 text-pink-600"
@@ -245,7 +245,7 @@ const DataAtlit = () => {
                           </span>
                         </td>
                         <td className="px-6 py-4 text-center">
-                          <span className="font-inter font-medium text-black/70">{atlit.umur} Tahun</span>
+                          <span className="font-plex font-medium text-black/70">{atlit.umur} Tahun</span>
                         </td>
                         <td className="px-6 py-4 text-center">
                           <div className="flex justify-center gap-2">
@@ -280,8 +280,8 @@ const DataAtlit = () => {
             {filteredAtlits.length === 0 && (
               <div className="text-center py-12">
                 <Users className="mx-auto text-gray-400 mb-4" size={48} />
-                <p className="font-inter text-gray-500">Tidak ada atlet yang ditemukan</p>
-                <p className="font-inter text-sm text-gray-400 mt-2">Coba ubah kriteria pencarian atau filter</p>
+                <p className="font-plex text-gray-500">Tidak ada atlet yang ditemukan</p>
+                <p className="font-plex text-sm text-gray-400 mt-2">Coba ubah kriteria pencarian atau filter</p>
               </div>
             )}
           </div>

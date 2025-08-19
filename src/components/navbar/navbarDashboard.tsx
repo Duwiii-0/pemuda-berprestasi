@@ -36,7 +36,7 @@ const NavbarDashboard: React.FC<NavbarProps> = ({ mobile, onClose }) => {
       <div className="p-6">
         <button 
           onClick={() => navigate('/')}
-          className="cursor-pointer text-red hover:text-red/80 font-inter mb-4 flex items-center gap-2 transition-colors"
+          className="cursor-pointer text-red hover:text-red/80 font-plex mb-4 flex items-center gap-2 transition-colors"
         >
           <ArrowLeft size={20} />
         </button>        
@@ -47,7 +47,7 @@ const NavbarDashboard: React.FC<NavbarProps> = ({ mobile, onClose }) => {
             <button 
               key={item.path}
               onClick={() => handleNavigation(item.path)}
-              className={` cursor-pointer w-full text-left block p-3 rounded-lg font-inter transition-all duration-300 ${
+              className={` cursor-pointer w-full text-left block p-3 rounded-lg font-plex transition-all duration-300 ${
                 isActive(item.path)
                   ? 'bg-red text-white'
                   : 'hover:bg-red/10 text-red border border-red/20'
@@ -61,7 +61,7 @@ const NavbarDashboard: React.FC<NavbarProps> = ({ mobile, onClose }) => {
         <div className="absolute bottom-6 left-6 right-6">
           <button 
             onClick={() => handleNavigation('/login')}
-            className="cursor-pointer w-full p-3 rounded-lg border border-red/20 text-red hover:bg-red-700 hover:text-white font-inter transition-all duration-300"
+            className="cursor-pointer w-full p-3 rounded-lg border border-red/20 text-red hover:bg-red-700 hover:text-white font-plex transition-all duration-300"
           >
             Logout
           </button>

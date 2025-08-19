@@ -37,12 +37,12 @@ const AlertModal: React.FC<AlertModalProps> = ({
                 <div className="mt-6 flex justify-center gap-4">
                     <button
                         onClick={onClose}
-                        className="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400 transition cursor-pointer font-inter">
+                        className="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400 transition cursor-pointer font-plex">
                     Cancel
                     </button>
                     <button
                         onClick={onConfirm}
-                        className="px-8 py-2 bg-red text-white rounded-md hover:bg-red-700 transition cursor-pointer font-inter">
+                        className="px-8 py-2 bg-red text-white rounded-md hover:bg-red-700 transition cursor-pointer font-plex">
                     Ok
                     </button>
                 </div>

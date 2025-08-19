@@ -13,7 +13,7 @@ const FAQ = () => {
                     <div className="text-center md:text-left font-bebas leading-none text-black text-4xl md:text-7xl">
                       General FAQ'S
                     </div>
-                    <div className="text-center md:text-left font-inter leading-none text-black text-md md:text-md lg:text-xl pb-6 md:pb-0">
+                    <div className="text-center md:text-left font-plex leading-none text-black text-md md:text-md lg:text-xl pb-6 md:pb-0">
                       Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. 
                     </div>
                   </div>
@@ -37,7 +37,7 @@ const FAQ = () => {
                     <div className="text-center md:text-left font-bebas leading-none text-black text-4xl md:text-7xl">
                       General FAQ'S
                     </div>
-                    <div className="text-center md:text-left font-inter leading-none text-black text-md md:text-md lg:text-xl pb-6 md:pb-0">
+                    <div className="text-center md:text-left font-plex leading-none text-black text-md md:text-md lg:text-xl pb-6 md:pb-0">
                       Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. 
                     </div>
                   </div>
@@ -63,7 +63,7 @@ const FAQ = () => {
                     <div className="text-center md:text-left font-bebas leading-none text-black text-4xl md:text-7xl">
                       General FAQ'S
                     </div>
-                    <div className="text-center md:text-left font-inter leading-none text-black text-md md:text-md lg:text-xl pb-6 md:pb-0">
+                    <div className="text-center md:text-left font-plex leading-none text-black text-md md:text-md lg:text-xl pb-6 md:pb-0">
                       Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. 
                     </div>
                   </div>

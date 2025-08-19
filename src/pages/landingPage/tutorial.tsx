@@ -141,7 +141,7 @@ const TutorialPage = () => {
               <div className="bg-gradient-to-r from-red to-red/80 backdrop-blur-sm rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6 shadow-2xl hover:scale-105 transition-transform cursor-pointer">
                 <Play size={40} className="text-white ml-1" />
               </div>
-              <p className="text-white font-inter font-semibold text-lg mb-2">Klik untuk memutar video tutorial</p>
+              <p className="text-white font-plex font-semibold text-lg mb-2">Klik untuk memutar video tutorial</p>
             </div>
           </div>
 
@@ -151,7 +151,7 @@ const TutorialPage = () => {
                 <BookOpen size={24} />
                 Deskripsi Tutorial
               </h4>
-              <p className="text-gray-700 font-inter mb-6 leading-relaxed">{tutorial.description}</p>
+              <p className="text-gray-700 font-plex mb-6 leading-relaxed">{tutorial.description}</p>
               <div className="flex flex-wrap gap-3 text-sm">
                 <span className="flex items-center gap-2 bg-white/70 backdrop-blur-sm px-4 py-2 rounded-full text-gray-600 border border-gray-200">
                   <Clock size={16} />
@@ -171,7 +171,7 @@ const TutorialPage = () => {
                     <span className="bg-gradient-to-r from-red to-red/80 text-white rounded-xl w-8 h-8 flex items-center justify-center text-sm font-bold shrink-0 shadow-lg">
                       {index + 1}
                     </span>
-                    <span className="text-gray-700 font-inter leading-relaxed">{step}</span>
+                    <span className="text-gray-700 font-plex leading-relaxed">{step}</span>
                   </li>
                 ))}
               </ol>
@@ -239,14 +239,14 @@ const TutorialPage = () => {
                         <div className="bg-gradient-to-r from-red to-red/90 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform duration-300 shadow-2xl">
                           <Play size={24} className="text-white ml-1" />
                         </div>
-                        <p className="text-gray-700 font-inter font-semibold text-sm">Tonton Tutorial</p>
+                        <p className="text-gray-700 font-plex font-semibold text-sm">Tonton Tutorial</p>
                       </div>
                     </div>
                     <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-black/10 group-hover:from-red/10 transition-colors duration-500"></div>
                   </div>
                   
                   {/* Badges */}
-                  <div className="absolute top-4 left-4 bg-gradient-to-r from-yellow to-yellow/90 text-black px-3 py-1 rounded-full text-xs font-inter font-bold shadow-lg">
+                  <div className="absolute top-4 left-4 bg-gradient-to-r from-yellow to-yellow/90 text-black px-3 py-1 rounded-full text-xs font-plex font-bold shadow-lg">
                     #{index + 1}
                   </div>
                   <div className="absolute top-4 right-4 bg-black/70 backdrop-blur-sm text-white px-3 py-1 rounded-full text-xs font-semibold">
@@ -257,10 +257,10 @@ const TutorialPage = () => {
                 {/* Content */}
                 <div className="p-6">
                   <div className="flex items-center justify-between mb-4">
-                    <span className="bg-gradient-to-r from-red/10 to-red/20 text-red px-3 py-1 rounded-full text-sm font-inter font-semibold">
+                    <span className="bg-gradient-to-r from-red/10 to-red/20 text-red px-3 py-1 rounded-full text-sm font-plex font-semibold">
                       {tutorial.difficulty}
                     </span>
-                    <span className="text-gray-500 text-sm font-inter capitalize">
+                    <span className="text-gray-500 text-sm font-plex capitalize">
                       {tutorial.category}
                     </span>
                   </div>
@@ -269,7 +269,7 @@ const TutorialPage = () => {
                     {tutorial.title}
                   </h3>
                   
-                  <p className="text-gray-600 font-inter leading-relaxed mb-4 line-clamp-2">
+                  <p className="text-gray-600 font-plex leading-relaxed mb-4 line-clamp-2">
                     {tutorial.description}
                   </p>
 
@@ -281,7 +281,7 @@ const TutorialPage = () => {
                     
                     <button 
                       onClick={() => setActiveVideo(tutorial)}
-                      className="bg-gradient-to-r from-red to-red/90 hover:from-yellow hover:to-yellow/90 text-white hover:text-black transition-all duration-300 px-4 py-2 rounded-xl font-inter font-semibold flex items-center gap-2 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                      className="bg-gradient-to-r from-red to-red/90 hover:from-yellow hover:to-yellow/90 text-white hover:text-black transition-all duration-300 px-4 py-2 rounded-xl font-plex font-semibold flex items-center gap-2 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
                     >
                       <Play size={16} />
                       Tonton

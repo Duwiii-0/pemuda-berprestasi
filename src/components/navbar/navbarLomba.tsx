@@ -22,13 +22,13 @@ const NavbarLomba = () => {
 
       {/* Menu Desktop */}
       <div className="hidden md:flex md:gap-10  xl:gap-20 items-center">
-        <Link to="/lomba/home" className="text-lg text-white font-inter">
-          Beranda
+        <Link to="/lomba/home" className="text-md text-white font-plex">
+          BERANDA
         </Link>
-        <Link to="/lomba/timeline" className="text-lg text-white font-inter">
-          Timeline
+        <Link to="/lomba/timeline" className="text-md text-white font-plex">
+          TIMELINE
         </Link>
-        <Link to="/lomba/faq" className="text-lg text-white font-inter">
+        <Link to="/lomba/faq" className="text-md text-white font-plex">
           FAQ
         </Link>
       </div>
@@ -40,20 +40,20 @@ const NavbarLomba = () => {
             type="navbar"
             to="/register"
             label="Register"
-            className="h-12 text-lg border-2 border-white text-white font-inter"
+            className="h-12 text-lg border-2 border-white text-white font-plex"
           />
           <GeneralButton
             type="navbar"
             to="/login"
             label="Login"
-            className="h-12 text-lg border-2 bg-white border-white text-red font-inter"
+            className="h-12 text-lg border-2 bg-white border-white text-red font-plex"
           />
         </div>
       ) : (
         <div className="hidden md:block relative">
           <button
             onClick={() => setShowDropdown((prev) => !prev)}
-            className="h-12 px-6 text-lg border-2 border-white text-white font-inter rounded-lg"
+            className="h-12 px-6 text-lg border-2 border-white text-white font-plex rounded-lg"
           >
             <span className="flex gap-2 items-center justify-center">
               <span className="max-w-32 lg:max-w-42 xl:max-w-full truncate">

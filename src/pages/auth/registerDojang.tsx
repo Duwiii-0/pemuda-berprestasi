@@ -42,7 +42,7 @@ const RegisterDojang = () => {
       className="h-screen w-full flex items-center justify-center bg-cover bg-center"
       style={{ backgroundImage: "url('src/assets/photos/login.jpg')" }}
     >
-      <div className="px-10 sm:px-25 bg-gradient-to-b from-white/90 to-white/80 h-screen md:h-[80vh] w-full md:w-[72vw] lg:w-[56vw] xl:w-[35vw] rounded-xl flex flex-col justify-start items-center gap-8 py-10 overflow-y-scroll font-inter">
+      <div className="px-10 sm:px-25 bg-gradient-to-b from-white/90 to-white/80 h-screen md:h-[80vh] w-full md:w-[72vw] lg:w-[56vw] xl:w-[35vw] rounded-xl flex flex-col justify-start items-center gap-8 py-10 overflow-y-scroll font-plex">
         <div className="flex flex-col gap-2 justify-center items-center">
           <img
             src="src/assets/logo/taekwondo.png"
@@ -131,7 +131,7 @@ const RegisterDojang = () => {
           <GeneralButton
             label="Register"
             type={ "submit" as any }
-            className="mt-2 w-full bg-red border-2 border-red h-12 rounded-xl text-white font-semibold hover:scale-101 transition-discrete duration-300 hover:shadow-xl"
+            className="mt-2 w-full bg-red border-2 border-red h-12 rounded-xl text-white text-lg font-semibold hover:scale-101 transition-discrete duration-300 hover:shadow-xl"
           />
 
           <span className="text-center pt-1">

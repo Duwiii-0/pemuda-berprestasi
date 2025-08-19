@@ -80,7 +80,7 @@ const LandingPage = () => {
             <div className="text-3xl sm:text-4xl md:text-5xl font-bebas text-yellow leading-none text-center">
               Sriwijawa international taekwondo championship 2025
             </div>
-            <div className="text-sm sm:text-md md:text-lg font-inter font-semibold text-white text-center">
+            <div className="text-sm sm:text-md md:text-lg font-plex font-semibold text-white text-center">
               Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do
               eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut
               enim ad minim veniam, quis nostrud exercitation ullamco laboris
@@ -91,7 +91,7 @@ const LandingPage = () => {
               label="Join the Competitions"
               type="action"
               to=""
-              className="h-12 md:text-lg xl:text-xl border-2 border-white text-white"
+              className=" text-center h-12 md:text-lg xl:text-xl border-2 border-white text-white"
               onClick={handleJoinClick} 
             />
           </div>
@@ -102,7 +102,7 @@ const LandingPage = () => {
       <div className="relative h-[70vh] 2xl:h-[90vh] w-full flex items-center justify-center sm:pr-4">
         <div className="w-full h-full flex flex-col gap-5 md:gap-10 px-4 sm:px-10 xl:pl-30 justify-center">
             <div className="text-6xl lg:text-8xl font-bebas text-red leading-none text-center md:text-left">Tentang Kejuaraan</div>
-            <div className="text-md sm:text-lg md:text-xl font-inter text-black text-center md:text-left xl:pr-50">Sriwijaya Competition 2025, di bawah naungan Pengurus Besar Taekwondo Indonesia (PBTI), merupakan edisi ke-7 sejak 2015 yang menghadirkan kategori Kyorugi, Poomsae, dan Freestyle Poomsae untuk berbagai kelompok usia. Kejuaraan ini digelar untuk mengasah prestasi, menjunjung sportivitas, serta menjaring atlet potensial menuju tingkat internasional.
+            <div className="text-md sm:text-lg md:text-xl font-plex text-black text-center md:text-left xl:pr-50">Sriwijaya Competition 2025, di bawah naungan Pengurus Besar Taekwondo Indonesia (PBTI), merupakan edisi ke-7 sejak 2015 yang menghadirkan kategori Kyorugi, Poomsae, dan Freestyle Poomsae untuk berbagai kelompok usia. Kejuaraan ini digelar untuk mengasah prestasi, menjunjung sportivitas, serta menjaring atlet potensial menuju tingkat internasional.
             </div>
         </div>
         <div className="w-1/2 h-full hidden md:block">
@@ -113,7 +113,7 @@ const LandingPage = () => {
                     <div className="font-bebas text-3xl text-red">
                       Muhammad Rafif Dwiarka
                     </div>
-                    <div className="font-inter text-sm text-black">
+                    <div className="font-plex text-sm text-black">
                       Direktur sriwijaya championship
                     </div>
                 </div>
@@ -126,7 +126,7 @@ const LandingPage = () => {
       {/* how to enter */}
       <div className=" min-h-screen w-full flex flex-col justify-center items-center gap-4">
           <div className="text-6xl lg:text-8xl font-bebas text-red leading-none text-center px-2"> Tata cara mendaftar</div>
-          <div className="text-lg md:text-xl px-10 xl:px-0 font-inter text-black max-w-7xl text-center">Tata Cara Pendaftaran Peserta Kejuaraan Taekwondo Sriwijaya Competition Tahun 2025, Meliputi Pengisian Formulir, Pengiriman Dokumen, dan Proses Verifikasi</div>
+          <div className="text-lg md:text-xl px-10 xl:px-0 font-plex text-black max-w-7xl text-center">Tata Cara Pendaftaran Peserta Kejuaraan Taekwondo Sriwijaya Competition Tahun 2025, Meliputi Pengisian Formulir, Pengiriman Dokumen, dan Proses Verifikasi</div>
           <div className="h-full w-full lg:w-1/2 flex flex-col gap-8 py-10 px-4">
             {registerStep.map((step) => (
               <Steps
@@ -142,7 +142,7 @@ const LandingPage = () => {
       {/* contact us */}
       <div className="min-h- w-full flex flex-col justify-center items-center gap-4 py-20  px-10 lg:px-0">
           <div className="text-6xl lg:text-8xl font-bebas text-red leading-none text-center"> Punya pertanyaan?</div>
-          <div className="text-lg md:text-xl font-inter  xl:px-0 text-black max-w-7xl text-center">Jangan ragu untuk menghubungi kami melalui formulir atau kontak yang tersedia untuk mendapatkan informasi lebih lanjut.</div>
+          <div className="text-lg md:text-xl font-plex  xl:px-0 text-black max-w-7xl text-center">Jangan ragu untuk menghubungi kami melalui formulir atau kontak yang tersedia untuk mendapatkan informasi lebih lanjut.</div>
 
           <div className="hover:scale-102 transition-all duration-300 border-3 gap-4 xl:gap-0 flex flex-col xl:flex-row bg-white border-yellow h-full w-full xl:h-[56vh] lg:w-[65vw] rounded-2xl mt-20 py-8 shadow-2xl">
             <div  className=" w-full xl:w-1/2 h-full flex flex-col items-center gap-6 ">
