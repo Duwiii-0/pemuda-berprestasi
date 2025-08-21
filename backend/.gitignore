@@ -37,7 +37,6 @@ Thumbs.db
 *.swo
 
 # Uploads
-uploads/
 temp/
 
 # Prisma
