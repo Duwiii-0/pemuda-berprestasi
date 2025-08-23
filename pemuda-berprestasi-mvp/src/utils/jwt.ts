@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken'
+import { SignOptions, Secret, StringValue } from 'jsonwebtoken'
 
 export interface JWTPayload {
   id: number
@@ -13,37 +14,40 @@ export interface TokenPair {
   refreshToken: string
 }
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-fallback-secret'
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d'
-const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'your-refresh-secret'
-const JWT_REFRESH_EXPIRES_IN = process.env.JWT_REFRESH_EXPIRES_IN || '30d'
+const JWT_SECRET: Secret = process.env.JWT_SECRET || 'your-fallback-secret'
+const JWT_EXPIRES_IN: StringValue = (process.env.JWT_EXPIRES_IN as StringValue) || '7d'
+const JWT_REFRESH_SECRET: Secret = process.env.JWT_REFRESH_SECRET || 'your-refresh-secret'
+const JWT_REFRESH_EXPIRES_IN: StringValue = (process.env.JWT_REFRESH_EXPIRES_IN as StringValue) || '30d'
 
 if (!process.env.JWT_SECRET) {
   console.warn('⚠️  JWT_SECRET not set in environment variables')
 }
 
 export const generateAccessToken = (payload: JWTPayload): string => {
-  return jwt.sign(payload, JWT_SECRET, {
+  const options: SignOptions = {
     expiresIn: JWT_EXPIRES_IN,
     issuer: 'pemuda-berprestasi',
-    audience: 'pemuda-berprestasi-users'
-  })
+    audience: 'pemuda-berprestasi-users',
+  }
+  return jwt.sign(payload, JWT_SECRET, options)
 }
 
-export const generateRefreshToken = (payload: { id: number, email: string }): string => {
-  return jwt.sign(payload, JWT_REFRESH_SECRET, {
+
+export const generateRefreshToken = (payload: { id: number; email: string }): string => {
+  const options: SignOptions = {
     expiresIn: JWT_REFRESH_EXPIRES_IN,
     issuer: 'pemuda-berprestasi',
-    audience: 'pemuda-berprestasi-users'
-  })
+    audience: 'pemuda-berprestasi-users',
+  }
+  return jwt.sign(payload, JWT_REFRESH_SECRET, options)
 }
 
 export const generateTokenPair = (payload: JWTPayload): TokenPair => {
   const accessToken = generateAccessToken(payload)
   const refreshToken = generateRefreshToken({ id: payload.id, email: payload.email })
-  
   return { accessToken, refreshToken }
 }
+
 
 // Convenience function for most common use case
 export const generateToken = (payload: JWTPayload): string => {
