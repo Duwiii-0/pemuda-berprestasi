@@ -1,126 +1,85 @@
 // src/controllers/authController.ts
 import { Request, Response } from 'express'
-import { hashPassword, comparePassword } from '../utils/bcrypt'
-import { generateTokenPair } from '../utils/jwt'
-import { ResponseHelper } from '../utils/response'
-import { prisma } from '../config/database'
+import authService from '../services/authService'
+import { sendSuccess, sendError } from '../utils/response'
+import { asyncHandler } from '../middleware/errorHandler'
 
-export class AuthController {
-  static async register(req: Request, res: Response) {
+class AuthController {
+  // Register new pelatih
+  register = asyncHandler(async (req: Request, res: Response) => {
     try {
-      const { email, password, nama_pelatih, no_telp } = req.body
-
-      // Check if user exists
-      const existingUser = await prisma.tb_akun.findUnique({
-        where: { email }
-      })
-
-      if (existingUser) {
-        return ResponseHelper.error(res, 'Email already registered', null, 409)
+      const result = await authService.register(req.body)
+      
+      sendSuccess(
+        res, 
+        result, 
+        'Registration successful', 
+        201
+      )
+    } catch (error: any) {
+      if (error.message === 'Email already registered') {
+        return sendError(res, error.message, 409)
       }
-
-      // Hash password
-      const hashedPassword = await hashPassword(password)
-
-      // Create account and pelatih in transaction
-      const result = await prisma.$transaction(async (tx) => {
-        const akun = await tx.tb_akun.create({
-          data: {
-            email,
-            password_hash: hashedPassword,
-            role: 'PELATIH'
-          }
-        })
-
-        const pelatih = await tx.tb_pelatih.create({
-          data: {
-            nama_pelatih,
-            no_telp,
-            id_akun: akun.id_akun
-          }
-        })
-
-        return { akun, pelatih }
-      })
-
-      // Generate tokens
-      const tokens = generateTokenPair({
-        id: result.akun.id_akun,
-        email: result.akun.email,
-        role: result.akun.role,
-        pelatihId: result.pelatih.id_pelatih
-      })
-
-      return ResponseHelper.created(res, {
-        user: {
-          id: result.akun.id_akun,
-          email: result.akun.email,
-          role: result.akun.role,
-          pelatih: result.pelatih
-        },
-        tokens
-      }, 'Pelatih registered successfully')
-
-    } catch (error) {
-      console.error('Registration error:', error)
-      return ResponseHelper.serverError(res, 'Registration failed', error)
+      
+      return sendError(res, error.message || 'Registration failed', 400)
     }
-  }
+  })
 
-  static async login(req: Request, res: Response) {
+  // Login user
+  login = asyncHandler(async (req: Request, res: Response) => {
     try {
-      const { email, password } = req.body
-
-      // Find user with relations
-      const akun = await prisma.tb_akun.findUnique({
-        where: { email },
-        include: {
-          pelatih: true,
-          admin: true
-        }
-      })
-
-      if (!akun) {
-        return ResponseHelper.unauthorized(res, 'Invalid credentials')
+      const result = await authService.login(req.body)
+      
+      sendSuccess(res, result, 'Login successful')
+    } catch (error: any) {
+      if (error.message === 'Invalid credentials') {
+        return sendError(res, error.message, 401)
       }
-
-      // Verify password
-      const isPasswordValid = await comparePassword(password, akun.password_hash)
-      if (!isPasswordValid) {
-        return ResponseHelper.unauthorized(res, 'Invalid credentials')
-      }
-
-      // Generate tokens
-      const tokenPayload: any = {
-        id: akun.id_akun,
-        email: akun.email,
-        role: akun.role
-      }
-
-      if (akun.pelatih) {
-        tokenPayload.pelatihId = akun.pelatih.id_pelatih
-      }
-
-      if (akun.admin) {
-        tokenPayload.adminId = akun.admin.id_admin
-      }
-
-      const tokens = generateTokenPair(tokenPayload)
-
-      return ResponseHelper.success(res, {
-        user: {
-          id: akun.id_akun,
-          email: akun.email,
-          role: akun.role,
-          pelatih: akun.pelatih,
-          admin: akun.admin
-        },
-        tokens
-      }, 'Login successful')
-
-    } catch (error) {
-      console.error('Login error:', error)
-      return ResponseHelper.serverError(res, 'Login failed', error)
+      
+      return sendError(res, error.message || 'Login failed', 400)
     }
-  }
+  })
+
+  // Get user profile
+  getProfile = asyncHandler(async (req: Request, res: Response) => {
+    try {
+      const user = req.user!
+      const profile = await authService.getProfile(user.id_akun)
+      
+      sendSuccess(res, profile, 'Profile retrieved successfully')
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to get profile', 400)
+    }
+  })
+
+  // Change password
+  changePassword = asyncHandler(async (req: Request, res: Response) => {
+    try {
+      const user = req.user!
+      const { currentPassword, newPassword } = req.body
+      
+      const result = await authService.changePassword(
+        user.id_akun, 
+        currentPassword, 
+        newPassword
+      )
+      
+      sendSuccess(res, result, 'Password changed successfully')
+    } catch (error: any) {
+      if (error.message === 'Current password is incorrect') {
+        return sendError(res, error.message, 400)
+      }
+      
+      return sendError(res, error.message || 'Failed to change password', 400)
+    }
+  })
+
+  // Logout (optional - for token blacklist if needed)
+  logout = asyncHandler(async (req: Request, res: Response) => {
+    // Since we're using stateless JWT, logout is handled client-side
+    // But we can add token blacklist logic here if needed in future
+    sendSuccess(res, null, 'Logged out successfully')
+  })
 }
+
+export default new AuthController()

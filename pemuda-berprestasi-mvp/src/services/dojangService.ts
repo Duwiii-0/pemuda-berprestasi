@@ -5,7 +5,7 @@ const prisma = new PrismaClient();
 interface CreateDojangData {
   nama_dojang: string;
   email?: string;
-  no_telp?: string;
+  no_telp?: string | null;
   founder?: string;
   negara?: string;
   provinsi?: string;

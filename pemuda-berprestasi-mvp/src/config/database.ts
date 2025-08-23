@@ -6,7 +6,7 @@ declare global {
 }
 
 // Create single Prisma instance
-export const prisma = 
+ const prisma = 
   globalThis.__prisma ||
   new PrismaClient({
     log: process.env.NODE_ENV === 'development' ? ['query', 'error'] : ['error'],
@@ -71,3 +71,5 @@ export async function initializeDatabase() {
     process.exit(1)
   }
 }
+
+export default prisma;
