@@ -285,46 +285,51 @@ export class KompetisiController {
     }
   }
 
+  
   // Bulk register atlet
   static async bulkRegisterAtlet(req: Request, res: Response) {
-    try {
-      const { registrations } = req.body;
+  type RegistrationResult = Awaited<ReturnType<typeof KompetisiService.registerAtlet>>;
+  
+  try {
+    const { registrations } = req.body;
 
-      if (!Array.isArray(registrations) || registrations.length === 0) {
-        return sendError(res, 'Data pendaftaran harus berupa array dan tidak boleh kosong', 400);
-      }
-
-      const results = [];
-      const errors = [];
-
-      for (let i = 0; i < registrations.length; i++) {
-        try {
-          const registration = registrations[i];
-          const result = await KompetisiService.registerAtlet({
-            id_atlet: parseInt(registration.id_atlet),
-            id_kelas_kejuaraan: parseInt(registration.id_kelas_kejuaraan)
-          });
-          results.push(result);
-        } catch (error: any) {
-          errors.push({
-            index: i,
-            registration: registrations[i],
-            error: error.message
-          });
-        }
-      }
-
-      return sendSuccess(res, {
-        successful: results,
-        failed: errors,
-        summary: {
-          total: registrations.length,
-          successful: results.length,
-          failed: errors.length
-        }
-      }, 'Proses pendaftaran massal selesai');
-    } catch (error: any) {
-      return sendError(res, error.message, 400);
+    if (!Array.isArray(registrations) || registrations.length === 0) {
+      return sendError(res, 'Data pendaftaran harus berupa array dan tidak boleh kosong', 400);
     }
+
+    // ⬇️ kasih tipe eksplisit
+    const results: RegistrationResult[] = [];
+    const errors: { index: number; registration: any; error: string }[] = [];
+
+    for (let i = 0; i < registrations.length; i++) {
+      try {
+        const registration = registrations[i];
+        const result = await KompetisiService.registerAtlet({
+          id_atlet: parseInt(registration.id_atlet),
+          id_kelas_kejuaraan: parseInt(registration.id_kelas_kejuaraan)
+        });
+        results.push(result);
+      } catch (error: any) {
+        errors.push({
+          index: i,
+          registration: registrations[i],
+          error: error.message
+        });
+      }
+    }
+
+    return sendSuccess(res, {
+      successful: results,
+      failed: errors,
+      summary: {
+        total: registrations.length,
+        successful: results.length,
+        failed: errors.length
+      }
+    }, 'Proses pendaftaran massal selesai');
+  } catch (error: any) {
+    return sendError(res, error.message, 400);
   }
+}
+
 }

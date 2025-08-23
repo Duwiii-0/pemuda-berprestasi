@@ -2,6 +2,9 @@ import { Request, Response } from 'express';
 import { AtletService } from '../services/atletService';
 import { sendSuccess, sendError } from '../utils/response';
 import { JenisKelamin } from '@prisma/client';
+import { tb_atlet } from '@prisma/client';
+import { DojangService } from '../services/dojangService';
+
 
 export class AtletController {
   // Create new atlet
@@ -19,7 +22,7 @@ export class AtletController {
         atletData.berat_badan = parseFloat(atletData.berat_badan);
       }
 
-      if (atletData.tinggi_badan) {
+      if (atletData.tinggi_badan) { 
         atletData.tinggi_badan = parseFloat(atletData.tinggi_badan);
       }
 
@@ -200,7 +203,7 @@ export class AtletController {
       }
 
       // Get atlet from all dojang owned by this pelatih
-      const allAtlet = [];
+      const allAtlet: tb_atlet[] = []; // ✅ pakai tipe dari Prisma
       for (const dojang of dojangList) {
         const atletResult = await AtletService.getAtletByDojang(dojang.id_dojang, 1, 1000); // Get all
         allAtlet.push(...atletResult.data);
