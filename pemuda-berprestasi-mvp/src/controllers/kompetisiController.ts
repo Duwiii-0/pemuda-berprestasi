@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { KompetisiService } from '../services/kompetisiService';
-import { successResponse, errorResponse } from '../utils/response';
+import { sendSuccess, sendError } from '../utils/response';
 import { TypeKompetisi, StatusKompetisi, StatusPendaftaran } from '@prisma/client';
 
 export class KompetisiController {
@@ -20,9 +20,9 @@ export class KompetisiController {
 
       const kompetisi = await KompetisiService.createKompetisi(kompetisiData);
       
-      return successResponse(res, kompetisi, 'Kompetisi berhasil dibuat', 201);
+      return sendSuccess(res, kompetisi, 'Kompetisi berhasil dibuat', 201);
     } catch (error: any) {
-      return errorResponse(res, error.message, 400);
+      return sendError(res, error.message, 400);
     }
   }
 
@@ -41,9 +41,9 @@ export class KompetisiController {
 
       const result = await KompetisiService.getAllKompetisi(filters);
       
-      return successResponse(res, result.data, 'Data kompetisi berhasil diambil', 200, result.pagination);
+      return sendSuccess(res, result.data, 'Data kompetisi berhasil diambil', 200, result.pagination);
     } catch (error: any) {
-      return errorResponse(res, error.message, 500);
+      return sendError(res, error.message, 500);
     }
   }
 
@@ -53,14 +53,14 @@ export class KompetisiController {
       const id = parseInt(req.params.id);
       
       if (isNaN(id)) {
-        return errorResponse(res, 'ID kompetisi tidak valid', 400);
+        return sendError(res, 'ID kompetisi tidak valid', 400);
       }
 
       const kompetisi = await KompetisiService.getKompetisiById(id);
       
-      return successResponse(res, kompetisi, 'Detail kompetisi berhasil diambil');
+      return sendSuccess(res, kompetisi, 'Detail kompetisi berhasil diambil');
     } catch (error: any) {
-      return errorResponse(res, error.message, 404);
+      return sendError(res, error.message, 404);
     }
   }
 
@@ -70,7 +70,7 @@ export class KompetisiController {
       const id = parseInt(req.params.id);
       
       if (isNaN(id)) {
-        return errorResponse(res, 'ID kompetisi tidak valid', 400);
+        return sendError(res, 'ID kompetisi tidak valid', 400);
       }
 
       const updateData = {
@@ -89,9 +89,9 @@ export class KompetisiController {
 
       const updatedKompetisi = await KompetisiService.updateKompetisi(updateData);
       
-      return successResponse(res, updatedKompetisi, 'Kompetisi berhasil diperbarui');
+      return sendSuccess(res, updatedKompetisi, 'Kompetisi berhasil diperbarui');
     } catch (error: any) {
-      return errorResponse(res, error.message, 400);
+      return sendError(res, error.message, 400);
     }
   }
 
@@ -101,14 +101,14 @@ export class KompetisiController {
       const id = parseInt(req.params.id);
       
       if (isNaN(id)) {
-        return errorResponse(res, 'ID kompetisi tidak valid', 400);
+        return sendError(res, 'ID kompetisi tidak valid', 400);
       }
 
       const result = await KompetisiService.deleteKompetisi(id);
       
-      return successResponse(res, null, result.message);
+      return sendSuccess(res, null, result.message);
     } catch (error: any) {
-      return errorResponse(res, error.message, 400);
+      return sendError(res, error.message, 400);
     }
   }
 
@@ -119,18 +119,18 @@ export class KompetisiController {
       const kelasData = req.body.kelas_kejuaraan;
       
       if (isNaN(id)) {
-        return errorResponse(res, 'ID kompetisi tidak valid', 400);
+        return sendError(res, 'ID kompetisi tidak valid', 400);
       }
 
       if (!Array.isArray(kelasData) || kelasData.length === 0) {
-        return errorResponse(res, 'Data kelas kejuaraan harus berupa array dan tidak boleh kosong', 400);
+        return sendError(res, 'Data kelas kejuaraan harus berupa array dan tidak boleh kosong', 400);
       }
 
       const result = await KompetisiService.addKelasKejuaraan(id, kelasData);
       
-      return successResponse(res, result, result.message);
+      return sendSuccess(res, result, result.message);
     } catch (error: any) {
-      return errorResponse(res, error.message, 400);
+      return sendError(res, error.message, 400);
     }
   }
 
@@ -140,7 +140,7 @@ export class KompetisiController {
       const { id_atlet, id_kelas_kejuaraan } = req.body;
 
       if (!id_atlet || !id_kelas_kejuaraan) {
-        return errorResponse(res, 'ID atlet dan ID kelas kejuaraan diperlukan', 400);
+        return sendError(res, 'ID atlet dan ID kelas kejuaraan diperlukan', 400);
       }
 
       const registrationData = {
@@ -150,9 +150,9 @@ export class KompetisiController {
 
       const pesertaKompetisi = await KompetisiService.registerAtlet(registrationData);
       
-      return successResponse(res, pesertaKompetisi, 'Atlet berhasil didaftarkan ke kompetisi', 201);
+      return sendSuccess(res, pesertaKompetisi, 'Atlet berhasil didaftarkan ke kompetisi', 201);
     } catch (error: any) {
-      return errorResponse(res, error.message, 400);
+      return sendError(res, error.message, 400);
     }
   }
 
@@ -163,18 +163,18 @@ export class KompetisiController {
       const { status } = req.body;
       
       if (isNaN(id)) {
-        return errorResponse(res, 'ID pendaftaran tidak valid', 400);
+        return sendError(res, 'ID pendaftaran tidak valid', 400);
       }
 
       if (!Object.values(StatusPendaftaran).includes(status)) {
-        return errorResponse(res, 'Status pendaftaran tidak valid', 400);
+        return sendError(res, 'Status pendaftaran tidak valid', 400);
       }
 
       const updatedRegistration = await KompetisiService.updateRegistrationStatus(id, status);
       
-      return successResponse(res, updatedRegistration, 'Status pendaftaran berhasil diperbarui');
+      return sendSuccess(res, updatedRegistration, 'Status pendaftaran berhasil diperbarui');
     } catch (error: any) {
-      return errorResponse(res, error.message, 400);
+      return sendError(res, error.message, 400);
     }
   }
 
@@ -186,14 +186,14 @@ export class KompetisiController {
       const limit = parseInt(req.query.limit as string) || 10;
       
       if (isNaN(id)) {
-        return errorResponse(res, 'ID kompetisi tidak valid', 400);
+        return sendError(res, 'ID kompetisi tidak valid', 400);
       }
 
       const result = await KompetisiService.getKompetisiParticipants(id, page, limit);
       
-      return successResponse(res, result.data, 'Data peserta kompetisi berhasil diambil', 200, result.pagination);
+      return sendSuccess(res, result.data, 'Data peserta kompetisi berhasil diambil', 200, result.pagination);
     } catch (error: any) {
-      return errorResponse(res, error.message, 500);
+      return sendError(res, error.message, 500);
     }
   }
 
@@ -203,14 +203,14 @@ export class KompetisiController {
       const id = parseInt(req.params.id);
       
       if (isNaN(id)) {
-        return errorResponse(res, 'ID kompetisi tidak valid', 400);
+        return sendError(res, 'ID kompetisi tidak valid', 400);
       }
 
       const publishedKompetisi = await KompetisiService.publishKompetisi(id);
       
-      return successResponse(res, publishedKompetisi, 'Kompetisi berhasil dipublikasi');
+      return sendSuccess(res, publishedKompetisi, 'Kompetisi berhasil dipublikasi');
     } catch (error: any) {
-      return errorResponse(res, error.message, 400);
+      return sendError(res, error.message, 400);
     }
   }
 
@@ -219,9 +219,9 @@ export class KompetisiController {
     try {
       const stats = await KompetisiService.getKompetisiStats();
       
-      return successResponse(res, stats, 'Statistik kompetisi berhasil diambil');
+      return sendSuccess(res, stats, 'Statistik kompetisi berhasil diambil');
     } catch (error: any) {
-      return errorResponse(res, error.message, 500);
+      return sendError(res, error.message, 500);
     }
   }
 
@@ -240,9 +240,9 @@ export class KompetisiController {
 
       const result = await KompetisiService.getAllKompetisi(filters);
       
-      return successResponse(res, result.data, 'Data kompetisi yang dipublikasi berhasil diambil', 200, result.pagination);
+      return sendSuccess(res, result.data, 'Data kompetisi yang dipublikasi berhasil diambil', 200, result.pagination);
     } catch (error: any) {
-      return errorResponse(res, error.message, 500);
+      return sendError(res, error.message, 500);
     }
   }
 
@@ -258,9 +258,9 @@ export class KompetisiController {
 
       const result = await KompetisiService.getAllKompetisi(filters);
       
-      return successResponse(res, result.data, 'Data kompetisi mendatang berhasil diambil', 200, result.pagination);
+      return sendSuccess(res, result.data, 'Data kompetisi mendatang berhasil diambil', 200, result.pagination);
     } catch (error: any) {
-      return errorResponse(res, error.message, 500);
+      return sendError(res, error.message, 500);
     }
   }
 
@@ -270,18 +270,18 @@ export class KompetisiController {
       const id = parseInt(req.params.id);
       
       if (isNaN(id)) {
-        return errorResponse(res, 'ID kompetisi tidak valid', 400);
+        return sendError(res, 'ID kompetisi tidak valid', 400);
       }
 
       const kompetisi = await KompetisiService.getKompetisiById(id);
       
       if (kompetisi.status !== StatusKompetisi.PUBLISHED) {
-        return errorResponse(res, 'Kompetisi belum dipublikasi', 400);
+        return sendError(res, 'Kompetisi belum dipublikasi', 400);
       }
 
-      return successResponse(res, kompetisi.kelas_kejuaraan, 'Data kelas kejuaraan berhasil diambil');
+      return sendSuccess(res, kompetisi.kelas_kejuaraan, 'Data kelas kejuaraan berhasil diambil');
     } catch (error: any) {
-      return errorResponse(res, error.message, 404);
+      return sendError(res, error.message, 404);
     }
   }
 
@@ -291,7 +291,7 @@ export class KompetisiController {
       const { registrations } = req.body;
 
       if (!Array.isArray(registrations) || registrations.length === 0) {
-        return errorResponse(res, 'Data pendaftaran harus berupa array dan tidak boleh kosong', 400);
+        return sendError(res, 'Data pendaftaran harus berupa array dan tidak boleh kosong', 400);
       }
 
       const results = [];
@@ -314,7 +314,7 @@ export class KompetisiController {
         }
       }
 
-      return successResponse(res, {
+      return sendSuccess(res, {
         successful: results,
         failed: errors,
         summary: {
@@ -324,7 +324,7 @@ export class KompetisiController {
         }
       }, 'Proses pendaftaran massal selesai');
     } catch (error: any) {
-      return errorResponse(res, error.message, 400);
+      return sendError(res, error.message, 400);
     }
   }
 }

@@ -1,6 +1,7 @@
 // src/middleware/validation.ts
 import { Request, Response, NextFunction } from 'express'
 import Joi from 'joi'
+import { ObjectSchema } from 'joi'
 import { sendValidationError } from '../utils/response'
 
 export const validate = (schema: Joi.ObjectSchema) => {
@@ -56,6 +57,30 @@ export const validateQuery = (schema: Joi.ObjectSchema) => {
       return sendValidationError(res, errors)
     }
     
+    next()
+  }
+}
+
+export const validateRequest = (schema: ObjectSchema) => {
+  return (req: Request, res: Response, next: NextFunction) => {
+    const data = {
+      body: req.body,
+      query: req.query,
+      params: req.params,
+    }
+
+    const { error } = schema.validate(data, { abortEarly: false, allowUnknown: true })
+
+    if (error) {
+      return res.status(400).json({
+        message: 'Validation error',
+        errors: error.details.map((detail) => ({
+          field: detail.path.join('.'),
+          message: detail.message,
+        })),
+      })
+    }
+
     next()
   }
 }

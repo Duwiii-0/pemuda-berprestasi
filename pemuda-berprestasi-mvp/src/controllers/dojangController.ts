@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { DojangService } from '../services/dojangService';
-import { successResponse, errorResponse } from '../utils/response';
+import { sendSuccess, sendError } from '../utils/response';
 
 export class DojangController {
   // Create new dojang
@@ -9,9 +9,9 @@ export class DojangController {
       const dojangData = req.body;
       const dojang = await DojangService.createDojang(dojangData);
       
-      return successResponse(res, dojang, 'Dojang berhasil dibuat', 201);
+      return sendSuccess(res, dojang, 'Dojang berhasil dibuat', 201);
     } catch (error: any) {
-      return errorResponse(res, error.message, 400);
+      return sendError(res, error.message, 400);
     }
   }
 
@@ -24,9 +24,9 @@ export class DojangController {
 
       const result = await DojangService.getAllDojang(page, limit, search);
       
-      return successResponse(res, result.data, 'Data dojang berhasil diambil', 200, result.pagination);
+      return sendSuccess(res, result.data, 'Data dojang berhasil diambil', 200, result.pagination);
     } catch (error: any) {
-      return errorResponse(res, error.message, 500);
+      return sendError(res, error.message, 500);
     }
   }
 
@@ -36,14 +36,14 @@ export class DojangController {
       const id = parseInt(req.params.id);
       
       if (isNaN(id)) {
-        return errorResponse(res, 'ID dojang tidak valid', 400);
+        return sendError(res, 'ID dojang tidak valid', 400);
       }
 
       const dojang = await DojangService.getDojangById(id);
       
-      return successResponse(res, dojang, 'Detail dojang berhasil diambil');
+      return sendSuccess(res, dojang, 'Detail dojang berhasil diambil');
     } catch (error: any) {
-      return errorResponse(res, error.message, 404);
+      return sendError(res, error.message, 404);
     }
   }
 
@@ -53,7 +53,7 @@ export class DojangController {
       const id = parseInt(req.params.id);
       
       if (isNaN(id)) {
-        return errorResponse(res, 'ID dojang tidak valid', 400);
+        return sendError(res, 'ID dojang tidak valid', 400);
       }
 
       const updateData = {
@@ -63,9 +63,9 @@ export class DojangController {
 
       const updatedDojang = await DojangService.updateDojang(updateData);
       
-      return successResponse(res, updatedDojang, 'Dojang berhasil diperbarui');
+      return sendSuccess(res, updatedDojang, 'Dojang berhasil diperbarui');
     } catch (error: any) {
-      return errorResponse(res, error.message, 400);
+      return sendError(res, error.message, 400);
     }
   }
 
@@ -75,14 +75,14 @@ export class DojangController {
       const id = parseInt(req.params.id);
       
       if (isNaN(id)) {
-        return errorResponse(res, 'ID dojang tidak valid', 400);
+        return sendError(res, 'ID dojang tidak valid', 400);
       }
 
       const result = await DojangService.deleteDojang(id);
       
-      return successResponse(res, null, result.message);
+      return sendSuccess(res, null, result.message);
     } catch (error: any) {
-      return errorResponse(res, error.message, 400);
+      return sendError(res, error.message, 400);
     }
   }
 
@@ -92,14 +92,14 @@ export class DojangController {
       const id_pelatih = parseInt(req.params.id_pelatih);
       
       if (isNaN(id_pelatih)) {
-        return errorResponse(res, 'ID pelatih tidak valid', 400);
+        return sendError(res, 'ID pelatih tidak valid', 400);
       }
 
       const dojangList = await DojangService.getDojangByPelatih(id_pelatih);
       
-      return successResponse(res, dojangList, 'Data dojang berhasil diambil');
+      return sendSuccess(res, dojangList, 'Data dojang berhasil diambil');
     } catch (error: any) {
-      return errorResponse(res, error.message, 500);
+      return sendError(res, error.message, 500);
     }
   }
 
@@ -108,9 +108,9 @@ export class DojangController {
     try {
       const stats = await DojangService.getDojangStats();
       
-      return successResponse(res, stats, 'Statistik dojang berhasil diambil');
+      return sendSuccess(res, stats, 'Statistik dojang berhasil diambil');
     } catch (error: any) {
-      return errorResponse(res, error.message, 500);
+      return sendError(res, error.message, 500);
     }
   }
 
@@ -121,14 +121,14 @@ export class DojangController {
       const user = (req as any).user;
       
       if (!user || !user.pelatih) {
-        return errorResponse(res, 'Data pelatih tidak ditemukan', 401);
+        return sendError(res, 'Data pelatih tidak ditemukan', 401);
       }
 
       const dojangList = await DojangService.getDojangByPelatih(user.pelatih.id_pelatih);
       
-      return successResponse(res, dojangList, 'Data dojang Anda berhasil diambil');
+      return sendSuccess(res, dojangList, 'Data dojang Anda berhasil diambil');
     } catch (error: any) {
-      return errorResponse(res, error.message, 500);
+      return sendError(res, error.message, 500);
     }
   }
 }

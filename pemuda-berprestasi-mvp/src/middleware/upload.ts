@@ -45,3 +45,19 @@ export const uploadSingle = (fieldName: string) => {
     })
   }
 }
+
+export const uploadMiddleware = {
+  fields: (fields: { name: string; maxCount: number }[]) => {
+    return (req: Request, res: Response, next: NextFunction) => {
+      upload.fields(fields)(req, res, (err: any) => {
+        if (err) {
+          if (err.code === 'LIMIT_FILE_SIZE') {
+            return sendError(res, 'File size too large. Maximum 5MB allowed', 400)
+          }
+          return sendError(res, err.message || 'Upload error', 400)
+        }
+        next()
+      })
+    }
+  }
+}

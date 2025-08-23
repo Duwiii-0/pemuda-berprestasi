@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { DojangController } from '../controllers/dojangController';
-import { authMiddleware } from '../middleware/auth';
+import { authenticate } from '../middleware/auth';
 import { validateRequest } from '../middleware/validation';
 import { dojangValidation } from '../validations/dojangValidation';
 
@@ -10,7 +10,7 @@ const router = Router();
 router.get('/stats', DojangController.getStats);
 
 // Protected routes (require authentication)
-router.use(authMiddleware);
+router.use(authenticate);
 
 // CRUD operations
 router.post('/', validateRequest(dojangValidation.create), DojangController.create);

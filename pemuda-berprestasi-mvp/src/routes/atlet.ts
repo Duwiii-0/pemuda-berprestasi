@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { AtletController } from '../controllers/atletController';
-import { authMiddleware } from '../middleware/auth';
+import { authenticate } from '../middleware/auth';
 import { uploadMiddleware } from '../middleware/upload';
 import { validateRequest } from '../middleware/validation';
 import { atletValidation } from '../validations/atletValidation';
@@ -11,7 +11,7 @@ const router = Router();
 router.get('/stats', AtletController.getStats);
 
 // Protected routes (require authentication)
-router.use(authMiddleware);
+router.use(authenticate);
 
 // CRUD operations
 router.post('/', validateRequest(atletValidation.create), AtletController.create);

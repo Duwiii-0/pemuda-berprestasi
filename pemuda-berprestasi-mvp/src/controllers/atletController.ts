@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { AtletService } from '../services/atletService';
-import { successResponse, errorResponse } from '../utils/response';
+import { sendSuccess, sendError } from '../utils/response';
 import { JenisKelamin } from '@prisma/client';
 
 export class AtletController {
@@ -25,9 +25,9 @@ export class AtletController {
 
       const atlet = await AtletService.createAtlet(atletData);
       
-      return successResponse(res, atlet, 'Atlet berhasil dibuat', 201);
+      return sendSuccess(res, atlet, 'Atlet berhasil dibuat', 201);
     } catch (error: any) {
-      return errorResponse(res, error.message, 400);
+      return sendError(res, error.message, 400);
     }
   }
 
@@ -48,9 +48,9 @@ export class AtletController {
 
       const result = await AtletService.getAllAtlet(filters);
       
-      return successResponse(res, result.data, 'Data atlet berhasil diambil', 200, result.pagination);
+      return sendSuccess(res, result.data, 'Data atlet berhasil diambil', 200, result.pagination);
     } catch (error: any) {
-      return errorResponse(res, error.message, 500);
+      return sendError(res, error.message, 500);
     }
   }
 
@@ -60,14 +60,14 @@ export class AtletController {
       const id = parseInt(req.params.id);
       
       if (isNaN(id)) {
-        return errorResponse(res, 'ID atlet tidak valid', 400);
+        return sendError(res, 'ID atlet tidak valid', 400);
       }
 
       const atlet = await AtletService.getAtletById(id);
       
-      return successResponse(res, atlet, 'Detail atlet berhasil diambil');
+      return sendSuccess(res, atlet, 'Detail atlet berhasil diambil');
     } catch (error: any) {
-      return errorResponse(res, error.message, 404);
+      return sendError(res, error.message, 404);
     }
   }
 
@@ -77,7 +77,7 @@ export class AtletController {
       const id = parseInt(req.params.id);
       
       if (isNaN(id)) {
-        return errorResponse(res, 'ID atlet tidak valid', 400);
+        return sendError(res, 'ID atlet tidak valid', 400);
       }
 
       const updateData = {
@@ -101,9 +101,9 @@ export class AtletController {
 
       const updatedAtlet = await AtletService.updateAtlet(updateData);
       
-      return successResponse(res, updatedAtlet, 'Atlet berhasil diperbarui');
+      return sendSuccess(res, updatedAtlet, 'Atlet berhasil diperbarui');
     } catch (error: any) {
-      return errorResponse(res, error.message, 400);
+      return sendError(res, error.message, 400);
     }
   }
 
@@ -113,14 +113,14 @@ export class AtletController {
       const id = parseInt(req.params.id);
       
       if (isNaN(id)) {
-        return errorResponse(res, 'ID atlet tidak valid', 400);
+        return sendError(res, 'ID atlet tidak valid', 400);
       }
 
       const result = await AtletService.deleteAtlet(id);
       
-      return successResponse(res, null, result.message);
+      return sendSuccess(res, null, result.message);
     } catch (error: any) {
-      return errorResponse(res, error.message, 400);
+      return sendError(res, error.message, 400);
     }
   }
 
@@ -132,14 +132,14 @@ export class AtletController {
       const limit = parseInt(req.query.limit as string) || 10;
       
       if (isNaN(id_dojang)) {
-        return errorResponse(res, 'ID dojang tidak valid', 400);
+        return sendError(res, 'ID dojang tidak valid', 400);
       }
 
       const result = await AtletService.getAtletByDojang(id_dojang, page, limit);
       
-      return successResponse(res, result.data, 'Data atlet berhasil diambil', 200, result.pagination);
+      return sendSuccess(res, result.data, 'Data atlet berhasil diambil', 200, result.pagination);
     } catch (error: any) {
-      return errorResponse(res, error.message, 500);
+      return sendError(res, error.message, 500);
     }
   }
 
@@ -149,14 +149,14 @@ export class AtletController {
       const id_kelas_kejuaraan = parseInt(req.params.id_kelas_kejuaraan);
       
       if (isNaN(id_kelas_kejuaraan)) {
-        return errorResponse(res, 'ID kelas kejuaraan tidak valid', 400);
+        return sendError(res, 'ID kelas kejuaraan tidak valid', 400);
       }
 
       const eligibleAtlet = await AtletService.getEligibleAtlet(id_kelas_kejuaraan);
       
-      return successResponse(res, eligibleAtlet, 'Data atlet yang memenuhi syarat berhasil diambil');
+      return sendSuccess(res, eligibleAtlet, 'Data atlet yang memenuhi syarat berhasil diambil');
     } catch (error: any) {
-      return errorResponse(res, error.message, 500);
+      return sendError(res, error.message, 500);
     }
   }
 
@@ -165,9 +165,9 @@ export class AtletController {
     try {
       const stats = await AtletService.getAtletStats();
       
-      return successResponse(res, stats, 'Statistik atlet berhasil diambil');
+      return sendSuccess(res, stats, 'Statistik atlet berhasil diambil');
     } catch (error: any) {
-      return errorResponse(res, error.message, 500);
+      return sendError(res, error.message, 500);
     }
   }
 
@@ -178,7 +178,7 @@ export class AtletController {
       const user = (req as any).user;
       
       if (!user || !user.pelatih) {
-        return errorResponse(res, 'Data pelatih tidak ditemukan', 401);
+        return sendError(res, 'Data pelatih tidak ditemukan', 401);
       }
 
       const filters = {
@@ -196,7 +196,7 @@ export class AtletController {
       const dojangList = await DojangService.getDojangByPelatih(user.pelatih.id_pelatih);
       
       if (dojangList.length === 0) {
-        return successResponse(res, [], 'Belum ada atlet untuk pelatih ini');
+        return sendSuccess(res, [], 'Belum ada atlet untuk pelatih ini');
       }
 
       // Get atlet from all dojang owned by this pelatih
@@ -232,9 +232,9 @@ export class AtletController {
         itemsPerPage: filters.limit
       };
 
-      return successResponse(res, paginatedAtlet, 'Data atlet Anda berhasil diambil', 200, pagination);
+      return sendSuccess(res, paginatedAtlet, 'Data atlet Anda berhasil diambil', 200, pagination);
     } catch (error: any) {
-      return errorResponse(res, error.message, 500);
+      return sendError(res, error.message, 500);
     }
   }
 
@@ -244,14 +244,14 @@ export class AtletController {
       const id = parseInt(req.params.id);
       
       if (isNaN(id)) {
-        return errorResponse(res, 'ID atlet tidak valid', 400);
+        return sendError(res, 'ID atlet tidak valid', 400);
       }
 
       // Check if atlet exists
       const atlet = await AtletService.getAtletById(id);
       
       if (!atlet) {
-        return errorResponse(res, 'Atlet tidak ditemukan', 404);
+        return sendError(res, 'Atlet tidak ditemukan', 404);
       }
 
       // Handle file uploads (assuming files are processed by multer middleware)
@@ -276,9 +276,9 @@ export class AtletController {
 
       const updatedAtlet = await AtletService.updateAtlet(updateData);
       
-      return successResponse(res, updatedAtlet, 'Dokumen atlet berhasil diupload');
+      return sendSuccess(res, updatedAtlet, 'Dokumen atlet berhasil diupload');
     } catch (error: any) {
-      return errorResponse(res, error.message, 400);
+      return sendError(res, error.message, 400);
     }
   }
 }
