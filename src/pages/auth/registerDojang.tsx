@@ -8,7 +8,7 @@ import { apiClient } from "../../../pemuda-berprestasi-mvp/src/config/api";
 const RegisterDojang = () => {
   const [namaDojang, setNamaDojang] = useState("");
   const [email, setEmail] = useState("");
-  const [noHp, setNoHp] = useState("");
+  const [no_telp, setno_telp] = useState("");
   const [founder, setFounder] = useState("");
   const [kabupaten, setKabupaten] = useState("");
   const [provinsi, setProvinsi] = useState("");
@@ -18,30 +18,28 @@ const RegisterDojang = () => {
   const handleRegister = async () => {
     setIsLoading(true);
     try { 
-      // Payload yang benar sesuai backend - TIDAK mengirim 'status'
       const payload = {
-        nama_dojang: namaDojang,
-        email: email || null,
-        no_telp: noHp || null,
-        founder: founder || null,
-        negara: negara || null,
-        provinsi: provinsi || null,
-        kota: kabupaten || null, // backend expects 'kota'
-        // JANGAN kirim field berikut:
-        // - status (akan di-set otomatis oleh backend via schema default)
-        // - id_pelatih_pendaftar (bisa null untuk public registration)
-      };
+  nama_dojang: namaDojang.trim(),
+  email: email.trim() || "",
+  no_telp: no_telp.trim() || "",
+  founder: founder.trim() || "",
+  negara: negara.trim() || "",
+  provinsi: provinsi.trim() || "",
+  kota: kabupaten.trim() || "",
+};
+
 
       console.log("Sending payload:", payload);
+      console.log("Payload yang dikirim ke backend:", payload);
 
       const response = await apiClient.post("/dojang", payload);
       
       toast.success("Registrasi dojang berhasil! Menunggu persetujuan admin.");
-      
-      // Reset form setelah berhasil
+
+      // Reset form
       setNamaDojang("");
       setEmail("");
-      setNoHp("");
+      setno_telp("");
       setFounder("");
       setKabupaten("");
       setProvinsi("");
@@ -49,20 +47,15 @@ const RegisterDojang = () => {
 
       console.log("Registration successful:", response);
     } catch (err: any) {
-      console.error("Registration error:", err);
-      
-      // Handle different error types dengan response yang benar dari api.ts
-      if (err.response?.status === 400) {
-        const errorMessage = err.response?.data?.message || err.response?.data?.error || err.message;
-        toast.error(`Gagal registrasi: ${errorMessage}`);
-      } else if (err.response?.status === 401) {
-        toast.error("Sesi anda telah habis. Silakan refresh halaman.");
-      } else if (err.response?.status === 409 || err.message?.includes('sudah terdaftar')) {
-        toast.error("Nama dojang sudah terdaftar. Silakan gunakan nama lain.");
-      } else {
-        toast.error(err.message || "Terjadi kesalahan sistem. Coba lagi nanti.");
-      }
-    } finally {
+  console.error("Registration error:", err);
+  if (err.data?.errors) {
+    console.table(err.data.errors);
+    toast.error("Ada field yang tidak valid. Cek console untuk detail.");
+  } else {
+    toast.error(err.message || "Terjadi kesalahan sistem.");
+  }
+}
+ finally {
       setIsLoading(false);
     }
   };
@@ -70,26 +63,22 @@ const RegisterDojang = () => {
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    // Validasi minimal - hanya nama dojang yang wajib
     if (!namaDojang.trim()) {
       toast.error("Nama dojang harus diisi");
       return;
     }
 
-    // Validasi nama dojang tidak terlalu pendek
     if (namaDojang.trim().length < 3) {
       toast.error("Nama dojang minimal 3 karakter");
       return;
     }
 
-    // Validasi email jika diisi
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       toast.error("Format email tidak valid");
       return;
     }
 
-    // Validasi nomor HP jika diisi
-    if (noHp && !/^[\d\s\-\+\(\)]+$/.test(noHp)) {
+    if (no_telp && !/^[\d\s\-\+\(\)]+$/.test(no_telp)) {
       toast.error("Format nomor HP tidak valid");
       return;
     }
@@ -110,15 +99,15 @@ const RegisterDojang = () => {
             className="sm:h-50 sm:w-50 h-30 w-30"
           />
           <label className="font-bebas text-6xl text-center text-red">
-            registrasi Dojang
+            Registrasi Dojang
           </label>
           <p className="text-sm text-gray-600 text-center">
             Daftarkan dojang anda untuk bergabung dengan komunitas taekwondo
           </p>
         </div>
 
-        {/* Form */}
         <form onSubmit={handleSubmit} className="w-full flex flex-col gap-4">
+          {/* Nama Dojang */}
           <div>
             <label className="pl-2 text-sm font-medium">
               Nama Dojang <span className="text-red-500">*</span>
@@ -128,10 +117,12 @@ const RegisterDojang = () => {
               onChange={(e) => setNamaDojang(e.target.value)}
               className="h-12 border-red"
               placeholder="Contoh: Dojang Garuda Sakti"
+              type="text"
               icon={<Home className="text-red" size={20} />}
             />
           </div>
 
+          {/* Email */}
           <div>
             <label className="pl-2 text-sm font-medium">Email (Opsional)</label>
             <TextInput
@@ -144,17 +135,19 @@ const RegisterDojang = () => {
             />
           </div>
 
+          {/* No HP */}
           <div>
             <label className="pl-2 text-sm font-medium">No HP (Opsional)</label>
             <TextInput
-              value={noHp}
-              onChange={(e) => setNoHp(e.target.value)}
+              value={no_telp}
+              onChange={(e) => setno_telp(e.target.value)}
               className="h-12 border-red"
               placeholder="08123456789"
               icon={<Phone className="text-red" size={20} />}
             />
           </div>
 
+          {/* Founder */}
           <div>
             <label className="pl-2 text-sm font-medium">Nama Founder (Opsional)</label>
             <TextInput
@@ -166,6 +159,7 @@ const RegisterDojang = () => {
             />
           </div>
 
+          {/* Kabupaten/Kota */}
           <div>
             <label className="pl-2 text-sm font-medium">Kabupaten/Kota (Opsional)</label>
             <TextInput
@@ -177,6 +171,7 @@ const RegisterDojang = () => {
             />
           </div>
 
+          {/* Provinsi */}
           <div>
             <label className="pl-2 text-sm font-medium">Provinsi (Opsional)</label>
             <TextInput
@@ -188,6 +183,7 @@ const RegisterDojang = () => {
             />
           </div>
 
+          {/* Negara */}
           <div>
             <label className="pl-2 text-sm font-medium">Negara (Opsional)</label>
             <TextInput
@@ -214,14 +210,15 @@ const RegisterDojang = () => {
             type="submit"
             disabled={isLoading}
             className={`active:scale-97 mt-2 w-full h-12 rounded-xl text-white text-lg font-semibold transition-all duration-300 hover:shadow-xl ${
-              isLoading 
-                ? "bg-gray-400 border-gray-400 cursor-not-allowed" 
+              isLoading
+                ? "bg-gray-400 border-gray-400 cursor-not-allowed"
                 : "bg-red border-2 border-red hover:scale-101"
             }`}
           >
             {isLoading ? "Mendaftarkan..." : "Daftar Dojang"}
           </button>
 
+          {/* Links */}
           <span className="text-center pt-1 text-sm">
             Belum punya akun pelatih?
             <Link to="/register" className="pl-1 underline hover:text-red">

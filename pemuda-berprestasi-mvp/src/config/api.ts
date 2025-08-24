@@ -1,97 +1,74 @@
-  const API_BASE_URL = 'http://localhost:3000/api';
+const API_BASE_URL = "http://localhost:3000/api";
 
-  // Token management (gunakan React state, bukan localStorage)
-  let authToken: string | null = null;
+let authToken: string | null = null;
 
-  export const setAuthToken = (token: string | null) => {
-    authToken = token;
-  };
+export const setAuthToken = (token: string | null) => {
+  authToken = token;
+};
 
-  export const getAuthToken = () => authToken;
+export const getAuthToken = () => authToken;
 
-  export const apiClient = {
-    // GET request
-    get: async (url: string) => {
-      const response = await fetch(`${API_BASE_URL}${url}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(authToken && { 'Authorization': `Bearer ${authToken}` })
-        }
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      return response.json();
-    },
+const handleResponse = async (response: Response) => {
+  const contentType = response.headers.get("content-type");
+  let data: any = null;
+  if (contentType?.includes("application/json")) {
+    data = await response.json();
+  } else {
+    data = await response.text();
+  }
 
-    // POST request
-    post: async (url: string, data?: any) => {
-      const response = await fetch(`${API_BASE_URL}${url}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(authToken && { 'Authorization': `Bearer ${authToken}` })
-        },
-        body: data ? JSON.stringify(data) : undefined
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      return response.json();
-    },
+  if (!response.ok) {
+    throw { status: response.status, data };
+  }
 
-    // PUT request
-    put: async (url: string, data?: any) => {
-      const response = await fetch(`${API_BASE_URL}${url}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(authToken && { 'Authorization': `Bearer ${authToken}` })
-        },
-        body: data ? JSON.stringify(data) : undefined
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      return response.json();
-    },
+  return data;
+};
 
-    // DELETE request
-    delete: async (url: string) => {
-      const response = await fetch(`${API_BASE_URL}${url}`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(authToken && { 'Authorization': `Bearer ${authToken}` })
-        }
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      return response.json();
-    },
+export const apiClient = {
+  get: (url: string) =>
+    fetch(`${API_BASE_URL}${url}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        ...(authToken && { Authorization: `Bearer ${authToken}` }),
+      },
+    }).then(handleResponse),
 
-    // Multipart form data (untuk upload file)
-    postFormData: async (url: string, formData: FormData) => {
-      const response = await fetch(`${API_BASE_URL}${url}`, {
-        method: "POST",
-        headers: {
-          ...(authToken && { Authorization: `Bearer ${authToken}` }),
-          // tidak perlu set Content-Type, browser otomatis
-        },
-        body: formData,
-      });
+  post: (url: string, data?: any) =>
+    fetch(`${API_BASE_URL}${url}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(authToken && { Authorization: `Bearer ${authToken}` }),
+      },
+      body: data ? JSON.stringify(data) : undefined,
+    }).then(handleResponse),
 
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-      return response.json();
-    },
-  };
+  put: (url: string, data?: any) =>
+    fetch(`${API_BASE_URL}${url}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        ...(authToken && { Authorization: `Bearer ${authToken}` }),
+      },
+      body: data ? JSON.stringify(data) : undefined,
+    }).then(handleResponse),
+
+  delete: (url: string) =>
+    fetch(`${API_BASE_URL}${url}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        ...(authToken && { Authorization: `Bearer ${authToken}` }),
+      },
+    }).then(handleResponse),
+
+  postFormData: (url: string, formData: FormData) =>
+    fetch(`${API_BASE_URL}${url}`, {
+      method: "POST",
+      headers: {
+        ...(authToken && { Authorization: `Bearer ${authToken}` }),
+      },
+      body: formData,
+    }).then(handleResponse),
+};

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Select from "react-select";
 import GeneralButton from "../../components/generalButton";
 import TextInput from "../../components/textInput";
@@ -16,17 +16,31 @@ const Register = () => {
   const [telepon, setTelepon] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [selectedDojang, setSelectedDojang] = useState<OptionType | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedDojang, setSelectedDojang] = useState<OptionType | null>(null);
+  const [dojangOptions, setDojangOptions] = useState<OptionType[]>([]);
+
   
   const navigate = useNavigate();
 
-  // TODO: Nanti ini akan diganti dengan data dari API ketika Phase 2 Dojang selesai
-  const dojangOptions: OptionType[] = [
-    { value: "dojangA", label: "Dojang A" },
-    { value: "dojangB", label: "Dojang B" },
-    { value: "dojangC", label: "Dojang C" },
-  ];
+useEffect(() => {
+  const fetchDojang = async () => {
+    try {
+      const response = await apiClient.get("/dojang/listdojang");
+      const options = response.data.map((item: any) => ({
+        value: item.id,
+        label: item.nama_dojang
+      }));
+      
+      setDojangOptions(options);
+    } catch (error) {
+      console.error("Gagal mengambil data dojang:", error);
+      toast.error("Tidak dapat mengambil data dojang");
+    }
+  };
+
+  fetchDojang();
+}, []);
 
   const handleRegister = async () => {
     try {
@@ -46,8 +60,8 @@ const Register = () => {
         password,
         confirmPassword, // Required by validation
         nama_pelatih: nama.trim(), // Backend expects 'nama_pelatih', bukan 'nama'
-        no_telp: telepon.trim() // Backend expects 'no_telp', bukan 'telepon'
-        // Tidak kirim field lain karena tidak ada di validation schema
+        no_telp: telepon.trim(), // Backend expects 'no_telp', bukan 'telepon'
+        id_dojang: selectedDojang?.value // kirim id dojang ke backend
       };
 
       console.log('Final registration data (matching validation schema):', registerData);
@@ -252,9 +266,10 @@ const Register = () => {
               options={dojangOptions}
               value={selectedDojang}
               onChange={setSelectedDojang}
-              placeholder="Pilih atau cari nama dojang..."
+              placeholder="Pilih dojang..."
               isSearchable
               isDisabled={isLoading}
+
               classNames={{
                 control: () =>
                   `border-2 border-red rounded-lg h-12 px-2 text-inter ${isLoading ? 'opacity-50' : ''}`,

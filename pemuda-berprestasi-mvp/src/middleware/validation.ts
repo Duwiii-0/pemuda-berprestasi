@@ -43,6 +43,7 @@ export const validateParams = (schema: Joi.ObjectSchema) => {
   }
 }
 
+
 // Validate query parameters
 export const validateQuery = (schema: Joi.ObjectSchema) => {
   return (req: Request, res: Response, next: NextFunction) => {
@@ -61,25 +62,20 @@ export const validateQuery = (schema: Joi.ObjectSchema) => {
   }
 }
 
-export const validateRequest = (schema: ObjectSchema) => {
+
+export const validateRequest = (schema: Joi.ObjectSchema, property: 'body' | 'query' | 'params' = 'body') => {
   return (req: Request, res: Response, next: NextFunction) => {
-    const data = {
-      body: req.body,
-      query: req.query,
-      params: req.params,
-    }
-
-    const { error } = schema.validate(data, { abortEarly: false, allowUnknown: true })
-
+    const { error } = schema.validate(req[property], { abortEarly: false });
     if (error) {
-      const errors = error.details.map((detail) => ({
-        field: detail.path.join('.'),
-        message: detail.message,
-      }))
-
-      return sendValidationError(res, errors, 'Request validation error')
+      return res.status(400).json({
+        success: false,
+        message: 'Request validation error',
+        errors: error.details.map(d => ({
+          field: d.path.join('.'),
+          message: d.message
+        }))
+      });
     }
-
-    next()
+    next();
   }
 }
