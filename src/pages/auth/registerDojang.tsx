@@ -1,59 +1,96 @@
 import { useState } from "react";
-import GeneralButton from "../../components/generalButton";
 import TextInput from "../../components/textInput";
-import { Home, Phone, MapPin, Map } from "lucide-react";
+import { Home, Phone, MapPin, Map, User, Mail } from "lucide-react";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
-import {apiClient} from "../../../pemuda-berprestasi-mvp/src/config/api";
-
+import { apiClient } from "../../../pemuda-berprestasi-mvp/src/config/api"; 
 
 const RegisterDojang = () => {
   const [namaDojang, setNamaDojang] = useState("");
+  const [email, setEmail] = useState("");
   const [noHp, setNoHp] = useState("");
-  const [alamat, setAlamat] = useState("");
-  const [kecamatan, setKecamatan] = useState("");
+  const [founder, setFounder] = useState("");
   const [kabupaten, setKabupaten] = useState("");
   const [provinsi, setProvinsi] = useState("");
   const [negara, setNegara] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleRegister = async () => {
-    try {
-      // ini data sesuai schema Prisma & validation
+    setIsLoading(true);
+    try { 
+      // Payload yang benar sesuai backend - TIDAK mengirim 'status'
       const payload = {
         nama_dojang: namaDojang,
-        no_telp: noHp,
-        alamat: alamat, // gabungin
-        kecamatan: kecamatan,
-        provinsi,
-        negara,
-        kota: kabupaten, // backend pakai "kota"
-        id_pelatih_pendaftar: 1, // sementara hardcode, nanti ambil dari auth user
+        email: email || null,
+        no_telp: noHp || null,
+        founder: founder || null,
+        negara: negara || null,
+        provinsi: provinsi || null,
+        kota: kabupaten || null, // backend expects 'kota'
+        // JANGAN kirim field berikut:
+        // - status (akan di-set otomatis oleh backend via schema default)
+        // - id_pelatih_pendaftar (bisa null untuk public registration)
       };
 
-      const res = await apiClient.post("/dojang", payload);
-      toast.success("Registrasi dojang berhasil!");
+      console.log("Sending payload:", payload);
 
-      console.log("Res:", res.data);
+      const response = await apiClient.post("/dojang", payload);
+      
+      toast.success("Registrasi dojang berhasil! Menunggu persetujuan admin.");
+      
+      // Reset form setelah berhasil
+      setNamaDojang("");
+      setEmail("");
+      setNoHp("");
+      setFounder("");
+      setKabupaten("");
+      setProvinsi("");
+      setNegara("");
+
+      console.log("Registration successful:", response);
     } catch (err: any) {
-      console.error(err);
-      toast.error(err.response?.data?.message || " kontol ");
+      console.error("Registration error:", err);
+      
+      // Handle different error types dengan response yang benar dari api.ts
+      if (err.response?.status === 400) {
+        const errorMessage = err.response?.data?.message || err.response?.data?.error || err.message;
+        toast.error(`Gagal registrasi: ${errorMessage}`);
+      } else if (err.response?.status === 401) {
+        toast.error("Sesi anda telah habis. Silakan refresh halaman.");
+      } else if (err.response?.status === 409 || err.message?.includes('sudah terdaftar')) {
+        toast.error("Nama dojang sudah terdaftar. Silakan gunakan nama lain.");
+      } else {
+        toast.error(err.message || "Terjadi kesalahan sistem. Coba lagi nanti.");
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
-
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (
-      !namaDojang ||
-      !noHp ||
-      !alamat ||
-      !kecamatan ||
-      !kabupaten ||
-      !provinsi ||
-      !negara
-    ) {
-      toast.error("Semua field harus terisi terlebih dahulu");
+    // Validasi minimal - hanya nama dojang yang wajib
+    if (!namaDojang.trim()) {
+      toast.error("Nama dojang harus diisi");
+      return;
+    }
+
+    // Validasi nama dojang tidak terlalu pendek
+    if (namaDojang.trim().length < 3) {
+      toast.error("Nama dojang minimal 3 karakter");
+      return;
+    }
+
+    // Validasi email jika diisi
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      toast.error("Format email tidak valid");
+      return;
+    }
+
+    // Validasi nomor HP jika diisi
+    if (noHp && !/^[\d\s\-\+\(\)]+$/.test(noHp)) {
+      toast.error("Format nomor HP tidak valid");
       return;
     }
 
@@ -75,102 +112,130 @@ const RegisterDojang = () => {
           <label className="font-bebas text-6xl text-center text-red">
             registrasi Dojang
           </label>
+          <p className="text-sm text-gray-600 text-center">
+            Daftarkan dojang anda untuk bergabung dengan komunitas taekwondo
+          </p>
         </div>
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="w-full flex flex-col gap-4">
           <div>
-            <label className="pl-2">Nama Dojang</label>
+            <label className="pl-2 text-sm font-medium">
+              Nama Dojang <span className="text-red-500">*</span>
+            </label>
             <TextInput
               value={namaDojang}
               onChange={(e) => setNamaDojang(e.target.value)}
-              className="h-12  border-red"
-              placeholder="Nama Dojang"
+              className="h-12 border-red"
+              placeholder="Contoh: Dojang Garuda Sakti"
               icon={<Home className="text-red" size={20} />}
             />
           </div>
+
           <div>
-            <label className="pl-2">No Hp</label>
+            <label className="pl-2 text-sm font-medium">Email (Opsional)</label>
+            <TextInput
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="h-12 border-red"
+              placeholder="email@example.com"
+              type="email"
+              icon={<Mail className="text-red" size={20} />}
+            />
+          </div>
+
+          <div>
+            <label className="pl-2 text-sm font-medium">No HP (Opsional)</label>
             <TextInput
               value={noHp}
               onChange={(e) => setNoHp(e.target.value)}
-              className="h-12  border-red"
-              placeholder="No Hp"
+              className="h-12 border-red"
+              placeholder="08123456789"
               icon={<Phone className="text-red" size={20} />}
             />
           </div>
+
           <div>
-            <label className="pl-2">Alamat Lengkap</label>
+            <label className="pl-2 text-sm font-medium">Nama Founder (Opsional)</label>
             <TextInput
-              value={alamat}
-              onChange={(e) => setAlamat(e.target.value)}
-              className="h-12  border-red"
-              placeholder="alamat"
-              icon={<MapPin className="text-red" size={20} />}
+              value={founder}
+              onChange={(e) => setFounder(e.target.value)}
+              className="h-12 border-red"
+              placeholder="Nama pendiri dojang"
+              icon={<User className="text-red" size={20} />}
             />
           </div>
+
           <div>
-            <label className="pl-2">Kecamatan</label>
-            <TextInput
-              value={kecamatan}
-              onChange={(e) => setKecamatan(e.target.value)}
-              className="h-12  border-red"
-              placeholder="kecamatan"
-              icon={<Map className="text-red" size={20} />}
-            />
-          </div>
-          <div>
-            <label className="pl-2">Kabupaten/Kota</label>
+            <label className="pl-2 text-sm font-medium">Kabupaten/Kota (Opsional)</label>
             <TextInput
               value={kabupaten}
               onChange={(e) => setKabupaten(e.target.value)}
-              className="h-12  border-red"
-              placeholder="kabupaten/kota"
-              icon={<Map className="text-red" size={20} />}
+              className="h-12 border-red"
+              placeholder="Jakarta Selatan"
+              icon={<MapPin className="text-red" size={20} />}
             />
           </div>
+
           <div>
-            <label className="pl-2">Provinsi</label>
+            <label className="pl-2 text-sm font-medium">Provinsi (Opsional)</label>
             <TextInput
               value={provinsi}
               onChange={(e) => setProvinsi(e.target.value)}
-              className="h-12  border-red"
-              placeholder="provinsi"
+              className="h-12 border-red"
+              placeholder="DKI Jakarta"
               icon={<Map className="text-red" size={20} />}
             />
           </div>
+
           <div>
-            <label className="pl-2">Negara</label>
+            <label className="pl-2 text-sm font-medium">Negara (Opsional)</label>
             <TextInput
               value={negara}
               onChange={(e) => setNegara(e.target.value)}
-              className="h-12  border-red"
-              placeholder="Negara"
+              className="h-12 border-red"
+              placeholder="Indonesia"
               icon={<Map className="text-red" size={20} />}
             />
           </div>
 
-          {/* Tombol Register */}
-          <GeneralButton
-            label="Register"
-            type={ "submit" as any }
-            className="active:scale-97 mt-2 w-full bg-red border-2 border-red h-12 rounded-xl text-white text-lg font-semibold hover:scale-101 transition-discrete duration-300 hover:shadow-xl"
-          />
+          {/* Info Box */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
+            <p className="font-medium">ℹ️ Informasi Penting:</p>
+            <ul className="mt-1 list-disc list-inside space-y-1">
+              <li>Pendaftaran akan berstatus "Menunggu Persetujuan"</li>
+              <li>Admin akan melakukan verifikasi sebelum aktivasi</li>
+              <li>Anda akan dihubungi melalui kontak yang diberikan</li>
+            </ul>
+          </div>
 
-          <span className="text-center pt-1">
-            Dont have an account?
+          {/* Tombol Register */}
+          <button
+            type="submit"
+            disabled={isLoading}
+            className={`active:scale-97 mt-2 w-full h-12 rounded-xl text-white text-lg font-semibold transition-all duration-300 hover:shadow-xl ${
+              isLoading 
+                ? "bg-gray-400 border-gray-400 cursor-not-allowed" 
+                : "bg-red border-2 border-red hover:scale-101"
+            }`}
+          >
+            {isLoading ? "Mendaftarkan..." : "Daftar Dojang"}
+          </button>
+
+          <span className="text-center pt-1 text-sm">
+            Belum punya akun pelatih?
             <Link to="/register" className="pl-1 underline hover:text-red">
-              Register here
+              Daftar sebagai pelatih
             </Link>
           </span>
 
-          <span className="text-center">
-            Already have an account?
+          <span className="text-center text-sm">
+            Sudah punya akun?
             <Link
               to="/login"
               className="pl-1 underline hover:text-red transition-colors"
             >
-              Login here
+              Login di sini
             </Link>
           </span>
         </form>

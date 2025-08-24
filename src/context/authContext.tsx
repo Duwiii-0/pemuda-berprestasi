@@ -15,9 +15,14 @@ const tokenManager = {
   }
 };
 
-// API helper function
+// API helper function with better error handling
 const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
   const token = tokenManager.getToken();
+  
+  // Jika logout dan tidak ada token, jangan throw error
+  if (endpoint === '/auth/logout' && !token) {
+    return { success: true, message: 'Already logged out' };
+  }
   
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     ...options,
@@ -30,6 +35,12 @@ const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
+    
+    // Untuk logout, jika 401 (Unauthorized), anggap sukses karena sudah logout
+    if (endpoint === '/auth/logout' && response.status === 401) {
+      return { success: true, message: 'Token expired, logout successful' };
+    }
+    
     throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
   }
 
@@ -175,14 +186,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const logout = () => {
     console.log('🚪 Logging out user...');
     
-    // Clear state
+    // Clear state immediately
     setUser(null);
     setToken(null);
     tokenManager.removeToken();
     
-    // Optional: Call backend logout endpoint
-    authAPI.logout().catch((error) => {
-      console.error('⚠️ Logout API call failed:', error);
+    // Optional: Call backend logout endpoint - jangan throw error jika gagal
+    authAPI.logout().then((response) => {
+      console.log('✅ Backend logout successful:', response.message);
+    }).catch((error) => {
+      // Jangan log sebagai error karena sudah logout di frontend
+      console.log('ℹ️ Backend logout info:', error.message || 'Token might already be expired');
     });
     
     console.log('✅ Logout completed');

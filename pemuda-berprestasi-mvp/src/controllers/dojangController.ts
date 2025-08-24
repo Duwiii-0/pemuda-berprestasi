@@ -3,16 +3,46 @@ import { DojangService } from '../services/dojangService';
 import { sendSuccess, sendError } from '../utils/response';
 
 export class DojangController {
-  // Create new dojang
+  // Create new dojang (support public registration)
   static async create(req: Request, res: Response) {
     try {
       const dojangData = req.body;
-      const dojang = await DojangService.createDojang(dojangData);
-      console.log("Payload diterima:", req.body); // <- tambahkan ini
+      console.log("Payload diterima:", req.body);
       
-      return sendSuccess(res, dojang, 'Dojang berhasil dibuat', 201);
+      // Validasi minimal untuk registrasi publik
+      if (!dojangData.nama_dojang || dojangData.nama_dojang.trim().length === 0) {
+        return sendError(res, 'Nama dojang harus diisi', 400);
+      }
+
+      // Validasi email jika ada
+      if (dojangData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(dojangData.email)) {
+        return sendError(res, 'Format email tidak valid', 400);
+      }
+
+      // Sanitasi data
+      const sanitizedData = {
+        nama_dojang: dojangData.nama_dojang.trim(),
+        email: dojangData.email ? dojangData.email.trim() : null,
+        no_telp: dojangData.no_telp ? dojangData.no_telp.trim() : null,
+        founder: dojangData.founder ? dojangData.founder.trim() : null,
+        negara: dojangData.negara ? dojangData.negara.trim() : null,
+        provinsi: dojangData.provinsi ? dojangData.provinsi.trim() : null,
+        kota: dojangData.kota ? dojangData.kota.trim() : null,
+        id_pelatih_pendaftar: dojangData.id_pelatih_pendaftar || null, // Bisa null untuk registrasi publik
+      };
+
+      const dojang = await DojangService.createDojang(sanitizedData);
+      
+      return sendSuccess(res, dojang, 'Dojang berhasil didaftarkan! Menunggu persetujuan admin.', 201);
     } catch (error: any) {
-      return sendError(res, error.message, 400);
+      console.error('Error creating dojang:', error);
+      
+      // Handle specific Prisma errors
+      if (error.code === 'P2002') {
+        return sendError(res, 'Nama dojang sudah terdaftar. Silakan gunakan nama lain.', 400);
+      }
+      
+      return sendError(res, error.message || 'Terjadi kesalahan saat mendaftarkan dojang', 400);
     }
   }
 
@@ -28,6 +58,60 @@ export class DojangController {
       return sendSuccess(res, result.data, 'Data dojang berhasil diambil', 200, result.pagination);
     } catch (error: any) {
       return sendError(res, error.message, 500);
+    }
+  }
+
+  // Get pending dojangs (for admin)
+  static async getPending(req: Request, res: Response) {
+    try {
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 10;
+
+      const result = await DojangService.getPendingDojangs(page, limit);
+      
+      return sendSuccess(res, result.data, 'Data dojang pending berhasil diambil', 200, result.pagination);
+    } catch (error: any) {
+      return sendError(res, error.message, 500);
+    }
+  }
+
+  // Approve dojang (for admin)
+  static async approve(req: Request, res: Response) {
+    try {
+      const id = parseInt(req.params.id);
+      const { id_pelatih_pendaftar } = req.body;
+      
+      if (isNaN(id)) {
+        return sendError(res, 'ID dojang tidak valid', 400);
+      }
+
+      if (!id_pelatih_pendaftar) {
+        return sendError(res, 'ID pelatih pendaftar harus diisi', 400);
+      }
+
+      const result = await DojangService.approveDojang(id, id_pelatih_pendaftar);
+      
+      return sendSuccess(res, result, 'Dojang berhasil diapprove');
+    } catch (error: any) {
+      return sendError(res, error.message, 400);
+    }
+  }
+
+  // Reject dojang (for admin)
+  static async reject(req: Request, res: Response) {
+    try {
+      const id = parseInt(req.params.id);
+      const { reason } = req.body;
+      
+      if (isNaN(id)) {
+        return sendError(res, 'ID dojang tidak valid', 400);
+      }
+
+      const result = await DojangService.rejectDojang(id, reason);
+      
+      return sendSuccess(res, result, 'Dojang berhasil ditolak');
+    } catch (error: any) {
+      return sendError(res, error.message, 400);
     }
   }
 
@@ -128,6 +212,23 @@ export class DojangController {
       const dojangList = await DojangService.getDojangByPelatih(user.pelatih.id_pelatih);
       
       return sendSuccess(res, dojangList, 'Data dojang Anda berhasil diambil');
+    } catch (error: any) {
+      return sendError(res, error.message, 500);
+    }
+  }
+
+  // Check dojang name availability
+  static async checkNameAvailability(req: Request, res: Response) {
+    try {
+      const { nama_dojang } = req.query;
+      
+      if (!nama_dojang) {
+        return sendError(res, 'Nama dojang harus diisi', 400);
+      }
+
+      const isAvailable = await DojangService.checkNameAvailability(nama_dojang as string);
+      
+      return sendSuccess(res, { available: isAvailable }, 'Pengecekan nama berhasil');
     } catch (error: any) {
       return sendError(res, error.message, 500);
     }

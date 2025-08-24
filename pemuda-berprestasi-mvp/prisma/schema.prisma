@@ -56,12 +56,16 @@ model tb_dojang {
   negara               String?      @db.VarChar(100)
   provinsi             String?      @db.VarChar(100)
   kota                 String?      @db.VarChar(100)
-  id_pelatih_pendaftar Int
+  id_pelatih_pendaftar Int?         // Ubah jadi optional/nullable
+  status               StatusDojang @default(PENDING_APPROVAL) // Field baru
+  created_at           DateTime     @default(now())            // Field baru
+  updated_at           DateTime     @updatedAt                 // Field baru
 
   atlet                tb_atlet[]
-  pelatih_pendaftar    tb_pelatih   @relation("DojangPendaftar", fields: [id_pelatih_pendaftar], references: [id_pelatih])
+  pelatih_pendaftar    tb_pelatih?  @relation("DojangPendaftar", fields: [id_pelatih_pendaftar], references: [id_pelatih])
 
   @@index([id_pelatih_pendaftar], map: "tb_dojang_id_pelatih_pendaftar_fkey")
+  @@index([status], map: "tb_dojang_status_idx") // Index untuk performa query
 }
 
 model tb_atlet {
@@ -297,4 +301,11 @@ enum StatusPendaftaran {
 enum ROLE {
   ADMIN
   PELATIH
+}
+
+enum StatusDojang {
+  PENDING_APPROVAL  
+  ACTIVE           
+  INACTIVE         
+  REJECTED         
 }
