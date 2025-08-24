@@ -4,6 +4,8 @@ import TextInput from "../../components/textInput";
 import { Home, Phone, MapPin, Map } from "lucide-react";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
+import {apiClient} from "../../../pemuda-berprestasi-mvp/src/config/api";
+
 
 const RegisterDojang = () => {
   const [namaDojang, setNamaDojang] = useState("");
@@ -14,9 +16,30 @@ const RegisterDojang = () => {
   const [provinsi, setProvinsi] = useState("");
   const [negara, setNegara] = useState("");
 
-  const handleRegister = () => {
-    toast.success("Registrasi dojang berhasil (dummy)!");
+  const handleRegister = async () => {
+    try {
+      // ini data sesuai schema Prisma & validation
+      const payload = {
+        nama_dojang: namaDojang,
+        no_telp: noHp,
+        alamat: alamat, // gabungin
+        kecamatan: kecamatan,
+        provinsi,
+        negara,
+        kota: kabupaten, // backend pakai "kota"
+        id_pelatih_pendaftar: 1, // sementara hardcode, nanti ambil dari auth user
+      };
+
+      const res = await apiClient.post("/dojang", payload);
+      toast.success("Registrasi dojang berhasil!");
+
+      console.log("Res:", res.data);
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.response?.data?.message || " kontol ");
+    }
   };
+
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

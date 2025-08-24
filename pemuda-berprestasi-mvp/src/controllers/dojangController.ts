@@ -8,6 +8,7 @@ export class DojangController {
     try {
       const dojangData = req.body;
       const dojang = await DojangService.createDojang(dojangData);
+      console.log("Payload diterima:", req.body); // <- tambahkan ini
       
       return sendSuccess(res, dojang, 'Dojang berhasil dibuat', 201);
     } catch (error: any) {

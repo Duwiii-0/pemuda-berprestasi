@@ -9,8 +9,7 @@ const router = Router();
 // Public routes
 router.get('/stats', DojangController.getStats);
 
-// Protected routes (require authentication)
-router.use(authenticate);
+router.use(authenticate)
 
 // CRUD operations
 router.post('/', validateRequest(dojangValidation.create), DojangController.create);

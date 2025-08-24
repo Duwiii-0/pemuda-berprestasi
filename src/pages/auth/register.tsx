@@ -302,13 +302,7 @@ const Register = () => {
                 Login here
               </Link>
             </span>
-            
-            {/* Info tambahan */}
-            <div className="text-xs text-gray-600 text-center mt-2 px-4">
-              <p>* Field wajib diisi</p>
-              <p>Field lainnya seperti alamat, tanggal lahir, dll dapat diisi di halaman settings setelah login</p>
-            </div>
-          </div>
+                      </div>
         </form>
       </div>
     </div>

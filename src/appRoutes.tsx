@@ -135,9 +135,7 @@ export default function AppRoutes() {
 
         {/* Register Dojang - only for authenticated PELATIH */}
         <Route path="/registerdojang" element={
-          <ProtectedRoute requiredRole="PELATIH">
             <RegisterDojang />
-          </ProtectedRoute>
         } />
 
         {/* Landing pages - accessible to everyone */}

@@ -7,6 +7,7 @@ import dotenv from 'dotenv'
 // Import routes
 import authRoutes from './routes/auth'
 import pelatihRoutes from './routes/pelatih'
+import dojangRoutes from './routes/dojang'
 
 // Import middleware
 import { errorHandler, notFoundHandler } from './middleware/errorHandler'
@@ -44,7 +45,7 @@ app.use('/api/auth', authRoutes)
 app.use('/api/pelatih', pelatihRoutes)
 
 // Routes untuk Developer B nanti:
-// app.use('/api/dojang', dojangRoutes)
+app.use('/api/dojang', dojangRoutes)
 // app.use('/api/atlet', atletRoutes)
 // app.use('/api/kompetisi', kompetisiRoutes)
 // app.use('/api/admin', adminRoutes)
