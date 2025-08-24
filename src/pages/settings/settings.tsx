@@ -1,23 +1,30 @@
-import { ArrowLeft, Mail, KeyRound, IdCard, Phone, CalendarFold, Map, MapPinned, User, Settings as SettingsIcon, Shield, Edit3, Save, X } from 'lucide-react';
+import { ArrowLeft, Mail, KeyRound, IdCard, Phone, CalendarFold, Map, MapPinned, User, Settings as SettingsIcon, Shield, UploadCloud, Save, X } from 'lucide-react';
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
 import { GeneralButton } from '../dashboard/dataDojang';
 import { TextInput } from '../dashboard/dataDojang';
 import { useAuth } from "../../context/authContext";
-import { apiClient, setAuthToken } from "../../config/api";
+import { apiClient, setAuthToken } from "../../../pemuda-berprestasi-mvp/src/config/api";
 import Select from "react-select";
 import toast from 'react-hot-toast';
+import FileInput from "../../components/fileInput";
+
 
 const Settings = () => {
   const { user, token } = useAuth();
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [files, setFiles] = useState<{
+    fotoKtp?: File | null;
+    sertifikatSabuk?: File | null;
+  }>({});
+
+
   const [formData, setFormData] = useState({
     email: user?.email || '',
-    password: user?.password || '',
-    name: user?.nama_pelatih || '',
+    name: user?.pelatih?.nama_pelatih || '',
     phone: '',
     nik: '',
     tglLahir: '',
@@ -25,7 +32,11 @@ const Settings = () => {
     Alamat: '',
     Provinsi: '',
     gender: '' as "Laki-Laki" | "Perempuan" | '',
+    
   });
+
+  const [initialData, setInitialData] = useState(formData);
+
 
   const genderOptions = [
     { value: "Laki-Laki", label: "Laki-Laki" },
@@ -40,77 +51,101 @@ const Settings = () => {
   }, [token]);
 
   // Fetch profile data dari API pelatih saat component mount
-  useEffect(() => {
-    const fetchPelatihProfile = async () => {
-      if (!user || user.role !== 'PELATIH') return;
-      
-      try {
-        setLoading(true);
-        const response = await apiClient.get('/pelatih/profile');
-        
-        if (response.success) {
-          const profileData = response.data;
-          // Map data pelatih ke form fields yang sudah ada
-          setFormData(prev => ({
-            ...prev,
-            email: profileData.akun.email,
-            name: profileData.nama_pelatih || '',
-            phone: profileData.no_telp || '',
-          }));
-        }
-      } catch (error) {
-        console.error('Error fetching profile:', error);
-        toast.error('Gagal mengambil data profil');
-      } finally {
-        setLoading(false);
-      }
-    };
+useEffect(() => {
+  const fetchPelatihProfile = async () => {
+    if (!user || user.role !== 'PELATIH') return;
 
-    fetchPelatihProfile();
-  }, [user]);
-
-  const handleCancel = () => {
-    setIsEditing(false);
-    // Reset form ke data user asli
-    setFormData({
-      email: user?.email || '',
-      password: user?.password || '',
-      name: user?.nama_pelatih || '',
-      phone: formData.phone,
-      nik: formData.nik,
-      tglLahir: formData.tglLahir,
-      kota: formData.kota,
-      Alamat: formData.Alamat,
-      Provinsi: formData.Provinsi,
-      gender: formData.gender,
-    });
-  };
-
-  const handleUpdate = async () => {
     try {
       setLoading(true);
-      
-      // Hanya update data yang relevan untuk pelatih
-      const updateData = {
-        nama_pelatih: formData.name.trim(),
-        no_telp: formData.phone.trim() || null,
-      };
-
-      const response = await apiClient.put('/pelatih/profile', updateData);
+      const response = await apiClient.get('/pelatih/profile');
       
       if (response.success) {
-        setIsEditing(false);
-        toast.success('Profil berhasil diperbarui');
-      } else {
-        toast.error(response.message || 'Gagal memperbarui profil');
+        const profileData = response.data;
+        const data = {
+          email: profileData.akun.email,
+          name: profileData.nama_pelatih,
+          phone: profileData.no_telp,
+          nik: profileData.nik,
+          tglLahir: profileData.tgl_lahir ,
+          kota: profileData.kota,
+          Alamat: profileData.alamat,
+          Provinsi: profileData.provinsi,
+          gender: profileData.gender
+        };
+        setFormData(data);
+        setInitialData(data); // simpan data asli
       }
     } catch (error) {
-      console.error('Error updating profile:', error);
-      toast.error('Terjadi kesalahan saat memperbarui profil');
+      console.error('Error fetching profile:', error);
+      toast.error('Gagal mengambil data profil');
     } finally {
       setLoading(false);
     }
   };
+
+  fetchPelatihProfile();
+}, [user]);
+
+  const handleCancel = () => {
+    setIsEditing(false);
+    setFormData(initialData);
+  };
+
+
+const handleUpdate = async () => {
+  try {
+    setLoading(true);
+
+    // 1️⃣ Update data text
+    const updateData = {
+      nama_pelatih: formData.name.trim(),
+      no_telp: formData.phone.trim() || null,
+      nik: formData.nik,
+      tgl_lahir: formData.tglLahir,
+      kota: formData.kota,
+      provinsi: formData.Provinsi,
+      alamat: formData.Alamat,
+      gender: formData.gender,
+    };
+
+    const response = await apiClient.put("/pelatih/profile", updateData);
+
+    if (!response.success) {
+      toast.error(response.message || "Gagal memperbarui profil");
+      return;
+    }
+
+    // 2️⃣ Upload file (jika ada)
+    if (files.fotoKtp || files.sertifikatSabuk) {
+      const formDataToSend = new FormData();
+
+      if (files.fotoKtp) {
+        formDataToSend.append("foto_ktp", files.fotoKtp);
+      }
+      if (files.sertifikatSabuk) {
+        formDataToSend.append("sertifikat_sabuk", files.sertifikatSabuk);
+      }
+
+      const uploadRes = await apiClient.postFormData("/pelatih/upload", formDataToSend )
+
+      if (!uploadRes.success) {
+        toast.error(uploadRes.message || "Upload file gagal");
+        return;
+      } 
+    }
+
+    setIsEditing(false);
+    toast.success("Profil berhasil diperbarui");
+  } catch (error) {
+    console.error("Error updating profile:", error);
+    toast.error("Terjadi kesalahan saat memperbarui profil");
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+
 
   // Redirect jika tidak login
   useEffect(() => {
@@ -176,11 +211,8 @@ const Settings = () => {
                 </div>
                 
                 <h3 className="font-inter font-semibold text-lg text-gray-800 mb-1">
-                  {formData.name || user.userName}
+                  {formData.name || user?.pelatih?.nama_pelatih}
                 </h3>
-                <p className="font-inter text-sm text-gray-500 mb-2">
-                  {user.role === 'PELATIH' ? 'Pelatih Taekwondo' : 'Pengguna Terdaftar'}
-                </p>
                 <p className="font-inter text-xs text-gray-400 mb-6">{formData.email}</p>
                 
                 {/* Account Actions */}
@@ -416,22 +448,47 @@ const Settings = () => {
                     </div>
                   </div>
 
-                  {/* Status untuk Pelatih */}
-                  {user.role === 'PELATIH' && (
-                    <div className="md:col-span-2">
-                      <label className="block font-inter font-medium text-black/70 text-sm mb-3">
-                        Status Pelatih
-                      </label>
-                      <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                        <div className="flex items-center gap-2 text-blue-700">
-                          <Shield size={20} />
-                          <span className="font-inter text-sm font-medium">
-                            Data lengkap pelatih dapat dikelola melalui profil pelatih
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
+                  {/* Upload Foto KTP */}
+<div className="space-y-2">
+  <label className="block font-inter font-medium text-black/70 text-sm">
+    Upload Foto KTP
+  </label>
+  <div className="relative">
+    <FileInput
+      accept="image/*"
+      disabled={!isEditing}
+        file={files.fotoKtp}
+      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+        setFiles({ ...files, fotoKtp: e.target.files?.[0] || null })
+      }
+      className="border-red/20 bg-white/50 backdrop-blur-sm rounded-xl hover:border-red transition-all duration-300"
+    />
+    {!isEditing && (
+      <div className="absolute inset-0 bg-gray-100/50 rounded-xl" />
+    )}
+  </div>
+</div>
+
+{/* Upload Sertifikat Sabuk */}
+<div className="space-y-2">
+  <label className="block font-inter font-medium text-black/70 text-sm">
+    Upload Sertifikat Sabuk
+  </label>
+  <div className="relative">
+    <FileInput
+      accept="image/*"
+      disabled={!isEditing}
+      file={files.sertifikatSabuk}
+      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+        setFiles({ ...files, sertifikatSabuk: e.target.files?.[0] || null })
+      }
+      className="border-red/20 bg-white/50 backdrop-blur-sm rounded-xl hover:border-red transition-all duration-300"
+    />
+    {!isEditing && (
+      <div className="absolute inset-0 bg-gray-100/50 rounded-xl" />
+    )}
+  </div>
+</div>
 
                 </div>
               </div>

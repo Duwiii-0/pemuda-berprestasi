@@ -5,7 +5,7 @@ import TextInput from "../../components/textInput";
 import { Mail, User, Phone, Lock, IdCard } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import { apiClient } from "../../config/api";
+import { apiClient } from "../../../pemuda-berprestasi-mvp/src/config/api";
 
 type OptionType = { value: string; label: string };
 

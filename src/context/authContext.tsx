@@ -64,11 +64,11 @@ interface User {
   role: 'ADMIN' | 'PELATIH';
   admin?: {
     id_admin: number;
-    nama: string;
+    nama_admin: string;
   };
   pelatih?: {
     id_pelatih: number;
-    nama: string;
+    nama_pelatih: string;
   };
 }
 
@@ -215,7 +215,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const isAuthenticated = !!user && !!token;
   const isAdmin = user?.role === 'ADMIN';
   const isPelatih = user?.role === 'PELATIH';
-  const userName = user?.admin?.nama || user?.pelatih?.nama || user?.email || 'User';
+  const userName = user?.admin?.nama_admin || user?.pelatih?.nama_pelatih || user?.email || 'User';
 
   // ===== CONTEXT VALUE =====
   const value: AuthContextType = {
