@@ -18,7 +18,7 @@ export const validate = (schema: Joi.ObjectSchema) => {
         message: detail.message
       }))
       
-      return sendValidationError(res, errors)
+      return sendValidationError(res, errors, 'Validation error')
     }
     
     next()
@@ -36,7 +36,7 @@ export const validateParams = (schema: Joi.ObjectSchema) => {
         message: detail.message
       }))
       
-      return sendValidationError(res, errors)
+      return sendValidationError(res, errors, 'Parameter validation error')
     }
     
     next()
@@ -54,7 +54,7 @@ export const validateQuery = (schema: Joi.ObjectSchema) => {
         message: detail.message
       }))
       
-      return sendValidationError(res, errors)
+      return sendValidationError(res, errors, 'Query validation error')
     }
     
     next()
@@ -72,13 +72,12 @@ export const validateRequest = (schema: ObjectSchema) => {
     const { error } = schema.validate(data, { abortEarly: false, allowUnknown: true })
 
     if (error) {
-      return res.status(400).json({
-        message: 'Validation error',
-        errors: error.details.map((detail) => ({
-          field: detail.path.join('.'),
-          message: detail.message,
-        })),
-      })
+      const errors = error.details.map((detail) => ({
+        field: detail.path.join('.'),
+        message: detail.message,
+      }))
+
+      return sendValidationError(res, errors, 'Request validation error')
     }
 
     next()
