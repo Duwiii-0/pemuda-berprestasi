@@ -1,5 +1,7 @@
 // src/validations/pelatihValidation.ts
 import Joi from 'joi'
+import { body } from 'express-validator'
+
 
 // Update pelatih profile validation
 export const updatePelatihSchema = Joi.object({
@@ -68,3 +70,40 @@ export const listPelatihSchema = Joi.object({
     .default('asc')
     .optional()
 })
+
+export const validateUpdatePelatih = [
+  body('nama_pelatih')
+    .notEmpty()
+    .withMessage('Nama pelatih harus diisi')
+    .isLength({ min: 2, max: 100 })
+    .withMessage('Nama pelatih harus antara 2-100 karakter')
+    .matches(/^[a-zA-Z\s\.]+$/)
+    .withMessage('Nama pelatih hanya boleh mengandung huruf, spasi, dan titik')
+    .custom((value) => {
+      // Check for excessive spaces or special characters
+      if (value.includes('  ') || value.trim() !== value) {
+        throw new Error('Nama pelatih tidak boleh mengandung spasi berlebihan')
+      }
+      return true
+    }),
+
+  body('no_telp')
+    .optional({ nullable: true })
+    .custom((value) => {
+      if (value === null || value === '' || value === undefined) {
+        return true // Optional field
+      }
+      
+      // Remove spaces and validate Indonesian phone number
+      const cleanPhone = value.replace(/\s/g, '')
+      const phoneRegex = /^(\+62|62|0)[0-9]{8,13}$/
+      
+      if (!phoneRegex.test(cleanPhone)) {
+        throw new Error('Format nomor telepon tidak valid (contoh: 08123456789 atau +628123456789)')
+      }
+      
+      return true
+    })
+    .isLength({ max: 20 })
+    .withMessage('Nomor telepon maksimal 20 karakter')
+]

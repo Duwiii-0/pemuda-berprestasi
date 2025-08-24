@@ -16,6 +16,7 @@ interface TextInputProps {
   icon?: React.ReactNode;
   disabled?: boolean;
   value?: string;
+  type?: string | "text";
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
@@ -23,6 +24,7 @@ interface GeneralButtonProps {
   label: string;
   className?: string;
   onClick?: () => void;
+  disabled?: boolean;
 }
 
 interface StatsCardProps {
@@ -32,17 +34,17 @@ interface StatsCardProps {
   color: string;
 }
 
-export const TextInput: React.FC<TextInputProps> = ({ placeholder, className, icon, value, disabled, onChange }) => {
+export const TextInput: React.FC<TextInputProps> = ({ placeholder, className, icon, value, disabled,type , onChange }) => {
   return (
     <div className={`relative group ${className}`}>
       <div className="flex items-center border-2 border-red/20 hover:border-red/40 focus-within:border-red rounded-xl px-4 py-3 gap-3 bg-white/80 backdrop-blur-sm transition-all duration-300 hover:shadow-lg">
         {icon && <span className="text-red/60 group-focus-within:text-red transition-colors">{icon}</span>}
         <input
           value={value}
+          type={type}
           onChange={onChange}
           disabled={disabled}
           placeholder={placeholder}
-          type="text"
           className="w-full outline-none bg-transparent placeholder-red/30 text-black/80 font-plex"
         />
       </div>
@@ -51,8 +53,9 @@ export const TextInput: React.FC<TextInputProps> = ({ placeholder, className, ic
   );
 };
 
-export const GeneralButton: React.FC<GeneralButtonProps> = ({ label, className, onClick }) => (
+export const GeneralButton: React.FC<GeneralButtonProps> = ({ label, className,disabled, onClick }) => (
   <button
+    disabled={disabled}
     onClick={onClick}
     className={`font-plex font-medium px-6 py-3 rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-lg active:scale-95 ${className}`}
   >

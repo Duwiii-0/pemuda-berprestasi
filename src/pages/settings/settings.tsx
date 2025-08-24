@@ -5,24 +5,26 @@ import { Link } from "react-router-dom";
 import { GeneralButton } from '../dashboard/dataDojang';
 import { TextInput } from '../dashboard/dataDojang';
 import { useAuth } from "../../context/authContext";
+import { apiClient, setAuthToken } from "../../config/api";
 import Select from "react-select";
 import toast from 'react-hot-toast';
 
 const Settings = () => {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    email: user?.email,
-    password: user?.password,
-    name: user?.name,
-    phone: user?.phone,
-    nik: user?.nik,
-    tglLahir: user?.tglLahir,
-    kota: user?.kota,
-    Alamat: user?.alamat,
-    Provinsi: user?.provinsi,
-    gender: user?.gender,
+    email: user?.email || '',
+    password: user?.password || '',
+    name: user?.nama_pelatih || '',
+    phone: '',
+    nik: '',
+    tglLahir: '',
+    kota: '',
+    Alamat: '',
+    Provinsi: '',
+    gender: '' as "Laki-Laki" | "Perempuan" | '',
   });
 
   const genderOptions = [
@@ -30,35 +32,105 @@ const Settings = () => {
     { value: "Perempuan", label: "Perempuan" },
   ];
 
+  // Set token ke API client saat component mount
+  useEffect(() => {
+    if (token) {
+      setAuthToken(token);
+    }
+  }, [token]);
+
+  // Fetch profile data dari API pelatih saat component mount
+  useEffect(() => {
+    const fetchPelatihProfile = async () => {
+      if (!user || user.role !== 'PELATIH') return;
+      
+      try {
+        setLoading(true);
+        const response = await apiClient.get('/pelatih/profile');
+        
+        if (response.success) {
+          const profileData = response.data;
+          // Map data pelatih ke form fields yang sudah ada
+          setFormData(prev => ({
+            ...prev,
+            email: profileData.akun.email,
+            name: profileData.nama_pelatih || '',
+            phone: profileData.no_telp || '',
+          }));
+        }
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+        toast.error('Gagal mengambil data profil');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPelatihProfile();
+  }, [user]);
+
   const handleCancel = () => {
     setIsEditing(false);
+    // Reset form ke data user asli
     setFormData({
-      email: user?.email,
-      password: user?.password,
-      name: user?.name,
-      phone: user?.phone,
-      nik: user?.nik,
-      tglLahir: user?.tglLahir,
-      kota: user?.kota,
-      Alamat: user?.alamat,
-      Provinsi: user?.provinsi,
-      gender: user?.gender,
+      email: user?.email || '',
+      password: user?.password || '',
+      name: user?.nama_pelatih || '',
+      phone: formData.phone,
+      nik: formData.nik,
+      tglLahir: formData.tglLahir,
+      kota: formData.kota,
+      Alamat: formData.Alamat,
+      Provinsi: formData.Provinsi,
+      gender: formData.gender,
     });
   };
 
-  const handleUpdate = () => {
-    console.log("Data akan diupdate:", formData);
-    setIsEditing(false);
+  const handleUpdate = async () => {
+    try {
+      setLoading(true);
+      
+      // Hanya update data yang relevan untuk pelatih
+      const updateData = {
+        nama_pelatih: formData.name.trim(),
+        no_telp: formData.phone.trim() || null,
+      };
+
+      const response = await apiClient.put('/pelatih/profile', updateData);
+      
+      if (response.success) {
+        setIsEditing(false);
+        toast.success('Profil berhasil diperbarui');
+      } else {
+        toast.error(response.message || 'Gagal memperbarui profil');
+      }
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast.error('Terjadi kesalahan saat memperbarui profil');
+    } finally {
+      setLoading(false);
+    }
   };
 
+  // Redirect jika tidak login
   useEffect(() => {
     if (!user) {
-      toast.error("Anda harus login terlebih dahulu ")  
+      toast.error("Anda harus login terlebih dahulu");
       navigate("/", { replace: true });
     }
   }, [user, navigate]);
 
-  if (!user) return null;
+  // Loading state
+  if (loading && !formData.name) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-white via-red/5 to-yellow/10 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red mx-auto mb-4"></div>
+          <p className="text-gray-600">Memuat profil...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-white via-red/5 to-yellow/10">
@@ -95,19 +167,21 @@ const Settings = () => {
             <div className="bg-white/40 rounded-2xl p-6 shadow-lg border border-gray-100">
               <div className="text-center">
                 <div className="relative inline-block mb-4">
-                  <div   onClick={() => toast.error("Fitur ini akan segera hadir")} className='h-24 w-24 rounded-xl overflow-hidden border-2 border-red/20 shadow-sm bg-gray-50 mx-auto'>
-                    {user.photo ? (
-                      <img src={user.photo} alt={user.name} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-red to-red/80 flex items-center justify-center text-white">
-                        <User strokeWidth={1.5} size={32}/>
-                      </div>
-                    )}
+                  <div onClick={() => toast.error("Fitur upload foto akan segera hadir")} 
+                       className='h-24 w-24 rounded-xl overflow-hidden border-2 border-red/20 shadow-sm bg-gray-50 mx-auto cursor-pointer hover:border-red/40 transition-colors'>
+                    <div className="w-full h-full bg-gradient-to-br from-red to-red/80 flex items-center justify-center text-white">
+                      <User strokeWidth={1.5} size={32}/>
+                    </div>
                   </div>
                 </div>
                 
-                <h3 className="font-inter font-semibold text-lg text-gray-800 mb-1">{user.name}</h3>
-                <p className="font-inter text-sm text-gray-500 mb-6">Pengguna Terdaftar</p>
+                <h3 className="font-inter font-semibold text-lg text-gray-800 mb-1">
+                  {formData.name || user.userName}
+                </h3>
+                <p className="font-inter text-sm text-gray-500 mb-2">
+                  {user.role === 'PELATIH' ? 'Pelatih Taekwondo' : 'Pengguna Terdaftar'}
+                </p>
+                <p className="font-inter text-xs text-gray-400 mb-6">{formData.email}</p>
                 
                 {/* Account Actions */}
                 <div className="space-y-3">
@@ -118,7 +192,10 @@ const Settings = () => {
                     <Shield size={16} />
                     Ganti Password
                   </button>
-                  <button onClick={() => toast.error("Fitur ini akan segera hadir")} className="w-full px-4 py-2.5 border border-red text-red hover:bg-red/5 rounded-lg font-inter text-sm transition-colors duration-300">
+                  <button 
+                    onClick={() => toast.error("Fitur ini akan segera hadir")} 
+                    className="w-full px-4 py-2.5 border border-red text-red hover:bg-red/5 rounded-lg font-inter text-sm transition-colors duration-300"
+                  >
                     Hapus Akun
                   </button>
                 </div>
@@ -148,6 +225,7 @@ const Settings = () => {
                        label="Ubah Data Diri"
                        className="text-white bg-gradient-to-r from-red to-red/80 hover:from-red/90 hover:to-red/70 border-0 shadow-lg flex items-center gap-2"
                        onClick={() => setIsEditing(true)}
+                       disabled={loading}
                      />
                    ) : (
                      <div className="flex gap-3">
@@ -155,11 +233,13 @@ const Settings = () => {
                          label="Batal"
                          className="text-red bg-white hover:bg-red/5 border-2 border-red/30 hover:border-red/50"
                          onClick={handleCancel}
+                         disabled={loading}
                        />
                        <GeneralButton
-                         label="Simpan"
+                         label={loading ? "Menyimpan..." : "Simpan"}
                          className="text-white bg-gradient-to-r from-red to-red/80 hover:from-red/90 hover:to-red/70 border-0 shadow-lg flex items-center gap-2"
                          onClick={handleUpdate}
+                         disabled={loading}
                        />
                      </div>
                    )}
@@ -170,18 +250,18 @@ const Settings = () => {
               <div className="p-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   
-                  {/* Username */}
+                  {/* Email (Read Only) */}
                   <div className="md:col-span-2">
                     <div className="space-y-2">
                       <label className="block font-inter font-medium text-black/70 text-sm">
-                        Nomor Telepon
+                        Email
                       </label>
                       <TextInput
                         className="w-full"
                         disabled
                         value={formData.email}
-                        placeholder="Masukkan nomor telepon"
-                        icon={<Phone className="text-red/60" size={20} />}
+                        placeholder="Email"
+                        icon={<Mail className="text-gray-400" size={20} />}
                       />
                     </div>
                   </div>
@@ -196,8 +276,8 @@ const Settings = () => {
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, nik: e.target.value })}
                       disabled={!isEditing}
                       value={formData.nik}
-                      placeholder="Masukkan nomor telepon"
-                      icon={<Phone className="text-red/60" size={20} />}
+                      placeholder="Masukkan NIK"
+                      icon={<IdCard className={isEditing ? "text-red/60" : "text-gray-400"} size={20} />}
                     />
                   </div>                  
                   
@@ -209,25 +289,25 @@ const Settings = () => {
                     <TextInput
                       className="w-full"
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, name: e.target.value })}
-                      disabled={!isEditing}
+                      disabled={!isEditing || loading}
                       value={formData.name}
-                      placeholder="Masukkan nomor telepon"
-                      icon={<Phone className="text-red/60" size={20} />}
+                      placeholder="Masukkan nama lengkap"
+                      icon={<User className={isEditing ? "text-red/60" : "text-gray-400"} size={20} />}
                     />
                   </div>
 
                   {/* Phone */}
                   <div className="space-y-2">
                     <label className="block font-inter font-medium text-black/70 text-sm">
-                      Nomor Telpon
+                      Nomor Telepon
                     </label>
                     <TextInput
                       className="w-full"
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, phone: e.target.value })}
-                      disabled={!isEditing}
+                      disabled={!isEditing || loading}
                       value={formData.phone}
                       placeholder="Masukkan nomor telepon"
-                      icon={<Phone className="text-red/60" size={20} />}
+                      icon={<Phone className={isEditing ? "text-red/60" : "text-gray-400"} size={20} />}
                     />
                   </div>
 
@@ -241,45 +321,45 @@ const Settings = () => {
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, tglLahir: e.target.value })}
                       disabled={!isEditing}
                       value={formData.tglLahir}
-                      placeholder="Masukkan nomor telepon"
-                      icon={<Phone className="text-red/60" size={20} />}
+                      type="date"
+                      placeholder="Pilih tanggal lahir"
+                      icon={<CalendarFold className={isEditing ? "text-red/60" : "text-gray-400"} size={20} />}
                     />
                   </div>
 
                   {/* Gender */}
-                  <div >
+                  <div>
                     <label className="block font-inter font-medium text-black/70 text-sm">Jenis Kelamin</label>
                     <div className='relative'>
-                    <Select
-                    
-                      unstyled
-                      isDisabled={!isEditing}
-                      value={genderOptions.find(opt => opt.value === formData.gender) || null}
-                      onChange={(selected) =>
-                        setFormData({ ...formData, gender: selected?.value as "Laki-Laki" | "Perempuan" })
-                      }
-                      options={genderOptions}
-                      placeholder="Pilih jenis kelamin"
-                      classNames={{
-                        control: () =>
-                          `flex items-center border-2 border-red/20 hover:border-red/40 focus-within:border-red rounded-xl px-4 py-3 gap-3 bg-white/80 backdrop-blur-sm transition-all duration-300 hover:shadow-lg ${
-                            isEditing 
-                              ? 'border-2 border-red bg-white' 
-                              : 'border border-gray-200 bg-gray-50'
-                          }`,
-                        valueContainer: () => "px-1",
-                        placeholder: () => "text-gray-400 font-inter text-sm",
-                        menu: () => "border border-red bg-white rounded-lg shadow-lg mt-1 overflow-hidden",
-                        menuList: () => "max-h-32 overflow-y-auto",
-                        option: ({ isFocused, isSelected }) =>
-                          [
-                            "px-3 py-2 cursor-pointer font-inter text-sm",
-                            isFocused ? "bg-red/10 text-black" : "text-black",
-                            isSelected ? "bg-red text-white" : ""
-                          ].join(" "),
-                      }}
-                    />
-                    {!isEditing && <div className="absolute inset-0 bg-gray-100/50 rounded-xl" />}
+                      <Select
+                        unstyled
+                        isDisabled={!isEditing}
+                        value={genderOptions.find(opt => opt.value === formData.gender) || null}
+                        onChange={(selected) =>
+                          setFormData({ ...formData, gender: selected?.value as "Laki-Laki" | "Perempuan" })
+                        }
+                        options={genderOptions}
+                        placeholder="Pilih jenis kelamin"
+                        classNames={{
+                          control: () =>
+                            `flex items-center border-2 border-red/20 hover:border-red/40 focus-within:border-red rounded-xl px-4 py-3 gap-3 bg-white/80 backdrop-blur-sm transition-all duration-300 hover:shadow-lg ${
+                              isEditing 
+                                ? 'border-2 border-red bg-white' 
+                                : 'border border-gray-200 bg-gray-50'
+                            }`,
+                          valueContainer: () => "px-1",
+                          placeholder: () => "text-gray-400 font-inter text-sm",
+                          menu: () => "border border-red bg-white rounded-lg shadow-lg mt-1 overflow-hidden",
+                          menuList: () => "max-h-32 overflow-y-auto",
+                          option: ({ isFocused, isSelected }) =>
+                            [
+                              "px-3 py-2 cursor-pointer font-inter text-sm",
+                              isFocused ? "bg-red/10 text-black" : "text-black",
+                              isSelected ? "bg-red text-white" : ""
+                            ].join(" "),
+                        }}
+                      />
+                      {!isEditing && <div className="absolute inset-0 bg-gray-100/50 rounded-xl" />}
                     </div>
                   </div>
 
@@ -293,8 +373,8 @@ const Settings = () => {
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, kota: e.target.value })}
                       disabled={!isEditing}
                       value={formData.kota}
-                      placeholder="Masukkan nomor telepon"
-                      icon={<Phone className="text-red/60" size={20} />}
+                      placeholder="Masukkan kota"
+                      icon={<Map className={isEditing ? "text-red/60" : "text-gray-400"} size={20} />}
                     />
                   </div>
 
@@ -308,13 +388,14 @@ const Settings = () => {
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, Provinsi: e.target.value })}
                       disabled={!isEditing}
                       value={formData.Provinsi}
-                      placeholder="Masukkan nomor telepon"
-                      icon={<Phone className="text-red/60" size={20} />}
+                      placeholder="Masukkan provinsi"
+                      icon={<Map className={isEditing ? "text-red/60" : "text-gray-400"} size={20} />}
                     />
                   </div>
+
                   {/* Alamat */}
                   <div className="md:col-span-2">
-                    <label className="block font-inter font-medium text-black/70 text-sm">Alamat Lengkap</label>
+                    <label className="block font-inter font-medium text-black/70 text-sm mb-2">Alamat Lengkap</label>
                     <div className="relative">
                       <div className="absolute left-3 top-4">
                         <MapPinned className={isEditing ? "text-red" : "text-gray-400"} size={18} />
@@ -324,16 +405,34 @@ const Settings = () => {
                         onChange={(e) => setFormData({ ...formData, Alamat: e.target.value })}
                         disabled={!isEditing}
                         rows={3}
-                        className={`w-full className="flex items-center border-2 border-red/20 hover:border-red/40 focus-within:border-red rounded-xl px-4 py-3 gap-3 bg-white/80 backdrop-blur-sm transition-all duration-300 hover:shadow-lg" ${
+                        className={`w-full pl-10 pr-4 py-3 rounded-xl font-inter text-sm transition-all duration-300 ${
                           isEditing 
-                            ? 'border-2 border-red bg-white focus:border-red/80' 
+                            ? 'border-2 border-red/20 hover:border-red/40 focus:border-red bg-white focus:shadow-lg' 
                             : 'border border-gray-200 bg-gray-50'
                         }`}
                         placeholder="Masukkan alamat lengkap"
                       />
-                    {!isEditing && <div className="absolute inset-0 bg-gray-100/50 rounded-xl" />}
+                      {!isEditing && <div className="absolute inset-0 bg-gray-100/50 rounded-xl" />}
                     </div>
                   </div>
+
+                  {/* Status untuk Pelatih */}
+                  {user.role === 'PELATIH' && (
+                    <div className="md:col-span-2">
+                      <label className="block font-inter font-medium text-black/70 text-sm mb-3">
+                        Status Pelatih
+                      </label>
+                      <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                        <div className="flex items-center gap-2 text-blue-700">
+                          <Shield size={20} />
+                          <span className="font-inter text-sm font-medium">
+                            Data lengkap pelatih dapat dikelola melalui profil pelatih
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                 </div>
               </div>
             </div>
