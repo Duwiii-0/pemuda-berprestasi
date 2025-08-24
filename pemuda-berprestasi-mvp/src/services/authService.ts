@@ -8,6 +8,7 @@ export interface RegisterData {
   password: string
   nama_pelatih: string
   no_telp?: string
+  id_dojang: number
 }
 
 export interface LoginData {
@@ -25,6 +26,7 @@ export interface LoginResponse {
       id_pelatih: number
       nama_pelatih: string
       no_telp?: string | null
+      id_dojang?: number | null
     }
     admin?: {
       id_admin: number
@@ -35,7 +37,7 @@ export interface LoginResponse {
 
 class AuthService {
   async register(data: RegisterData): Promise<LoginResponse> {
-    const { email, password, nama_pelatih, no_telp } = data
+    const { email, password, nama_pelatih, no_telp, id_dojang } = data
 
     // Check if email already exists
     const existingAccount = await prisma.tb_akun.findUnique({
@@ -60,12 +62,13 @@ class AuthService {
         }
       })
 
-      // Create pelatih profile
+      // Create pelatih profile (include id_dojang)
       const pelatih = await tx.tb_pelatih.create({
         data: {
           nama_pelatih,
           no_telp,
-          id_akun: account.id_akun
+          id_akun: account.id_akun,
+          id_dojang: id_dojang
         }
       })
 
@@ -91,7 +94,8 @@ class AuthService {
         pelatih: {
           id_pelatih: result.pelatih.id_pelatih,
           nama_pelatih: result.pelatih.nama_pelatih,
-          no_telp: result.pelatih.no_telp
+          no_telp: result.pelatih.no_telp,
+          id_dojang: result.pelatih.id_dojang
         }
       }
     }
@@ -127,7 +131,6 @@ class AuthService {
       role: account.role
     }
 
-    // Add role-specific data
     if (account.role === 'PELATIH' && account.pelatih) {
       tokenPayload.pelatihId = account.pelatih.id_pelatih
     } else if (account.role === 'ADMIN' && account.admin) {
@@ -147,7 +150,8 @@ class AuthService {
       userResponse.pelatih = {
         id_pelatih: account.pelatih.id_pelatih,
         nama_pelatih: account.pelatih.nama_pelatih,
-        no_telp: account.pelatih.no_telp
+        no_telp: account.pelatih.no_telp,
+        id_dojang: account.pelatih.id_dojang
       }
     }
 
@@ -191,17 +195,14 @@ class AuthService {
       throw new Error('Account not found')
     }
 
-    // Verify current password
     const isValidPassword = await comparePassword(currentPassword, account.password_hash)
     
     if (!isValidPassword) {
       throw new Error('Current password is incorrect')
     }
 
-    // Hash new password
     const password_hash = await hashPassword(newPassword)
 
-    // Update password
     await prisma.tb_akun.update({
       where: { id_akun },
       data: { password_hash }

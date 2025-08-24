@@ -45,6 +45,11 @@ export const registerSchema = Joi.object({
     .optional()
     .messages({
       'string.pattern.base': 'No telepon must be a valid Indonesian phone number'
+    }),
+    id_dojang: Joi.number()
+    .required()
+    .messages({
+      'any.required': 'dojang is required'
     })
 })
 

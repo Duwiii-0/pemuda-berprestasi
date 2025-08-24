@@ -6,6 +6,7 @@ import path from 'path'
 export interface UpdatePelatihData {
   nama_pelatih?: string;
   no_telp?: string | null;
+  id_dojang?: number; // sekarang pelatih wajib punya 1 dojang
 }
 
 export interface PelatihListQuery {
@@ -33,6 +34,14 @@ class PelatihService {
             id_akun: true,
             email: true,
             role: true
+          }
+        },
+        dojang: { // ✅ ikutkan relasi dojang
+          select: {
+            id_dojang: true,
+            nama_dojang: true,
+            kota: true,
+            provinsi: true
           }
         }
       }
@@ -70,6 +79,14 @@ class PelatihService {
             email: true,
             role: true
           }
+        },
+        dojang: { // ikutkan dojang biar jelas
+          select: {
+            id_dojang: true,
+            nama_dojang: true,
+            kota: true,
+            provinsi: true
+          }
         }
       }
     })
@@ -94,7 +111,8 @@ class PelatihService {
       where.OR = [
         { nama_pelatih: { contains: search } },
         { no_telp: { contains: search } },
-        { akun: { email: { contains: search } } }
+        { akun: { email: { contains: search } } },
+        { dojang: { nama_dojang: { contains: search } } }
       ]
     }
 
@@ -117,9 +135,16 @@ class PelatihService {
               role: true
             }
           },
+          dojang: { // ✅ ikutkan dojang
+            select: {
+              id_dojang: true,
+              nama_dojang: true,
+              kota: true,
+              provinsi: true
+            }
+          },
           _count: {
             select: {
-              dojang_pendaftar: true,
               atlet_pembuat: true
             }
           }
@@ -155,7 +180,7 @@ class PelatihService {
             role: true
           }
         },
-        dojang_pendaftar: {
+        dojang: { // ✅ langsung ke dojang
           select: {
             id_dojang: true,
             nama_dojang: true,
@@ -172,7 +197,6 @@ class PelatihService {
         },
         _count: {
           select: {
-            dojang_pendaftar: true,
             atlet_pembuat: true
           }
         }

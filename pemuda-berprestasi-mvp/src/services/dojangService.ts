@@ -8,7 +8,6 @@ interface CreateDojangData {
   negara?: string;
   provinsi?: string;
   kota?: string;
-  id_pelatih_pendaftar?: number; // optional, untuk public registration
 }
 
 interface UpdateDojangData extends Partial<CreateDojangData> {
@@ -18,37 +17,21 @@ interface UpdateDojangData extends Partial<CreateDojangData> {
 export class DojangService {
   // ===== CREATE DOJANG =====
   static async createDojang(data: CreateDojangData) {
-    // Cek nama dojang unik
     const existing = await prisma.tb_dojang.findFirst({
       where: { nama_dojang: data.nama_dojang.trim() },
     });
     if (existing) throw new Error('Nama dojang sudah terdaftar');
 
-    // Cek pelatih jika ada
-    if (data.id_pelatih_pendaftar) {
-      const pelatih = await prisma.tb_pelatih.findUnique({
-        where: { id_pelatih: data.id_pelatih_pendaftar },
-      });
-      if (!pelatih) throw new Error('Pelatih tidak ditemukan');
-    }
-
-    // Hanya sertakan id_pelatih_pendaftar jika ada
-    const dojangData: any = {
-      nama_dojang: data.nama_dojang.trim(),
-      email: data.email?.trim() || null,
-      no_telp: data.no_telp?.trim() || null,
-      negara: data.negara?.trim() || null,
-      provinsi: data.provinsi?.trim() || null,
-      kota: data.kota?.trim() || null,
-      ...(data.id_pelatih_pendaftar !== undefined && { id_pelatih_pendaftar: data.id_pelatih_pendaftar }),
-    };
-
     return prisma.tb_dojang.create({
-      data: dojangData,
-      include: {
-        pelatih_pendaftar: true,
-        atlet: true,
+      data: {
+        nama_dojang: data.nama_dojang.trim(),
+        email: data.email?.trim() || null,
+        no_telp: data.no_telp?.trim() || null,
+        negara: data.negara?.trim() || null,
+        provinsi: data.provinsi?.trim() || null,
+        kota: data.kota?.trim() || null,
       },
+      include: { pelatih: true, atlet: true },
     });
   }
 
@@ -64,7 +47,7 @@ export class DojangService {
         where,
         skip,
         take: limit,
-        include: { pelatih_pendaftar: true, atlet: true },
+        include: { pelatih: true, atlet: true },
         orderBy: { id_dojang: 'desc' },
       }),
       prisma.tb_dojang.count({ where }),
@@ -85,7 +68,7 @@ export class DojangService {
   static async getDojangById(id: number) {
     const dojang = await prisma.tb_dojang.findUnique({
       where: { id_dojang: id },
-      include: { pelatih_pendaftar: true, atlet: true },
+      include: { pelatih: true, atlet: true },
     });
     if (!dojang) throw new Error('Dojang tidak ditemukan');
     return dojang;
@@ -97,21 +80,10 @@ export class DojangService {
     const existing = await prisma.tb_dojang.findUnique({ where: { id_dojang } });
     if (!existing) throw new Error('Dojang tidak ditemukan');
 
-    if (update.id_pelatih_pendaftar) {
-      const pelatih = await prisma.tb_pelatih.findUnique({
-        where: { id_pelatih: update.id_pelatih_pendaftar },
-      });
-      if (!pelatih) throw new Error('Pelatih tidak ditemukan');
-    }
-
-    // Hanya sertakan field yang tidak undefined
-    const updateData: any = { ...update };
-    if (update.id_pelatih_pendaftar === undefined) delete updateData.id_pelatih_pendaftar;
-
     return prisma.tb_dojang.update({
       where: { id_dojang },
-      data: updateData,
-      include: { pelatih_pendaftar: true, atlet: true },
+      data: update,
+      include: { pelatih: true, atlet: true },
     });
   }
 
@@ -128,15 +100,17 @@ export class DojangService {
     return { message: 'Dojang berhasil dihapus' };
   }
 
-  // ===== GET BY PELATIH =====
+  // ===== GET DOJANG BY PELATIH =====
   static async getByPelatih(id_pelatih: number) {
-    return prisma.tb_dojang.findMany({
-      where: { id_pelatih_pendaftar: id_pelatih },
-      include: { pelatih_pendaftar: true, atlet: true },
+    const pelatih = await prisma.tb_pelatih.findUnique({
+      where: { id_pelatih },
+      include: { dojang: true },
     });
+    if (!pelatih) throw new Error('Pelatih tidak ditemukan');
+    return pelatih.dojang;
   }
 
-  // ===== GET BY ATLET =====
+  // ===== GET DOJANG BY ATLET =====
   static async getByAtlet(id_atlet: number) {
     const atlet = await prisma.tb_atlet.findUnique({
       where: { id_atlet },

@@ -34,7 +34,7 @@ const RegisterDojang = () => {
 
       const response = await apiClient.post("/dojang", payload);
       
-      toast.success("Registrasi dojang berhasil! Menunggu persetujuan admin.");
+      toast.success("Registrasi dojang berhasil! Silahkan registrasi.");
 
       // Reset form
       setNamaDojang("");

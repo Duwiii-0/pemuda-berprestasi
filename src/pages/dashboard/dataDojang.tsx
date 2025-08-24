@@ -2,12 +2,9 @@ import { useState, useEffect } from "react";
 import { Phone, Mail, MapPin, Map, Building, Flag, Menu, Award, Users, Calendar } from 'lucide-react';
 import NavbarDashboard from "../../components/navbar/navbarDashboard"; // Import NavbarDashboard
 import { useAuth } from "../../context/authContext";
-import { dummyDojangs, type DummyDojang } from "../../dummy/dummyDojang";
 import { useNavigate } from "react-router-dom";  // ⬅️ tambahkan
-
-
-
-export type DojangForm = Omit<DummyDojang, "id">;
+import toast from "react-hot-toast";
+import { apiClient, setAuthToken } from "../../../pemuda-berprestasi-mvp/src/config/api";
 
 // Types untuk components
 interface TextInputProps {
@@ -77,70 +74,103 @@ const StatsCard: React.FC<StatsCardProps> = ({ icon: Icon, title, value, color }
   </div>
 );
 
+
+
 const Dojang = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const navigate = useNavigate();
-  
-  {/* cari dojang by id dojang di user */}
-  const userDojang = dummyDojangs.find(
-    (d) => d.id === user?.dojangId
-  );
 
-  {/* biar kalo di refresh kan usernya ke logout, jadi redirect ke home */}
+  const [userDojang, setUserDojang] = useState<any>(null);
+  const [formData, setFormData] = useState<any>(null);
+
+  // Set token global sekali aja
+  useEffect(() => {
+    if (token) setAuthToken(token);
+  }, [token]);
+
+  // 🔹 Fetch data my-dojang
   useEffect(() => {
     if (!user) {
+      toast.error("Anda harus login dulu");
       navigate("/", { replace: true });
+      return;
     }
-  }, [user, navigate]);
 
+    const fetchDojang = async () => {
+      try {
+        const { data } = await apiClient.get("/dojang/my-dojang");
 
-  const [formData, setFormData] = useState<DojangForm>(
-    userDojang
-      ? {
-          name: userDojang.name,
-          email: userDojang.email,
-          phone: userDojang.phone,
-          negara: userDojang.negara,
-          provinsi: userDojang.provinsi,
-          kota: userDojang.kota,
-          kecamatan: userDojang.kecamatan,
-          kelurahan: userDojang.kelurahan,
-          alamat: userDojang.alamat,
-        }
-      : {
-          name: "",
-          email: "",
-          phone: "",
-          negara: "",
-          provinsi: "",
-          kota: "",
-          kecamatan: "",
-          kelurahan: "",
-          alamat: "",
-        }
-  );
-
-
-  useEffect(() => {
-    const onResize = () => {
-      if (window.innerWidth >= 1024) setSidebarOpen(false);
+        setUserDojang(data);
+        setFormData({
+          name: data.nama_dojang || "",
+          email: data.email || "",
+          phone: data.no_telp || "",
+          negara: data.negara || "",
+          provinsi: data.provinsi || "",
+          kota: data.kota || "",
+          kecamatan: data.kecamatan || "",
+          kelurahan: data.kelurahan || "",
+          alamat: data.alamat || "",
+        });
+      } catch (err: any) {
+        console.error(err);
+        toast.error(err.response?.data?.message || "Gagal mengambil data dojang");
+      }
     };
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
-  }, []);
+
+    fetchDojang();
+  }, [user, navigate]);
 
   const handleCancel = () => {
     setIsEditing(false);
-    setFormData(formData);
+    if (userDojang) {
+      setFormData({
+        name: userDojang.nama_dojang,
+        email: userDojang.email,
+        phone: userDojang.no_telp,
+        negara: userDojang.negara,
+        provinsi: userDojang.provinsi,
+        kota: userDojang.kota,
+        kecamatan: userDojang.kecamatan,
+        kelurahan: userDojang.kelurahan,
+        alamat: userDojang.alamat,
+      });
+    }
   };
 
-  const handleUpdate = () => {
-    console.log("Data dojang diupdate:", formData);
-    setIsEditing(false);
+  // 🔹 Update dojang
+  const handleUpdate = async () => {
+    try {
+      const { data } = await apiClient.put(`/dojang/${userDojang.id_dojang}`, {
+        nama_dojang: formData.name,
+        email: formData.email,
+        no_telp: formData.phone,
+        negara: formData.negara,
+        provinsi: formData.provinsi,
+        kota: formData.kota,
+        kecamatan: formData.kecamatan,
+        kelurahan: formData.kelurahan,
+        alamat: formData.alamat,
+      });
+
+      setUserDojang(data);
+      setIsEditing(false);
+      toast.success("Data dojang berhasil diperbarui");
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.response?.data?.message || "Update dojang gagal");
+    }
   };
 
+  if (!formData) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <p className="text-red font-plex">Memuat data dojang...</p>
+      </div>
+    );
+  }
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-white via-red/5 to-yellow/10">
       {/* Desktop Navbar - Tinggal panggil aja */}

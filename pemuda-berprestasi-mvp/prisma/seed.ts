@@ -35,22 +35,41 @@ async function main() {
     where: { email: 'pelatih@example.com' }
   });
 
+  const dojang = await prisma.tb_dojang.upsert({
+    where: { id_dojang: 1 },
+    update: {},
+    create: {
+      nama_dojang: "Dojang Utama",
+      email: "dojang@example.com",
+      no_telp: "0811111111",
+      founder: "Master Kim",
+      negara: "Indonesia",
+      provinsi: "Jawa Barat",
+      kota: "Bandung"
+    }
+  });
+
+
   if (!existingPelatih) {
     const hashedPelatihPassword = await bcrypt.hash('pelatih123', 10);
 
     await prisma.tb_akun.create({
       data: {
         email: 'pelatih@example.com',
-        password_hash: hashedPelatihPassword,
+        password_hash: await bcrypt.hash('pelatih123', 10),
         role: 'PELATIH',
         pelatih: {
           create: {
             nama_pelatih: 'Budi Pelatih',
             no_telp: '08123456789',
+            dojang: {       // << ini wajib karena relasi required
+              connect: { id_dojang: dojang.id_dojang }
+            }
           }
         }
       }
     });
+
     console.log('✅ Pelatih account created');
   } else {
     console.log('ℹ️ Pelatih account already exists');

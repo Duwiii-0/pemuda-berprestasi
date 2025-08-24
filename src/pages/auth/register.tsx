@@ -28,7 +28,7 @@ useEffect(() => {
     try {
       const response = await apiClient.get("/dojang/listdojang");
       const options = response.data.map((item: any) => ({
-        value: item.id,
+        value: item.id_dojang,
         label: item.nama_dojang
       }));
       
@@ -61,7 +61,7 @@ useEffect(() => {
         confirmPassword, // Required by validation
         nama_pelatih: nama.trim(), // Backend expects 'nama_pelatih', bukan 'nama'
         no_telp: telepon.trim(), // Backend expects 'no_telp', bukan 'telepon'
-        id_dojang: selectedDojang?.value // kirim id dojang ke backend
+        id_dojang: Number(selectedDojang?.value)
       };
 
       console.log('Final registration data (matching validation schema):', registerData);
