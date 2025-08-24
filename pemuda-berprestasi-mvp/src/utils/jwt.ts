@@ -1,5 +1,4 @@
-// src/utils/jwt.ts
-import jwt from 'jsonwebtoken'
+const jwt = require('jsonwebtoken')
 
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-key'
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d'

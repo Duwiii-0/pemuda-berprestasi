@@ -1,4 +1,5 @@
-import { useState } from "react";
+// Update bagian ini di src/pages/auth/login.tsx
+import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Mail, KeyRound } from "lucide-react";
 import { useAuth } from "../../context/authContext";
@@ -8,24 +9,39 @@ import toast from "react-hot-toast";
 
 const Login = () => {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, loading, isAuthenticated, isAdmin, isPelatih } = useAuth(); // tambah props ini
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleLogin = () => {
-    const success = login(email, password);
-    if (success) {
-      navigate("/");
-    } else {
-      toast.error('Email atau password salah')
+  // Update handleLogin untuk async
+  const handleLogin = async () => {
+    try {
+      await login(email, password); // sekarang async
+      // Navigation akan dihandle di useEffect bawah
+    } catch (error: any) {
+      toast.error(error.message || 'Email atau password salah');
     }
   };
 
+  // Auto redirect setelah login berhasil
+  React.useEffect(() => {
+    if (isAuthenticated) {
+      if (isAdmin) {
+        navigate("/dashboard");
+        toast.success("Login berhasil sebagai Admin!");
+      } else if (isPelatih) {
+        navigate("/dashboard");
+        toast.success("Login berhasil sebagai Pelatih!");
+      }
+    }
+  }, [isAuthenticated, isAdmin, isPelatih, navigate]);
+
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault(); // biar nggak reload page
+    e.preventDefault();
     handleLogin();
   };
 
+  // Rest of your component stays the same, just add loading state to button:
   return (
     <div
       className="h-screen w-full flex items-center justify-center bg-cover bg-center"
@@ -48,6 +64,7 @@ const Login = () => {
               icon={<Mail className="text-black" size={20} />}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              disabled={loading} // tambah ini
             />
           </div>
 
@@ -56,8 +73,10 @@ const Login = () => {
               className="h-12  border-red"
               placeholder="your password"
               icon={<KeyRound className="text-black" size={20} />}
+              type="password" // tambah ini untuk hide password
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              disabled={loading} // tambah ini
             />
           </div>
 
@@ -66,18 +85,27 @@ const Login = () => {
             Forgot Password?
           </Link>
           </div>
+          
           <GeneralButton
-            label="Login"
+            label={loading ? "Masuk..." : "Login"} // update label
             type={"submit" as any}
-            className="active:scale-97 w-full bg-red border-2 border-red h-12 rounded-xl text-white text-lg font-semibold hover:scale-101 transition-discrete duration-300 hover:shadow-xl"
+            disabled={loading} // tambah disabled state
+            className="active:scale-97 w-full bg-red border-2 border-red h-12 rounded-xl text-white text-lg font-semibold hover:scale-101 transition-discrete duration-300 hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
           />
+          
           <span className="text-center">
             Dont have an account? 
-           {/* Register link */}
            <Link to="/register" className="pl-1 underline hover:text-red">
              Register here
            </Link>
           </span>
+
+          {/* Demo credentials */}
+          <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md text-xs">
+            <p className="font-medium text-yellow-800">Demo Akun:</p>
+            <p className="text-yellow-700">Admin: admin@example.com / admin123</p>
+            <p className="text-yellow-700">Pelatih: pelatih@example.com / pelatih123</p>
+          </div>
         </form>
       </div>
     </div>
