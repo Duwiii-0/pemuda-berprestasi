@@ -8,6 +8,9 @@ interface CreateAtletData {
   berat_badan: number;
   tinggi_badan: number;
   jenis_kelamin: JenisKelamin;
+  provinsi: string;
+  kota?: string;
+  alamat?: string;
   id_dojang: number;
   id_pelatih_pembuat: number;
   akte_kelahiran: string;
@@ -68,14 +71,12 @@ export class AtletService {
           dojang: {
             select: {
               id_dojang: true,
-              nama_dojang: true,
               kota: true
             }
           },
           pelatih_pembuat: {
             select: {
               id_pelatih: true,
-              nama_pelatih: true
             }
           }
         }

@@ -22,6 +22,13 @@
     nama_pelatih     String      @db.VarChar(150)
     no_telp          String?     @db.VarChar(15)
     foto_ktp         String?     @db.VarChar(255)
+    nik              String?     @db.VarChar(255)
+    tanggal_lahir    DateTime?
+    jenis_kelamin    JenisKelamin?
+    provinsi         String?     @db.VarChar(100)
+    kota             String?     @db.VarChar(100)
+    alamat           String?     @db.VarChar(100)
+
     sertifikat_sabuk String?     @db.VarChar(255)
 
     id_akun   Int?    @unique
@@ -72,6 +79,9 @@
     nama_atlet         String                 @db.VarChar(150)
     tanggal_lahir      DateTime
     berat_badan        Float
+    provinsi           String                 @db.VarChar(100)
+    kota               String?                @db.VarChar(100)
+
     tinggi_badan       Float
     jenis_kelamin      JenisKelamin
     id_dojang          Int
@@ -80,6 +90,7 @@
     pas_foto           String                 @db.VarChar(255)
     sertifikat_belt    String                 @db.VarChar(255)
     ktp                String?                @db.VarChar(255)
+    umur               Int                    
 
     dojang             tb_dojang              @relation(fields: [id_dojang], references: [id_dojang])
     pelatih_pembuat    tb_pelatih             @relation("AtletPembuat", fields: [id_pelatih_pembuat], references: [id_pelatih])

@@ -81,6 +81,13 @@ interface User {
     id_pelatih: number;
     nama_pelatih: string;
     id_dojang: number;
+    no_telp: string;
+    kota: string;
+    provinsi: string;
+    alamat: string;
+    tanggal_lahir: string;
+    nik: string;
+    jenis_kelamin: 'LAKI_LAKI' | 'PEREMPUAN' | null;  
   };
 }
 

@@ -5,8 +5,16 @@ import path from 'path'
 
 export interface UpdatePelatihData {
   nama_pelatih?: string;
-  no_telp?: string | null;
+  no_telp?: string | '';
+  nik?: string | null;
+  tanggal_lahir?: Date | null;
   id_dojang?: number; // sekarang pelatih wajib punya 1 dojang
+  phone?: string | null;
+  kota?: string | null;
+  provinsi?: string | null;
+  alamat?: string | null;
+  jenis_kelamin?: 'LAKI_LAKI' | 'PEREMPUAN' | null;
+  
 }
 
 export interface PelatihListQuery {

@@ -1,13 +1,15 @@
 // src/pages/Profile.tsx
 import { useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Phone, User, CalendarFold, IdCard, MapPinned, Map, Scale, Ruler, ArrowLeft } from "lucide-react";
 import TextInput from "../../components/textInput";
 import FileInput from "../../components/fileInput";
-import type { DummyAtlit } from "../../dummy/dummyAtlit";
 import Select from "react-select";
 import { GeneralButton } from "../dashboard/dataDojang";
+import { useAtletContext } from "../../context/AtlitContext";
+import type { Atlet } from "../../context/AtlitContext";
+
 
 // Helper function to calculate age from birth date
 const calculateAge = (birthDate: string): number => {
@@ -24,13 +26,10 @@ const calculateAge = (birthDate: string): number => {
   return age;
 };
 
-// Convert date from mm/dd/yyyy to yyyy-mm-dd format
 function toInputDateFormat(dateStr: string): string {
-  // mm/dd/yyyy -> yyyy-mm-dd
   if (!dateStr) return "";
-  const [month, day, year] = dateStr.split("/");
-  if (!month || !day || !year) return "";
-  return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+  // Jika format ISO, ambil yyyy-mm-dd
+  return dateStr.slice(0, 10);
 }
 
 // Convert date from yyyy-mm-dd to mm/dd/yyyy format
@@ -46,8 +45,21 @@ const Profile = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
 
-  const [formData, setFormData] = useState<DummyAtlit | null>();
+  const [formData, setFormData] = useState<Atlet | null>();
   const [isEditing, setIsEditing] = useState(false);
+
+  const { fetchAtletById } = useAtletContext();
+
+  useEffect(() => {
+    if (id) {
+      fetchAtletById(id).then((data) => {
+        console.log("Fetched Atlet:", data);
+        if (data) setFormData(data);
+      });
+    }
+  }, [id, fetchAtletById]);
+
+
 
   const handleCancel = () => {
     setIsEditing(false);
@@ -56,7 +68,7 @@ const Profile = () => {
   const handleUpdate = () => {
     if (formData) {
       // Calculate age from birth date before updating
-      const calculatedAge = calculateAge(formData.tglLahir);
+      const calculatedAge = calculateAge(formData.tanggal_lahir);
       const updatedData = {
         ...formData,
         umur: calculatedAge
@@ -65,21 +77,22 @@ const Profile = () => {
     setIsEditing(false);
   };
 
-  const handleInputChange = (field: keyof DummyAtlit, value: any) => {
+  const handleInputChange = (field: keyof Atlet, value: any) => {
     if (!formData) return;
     let updatedData = { ...formData, [field]: value };
 
-    if (field === 'tglLahir' && typeof value === 'string') {
-      updatedData.tglLahir = toMMDDYYYY(value);
-      updatedData.umur = calculateAge(updatedData.tglLahir);
+    if (field === 'tanggal_lahir' && typeof value === 'string') {
+      updatedData.tanggal_lahir = toMMDDYYYY(value);
+      updatedData.umur = calculateAge(updatedData.tanggal_lahir);
     }
 
     setFormData(updatedData);
   };
 
+
   const genderOptions = [
-    { value: "Laki-Laki", label: "Laki-Laki" },
-    { value: "Perempuan", label: "Perempuan" },
+    { value: "LAKI_LAKI", label: "Laki-Laki" },
+    { value: "PEREMPUAN", label: "Perempuan" },
   ];
 
   const beltOptions = [
@@ -120,7 +133,7 @@ const Profile = () => {
               PROFIL ATLET
             </h1>
             <p className="font-plex text-black/60 text-lg">
-              Detail informasi {formData.name}
+              Detail informasi {formData.nama_atlet}
             </p>
           </div>
         </div>
@@ -130,27 +143,27 @@ const Profile = () => {
           {/* Avatar Section */}
           <div className="flex items-center gap-6 mb-8 border-b border-white/30">
             <div className="w-24 h-24 rounded-full bg-gradient-to-br from-red to-red/80 flex items-center justify-center text-white font-bebas text-3xl shadow-lg">
-              {formData.name.charAt(0)}
+              {formData.nama_atlet?.charAt(0)}
             </div>
             <div>
               <h2 className="font-bebas text-3xl text-black/80 tracking-wide">
-                {formData.name}
+                {formData.nama_atlet}
               </h2>
               <p className="font-plex text-black/60">ID: {formData.id}</p>
               <div className="flex gap-2 mt-2">
                 <span className={`px-3 py-1 rounded-full text-xs font-plex font-medium ${
-                  formData.gender === "Laki-Laki"
+                  formData.jenis_kelamin === "LAKI_LAKI"
                     ? "bg-blue-100 text-blue-600"
                     : "bg-pink-100 text-pink-600"
                 }`}>
-                  {formData.gender}
+                {formData.jenis_kelamin === "LAKI_LAKI" ? "Laki-laki" : "Perempuan"}
                 </span>
                 <span className="px-3 py-1 rounded-full text-xs font-plex font-medium bg-yellow/20 text-yellow/80">
                   Sabuk {formData.belt || 'Tidak Ada'}
                 </span>
                 {/* Display calculated age */}
                 <span className="px-3 py-1 rounded-full text-xs font-plex font-medium bg-green-100 text-green-600">
-                  {calculateAge(formData.tglLahir)} tahun
+                  {calculateAge(formData.tanggal_lahir)} tahun
                 </span>
               </div>
             </div>
@@ -187,9 +200,9 @@ const Profile = () => {
               <div className="relative">
               <TextInput
                 className="h-12 border-red/20 bg-white/50 backdrop-blur-sm rounded-xl focus:border-red transition-all duration-300"
-                onChange={(e) => handleInputChange('name', e.target.value)}
+                onChange={(e) => handleInputChange('nama_atlet', e.target.value)}
                 disabled={!isEditing}
-                value={formData.name}
+                value={formData?.nama_atlet}
                 placeholder="Nama"
                 icon={<User className="text-red" size={20} />}
               />
@@ -205,7 +218,7 @@ const Profile = () => {
                   className="h-12 border-red/20 bg-white/50 backdrop-blur-sm rounded-xl focus:border-red transition-all duration-300"
                   onChange={(e) => handleInputChange('phone', e.target.value)}
                   disabled={!isEditing}
-                  value={formData.phone || ''}
+                  value={formData.phone || ''} //blm ada ni field di db
                   placeholder="No HP"
                   icon={<Phone className="text-red" size={20} />}
                 />
@@ -221,7 +234,7 @@ const Profile = () => {
                 className="h-12 border-red/20 bg-white/50 backdrop-blur-sm rounded-xl focus:border-red transition-all duration-300"
                 onChange={(e) => handleInputChange('alamat', e.target.value)}
                 disabled={!isEditing}
-                value={formData.alamat || ''}
+                value={formData.alamat || ''} // blm ada jg
                 placeholder="Alamat"
                 icon={<MapPinned className="text-red" size={20} />}
               />
@@ -252,9 +265,9 @@ const Profile = () => {
               <Select
                 unstyled
                 isDisabled={!isEditing}
-                value={genderOptions.find(opt => opt.value === formData.gender) || null}
+                value={genderOptions.find(opt => opt.value === formData?.jenis_kelamin)}
                 onChange={(selected) =>
-                  handleInputChange('gender', selected?.value as "Laki-Laki" | "Perempuan")
+                  handleInputChange('jenis_kelamin', selected?.value as "LAKI_LAKI" | "PEREMPUAN")
                 }
                 options={genderOptions}
                 classNames={{
@@ -283,7 +296,7 @@ const Profile = () => {
               <Select
                 unstyled
                 isDisabled={!isEditing}
-                value={beltOptions.find(opt => opt.value === formData.belt) || null}
+                value={beltOptions.find(opt => opt.value === formData.belt) || null} // ni jugaaa
                 onChange={(selected) =>
                   handleInputChange('belt', selected?.value || '')
                 }
@@ -314,18 +327,18 @@ const Profile = () => {
               <TextInput
                 type="date"
                 className="h-12 border-red/20 bg-white/50 backdrop-blur-sm rounded-xl focus:border-red transition-all duration-300"
-                onChange={(e) => handleInputChange('tglLahir', e.target.value)}
+                onChange={(e) => handleInputChange('tanggal_lahir', e.target.value)}
                 disabled={!isEditing}
-                value={toInputDateFormat(formData.tglLahir) || ''}
+                value={toInputDateFormat(formData.tanggal_lahir) || ''}
                 placeholder="Tanggal Lahir"
                 icon={<CalendarFold className="text-red" size={20} />}
               />
               {!isEditing && <div className="absolute inset-0 bg-gray-100/50 rounded-xl" />}
               </div>
               {/* Display calculated age */}
-              {formData.tglLahir && (
+              {formData.tanggal_lahir && (
                 <p className="text-green-600 text-sm font-plex">
-                  Umur: {calculateAge(formData.tglLahir)} tahun
+                  Umur: {calculateAge(formData.tanggal_lahir)} tahun
                 </p>
               )}
             </div>
@@ -337,9 +350,9 @@ const Profile = () => {
               <TextInput
                 type="number"
                 className="h-12 border-red/20 bg-white/50 backdrop-blur-sm rounded-xl focus:border-red transition-all duration-300"
-                onChange={(e) => handleInputChange('bb', Number(e.target.value))}
+                onChange={(e) => handleInputChange('berat_badan', Number(e.target.value))}
                 disabled={!isEditing}
-                value={formData.bb?.toString() || ''}
+                value={formData.berat_badan?.toString() || ''}
                 placeholder="Berat Badan"
                 icon={<Scale className="text-red" size={20} />}
               />
@@ -354,9 +367,9 @@ const Profile = () => {
               <TextInput
                 type="number"
                 className="h-12 border-red/20 bg-white/50 backdrop-blur-sm rounded-xl focus:border-red transition-all duration-300"
-                onChange={(e) => handleInputChange('tb', Number(e.target.value))}
+                onChange={(e) => handleInputChange('tinggi_badan', Number(e.target.value))}
                 disabled={!isEditing}
-                value={formData.tb?.toString() || ''}
+                value={formData.tinggi_badan?.toString() || ''}
                 placeholder="Tinggi Badan"
                 icon={<Ruler className="text-red" size={20} />}
               />
@@ -372,7 +385,7 @@ const Profile = () => {
                 className="h-12 border-red/20 bg-white/50 backdrop-blur-sm rounded-xl focus:border-red transition-all duration-300"
                 onChange={(e) => handleInputChange('nik', e.target.value)}
                 disabled={!isEditing}
-                value={formData.nik || ''}
+                value={formData.nik || ''} // nik jg blm 
                 placeholder="NIK"
                 icon={<IdCard className="text-red" size={20} />}
               />

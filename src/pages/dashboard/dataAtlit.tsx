@@ -92,8 +92,8 @@ const filteredAtlits = (atlits).filter(atlit => {
 
 // Stats
 const totalAtlits = atlits.length;
-const lakiLakiCount = atlits.filter(a => a.jenis_kelamin === "Laki-Laki").length;
-const perempuanCount = atlits.filter(a => a.jenis_kelamin === "Perempuan").length;
+const lakiLakiCount = atlits.filter(a => a.jenis_kelamin === "LAKI_LAKI").length;
+const perempuanCount = atlits.filter(a => a.jenis_kelamin === "PEREMPUAN").length;
 const avgAge = Math.round(atlits.reduce((sum, a) => sum + a.age, 0) / (atlits.length || 1));
 
 

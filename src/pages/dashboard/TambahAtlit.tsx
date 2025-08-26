@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Phone, User, CalendarFold, IdCard, MapPinned, Scale, Ruler, Save, ArrowLeft } from "lucide-react";
 import NavbarDashboard from "../../components/navbar/navbarDashboard";
 import type { DummyAtlit } from "../../dummy/dummyAtlit";
-import { useAtlit } from "../../context/AtlitContext";
+import { useAtletContext } from "../../context/AtlitContext";
 import { dummyAtlits } from "../../dummy/dummyAtlit";
 
 export type AtlitForm = Omit<DummyAtlit, "id">;
@@ -197,7 +197,6 @@ function toMMDDYYYY(dateStr: string): string {
 
 const TambahAtlit: React.FC = () => {
   const navigate = useNavigate();
-  const { addAtlit } = useAtlit();
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [submitSuccess, setSubmitSuccess] = useState<boolean>(false);
@@ -333,13 +332,6 @@ const TambahAtlit: React.FC = () => {
       const birthDateMMDDYYYY = toMMDDYYYY(formData.tglLahir);
       const calculatedAge = calculateAge(birthDateMMDDYYYY);
 
-      addAtlit({
-        ...formData,
-        id: dummyAtlits.length + 1,
-        tglLahir: birthDateMMDDYYYY,
-        gender: formData.gender as "Laki-Laki" | "Perempuan",
-        umur: calculatedAge,
-      });
 
       setSubmitSuccess(true);
 

@@ -20,6 +20,53 @@ export const updatePelatihSchema = Joi.object({
     .allow('')
     .messages({
       'string.pattern.base': 'No telepon must be a valid Indonesian phone number'
+    }),
+  nik: Joi.string()
+    .pattern(/^\d{16}$/)
+    .optional()
+    .messages({
+      'string.pattern.base': 'NIK harus berupa 16 digit angka',
+    }),
+
+  tanggal_lahir: Joi.date()
+    .optional()
+    .messages({
+      'date.base': 'Tanggal lahir harus berupa tanggal yang valid',
+      'date.less': 'Tanggal lahir tidak boleh di masa depan',
+    }),
+
+  jenis_kelamin: Joi.string()
+    .valid('LAKI_LAKI', 'PEREMPUAN')
+    .optional()
+    .messages({
+      'any.only': 'Jenis kelamin harus LAKI_LAKI atau PEREMPUAN',
+    }),
+
+  kota: Joi.string()
+    .min(2)
+    .max(100)
+    .optional()
+    .messages({
+      'string.min': 'Kota minimal 2 karakter',
+      'string.max': 'Kota maksimal 100 karakter',
+    }),
+
+  provinsi: Joi.string()
+    .min(2)
+    .max(100)
+    .optional()
+    .messages({
+      'string.min': 'Provinsi minimal 2 karakter',
+      'string.max': 'Provinsi maksimal 100 karakter',
+    }),
+
+  alamat: Joi.string()
+    .min(5)
+    .max(255)
+    .optional()
+    .messages({
+      'string.min': 'Alamat minimal 5 karakter',
+      'string.max': 'Alamat maksimal 255 karakter',
     })
 })
 
@@ -33,7 +80,6 @@ export const pelatihIdSchema = Joi.object({
       'number.base': 'ID must be a number',
       'number.integer': 'ID must be an integer',
       'number.positive': 'ID must be positive',
-      'any.required': 'ID is required'
     })
 })
 

@@ -1,77 +1,79 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
-import type { DummyAtlit } from "../dummy/dummyAtlit"; // ganti nanti ke model sebenarnya
+// src/context/atletContext.tsx
+import React, { createContext, useContext, useState } from "react";
+import { useCallback } from "react";
 import { apiClient } from "../../pemuda-berprestasi-mvp/src/config/api";
-import { useAuth } from "../context/authContext"; // supaya bisa ambil pelatih.id_dojang dari login
 
-interface AtlitContextType {
-  atlits: DummyAtlit[];
-  loading: boolean;
-  fetchAtlits: () => Promise<void>;
-  addAtlit: (atlit: Omit<DummyAtlit, "id">) => Promise<void>;
-  updateAtlit: (atlit: DummyAtlit) => Promise<void>;
+// Interface Atlet sesuai response API
+export interface Atlet {
+  id: string;
+  nama_atlet: string;
+  jenis_kelamin: "LAKI_LAKI" | "PEREMPUAN";
+  tanggal_lahir: string;
+  berat_badan?: number;      // Berat Badan
+  tinggi_badan?: number;      // Tinggi Badan
+  belt?: string;
+  alamat?: string;
+  provinsi?: string;
+  phone?: string;
+  nik?: string;
+  umur?: number;
+  // tambahkan field lain sesuai API
 }
 
-const AtlitContext = createContext<AtlitContextType | undefined>(undefined);
+interface AtletContextType {
+  atlits: Atlet[];
+  fetchAllAtlits: () => Promise<void>;
+  fetchAtletById: (id: string) => Promise<Atlet | undefined>;
+  updateAtlet: (updated: Atlet) => void;
+}
 
-export const AtlitProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [atlits, setAtlits] = useState<DummyAtlit[]>([]);
-  const [loading, setLoading] = useState(false);
-  const { user } = useAuth(); // misal user punya user.pelatih.id_dojang
-  const id_dojang = user?.pelatih?.id_dojang;
+const AtletContext = createContext<AtletContextType | undefined>(undefined);
 
-  const fetchAtlits = async () => {
-    if (!id_dojang) return;
-    setLoading(true);
+export const AtletProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [atlits, setAtlits] = useState<Atlet[]>([]);
+
+  // Fetch semua atlet
+  const fetchAllAtlits = async () => {
     try {
-      const res = await apiClient.get(`/atlet/dojang/${id_dojang}?page=1&limit=50`);
-      if (res?.data?.data) {
-        setAtlits(res.data.data);
-      } else {
-        console.warn("Fetch atlits returned empty:", res);
-        setAtlits([]);
+      const res = await apiClient.get("/atlet"); // endpoint fetch semua atlet
+      if (res.data && Array.isArray(res.data)) setAtlits(res.data);
+    } catch (err) {
+      console.error("Gagal fetch semua atlet:", err);
+    }
+  };
+
+  // Fetch atlet berdasarkan ID
+  const fetchAtletById = useCallback (async (id: string) => {
+    let atlet = atlits.find(a => a.id === id);
+    if (!atlet) {
+      try {
+        const res = await apiClient.get(`/atlet/${id}`);
+        if (res.data) {
+          atlet = res.data;
+          setAtlits(prev => [...prev.filter(a => a.id !== id), atlet!]);
+        }
+      } catch (err) {
+        console.error(`Gagal fetch atlet dengan ID ${id}:`, err);
       }
-    } catch (err) {
-      console.error("Failed to fetch atlits:", err);
-    } finally {
-      setLoading(false);
     }
-  };
+    return atlet;
+  }, []);
 
-  const addAtlit = async (atlit: Omit<DummyAtlit, "id">) => {
-    try {
-      const res = await apiClient.post(`/atlet`, {
-        ...atlit,
-        id_dojang, // otomatis sama dengan dojang pelatih login
-        id_pelatih_pembuat: user?.pelatih?.id_pelatih
-      });
-      setAtlits(prev => [...prev, res.data.data]); // data dari backend
-    } catch (err) {
-      console.error("Failed to add atlit:", err);
-    }
+  // Update atlet di context
+  const updateAtlet = (updated: Atlet) => {
+    setAtlits(prev => prev.map(a => (a.id === updated.id ? updated : a)));
   };
-
-  const updateAtlit = async (atlit: DummyAtlit) => {
-    try {
-      const res = await apiClient.put(`/atlet/${atlit.id}`, atlit);
-      setAtlits(prev => prev.map(a => a.id === atlit.id ? res.data.data : a));
-    } catch (err) {
-      console.error("Failed to update atlit:", err);
-    }
-  };
-
-  useEffect(() => {
-    fetchAtlits();
-  }, [id_dojang]);
 
   return (
-    <AtlitContext.Provider value={{ atlits, loading, fetchAtlits, addAtlit, updateAtlit }}>
+    <AtletContext.Provider value={{ atlits, fetchAllAtlits, fetchAtletById, updateAtlet }}>
       {children}
-    </AtlitContext.Provider>
+    </AtletContext.Provider>
   );
 };
 
-export const useAtlit = () => {
-  const context = useContext(AtlitContext);
-  if (!context) throw new Error("useAtlit must be used within AtlitProvider");
+// Hook untuk pakai context
+export const useAtletContext = () => {
+  const context = useContext(AtletContext);
+  if (!context) throw new Error("useAtletContext harus digunakan dalam AtletProvider");
   return context;
 };

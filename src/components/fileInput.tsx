@@ -1,19 +1,35 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 
 type FileInputProps = {
   accept?: string;
-  file?: File | null; // ⬅️ ambil file dari parent
+  file?: File | null; // file baru dari parent
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   className?: string;
   disabled?: boolean;
+  previewUrl?: string; // URL file lama dari server
 };
 
-const FileInput: React.FC<FileInputProps> = ({ accept, file, onChange, className, disabled }) => {
+const FileInput: React.FC<FileInputProps> = ({ accept, file, onChange, className, disabled, previewUrl }) => {
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const [localPreview, setLocalPreview] = useState<string | null>(null);
 
   const handleClick = () => {
     if (!disabled) inputRef.current?.click();
   };
+
+  // Buat preview ketika user pilih file baru
+  useEffect(() => {
+    // hanya buat object URL kalau file benar-benar File/Blob
+    if (file instanceof File && accept?.startsWith("image/")) {
+      const objectUrl = URL.createObjectURL(file);
+      setLocalPreview(objectUrl);
+
+      return () => URL.revokeObjectURL(objectUrl); // bersihkan memory
+    } else {
+      setLocalPreview(null);
+    }
+  }, [file, accept]);
+
 
   return (
     <>
@@ -28,16 +44,20 @@ const FileInput: React.FC<FileInputProps> = ({ accept, file, onChange, className
 
       <div
         onClick={handleClick}
-        className={`border-2 border-red rounded-lg cursor-pointer flex items-center justify-center overflow-hidden relative ${className} w-full h-60 py-4`}
+        className={`border-2 border-red/20 bg-white/80 rounded-lg cursor-pointer flex items-center justify-center overflow-hidden relative ${className} w-full h-60 py-4`}
       >
-        {file && accept?.startsWith("image/") ? (
+        {localPreview ? (
           <img
-            src={URL.createObjectURL(file)}
-            alt="Preview"
+            src={localPreview}
+            alt="teskuu"
             className="w-full h-full object-contain"
           />
-        ) : file ? (
-          <p className="text-sm text-gray-600">📄 {file.name}</p>
+        ) : previewUrl ? (
+          <img
+            src={previewUrl}
+            alt="tesss"
+            className="w-full h-full object-contain"
+          />
         ) : (
           <p className="text-gray-400">Klik untuk pilih file</p>
         )}

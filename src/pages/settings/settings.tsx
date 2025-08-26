@@ -17,30 +17,38 @@ const Settings = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [files, setFiles] = useState<{
-    fotoKtp?: File | null;
-    sertifikatSabuk?: File | null;
-  }>({});
+  fotoKtp?: File | string | null;
+  sertifikatSabuk?: File | string | null;
+}>({});
 
-
-  const [formData, setFormData] = useState({
-    email: user?.email || '',
-    name: user?.pelatih?.nama_pelatih || '',
-    phone: '',
-    nik: '',
-    tglLahir: '',
-    kota: '',
-    Alamat: '',
-    Provinsi: '',
-    gender: '' as "Laki-Laki" | "Perempuan" | '',
-    
-  });
+const [formData, setFormData] = useState<{
+  email: string;
+  name: string;
+  no_telp: string;
+  nik: string;
+  tanggal_lahir: string;
+  kota: string;
+  Alamat: string;
+  Provinsi: string;
+  jenis_kelamin: "LAKI_LAKI" | "PEREMPUAN" | '';
+}>({
+  email: user?.email || '',
+  name:  '',
+  no_telp: '',
+  nik: '',
+  tanggal_lahir: '',
+  kota: '',
+  Alamat: '',
+  Provinsi: '',
+  jenis_kelamin: '',
+});
 
   const [initialData, setInitialData] = useState(formData);
 
 
   const genderOptions = [
-    { value: "Laki-Laki", label: "Laki-Laki" },
-    { value: "Perempuan", label: "Perempuan" },
+    { value: "LAKI_LAKI", label: "Laki-Laki" },
+    { value: "PEREMPUAN", label: "Perempuan" },
   ];
 
   // Set token ke API client saat component mount
@@ -49,6 +57,33 @@ const Settings = () => {
       setAuthToken(token);
     }
   }, [token]);
+
+
+useEffect(() => {
+  const fetchFiles = async () => {
+    if (!user) return;
+
+    try {
+      const res = await apiClient.get('/pelatih/files');
+      console.log('Fetched files:', res);
+
+      if (res.success) {
+        setFiles({
+          fotoKtp: res.data.foto_ktp?.path || null, // path dari server
+          sertifikatSabuk: res.data.sertifikat_sabuk?.path || null
+        });
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error('Gagal mengambil file');
+    }
+  };
+
+  fetchFiles();
+}, [user]);
+
+
+
 
   // Fetch profile data dari API pelatih saat component mount
 useEffect(() => {
@@ -64,16 +99,16 @@ useEffect(() => {
         const data = {
           email: profileData.akun.email,
           name: profileData.nama_pelatih,
-          phone: profileData.no_telp,
-          nik: profileData.nik,
-          tglLahir: profileData.tgl_lahir ,
-          kota: profileData.kota,
-          Alamat: profileData.alamat,
-          Provinsi: profileData.provinsi,
-          gender: profileData.gender
+          no_telp: profileData.no_telp || '',
+          nik: profileData.nik || '',
+          tanggal_lahir:  profileData.tanggal_lahir || '',
+          kota: profileData.kota || null,
+          Alamat: profileData.alamat || null,
+          Provinsi: profileData.provinsi || null,
+          jenis_kelamin: profileData.jenis_kelamin || null
         };
         setFormData(data);
-        setInitialData(data); // simpan data asli
+        setInitialData(data); // <- ini penting
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
@@ -99,17 +134,17 @@ const handleUpdate = async () => {
     // 1️⃣ Update data text
     const updateData = {
       nama_pelatih: formData.name.trim(),
-      no_telp: formData.phone.trim() || null,
-      nik: formData.nik,
-      tgl_lahir: formData.tglLahir,
-      kota: formData.kota,
-      provinsi: formData.Provinsi,
-      alamat: formData.Alamat,
-      gender: formData.gender,
+      no_telp: formData.no_telp.trim() || null,
+      nik: formData.nik || null,
+      tanggal_lahir: formData.tanggal_lahir ? new Date(formData.tanggal_lahir) : null,
+      kota: formData.kota || null,
+      provinsi: formData.Provinsi || null,
+      alamat: formData.Alamat || null,
+      jenis_kelamin: formData.jenis_kelamin || null,
     };
 
     const response = await apiClient.put("/pelatih/profile", updateData);
-
+    
     if (!response.success) {
       toast.error(response.message || "Gagal memperbarui profil");
       return;
@@ -138,7 +173,7 @@ const handleUpdate = async () => {
     toast.success("Profil berhasil diperbarui");
   } catch (error) {
     console.error("Error updating profile:", error);
-    toast.error("Terjadi kesalahan saat memperbarui profil");
+    toast.error("Pastikan semua data sudah sesuai");
   } finally {
     setLoading(false);
   }
@@ -307,7 +342,7 @@ const handleUpdate = async () => {
                       className="w-full"
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, nik: e.target.value })}
                       disabled={!isEditing}
-                      value={formData.nik}
+                      value={formData.nik }
                       placeholder="Masukkan NIK"
                       icon={<IdCard className={isEditing ? "text-red/60" : "text-gray-400"} size={20} />}
                     />
@@ -335,9 +370,9 @@ const handleUpdate = async () => {
                     </label>
                     <TextInput
                       className="w-full"
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, phone: e.target.value })}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, no_telp: e.target.value })}
                       disabled={!isEditing || loading}
-                      value={formData.phone}
+                      value={formData.no_telp}
                       placeholder="Masukkan nomor telepon"
                       icon={<Phone className={isEditing ? "text-red/60" : "text-gray-400"} size={20} />}
                     />
@@ -350,9 +385,9 @@ const handleUpdate = async () => {
                     </label>
                     <TextInput
                       className="w-full"
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, tglLahir: e.target.value })}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, tanggal_lahir: e.target.value })}
                       disabled={!isEditing}
-                      value={formData.tglLahir}
+                      value={formData.tanggal_lahir}
                       type="date"
                       placeholder="Pilih tanggal lahir"
                       icon={<CalendarFold className={isEditing ? "text-red/60" : "text-gray-400"} size={20} />}
@@ -366,9 +401,9 @@ const handleUpdate = async () => {
                       <Select
                         unstyled
                         isDisabled={!isEditing}
-                        value={genderOptions.find(opt => opt.value === formData.gender) || null}
+                        value={genderOptions.find(opt => opt.value === formData.jenis_kelamin) || null}
                         onChange={(selected) =>
-                          setFormData({ ...formData, gender: selected?.value as "Laki-Laki" | "Perempuan" })
+                          setFormData({ ...formData, jenis_kelamin: selected?.value as "LAKI_LAKI" | "PEREMPUAN" })
                         }
                         options={genderOptions}
                         placeholder="Pilih jenis kelamin"
@@ -433,13 +468,13 @@ const handleUpdate = async () => {
                         <MapPinned className={isEditing ? "text-red" : "text-gray-400"} size={18} />
                       </div>
                       <textarea
-                        value={formData.Alamat || ''}
+                        value={formData.Alamat}
                         onChange={(e) => setFormData({ ...formData, Alamat: e.target.value })}
                         disabled={!isEditing}
                         rows={3}
-                        className={`w-full pl-10 pr-4 py-3 rounded-xl font-inter text-sm transition-all duration-300 ${
+                        className={`w-full pl-10 pr-4 py-3 bg-transparent placeholder-red/30 text-black/80 font-plex border-2 border-red/20 hover:border-red/40 focus-within:border-red rounded-xl text-sm transition-all duration-300 ${
                           isEditing 
-                            ? 'border-2 border-red/20 hover:border-red/40 focus:border-red bg-white focus:shadow-lg' 
+                            ? 'border-2 hover:border-red/40 focus:border-red  bg-white focus:shadow-lg' 
                             : 'border border-gray-200 bg-gray-50'
                         }`}
                         placeholder="Masukkan alamat lengkap"
@@ -455,14 +490,15 @@ const handleUpdate = async () => {
   </label>
   <div className="relative">
     <FileInput
-      accept="image/*"
-      disabled={!isEditing}
-        file={files.fotoKtp}
-      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-        setFiles({ ...files, fotoKtp: e.target.files?.[0] || null })
-      }
-      className="border-red/20 bg-white/50 backdrop-blur-sm rounded-xl hover:border-red transition-all duration-300"
-    />
+  accept="image/*"
+  disabled={!isEditing}
+  file={files?.fotoKtp instanceof File ? files.fotoKtp : null}
+  previewUrl={typeof files?.fotoKtp === "string" ? files.fotoKtp : undefined}
+  onChange={(e) =>
+    setFiles({ ...files, sertifikatSabuk: e.target.files?.[0] || files?.sertifikatSabuk })
+  }
+/>
+
     {!isEditing && (
       <div className="absolute inset-0 bg-gray-100/50 rounded-xl" />
     )}
@@ -478,12 +514,13 @@ const handleUpdate = async () => {
     <FileInput
       accept="image/*"
       disabled={!isEditing}
-      file={files.sertifikatSabuk}
-      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-        setFiles({ ...files, sertifikatSabuk: e.target.files?.[0] || null })
+      file={files?.sertifikatSabuk instanceof File ? files.sertifikatSabuk : null}
+      previewUrl={typeof files?.sertifikatSabuk === "string" ? files.sertifikatSabuk : undefined}
+      onChange={(e) =>
+        setFiles({ ...files, sertifikatSabuk: e.target.files?.[0] || files?.sertifikatSabuk })
       }
-      className="border-red/20 bg-white/50 backdrop-blur-sm rounded-xl hover:border-red transition-all duration-300"
     />
+
     {!isEditing && (
       <div className="absolute inset-0 bg-gray-100/50 rounded-xl" />
     )}

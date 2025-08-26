@@ -86,12 +86,15 @@ async function main() {
           tanggal_lahir: new Date('2005-05-10'),
           berat_badan: 60,
           tinggi_badan: 170,
+          provinsi: 'Jawa Barat',
+          kota: 'Bandung',
           jenis_kelamin: 'LAKI_LAKI',  // ✅ harus sama persis
           id_dojang: dojang.id_dojang,
           id_pelatih_pembuat: pelatihId,
           akte_kelahiran: 'akte_andi.pdf',
           pas_foto: 'andi.jpg',
-          sertifikat_belt: 'belt_1.pdf'
+          sertifikat_belt: 'belt_1.pdf',
+          umur: 18
         }
     });
   
