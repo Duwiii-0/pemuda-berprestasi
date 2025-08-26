@@ -16,7 +16,6 @@ router.use(authenticate);
 // CRUD operations
 router.post('/', validateRequest(atletValidation.create), AtletController.create);
 router.get('/', AtletController.getAll);
-router.get('/my-atlet', AtletController.getMyAtlet);
 router.get('/dojang/:id_dojang', AtletController.getByDojang);
 router.get('/eligible/:id_kelas_kejuaraan', AtletController.getEligibleForClass);
 router.get('/:id', AtletController.getById);

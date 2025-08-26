@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Menu, Users, Award, TrendingUp, Search, Eye, Edit, UserPlus } from 'lucide-react';
 import NavbarDashboard from "../../components/navbar/navbarDashboard"
-import { useAtlit } from "../../context/AtlitContext";
+import { useAuth } from "../../context/authContext";
+import { apiClient, setAuthToken } from "../../../pemuda-berprestasi-mvp/src/config/api";
 
 interface StatsCardProps {
   icon: React.ComponentType<{ size?: number; className?: string }>;
@@ -28,11 +29,50 @@ const StatsCard: React.FC<StatsCardProps> = ({ icon: Icon, title, value, color }
 );
 
 const DataAtlit = () => {
+  const { user, token } = useAuth();
   const navigate = useNavigate();
-  const { atlits, updateAtlit } = useAtlit();
+  const [atlits, setAtlits] = useState<any[]>([]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [genderFilter, setGenderFilter] = useState<"all" | "Laki-Laki" | "Perempuan">("all");
+  const [genderFilter, setGenderFilter] = useState<"all" | "LAKI_LAKI" | "PEREMPUAN">("all");
+
+    useEffect(() => {
+    if (token) {
+      setAuthToken(token);
+    }
+  }, [token]);
+  
+  // Fetch data atlit 
+  useEffect(() => {
+  const fetchAtlits = async () => {
+    try {
+      // asumsi kamu sudah punya user login dengan id_dojang
+      const id_dojang = user?.pelatih?.id_dojang; 
+      if (!id_dojang) return;
+
+      const res = await apiClient.get(`/atlet/dojang/${id_dojang}`);
+      console.log("Res data:", res.data);
+
+      if (res.success) {
+        const profileData = res.data;
+        const data = {
+          name: profileData.nama_atlet,
+          tb: profileData.tinggi_badan,
+          bb: profileData.berat_badan,
+          tglLahir: profileData.tanggal_lahir ,
+          jeniskelamin: profileData.jenis_kelamin,
+        };
+        setAtlits([data]);
+      }
+      setAtlits(res.data); // sesuai dengan AtletController.sendSuccess
+    } catch (err) {
+      console.error("Gagal ambil data atlet:", err);
+    }
+  };
+
+  fetchAtlits();
+}, [user]);
+
 
   useEffect(() => {
     const onResize = () => {
@@ -42,19 +82,20 @@ const DataAtlit = () => {
     return () => window.removeEventListener('resize', onResize);
   }, []);
 
-  // Filter logic
-  const filteredAtlits = atlits.filter(atlit => {
-    const matchesSearch = atlit.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         atlit.provinsi.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesGender = genderFilter === "all" || atlit.gender === genderFilter;
-    return matchesSearch && matchesGender;
-  });
+  // Filter
+const filteredAtlits = (atlits).filter(atlit => {
+  const matchesSearch = atlit.nama_atlet.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                       atlit.dojang?.provinsi?.toLowerCase().includes(searchTerm.toLowerCase());
+  const matchesGender = genderFilter === "all" || atlit.jenis_kelamin === genderFilter;
+  return matchesSearch && matchesGender;
+});
 
-  // Stats calculations
-  const totalAtlits = atlits.length;
-  const lakiLakiCount = atlits.filter(a => a.gender === "Laki-Laki").length;
-  const perempuanCount = atlits.filter(a => a.gender === "Perempuan").length;
-  const avgAge = Math.round(atlits.reduce((sum, a) => sum + a.umur, 0) / (atlits.length || 1));
+// Stats
+const totalAtlits = atlits.length;
+const lakiLakiCount = atlits.filter(a => a.jenis_kelamin === "Laki-Laki").length;
+const perempuanCount = atlits.filter(a => a.jenis_kelamin === "Perempuan").length;
+const avgAge = Math.round(atlits.reduce((sum, a) => sum + a.age, 0) / (atlits.length || 1));
+
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-white via-red/5 to-yellow/10">
@@ -150,9 +191,9 @@ const DataAtlit = () => {
                   Semua
                 </button>
                 <button
-                  onClick={() => setGenderFilter("Laki-Laki")}
+                  onClick={() => setGenderFilter("LAKI_LAKI")}
                   className={`cursor-pointer px-4 py-3 rounded-xl font-plex text-sm transition-all duration-300 ${
-                    genderFilter === "Laki-Laki"
+                    genderFilter === "LAKI_LAKI"
                       ? "bg-blue-500 text-white"
                       : "bg-white/50 text-blue-500 border border-blue-500/20 hover:bg-blue-500/5"
                   }`}
@@ -160,9 +201,9 @@ const DataAtlit = () => {
                   Laki-laki
                 </button>
                 <button
-                  onClick={() => setGenderFilter("Perempuan")}
+                  onClick={() => setGenderFilter("PEREMPUAN")}
                   className={`cursor-pointer px-4 py-3 rounded-xl font-plex text-sm transition-all duration-300 ${
-                    genderFilter === "Perempuan"
+                    genderFilter === "PEREMPUAN"
                       ? "bg-pink-500 text-white"
                       : "bg-white/50 text-pink-500 border border-pink-500/20 hover:bg-pink-500/5"
                   }`}
@@ -213,46 +254,45 @@ const DataAtlit = () => {
                   <tbody className="divide-y divide-white/30">
                     {filteredAtlits.map((atlit, index) => (
                       <tr
-                        key={atlit.id}
+                        key={atlit.id_atlet}
                         className={`transition-all duration-200 hover:bg-white/50 cursor-pointer ${
                           index % 2 === 0 ? "bg-white/20" : "bg-white/10"
                         }`}
-                        onClick={() => navigate(`/dashboard/atlit/${atlit.id}`)}
+                        onClick={() => navigate(`/dashboard/atlit/${atlit.id_atlet}`)}
                       >
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-red to-red/80 flex items-center justify-center text-white font-bebas">
-                              {atlit.name.charAt(0)}
+                              {atlit.nama_atlet.charAt(0)}
                             </div>
                             <div>
-                              <p className="font-plex font-semibold text-black/80">{atlit.name}</p>
-                              <p className="font-plex text-sm text-black/60">ID: {atlit.id}</p>
+                              <p className="font-plex font-semibold text-black/80">{atlit.nama_atlet}</p>
                             </div>
                           </div>
                         </td>
                         <td className="px-6 py-4 text-center">
-                          <span className="font-plex text-black/70">{atlit.provinsi}</span>
+                          <span className="font-plex text-black/70">{atlit.dojang?.provinsi || "-"}</span>
                         </td>
                         <td className="px-6 py-4 text-center">
                           <span
                             className={`px-3 py-1 rounded-full text-xs font-plex font-medium ${
-                              atlit.gender === "Laki-Laki"
+                              atlit.jenis_kelamin === "LAKI_LAKI"
                                 ? "bg-blue-100 text-blue-600"
                                 : "bg-pink-100 text-pink-600"
                             }`}
                           >
-                            {atlit.gender}
+                            {atlit.jenis_kelamin === "LAKI_LAKI" ? "Laki-laki" : "Perempuan"}
                           </span>
                         </td>
                         <td className="px-6 py-4 text-center">
-                          <span className="font-plex font-medium text-black/70">{atlit.umur} Tahun</span>
+                          <span className="font-plex font-medium text-black/70">{atlit.age} Tahun</span>
                         </td>
                         <td className="px-6 py-4 text-center">
                           <div className="flex justify-center gap-2">
                             <button 
                               onClick={(e) => {
                                 e.stopPropagation();
-                                navigate(`/dashboard/atlit/${atlit.id}`);
+                                navigate(`/dashboard/atlit/${atlit.id_atlet}`);
                               }}
                               className="p-2 rounded-lg bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 transition-all duration-200"
                             >

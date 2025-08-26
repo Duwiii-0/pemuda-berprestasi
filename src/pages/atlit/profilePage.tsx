@@ -8,7 +8,6 @@ import FileInput from "../../components/fileInput";
 import type { DummyAtlit } from "../../dummy/dummyAtlit";
 import Select from "react-select";
 import { GeneralButton } from "../dashboard/dataDojang";
-import { useAtlit } from "../../context/AtlitContext";
 
 // Helper function to calculate age from birth date
 const calculateAge = (birthDate: string): number => {
@@ -44,17 +43,14 @@ function toMMDDYYYY(dateStr: string): string {
 }
 
 const Profile = () => {
-  const { atlits, updateAtlit } = useAtlit();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  const atlit = atlits.find((a) => a.id === Number(id)) || null;
 
-  const [formData, setFormData] = useState<DummyAtlit | null>(atlit);
+  const [formData, setFormData] = useState<DummyAtlit | null>();
   const [isEditing, setIsEditing] = useState(false);
 
   const handleCancel = () => {
     setIsEditing(false);
-    setFormData(atlit);
   };
 
   const handleUpdate = () => {
@@ -65,7 +61,6 @@ const Profile = () => {
         ...formData,
         umur: calculatedAge
       };
-      updateAtlit(updatedData);
     }
     setIsEditing(false);
   };

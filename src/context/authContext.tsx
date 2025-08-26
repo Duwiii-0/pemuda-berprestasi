@@ -80,6 +80,7 @@ interface User {
   pelatih?: {
     id_pelatih: number;
     nama_pelatih: string;
+    id_dojang: number;
   };
 }
 

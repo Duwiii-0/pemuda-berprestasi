@@ -108,7 +108,11 @@ class AuthService {
     const account = await prisma.tb_akun.findUnique({
       where: { email },
       include: {
-        pelatih: true,
+      pelatih: {
+        include: {
+          dojang: true // ⬅️ ambil data dojang saat login
+        }
+      },
         admin: true
       }
     })
@@ -151,7 +155,7 @@ class AuthService {
         id_pelatih: account.pelatih.id_pelatih,
         nama_pelatih: account.pelatih.nama_pelatih,
         no_telp: account.pelatih.no_telp,
-        id_dojang: account.pelatih.id_dojang
+        id_dojang: account.pelatih.id_dojang,
       }
     }
 
@@ -172,7 +176,11 @@ class AuthService {
     const account = await prisma.tb_akun.findUnique({
       where: { id_akun },
       include: {
-        pelatih: true,
+      pelatih: {
+        include: {
+          dojang: true // ⬅️ ambil data dojang juga
+        }
+      },
         admin: true
       }
     })

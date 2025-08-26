@@ -30,7 +30,7 @@ const Login = () => {
         navigate("/dashboard");
         toast.success("Login berhasil sebagai Admin!");
       } else if (isPelatih) {
-        navigate("/dashboard");
+        navigate("/");
         toast.success("Login berhasil sebagai Pelatih!");
       }
     }

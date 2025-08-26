@@ -61,11 +61,6 @@ export class AtletService {
                   (today.getMonth() < birthDate.getMonth() || 
                    (today.getMonth() === birthDate.getMonth() && today.getDate() < birthDate.getDate()) ? 1 : 0);
 
-      // Validate age (minimum 5 years old)
-      if (age < 5) {
-        throw new Error('Atlet minimal berusia 5 tahun');
-      }
-
       // Create atlet
       const atlet = await prisma.tb_atlet.create({
         data,
@@ -389,23 +384,28 @@ export class AtletService {
 
       const [atletList, total] = await Promise.all([
         prisma.tb_atlet.findMany({
-          where: { id_dojang },
-          skip: offset,
-          take: limit,
-          include: {
-            pelatih_pembuat: {
-              select: {
-                id_pelatih: true,
-                nama_pelatih: true
+            where: { id_dojang },
+            skip: offset,
+            take: limit,
+            include: {
+              pelatih_pembuat: {
+                select: { 
+                  id_pelatih: true,
+                  nama_pelatih: true
+                }
+              },
+              dojang: {
+                select: {
+                  provinsi: true // <-- tambahkan ini
+                }
+              },
+              _count: {
+                select: {
+                  peserta_kompetisi: true
+                }
               }
             },
-            _count: {
-              select: {
-                peserta_kompetisi: true
-              }
-            }
-          },
-          orderBy: { nama_atlet: 'asc' }
+            orderBy: { nama_atlet: 'asc' }
         }),
         prisma.tb_atlet.count({ where: { id_dojang } })
       ]);
@@ -524,8 +524,8 @@ export class AtletService {
     try {
       const [totalAtlet, maleCount, femaleCount, registeredInCompetition] = await Promise.all([
         prisma.tb_atlet.count(),
-        prisma.tb_atlet.count({ where: { jenis_kelamin: 'L' } }),
-        prisma.tb_atlet.count({ where: { jenis_kelamin: 'P' } }),
+        prisma.tb_atlet.count({ where: { jenis_kelamin: 'LAKI_LAKI' } }),
+        prisma.tb_atlet.count({ where: { jenis_kelamin: 'PEREMPUAN' } }),
         prisma.tb_atlet.count({
           where: {
             peserta_kompetisi: {

@@ -8,6 +8,7 @@ import dotenv from 'dotenv'
 import authRoutes from './routes/auth'
 import pelatihRoutes from './routes/pelatih'
 import dojangRoutes from './routes/dojang'
+import atletRoutes from './routes/atlet'
 
 // Import middleware
 import { errorHandler, notFoundHandler } from './middleware/errorHandler'
@@ -20,7 +21,7 @@ const PORT = process.env.PORT || 3000
 
 // CORS configuration
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173', // Frontend biasanya port 5173
+  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
   credentials: true
 }))
 
@@ -46,7 +47,7 @@ app.use('/api/pelatih', pelatihRoutes)
 
 // Routes untuk Developer B nanti:
 app.use('/api/dojang', dojangRoutes)
-// app.use('/api/atlet', atletRoutes)
+app.use('/api/atlet', atletRoutes)
 // app.use('/api/kompetisi', kompetisiRoutes)
 // app.use('/api/admin', adminRoutes)
 

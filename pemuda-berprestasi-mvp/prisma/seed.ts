@@ -53,7 +53,7 @@ async function main() {
   if (!existingPelatih) {
     const hashedPelatihPassword = await bcrypt.hash('pelatih123', 10);
 
-    await prisma.tb_akun.create({
+    const pelatihAccount = await prisma.tb_akun.create({
       data: {
         email: 'pelatih@example.com',
         password_hash: await bcrypt.hash('pelatih123', 10),
@@ -67,14 +67,42 @@ async function main() {
             }
           }
         }
+      },
+      include: {
+        pelatih: true  // ⬅ ini wajib supaya TS tahu ada properti pelatih
       }
     });
 
+    
     console.log('✅ Pelatih account created');
+
+      const pelatihId = pelatihAccount.pelatih!.id_pelatih;
+
+    // Buat 3 atlet
+    await prisma.tb_atlet.create({
+      data: 
+        {
+          nama_atlet: 'Andi Sumarecon',
+          tanggal_lahir: new Date('2005-05-10'),
+          berat_badan: 60,
+          tinggi_badan: 170,
+          jenis_kelamin: 'LAKI_LAKI',  // ✅ harus sama persis
+          id_dojang: dojang.id_dojang,
+          id_pelatih_pembuat: pelatihId,
+          akte_kelahiran: 'akte_andi.pdf',
+          pas_foto: 'andi.jpg',
+          sertifikat_belt: 'belt_1.pdf'
+        }
+    });
+  
+    console.log('✅ 3 Atlet created');
+
   } else {
     console.log('ℹ️ Pelatih account already exists');
   }
 }
+
+
 
 main()
   .then(() => console.log('🎉 Seeding completed'))

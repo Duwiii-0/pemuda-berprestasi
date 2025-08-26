@@ -127,24 +127,23 @@ export class AtletController {
     }
   }
 
-  // Get atlet by dojang
-  static async getByDojang(req: Request, res: Response) {
-    try {
-      const id_dojang = parseInt(req.params.id_dojang);
-      const page = parseInt(req.query.page as string) || 1;
-      const limit = parseInt(req.query.limit as string) || 10;
-      
-      if (isNaN(id_dojang)) {
-        return sendError(res, 'ID dojang tidak valid', 400);
-      }
+    // Get atlet by dojang
+    static async getByDojang(req: Request, res: Response) {
+      try {
+        const id_dojang = parseInt(req.params.id_dojang);
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = parseInt(req.query.limit as string) || 10;
+        if (isNaN(id_dojang)) {
+          return sendError(res, 'ID dojang tidak valid', 400);
+        }
 
-      const result = await AtletService.getAtletByDojang(id_dojang, page, limit);
-      
-      return sendSuccess(res, result.data, 'Data atlet berhasil diambil', 200, result.pagination);
-    } catch (error: any) {
-      return sendError(res, error.message, 500);
+        const result = await AtletService.getAtletByDojang(id_dojang, page, limit);
+        
+        return sendSuccess(res, result.data, 'Data atlet berhasil diambil', 200, result.pagination);
+      } catch (error: any) {
+        return sendError(res, error.message, 500);
+      }
     }
-  }
 
   // Get eligible atlet for competition class
   static async getEligibleForClass(req: Request, res: Response) {
@@ -175,71 +174,7 @@ export class AtletController {
   }
 
   // Get atlet for current pelatih (from auth context)
-  static async getMyAtlet(req: Request, res: Response) {
-    try {
-      // Assuming user info is attached to req.user by auth middleware
-      const user = (req as any).user;
-      
-      if (!user || !user.pelatih) {
-        return sendError(res, 'Data pelatih tidak ditemukan', 401);
-      }
 
-      const filters = {
-        page: parseInt(req.query.page as string) || 1,
-        limit: parseInt(req.query.limit as string) || 10,
-        search: req.query.search as string,
-        jenis_kelamin: req.query.jenis_kelamin as JenisKelamin,
-        min_age: req.query.min_age ? parseInt(req.query.min_age as string) : undefined,
-        max_age: req.query.max_age ? parseInt(req.query.max_age as string) : undefined,
-        min_weight: req.query.min_weight ? parseFloat(req.query.min_weight as string) : undefined,
-        max_weight: req.query.max_weight ? parseFloat(req.query.max_weight as string) : undefined
-      };
-
-      // Get all dojang for this pelatih
-      const dojangList = await DojangService.getDojangByPelatih(user.pelatih.id_pelatih);
-      
-      if (dojangList.length === 0) {
-        return sendSuccess(res, [], 'Belum ada atlet untuk pelatih ini');
-      }
-
-      // Get atlet from all dojang owned by this pelatih
-      const allAtlet: tb_atlet[] = []; // ✅ pakai tipe dari Prisma
-      for (const dojang of dojangList) {
-        const atletResult = await AtletService.getAtletByDojang(dojang.id_dojang, 1, 1000); // Get all
-        allAtlet.push(...atletResult.data);
-      }
-
-      // Apply filters manually (simplified version)
-      let filteredAtlet = allAtlet;
-      
-      if (filters.search) {
-        filteredAtlet = filteredAtlet.filter(atlet => 
-          atlet.nama_atlet.toLowerCase().includes(filters.search.toLowerCase())
-        );
-      }
-
-      if (filters.jenis_kelamin) {
-        filteredAtlet = filteredAtlet.filter(atlet => atlet.jenis_kelamin === filters.jenis_kelamin);
-      }
-
-      // Apply pagination
-      const total = filteredAtlet.length;
-      const startIndex = (filters.page - 1) * filters.limit;
-      const endIndex = startIndex + filters.limit;
-      const paginatedAtlet = filteredAtlet.slice(startIndex, endIndex);
-
-      const pagination = {
-        currentPage: filters.page,
-        totalPages: Math.ceil(total / filters.limit),
-        totalItems: total,
-        itemsPerPage: filters.limit
-      };
-
-      return sendSuccess(res, paginatedAtlet, 'Data atlet Anda berhasil diambil', 200, pagination);
-    } catch (error: any) {
-      return sendError(res, error.message, 500);
-    }
-  }
 
   // Upload atlet documents
   static async uploadDocuments(req: Request, res: Response) {
