@@ -143,7 +143,7 @@ const Dojang = () => {
   // 🔹 Update dojang
   const handleUpdate = async () => {
     try {
-      const { data } = await apiClient.put(`/dojang/${userDojang.id_dojang}`, {
+      const updateData = {
         nama_dojang: formData.name,
         email: formData.email,
         no_telp: formData.phone,
@@ -153,11 +153,15 @@ const Dojang = () => {
         kecamatan: formData.kecamatan,
         kelurahan: formData.kelurahan,
         alamat: formData.alamat,
-      });
+      };
+      
+      const { data } = await apiClient.put(`/dojang/${userDojang.id_dojang}`, updateData);
 
-      setUserDojang(data);
+      setUserDojang(data); // pake hasil dari server, bukan formData
       setIsEditing(false);
       toast.success("Data dojang berhasil diperbarui");
+    
+
     } catch (err: any) {
       console.error(err);
       toast.error(err.response?.data?.message || "Update dojang gagal");

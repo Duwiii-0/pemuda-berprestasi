@@ -1,5 +1,8 @@
 import { Request, Response } from 'express';
 import { DojangService } from '../services/dojangService';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 export class DojangController {
   // PUBLIC
@@ -33,14 +36,24 @@ export class DojangController {
 
   // AUTHENTICATED
   static async getMyDojang(req: Request, res: Response) {
-    try {
-      const idPelatih = (req.user as any)?.id_pelatih; // pastikan middleware auth menaruh user
-      const dojang = await DojangService.getByPelatih(idPelatih);
-      res.json(dojang);
-    } catch (err: any) {
-      res.status(400).json({ message: err.message });
-    }
+  try {
+    const idAkun = (req.user as any)?.id_akun;
+    if (!idAkun) throw new Error("id_akun tidak ditemukan di token");
+
+    // cari pelatih berdasarkan id_akun
+    const pelatih = await prisma.tb_pelatih.findUnique({
+      where: { id_akun: idAkun },
+      include: { dojang: true },
+    });
+
+    if (!pelatih) throw new Error("Pelatih tidak ditemukan");
+
+  res.json({ data: pelatih.dojang });
+  } catch (err: any) {
+    res.status(400).json({ message: err.message });
   }
+}
+
 
   static async getByPelatih(req: Request, res: Response) {
     try {
@@ -80,7 +93,7 @@ export class DojangController {
     try {
       const id = parseInt(req.params.id);
       const dojang = await DojangService.updateDojang({ id_dojang: id, ...req.body });
-      res.json(dojang);
+      res.json({ success: true, data: dojang });
     } catch (err: any) {
       res.status(400).json({ message: err.message });
     }

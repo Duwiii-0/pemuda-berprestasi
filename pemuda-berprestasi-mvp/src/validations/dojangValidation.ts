@@ -35,14 +35,15 @@ create: Joi.object({
     'string.max': 'Nama kota maksimal 50 karakter'
   }),
 
-  id_pelatih: Joi.number().integer().min(1).optional().allow(null).messages({
-    'number.base': 'ID pelatih harus berupa angka',
-    'number.integer': 'ID pelatih harus bilangan bulat',
-    'number.min': 'ID pelatih minimal 1'
+  kecamatan: Joi.string().trim().max(50).optional().allow('').messages({
+    'string.max': 'Nama kota maksimal 50 karakter'
   }),
-  founder: Joi.string().trim().max(100).optional().allow('').messages({
-  'string.max': 'Nama founder maksimal 100 karakter'
-}),
+  kelurahan: Joi.string().trim().max(50).optional().allow('').messages({
+    'string.max': 'Nama kota maksimal 50 karakter'
+  }),
+  alamat: Joi.string().trim().max(50).optional().allow('').messages({
+    'string.max': 'Nama kota maksimal 50 karakter'
+  }),
 
 }),
 
@@ -53,7 +54,7 @@ create: Joi.object({
     'number.min': 'ID pelatih minimal 1'
   }),
 
-    nama: Joi.string()
+    nama_dojang: Joi.string()
       .trim()
       .min(3)
       .max(100)
@@ -110,10 +111,15 @@ create: Joi.object({
       .messages({
         'string.max': 'Nama kota maksimal 50 karakter'
       }),
-      founder: Joi.string().trim().max(100).optional().allow('').messages({
-  'string.max': 'Nama founder maksimal 100 karakter'
-}),
-
+    kecamatan: Joi.string().trim().max(50).optional().allow('').messages({
+    'string.max': 'Nama kota maksimal 50 karakter'
+    }),
+    kelurahan: Joi.string().trim().max(50).optional().allow('').messages({
+      'string.max': 'Nama kota maksimal 50 karakter'
+    }),
+    alamat: Joi.string().trim().max(50).optional().allow('').messages({
+      'string.max': 'Nama kota maksimal 50 karakter'
+    }),
   }),
 
   checkName: Joi.object({

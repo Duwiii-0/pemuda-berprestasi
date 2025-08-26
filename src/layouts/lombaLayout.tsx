@@ -2,21 +2,20 @@ import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import NavbarLomba from "../components/navbar/navbarLomba";
 import FooterLomba from '../components/footerLomba';
 import { useState, useEffect } from "react";
+import AlertModal from "../components/alertModal";
 import { useAuth } from "../context/authContext";
 
 
 
 export default function LombaLayout() {
   const [isOpen, setIsOpen] = useState(false);
-  const location = useLocation();
   const navigate = useNavigate();
   const { logout } = useAuth(); // ⬅️ ambil logout dari AuthContext
-  const isSettings = location.pathname.startsWith("/settings");
 
   const handleConfirmLogout = () => {
     setIsOpen(false);
     logout(); // ⬅️ pakai context logout
-    navigate("/"); // ⬅️ redirect ke halaman utama
+    navigate("/lomba/home"); // ⬅️ redirect ke halaman utama
   };
 
   useEffect(() => {
@@ -38,6 +37,13 @@ export default function LombaLayout() {
         <Outlet />
       </main>
       <FooterLomba/>
+
+      <AlertModal
+        isOpen={isOpen}
+        onClose={() => setIsOpen(false)}
+        onConfirm={handleConfirmLogout}
+        message="Are you sure you want to log out?"
+      />
     </div>
   );
 }

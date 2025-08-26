@@ -1,14 +1,17 @@
 import { Menu, X, ChevronUp, ChevronDown } from "lucide-react";
 import GeneralButton from "../generalButton";
 import { Link, useLocation } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "../../context/authContext";
 
 const NavbarLomba = ({ onLogoutRequest }: { onLogoutRequest: () => void }) => {
   const location = useLocation();
-  const { user } = useAuth();
+
+  const { user } = useAuth(); 
   const [showDropdown, setShowDropdown] = useState(false);
   const [isBurgerOpen, setIsBurgerOpen] = useState(false);
+
+
 
   return (
     <div className="bg-red absolute top-0 left-0 h-24 w-full flex justify-between items-center px-4 md:px-10 lg:px-12 z-50">
@@ -87,7 +90,7 @@ const NavbarLomba = ({ onLogoutRequest }: { onLogoutRequest: () => void }) => {
           >
             <span className="flex gap-2 items-center justify-center">
               <span className="max-w-32 lg:max-w-42 xl:max-w-full truncate">
-                {user.name}
+                {user?.pelatih?.nama_pelatih ?? "Nama tidak tersedia"}
               </span>
               {showDropdown ? (
                 <ChevronUp size={26} className="transition-all duration-500" />
