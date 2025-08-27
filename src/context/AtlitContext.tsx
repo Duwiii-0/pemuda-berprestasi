@@ -5,7 +5,7 @@ import { apiClient } from "../../pemuda-berprestasi-mvp/src/config/api";
 
 // Interface Atlet sesuai response API
 export interface Atlet {
-  id: string;
+  id_atlet?: number;
   nama_atlet: string;
   jenis_kelamin: "LAKI_LAKI" | "PEREMPUAN";
   tanggal_lahir: string;
@@ -14,11 +14,27 @@ export interface Atlet {
   belt?: string;
   alamat?: string;
   provinsi?: string;
-  phone?: string;
+  no_telp?: string;
   nik?: string;
   umur?: number;
   // tambahkan field lain sesuai API
 }
+
+export type UpdateAtletPayload = {
+  id_atlet: number; // wajib, untuk identify
+  nama_atlet?: string;
+  nik?: string;
+  tanggal_lahir?: string;
+  jenis_kelamin?: "LAKI_LAKI" | "PEREMPUAN";
+  tinggi?: number;
+  berat?: number;
+  no_telp?: string;
+  alamat?: string;
+  umur?: number;
+  id_dojang?: string;
+  id_pelatih_pembuat?: string;
+};
+
 
 export const genderOptions = [
     { value: "LAKI_LAKI", label: "Laki-Laki" },
@@ -56,8 +72,8 @@ export const calculateAge = (birthDate: string): number => {
 interface AtletContextType {
   atlits: Atlet[];
   fetchAllAtlits: () => Promise<void>;
-  fetchAtletById: (id: string) => Promise<Atlet | undefined>;
-  updateAtlet: (updated: Atlet) => void;
+  fetchAtletById: (id: number) => Promise<Atlet | undefined>;
+  updateAtlet: (updated: Atlet) => Promise<Atlet | undefined>;
 }
 
 const AtletContext = createContext<AtletContextType | undefined>(undefined);
@@ -76,14 +92,14 @@ export const AtletProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   // Fetch atlet berdasarkan ID
-  const fetchAtletById = useCallback (async (id: string) => {
-    let atlet = atlits.find(a => a.id === id);
+  const fetchAtletById = useCallback (async (id: number) => {
+    let atlet = atlits.find(a => a.id_atlet === id);
     if (!atlet) {
       try {
         const res = await apiClient.get(`/atlet/${id}`);
         if (res.data) {
           atlet = res.data;
-          setAtlits(prev => [...prev.filter(a => a.id !== id), atlet!]);
+          setAtlits(prev => [...prev.filter(a => a.id_atlet !== id), atlet!]);
         }
       } catch (err) {
         console.error(`Gagal fetch atlet dengan ID ${id}:`, err);
@@ -93,9 +109,23 @@ export const AtletProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, []);
 
   // Update atlet di context
-  const updateAtlet = (updated: Atlet) => {
-    setAtlits(prev => prev.map(a => (a.id === updated.id ? updated : a)));
-  };
+// Update atlet di context
+const updateAtlet = async (updated: Atlet) => {
+  try {
+    const res = await apiClient.put(`/atlet/${updated.id_atlet}`, updated);
+    if (res.data) {
+      setAtlits(prev =>
+        prev.map(a => (a.id_atlet === updated.id_atlet ? res.data : a))
+      );
+      return res.data; // return biar caller bisa pakai data terbaru
+    }
+  } catch (err) {
+    console.error(`Gagal update atlet dengan ID ${updated.id_atlet}:`, err);
+    throw err; // biar bisa ditangkap di UI
+  }
+};
+
+
 
   return (
     <AtletContext.Provider value={{ atlits, fetchAllAtlits, fetchAtletById, updateAtlet }}>
@@ -109,4 +139,4 @@ export const useAtletContext = () => {
   const context = useContext(AtletContext);
   if (!context) throw new Error("useAtletContext harus digunakan dalam AtletProvider");
   return context;
-};
+};  

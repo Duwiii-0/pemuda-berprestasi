@@ -11,6 +11,7 @@ interface CreateAtletData {
   berat_badan: number;
   tinggi_badan: number;
   jenis_kelamin: JenisKelamin;
+  no_telp?: string;
   provinsi: string;
   kota?: string;
   alamat?: string;

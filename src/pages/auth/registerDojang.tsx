@@ -9,7 +9,6 @@ const RegisterDojang = () => {
   const [namaDojang, setNamaDojang] = useState("");
   const [email, setEmail] = useState("");
   const [no_telp, setno_telp] = useState("");
-  const [founder, setFounder] = useState("");
   const [kabupaten, setKabupaten] = useState("");
   const [provinsi, setProvinsi] = useState("");
   const [negara, setNegara] = useState("");
@@ -17,16 +16,15 @@ const RegisterDojang = () => {
 
   const handleRegister = async () => {
     setIsLoading(true);
-    try { 
-      const payload = {
-  nama_dojang: namaDojang.trim(),
-  email: email.trim() || "",
-  no_telp: no_telp.trim() || "",
-  founder: founder.trim() || "",
-  negara: negara.trim() || "",
-  provinsi: provinsi.trim() || "",
-  kota: kabupaten.trim() || "",
-};
+        try { 
+          const payload = {
+      nama_dojang: namaDojang.trim(),
+      email: email.trim() || "",
+      no_telp: no_telp.trim() || "",
+      negara: negara.trim() || "",
+      provinsi: provinsi.trim() || "",
+      kota: kabupaten.trim() || "",
+    };
 
 
       console.log("Sending payload:", payload);
@@ -40,7 +38,6 @@ const RegisterDojang = () => {
       setNamaDojang("");
       setEmail("");
       setno_telp("");
-      setFounder("");
       setKabupaten("");
       setProvinsi("");
       setNegara("");
@@ -144,18 +141,6 @@ const RegisterDojang = () => {
               className="h-12 border-red"
               placeholder="08123456789"
               icon={<Phone className="text-red" size={20} />}
-            />
-          </div>
-
-          {/* Founder */}
-          <div>
-            <label className="pl-2 text-sm font-medium">Nama Founder (Opsional)</label>
-            <TextInput
-              value={founder}
-              onChange={(e) => setFounder(e.target.value)}
-              className="h-12 border-red"
-              placeholder="Nama pendiri dojang"
-              icon={<User className="text-red" size={20} />}
             />
           </div>
 

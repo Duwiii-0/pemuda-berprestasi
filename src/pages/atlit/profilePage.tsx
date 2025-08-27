@@ -12,6 +12,8 @@ import type { Atlet } from "../../context/AtlitContext";
 import  { beltOptions } from "../../context/AtlitContext";
 import  { genderOptions } from "../../context/AtlitContext";
 import { calculateAge } from "../../context/AtlitContext";
+import toast from "react-hot-toast";
+
 
 
 function toInputDateFormat(dateStr: string): string {
@@ -32,44 +34,72 @@ function toMMDDYYYY(dateStr: string): string {
 const Profile = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-
+  const [originalData, setOriginalData] = useState<Atlet | null>(null); // 🆕 simpan data asli dari DB
   const [formData, setFormData] = useState<Atlet | null>();
   const [isEditing, setIsEditing] = useState(false);
 
-  const { fetchAtletById } = useAtletContext();
+  const { fetchAtletById, updateAtlet } = useAtletContext();
 
+  // Fetch data atlet sekali saat masuk halaman
   useEffect(() => {
     if (id) {
-      fetchAtletById(id).then((data) => {
-        console.log("Fetched Atlet:", data);
-        if (data) setFormData(data);
+      const atletId = Number(id);
+      fetchAtletById(atletId).then((data) => {
+        if (data) {
+          setFormData(data);
+          setOriginalData(data); // simpan versi asli
+        }
       });
     }
   }, [id, fetchAtletById]);
 
-
-
   const handleCancel = () => {
-    setIsEditing(false);
-  };
-
-  const handleUpdate = () => {
-    if (formData) {
-      // Calculate age from birth date before updating
-      const calculatedAge = calculateAge(formData.tanggal_lahir);
-      const updatedData = {
-        ...formData,
-        umur: calculatedAge
-      };
+    if (originalData) {
+      setFormData(originalData); // 🆕 balikin ke data awal dari DB
     }
     setIsEditing(false);
   };
+
+  const handleUpdate = async () => {
+  if (formData) {
+    try {
+      const calculatedAge = calculateAge(formData.tanggal_lahir);
+
+      // Hanya ambil field yang valid untuk update
+      const payload = {
+        id_atlet: Number(id),
+        nama_atlet: formData.nama_atlet,
+        nik: formData.nik,
+        tanggal_lahir: formData.tanggal_lahir,
+        jenis_kelamin: formData.jenis_kelamin,
+        tinggi_badan: formData.tinggi_badan,
+        berat_badan: formData.berat_badan,
+        no_telp: formData.no_telp,
+        alamat: formData.alamat,
+        umur: calculatedAge, // kalau schema Joi terima
+      };
+
+      const saved = await updateAtlet(payload);
+
+      if (saved) {
+        setFormData(saved);
+        setOriginalData(saved);
+        setIsEditing(false);
+        toast.success("Data atlet berhasil diperbarui")
+      }
+    } catch (err) {
+      console.error("Gagal update atlet:", err);
+      toast.error("Semua field harus diisi dengan benar"); 
+    }
+  }
+};
+
 
   const handleInputChange = (field: keyof Atlet, value: any) => {
     if (!formData) return;
     let updatedData = { ...formData, [field]: value };
 
-    if (field === 'tanggal_lahir' && typeof value === 'string') {
+    if (field === "tanggal_lahir" && typeof value === "string") {
       updatedData.tanggal_lahir = toMMDDYYYY(value);
       updatedData.umur = calculateAge(updatedData.tanggal_lahir);
     }
@@ -121,7 +151,6 @@ const Profile = () => {
               <h2 className="font-bebas text-3xl text-black/80 tracking-wide">
                 {formData.nama_atlet}
               </h2>
-              <p className="font-plex text-black/60">ID: {formData.id}</p>
               <div className="flex gap-2 mt-2">
                 <span className={`px-3 py-1 rounded-full text-xs font-plex font-medium ${
                   formData.jenis_kelamin === "LAKI_LAKI"
@@ -188,9 +217,9 @@ const Profile = () => {
                 <div className="relative">
                 <TextInput
                   className="h-12 border-red/20 bg-white/50 backdrop-blur-sm rounded-xl focus:border-red transition-all duration-300"
-                  onChange={(e) => handleInputChange('phone', e.target.value)}
+                  onChange={(e) => handleInputChange('no_telp', e.target.value)}
                   disabled={!isEditing}
-                  value={formData.phone || ''} //blm ada ni field di db
+                  value={formData.no_telp || ''} //blm ada ni field di db
                   placeholder="No HP"
                   icon={<Phone className="text-red" size={20} />}
                 />
@@ -261,7 +290,7 @@ const Profile = () => {
                     ].join(" "),
                 }}
               />
-              {!isEditing && <div className="absolute inset-0 bg-gray-100/50 rounded-xl" />}
+              {!isEditing && <div className="absolute inset-0 bg-gray-100/50 rounded-xl z-50" />}
               </div>
             </div>
 
@@ -296,7 +325,7 @@ const Profile = () => {
                     ].join(" "),
                 }}
               />
-              {!isEditing && <div className="absolute inset-0 bg-gray-100/50 rounded-xl" />}
+              {!isEditing && <div className="absolute inset-0 bg-gray-100/50 rounded-xl z-50" />}
               </div>
             </div>
 
