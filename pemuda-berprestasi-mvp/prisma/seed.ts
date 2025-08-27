@@ -83,9 +83,12 @@ async function main() {
       data: 
         {
           nama_atlet: 'Andi Sumarecon',
+          nik: '3201012005050001',
+          belt: 'kuning',
           tanggal_lahir: new Date('2005-05-10'),
           berat_badan: 60,
           tinggi_badan: 170,
+          umur:  20,
           provinsi: 'Jawa Barat',
           kota: 'Bandung',
           jenis_kelamin: 'LAKI_LAKI',  // ✅ harus sama persis
@@ -94,7 +97,7 @@ async function main() {
           akte_kelahiran: 'akte_andi.pdf',
           pas_foto: 'andi.jpg',
           sertifikat_belt: 'belt_1.pdf',
-          umur: 18
+          
         }
     });
   

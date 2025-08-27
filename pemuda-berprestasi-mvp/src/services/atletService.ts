@@ -4,6 +4,9 @@ const prisma = new PrismaClient();
 
 interface CreateAtletData {
   nama_atlet: string;
+  nik: string;
+  umur: number;
+  belt: string;
   tanggal_lahir: Date;
   berat_badan: number;
   tinggi_badan: number;

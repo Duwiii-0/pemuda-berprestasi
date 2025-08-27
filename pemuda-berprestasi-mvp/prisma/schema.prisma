@@ -78,19 +78,24 @@
     id_atlet           Int                    @id @default(autoincrement())
     nama_atlet         String                 @db.VarChar(150)
     tanggal_lahir      DateTime
+    nik                String             
     berat_badan        Float
     provinsi           String                 @db.VarChar(100)
     kota               String?                @db.VarChar(100)
-
+    belt               String 
+    alamat             String?
+    no_telp            String?
     tinggi_badan       Float
     jenis_kelamin      JenisKelamin
+    umur               Int?                    
     id_dojang          Int
     id_pelatih_pembuat Int
+
+
     akte_kelahiran     String                 @db.VarChar(255)
     pas_foto           String                 @db.VarChar(255)
     sertifikat_belt    String                 @db.VarChar(255)
     ktp                String?                @db.VarChar(255)
-    umur               Int                    
 
     dojang             tb_dojang              @relation(fields: [id_dojang], references: [id_dojang])
     pelatih_pembuat    tb_pelatih             @relation("AtletPembuat", fields: [id_pelatih_pembuat], references: [id_pelatih])

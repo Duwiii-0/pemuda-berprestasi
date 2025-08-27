@@ -23,12 +23,12 @@ const TextInput: React.FC<TextInputProps> = ({
 }) => (
   <div className="relative">
     {icon && (
-      <div className="absolute left-3 top-1/2 transform -translate-y-1/2 z-10">
+      <div className="absolute left-3 top-1/2 transform -translate-y-1/2 z-1 text-red ">
         {icon}
       </div>
     )}
     <input
-      type={type}
+      type={type} 
       disabled={disabled}
       {...props}
       className={`placeholder-red/50 w-full ${icon ? 'pl-12' : 'pl-4'} pr-4 py-3 border-2 rounded-xl font-plex transition-all duration-300 focus:outline-none ${

@@ -9,22 +9,10 @@ import Select from "react-select";
 import { GeneralButton } from "../dashboard/dataDojang";
 import { useAtletContext } from "../../context/AtlitContext";
 import type { Atlet } from "../../context/AtlitContext";
+import  { beltOptions } from "../../context/AtlitContext";
+import  { genderOptions } from "../../context/AtlitContext";
+import { calculateAge } from "../../context/AtlitContext";
 
-
-// Helper function to calculate age from birth date
-const calculateAge = (birthDate: string): number => {
-  if (!birthDate) return 0;
-  const today = new Date();
-  const birth = new Date(birthDate);
-  let age = today.getFullYear() - birth.getFullYear();
-  const monthDiff = today.getMonth() - birth.getMonth();
-  
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-    age--;
-  }
-  
-  return age;
-};
 
 function toInputDateFormat(dateStr: string): string {
   if (!dateStr) return "";
@@ -88,22 +76,6 @@ const Profile = () => {
 
     setFormData(updatedData);
   };
-
-
-  const genderOptions = [
-    { value: "LAKI_LAKI", label: "Laki-Laki" },
-    { value: "PEREMPUAN", label: "Perempuan" },
-  ];
-
-  const beltOptions = [
-    { value: "putih", label: "Putih" },
-    { value: "kuning", label: "Kuning" },
-    { value: "orange", label: "Orange" },
-    { value: "hijau", label: "Hijau" },
-    { value: "biru", label: "Biru" },
-    { value: "coklat", label: "Coklat" },
-    { value: "hitam", label: "Hitam" },
-  ];
 
   if (!formData) {
     return (
@@ -264,6 +236,10 @@ const Profile = () => {
               <div className="relative">
               <Select
                 unstyled
+                menuPortalTarget={document.body}
+                styles={{
+                  menuPortal: base => ({ ...base, zIndex: 10 })
+                }}
                 isDisabled={!isEditing}
                 value={genderOptions.find(opt => opt.value === formData?.jenis_kelamin)}
                 onChange={(selected) =>
@@ -272,16 +248,16 @@ const Profile = () => {
                 options={genderOptions}
                 classNames={{
                   control: () =>
-                    "border-2 border-red/20 bg-white/50 backdrop-blur-sm rounded-xl h-12 px-4 font-plex focus:border-red transition-all duration-300",
+                    "z-10 border-2 border-red/20 bg-white/50 backdrop-blur-sm rounded-xl h-12 px-4 font-plex hover:border-red/40 focus-within:border-red transition-all duration-300",
                   valueContainer: () => "px-2",
                   placeholder: () => "text-red/50 font-plex",
-                  menu: () => "border-2 border-red/20 bg-white/90 backdrop-blur-sm rounded-xl shadow-xl mt-2",
-                  menuList: () => "max-h-40 overflow-y-auto",
+                  menu: () => "max-h-64 border border-red bg-white rounded-lg shadow-lg mt-1 overflow-hidden z-10",
+                  menuList: () => "z-10 max-h-40 overflow-y-auto bg-white",
                   option: ({ isFocused, isSelected }) =>
                     [
                       "px-4 py-3 cursor-pointer font-plex transition-all duration-200",
                       isFocused ? "bg-red/10 text-black" : "text-black",
-                      isSelected ? "bg-red text-white" : "text-black"
+                      isSelected ? "bg-red text-black" : "text-black"
                     ].join(" "),
                 }}
               />
@@ -295,6 +271,10 @@ const Profile = () => {
               <div className="relative">
               <Select
                 unstyled
+                menuPortalTarget={document.body}
+                styles={{
+                  menuPortal: base => ({ ...base, zIndex: 10 })
+                }}
                 isDisabled={!isEditing}
                 value={beltOptions.find(opt => opt.value === formData.belt) || null} // ni jugaaa
                 onChange={(selected) =>
@@ -303,16 +283,16 @@ const Profile = () => {
                 options={beltOptions}
                 classNames={{
                   control: () =>
-                    "border-2 border-red/20 bg-white/50 backdrop-blur-sm rounded-xl h-12 px-4 font-plex focus:border-red transition-all duration-300",
+                    "z-50 border-2  border-red/20 hover:border-red/40 bg-white/50 rounded-xl h-12 px-4 font-plex hover:border-red/40 focus-within:border-red transition-all duration-300",
                   valueContainer: () => "px-2",
                   placeholder: () => "text-red/50 font-plex",
-                  menu: () => "border-2 border-red/20 bg-white/90 backdrop-blur-sm rounded-xl shadow-xl mt-2",
-                  menuList: () => "max-h-40 overflow-y-auto",
+                  menu: () => "max-h-64 border border-red bg-white rounded-lg shadow-lg mt-1 overflow-hidden z-20",
+                  menuList: () => "z-20 max-h-10 overflow-y-auto",
                   option: ({ isFocused, isSelected }) =>
                     [
                       "px-4 py-3 cursor-pointer font-plex transition-all duration-200",
                       isFocused ? "bg-red/10 text-black" : "text-black",
-                      isSelected ? "bg-red text-white" : "text-black"
+                      isSelected ? "bg-red text-black" : ""
                     ].join(" "),
                 }}
               />

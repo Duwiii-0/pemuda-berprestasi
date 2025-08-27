@@ -20,6 +20,39 @@ export interface Atlet {
   // tambahkan field lain sesuai API
 }
 
+export const genderOptions = [
+    { value: "LAKI_LAKI", label: "Laki-Laki" },
+    { value: "PEREMPUAN", label: "Perempuan" },
+  ];
+
+export const beltOptions = [
+    { value: "putih", label: "Putih" },
+    { value: "kuning", label: "Kuning" },
+    { value: "kuningHijau", label: "Kuning strip Hijau" },
+    { value: "hijau", label: "Hijau" },
+    { value: "hijauBiru", label: "Hijau strip Biru" },
+    { value: "biru", label: "Biru" },
+    { value: "biruMerah", label: "Biru strip Merah" },
+    { value: "merah", label: "Merah" },
+    { value: "merahHitam", label: "Merah strip Coklat" },
+    { value: "coklat", label: "Coklat" },
+    { value: "hitam", label: "Hitam" },
+  ];
+
+export const calculateAge = (birthDate: string): number => {
+  if (!birthDate) return 0;
+  const today = new Date();
+  const birth = new Date(birthDate);
+  let age = today.getFullYear() - birth.getFullYear();
+  const monthDiff = today.getMonth() - birth.getMonth();
+  
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+    age--;
+  }
+  
+  return age;
+};
+
 interface AtletContextType {
   atlits: Atlet[];
   fetchAllAtlits: () => Promise<void>;
