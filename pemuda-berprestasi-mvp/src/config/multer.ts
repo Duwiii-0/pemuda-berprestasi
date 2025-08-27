@@ -7,7 +7,11 @@ import fs from 'fs'
 const createUploadDirs = () => {
   const dirs = [
     'uploads/pelatih/ktp',
-    'uploads/pelatih/sertifikat'
+    'uploads/pelatih/sertifikat',
+    'uploads/atlet/akte_kelahiran',
+    'uploads/atlet/pas_foto',
+    'uploads/atlet/sertifikat_belt',
+    'uploads/atlet/ktp'
   ]
   
   dirs.forEach(dir => {
@@ -29,6 +33,15 @@ const storage = multer.diskStorage({
       folder = 'uploads/pelatih/ktp'
     } else if (type === 'sertifikat_sabuk') {
       folder = 'uploads/pelatih/sertifikat'
+      // atlet
+    } else if (type === 'akte_kelahiran') {
+      folder = 'uploads/atlet/akte_kelahiran'
+    } else if (type === 'pas_foto') {
+      folder = 'uploads/atlet/pas_foto'
+    } else if (type === 'sertifikat_belt') {
+      folder = 'uploads/atlet/sertifikat_belt'
+    } else if (type === 'ktp') {
+      folder = 'uploads/atlet/ktp'
     } else {
       return cb(new Error('Invalid file field'), '')
     }

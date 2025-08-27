@@ -20,6 +20,9 @@ export interface Atlet {
   // tambahkan field lain sesuai API
 }
 
+export type CreateAtletPayload = Omit<Atlet, "id_atlet" | "umur">;
+
+
 export type UpdateAtletPayload = {
   id_atlet: number; // wajib, untuk identify
   nama_atlet?: string;
@@ -32,7 +35,7 @@ export type UpdateAtletPayload = {
   alamat?: string;
   umur?: number;
   id_dojang?: string;
-  id_pelatih_pembuat?: string;
+  id_pelatih?: string;
 };
 
 
@@ -74,7 +77,7 @@ interface AtletContextType {
   fetchAllAtlits: () => Promise<void>;
   fetchAtletById: (id: number) => Promise<Atlet | undefined>;
   updateAtlet: (updated: Atlet) => Promise<Atlet | undefined>;
-  createAtlet: (newAtlet: Omit<Atlet, "id_atlet">) => Promise<Atlet | undefined>; // ⬅️ tambah
+  createAtlet: (formData: FormData) => Promise<Atlet | undefined>; // ⬅️ tambah
 }
 
 const AtletContext = createContext<AtletContextType | undefined>(undefined);
@@ -109,19 +112,18 @@ export const AtletProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return atlet;
   }, []);
 
-const createAtlet = async (newAtlet: Omit<Atlet, "id_atlet">) => {
+const createAtlet = async (formData: FormData) => {
   try {
-    const res = await apiClient.post("/atlet", newAtlet);
-    if (res.data) {
-      setAtlits(prev => [...prev, res.data]); // update state biar UI langsung refresh
-      return res.data;
-    }
+    const data = await apiClient.postFormData("/atlet", formData); // ✅ pakai postFormData
+    const id_dojang = Number(data.id_dojang);
+    const id_pelatih = Number(data.id_pelatih);
+    setAtlits(prev => [...prev, data]);
+    return data;
   } catch (err) {
-    console.error("Gagal membuat atlet baru:", err);
+    console.error("Error creating athlete:", err);
     throw err;
   }
 };
-
 
 // Update atlet di context
 const updateAtlet = async (updated: Atlet) => {

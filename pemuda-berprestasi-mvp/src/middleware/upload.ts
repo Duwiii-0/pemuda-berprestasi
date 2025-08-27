@@ -6,6 +6,10 @@ import { sendError } from '../utils/response'
 // Handle multer upload errors
 export const handleUploadError = (req: Request, res: Response, next: NextFunction) => {
   upload.fields([
+    { name: 'akte_kelahiran', maxCount: 1 },
+    { name: 'pas_foto', maxCount: 1 },
+    { name: 'sertifikat_belt', maxCount: 1 },
+    { name: 'ktp', maxCount: 1 },
     { name: 'foto_ktp', maxCount: 1 },
     { name: 'sertifikat_sabuk', maxCount: 1 }
   ])(req, res, (err: any) => {

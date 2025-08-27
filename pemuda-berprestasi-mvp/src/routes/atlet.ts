@@ -14,7 +14,19 @@ router.get('/stats', AtletController.getStats);
 router.use(authenticate);
 
 // CRUD operations
-router.post('/', validateRequest(atletValidation.create), AtletController.create);
+router.post(
+  '/',
+  authenticate,
+  uploadMiddleware.fields([
+    { name: 'akte_kelahiran', maxCount: 1 },
+    { name: 'pas_foto', maxCount: 1 },
+    { name: 'sertifikat_belt', maxCount: 1 },
+    { name: 'ktp', maxCount: 1 }
+  ]),
+  validateRequest(atletValidation.create),
+  AtletController.create
+);
+
 router.get('/', AtletController.getAll);
 router.get('/dojang/:id_dojang', AtletController.getByDojang);
 router.get('/eligible/:id_kelas_kejuaraan', AtletController.getEligibleForClass);

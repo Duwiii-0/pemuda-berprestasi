@@ -60,19 +60,6 @@ export const atletValidation = {
       'number.positive': 'ID pelatih harus positif',
       'any.required': 'ID pelatih wajib diisi',
     }),
-    akte_kelahiran: Joi.string().required().messages({
-      'string.empty': 'Akte kelahiran wajib diupload',
-      'any.required': 'Akte kelahiran wajib diupload',
-    }),
-    pas_foto: Joi.string().required().messages({
-      'string.empty': 'Pas foto wajib diupload',
-      'any.required': 'Pas foto wajib diupload',
-    }),
-    sertifikat_belt: Joi.string().required().messages({
-      'string.empty': 'Sertifikat sabuk wajib diupload',
-      'any.required': 'Sertifikat sabuk wajib diupload',
-    }),
-    ktp: Joi.string().optional(),
   }),
 
   update: Joi.object({

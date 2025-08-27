@@ -7,30 +7,39 @@ import { JenisKelamin } from '@prisma/client';
 export class AtletController {
   // Create new atlet
   static async create(req: Request, res: Response) {
-    try {
-      const atletData = req.body;
-      
-      // Convert string date to Date object
-      if (atletData.tanggal_lahir) {
-        atletData.tanggal_lahir = new Date(atletData.tanggal_lahir);
-      }
-
-      // Convert weight and height to numbers
-      if (atletData.berat_badan) {
-        atletData.berat_badan = parseFloat(atletData.berat_badan);
-      }
-
-      if (atletData.tinggi_badan) { 
-        atletData.tinggi_badan = parseFloat(atletData.tinggi_badan);
-      }
-
-      const atlet = await AtletService.createAtlet(atletData);
-      
-      return sendSuccess(res, atlet, 'Atlet berhasil dibuat', 201);
-    } catch (error: any) {
-      return sendError(res, error.message, 400);
+  try {
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+    
+    const atletData: any = {
+      ...req.body,
+      akte_kelahiran: files?.akte_kelahiran?.[0]?.filename,
+      pas_foto: files?.pas_foto?.[0]?.filename,
+      sertifikat_belt: files?.sertifikat_belt?.[0]?.filename,
+      ktp: files?.ktp?.[0]?.filename,
+    };
+    
+    // Convert string date to Date object
+    if (atletData.tanggal_lahir) {
+      atletData.tanggal_lahir = new Date(atletData.tanggal_lahir);
     }
+
+    // Convert weight and height to numbers
+    if (atletData.berat_badan) {
+      atletData.berat_badan = parseFloat(atletData.berat_badan);
+    }
+
+    if (atletData.tinggi_badan) { 
+      atletData.tinggi_badan = parseFloat(atletData.tinggi_badan);
+    }
+
+    const atlet = await AtletService.createAtlet(atletData);
+
+    return sendSuccess(res, atlet, 'Atlet berhasil dibuat', 201);
+  } catch (error: any) {
+    return sendError(res, error.message, 400);
   }
+}
+
 
   // Get all atlet with filters and pagination
   static async getAll(req: Request, res: Response) {

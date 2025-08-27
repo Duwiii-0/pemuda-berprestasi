@@ -1,4 +1,21 @@
 import { PrismaClient, JenisKelamin } from '@prisma/client';
+import fs from 'fs'
+import path from 'path'
+
+
+export interface FileInfo {
+  filename: string
+  path: string
+  exists: boolean
+  uploadedAt?: Date
+}
+
+interface AtletFileInfo {
+  akte_kelahiran: FileInfo | null
+  pas_foto: FileInfo | null
+  sertifikat_belt: FileInfo | null
+  ktp: FileInfo | null
+}
 
 const prisma = new PrismaClient();
 
@@ -55,9 +72,11 @@ export class AtletService {
     try {
       // Validate dojang exists
       const age = calculateAge(new Date(data.tanggal_lahir));
+      const bener_id_dojang = Number(data.id_dojang);
+      const id_pelatih = Number(data.id_pelatih_pembuat);
 
       const dojang = await prisma.tb_dojang.findUnique({
-        where: { id_dojang: data.id_dojang }
+        where: { id_dojang: Number(data.id_dojang) }
       });
 
       if (!dojang) {
@@ -66,7 +85,7 @@ export class AtletService {
 
       // Validate pelatih exists
       const pelatih = await prisma.tb_pelatih.findUnique({
-        where: { id_pelatih: data.id_pelatih_pembuat }
+        where: { id_pelatih: Number(data.id_pelatih_pembuat) }
       });
 
       if (!pelatih) {
@@ -77,6 +96,8 @@ export class AtletService {
       const atlet = await prisma.tb_atlet.create({
         data: {
           ...data,
+          id_dojang: Number(data.id_dojang),
+          id_pelatih_pembuat: Number(data.id_pelatih_pembuat),
           umur: age
         },
         include: {
@@ -573,5 +594,109 @@ export class AtletService {
     } catch (error) {
       throw error;
     }
+  }
+
+  static async handleFileUpload(id_atlet: number, files: any): Promise<AtletFileInfo> {
+    const atlet = await prisma.tb_atlet.findUnique({
+      where: { id_atlet }
+    })
+
+    if (!atlet) {
+      throw new Error('Atlet tidak ditemukan')
+    }
+
+    const updateData: any = {}
+
+    if (files.akte_kelahiran && files.akte_kelahiran[0]) {
+      updateData.akte_kelahiran = files.akte_kelahiran[0].filename
+    }
+
+    if (files.pas_foto && files.pas_foto[0]) {
+      updateData.pas_foto = files.pas_foto[0].filename
+    }
+
+    if (files.sertifikat_belt && files.sertifikat_belt[0]) {
+      updateData.sertifikat_belt = files.sertifikat_belt[0].filename
+    }
+
+    if (files.ktp && files.ktp[0]) {
+      updateData.ktp = files.ktp[0].filename
+    }
+
+    if (Object.keys(updateData).length > 0) {
+      await prisma.tb_atlet.update({
+        where: { id_atlet },
+        data: updateData
+      })
+    }
+
+    return await this.getUploadedFiles(id_atlet)
+  }
+
+  // Ambil info file yang sudah di-upload
+  static async getUploadedFiles(id_atlet: number): Promise<AtletFileInfo> {
+    const atlet = await prisma.tb_atlet.findUnique({
+      where: { id_atlet },
+      select: {
+        akte_kelahiran: true,
+        pas_foto: true,
+        sertifikat_belt: true,
+        ktp: true
+      }
+    })
+
+    if (!atlet) {
+      throw new Error('Atlet tidak ditemukan')
+    }
+
+    const checkFile = (filename: string | null, type: 'akte' | 'pas_foto' | 'sertifikat' | 'ktp'): FileInfo | null => {
+      if (!filename) return null
+      const filePath = path.join(process.cwd(), 'uploads', 'atlet', type, filename)
+      const exists = fs.existsSync(filePath)
+      return {
+        filename,
+        path: `uploads/atlet/${type}/${filename}`,
+        exists,
+        uploadedAt: exists ? fs.statSync(filePath).mtime : undefined
+      }
+    }
+
+    return {
+      akte_kelahiran: checkFile(atlet.akte_kelahiran, 'akte'),
+      pas_foto: checkFile(atlet.pas_foto, 'pas_foto'),
+      sertifikat_belt: checkFile(atlet.sertifikat_belt, 'sertifikat'),
+      ktp: checkFile(atlet.ktp, 'ktp')
+    }
+  }
+
+  // Hapus file atlet
+  static async deleteFile(id_atlet: number, fileType: keyof AtletFileInfo) {
+    const atlet = await prisma.tb_atlet.findUnique({
+      where: { id_atlet }
+    })
+
+    if (!atlet) throw new Error('Atlet tidak ditemukan')
+
+    const filename = atlet[fileType]
+    if (!filename) throw new Error('File tidak ditemukan')
+
+    const folderMap: Record<string, string> = {
+      akte_kelahiran: 'akte',
+      pas_foto: 'pas_foto',
+      sertifikat_belt: 'sertifikat',
+      ktp: 'ktp'
+    }
+
+    const folder = folderMap[fileType]
+    const filePath = path.join(process.cwd(), 'uploads', 'atlet', folder, filename)
+
+    if (fs.existsSync(filePath)) fs.unlinkSync(filePath)
+
+    await prisma.tb_atlet.update({
+      where: { id_atlet },
+      data: { [fileType]: null }
+    })
+
+    return { message: `${fileType} deleted successfully` }
   }
 }
