@@ -39,11 +39,23 @@ interface AtletFilter {
   max_weight?: number;
 }
 
+export function calculateAge(birthDate: Date): number {
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const m = today.getMonth() - birthDate.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+  return age;
+}
+
 export class AtletService {
   // Create new atlet
   static async createAtlet(data: CreateAtletData) {
     try {
       // Validate dojang exists
+      const age = calculateAge(new Date(data.tanggal_lahir));
+
       const dojang = await prisma.tb_dojang.findUnique({
         where: { id_dojang: data.id_dojang }
       });
@@ -61,16 +73,12 @@ export class AtletService {
         throw new Error('Pelatih tidak ditemukan');
       }
 
-      // Calculate age
-      const today = new Date();
-      const birthDate = new Date(data.tanggal_lahir);
-      const age = today.getFullYear() - birthDate.getFullYear() - 
-                  (today.getMonth() < birthDate.getMonth() || 
-                   (today.getMonth() === birthDate.getMonth() && today.getDate() < birthDate.getDate()) ? 1 : 0);
-
       // Create atlet
       const atlet = await prisma.tb_atlet.create({
-        data,
+        data: {
+          ...data,
+          umur: age
+        },
         include: {
           dojang: {
             select: {
@@ -209,6 +217,7 @@ export class AtletService {
   // Get atlet by ID
   static async getAtletById(id: number) {
     try {
+      
       const atlet = await prisma.tb_atlet.findUnique({
         where: { id_atlet: id },
         include: {
@@ -256,13 +265,8 @@ export class AtletService {
       if (!atlet) {
         throw new Error('Atlet tidak ditemukan');
       }
-
-      // Calculate age
-      const today = new Date();
-      const birthDate = new Date(atlet.tanggal_lahir);
-      const age = today.getFullYear() - birthDate.getFullYear() - 
-                  (today.getMonth() < birthDate.getMonth() || 
-                   (today.getMonth() === birthDate.getMonth() && today.getDate() < birthDate.getDate()) ? 1 : 0);
+      
+      const age = calculateAge(new Date(atlet.tanggal_lahir));
 
       return {
         ...atlet,
@@ -311,16 +315,9 @@ export class AtletService {
 
       // Validate age if birth date is being updated
       if (updateData.tanggal_lahir) {
-        const today = new Date();
-        const birthDate = new Date(updateData.tanggal_lahir);
-        const age = today.getFullYear() - birthDate.getFullYear() - 
-                    (today.getMonth() < birthDate.getMonth() || 
-                     (today.getMonth() === birthDate.getMonth() && today.getDate() < birthDate.getDate()) ? 1 : 0);
-
-        if (age < 5) {
-          throw new Error('Atlet minimal berusia 5 tahun');
-        }
+        updateData.umur = calculateAge(new Date(updateData.tanggal_lahir));
       }
+
 
       const updatedAtlet = await prisma.tb_atlet.update({
         where: { id_atlet },
@@ -446,6 +443,8 @@ export class AtletService {
   // Get eligible atlet for competition class
   static async getEligibleAtlet(id_kelas_kejuaraan: number) {
     try {
+        
+      
       // Get class details
       const kelasKejuaraan = await prisma.tb_kelas_kejuaraan.findUnique({
         where: { id_kelas_kejuaraan },
@@ -504,19 +503,15 @@ export class AtletService {
         orderBy: { nama_atlet: 'asc' }
       });
 
-      // Add calculated age
       const atletWithAge = eligibleAtlet.map(atlet => {
-        const today = new Date();
-        const birthDate = new Date(atlet.tanggal_lahir);
-        const age = today.getFullYear() - birthDate.getFullYear() - 
-                    (today.getMonth() < birthDate.getMonth() || 
-                     (today.getMonth() === birthDate.getMonth() && today.getDate() < birthDate.getDate()) ? 1 : 0);
-
+        const age = calculateAge(new Date(atlet.tanggal_lahir));
         return {
           ...atlet,
           age
         };
       });
+
+
 
       return atletWithAge;
     } catch (error) {
@@ -555,19 +550,15 @@ export class AtletService {
         '21+': 0
       };
 
-      const today = new Date();
       allAtlet.forEach(atlet => {
-        const birthDate = new Date(atlet.tanggal_lahir);
-        const age = today.getFullYear() - birthDate.getFullYear() - 
-                    (today.getMonth() < birthDate.getMonth() || 
-                     (today.getMonth() === birthDate.getMonth() && today.getDate() < birthDate.getDate()) ? 1 : 0);
-
+        const age = calculateAge(new Date(atlet.tanggal_lahir));
         if (age >= 5 && age <= 8) ageGroups['5-8']++;
         else if (age >= 9 && age <= 12) ageGroups['9-12']++;
         else if (age >= 13 && age <= 16) ageGroups['13-16']++;
         else if (age >= 17 && age <= 20) ageGroups['17-20']++;
         else if (age >= 21) ageGroups['21+']++;
       });
+
 
       return {
         totalAtlet,

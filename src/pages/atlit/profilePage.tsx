@@ -85,7 +85,7 @@ const Profile = () => {
         setFormData(saved);
         setOriginalData(saved);
         setIsEditing(false);
-        toast.success("Data atlet berhasil diperbarui")
+        toast.success("Data atlet berhasil diperbarui ✅")
       }
     } catch (err) {
       console.error("Gagal update atlet:", err);
@@ -100,7 +100,7 @@ const Profile = () => {
     let updatedData = { ...formData, [field]: value };
 
     if (field === "tanggal_lahir" && typeof value === "string") {
-      updatedData.tanggal_lahir = toMMDDYYYY(value);
+      updatedData.tanggal_lahir = value;
       updatedData.umur = calculateAge(updatedData.tanggal_lahir);
     }
 

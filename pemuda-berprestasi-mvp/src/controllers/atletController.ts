@@ -2,8 +2,6 @@ import { Request, Response } from 'express';
 import { AtletService } from '../services/atletService';
 import { sendSuccess, sendError } from '../utils/response';
 import { JenisKelamin } from '@prisma/client';
-import { tb_atlet } from '@prisma/client';
-import { DojangService } from '../services/dojangService';
 
 
 export class AtletController {

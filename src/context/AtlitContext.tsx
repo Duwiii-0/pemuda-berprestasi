@@ -74,6 +74,7 @@ interface AtletContextType {
   fetchAllAtlits: () => Promise<void>;
   fetchAtletById: (id: number) => Promise<Atlet | undefined>;
   updateAtlet: (updated: Atlet) => Promise<Atlet | undefined>;
+  createAtlet: (newAtlet: Omit<Atlet, "id_atlet">) => Promise<Atlet | undefined>; // ⬅️ tambah
 }
 
 const AtletContext = createContext<AtletContextType | undefined>(undefined);
@@ -108,7 +109,20 @@ export const AtletProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return atlet;
   }, []);
 
-  // Update atlet di context
+const createAtlet = async (newAtlet: Omit<Atlet, "id_atlet">) => {
+  try {
+    const res = await apiClient.post("/atlet", newAtlet);
+    if (res.data) {
+      setAtlits(prev => [...prev, res.data]); // update state biar UI langsung refresh
+      return res.data;
+    }
+  } catch (err) {
+    console.error("Gagal membuat atlet baru:", err);
+    throw err;
+  }
+};
+
+
 // Update atlet di context
 const updateAtlet = async (updated: Atlet) => {
   try {
@@ -128,7 +142,7 @@ const updateAtlet = async (updated: Atlet) => {
 
 
   return (
-    <AtletContext.Provider value={{ atlits, fetchAllAtlits, fetchAtletById, updateAtlet }}>
+    <AtletContext.Provider value={{ atlits, fetchAllAtlits, fetchAtletById, updateAtlet, createAtlet }}>
       {children}
     </AtletContext.Provider>
   );
