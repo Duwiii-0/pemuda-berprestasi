@@ -121,6 +121,8 @@ async function seedKelompokUsia() {
 async function seedKelasBerat() {
   // Data kelas berat berdasarkan tabel
   const kelasBeratData = [
+
+    //cadet
     // Putra
     { id_kelompok: 1, jenis_kelamin: JenisKelamin.LAKI_LAKI, batas_min: 0, batas_max: 33.0, nama_kelas: 'Under 33 kg' },
     { id_kelompok: 1, jenis_kelamin: JenisKelamin.LAKI_LAKI, batas_min: 33.1, batas_max: 37.0, nama_kelas: 'Under 37 kg' },
@@ -143,7 +145,52 @@ async function seedKelasBerat() {
     { id_kelompok: 1, jenis_kelamin: JenisKelamin.PEREMPUAN, batas_min: 47.1, batas_max: 51.0, nama_kelas: 'Under 51 kg' },
     { id_kelompok: 1, jenis_kelamin: JenisKelamin.PEREMPUAN, batas_min: 51.1, batas_max: 55.0, nama_kelas: 'Under 55 kg' },
     { id_kelompok: 1, jenis_kelamin: JenisKelamin.PEREMPUAN, batas_min: 55.1, batas_max: 59.0, nama_kelas: 'Under 59 kg' },
-    { id_kelompok: 1, jenis_kelamin: JenisKelamin.PEREMPUAN, batas_min: 59.1, batas_max: 200.0, nama_kelas: 'Over 59 kg' }
+    { id_kelompok: 1, jenis_kelamin: JenisKelamin.PEREMPUAN, batas_min: 59.1, batas_max: 200.0, nama_kelas: 'Over 59 kg' },
+
+    // Junior - Putra
+    { id_kelompok: 2, jenis_kelamin: JenisKelamin.LAKI_LAKI, batas_min: 0, batas_max: 45.0, nama_kelas: 'Under 45 kg' },
+    { id_kelompok: 2, jenis_kelamin: JenisKelamin.LAKI_LAKI, batas_min: 45.1, batas_max: 48.0, nama_kelas: 'Under 48 kg' },
+    { id_kelompok: 2, jenis_kelamin: JenisKelamin.LAKI_LAKI, batas_min: 48.1, batas_max: 51.0, nama_kelas: 'Under 51 kg' },
+    { id_kelompok: 2, jenis_kelamin: JenisKelamin.LAKI_LAKI, batas_min: 51.1, batas_max: 55.0, nama_kelas: 'Under 55 kg' },
+    { id_kelompok: 2, jenis_kelamin: JenisKelamin.LAKI_LAKI, batas_min: 55.1, batas_max: 59.0, nama_kelas: 'Under 59 kg' },
+    { id_kelompok: 2, jenis_kelamin: JenisKelamin.LAKI_LAKI, batas_min: 59.1, batas_max: 63.0, nama_kelas: 'Under 63 kg' },
+    { id_kelompok: 2, jenis_kelamin: JenisKelamin.LAKI_LAKI, batas_min: 63.1, batas_max: 68.0, nama_kelas: 'Under 68 kg' },
+    { id_kelompok: 2, jenis_kelamin: JenisKelamin.LAKI_LAKI, batas_min: 68.1, batas_max: 73.0, nama_kelas: 'Under 73 kg' },
+    { id_kelompok: 2, jenis_kelamin: JenisKelamin.LAKI_LAKI, batas_min: 73.1, batas_max: 78.0, nama_kelas: 'Under 78 kg' },
+    { id_kelompok: 2, jenis_kelamin: JenisKelamin.LAKI_LAKI, batas_min: 78.1, batas_max: 200.0, nama_kelas: 'Over 78 kg' },
+
+    // Junior - Putri
+    { id_kelompok: 2, jenis_kelamin: JenisKelamin.PEREMPUAN, batas_min: 0, batas_max: 42.0, nama_kelas: 'Under 42 kg' },
+    { id_kelompok: 2, jenis_kelamin: JenisKelamin.PEREMPUAN, batas_min: 42.1, batas_max: 44.0, nama_kelas: 'Under 44 kg' },
+    { id_kelompok: 2, jenis_kelamin: JenisKelamin.PEREMPUAN, batas_min: 44.1, batas_max: 46.0, nama_kelas: 'Under 46 kg' },
+    { id_kelompok: 2, jenis_kelamin: JenisKelamin.PEREMPUAN, batas_min: 46.1, batas_max: 49.0, nama_kelas: 'Under 49 kg' },
+    { id_kelompok: 2, jenis_kelamin: JenisKelamin.PEREMPUAN, batas_min: 49.1, batas_max: 52.0, nama_kelas: 'Under 52 kg' },
+    { id_kelompok: 2, jenis_kelamin: JenisKelamin.PEREMPUAN, batas_min: 52.1, batas_max: 55.0, nama_kelas: 'Under 55 kg' },
+    { id_kelompok: 2, jenis_kelamin: JenisKelamin.PEREMPUAN, batas_min: 55.1, batas_max: 59.0, nama_kelas: 'Under 59 kg' },
+    { id_kelompok: 2, jenis_kelamin: JenisKelamin.PEREMPUAN, batas_min: 59.1, batas_max: 63.0, nama_kelas: 'Under 63 kg' },
+    { id_kelompok: 2, jenis_kelamin: JenisKelamin.PEREMPUAN, batas_min: 63.1, batas_max: 68.0, nama_kelas: 'Under 68 kg' },
+    { id_kelompok: 2, jenis_kelamin: JenisKelamin.PEREMPUAN, batas_min: 68.1, batas_max: 200.0, nama_kelas: 'Over 68 kg' },
+
+    // senior
+    // PUTRA
+    { id_kelompok: 3, jenis_kelamin: JenisKelamin.LAKI_LAKI , batas_min: 0,     batas_max: 54.0,  nama_kelas: "Under 54 kg" },
+    { id_kelompok: 3, jenis_kelamin: JenisKelamin.LAKI_LAKI , batas_min: 54.01, batas_max: 58.0,  nama_kelas: "Under 58 kg" },
+    { id_kelompok: 3, jenis_kelamin: JenisKelamin.LAKI_LAKI , batas_min: 58.01, batas_max: 63.0,  nama_kelas: "Under 63 kg" },
+    { id_kelompok: 3, jenis_kelamin: JenisKelamin.LAKI_LAKI , batas_min: 63.01, batas_max: 68.0,  nama_kelas: "Under 68 kg" },
+    { id_kelompok: 3, jenis_kelamin: JenisKelamin.LAKI_LAKI , batas_min: 68.01, batas_max: 74.0,  nama_kelas: "Under 74 kg" },
+    { id_kelompok: 3, jenis_kelamin: JenisKelamin.LAKI_LAKI , batas_min: 74.01, batas_max: 80.0,  nama_kelas: "Under 80 kg" },
+    { id_kelompok: 3, jenis_kelamin: JenisKelamin.LAKI_LAKI , batas_min: 80.01, batas_max: 87.0,  nama_kelas: "Under 87 kg" },
+    { id_kelompok: 3, jenis_kelamin: JenisKelamin.LAKI_LAKI , batas_min: 87.1,  batas_max: 999,   nama_kelas: "Over 87 kg" },
+    
+    // PUTRI
+    { id_kelompok: 3, jenis_kelamin: JenisKelamin.PEREMPUAN, batas_min: 0,     batas_max: 46.0,  nama_kelas: "Under 46 kg" },
+    { id_kelompok: 3, jenis_kelamin: JenisKelamin.PEREMPUAN, batas_min: 46.01, batas_max: 49.0,  nama_kelas: "Under 49 kg" },
+    { id_kelompok: 3, jenis_kelamin: JenisKelamin.PEREMPUAN, batas_min: 49.01, batas_max: 53.0,  nama_kelas: "Under 53 kg" },
+    { id_kelompok: 3, jenis_kelamin: JenisKelamin.PEREMPUAN, batas_min: 53.01, batas_max: 57.0,  nama_kelas: "Under 57 kg" },
+    { id_kelompok: 3, jenis_kelamin: JenisKelamin.PEREMPUAN, batas_min: 57.01, batas_max: 62.0,  nama_kelas: "Under 62 kg" },
+    { id_kelompok: 3, jenis_kelamin: JenisKelamin.PEREMPUAN, batas_min: 62.01, batas_max: 67.0,  nama_kelas: "Under 67 kg" },
+    { id_kelompok: 3, jenis_kelamin: JenisKelamin.PEREMPUAN, batas_min: 67.01, batas_max: 73.0,  nama_kelas: "Under 73 kg" },
+    { id_kelompok: 3, jenis_kelamin: JenisKelamin.PEREMPUAN, batas_min: 73.1,  batas_max: 999,   nama_kelas: "Over 73 kg" },
   ];
 
   await prisma.tb_kelas_berat.createMany({
