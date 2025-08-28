@@ -92,9 +92,9 @@
     id_pelatih_pembuat Int
 
 
-    akte_kelahiran     String                 @db.VarChar(255)
-    pas_foto           String                 @db.VarChar(255)
-    sertifikat_belt    String                 @db.VarChar(255)
+    akte_kelahiran     String?                 @db.VarChar(255)
+    pas_foto           String?                 @db.VarChar(255)
+    sertifikat_belt    String?                 @db.VarChar(255)
     ktp                String?                @db.VarChar(255)
 
     dojang             tb_dojang              @relation(fields: [id_dojang], references: [id_dojang])
