@@ -161,6 +161,7 @@
     kelas_kejuaraan tb_kelas_kejuaraan[]
   }
 
+
   model tb_kelas_kejuaraan {
     id_kelas_kejuaraan Int                    @id @default(autoincrement())
     id_kategori_event  Int

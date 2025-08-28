@@ -204,8 +204,8 @@ async function seedKelasBerat() {
 async function seedKategoriEvent() {
   await prisma.tb_kategori_event.createMany({
     data: [
-      { nama_kategori: "Kyorugi" },
-      { nama_kategori: "Poomsae" }
+      { nama_kategori: "Pemula" },
+      { nama_kategori: "Prestasi" }
     ],
     skipDuplicates: true
   });
@@ -235,6 +235,80 @@ async function seedKelasPoomsae() {
   console.log("✅ Kelas Poomsae seeded");
 }
 
+async function seedPenyelenggara() {
+  const penyelenggara = await prisma.tb_penyelenggara.create({
+    data: {
+      nama_penyelenggara: "Pengurus Besar Taekwondo Indonesia",
+      email: "info@pbti.or.id",
+      no_telp: "08123456789",
+    },
+  });
+
+
+
+  console.log("✅ Penyelenggara seeded");
+  return penyelenggara;
+}
+
+async function seedKompetisi(penyelenggaraId: number) {
+  const kompetisi = await prisma.tb_kompetisi.create({
+    data: {
+      nama_event: "Kejuaraan Nasional Taekwondo 2025",
+      tanggal_mulai: new Date("2025-09-01"),
+      tanggal_selesai: new Date("2025-09-05"),
+      id_penyelenggara: penyelenggaraId,
+    },
+  });
+
+  console.log("✅ Kompetisi created:", kompetisi.nama_event);
+  return kompetisi;
+}
+
+async function seedKelasKejuaraan(idKompetisi: number) {
+  const kategoriEvents = await prisma.tb_kategori_event.findMany();
+  const kelompokUsia = await prisma.tb_kelompok_usia.findMany();
+  const kelasBerat = await prisma.tb_kelas_berat.findMany();
+  const kelasPoomsae = await prisma.tb_kelas_poomsae.findMany();
+
+  const data: any[] = [];
+
+  for (const kategori of kategoriEvents) {
+    for (const kelompok of kelompokUsia) {
+      // KYORUGI → ambil semua kelas berat dari kelompok ini
+      const kelasBeratByKelompok = kelasBerat.filter(k => k.id_kelompok === kelompok.id_kelompok);
+      for (const kb of kelasBeratByKelompok) {
+        data.push({
+          id_kompetisi: idKompetisi, // contoh kompetisi id 1
+          cabang: "KYORUGI",
+          id_kategori_event: kategori.id_kategori_event,
+          id_kelompok: kelompok.id_kelompok,
+          id_kelas_berat: kb.id_kelas_berat,
+          id_poomsae: null
+        });
+      }
+
+      // POOMSAE → ambil semua kelas poomsae dari kelompok ini
+      const kelasPoomsaeByKelompok = kelasPoomsae.filter(p => p.id_kelompok === kelompok.id_kelompok);
+      for (const kp of kelasPoomsaeByKelompok) {
+        data.push({
+          id_kompetisi: 1,
+          cabang: "POOMSAE",
+          id_kategori_event: kategori.id_kategori_event,
+          id_kelompok: kelompok.id_kelompok,
+          id_kelas_berat: null,
+          id_poomsae: kp.id_poomsae
+        });
+      }
+    }
+  }
+
+  await prisma.tb_kelas_kejuaraan.createMany({
+    data,
+    skipDuplicates: true
+  });
+  console.log("✅ Kelas Kejuaraan seeded,", data.length);
+}
+
 
 async function main() {
   await seedAdmin();
@@ -244,7 +318,13 @@ async function main() {
   await seedKelasBerat();
   await seedKategoriEvent();
   await seedKelasPoomsae();
+
+  const penyelenggara = await seedPenyelenggara();
+  const kompetisi = await seedKompetisi(penyelenggara.id_penyelenggara);
+
+  await seedKelasKejuaraan(kompetisi.id_kompetisi);
 }
+
 
 main()
   .then(() => console.log('🎉 Seeding completed'))
