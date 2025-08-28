@@ -109,8 +109,10 @@
     id_kompetisi     Int                  @id @default(autoincrement())
     id_penyelenggara Int
     tanggal_mulai    DateTime
+    lokasi           String
     tanggal_selesai  DateTime
     nama_event       String               @db.VarChar(255)
+    status           StatusKompetisi
 
     penyelenggara    tb_penyelenggara     @relation(fields: [id_penyelenggara], references: [id_penyelenggara])
     bagan            tb_bagan[]
@@ -301,4 +303,10 @@
   enum ROLE {
     ADMIN
     PELATIH
+  }
+
+  enum StatusKompetisi {
+    PENDAFTARAN
+    SEDANG_DIMULAI
+    SELESAI
   }

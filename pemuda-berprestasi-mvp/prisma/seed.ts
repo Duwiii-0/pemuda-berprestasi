@@ -253,10 +253,12 @@ async function seedPenyelenggara() {
 async function seedKompetisi(penyelenggaraId: number) {
   const kompetisi = await prisma.tb_kompetisi.create({
     data: {
-      nama_event: "Kejuaraan Nasional Taekwondo 2025",
+      nama_event: "Sriwijaya Competition",
       tanggal_mulai: new Date("2025-09-01"),
       tanggal_selesai: new Date("2025-09-05"),
+      lokasi: 'Jakarta',
       id_penyelenggara: penyelenggaraId,
+      status: "PENDAFTARAN"
     },
   });
 

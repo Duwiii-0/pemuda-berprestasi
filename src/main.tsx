@@ -7,16 +7,19 @@ import './style/index.css';
 import { AuthProvider } from './context/authContext';
 import { AtletProvider } from './context/AtlitContext';
 import { RegistrationProvider } from './context/registrationContext';
+import { KompetisiProvider } from './context/KompetisiContext';
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <AuthProvider>
       <AtletProvider>
-        <RegistrationProvider>
-        <BrowserRouter>
-          <App />
-        </BrowserRouter>
-        </RegistrationProvider>
+        <KompetisiProvider>
+          <RegistrationProvider>
+            <BrowserRouter>
+             <App />
+            </BrowserRouter>
+          </RegistrationProvider>
+        </KompetisiProvider>
       </AtletProvider>
     </AuthProvider>
   </React.StrictMode>

@@ -7,6 +7,11 @@ export const kompetisiValidation = {
       'string.min': 'Nama event minimal 3 karakter',
       'string.max': 'Nama event maksimal 255 karakter'
     }),
+    lokasi: Joi.string().min(3).max(255).required().messages({
+      'string.empty': 'lokasi event wajib diisi',
+      'string.min': 'Nama event minimal 3 karakter',
+      'string.max': 'Nama event maksimal 255 karakter'
+    }),
     tanggal_mulai: Joi.date().min('now').required().messages({
       'date.base': 'Format tanggal mulai tidak valid',
       'date.min': 'Tanggal mulai tidak boleh di masa lalu',
@@ -17,8 +22,8 @@ export const kompetisiValidation = {
       'date.min': 'Tanggal selesai tidak boleh sebelum tanggal mulai',
       'any.required': 'Tanggal selesai wajib diisi'
     }),
-    type_kompetisi: Joi.string().valid('OPEN', 'TRAINING', 'GRADE_B', 'GRADE_C').required().messages({
-      'any.only': 'Type kompetisi harus salah satu dari: OPEN, TRAINING, GRADE_B, GRADE_C',
+    status: Joi.string().valid('PENDAFTARAN', 'SEDANG_DIMULAI', 'SELESAI').required().messages({
+      'any.only': 'Type kompetisi harus salah satu dari: PENDAFTARAN, SEDANG_DIMULAI, SELESAI',
       'any.required': 'Type kompetisi wajib diisi'
     }),
     id_penyelenggara: Joi.number().integer().positive().required().messages({

@@ -7,10 +7,8 @@ import { kompetisiValidation } from '../validations/kompetisiValidation';
 const router = Router();
 
 // Public routes
-router.get('/published', KompetisiController.getPublished);
-router.get('/upcoming', KompetisiController.getUpcoming);
-router.get('/stats', KompetisiController.getStats);
-router.get('/:id/classes', KompetisiController.getCompetitionClasses);
+// router.get('/stats', KompetisiController.getStats);
+// router.get('/:id/classes', KompetisiController.getCompetitionClasses);
 
 // Protected routes (require authentication)
 router.use(authenticate);
@@ -23,21 +21,21 @@ router.put('/:id', validateRequest(kompetisiValidation.update), KompetisiControl
 router.delete('/:id', KompetisiController.delete);
 
 // Competition management
-router.post(
-  '/:id/classes',
-  validateRequest(kompetisiValidation.createClass),
-  KompetisiController.addKelasKejuaraan
-);
+// router.post(
+//   '/:id/classes',
+//   validateRequest(kompetisiValidation.createClass),
+//   KompetisiController.addKelasKejuaraan
+// );
 // sementara update & delete class belum ada di controller
 
 // Registration management
-router.get('/:id/participants', KompetisiController.getParticipants);
-router.post('/:id/register', validateRequest(kompetisiValidation.register), KompetisiController.registerAtlet);
-router.put(
-  '/:id/participants/:participantId/status',
-  validateRequest(kompetisiValidation.updateStatus),
-  KompetisiController.updateRegistrationStatus
-);
+// router.get('/:id/participants', KompetisiController.getParticipants);
+// router.post('/:id/register', validateRequest(kompetisiValidation.register), KompetisiController.registerAtlet);
+// router.put(
+//   '/:id/participants/:participantId/status',
+//   validateRequest(kompetisiValidation.updateStatus),
+//   KompetisiController.updateRegistrationStatus
+// );
 // Tournament management
 // router.post('/:id/brackets', KompetisiController.generateBrackets);
 // router.get('/:id/brackets', KompetisiController.getBrackets);
