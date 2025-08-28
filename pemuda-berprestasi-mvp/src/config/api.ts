@@ -1,3 +1,6 @@
+// src/types/api.ts
+
+// Base API Response (sesuai dengan backend response pattern)
 export interface ApiResponse<T> {
   success: boolean;
   message: string;
