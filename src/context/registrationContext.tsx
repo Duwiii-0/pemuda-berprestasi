@@ -408,7 +408,7 @@ export const RegistrationProvider = ({ children }: RegistrationProviderProps) =>
     }
   };
 
-  const confirmRegistration = (registrationId: string) => {
+  const confirmRegistration = async (registrationId: string): Promise<void> => {
     setRegistrations(prev =>
       prev.map(reg =>
         reg.id === registrationId
