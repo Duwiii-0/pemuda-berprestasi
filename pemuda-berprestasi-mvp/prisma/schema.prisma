@@ -111,8 +111,6 @@
     tanggal_mulai    DateTime
     tanggal_selesai  DateTime
     nama_event       String               @db.VarChar(255)
-    type_kompetisi   TypeKompetisi
-    status           StatusKompetisi      @default(DRAFT)
 
     penyelenggara    tb_penyelenggara     @relation(fields: [id_penyelenggara], references: [id_penyelenggara])
     bagan            tb_bagan[]
@@ -143,7 +141,7 @@
   model tb_kelas_berat {
     id_kelas_berat Int                @id @default(autoincrement())
     id_kelompok    Int
-    gender         JenisKelamin
+    jenis_kelamin  JenisKelamin
     batas_min      Float
     batas_max      Float
     nama_kelas     String             @db.VarChar(100)
@@ -288,19 +286,6 @@
   LAKI_LAKI
   PEREMPUAN
 }
-
-  enum TypeKompetisi {
-    OPEN
-    TRAINING
-    GRADE_B
-    GRADE_C
-  }
-
-  enum StatusKompetisi {
-    DRAFT
-    PUBLISHED
-    CLOSED
-  }
 
   enum Cabang {
     POOMSAE

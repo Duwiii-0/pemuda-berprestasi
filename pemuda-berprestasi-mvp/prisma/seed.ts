@@ -1,11 +1,10 @@
 // prisma/seed.ts
-import { PrismaClient } from '@prisma/client';
-import * as bcrypt from 'bcrypt';
+import { PrismaClient, JenisKelamin } from "@prisma/client";
+  import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
-async function main() {
-  // Check if admin already exists
+async function seedAdmin() {
   const existingAdmin = await prisma.tb_akun.findUnique({
     where: { email: 'admin@example.com' }
   });
@@ -19,18 +18,17 @@ async function main() {
         password_hash: hashedPassword,
         role: 'ADMIN',
         admin: {
-          create: {
-            nama: 'Super Admin'
-          }
+          create: { nama: 'Super Admin' }
         }
       }
     });
     console.log('✅ Admin account created');
   } else {
-    console.log('ℹ️ Admin account already exists');
+    console.log('ℹ️ Admin already exists');
   }
+}
 
-  // Check if pelatih already exists
+async function seedPelatihDojang() {
   const existingPelatih = await prisma.tb_akun.findUnique({
     where: { email: 'pelatih@example.com' }
   });
@@ -49,72 +47,127 @@ async function main() {
     }
   });
 
-
   if (!existingPelatih) {
-    const hashedPelatihPassword = await bcrypt.hash('pelatih123', 10);
+    const hashedPassword = await bcrypt.hash('pelatih123', 10);
 
-    const pelatihAccount = await prisma.tb_akun.create({
+    await prisma.tb_akun.create({
       data: {
         email: 'pelatih@example.com',
-        password_hash: await bcrypt.hash('pelatih123', 10),
+        password_hash: hashedPassword,
         role: 'PELATIH',
         pelatih: {
           create: {
             nama_pelatih: 'Budi Pelatih',
             no_telp: '08123456789',
-            dojang: {       // << ini wajib karena relasi required
-              connect: { id_dojang: dojang.id_dojang }
-            }
+            dojang: { connect: { id_dojang: dojang.id_dojang } }
           }
         }
-      },
-      include: {
-        pelatih: true  // ⬅ ini wajib supaya TS tahu ada properti pelatih
       }
     });
-
-    
     console.log('✅ Pelatih account created');
-
-      const pelatihId = pelatihAccount.pelatih!.id_pelatih;
-
-    // Buat 3 atlet
-    await prisma.tb_atlet.create({
-      data: 
-        {
-          nama_atlet: 'Andi Sumarecon',
-          nik: '3201012005050001',
-          belt: 'kuning',
-          tanggal_lahir: new Date('2005-05-10'),
-          berat_badan: 60,
-          tinggi_badan: 170,
-          umur:  20,
-          provinsi: 'Jawa Barat',
-          kota: 'Bandung',
-          jenis_kelamin: 'LAKI_LAKI',  // ✅ harus sama persis
-          id_dojang: dojang.id_dojang,
-          id_pelatih_pembuat: pelatihId,
-          akte_kelahiran: 'akte_andi.pdf',
-          pas_foto: 'andi.jpg',
-          sertifikat_belt: 'belt_1.pdf',
-          
-        }
-    });
-  
-    console.log('✅ 3 Atlet created');
-
   } else {
-    console.log('ℹ️ Pelatih account already exists');
+    console.log('ℹ️ Pelatih already exists');
   }
 }
 
+async function seedAtlet() {
+  const pelatih = await prisma.tb_pelatih.findFirst();
+  const dojang = await prisma.tb_dojang.findFirst();
 
+  if (!pelatih || !dojang) {
+    console.log("⚠️ Skip seeding atlet, pelatih/dojang belum ada");
+    return;
+  }
+
+  await prisma.tb_atlet.createMany({
+    data: [
+      {
+        nama_atlet: 'Andi Sumarecon',
+        nik: '3201012005050001',
+        belt: 'kuning',
+        tanggal_lahir: new Date('2005-05-10'),
+        berat_badan: 60,
+        tinggi_badan: 170,
+        umur: 20,
+        provinsi: 'Jawa Barat',
+        kota: 'Bandung',
+        jenis_kelamin: 'LAKI_LAKI',
+        id_dojang: dojang.id_dojang,
+        id_pelatih_pembuat: pelatih.id_pelatih,
+        akte_kelahiran: 'akte_andi.pdf',
+        pas_foto: 'andi.jpg',
+        sertifikat_belt: 'belt_1.pdf'
+      }
+    ],
+    skipDuplicates: true
+  });
+
+  console.log("✅ Atlet seeded");
+}
+
+async function seedKelompokUsia() {
+  await prisma.tb_kelompok_usia.createMany({
+    data: [
+      { nama_kelompok: "Cadet", usia_min: 11, usia_max: 13 },
+      { nama_kelompok: "Junior", usia_min: 14, usia_max: 17 },
+      { nama_kelompok: "Senior", usia_min: 18, usia_max: 40 }
+    ],
+    skipDuplicates: true
+  });
+
+  console.log("✅ Kelompok usia seeded");
+}
+
+async function seedKelasBerat() {
+  // Data kelas berat berdasarkan tabel
+  const kelasBeratData = [
+    // Putra
+    { id_kelompok: 1, jenis_kelamin: JenisKelamin.LAKI_LAKI, batas_min: 0, batas_max: 33.0, nama_kelas: 'Under 33 kg' },
+    { id_kelompok: 1, jenis_kelamin: JenisKelamin.LAKI_LAKI, batas_min: 33.1, batas_max: 37.0, nama_kelas: 'Under 37 kg' },
+    { id_kelompok: 1, jenis_kelamin: JenisKelamin.LAKI_LAKI, batas_min: 37.1, batas_max: 41.0, nama_kelas: 'Under 41 kg' },
+    { id_kelompok: 1, jenis_kelamin: JenisKelamin.LAKI_LAKI, batas_min: 41.1, batas_max: 45.0, nama_kelas: 'Under 45 kg' },
+    { id_kelompok: 1, jenis_kelamin: JenisKelamin.LAKI_LAKI, batas_min: 45.1, batas_max: 49.0, nama_kelas: 'Under 49 kg' },
+    { id_kelompok: 1, jenis_kelamin: JenisKelamin.LAKI_LAKI, batas_min: 49.1, batas_max: 53.0, nama_kelas: 'Under 53 kg' },
+    { id_kelompok: 1, jenis_kelamin: JenisKelamin.LAKI_LAKI, batas_min: 53.1, batas_max: 57.0, nama_kelas: 'Under 57 kg' },
+    { id_kelompok: 1, jenis_kelamin: JenisKelamin.LAKI_LAKI, batas_min: 57.1, batas_max: 61.0, nama_kelas: 'Under 61 kg' },
+    { id_kelompok: 1, jenis_kelamin: JenisKelamin.LAKI_LAKI, batas_min: 61.1, batas_max: 65.0, nama_kelas: 'Under 65 kg' },
+    { id_kelompok: 1, jenis_kelamin: JenisKelamin.LAKI_LAKI, batas_min: 65.1, batas_max: 200.0, nama_kelas: 'Over 65 kg' },
+
+    // Putri
+    { id_kelompok: 1, jenis_kelamin: JenisKelamin.PEREMPUAN, batas_min: 0, batas_max: 29.0, nama_kelas: 'Under 29 kg' },
+    { id_kelompok: 1, jenis_kelamin: JenisKelamin.PEREMPUAN, batas_min: 29.1, batas_max: 33.0, nama_kelas: 'Under 33 kg' },
+    { id_kelompok: 1, jenis_kelamin: JenisKelamin.PEREMPUAN, batas_min: 33.1, batas_max: 37.0, nama_kelas: 'Under 37 kg' },
+    { id_kelompok: 1, jenis_kelamin: JenisKelamin.PEREMPUAN, batas_min: 37.1, batas_max: 41.0, nama_kelas: 'Under 41 kg' },
+    { id_kelompok: 1, jenis_kelamin: JenisKelamin.PEREMPUAN, batas_min: 41.1, batas_max: 44.0, nama_kelas: 'Under 44 kg' },
+    { id_kelompok: 1, jenis_kelamin: JenisKelamin.PEREMPUAN, batas_min: 44.1, batas_max: 47.0, nama_kelas: 'Under 47 kg' },
+    { id_kelompok: 1, jenis_kelamin: JenisKelamin.PEREMPUAN, batas_min: 47.1, batas_max: 51.0, nama_kelas: 'Under 51 kg' },
+    { id_kelompok: 1, jenis_kelamin: JenisKelamin.PEREMPUAN, batas_min: 51.1, batas_max: 55.0, nama_kelas: 'Under 55 kg' },
+    { id_kelompok: 1, jenis_kelamin: JenisKelamin.PEREMPUAN, batas_min: 55.1, batas_max: 59.0, nama_kelas: 'Under 59 kg' },
+    { id_kelompok: 1, jenis_kelamin: JenisKelamin.PEREMPUAN, batas_min: 59.1, batas_max: 200.0, nama_kelas: 'Over 59 kg' }
+  ];
+
+  await prisma.tb_kelas_berat.createMany({
+    data: kelasBeratData,
+    skipDuplicates: true
+  });
+
+  console.log("✅ Kelas berat seeded");
+}
+
+
+async function main() {
+  await seedAdmin();
+  await seedPelatihDojang();
+  await seedKelompokUsia();
+  await seedAtlet();
+  await seedKelasBerat();
+}
 
 main()
   .then(() => console.log('🎉 Seeding completed'))
   .catch((e) => {
-    console.error('❌ Seeding failed:', e)
-    process.exit(1)
+    console.error('❌ Seeding failed:', e);
+    process.exit(1);
   })
   .finally(async () => {
     await prisma.$disconnect();

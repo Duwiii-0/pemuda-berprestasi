@@ -268,7 +268,6 @@ export class AtletService {
                       nama_event: true,
                       tanggal_mulai: true,
                       tanggal_selesai: true,
-                      status: true
                     }
                   },
                   kategori_event: {
@@ -501,7 +500,7 @@ export class AtletService {
           gte: kelasKejuaraan.kelas_berat.batas_min,
           lte: kelasKejuaraan.kelas_berat.batas_max
         };
-        whereCondition.jenis_kelamin = kelasKejuaraan.kelas_berat.gender;
+        whereCondition.jenis_kelamin = kelasKejuaraan.kelas_berat.jenis_kelamin;
       }
 
       // Exclude already registered athletes
