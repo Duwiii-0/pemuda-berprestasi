@@ -1,4 +1,4 @@
-import { ArrowLeft, Mail, KeyRound, IdCard, Phone, CalendarFold, Map, MapPinned, User, Settings as SettingsIcon, Shield, UploadCloud, Save, X } from 'lucide-react';
+import { ArrowLeft, Mail, IdCard, Phone, CalendarFold, Map, MapPinned, User, Settings as SettingsIcon, Shield } from 'lucide-react';
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
@@ -131,19 +131,26 @@ const handleUpdate = async () => {
   try {
     setLoading(true);
 
-    // 1️⃣ Update data text
+    // 1️⃣ Update data text - handle empty strings properly
     const updateData = {
-      nama_pelatih: formData.name.trim(),
-      no_telp: formData.no_telp.trim() || null,
-      nik: formData.nik || null,
+      nama_pelatih: formData.name?.trim() || null, // Convert empty to null
+      no_telp: formData.no_telp?.trim() || null,
+      nik: formData.nik?.trim() || null,
       tanggal_lahir: formData.tanggal_lahir ? new Date(formData.tanggal_lahir) : null,
-      kota: formData.kota || null,
-      provinsi: formData.Provinsi || null,
-      alamat: formData.Alamat || null,
+      kota: formData.kota?.trim() || null,
+      provinsi: formData.Provinsi?.trim() || null,
+      alamat: formData.Alamat?.trim() || null,
       jenis_kelamin: formData.jenis_kelamin || null,
     };
 
-    const response = await apiClient.put("/pelatih/profile", updateData);
+    // Remove null values to avoid sending unnecessary data
+    const filteredData = Object.fromEntries(
+      Object.entries(updateData).filter(([_, value]) => value !== null && value !== '')
+    );
+
+    console.log('Sending update data:', filteredData); // Debug log
+
+    const response = await apiClient.put("/pelatih/profile", filteredData);
     
     if (!response.success) {
       toast.error(response.message || "Gagal memperbarui profil");
@@ -151,17 +158,17 @@ const handleUpdate = async () => {
     }
 
     // 2️⃣ Upload file (jika ada)
-    if (files.fotoKtp || files.sertifikatSabuk) {
+    if (files.fotoKtp instanceof File || files.sertifikatSabuk instanceof File) {
       const formDataToSend = new FormData();
 
-      if (files.fotoKtp) {
+      if (files.fotoKtp instanceof File) {
         formDataToSend.append("foto_ktp", files.fotoKtp);
       }
-      if (files.sertifikatSabuk) {
+      if (files.sertifikatSabuk instanceof File) {
         formDataToSend.append("sertifikat_sabuk", files.sertifikatSabuk);
       }
 
-      const uploadRes = await apiClient.postFormData("/pelatih/upload", formDataToSend )
+      const uploadRes = await apiClient.postFormData("/pelatih/upload", formDataToSend);
 
       if (!uploadRes.success) {
         toast.error(uploadRes.message || "Upload file gagal");
@@ -178,9 +185,6 @@ const handleUpdate = async () => {
     setLoading(false);
   }
 };
-
-
-
 
   // Redirect jika tidak login
   useEffect(() => {
