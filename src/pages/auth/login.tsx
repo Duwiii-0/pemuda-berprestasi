@@ -51,7 +51,7 @@ const Login = () => {
         
         {/* Logo + Title */}
         <div className="flex flex-col gap-2 justify-center items-center">
-          <img src="src/assets/logo/taekwondo.png" alt="taekwondo logo" className="h-50 w-50"/>
+          <img src="src/assets/logo/logojv.png" alt="taekwondo logo" className="h-50 w-50"/>
           <label className="font-bebas text-6xl text-red">Masuk</label>
         </div>
 

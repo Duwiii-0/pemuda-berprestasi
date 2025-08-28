@@ -35,7 +35,7 @@ const ResetPassword = () => {
       <div className="px-10 sm:px-25 bg-gradient-to-b from-white/90 to-white/80 h-screen md:h-[80vh] w-full md:w-[72vw] lg:w-[56vw] xl:w-[32vw] rounded-xl flex flex-col justify-center items-center gap-8 pt-0 font-plex ">
         <div className="flex flex-col gap-2 justify-center items-center">
           <img
-            src="src/assets/logo/taekwondo.png"
+            src="src/assets/logo/logojv.png"
             alt="taekwondo logo"
             className="h-50 w-50"
           />
