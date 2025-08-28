@@ -1,3 +1,4 @@
+// src/context/registrationContext.tsx - Fixed Version
 import { createContext, useContext, useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import type { ReactNode } from 'react';
@@ -147,7 +148,7 @@ export const RegistrationProvider = ({ children }: RegistrationProviderProps) =>
     registration: false
   });
 
-  const API_BASE = import.meta.env.VITE_API_URL || '/api';
+  const API_BASE = process.env.REACT_APP_API_URL || '/api';
 
   // Fetch functions
   const fetchAtletList = async () => {
