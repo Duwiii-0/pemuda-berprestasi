@@ -201,6 +201,40 @@ async function seedKelasBerat() {
   console.log("✅ Kelas berat seeded");
 }
 
+async function seedKategoriEvent() {
+  await prisma.tb_kategori_event.createMany({
+    data: [
+      { nama_kategori: "Kyorugi" },
+      { nama_kategori: "Poomsae" }
+    ],
+    skipDuplicates: true
+  });
+
+  console.log("✅ Kategori Event seeded");
+}
+
+async function seedKelasPoomsae() {
+  // Ambil semua kelompok usia yang ada
+  const kelompokUsia = await prisma.tb_kelompok_usia.findMany();
+
+  const data: { id_kelompok: number; nama_kelas: string }[] = [];
+
+  for (const kelompok of kelompokUsia) {
+    data.push(
+      { id_kelompok: kelompok.id_kelompok, nama_kelas: "Individu" },
+      { id_kelompok: kelompok.id_kelompok, nama_kelas: "Beregu" },
+      { id_kelompok: kelompok.id_kelompok, nama_kelas: "Berpasangan" }
+    );
+  }
+
+  await prisma.tb_kelas_poomsae.createMany({
+    data,
+    skipDuplicates: true,
+  });
+
+  console.log("✅ Kelas Poomsae seeded");
+}
+
 
 async function main() {
   await seedAdmin();
@@ -208,6 +242,8 @@ async function main() {
   await seedKelompokUsia();
   await seedAtlet();
   await seedKelasBerat();
+  await seedKategoriEvent();
+  await seedKelasPoomsae();
 }
 
 main()
