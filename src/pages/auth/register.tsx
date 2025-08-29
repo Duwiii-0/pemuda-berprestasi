@@ -1,152 +1,148 @@
 import { useState, useEffect } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { Mail, User, Phone, Lock, IdCard, Eye, EyeOff, Building } from "lucide-react";
 import Select from "react-select";
 import GeneralButton from "../../components/generalButton";
 import TextInput from "../../components/textInput";
-import { Mail, User, Phone, Lock, IdCard } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import { apiClient } from "../../../pemuda-berprestasi-mvp/src/config/api";
+import { useAuth } from "../../context/authContext";
 
 type OptionType = { value: string; label: string };
 
 const Register = () => {
+  const navigate = useNavigate();
+  const { register } = useAuth(); // Get register function from useAuth
+  
+  // Form states
   const [nama, setNama] = useState("");
   const [email, setEmail] = useState("");
   const [nik, setNik] = useState("");
   const [telepon, setTelepon] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const [selectedDojang, setSelectedDojang] = useState<OptionType | null>(null);
   const [dojangOptions, setDojangOptions] = useState<OptionType[]>([]);
-
   
-  const navigate = useNavigate();
+  // UI states
+  const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-useEffect(() => {
-  const fetchDojang = async () => {
-    try {
-      const response = await apiClient.get("/dojang/listdojang");
-      const options = response.data.map((item: any) => ({
-        value: item.id_dojang,
-        label: item.nama_dojang
-      }));
-      
-      setDojangOptions(options);
-    } catch (error) {
-      console.error("Gagal mengambil data dojang:", error);
-      toast.error("Tidak dapat mengambil data dojang");
-    }
-  };
+  // Fetch dojang options
+  useEffect(() => {
+    const fetchDojang = async () => {
+      try {
+        // Simple fetch request (since this doesn't require auth)
+        const response = await fetch('http://localhost:3000/api/dojang/listdojang');
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch dojang data');
+        }
+        
+        const data = await response.json();
+        
+        // Map the response data to options format
+        const options = data.data?.map((item: any) => ({
+          value: item.id_dojang,
+          label: item.nama_dojang
+        })) || [];
+        
+        setDojangOptions(options);
+      } catch (error) {
+        console.error("Gagal mengambil data dojang:", error);
+        toast.error("Tidak dapat mengambil data dojang");
+      }
+    };
 
-  fetchDojang();
-}, []);
+    fetchDojang();
+  }, []);
 
+  // Handle registration
   const handleRegister = async () => {
     try {
       setIsLoading(true);
       
-      console.log('Sending registration data:', {
-        nama,
-        email,
-        telepon,
-        nik,
-        dojangSelected: selectedDojang
-      });
+      // Debug: Log semua data yang akan dikirim
+      console.log('=== REGISTRATION DEBUG ===');
+      console.log('Raw NIK value:', nik);
+      console.log('NIK length:', nik.length);
+      console.log('NIK type:', typeof nik);
+      console.log('Is NIK valid digits?', /^\d+$/.test(nik));
       
-      // Prepare data sesuai dengan authValidation.ts schema
+      // Prepare data according to backend schema and API
       const registerData = {
         email: email.toLowerCase().trim(),
-        password,
-        confirmPassword, // Required by validation
-        nama_pelatih: nama.trim(), // Backend expects 'nama_pelatih', bukan 'nama'
-        no_telp: telepon.trim(), // Backend expects 'no_telp', bukan 'telepon'
+        password: password,
+        confirmPassword: confirmPassword,
+        nama_pelatih: nama.trim(),
+        no_telp: telepon.trim(),
+        nik: nik.trim(), // Pastikan NIK di-trim untuk menghilangkan spasi
         id_dojang: Number(selectedDojang?.value)
       };
 
-      console.log('Final registration data (matching validation schema):', registerData);
+      console.log('Final registration payload:', registerData);
+      console.log('NIK in payload:', registerData.nik);
+      console.log('===========================');
 
-      const response = await apiClient.post('/auth/register', registerData);
+      // Use register method from useAuth context
+      const result = await register(registerData);
       
-      console.log('Registration response:', response);
-      
-      if (response.success) {
+      if (result.success) {
         toast.success("Registrasi berhasil! Silakan login.");
         setTimeout(() => {
           navigate('/login');
         }, 1500);
       } else {
-        // Handle specific validation errors
-        if (response.errors && Array.isArray(response.errors)) {
-          const errorMessages = response.errors.map((err: any) => err.message || err).join('\n');
-          throw new Error(errorMessages);
-        } else {
-          throw new Error(response.message || 'Registrasi gagal');
-        }
+        throw new Error(result.message || 'Registrasi gagal');
       }
     } catch (error) {
       console.error('Registration error:', error);
       
-      // Handle fetch errors
-      if (error instanceof Error && error.message.includes('HTTP error')) {
-        toast.error('Koneksi ke server gagal. Pastikan backend sedang berjalan.');
-      } else if (error instanceof Error && error.message.includes('Failed to fetch')) {
-        toast.error('Tidak dapat terhubung ke server. Periksa koneksi internet.');
-      } else {
-        const errorMessage = error instanceof Error ? error.message : 'Registrasi gagal';
-        toast.error(errorMessage);
-      }
+      const errorMessage = error instanceof Error ? error.message : 'Registrasi gagal';
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Form validation and submission
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    // ✅ Validasi semua field
-    if (
-      !nama ||
-      !email ||
-      !nik ||
-      !telepon ||
-      !password ||
-      !confirmPassword ||
-      !selectedDojang
-    ) {
+    // Check all required fields
+    if (!nama || !email || !nik || !telepon || !password || !confirmPassword || !selectedDojang) {
       toast.error("Semua field harus terisi terlebih dahulu");
       return;
     }
 
-    // Validasi format email
+    // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       toast.error("Format email tidak valid");
       return;
     }
 
-    // Validasi NIK (16 digit)
+    // NIK validation (16 digits)
     if (nik.length !== 16 || !/^\d+$/.test(nik)) {
       toast.error("NIK harus berupa 16 digit angka");
       return;
     }
 
-    // Validasi telepon
+    // Phone validation
     if (!/^(\+62|62|0)[0-9]{9,13}$/.test(telepon)) {
       toast.error("Format nomor telepon tidak valid");
       return;
     }
 
-    // Validasi password sesuai dengan backend requirement
+    // Password validation
     if (password.length < 8) {
       toast.error("Password minimal 8 karakter");
       return;
     }
 
-    // Password must contain at least one uppercase, one lowercase, and one number
     const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d).+$/;
     if (!passwordRegex.test(password)) {
-      toast.error("Password harus mengandung minimal 1 huruf, dan 1 angka");
+      toast.error("Password harus mengandung minimal 1 huruf dan 1 angka");
       return;
     }
 
@@ -158,167 +154,280 @@ useEffect(() => {
     handleRegister();
   };
 
+  // Custom select styles matching the design
+  const selectStyles = {
+    control: (base: any, state: any) => ({
+      ...base,
+      height: '44px',
+      minHeight: '44px',
+      border: `2px solid ${state.isFocused ? '#dc2626' : 'rgba(220, 38, 38, 0.25)'}`,
+      borderRadius: '12px',
+      backgroundColor: 'rgba(255, 255, 255, 0.8)',
+      backdropFilter: 'blur(4px)',
+      boxShadow: state.isFocused ? '0 4px 6px -1px rgba(220, 38, 38, 0.1)' : 'none',
+      fontSize: '14px',
+      fontFamily: 'Inter',
+      paddingLeft: '40px',
+      '&:hover': {
+        border: `2px solid rgba(220, 38, 38, 0.4)`,
+      },
+    }),
+    valueContainer: (base: any) => ({
+      ...base,
+      paddingLeft: '0',
+    }),
+    placeholder: (base: any) => ({
+      ...base,
+      color: 'rgba(220, 38, 38, 0.5)',
+      fontSize: '14px',
+    }),
+    menu: (base: any) => ({
+      ...base,
+      border: '2px solid rgba(220, 38, 38, 0.25)',
+      borderRadius: '12px',
+      backgroundColor: 'white',
+      boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+      marginTop: '4px',
+    }),
+    menuList: (base: any) => ({
+      ...base,
+      maxHeight: '160px',
+    }),
+    option: (base: any, state: any) => ({
+      ...base,
+      backgroundColor: state.isFocused 
+        ? 'rgba(220, 38, 38, 0.1)' 
+        : state.isSelected 
+          ? '#dc2626' 
+          : 'white',
+      color: state.isSelected ? 'white' : 'black',
+      padding: '8px 16px',
+      cursor: 'pointer',
+      fontSize: '14px',
+      '&:active': {
+        backgroundColor: state.isSelected ? '#dc2626' : 'rgba(220, 38, 38, 0.2)',
+      },
+    }),
+  };
+
   return (
-    <div
-      className="h-screen w-full flex items-center justify-center bg-cover bg-center"
-      style={{ backgroundImage: "url('src/assets/photos/login.jpg')" }}
-    >
-      <div className="px-10 sm:px-25 bg-gradient-to-b from-white/90 to-white/80 h-screen md:h-[80vh] w-full md:w-[72vw] lg:w-[56vw] xl:w-[35vw] rounded-xl flex flex-col justify-start items-center gap-8 py-10 pb-15 overflow-y-scroll font-plex">
-        <div className="flex flex-col gap-2 justify-center items-center">
-          <img
-            src="src/assets/logo/logojv.png"
-            alt="taekwondo logo"
-            className="h-30 w-30 sm:h-50 sm:w-50"
-          />
-          <label className="font-bebas text-6xl text-red">registrasi</label>
-        </div>
+    <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-red/15 via-white to-red/10 py-6 px-4">
+      {/* Register Container */}
+      <div className="w-full max-w-md mx-auto">
+        <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl border border-white/30 p-6 sm:p-7 md:p-8">
+          
+          {/* Header Section */}
+          <div className="text-center mb-6">
+            {/* Logo */}
+            <div className="relative mb-4">
+              <div className="absolute -inset-1 bg-gradient-to-r from-red/10 to-red/5 rounded-full blur-md opacity-60"></div>
+              <img 
+                src="src/assets/logo/logojv.png" 
+                alt="Taekwondo Logo" 
+                className="relative h-12 w-12 sm:h-16 sm:w-16 mx-auto drop-shadow-md"
+              />
+            </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="w-full flex flex-col gap-4">
-          {/* Nama */}
-          <div>
-            <label className="pl-2">Nama *</label>
-            <TextInput
-              value={nama}
-              onChange={(e) => setNama(e.target.value)}
-              className="h-12 border-red"
-              placeholder="Nama Lengkap"
-              icon={<User className="text-black" size={20} />}
-              disabled={isLoading}
-            />
+            {/* Title */}
+            <div className="space-y-2">
+              <h1 className="font-bebas text-3xl sm:text-4xl leading-none tracking-wide">
+                <span className="bg-gradient-to-r from-red via-red/90 to-red/80 bg-clip-text text-transparent">
+                  REGISTRASI
+                </span>
+              </h1>
+              <div className="w-10 sm:w-14 h-0.5 bg-gradient-to-r from-red/40 via-red to-red/40 mx-auto rounded-full"></div>
+              <p className="text-xs sm:text-sm font-plex text-black/70 mt-2">
+                Daftar sebagai pelatih untuk bergabung dengan platform
+              </p>
+            </div>
           </div>
 
-          {/* Email */}
-          <div>
-            <label className="pl-2">Email *</label>
-            <TextInput
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="h-12 border-red"
-              placeholder="Email"
-              icon={<Mail className="text-black" size={20} />}
-              disabled={isLoading}
-            />
-          </div>
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Nama Lengkap */}
+            <div className="space-y-1.5">
+              <label className="text-xs sm:text-sm font-plex font-medium text-black/80 block">
+                Nama Lengkap *
+              </label>
+              <div className="relative group">
+                <TextInput
+                  className="h-11 border-2 border-red/25 focus:border-red rounded-xl bg-white/80 backdrop-blur-sm text-sm font-plex pl-10 pr-4 transition-all duration-300 group-hover:border-red/40 focus:bg-white focus:shadow-md focus:shadow-red/10"
+                  placeholder="Masukkan nama lengkap"
+                  value={nama}
+                  onChange={(e) => setNama(e.target.value)}
+                  disabled={isLoading}
+                />
+                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-red/60 group-hover:text-red transition-colors" size={16} />
+              </div>
+            </div>
 
-          {/* NIK */}
-          <div>
-            <label className="pl-2">NIK *</label>
-            <TextInput
-              value={nik}
-              onChange={(e) => setNik(e.target.value)}
-              className="h-12 border-red"
-              placeholder="NIK (16 digit)"
-              icon={<IdCard className="text-black" size={20} />}
-              maxLength={16}
-              disabled={isLoading}
-            />
-          </div>
+            {/* Email */}
+            <div className="space-y-1.5">
+              <label className="text-xs sm:text-sm font-plex font-medium text-black/80 block">
+                Email Address *
+              </label>
+              <div className="relative group">
+                <TextInput
+                  type="email"
+                  className="h-11 border-2 border-red/25 focus:border-red rounded-xl bg-white/80 backdrop-blur-sm text-sm font-plex pl-10 pr-4 transition-all duration-300 group-hover:border-red/40 focus:bg-white focus:shadow-md focus:shadow-red/10"
+                  placeholder="your.email@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  disabled={isLoading}
+                />
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-red/60 group-hover:text-red transition-colors" size={16} />
+              </div>
+            </div>
 
-          {/* Nomor Telepon */}
-          <div>
-            <label className="pl-2">Nomor Telepon *</label>
-            <TextInput
-              type="tel"
-              value={telepon}
-              onChange={(e) => setTelepon(e.target.value)}
-              className="h-12 border-red"
-              placeholder="08xxxxxxxxxx"
-              icon={<Phone className="text-black" size={20} />}
-              disabled={isLoading}
-            />
-          </div>
+            {/* NIK */}
+            <div className="space-y-1.5">
+              <label className="text-xs sm:text-sm font-plex font-medium text-black/80 block">
+                NIK (16 digit) *
+              </label>
+              <div className="relative group">
+                <TextInput
+                  className="h-11 border-2 border-red/25 focus:border-red rounded-xl bg-white/80 backdrop-blur-sm text-sm font-plex pl-10 pr-4 transition-all duration-300 group-hover:border-red/40 focus:bg-white focus:shadow-md focus:shadow-red/10"
+                  placeholder="1234567890123456"
+                  value={nik}
+                  onChange={(e) => {
+                    // Only allow numbers and limit to 16 characters
+                    const value = e.target.value.replace(/\D/g, '').slice(0, 16);
+                    setNik(value);
+                  }}
+                  disabled={isLoading}
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                />
+                <IdCard className="absolute left-3 top-1/2 transform -translate-y-1/2 text-red/60 group-hover:text-red transition-colors" size={16} />
+                <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs text-gray-500">
+                  {nik.length}/16
+                </div>
+              </div>
+            </div>
 
-          {/* Password */}
-          <div>
-            <label className="pl-2">Password *</label>
-            <TextInput
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="h-12 border-red"
-              placeholder="Password (min. 8 karakter, harus ada huruf besar, kecil, angka)"
-              icon={<Lock className="text-black" size={20} />}
-              disabled={isLoading}
-            />
-          </div>
+            {/* Nomor Telepon */}
+            <div className="space-y-1.5">
+              <label className="text-xs sm:text-sm font-plex font-medium text-black/80 block">
+                Nomor Telepon *
+              </label>
+              <div className="relative group">
+                <TextInput
+                  type="tel"
+                  className="h-11 border-2 border-red/25 focus:border-red rounded-xl bg-white/80 backdrop-blur-sm text-sm font-plex pl-10 pr-4 transition-all duration-300 group-hover:border-red/40 focus:bg-white focus:shadow-md focus:shadow-red/10"
+                  placeholder="08xxxxxxxxxx"
+                  value={telepon}
+                  onChange={(e) => setTelepon(e.target.value)}
+                  disabled={isLoading}
+                />
+                <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-red/60 group-hover:text-red transition-colors" size={16} />
+              </div>
+            </div>
 
-          {/* Confirm Password */}
-          <div>
-            <label className="pl-2">Confirm Password *</label>
-            <TextInput
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className="h-12 border-red"
-              placeholder="Konfirmasi Password"
-              icon={<Lock className="text-black" size={20} />}
-              disabled={isLoading}
-            />
-          </div>
+            {/* Nama Dojang */}
+            <div className="space-y-1.5">
+              <label className="text-xs sm:text-sm font-plex font-medium text-black/80 block">
+                Nama Dojang *
+              </label>
+              <div className="relative group">
+                <Select
+                  options={dojangOptions}
+                  value={selectedDojang}
+                  onChange={setSelectedDojang}
+                  placeholder="Pilih dojang..."
+                  isSearchable
+                  isDisabled={isLoading}
+                  styles={selectStyles}
+                  className="react-select-container"
+                  classNamePrefix="react-select"
+                />
+                <Building className="absolute left-3 top-1/2 transform -translate-y-1/2 text-red/60 pointer-events-none z-10" size={16} />
+              </div>
+            </div>
 
-          {/* Nama Dojang */}
-          <div>
-            <label className="pl-2">Nama Dojang *</label>
-            <Select
-              unstyled
-              options={dojangOptions}
-              value={selectedDojang}
-              onChange={setSelectedDojang}
-              placeholder="Pilih dojang..."
-              isSearchable
-              isDisabled={isLoading}
+            {/* Password */}
+            <div className="space-y-1.5">
+              <label className="text-xs sm:text-sm font-plex font-medium text-black/80 block">
+                Password *
+              </label>
+              <div className="relative group">
+                <TextInput
+                  type={showPassword ? "text" : "password"}
+                  className="h-11 border-2 border-red/25 focus:border-red rounded-xl bg-white/80 backdrop-blur-sm text-sm font-plex pl-10 pr-10 transition-all duration-300 group-hover:border-red/40 focus:bg-white focus:shadow-md focus:shadow-red/10"
+                  placeholder="Min. 8 karakter, huruf & angka"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={isLoading}
+                />
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-red/60 group-hover:text-red transition-colors" size={16} />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-black/50 hover:text-red transition-colors"
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </div>
 
-              classNames={{
-                control: () =>
-                  `border-2 border-red rounded-lg h-12 px-2 text-inter ${isLoading ? 'opacity-50' : ''}`,
-                valueContainer: () => "px-2",
-                placeholder: () => "text-red/50 text-inter",
-                menu: () =>
-                  "border-2 border-red bg-white rounded-lg shadow-lg mt-1",
-                menuList: () => "max-h-40 overflow-y-scroll",
-                option: ({ isFocused, isSelected }) =>
-                  [
-                    "px-4 py-2 cursor-pointer",
-                    isFocused ? "bg-yellow/10 text-black" : "text-black",
-                    isSelected ? "bg-red text-white" : "text-black",
-                  ].join(" "),
-              }}
-            />
-          </div>
+            {/* Confirm Password */}
+            <div className="space-y-1.5">
+              <label className="text-xs sm:text-sm font-plex font-medium text-black/80 block">
+                Konfirmasi Password *
+              </label>
+              <div className="relative group">
+                <TextInput
+                  type={showConfirmPassword ? "text" : "password"}
+                  className="h-11 border-2 border-red/25 focus:border-red rounded-xl bg-white/80 backdrop-blur-sm text-sm font-plex pl-10 pr-10 transition-all duration-300 group-hover:border-red/40 focus:bg-white focus:shadow-md focus:shadow-red/10"
+                  placeholder="Ulangi password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  disabled={isLoading}
+                />
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-red/60 group-hover:text-red transition-colors" size={16} />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-black/50 hover:text-red transition-colors"
+                >
+                  {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </div>
 
-          <div className="w-full text-end">
-            <Link
-              to="/registerdojang"
-              className="underline hover:text-red transition-colors"
-            >
-              register your dojang
-            </Link>
-          </div>
-
-          {/* Tombol Register */}
-          <GeneralButton
-            label={isLoading ? "Mendaftarkan..." : "Register"}
-            type={"submit" as any}
-            className={`active:scale-97 mt-2 w-full bg-red border-2 border-red h-12 rounded-xl text-white text-lg font-semibold hover:scale-101 transition-discrete duration-300 hover:shadow-xl ${
-              isLoading ? 'opacity-50 cursor-not-allowed' : ''
-            }`}
-            disabled={isLoading}
-          />
-
-          <div className="w-full flex flex-col gap-2">
-            <span className="text-center">
-              Already have an account?
-              <Link
-                to="/login"
-                className="pl-1 underline hover:text-red transition-colors"
+            {/* Register Dojang Link */}
+            <div className="text-right">
+              <Link 
+                to="/registerdojang" 
+                className="text-xs sm:text-sm font-plex text-black/60 hover:text-red underline underline-offset-2 transition-colors duration-300"
               >
-                Login here
+                Daftarkan dojang baru
               </Link>
-            </span>
-                      </div>
-        </form>
+            </div>
+            
+            {/* Register Button */}
+            <div className="pt-2">
+              <GeneralButton
+                label={isLoading ? "Mendaftarkan..." : "Daftar"}
+                type="submit"
+                disabled={isLoading}
+                className="w-full h-11 bg-gradient-to-r from-red to-red/90 hover:from-red/90 hover:to-red border-2 border-red rounded-xl text-white text-sm font-plex font-semibold transition-all duration-300 hover:shadow-lg hover:shadow-red/25 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
+              />
+            </div>
+            
+            {/* Login Link */}
+            <div className="text-center pt-3">
+              <p className="text-xs sm:text-sm font-plex text-black/70">
+                Sudah punya akun?{" "}
+                <Link 
+                  to="/login" 
+                  className="font-medium text-red hover:text-red/80 underline underline-offset-2 transition-colors duration-300"
+                >
+                  Masuk di sini
+                </Link>
+              </p>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );

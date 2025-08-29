@@ -21,7 +21,6 @@ export const registerSchema = Joi.object({
       'any.required': 'Password is required'
     }),
 
-    
   confirmPassword: Joi.string()
     .valid(Joi.ref('password'))
     .required()
@@ -40,16 +39,27 @@ export const registerSchema = Joi.object({
       'any.required': 'Nama pelatih is required'
     }),
     
+  nik: Joi.string()
+    .length(16)
+    .pattern(/^[0-9]+$/)
+    .required()
+    .messages({
+      'string.length': 'NIK must be exactly 16 digits',
+      'string.pattern.base': 'NIK must contain only numbers',
+      'any.required': 'NIK is required'
+    }),
+    
   no_telp: Joi.string()
     .pattern(/^(\+62|62|0)[0-9]{8,13}$/)
     .optional()
     .messages({
       'string.pattern.base': 'No telepon must be a valid Indonesian phone number'
     }),
-    id_dojang: Joi.number()
+    
+  id_dojang: Joi.number()
     .required()
     .messages({
-      'any.required': 'dojang is required'
+      'any.required': 'Dojang is required'
     })
 })
 
