@@ -226,4 +226,42 @@ export class AtletController {
       return sendError(res, error.message, 400);
     }
   }
+
+  // Get all athletes in a competition
+static async getByKompetisi(req: Request, res: Response) {
+  try {
+    const id_kompetisi = parseInt(req.params.id_kompetisi);
+    const cabang = (req.query.cabang as 'KYORUGI' | 'POOMSAE') || undefined;
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+
+    if (isNaN(id_kompetisi)) {
+      return sendError(res, 'ID kompetisi tidak valid', 400);
+    }
+
+    // Panggil service
+    const atletList = await AtletService.getAtletByKompetisi(id_kompetisi, cabang);
+
+    // Pagination manual
+    const totalItems = atletList.length;
+    const totalPages = Math.ceil(totalItems / limit);
+    const paginatedData = atletList.slice((page - 1) * limit, page * limit);
+
+    return sendSuccess(
+      res,
+      paginatedData,
+      'Data atlet berhasil diambil',
+      200,
+      {
+        currentPage: page,
+        totalPages,
+        totalItems,
+        itemsPerPage: limit
+      }
+    );
+  } catch (error: any) {
+    return sendError(res, error.message, 500);
+  }
+}
+
 }

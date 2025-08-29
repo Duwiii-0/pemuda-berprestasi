@@ -698,4 +698,33 @@ export class AtletService {
 
     return { message: `${fileType} deleted successfully` }
   }
+
+  static async getAtletByKompetisi(id_kompetisi: number, cabang?: "KYORUGI" | "POOMSAE") {
+    const kelasKejuaraan = await prisma.tb_kelas_kejuaraan.findMany({
+      where: {
+        id_kompetisi,
+        ...(cabang ? { cabang } : {})
+      },
+      select: {
+        peserta_kompetisi: {
+          select: {
+            atlet: true,
+            status: true
+          }
+        }
+      }
+    });
+  
+    // flatten all peserta into one array
+    const atletFlat = kelasKejuaraan.flatMap(kelas =>
+      kelas.peserta_kompetisi.map(p => ({
+        ...p.atlet,
+        status: p.status
+      }))
+    );
+  
+    return atletFlat;
+  }
+
 }
+

@@ -6,7 +6,6 @@ import { BrowserRouter } from 'react-router-dom';
 import './style/index.css';
 import { AuthProvider } from './context/authContext';
 import { AtletProvider } from './context/AtlitContext';
-import { RegistrationProvider } from './context/registrationContext';
 import { KompetisiProvider } from './context/KompetisiContext';
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
@@ -14,11 +13,9 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     <AuthProvider>
       <AtletProvider>
         <KompetisiProvider>
-          <RegistrationProvider>
             <BrowserRouter>
              <App />
             </BrowserRouter>
-          </RegistrationProvider>
         </KompetisiProvider>
       </AtletProvider>
     </AuthProvider>

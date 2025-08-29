@@ -7,7 +7,6 @@ import { LockedSelect } from "../lockSelect";
 import { dummyAtlits } from "../../dummy/dummyAtlit";
 import GeneralButton from "../../components/generalButton";
 import toast from "react-hot-toast";
-import { useRegistration } from "../../context/registrationContext";
 
 type UnifiedRegistrationProps = {
   isOpen: boolean;
