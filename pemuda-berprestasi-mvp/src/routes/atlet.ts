@@ -29,7 +29,7 @@ router.post(
 
 router.get('/', AtletController.getAll);
 router.get('/dojang/:id_dojang', AtletController.getByDojang);
-router.get('/eligible/:id_kelas_kejuaraan', AtletController.getEligibleForClass);
+router.post("/eligible", authenticate, AtletController.getEligible);
 router.get('/:id', AtletController.getById);
 router.put('/:id', validateRequest(atletValidation.update), AtletController.update);
 router.delete('/:id', AtletController.delete);

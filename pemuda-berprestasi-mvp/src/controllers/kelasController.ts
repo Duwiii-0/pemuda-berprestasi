@@ -49,14 +49,56 @@ export const kelasController = {
     }
   },
 
-  async getKelasKejuaraan(req: Request, res: Response) {
-    try {
-      const { kompetisiId } = req.params;
-      const filter = req.body;
-      const data = await kelasService.getKelasKejuaraan(Number(kompetisiId), filter);
-      res.json(data);
-    } catch (err) {
-      res.status(500).json({ message: "Error fetching kelas kejuaraan", error: err });
+  // Backend Controller - Updated to handle new parameters
+async getKelasKejuaraan(req: Request, res: Response) {
+  try {
+    const { kompetisiId } = req.params;
+    const {
+      styleType,
+      gender,
+      categoryType,
+      kelompokId,
+      kelasBeratId,
+    } = req.body;
+
+    console.log("🔹 Request params:", req.params);
+    console.log("🔹 Request body (filter):", req.body);
+
+    // Validasi parameter wajib
+    if (!styleType) {
+      return res.status(400).json({ message: "styleType is required" });
     }
-  },
+
+    if (!categoryType) {
+      return res.status(400).json({ message: "categoryType is required" });
+    }
+
+    const filter = {
+      styleType,
+      gender,
+      categoryType,
+      kelompokId: kelompokId ? Number(kelompokId) : undefined,
+      kelasBeratId: kelasBeratId ? Number(kelasBeratId) : undefined,
+    };
+
+    console.log("🔹 Processed filter:", filter);
+
+    const data = await kelasService.getKelasKejuaraan(Number(kompetisiId), filter);
+
+    console.log("🔹 Data dari service:", data);
+    
+    if (!data) {
+      return res.status(404).json({ message: "No kelas kejuaraan found for given criteria" });
+    }
+
+    res.json(data);
+  } catch (err) {
+    console.error("❌ Error di controller:", err);
+    res.status(500).json({ 
+      message: "Error fetching kelas kejuaraan", 
+      error: err instanceof Error ? err.message : "Unknown error"
+    });
+  }
+}
+    
 };

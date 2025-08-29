@@ -1,7 +1,9 @@
 import { Request, Response } from 'express';
 import { AtletService } from '../services/atletService';
 import { sendSuccess, sendError } from '../utils/response';
-import { JenisKelamin } from '@prisma/client';
+import { JenisKelamin} from '@prisma/client';
+import prisma from '../config/database'
+
 
 
 export class AtletController {
@@ -153,21 +155,39 @@ export class AtletController {
     }
 
   // Get eligible atlet for competition class
-  static async getEligibleForClass(req: Request, res: Response) {
-    try {
-      const id_kelas_kejuaraan = parseInt(req.params.id_kelas_kejuaraan);
-      
-      if (isNaN(id_kelas_kejuaraan)) {
-        return sendError(res, 'ID kelas kejuaraan tidak valid', 400);
-      }
+  static async getEligible(req: Request, res: Response) {
+  try {
+    const { kelasId, ...filter } = req.body;
 
-      const eligibleAtlet = await AtletService.getEligibleAtlet(id_kelas_kejuaraan);
-      
-      return sendSuccess(res, eligibleAtlet, 'Data atlet yang memenuhi syarat berhasil diambil');
-    } catch (error: any) {
-      return sendError(res, error.message, 500);
+    console.log("🔄 Received request:", { kelasId, filter });
+
+    if (!kelasId) {
+      return res.status(400).json({ message: "kelasId is required" });
     }
+
+    const eligibleAtlits = await AtletService.getEligible(kelasId, filter);
+    
+    console.log("👥 Found eligible atlits:", eligibleAtlits?.length || 0);
+
+    // ✅ FIXED: Pastikan response structure konsisten
+    // Mapping untuk format yang diharapkan frontend
+    const formattedAtlits = eligibleAtlits.map(atlet => ({
+      id: atlet.id_atlet || atlet.id_atlet, // sesuaikan dengan field database
+      nama: atlet.nama_atlet || atlet.nama_atlet,
+      provinsi: atlet.provinsi,
+      bb: atlet.berat_badan,
+      tb: atlet.tinggi_badan,
+      belt: atlet.belt || atlet.belt,
+    }));
+
+    // Return array langsung (bukan wrapped dalam data property)
+    res.json(formattedAtlits);
+    
+  } catch (err) {
+    console.error("❌ Error fetching eligible atlits:", err);
+    res.status(500).json({ message: "fakyu" });
   }
+}
 
   // Get atlet statistics
   static async getStats(req: Request, res: Response) {

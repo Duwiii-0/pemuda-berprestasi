@@ -81,28 +81,186 @@ async function seedAtlet() {
 
   await prisma.tb_atlet.createMany({
     data: [
+      // CADET (11-13 tahun)
       {
-        nama_atlet: 'Andi Sumarecon',
-        nik: '3201012005050001',
+        nama_atlet: 'Budi Santoso',
+        nik: '3201012012110001',
         belt: 'kuning',
-        tanggal_lahir: new Date('2005-05-10'),
-        berat_badan: 60,
-        tinggi_badan: 170,
+        tanggal_lahir: new Date('2012-05-15'),
+        berat_badan: 35,
+        tinggi_badan: 145,
+        umur: 11,
+        provinsi: 'Jawa Barat',
+        kota: 'Bandung',
+        jenis_kelamin: 'LAKI_LAKI',
+        id_dojang: dojang.id_dojang,
+        id_pelatih_pembuat: pelatih.id_pelatih,
+        akte_kelahiran: 'akte_budi.pdf',
+        pas_foto: 'budi.jpg',
+        sertifikat_belt: 'belt_budi.pdf'
+      },
+      {
+        nama_atlet: 'Siti Rahma',
+        nik: '3201012011110002',
+        belt: 'hijau',
+        tanggal_lahir: new Date('2011-08-20'),
+        berat_badan: 32,
+        tinggi_badan: 142,
+        umur: 12,
+        provinsi: 'Jawa Barat',
+        kota: 'Bandung',
+        jenis_kelamin: 'PEREMPUAN',
+        id_dojang: dojang.id_dojang,
+        id_pelatih_pembuat: pelatih.id_pelatih,
+        akte_kelahiran: 'akte_siti.pdf',
+        pas_foto: 'siti.jpg',
+        sertifikat_belt: 'belt_siti.pdf'
+      },
+
+      // JUNIOR (14-17 tahun)
+      {
+        nama_atlet: 'Ahmad Fajar',
+        nik: '3201012008080003',
+        belt: 'biru',
+        tanggal_lahir: new Date('2008-03-10'),
+        berat_badan: 58,
+        tinggi_badan: 168,
+        umur: 15,
+        provinsi: 'Jawa Barat',
+        kota: 'Bandung',
+        jenis_kelamin: 'LAKI_LAKI',
+        id_dojang: dojang.id_dojang,
+        id_pelatih_pembuat: pelatih.id_pelatih,
+        akte_kelahiran: 'akte_ahmad.pdf',
+        pas_foto: 'ahmad.jpg',
+        sertifikat_belt: 'belt_ahmad.pdf'
+      },
+      {
+        nama_atlet: 'Dewi Putri',
+        nik: '3201012007070004',
+        belt: 'merah',
+        tanggal_lahir: new Date('2007-11-25'),
+        berat_badan: 49,
+        tinggi_badan: 160,
+        umur: 16,
+        provinsi: 'Jawa Barat',
+        kota: 'Bandung',
+        jenis_kelamin: 'PEREMPUAN',
+        id_dojang: dojang.id_dojang,
+        id_pelatih_pembuat: pelatih.id_pelatih,
+        akte_kelahiran: 'akte_dewi.pdf',
+        pas_foto: 'dewi.jpg',
+        sertifikat_belt: 'belt_dewi.pdf'
+      },
+
+      // SENIOR (18-40 tahun)
+      {
+        nama_atlet: 'Rudi Hermawan',
+        nik: '3201012005050005',
+        belt: 'hitam',
+        tanggal_lahir: new Date('2005-04-30'),
+        berat_badan: 68,
+        tinggi_badan: 175,
         umur: 20,
         provinsi: 'Jawa Barat',
         kota: 'Bandung',
         jenis_kelamin: 'LAKI_LAKI',
         id_dojang: dojang.id_dojang,
         id_pelatih_pembuat: pelatih.id_pelatih,
-        akte_kelahiran: 'akte_andi.pdf',
-        pas_foto: 'andi.jpg',
-        sertifikat_belt: 'belt_1.pdf'
+        akte_kelahiran: 'akte_rudi.pdf',
+        pas_foto: 'rudi.jpg',
+        sertifikat_belt: 'belt_rudi.pdf'
+      },
+      {
+        nama_atlet: 'Maya Sari',
+        nik: '3201012004040006',
+        belt: 'hitam',
+        tanggal_lahir: new Date('2004-07-15'),
+        berat_badan: 57,
+        tinggi_badan: 165,
+        umur: 21,
+        provinsi: 'Jawa Barat',
+        kota: 'Bandung',
+        jenis_kelamin: 'PEREMPUAN',
+        id_dojang: dojang.id_dojang,
+        id_pelatih_pembuat: pelatih.id_pelatih,
+        akte_kelahiran: 'akte_maya.pdf',
+        pas_foto: 'maya.jpg',
+        sertifikat_belt: 'belt_maya.pdf'
+      },
+      {
+        nama_atlet: 'Doni Kusuma',
+        nik: '3201012003030007',
+        belt: 'hitam',
+        tanggal_lahir: new Date('2003-09-20'),
+        berat_badan: 80,
+        tinggi_badan: 180,
+        umur: 22,
+        provinsi: 'Jawa Barat',
+        kota: 'Bandung',
+        jenis_kelamin: 'LAKI_LAKI',
+        id_dojang: dojang.id_dojang,
+        id_pelatih_pembuat: pelatih.id_pelatih,
+        akte_kelahiran: 'akte_doni.pdf',
+        pas_foto: 'doni.jpg',
+        sertifikat_belt: 'belt_doni.pdf'
+      },
+      {
+        nama_atlet: 'Linda Wati',
+        nik: '3201012002020008',
+        belt: 'hitam',
+        tanggal_lahir: new Date('2002-12-05'),
+        berat_badan: 62,
+        tinggi_badan: 167,
+        umur: 23,
+        provinsi: 'Jawa Barat',
+        kota: 'Bandung',
+        jenis_kelamin: 'PEREMPUAN',
+        id_dojang: dojang.id_dojang,
+        id_pelatih_pembuat: pelatih.id_pelatih,
+        akte_kelahiran: 'akte_linda.pdf',
+        pas_foto: 'linda.jpg',
+        sertifikat_belt: 'belt_linda.pdf'
+      },
+      {
+        nama_atlet: 'Rizki Pratama',
+        nik: '3201012001010009',
+        belt: 'hitam',
+        tanggal_lahir: new Date('2001-02-28'),
+        berat_badan: 74,
+        tinggi_badan: 178,
+        umur: 24,
+        provinsi: 'Jawa Barat',
+        kota: 'Bandung',
+        jenis_kelamin: 'LAKI_LAKI',
+        id_dojang: dojang.id_dojang,
+        id_pelatih_pembuat: pelatih.id_pelatih,
+        akte_kelahiran: 'akte_rizki.pdf',
+        pas_foto: 'rizki.jpg',
+        sertifikat_belt: 'belt_rizki.pdf'
+      },
+      {
+        nama_atlet: 'Anisa Putri',
+        nik: '3201012000000010',
+        belt: 'hitam',
+        tanggal_lahir: new Date('2000-06-15'),
+        berat_badan: 53,
+        tinggi_badan: 163,
+        umur: 25,
+        provinsi: 'Jawa Barat',
+        kota: 'Bandung',
+        jenis_kelamin: 'PEREMPUAN',
+        id_dojang: dojang.id_dojang,
+        id_pelatih_pembuat: pelatih.id_pelatih,
+        akte_kelahiran: 'akte_anisa.pdf',
+        pas_foto: 'anisa.jpg',
+        sertifikat_belt: 'belt_anisa.pdf'
       }
     ],
     skipDuplicates: true
   });
 
-  console.log("✅ Atlet seeded");
+  console.log("✅ 10 Atlet seeded");
 }
 
 async function seedKelompokUsia() {
