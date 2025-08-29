@@ -7,7 +7,6 @@ import { LockedSelect } from "../lockSelect";
 import { dummyAtlits } from "../../dummy/dummyAtlit";
 import GeneralButton from "../../components/generalButton";
 import toast from "react-hot-toast";
-
 type UnifiedRegistrationProps = {
   isOpen: boolean;
   onClose: () => void;
@@ -18,6 +17,13 @@ type UnifiedRegistrationProps = {
 
 type OptionType = { value: string; label: string };
 
+// Type untuk registration object
+type RegistrationType = {
+  atlitId: number;
+  kompetisiId: number;
+  // tambahkan properti lain sesuai kebutuhan
+};
+
 const UnifiedRegistration = ({
   isOpen,
   onClose,
@@ -25,7 +31,16 @@ const UnifiedRegistration = ({
   kompetisiName = "Kejuaraan Karate Nasional 2024",
   biayaPendaftaran = 150000
 }: UnifiedRegistrationProps) => {
-  const { addRegistration, getRegistrationsByKompetisi } = useRegistration();
+  // Temporary mock functions until you implement the actual registration system
+  const addRegistration = (data: any) => {
+    console.log("Registration data:", data);
+    toast.success("Pendaftaran berhasil!");
+  };
+  
+  const getRegistrationsByKompetisi = (id: number): RegistrationType[] => {
+    // Return empty array for now - replace with actual implementation later
+    return [];
+  };
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
     styleType: null as "kyorugi" | "poomsae" | null,
@@ -40,7 +55,7 @@ const UnifiedRegistration = ({
 
   // Get existing registrations for this competition
   const existingRegistrations = getRegistrationsByKompetisi(kompetisiId ?? 1);
-  const registeredAtlitIds = existingRegistrations.map(reg => reg.atlitId);
+  const registeredAtlitIds = existingRegistrations.map((reg: RegistrationType) => reg.atlitId);
 
   // Filter out already registered athletes
   const availableAtlits = dummyAtlits.filter(
@@ -113,7 +128,7 @@ const UnifiedRegistration = ({
       return
     }
 
-    if (currentStep === 3 && (!formData.selectedGender)){
+    if (currentStep === 3 && (!formData.selectedAtlit)){
       toast.error("Anda harus memilih atlit terlebih dahulu");
       return
     }
@@ -122,7 +137,6 @@ const UnifiedRegistration = ({
       setCurrentStep(currentStep + 1);
     }
   };
-
 
   const handleBack = () => {
     if (currentStep > 1) {
@@ -210,13 +224,6 @@ const UnifiedRegistration = ({
   };
 
   const canSubmit = canProceedStep2() && formData.selectedAtlit;
-
-  const formatRupiah = (amount: number) => {
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
-    }).format(amount);
-  };
 
   const renderStepContent = () => {
     switch (currentStep) {
@@ -382,6 +389,15 @@ const UnifiedRegistration = ({
                 Registrasi Atlit
               </h2>
               <p className="text-black/70 font-plex">Langkah 3 dari {totalSteps}</p>
+              {/* Display biaya pendaftaran */}
+              <div className="mt-4 p-4 bg-blue-50 rounded-lg">
+                <p className="font-plex text-blue-700 text-lg">
+                  <strong>Biaya Pendaftaran: {new Intl.NumberFormat('id-ID', {
+                    style: 'currency',
+                    currency: 'IDR',
+                  }).format(biayaPendaftaran)}</strong>
+                </p>
+              </div>
             </div>
 
             <div className="space-y-6">

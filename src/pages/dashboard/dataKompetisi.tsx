@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Trophy, Calendar, Users, MapPin, Search } from 'lucide-react';
+import { Trophy, Calendar, Users, MapPin, Search, Clock, CheckCircle } from 'lucide-react';
 import NavbarDashboard from "../../components/navbar/navbarDashboard";
 import { useKompetisi } from "../../context/KompetisiContext";
 import type { Kompetisi } from "../../context/KompetisiContext";
@@ -61,6 +61,14 @@ const DataKompetisi = () => {
       }
   };
 
+  // Hitung statistik berdasarkan status
+  const stats = {
+    total: kompetisiList.length,
+    pendaftaran: kompetisiList.filter(k => k.status === "PENDAFTARAN").length,
+    sedangBerlangsung: kompetisiList.filter(k => k.status === "SEDANG_DIMULAI").length,
+    selesai: kompetisiList.filter(k => k.status === "SELESAI").length
+  };
+
   const filteredKompetisi = kompetisiList.filter(k => {
     const matchesSearch = k.nama_event.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           (k.lokasi?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false);
@@ -115,15 +123,42 @@ const DataKompetisi = () => {
     <div className="min-h-screen w-full bg-gradient-to-br from-white via-red/5 to-yellow/10">
       <NavbarDashboard />
       <div className="lg:ml-64 min-h-screen p-8">
-              <div>
-                <h1 className="font-bebas text-4xl lg:text-6xl xl:text-7xl text-black/80 tracking-wider">
-                  DATA KOmpetisi
-                </h1>
-                <p className="font-plex text-black/60 text-lg mt-2">
-                  Lihat info kompetisi dan peserta yang terdaftar
-                </p>
-              </div>
+        <div>
+          <h1 className="font-bebas text-4xl lg:text-6xl xl:text-7xl text-black/80 tracking-wider">
+            DATA KOMPETISI
+          </h1>
+          <p className="font-plex text-black/60 text-lg mt-2">
+            Lihat info kompetisi dan peserta yang terdaftar
+          </p>
+        </div>
 
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 my-8">
+          <StatsCard
+            icon={Trophy}
+            title="Total Kompetisi"
+            value={stats.total.toString()}
+            color="bg-gradient-to-r from-red to-red/80"
+          />
+          <StatsCard
+            icon={Users}
+            title="Masa Pendaftaran"
+            value={stats.pendaftaran.toString()}
+            color="bg-gradient-to-r from-green-500 to-green-600"
+          />
+          <StatsCard
+            icon={Clock}
+            title="Sedang Berlangsung"
+            value={stats.sedangBerlangsung.toString()}
+            color="bg-gradient-to-r from-yellow-500 to-yellow-600"
+          />
+          <StatsCard
+            icon={CheckCircle}
+            title="Sudah Selesai"
+            value={stats.selesai.toString()}
+            color="bg-gradient-to-r from-gray-500 to-gray-600"
+          />
+        </div>
 
         {/* Search & Status Filter */}
         <div className="bg-white/60 backdrop-blur-sm rounded-3xl p-6 shadow-xl border border-white/50 my-4">
@@ -145,10 +180,8 @@ const DataKompetisi = () => {
             {/* Status Filter */}
             <div className="flex gap-2 flex-wrap">
               {["all", "PENDAFTARAN", "SEDANG_DIMULAI", "SELESAI"].map((status) => {
-                // tentukan apakah tombol ini aktif
                 const isActive = statusFilter === status;
               
-                // tentukan warna dan border sesuai status
                 let buttonClass = "";
                 switch (status) {
                   case "PENDAFTARAN":
@@ -190,7 +223,6 @@ const DataKompetisi = () => {
                 );
               })}
             </div>
-
           </div>
         </div>
 

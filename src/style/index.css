@@ -1,10 +1,10 @@
 @import "tailwindcss";
 
-
 @font-face {
   font-family: 'IBM Plex Sans';
   src: url('src/assets/font/IBMPlexSans-VariableFont_wdth,wght.ttf') format('truetype');
 }
+
 @font-face {
   font-family: 'Bebas Neue';
   src: url('/src/assets/font/BebasNeue-Regular.ttf') format('truetype');
@@ -15,10 +15,8 @@
   src: url('src/assets/font/Inter.ttf') format('truetype');
 }
 
-
 @theme {
   --color-red: #990D35;
-  --color-yellow: #F5B700;
   --color-white: #F5FBEF;
   --color-black: #050505;
   --font-plex: "IBM Plex Sans", sans-serif;
@@ -27,21 +25,20 @@
   --text-judul: 109.66px;
   --text-h2: 41.89px;
   --text-h3: 25.89px;
-  --test-isi: 16px;
-
-
+  --text-isi: 16px;
 }
-html{
+
+html {
   scroll-behavior: smooth;
   background-color: #F5FBEF;
 }
 
-/* Untuk Chrome, Edge, Safari */
+/* Hide scrollbar completely */
 ::-webkit-scrollbar {
   display: none;
 }
 
-/* Untuk Firefox */
+/* Firefox */
 html {
   scrollbar-width: none; 
 }

@@ -2,24 +2,79 @@ import GeneralButton from "./generalButton";
 import { Link } from "react-router-dom";
 
 const Hero = () => {
+  return (
+    <div className="relative h-[85vh] md:h-[90vh] lg:h-screen w-full flex items-center justify-center overflow-hidden">
+      {/* Background with Gradient Overlay */}
+      <div 
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+        style={{backgroundImage: "url('src/assets/photos/hero.png')"}}
+      />
+      <div className="absolute inset-0 bg-gradient-to-r from-red/90 via-red/70 to-red/40" />
+      <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/40" />
+      
+      {/* Decorative Elements */}
+      <div className="absolute top-1/4 right-1/4 w-32 h-32 border-2 border-white/20 rounded-full animate-pulse"></div>
+      <div className="absolute bottom-1/3 left-1/4 w-24 h-24 border border-white/15 rounded-full"></div>
+      
+      {/* Content */}
+      <div className="relative z-10 container mx-auto px-4 h-full flex items-center">
+        <div className="w-full max-w-5xl flex flex-col justify-center space-y-6 lg:space-y-8 text-center md:text-left">
+          
+          {/* Main Heading */}
+          <div className="space-y-2 lg:space-y-4">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bebas text-white leading-[0.9] tracking-wide drop-shadow-2xl">
+              Welcome to the
+              <span className="block bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent">
+                Arena
+              </span>
+            </h1>
+            
+            {/* Subtitle */}
+            <p className="text-base sm:text-lg md:text-xl lg:text-2xl font-plex font-medium text-white/95 max-w-3xl mx-auto md:mx-0 leading-relaxed drop-shadow-lg">
+              Tempat di mana semangat kompetisi bertemu dengan prestasi luar biasa. 
+              Bergabunglah dalam pertandingan taekwondo tingkat internasional.
+            </p>
+          </div>
 
-     return (
-        <div className="h-[60vh] sm:h-screen w-full flex items-center md:items-end justify-center bg-cover bg-center 2xl:bg-top z-50"
-              style={{backgroundImage: "url('src/assets/photos/hero.png')",
-               }}>
-            <div className="w-full h-[40vh]  md:h-[80vh] flex flex-col justify-center md:justify-end md:pr-[30vw] xl:pr-[50vw] gap-8 md:pb-40 md:pl-10 lg:pl-20 xl:pl-40">
-                <div className="flex flex-col justify-center items-center px-4 md:px-0 pt-10 md:pt-0">
-                    <div className="text-5xl md:text-8xl xl:text-judul font-bebas text-yellow leading-none text-center md:text-left">Welcome to the arena</div>
-                    <div className="hidden sm:block md:text-lg xl:text-xl font-plex font-semibold text-white text-center md:text-left">Lorem ipsum dolor sit amet, consectetur adipiscing elit. 
-                        Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris 
-                    </div>
-                </div>
-                <div className="md:pl-6 flex justify-center items-center md:justify-start md:items-start">
-                    <GeneralButton label="See Our Competitions" type="hero" to="/event" className="active:scale-97 h-12 md:text-lg xl:text-xl border-2 border-white text-white"/>
-                </div>
+          {/* CTA Buttons - STYLING TERINTEGRASI */}
+          <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start items-center pt-2">
+            <Link
+              to="/event"
+              className="group relative w-full sm:w-auto px-8 py-4 text-lg font-plex font-semibold border-2 border-white text-white bg-transparent hover:bg-white hover:text-red transition-all duration-300 rounded-xl backdrop-blur-sm hover:scale-105 hover:shadow-2xl overflow-hidden"
+            >
+              <span className="relative z-10">Lihat Kompetisi</span>
+              <div className="absolute inset-0 bg-white transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></div>
+            </Link>
+            
+            <Link 
+              to="/tutorial" 
+              className="group w-full sm:w-auto px-8 py-4 text-lg font-plex font-semibold text-white/90 hover:text-white border-2 border-white/30 hover:border-white/60 transition-all duration-300 rounded-xl text-center backdrop-blur-sm hover:scale-105 hover:shadow-lg"
+            >
+              Pelajari Lebih Lanjut
+            </Link>
+          </div>
+
+          {/* Stats */}
+          <div className="flex items-center justify-center md:justify-start space-x-6 lg:space-x-8 pt-4 lg:pt-6">
+            <div className="text-center group hover:scale-105 transition-transform duration-300">
+              <div className="text-2xl lg:text-3xl font-bebas text-white drop-shadow-lg">100+</div>
+              <div className="text-sm font-plex text-white/80">Peserta</div>
             </div>
+            <div className="w-px h-8 bg-white/30"></div>
+            <div className="text-center group hover:scale-105 transition-transform duration-300">
+              <div className="text-2xl lg:text-3xl font-bebas text-white drop-shadow-lg">15+</div>
+              <div className="text-sm font-plex text-white/80">Negara</div>
+            </div>
+            <div className="w-px h-8 bg-white/30"></div>
+            <div className="text-center group hover:scale-105 transition-transform duration-300">
+              <div className="text-2xl lg:text-3xl font-bebas text-white drop-shadow-lg">5</div>
+              <div className="text-sm font-plex text-white/80">Kategori</div>
+            </div>
+          </div>
         </div>
-    )
-}
+      </div>
+    </div>
+  );
+};
 
 export default Hero;

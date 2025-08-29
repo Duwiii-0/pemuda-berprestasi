@@ -142,7 +142,7 @@ export default function AppRoutes() {
         <Route element={<LandingLayout />}>
           <Route index element={<Home />} />
           <Route path="event" element={<Event />} />
-          <Route path="tutorial" element={<Tutorial />} />
+          <Route path="tutorial" element={<NotFound />} />
         </Route>
 
         {/* Settings - protected route */}
