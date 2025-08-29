@@ -25,6 +25,7 @@ import DataAtlit from "./pages/dashboard/dataAtlit";
 import Dojang from "./pages/dashboard/dataDojang";
 import TambahAtlit from "./pages/dashboard/TambahAtlit";
 import DataKompetisi from "./pages/dashboard/dataKompetisi";
+import Dashboard from "./pages/dashboard/dashboard"; 
 
 // data atlit
 import Profile from "./pages/atlit/profilePage";
@@ -150,35 +151,35 @@ export default function AppRoutes() {
           <ProtectedRoute>
             <Settings />
           </ProtectedRoute>
-        } />
+          } />
 
         {/* Dashboard - protected routes */}
         <Route path="dashboard" element={
           <ProtectedRoute>
             <DashboardLayout />
           </ProtectedRoute>
-        }>
-          {/* Default dashboard view - different for admin vs pelatih */}
-          <Route index element={<DataAtlit />} />
-          
+         }>
+          {/* Dashboard home - overview page */}
+          <Route index element={<Dashboard />} />
+
           {/* Dojang management - only for PELATIH */}
           <Route path="dojang" element={
             <ProtectedRoute requiredRole="PELATIH">
               <Dojang />
             </ProtectedRoute>
           } />
-          
+
           {/* Atlet management */}
           <Route path="atlit" element={<DataAtlit />} />
           <Route path="atlit/:id" element={<Profile />} />
-          
+
           {/* Add athlete - only for PELATIH */}
-          <Route path="atlit/add" element={
+          <Route path="TambahAtlit" element={
             <ProtectedRoute requiredRole="PELATIH">
               <TambahAtlit />
             </ProtectedRoute>
           } />
-          
+
           {/* Competition data */}
           <Route path="dataKompetisi" element={<DataKompetisi />} />
         </Route>
