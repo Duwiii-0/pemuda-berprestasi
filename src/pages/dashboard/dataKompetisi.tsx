@@ -2,8 +2,10 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Trophy, Calendar, Users, MapPin, Search, Clock, CheckCircle } from 'lucide-react';
 import NavbarDashboard from "../../components/navbar/navbarDashboard";
+import { useAuth } from "../../context/authContext";
 import { useKompetisi } from "../../context/KompetisiContext";
 import type { Kompetisi } from "../../context/KompetisiContext";
+import { apiClient, setAuthToken } from "../../../pemuda-berprestasi-mvp/src/config/api";
 
 interface StatsCardProps {
   icon: React.ComponentType<{ size?: number; className?: string }>;
@@ -28,11 +30,16 @@ const StatsCard: React.FC<StatsCardProps> = ({ icon: Icon, title, value, color }
 
 const DataKompetisi = () => {
   const navigate = useNavigate();
+  const { user, token } = useAuth();
   const { kompetisiList, loadingKompetisi, errorKompetisi, fetchKompetisiList, fetchAtletByKompetisi, atletList } = useKompetisi();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "PENDAFTARAN" | "SEDANG_DIMULAI" | "SELESAI">("all");
   const [selectedKompetisi, setSelectedKompetisi] = useState<Kompetisi | null>(null);
   const [showPeserta, setShowPeserta] = useState(false);
+
+    useEffect(() => {
+    if (token) setAuthToken(token);
+  }, [token]);
 
   useEffect(() => {
     fetchKompetisiList();

@@ -29,8 +29,8 @@ router.delete('/:id', KompetisiController.delete);
 // sementara update & delete class belum ada di controller
 
 // Registration management
-// router.get('/:id/participants', KompetisiController.getParticipants);
-// router.post('/:id/register', validateRequest(kompetisiValidation.register), KompetisiController.registerAtlet);
+router.get("/:id/atlet", authenticate, KompetisiController.getAtletsByKompetisi);
+router.post('/:id/register', validateRequest(kompetisiValidation.register), KompetisiController.registerAtlet);
 // router.put(
 //   '/:id/participants/:participantId/status',
 //   validateRequest(kompetisiValidation.updateStatus),

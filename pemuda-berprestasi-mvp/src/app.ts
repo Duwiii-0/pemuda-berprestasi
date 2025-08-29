@@ -9,6 +9,7 @@ import authRoutes from './routes/auth'
 import pelatihRoutes from './routes/pelatih'
 import dojangRoutes from './routes/dojang'
 import atletRoutes from './routes/atlet'
+import kelasRoutes from './routes/kelas'
 import kompetisiRoutes from './routes/kompetisi'
 
 // Import middleware
@@ -51,7 +52,7 @@ app.use('/api/dojang', dojangRoutes)
 app.use('/api/atlet', atletRoutes)
 app.use('/api/kompetisi', kompetisiRoutes)
 // app.use('/api/admin', adminRoutes)
-
+app.use('/api/kelas', kelasRoutes) // Contoh tambahan route
 // 404 handler
 app.use(notFoundHandler)
 

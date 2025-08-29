@@ -172,4 +172,72 @@ export class KompetisiService {
     await prisma.tb_kompetisi.delete({ where: { id_kompetisi: id } });
     return { message: 'Kompetisi berhasil dihapus' };
   }
+  
+  static async registerAtlet(data: {
+    atlitId: number;
+    kelasKejuaraanId: number;
+  }) {
+    // Pastikan atlet dan kelas kejuaraan ada
+    const [atlet, kelas] = await Promise.all([
+      prisma.tb_atlet.findUnique({ where: { id_atlet: data.atlitId } }),
+      prisma.tb_kelas_kejuaraan.findUnique({ where: { id_kelas_kejuaraan: data.kelasKejuaraanId } })
+    ]);
+  
+    if (!atlet) throw new Error('Atlet tidak ditemukan');
+    if (!kelas) throw new Error('Kelas kejuaraan tidak ditemukan');
+  
+    // Cek apakah atlet sudah terdaftar di kelas kejuaraan ini
+    const existingRegistration = await prisma.tb_peserta_kompetisi.findFirst({
+      where: {
+        id_atlet: data.atlitId,
+        id_kelas_kejuaraan: data.kelasKejuaraanId
+      }
+    });
+  
+    if (existingRegistration) {
+      throw new Error('Atlet sudah terdaftar pada kelas kejuaraan ini');
+    }
+  
+    // Simpan registrasi ke database
+    const peserta = await prisma.tb_peserta_kompetisi.create({
+      data: {
+        id_atlet: data.atlitId,
+        id_kelas_kejuaraan: data.kelasKejuaraanId,
+        status: StatusPendaftaran.PENDING,
+      }
+    });
+  
+    return peserta;
+  }
+
+  static async getAtletsByKompetisi(kompetisiId: number, page: number, limit: number) {
+  const skip = (page - 1) * limit;
+
+  const peserta = await prisma.tb_peserta_kompetisi.findMany({
+    where: {
+      kelas_kejuaraan: {
+        id_kompetisi: kompetisiId,
+      },
+    },
+    include: {
+      atlet: true,
+      kelas_kejuaraan: true,
+    },
+    skip,
+    take: limit,
+  });
+
+  const total = await prisma.tb_peserta_kompetisi.count({
+    where: {
+      kelas_kejuaraan: {
+        id_kompetisi: kompetisiId,
+      },
+    },
+  });
+
+  return { peserta, total };
+}
+
+
+
 }

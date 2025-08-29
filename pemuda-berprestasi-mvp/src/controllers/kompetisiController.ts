@@ -90,4 +90,61 @@ export class KompetisiController {
       return sendError(res, error.message, 400);
     }
   }
+
+  static async registerAtlet(req: Request, res: Response) {
+    try {
+      const { atlitId, kelasKejuaraanId } = req.body;
+
+      if (!atlitId || !kelasKejuaraanId) {
+        return sendError(res, 'atlitId dan kelasKejuaraanId wajib diisi', 400);
+      }
+
+      const peserta = await KompetisiService.registerAtlet({
+        atlitId: Number(atlitId),
+        kelasKejuaraanId: Number(kelasKejuaraanId),
+      });
+
+      return sendSuccess(res, peserta, 'Atlet berhasil didaftarkan ke kelas kejuaraan', 201);
+    } catch (error: any) {
+      return sendError(res, error.message, 400);
+    }
+  }
+
+  static async getAtletsByKompetisi(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const { page = "1", limit = "20" } = req.query;
+
+      const kompetisiId = parseInt(id, 10);
+      const pageNum = parseInt(page as string, 10);
+      const limitNum = parseInt(limit as string, 10);
+
+      if (isNaN(kompetisiId)) {
+        return res.status(400).json({ message: "Invalid kompetisiId" });
+      }
+
+      const result = await KompetisiService.getAtletsByKompetisi(
+        kompetisiId,
+        pageNum,
+        limitNum
+      );
+
+      return res.status(200).json({
+        success: true,
+        data: result.peserta,
+        total: result.total,
+        page: pageNum,
+        limit: limitNum,
+      });
+    } catch (error: any) {
+      console.error("Error getAtletsByKompetisi:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Failed to fetch atlet by kompetisi",
+        error: error.message,
+      });
+    }
+  }
+  
+
 }
