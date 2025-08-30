@@ -45,6 +45,7 @@ import FAQ from "./lombaLayout/faq";
 
 // settings
 import Settings from "./pages/settings/settings";
+import AllAtlets from "./pages/admin/AllAtlets";
 
 // Protected Route Component
 interface ProtectedRouteProps {
@@ -138,6 +139,7 @@ export default function AppRoutes() {
           <Route index element={<Navigate to="/admin/validasi-peserta" replace />} />
           <Route path="validasi-peserta" element={<ValidasiPeserta />} />
           <Route path="validasi-dojang" element={<ValidasiDojang />} />
+          <Route path="atlets" element={<AllAtlets />} />
           <Route path="users" element={<AdminUsers />} />
           <Route path="statistik" element={<AdminStats />} />
           <Route path="reports" element={<Reports />} />
@@ -165,9 +167,9 @@ export default function AppRoutes() {
 
         {/* Register Dojang - only for authenticated PELATIH */}
         <Route path="/registerdojang" element={
-          <ProtectedRoute requiredRole="PELATIH">
+          <PublicRoute>
             <RegisterDojang />
-          </ProtectedRoute>
+          </PublicRoute>
         } />
 
         {/* Landing pages - accessible to everyone */}

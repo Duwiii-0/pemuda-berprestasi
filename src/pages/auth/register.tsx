@@ -6,6 +6,8 @@ import GeneralButton from "../../components/generalButton";
 import TextInput from "../../components/textInput";
 import toast from "react-hot-toast";
 import { useAuth } from "../../context/authContext";
+import { useDojang } from "../../context/dojangContext";
+
 
 type OptionType = { value: string; label: string };
 
@@ -21,41 +23,18 @@ const Register = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [selectedDojang, setSelectedDojang] = useState<OptionType | null>(null);
-  const [dojangOptions, setDojangOptions] = useState<OptionType[]>([]);
+  const { dojangOptions, isLoading: isDojangLoading, refreshDojang } = useDojang();
   
   // UI states
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // Fetch dojang options
   useEffect(() => {
-    const fetchDojang = async () => {
-      try {
-        // Simple fetch request (since this doesn't require auth)
-        const response = await fetch('http://localhost:3000/api/dojang/listdojang');
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch dojang data');
-        }
-        
-        const data = await response.json();
-        
-        // Map the response data to options format
-        const options = data.data?.map((item: any) => ({
-          value: item.id_dojang,
-          label: item.nama_dojang
-        })) || [];
-        
-        setDojangOptions(options);
-      } catch (error) {
-        console.error("Gagal mengambil data dojang:", error);
-        toast.error("Tidak dapat mengambil data dojang");
-      }
-    };
+  // Fetch data dojang terbaru setiap kali halaman dibuka
+  refreshDojang();
+}, [refreshDojang]);
 
-    fetchDojang();
-  }, []);
 
   // Handle registration
   const handleRegister = async () => {

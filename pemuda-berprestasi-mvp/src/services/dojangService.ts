@@ -39,7 +39,7 @@ export class DojangService {
   static async getAllDojang(page = 1, limit = 10, search?: string) {
     const skip = (page - 1) * limit;
     const where = search
-      ? { nama_dojang: { contains: search, mode: 'insensitive' } as any }
+      ? { nama_dojang: { contains: search, mode: 'insensitive' } }
       : {};
 
     const [data, total] = await Promise.all([
@@ -47,14 +47,23 @@ export class DojangService {
         where,
         skip,
         take: limit,
-        include: { pelatih: true, atlet: true },
+        include: { 
+          pelatih: true,
+          _count: { select: { atlet: true } } // hitung jumlah atlet
+        },
         orderBy: { id_dojang: 'desc' },
       }),
       prisma.tb_dojang.count({ where }),
     ]);
 
+    // format data supaya jumlah_atlet lebih mudah diakses di frontend
+    const formattedData = data.map(item => ({
+      ...item,
+      jumlah_atlet: item._count.atlet
+    }));
+
     return {
-      data,
+      data: formattedData,
       pagination: {
         currentPage: page,
         totalItems: total,

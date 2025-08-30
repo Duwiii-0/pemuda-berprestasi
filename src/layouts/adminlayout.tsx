@@ -49,6 +49,12 @@ const AdminLayout: React.FC = () => {
       active: location.pathname === '/admin/validasi-peserta'
     },
     {
+      icon: Users,
+      label: 'Data Atlet',
+      path: '/admin/atlets',
+      active: location.pathname === '/admin/atlets'
+    },
+    {
       icon: UserCheck,
       label: 'Validasi Dojang',
       path: '/admin/validasi-dojang',
