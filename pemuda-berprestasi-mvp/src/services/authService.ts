@@ -7,6 +7,7 @@ export interface RegisterData {
   email: string
   password: string
   nama_pelatih: string
+  nik: string
   no_telp?: string
   id_dojang: number
 }
@@ -25,6 +26,7 @@ export interface LoginResponse {
     pelatih?: {
       id_pelatih: number
       nama_pelatih: string
+      nik: string | null
       no_telp?: string | null
       id_dojang?: number | null
     }
@@ -37,7 +39,7 @@ export interface LoginResponse {
 
 class AuthService {
   async register(data: RegisterData): Promise<LoginResponse> {
-    const { email, password, nama_pelatih, no_telp, id_dojang } = data
+    const { email, password, nama_pelatih, nik, no_telp, id_dojang } = data
 
     // Check if email already exists
     const existingAccount = await prisma.tb_akun.findUnique({
@@ -46,6 +48,15 @@ class AuthService {
 
     if (existingAccount) {
       throw new Error('Email already registered')
+    }
+
+    // Check if NIK already exists (gunakan findFirst karena tidak ada unique constraint)
+    const existingNik = await prisma.tb_pelatih.findFirst({
+      where: { nik }
+    })
+
+    if (existingNik) {
+      throw new Error('NIK already registered')
     }
 
     // Hash password
@@ -62,12 +73,13 @@ class AuthService {
         }
       })
 
-      // Create pelatih profile (include id_dojang)
+      // Create pelatih profile with NIK
       const pelatih = await tx.tb_pelatih.create({
         data: {
           nama_pelatih,
+          nik,              // Simpan NIK
           no_telp,
-          id_akun: account.id_akun,
+          id_akun: account.id_akun,  // Required field
           id_dojang: id_dojang
         }
       })
@@ -94,6 +106,7 @@ class AuthService {
         pelatih: {
           id_pelatih: result.pelatih.id_pelatih,
           nama_pelatih: result.pelatih.nama_pelatih,
+          nik: result.pelatih.nik,
           no_telp: result.pelatih.no_telp,
           id_dojang: result.pelatih.id_dojang
         }
@@ -108,11 +121,11 @@ class AuthService {
     const account = await prisma.tb_akun.findUnique({
       where: { email },
       include: {
-      pelatih: {
-        include: {
-          dojang: true // ⬅️ ambil data dojang saat login
-        }
-      },
+        pelatih: {
+          include: {
+            dojang: true
+          }
+        },
         admin: true
       }
     })
@@ -154,6 +167,7 @@ class AuthService {
       userResponse.pelatih = {
         id_pelatih: account.pelatih.id_pelatih,
         nama_pelatih: account.pelatih.nama_pelatih,
+        nik: account.pelatih.nik,
         no_telp: account.pelatih.no_telp,
         id_dojang: account.pelatih.id_dojang,
       }
@@ -176,11 +190,11 @@ class AuthService {
     const account = await prisma.tb_akun.findUnique({
       where: { id_akun },
       include: {
-      pelatih: {
-        include: {
-          dojang: true // ⬅️ ambil data dojang juga
-        }
-      },
+        pelatih: {
+          include: {
+            dojang: true
+          }
+        },
         admin: true
       }
     })
@@ -192,6 +206,29 @@ class AuthService {
     const { password_hash, ...accountData } = account
 
     return accountData
+  }
+
+  // FIXED: Reset Password method
+  async resetPassword(email: string, newPassword: string) {
+    // Check if email exists
+    const existingUser = await prisma.tb_akun.findUnique({
+      where: { email }
+    })
+    
+    if (!existingUser) {
+      throw new Error('Email not found')
+    }
+    
+    // Hash new password using the existing hashPassword utility
+    const password_hash = await hashPassword(newPassword)
+    
+    // Update password with correct field name
+    await prisma.tb_akun.update({
+      where: { email },
+      data: { password_hash }  // Fixed: use password_hash instead of password
+    })
+    
+    return { message: 'Password reset successfully' }
   }
 
   async changePassword(id_akun: number, currentPassword: string, newPassword: string) {

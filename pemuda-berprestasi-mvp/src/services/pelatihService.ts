@@ -3,18 +3,21 @@ import prisma from '../config/database'
 import fs from 'fs'
 import path from 'path'
 
+// PERBAIKAN: Hapus id_dojang dari UpdatePelatihData
 export interface UpdatePelatihData {
   nama_pelatih?: string;
-  no_telp?: string | '';
-  nik?: string | null;
+  no_telp?: string | null;
+  nik?: string;
   tanggal_lahir?: Date | null;
-  id_dojang?: number; // sekarang pelatih wajib punya 1 dojang
+  // HAPUS id_dojang karena tidak bisa diubah setelah registrasi
+  // id_dojang?: number; 
   phone?: string | null;
   kota?: string | null;
   provinsi?: string | null;
   alamat?: string | null;
   jenis_kelamin?: 'LAKI_LAKI' | 'PEREMPUAN' | null;
-  
+  foto_ktp?: string | null;
+  sertifikat_sabuk?: string | null;
 }
 
 export interface PelatihListQuery {
@@ -44,7 +47,7 @@ class PelatihService {
             role: true
           }
         },
-        dojang: { // ✅ ikutkan relasi dojang
+        dojang: {
           select: {
             id_dojang: true,
             nama_dojang: true,
@@ -77,6 +80,20 @@ class PelatihService {
       throw new Error('Pelatih not found')
     }
 
+    // Jika ada NIK baru, cek duplikat
+    if (data.nik && data.nik !== pelatih.nik) {
+      const existingNik = await prisma.tb_pelatih.findFirst({
+        where: { 
+          nik: data.nik,
+          NOT: { id_pelatih }
+        }
+      })
+
+      if (existingNik) {
+        throw new Error('NIK already registered')
+      }
+    }
+
     const updatedPelatih = await prisma.tb_pelatih.update({
       where: { id_pelatih },
       data,
@@ -88,7 +105,7 @@ class PelatihService {
             role: true
           }
         },
-        dojang: { // ikutkan dojang biar jelas
+        dojang: {
           select: {
             id_dojang: true,
             nama_dojang: true,
@@ -119,6 +136,7 @@ class PelatihService {
       where.OR = [
         { nama_pelatih: { contains: search } },
         { no_telp: { contains: search } },
+        { nik: { contains: search } },
         { akun: { email: { contains: search } } },
         { dojang: { nama_dojang: { contains: search } } }
       ]
@@ -143,7 +161,7 @@ class PelatihService {
               role: true
             }
           },
-          dojang: { // ✅ ikutkan dojang
+          dojang: {
             select: {
               id_dojang: true,
               nama_dojang: true,
@@ -188,7 +206,7 @@ class PelatihService {
             role: true
           }
         },
-        dojang: { // ✅ langsung ke dojang
+        dojang: {
           select: {
             id_dojang: true,
             nama_dojang: true,

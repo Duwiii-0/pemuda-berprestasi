@@ -74,6 +74,27 @@ class AuthController {
     }
   })
 
+  resetPassword = asyncHandler(async (req: Request, res: Response) => {
+    try {
+      const { email, newPassword, confirmNewPassword } = req.body
+    
+      // Validation
+     if (newPassword !== confirmNewPassword) {
+       return sendError(res, 'Password confirmation does not match', 400)
+      }
+    
+     const result = await authService.resetPassword(email, newPassword)
+    
+      sendSuccess(res, result, 'Password reset successfully')
+      } catch (error: any) {
+      if (error.message === 'Email not found') {
+       return sendError(res, error.message, 404)
+      }
+    
+      return sendError(res, error.message || 'Failed to reset password', 400)
+    }
+  })
+
   // Logout (optional - for token blacklist if needed)
   logout = asyncHandler(async (req: Request, res: Response) => {
     // Since we're using stateless JWT, logout is handled client-side

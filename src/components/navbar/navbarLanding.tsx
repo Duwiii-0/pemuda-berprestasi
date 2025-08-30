@@ -1,5 +1,4 @@
-import { ChevronDown, Menu, X, User, Settings, LogOut, Home, Calendar } from "lucide-react";
-import GeneralButton from "../generalButton";
+import { ChevronDown, Menu, X, User, Settings, LogOut, Home } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../../context/authContext";

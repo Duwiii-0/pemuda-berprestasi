@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Menu, Users, Award, TrendingUp, Search, Eye, Edit, UserPlus } from 'lucide-react';
+import { Menu, Users, Award, TrendingUp, Search, Eye, UserPlus } from 'lucide-react';
 import NavbarDashboard from "../../components/navbar/navbarDashboard"
 import { useAuth } from "../../context/authContext";
 import { apiClient, setAuthToken } from "../../../pemuda-berprestasi-mvp/src/config/api";
@@ -99,12 +99,12 @@ const avgAge = Math.round(atlits.reduce((sum, a) => sum + a.age, 0) / (atlits.le
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-white via-red/5 to-yellow/10">
-      {/* Desktop Navbar - Tinggal panggil aja */}
+      {/* Desktop Navbar */}
       <NavbarDashboard />
 
       {/* Main Content */}
-      <div className="lg:ml-64 min-h-screen">
-        <div className="overflow-y-auto bg-white/40 backdrop-blur-md border-white/30 w-full h-screen flex flex-col gap-8 pt-8 pb-12 px-8">
+      <div className="lg:ml-72 min-h-screen">
+        <div className="bg-white/40 backdrop-blur-md border-white/30 w-full min-h-screen flex flex-col gap-8 pt-8 pb-12 px-4 lg:px-8">
           
           {/* Header Section */}
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
@@ -131,7 +131,7 @@ const avgAge = Math.round(atlits.reduce((sum, a) => sum + a.age, 0) / (atlits.le
               </div>
               
               {/* Quick Stats */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <StatsCard 
                   icon={Users}
                   title="Total Atlet"
@@ -179,7 +179,7 @@ const avgAge = Math.round(atlits.reduce((sum, a) => sum + a.age, 0) / (atlits.le
               </div>
               
               {/* Gender Filter */}
-              <div className="flex gap-2">
+              <div className="flex flex-col lg:flex-row gap-2">
                 <button
                   onClick={() => setGenderFilter("all")}
                   className={`cursor-pointer px-4 py-3 rounded-xl font-plex text-sm transition-all duration-300 ${
@@ -215,25 +215,24 @@ const avgAge = Math.round(atlits.reduce((sum, a) => sum + a.age, 0) / (atlits.le
           </div>
 
           {/* Table Section */}
-          <div className="bg-white/60 backdrop-blur-sm rounded-3xl p-8 shadow-xl border border-white/50">
-            <div className="flex items-center justify-between gap-3 mb-6">
+          <div className="bg-white/60 backdrop-blur-sm rounded-3xl p-6 lg:p-8 shadow-xl border border-white/50">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 lg:gap-3 mb-6">
               <div className="flex gap-4 items-center">
-              <div className="p-2 bg-red/10 rounded-xl">
-                <Users className="text-red" size={20} />
-              </div>
-              <h2 className="font-bebas text-2xl text-black/80 tracking-wide">
-                DAFTAR ATLET ({filteredAtlits.length})
-              </h2>
+                <div className="p-2 bg-red/10 rounded-xl">
+                  <Users className="text-red" size={20} />
+                </div>
+                <h2 className="font-bebas text-2xl text-black/80 tracking-wide">
+                  DAFTAR ATLET ({filteredAtlits.length})
+                </h2>
               </div>
               {/* Action Buttons */}
-              <div className="flex gap-3 pr-12">
+              <div className="flex gap-3">
                 <button 
-                  onClick={() => navigate('/dashboard/atlit/add')}
+                  onClick={() => navigate('/dashboard/TambahAtlit')}
                   className="font-plex font-medium px-6 py-3 rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-lg active:scale-95 flex justify-center items-center cursor-pointer text-white bg-gradient-to-r from-red to-red/80 hover:from-red/90 hover:to-red/70 border-0 shadow-lg gap-2"
                 >
                   <UserPlus size={20} />
                   Tambah Atlit
-
                 </button>
               </div>
             </div>
@@ -298,15 +297,6 @@ const avgAge = Math.round(atlits.reduce((sum, a) => sum + a.age, 0) / (atlits.le
                             >
                               <Eye size={16} />
                             </button>
-                            <button 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                navigate(`/dashboard/atlit/${atlit.id}`);
-                              }}
-                              className="p-2 rounded-lg bg-green-500/10 text-green-500 hover:bg-green-500/20 transition-all duration-200"
-                            >
-                              <Edit size={16} />
-                            </button>
                           </div>
                         </td>
                       </tr>
@@ -328,7 +318,7 @@ const avgAge = Math.round(atlits.reduce((sum, a) => sum + a.age, 0) / (atlits.le
         </div>
       </div>
 
-      {/* Mobile Sidebar Overlay - Tinggal panggil aja */}
+      {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
         <>
           <div

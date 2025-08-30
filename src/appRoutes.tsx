@@ -18,7 +18,6 @@ import ResetPassword from "./pages/auth/changepassword";
 import Home from "./pages/landingPage/home";
 import Event from "./pages/landingPage/event";
 import NotFound from "./pages/notFound";
-import Tutorial from "./pages/landingPage/tutorial";
 
 // Dashboard
 import DataAtlit from "./pages/dashboard/dataAtlit";
@@ -26,6 +25,15 @@ import Dojang from "./pages/dashboard/dataDojang";
 import TambahAtlit from "./pages/dashboard/TambahAtlit";
 import DataKompetisi from "./pages/dashboard/dataKompetisi";
 import Dashboard from "./pages/dashboard/dashboard"; 
+
+// Admin - Fixed import paths
+import AdminLayout from "./layouts/adminlayout";
+import ValidasiPeserta from "./pages/admin/ValidasiPeserta";
+import ValidasiDojang from "./pages/admin/ValidasiDojang";
+import AdminUsers from "./pages/admin/AdminUsers";
+import AdminStats from "./pages/admin/AdminStats";
+import Reports from "./pages/admin/Reports";
+import AdminSettings from "./pages/admin/Settings";
 
 // data atlit
 import Profile from "./pages/atlit/profilePage";
@@ -92,7 +100,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole 
 
 // Public Route (only accessible when not authenticated)
 const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, user, loading } = useAuth();
 
   if (loading) {
     return (
@@ -102,9 +110,15 @@ const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     );
   }
 
-  // Redirect to dashboard if already authenticated
-  if (isAuthenticated) {
-    return <Navigate to="/dashboard" replace />;
+  // Redirect based on user role if already authenticated
+  if (isAuthenticated && user) {
+    if (user.role === 'ADMIN') {
+      return <Navigate to="/admin" replace />;
+    } else if (user.role === 'PELATIH') {
+      return <Navigate to="/dashboard" replace />;
+    } else {
+      return <Navigate to="/" replace />;
+    }
   }
 
   return <>{children}</>;
@@ -115,6 +129,21 @@ export default function AppRoutes() {
     <>
       <Toaster position="top-right" reverseOrder={false} />
       <Routes>
+        {/* Admin routes - protected for ADMIN role only */}
+        <Route path="/admin" element={
+          <ProtectedRoute requiredRole="ADMIN">
+            <AdminLayout />
+          </ProtectedRoute>
+        }>
+          <Route index element={<Navigate to="/admin/validasi-peserta" replace />} />
+          <Route path="validasi-peserta" element={<ValidasiPeserta />} />
+          <Route path="validasi-dojang" element={<ValidasiDojang />} />
+          <Route path="users" element={<AdminUsers />} />
+          <Route path="statistik" element={<AdminStats />} />
+          <Route path="reports" element={<Reports />} />
+          <Route path="settings" element={<AdminSettings />} />
+        </Route>
+
         {/* Auth routes - only accessible when not logged in */}
         <Route path="/login" element={
           <PublicRoute>
@@ -136,14 +165,15 @@ export default function AppRoutes() {
 
         {/* Register Dojang - only for authenticated PELATIH */}
         <Route path="/registerdojang" element={
+          <ProtectedRoute requiredRole="PELATIH">
             <RegisterDojang />
+          </ProtectedRoute>
         } />
 
         {/* Landing pages - accessible to everyone */}
         <Route element={<LandingLayout />}>
           <Route index element={<Home />} />
           <Route path="event" element={<Event />} />
-          <Route path="tutorial" element={<NotFound />} />
         </Route>
 
         {/* Settings - protected route */}
@@ -151,14 +181,14 @@ export default function AppRoutes() {
           <ProtectedRoute>
             <Settings />
           </ProtectedRoute>
-          } />
+        } />
 
         {/* Dashboard - protected routes */}
-        <Route path="dashboard" element={
+        <Route path="/dashboard" element={
           <ProtectedRoute>
             <DashboardLayout />
           </ProtectedRoute>
-         }>
+        }>
           {/* Dashboard home - overview page */}
           <Route index element={<Dashboard />} />
 
@@ -185,7 +215,7 @@ export default function AppRoutes() {
         </Route>
 
         {/* Lomba pages */}
-        <Route path="lomba" element={<LombaLayout />}>
+        <Route path="/lomba" element={<LombaLayout />}>
           <Route index element={<Navigate to="/lomba/home" replace />} />
           <Route path="home" element={<LandingPage />} />
           <Route path="faq" element={<FAQ />} />
