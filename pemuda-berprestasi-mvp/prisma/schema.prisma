@@ -75,35 +75,48 @@
   }
 
   model tb_atlet {
-    id_atlet           Int                    @id @default(autoincrement())
-    nama_atlet         String                 @db.VarChar(150)
-    tanggal_lahir      DateTime
-    nik                String             
-    berat_badan        Float
-    provinsi           String                 @db.VarChar(100)
-    kota               String?                @db.VarChar(100)
-    belt               String 
-    alamat             String?
-    no_telp            String?
-    tinggi_badan       Float
-    jenis_kelamin      JenisKelamin
-    umur               Int?                    
-    id_dojang          Int
-    id_pelatih_pembuat Int
+  id_atlet        Int                    @id @default(autoincrement())
+  nama_atlet      String                 @db.VarChar(150)
+  tanggal_lahir   DateTime
+  nik             String
+  berat_badan     Float
+  provinsi        String                 @db.VarChar(100)
+  kota            String?                @db.VarChar(100)
+  belt            String
+  alamat          String?
+  no_telp         String?
+  tinggi_badan    Float
+  jenis_kelamin   JenisKelamin
+  umur            Int?
+  id_dojang       Int
+  id_pelatih_pembuat Int
 
+  akte_kelahiran  String?                @db.VarChar(255)
+  pas_foto        String?                @db.VarChar(255)
+  sertifikat_belt String?                @db.VarChar(255)
+  ktp             String?                @db.VarChar(255)
 
-    akte_kelahiran     String?                 @db.VarChar(255)
-    pas_foto           String?                 @db.VarChar(255)
-    sertifikat_belt    String?                 @db.VarChar(255)
-    ktp                String?                @db.VarChar(255)
+  dojang          tb_dojang              @relation(fields: [id_dojang], references: [id_dojang])
+  pelatih_pembuat tb_pelatih             @relation("AtletPembuat", fields: [id_pelatih_pembuat], references: [id_pelatih])
+  peserta_kompetisi  tb_peserta_kompetisi[]  // untuk individu
+  peserta_tim      tb_peserta_tim[]     
 
-    dojang             tb_dojang              @relation(fields: [id_dojang], references: [id_dojang])
-    pelatih_pembuat    tb_pelatih             @relation("AtletPembuat", fields: [id_pelatih_pembuat], references: [id_pelatih])
-    peserta_kompetisi  tb_peserta_kompetisi[]
+  @@index([id_dojang])
+  @@index([id_pelatih_pembuat])
+}
 
-    @@index([id_dojang], map: "tb_atlet_id_dojang_fkey")
-    @@index([id_pelatih_pembuat], map: "tb_atlet_id_pelatih_pembuat_fkey")
+  model tb_peserta_tim {
+    id                 Int                   @id @default(autoincrement())
+    id_peserta_kompetisi Int
+    id_atlet           Int
+  
+    peserta_kompetisi  tb_peserta_kompetisi @relation(fields: [id_peserta_kompetisi], references: [id_peserta_kompetisi])
+    atlet              tb_atlet             @relation(fields: [id_atlet], references: [id_atlet])
+  
+    @@index([id_peserta_kompetisi])
+    @@index([id_atlet])
   }
+
 
   model tb_kompetisi {
     id_kompetisi     Int                  @id @default(autoincrement())
@@ -185,21 +198,25 @@
   }
 
   model tb_peserta_kompetisi {
-    id_peserta_kompetisi Int                @id @default(autoincrement())
-    id_atlet             Int
-    id_kelas_kejuaraan   Int
-    status               StatusPendaftaran  @default(PENDING)
+  id_peserta_kompetisi Int                @id @default(autoincrement())
+  id_atlet             Int?               // null jika tim
+  id_kelas_kejuaraan   Int
+  is_team              Boolean            @default(false)
+  status               StatusPendaftaran  @default(PENDING)
 
-    atlet                tb_atlet           @relation(fields: [id_atlet], references: [id_atlet])
-    kelas_kejuaraan      tb_kelas_kejuaraan @relation(fields: [id_kelas_kejuaraan], references: [id_kelas_kejuaraan])
-    drawing_seed         tb_drawing_seed[]
-    match_a              tb_match[]         @relation("PesertaA")
-    match_b              tb_match[]         @relation("PesertaB")
+  atlet                tb_atlet?          @relation(fields: [id_atlet], references: [id_atlet])
+  kelas_kejuaraan      tb_kelas_kejuaraan @relation(fields: [id_kelas_kejuaraan], references: [id_kelas_kejuaraan])
+  anggota_tim          tb_peserta_tim[]   // daftar anggota jika tim
+  drawing_seed         tb_drawing_seed[]
+  match_a              tb_match[]         @relation("PesertaA")
+  match_b              tb_match[]         @relation("PesertaB")
 
-    @@index([id_atlet], map: "tb_peserta_kompetisi_id_atlet_fkey")
-    @@index([id_kelas_kejuaraan], map: "tb_peserta_kompetisi_id_kelas_kejuaraan_fkey")
-  }
+  @@index([id_atlet])
+  @@index([id_kelas_kejuaraan])
+}
 
+
+  
   model tb_venue {
     id_venue     Int          @id @default(autoincrement())
     id_kompetisi Int

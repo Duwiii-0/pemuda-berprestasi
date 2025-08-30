@@ -24,20 +24,23 @@ interface KompetisiFilter {
   end_date?: Date;
 }
 
-export type RegistrationResult = {
-  peserta1: PesertaKompetisi;
-  peserta2?: PesertaKompetisi; // Optional for team registrations
+type RegistrationResult = {
+  peserta1: {
+    id_atlet: number | null;
+    status: StatusPendaftaran;
+    id_peserta_kompetisi: number;
+    id_kelas_kejuaraan: number;
+    is_team: boolean;
+  };
+  peserta2?: {
+    id_atlet: number | null;
+    status: StatusPendaftaran;
+    id_peserta_kompetisi: number;
+    id_kelas_kejuaraan: number;
+    is_team: boolean;
+  };
 };
 
-
-type PesertaKompetisi = {
-  id_peserta_kompetisi: number;
-  id_atlet: number;
-  id_kelas_kejuaraan: number;
-  status: StatusPendaftaran;
-  created_at?: string;
-  updated_at?: string;
-};
 
 export class KompetisiService {
   // Create kompetisi
@@ -190,87 +193,47 @@ export class KompetisiService {
   
   // ✅ FIXED: Proper return types for registerAtlet service
 
-static async registerAtlet(data: {
-  atlitId: number;
+    static async registerAtlet(data: {
   kelasKejuaraanId: number;
+  atlitId: number;
   atlitId2?: number;
-}): Promise<RegistrationResult> {
-  // Validate first athlete
-  const [atlet, kelas] = await Promise.all([
-    prisma.tb_atlet.findUnique({ where: { id_atlet: data.atlitId } }),
-    prisma.tb_kelas_kejuaraan.findUnique({ where: { id_kelas_kejuaraan: data.kelasKejuaraanId } })
-  ]);
-
-  if (!atlet) throw new Error('Atlet pertama tidak ditemukan');
-  if (!kelas) throw new Error('Kelas kejuaraan tidak ditemukan');
-
-  // Validate second athlete if provided
-  if (data.atlitId2) {
-    const atlet2 = await prisma.tb_atlet.findUnique({ 
-      where: { id_atlet: data.atlitId2 } 
-    });
-    if (!atlet2) throw new Error('Atlet kedua tidak ditemukan');
-    
-    // Check if same athlete
-    if (data.atlitId === data.atlitId2) {
-      throw new Error('Atlet pertama dan kedua tidak boleh sama');
-    }
-  }
-
-  // Check existing registrations for first athlete
-  const existingRegistration1 = await prisma.tb_peserta_kompetisi.findFirst({
-    where: {
-      id_atlet: data.atlitId,
-      id_kelas_kejuaraan: data.kelasKejuaraanId
-    }
-  });
-
-  if (existingRegistration1) {
-    throw new Error('Atlet pertama sudah terdaftar pada kelas kejuaraan ini');
-  }
-
-  // Check existing registrations for second athlete
-  if (data.atlitId2) {
-    const existingRegistration2 = await prisma.tb_peserta_kompetisi.findFirst({
-      where: {
-        id_atlet: data.atlitId2,
-        id_kelas_kejuaraan: data.kelasKejuaraanId
-      }
-    });
-
-    if (existingRegistration2) {
-      throw new Error('Atlet kedua sudah terdaftar pada kelas kejuaraan ini');
-    }
-  }
-
-  // Register both athletes in a transaction
-  const result = await prisma.$transaction(async (tx) => {
-    // Register first athlete
-    const peserta1 = await tx.tb_peserta_kompetisi.create({
-      data: {
-        id_atlet: data.atlitId,
-        id_kelas_kejuaraan: data.kelasKejuaraanId,
-        status: StatusPendaftaran.PENDING,
-      }
-    });
-
-    // Register second athlete if exists
-    let peserta2: typeof peserta1 | undefined = undefined;
-    if (data.atlitId2) {
-      peserta2 = await tx.tb_peserta_kompetisi.create({
+  isTeam?: boolean; // true jika tim Poomsae
+}): Promise<any> {
+  return prisma.$transaction(async (tx) => {
+    if (data.isTeam) {
+      // Buat satu peserta kompetisi untuk tim
+      const pesertaTim = await tx.tb_peserta_kompetisi.create({
         data: {
-          id_atlet: data.atlitId2,
           id_kelas_kejuaraan: data.kelasKejuaraanId,
+          is_team: true,
           status: StatusPendaftaran.PENDING,
         }
       });
+
+      // Masukkan atlet ke anggota tim
+      const atletIds = [data.atlitId, data.atlitId2].filter(Boolean) as number[];
+      await tx.tb_peserta_tim.createMany({
+        data: atletIds.map(id => ({
+          id_peserta_kompetisi: pesertaTim.id_peserta_kompetisi,
+          id_atlet: id,
+        }))
+      });
+
+      return { pesertaTim, anggota: atletIds };
+    } else {
+      // Individu biasa
+      const peserta = await tx.tb_peserta_kompetisi.create({
+        data: {
+          id_kelas_kejuaraan: data.kelasKejuaraanId,
+          id_atlet: data.atlitId,
+          status: StatusPendaftaran.PENDING,
+        }
+      });
+      return { peserta };
     }
-
-    return { peserta1, peserta2 };
   });
-
-  return result;
 }
+
 
   static async getAtletsByKompetisi(kompetisiId: number, page: number, limit: number) {
   const skip = (page - 1) * limit;

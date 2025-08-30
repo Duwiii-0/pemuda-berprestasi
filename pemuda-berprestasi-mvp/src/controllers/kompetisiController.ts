@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { KompetisiService } from '../services/kompetisiService';
 import { sendSuccess, sendError } from '../utils/response';
 import { StatusKompetisi } from '@prisma/client';
+import prisma from '../config/database';
 
 export class KompetisiController {
   // Create new kompetisi
@@ -94,30 +95,37 @@ export class KompetisiController {
   static async registerAtlet(req: Request, res: Response) {
   try {
     const { atlitId, kelasKejuaraanId, atlitId2 } = req.body;
-    
-    // Basic validation
+
     if (!atlitId || !kelasKejuaraanId) {
       return sendError(res, 'atlitId dan kelasKejuaraanId wajib diisi', 400);
     }
 
-    // Validate atlitId2 if provided
     if (atlitId2 && atlitId === atlitId2) {
       return sendError(res, 'Atlet pertama dan kedua tidak boleh sama', 400);
     }
 
-    // Prepare service data
+    // Tentukan apakah ini pendaftaran tim
+    let isTeam = false;
+    if (atlitId2) {
+      const kelas = await prisma.tb_kelas_kejuaraan.findUnique({
+        where: { id_kelas_kejuaraan: Number(kelasKejuaraanId) },
+      });
+      // Asumsinya jika Poomsae dan kelas beregu/berpasangan
+      if (kelas?.cabang === "POOMSAE") {
+        isTeam = true;
+      }
+    }
+
     const registrationData = {
       atlitId: Number(atlitId),
       kelasKejuaraanId: Number(kelasKejuaraanId),
       ...(atlitId2 ? { atlitId2: Number(atlitId2) } : {}),
+      isTeam,
     };
-
-    console.log("🎯 Controller - Registration data:", registrationData);
 
     const peserta = await KompetisiService.registerAtlet(registrationData);
 
-    // Prepare response message
-    const message = atlitId2 
+    const message = isTeam
       ? 'Tim atlet berhasil didaftarkan ke kelas kejuaraan'
       : 'Atlet berhasil didaftarkan ke kelas kejuaraan';
 

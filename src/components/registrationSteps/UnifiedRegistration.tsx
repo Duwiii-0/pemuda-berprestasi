@@ -61,6 +61,7 @@ const UnifiedRegistration = ({
   registerAtlet,                 // ✅ ADD THIS  
   getRegistrationsByKompetisi,   // ✅ ADD THIS
   isPoomsaeTeam,                 // ✅ ADD THIS (replaces local function)
+  fetchKelasKejuaraan,
   requiresTwoAthletes,           // ✅ ADD THIS
   getSelectedAthletes            // ✅ ADD THIS
 
@@ -101,6 +102,61 @@ useEffect(() => {
       fetchKelasPoomsae(Number(formData.selectedAge.value));
     }
   }, [formData.styleType, formData.selectedAge, fetchKelasPoomsae]);
+
+
+  // fetch kelas kejuaraan
+  useEffect(() => {
+  if (!formData.styleType || !formData.categoryType || !user?.pelatih?.id_dojang) return;
+
+  // Hanya fetch kalau prestasi dan sudah pilih usia
+  if (formData.categoryType === "prestasi" && !formData.selectedAge) return;
+
+  // Untuk KYORUGI, pastikan gender & weight tersedia
+  if (formData.styleType === "KYORUGI" && (!formData.selectedGender || !formData.selectedWeight)) return;
+
+  // Untuk POOMSAE, pastikan poomsae terpilih
+  if (formData.styleType === "POOMSAE" && !formData.selectedPoomsae) return;
+
+  const kelasFilter: any = {
+    styleType: formData.styleType,
+    categoryType: formData.categoryType,
+  };
+
+  if (formData.selectedGender) kelasFilter.gender = formData.selectedGender.value as "LAKI_LAKI" | "PEREMPUAN";
+  if (formData.selectedAge) kelasFilter.kelompokId = Number(formData.selectedAge.value);
+  if (formData.selectedWeight) kelasFilter.kelasBeratId = Number(formData.selectedWeight.value);
+  if (formData.selectedPoomsae) kelasFilter.poomsaeId = Number(formData.selectedPoomsae.value);
+
+  (async () => {
+    try {
+      const kelasId = await fetchKelasKejuaraan(kompetisiId, kelasFilter);
+      if (kelasId) {
+        console.log("✅ Kelas kejuaraan didapat:", kelasId);
+
+        // Update formData untuk kelasKejuaraanId
+        setFormData({
+          ...formData,
+          kelasKejuaraanId: kelasId,
+        });
+      }
+    } catch (err) {
+      console.error("❌ Gagal fetch kelas kejuaraan:", err);
+    }
+  })();
+}, [
+  formData.styleType,
+  formData.categoryType,
+  formData.selectedGender,
+  formData.selectedAge,
+  formData.selectedWeight,
+  formData.selectedPoomsae,
+  kompetisiId,
+  user?.pelatih?.id_dojang,
+  fetchKelasKejuaraan,
+]);
+
+
+
 
   // ✅ UPDATED: useEffect untuk fetch eligible atlits dengan poomsae team support
   useEffect(() => {
@@ -245,6 +301,19 @@ useEffect(() => {
       ].join(" "),
   };
 
+  const TextInputDetail = ({ label, value }: { label: string; value?: string | number }) => (
+  <div>
+    <label className="block text-black mb-3 text-lg font-plex font-semibold pl-2">{label}</label>
+    <TextInput
+      value={value?.toString() || "Tidak tersedia"}
+      className="h-12 w-full bg-gray-50"
+      onChange={() => {}}
+      disabled
+    />
+  </div>
+);
+
+
   const handleNext = () => {
     if (currentStep === 1 && (!formData.styleType || !formData.categoryType)) {
       toast.error("Anda harus memilih style dan kategori terlebih dahulu!");
@@ -325,7 +394,7 @@ useEffect(() => {
           selectedAge: null,
           selectedWeight: null,
           selectedAtlit: null,
-          selectedAtlit2: null, // ✅ ADDED
+          selectedAtlit2: formData.styleType === "POOMSAE" && formData.selectedPoomsae ? null : formData.selectedAtlit2,
           selectedPoomsae: null
         });
       }
@@ -339,12 +408,16 @@ useEffect(() => {
 const handleSubmit = async () => {
   try {
     console.log("🎯 Starting registration submission...");
-    
-    // Use validation from context
-    const validation = validateRegistration(kompetisiId);
-    
+
+    // Ambil kelasKejuaraanId & selected athletes dari context
+    const kelasKejuaraanId = formData.kelasKejuaraanId;
+    const selectedAthletes = getSelectedAthletes();
+
+    // Validasi
+    console.log("💡 Debug before validation:", { kelasKejuaraanId, selectedAthletes });
+    const validation = validateRegistration(kelasKejuaraanId, selectedAthletes);
     console.log("📋 Validation result:", validation);
-    
+
     if (!validation.isValid) {
       console.error("❌ Validation failed:", validation.errors);
       validation.errors.forEach(error => toast.error(error));
@@ -356,8 +429,8 @@ const handleSubmit = async () => {
 
     console.log("✅ Validation passed, proceeding with registration...");
 
-    // Use registerAtlet from context
-    const result = await registerAtlet(kompetisiId);
+    // Registrasi
+    const result = await registerAtlet(kompetisiId, kelasKejuaraanId);
     
     if (result) {
       toast.success("Pendaftaran berhasil!");
@@ -375,6 +448,7 @@ const handleSubmit = async () => {
     toast.error(error.message || "Gagal mendaftarkan atlet");
   }
 };
+
 
 
   const canProceedStep1 = formData.styleType && formData.categoryType;
@@ -416,7 +490,9 @@ const handleSubmit = async () => {
     
     // Jika poomsae team, perlu atlit kedua juga
     if (isPoomsaeTeam()) {
-      return !!(formData.selectedAtlit2 && formData.selectedAtlit.value !== formData.selectedAtlit2.value);
+      return !!(formData.selectedAtlit2 && formData.selectedAtlit.value !== formData.selectedAtlit2.value &&
+               formData.kelasKejuaraanId // ✅ pastikan kelas kejuaraan sudah ada
+);
     }
     
     return true;
@@ -663,227 +739,141 @@ const handleSubmit = async () => {
       case 3:
         return (
           <div className="space-y-8">
-            <div className="text-center">
-              <h2 className="text-4xl md:text-6xl font-bebas text-red mb-2">
-                Registrasi Atlit
-              </h2>
-              <p className="text-black/70 font-plex">Langkah 3 dari {totalSteps}</p>
-              {/* Display biaya pendaftaran */}
-              <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-                <p className="font-plex text-blue-700 text-lg">
-                  <strong>Biaya Pendaftaran: {new Intl.NumberFormat('id-ID', {
-                    style: 'currency',
-                    currency: 'IDR',
-                  }).format(biayaPendaftaran)}</strong>
-                </p>
-              </div>
-              {/* ✅ ADDED: Show team info for poomsae */}
-              {isPoomsaeTeam() && (
-                <div className="mt-2 p-3 bg-purple-50 rounded-lg">
-                  <p className="font-plex text-purple-700 text-sm">
-                    <strong>Kategori Tim:</strong> {formData.selectedPoomsae?.label} - Pilih 2 atlet
-                  </p>
-                </div>
-              )}
+  {/* Header */}
+  <div className="text-center">
+    <h2 className="text-4xl md:text-6xl font-bebas text-red mb-2">
+      Registrasi Atlit
+    </h2>
+    <p className="text-black/70 font-plex">Langkah 3 dari {totalSteps}</p>
+
+    {/* Biaya Pendaftaran */}
+    <div className="mt-4 p-4 bg-blue-50 rounded-lg">
+      <p className="font-plex text-blue-700 text-lg">
+        <strong>
+          Biaya Pendaftaran: {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(biayaPendaftaran)}
+        </strong>
+      </p>
+    </div>
+
+    {/* Info Tim Poomsae */}
+    {isPoomsaeTeam() && (
+      <div className="mt-2 p-3 bg-purple-50 rounded-lg">
+        <p className="font-plex text-purple-700 text-sm">
+          <strong>Kategori Tim:</strong> {formData.selectedPoomsae?.label} - Pilih 2 atlet
+        </p>
+      </div>
+    )}
+  </div>
+
+  {/* Form Atlet */}
+  <div className="space-y-6">
+    {availableAtlits.length === 0 ? (
+      <div className="text-center py-8 bg-yellow-50 rounded-lg">
+        <p className="font-plex text-yellow-700">
+          Tidak ada atlet yang eligible atau semua atlet sudah terdaftar untuk kompetisi ini!
+        </p>
+      </div>
+    ) : (
+      <>
+        {/* Atlet Pertama */}
+        <div>
+          <label className="block text-black mb-3 text-lg font-plex font-semibold pl-2">
+            {isPoomsaeTeam() ? "Atlet Pertama" : "Nama Atlit"} <span className="text-red">*</span>
+          </label>
+          <LockedSelect
+            unstyled
+            options={atlitOptions}
+            value={formData.selectedAtlit}
+            onChange={(value: OptionType | null) => setFormData({
+              ...formData,
+              selectedAtlit: value,
+              selectedAtlit2: formData.selectedAtlit2?.value === value?.value ? null : formData.selectedAtlit2
+            })}
+            placeholder="Pilih nama atlit..."
+            isSearchable
+            classNames={selectClassNames}
+            disabled={!canProceedStep2()}
+            message="Harap lengkapi data sebelumnya terlebih dahulu"
+          />
+        </div>
+
+        {/* Atlet Kedua untuk Tim Poomsae */}
+        {isPoomsaeTeam() && (
+          <div>
+            <label className="block text-black mb-3 text-lg font-plex font-semibold pl-2">
+              Atlet Kedua <span className="text-red">*</span>
+            </label>
+            <LockedSelect
+              unstyled
+              options={atlitOptions.filter(option => option.value !== formData.selectedAtlit?.value)}
+              value={formData.selectedAtlit2}
+              onChange={(value: OptionType | null) => setFormData({ ...formData, selectedAtlit2: value })}
+              placeholder="Pilih atlet kedua..."
+              isSearchable
+              classNames={selectClassNames}
+              disabled={!formData.selectedAtlit}
+              message="Harap pilih atlet pertama terlebih dahulu"
+            />
+            {formData.selectedAtlit && formData.selectedAtlit2?.value === formData.selectedAtlit.value && (
+              <p className="text-xs text-red-600 mt-2 pl-2">
+                Tidak dapat memilih atlet yang sama untuk kedua posisi
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Detail Atlet Pertama */}
+        {selectedAtlitData && (
+          <div className="space-y-4">
+            <h3 className="text-lg font-plex font-semibold text-black">
+              Detail {isPoomsaeTeam() ? "Atlet Pertama" : "Atlet"}
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <TextInputDetail label="Berat Badan (kg)" value={selectedAtlitData.bb} />
+              <TextInputDetail label="Tinggi Badan (cm)" value={selectedAtlitData.tb} />
             </div>
-
-            <div className="space-y-6">
-              {availableAtlits.length === 0 ? (
-                <div className="text-center py-8 bg-yellow-50 rounded-lg">
-                  <p className="font-plex text-yellow-700">
-                    Tidak ada atlet yang eligible atau semua atlet sudah terdaftar untuk kompetisi ini!
-                  </p>
-                </div>
-              ) : (
-                <>
-                  <div>
-                    <label className="block text-black mb-3 text-lg font-plex font-semibold pl-2">
-                      {isPoomsaeTeam() ? "Atlet Pertama" : "Nama Atlit"} <span className="text-red">*</span>
-                    </label>
-                    <LockedSelect
-                      unstyled
-                      options={atlitOptions}
-                      value={formData.selectedAtlit}
-                      onChange={(value: OptionType | null) => setFormData({
-                        ...formData, 
-                        selectedAtlit: value,
-                        // Reset second athlete if first athlete changes
-                        selectedAtlit2: formData.selectedAtlit2?.value === value?.value ? null : formData.selectedAtlit2
-                      })}
-                      placeholder="Pilih nama atlit..."
-                      isSearchable
-                      classNames={selectClassNames}
-                      disabled={!canProceedStep2()}
-                      message="Harap lengkapi data sebelumnya terlebih dahulu"
-                    />
-                  </div>
-
-                  {/* ✅ ADDED: Second athlete selection for team poomsae */}
-                  {isPoomsaeTeam() && (
-                    <div>
-                      <label className="block text-black mb-3 text-lg font-plex font-semibold pl-2">
-                        Atlet Kedua <span className="text-red">*</span>
-                      </label>
-                      <LockedSelect
-                        unstyled
-                        options={atlitOptions.filter(option => option.value !== formData.selectedAtlit?.value)}
-                        value={formData.selectedAtlit2}
-                        onChange={(value: OptionType | null) => setFormData({...formData, selectedAtlit2: value})}
-                        placeholder="Pilih atlet kedua..."
-                        isSearchable
-                        classNames={selectClassNames}
-                        disabled={!formData.selectedAtlit}
-                        message="Harap pilih atlet pertama terlebih dahulu"
-                      />
-                      {formData.selectedAtlit && formData.selectedAtlit2?.value === formData.selectedAtlit.value && (
-                        <p className="text-xs text-red-600 mt-2 pl-2">
-                          Tidak dapat memilih atlet yang sama untuk kedua posisi
-                        </p>
-                      )}
-                    </div>
-                  )}
-
-                  {/* ✅ UPDATED: Display athlete details */}
-                  {selectedAtlitData && (
-                    <div className="space-y-4">
-                      <h3 className="text-lg font-plex font-semibold text-black">
-                        Detail {isPoomsaeTeam() ? "Atlet Pertama" : "Atlet"}
-                      </h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-black mb-3 text-lg font-plex font-semibold pl-2">
-                            Berat Badan (kg)
-                          </label>
-                          <TextInput
-                            value={selectedAtlitData.bb?.toString() || "Tidak tersedia"}
-                            placeholder="Berat badan"
-                            className="h-12 w-full bg-gray-50"
-                            onChange={() => toast.error("Berat badan tidak bisa diedit, silahkan edit di dalam data atlit")}
-                            disabled
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-black mb-3 text-lg font-plex font-semibold pl-2">
-                            Tinggi Badan (cm)
-                          </label>
-                          <TextInput
-                            value={selectedAtlitData.tb?.toString() || "Tidak tersedia"}
-                            placeholder="Tinggi badan"
-                            className="h-12 w-full bg-gray-50"
-                            onChange={() => toast.error("Tinggi badan tidak bisa diedit, silahkan edit di dalam data atlit")}
-                            disabled
-                          />
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-black mb-3 text-lg font-plex font-semibold pl-2">
-                            Provinsi
-                          </label>
-                          <TextInput
-                            value={selectedAtlitData.provinsi}
-                            className="h-12 w-full bg-gray-50"
-                            onChange={() => {}}
-                            disabled
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-black mb-3 text-lg font-plex font-semibold pl-2">
-                            Belt/Sabuk
-                          </label>
-                          <TextInput
-                            value={selectedAtlitData.belt || "Tidak tersedia"}
-                            className="h-12 w-full bg-gray-50"
-                            onChange={() => {}}
-                            disabled
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* ✅ ADDED: Display second athlete details for team poomsae */}
-                  {isPoomsaeTeam() && selectedAtlit2Data && (
-                    <div className="space-y-4">
-                      <h3 className="text-lg font-plex font-semibold text-black">
-                        Detail Atlet Kedua
-                      </h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-black mb-3 text-lg font-plex font-semibold pl-2">
-                            Berat Badan (kg)
-                          </label>
-                          <TextInput
-                            value={selectedAtlit2Data.bb?.toString() || "Tidak tersedia"}
-                            placeholder="Berat badan"
-                            className="h-12 w-full bg-gray-50"
-                            onChange={() => {}}
-                            disabled
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-black mb-3 text-lg font-plex font-semibold pl-2">
-                            Tinggi Badan (cm)
-                          </label>
-                          <TextInput
-                            value={selectedAtlit2Data.tb?.toString() || "Tidak tersedia"}
-                            placeholder="Tinggi badan"
-                            className="h-12 w-full bg-gray-50"
-                            onChange={() => {}}
-                            disabled
-                          />
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-black mb-3 text-lg font-plex font-semibold pl-2">
-                            Provinsi
-                          </label>
-                          <TextInput
-                            value={selectedAtlit2Data.provinsi}
-                            className="h-12 w-full bg-gray-50"
-                            onChange={() => {}}
-                            disabled
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-black mb-3 text-lg font-plex font-semibold pl-2">
-                            Belt/Sabuk
-                          </label>
-                          <TextInput
-                            value={selectedAtlit2Data.belt || "Tidak tersedia"}
-                            className="h-12 w-full bg-gray-50"
-                            onChange={() => {}}
-                            disabled
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* ✅ UPDATED: Poomsae category display */}
-                  {formData.styleType === "POOMSAE" && formData.selectedPoomsae && (
-                    <div className="p-4 bg-blue-50 rounded-lg border-l-4 border-blue-400">
-                      <p className="font-plex text-blue-700 text-sm">
-                        <strong>Kategori Poomsae:</strong> {formData.selectedPoomsae.label}
-                        {isPoomsaeTeam() && (
-                          <span className="block mt-1">
-                            <strong>Tim:</strong> Dapat memilih atlet dengan jenis kelamin berbeda
-                          </span>
-                        )}
-                      </p>
-                    </div>
-                  )}
-                </>
-              )}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <TextInputDetail label="Provinsi" value={selectedAtlitData.provinsi} />
+              <TextInputDetail label="Belt/Sabuk" value={selectedAtlitData.belt} />
             </div>
           </div>
+        )}
+
+        {/* Detail Atlet Kedua */}
+        {isPoomsaeTeam() && selectedAtlit2Data && (
+          <div className="space-y-4">
+            <h3 className="text-lg font-plex font-semibold text-black">
+              Detail Atlet Kedua
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <TextInputDetail label="Berat Badan (kg)" value={selectedAtlit2Data.bb} />
+              <TextInputDetail label="Tinggi Badan (cm)" value={selectedAtlit2Data.tb} />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <TextInputDetail label="Provinsi" value={selectedAtlit2Data.provinsi} />
+              <TextInputDetail label="Belt/Sabuk" value={selectedAtlit2Data.belt} />
+            </div>
+          </div>
+        )}
+
+        {/* Kategori Poomsae */}
+        {formData.styleType === "POOMSAE" && formData.selectedPoomsae && (
+          <div className="p-4 bg-blue-50 rounded-lg border-l-4 border-blue-400">
+            <p className="font-plex text-blue-700 text-sm">
+              <strong>Kategori Poomsae:</strong> {formData.selectedPoomsae.label}
+              {isPoomsaeTeam() && (
+                <span className="block mt-1">
+                  <strong>Tim:</strong> Dapat memilih atlet dengan jenis kelamin berbeda
+                </span>
+              )}
+            </p>
+          </div>
+        )}
+      </>
+    )}
+  </div>
+</div>
+
         );
 
       default:

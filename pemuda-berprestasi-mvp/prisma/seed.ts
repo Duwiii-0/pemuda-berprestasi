@@ -59,6 +59,7 @@ async function seedPelatihDojang() {
           create: {
             nama_pelatih: 'Budi Pelatih',
             no_telp: '08123456789',
+            nik: '1234567890987654',
             dojang: { connect: { id_dojang: dojang.id_dojang } }
           }
         }
@@ -494,8 +495,52 @@ async function seedKelasKejuaraan(idKompetisi: number) {
   console.log("✅ Kelas Kejuaraan seeded,", data.length);
 }
 
+async function seedSinglePoomsaeTeam(idKompetisi: number) {
+  // Ambil kelas Poomsae Beregu Cadet (contoh)
+  const kelasKejuaraan = await prisma.tb_kelas_kejuaraan.findFirst({
+    where: { id_kompetisi: idKompetisi, cabang: "POOMSAE" },
+  });
+
+  if (!kelasKejuaraan) {
+    console.log("⚠️ Kelas kejuaraan Poomsae Beregu belum ada, skip seeding peserta");
+    return;
+  }
+
+  // Ambil dua atlet Cadet pertama
+  const atletCadet = await prisma.tb_atlet.findMany({
+    where: { umur: { gte: 11, lte: 13 } },
+    take: 2
+  });
+
+  if (atletCadet.length < 2) {
+    console.log("⚠️ Tidak cukup atlet untuk membuat tim");
+    return;
+  }
+
+  // Buat peserta tim
+  const pesertaTim = await prisma.tb_peserta_kompetisi.create({
+    data: {
+      is_team: true,
+      id_kelas_kejuaraan: kelasKejuaraan.id_kelas_kejuaraan
+    }
+  });
+
+  // Tambahkan anggota tim
+  await prisma.tb_peserta_tim.createMany({
+    data: atletCadet.map(a => ({
+      id_peserta_kompetisi: pesertaTim.id_peserta_kompetisi,
+      id_atlet: a.id_atlet
+    }))
+  });
+
+  console.log(`✅ Tim Poomsae Beregu dibuat: ${atletCadet.map(a => a.nama_atlet).join(", ")}`);
+}
 
 async function main() {
+  
+  const penyelenggara = await seedPenyelenggara();
+  const kompetisi = await seedKompetisi(penyelenggara.id_penyelenggara);
+
   await seedAdmin();
   await seedPelatihDojang();
   await seedKelompokUsia();
@@ -503,11 +548,8 @@ async function main() {
   await seedKelasBerat();
   await seedKategoriEvent();
   await seedKelasPoomsae();
-
-  const penyelenggara = await seedPenyelenggara();
-  const kompetisi = await seedKompetisi(penyelenggara.id_penyelenggara);
-
   await seedKelasKejuaraan(kompetisi.id_kompetisi);
+  await seedSinglePoomsaeTeam(kompetisi.id_kompetisi);
 }
 
 
