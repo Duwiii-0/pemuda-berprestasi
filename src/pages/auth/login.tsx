@@ -8,7 +8,7 @@ import toast from "react-hot-toast";
 
 const Login = () => {
   const navigate = useNavigate();
-  const { login, loading, isAuthenticated, isAdmin, isPelatih } = useAuth();
+  const { login, loading, isAuthenticated, user } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -32,17 +32,7 @@ const Login = () => {
       if (result && (result as any).success !== false) {
         toast.success("Login berhasil!");
         
-        // Force navigation after successful login
-        setTimeout(() => {
-          if (isAdmin) {
-            navigate("/dashboard", { replace: true });
-          } else if (isPelatih) {
-            navigate("/", { replace: true });
-          } else {
-            // Default redirect for regular users
-            navigate("/", { replace: true });
-          }
-        }, 100);
+        // Don't navigate here, let useEffect handle it after state updates
       }
     } catch (error: any) {
       console.error("Login error:", error);
@@ -50,17 +40,19 @@ const Login = () => {
     }
   };
 
-  // Alternative useEffect for handling authentication state changes
+  // Handle redirect after successful authentication
   React.useEffect(() => {
-    if (isAuthenticated) {
+    if (isAuthenticated && user) {
       const redirectTimeout = setTimeout(() => {
-        if (isAdmin) {
-          navigate("/dashboard", { replace: true });
+        // Check user role and redirect accordingly
+        if (user.role === 'ADMIN') {
+          navigate("/admin", { replace: true });
           toast.success("Login berhasil sebagai Admin!");
-        } else if (isPelatih) {
-          navigate("/", { replace: true });
+        } else if (user.role === 'PELATIH') {
+          navigate("/dashboard", { replace: true });
           toast.success("Login berhasil sebagai Pelatih!");
         } else {
+          // Default redirect for other users
           navigate("/", { replace: true });
           toast.success("Login berhasil!");
         }
@@ -68,7 +60,7 @@ const Login = () => {
 
       return () => clearTimeout(redirectTimeout);
     }
-  }, [isAuthenticated, isAdmin, isPelatih, navigate]);
+  }, [isAuthenticated, user, navigate]);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -127,6 +119,7 @@ const Login = () => {
                   placeholder="your.email@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  onKeyPress={handleKeyPress}
                   disabled={loading}
                   required
                 />
@@ -146,6 +139,7 @@ const Login = () => {
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  onKeyPress={handleKeyPress}
                   disabled={loading}
                   required
                 />

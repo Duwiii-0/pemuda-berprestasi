@@ -235,12 +235,18 @@ const Settings = () => {
             to='/' 
             className="inline-flex items-center gap-2 sm:gap-3 text-black/70 hover:text-red transition-all duration-300 group mb-6 sm:mb-8"
           >
-            <div className="p-2 sm:p-3 rounded-lg sm:rounded-xl bg-white/80 backdrop-blur-sm shadow-lg border border-red/10 group-hover:border-red/30 group-hover:shadow-xl transition-all duration-300 group-hover:-translate-y-0.5">
-              <ArrowLeft size={18} className="sm:w-5 sm:h-5 group-hover:text-red transition-colors duration-300" />
-            </div>
-            <span className='text-base sm:text-lg font-plex font-medium group-hover:tracking-wide transition-all duration-300'>
-              Kembali ke Beranda
-            </span>
+            <button 
+              onClick={() => navigate('/')}
+              className="flex items-center gap-2 transition-colors duration-200"
+              style={{ 
+                color: '#990D35',
+                fontFamily: 'IBM Plex Sans, sans-serif'
+              }}
+              title="Kembali ke Beranda"
+            >
+              <ArrowLeft size={20} />
+              <span className="font-medium">Beranda</span>
+            </button>
           </Link>
           
           {/* Enhanced Header - Mobile Responsive */}
