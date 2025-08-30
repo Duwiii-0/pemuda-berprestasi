@@ -55,11 +55,11 @@ async getKelasKejuaraan(req: Request, res: Response) {
     const { kompetisiId } = req.params;
     const {
       styleType,
-      gender,
+      gender, // ✅ REMOVED validation - now optional
       categoryType,
       kelompokId,
       kelasBeratId,
-      poomsaeId, // ✅ ADDED
+      poomsaeId,
     } = req.body;
 
     console.log("🔹 Request params:", req.params);
@@ -73,13 +73,16 @@ async getKelasKejuaraan(req: Request, res: Response) {
       return res.status(400).json({ message: "categoryType is required" });
     }
 
+    // ✅ REMOVED: gender validation - it's now optional
+    // This allows team poomsae to work without specifying gender
+
     const filter = {
       styleType,
-      gender,
+      gender, // ✅ Can be undefined for team categories
       categoryType,
       kelompokId: kelompokId ? Number(kelompokId) : undefined,
       kelasBeratId: kelasBeratId ? Number(kelasBeratId) : undefined,
-      poomsaeId: poomsaeId ? Number(poomsaeId) : undefined, // ✅ ADDED
+      poomsaeId: poomsaeId ? Number(poomsaeId) : undefined,
     };
 
     console.log("🔹 Processed filter:", filter);

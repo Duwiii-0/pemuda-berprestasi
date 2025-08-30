@@ -36,15 +36,8 @@ const UnifiedRegistration = ({
   biayaPendaftaran = 150000
 }: UnifiedRegistrationProps) => {
   // Temporary mock functions until you implement the actual registration system
-  const addRegistration = (data: any) => {
-    console.log("Registration data:", data);
-    toast.success("Pendaftaran berhasil!");
-  };
   
-  const getRegistrationsByKompetisi = (): RegistrationType[] => {
-    // Return empty array for now - replace with actual implementation later
-    return [];
-  };
+  
   
   const { token, user } = useAuth();  
   
@@ -54,17 +47,39 @@ const UnifiedRegistration = ({
     
   const [currentStep, setCurrentStep] = useState(1);
   const {
-    formData,
-    setFormData,
-    availableAtlits,
-    fetchEligibleAtlits,
-    ageOptions,
-    weightOptions,
-    poomsaeOptions,
-    fetchAgeOptions,
-    fetchWeightOptions,
-    fetchKelasPoomsae,
-  } = useRegistration();
+  formData,
+  setFormData,
+  availableAtlits,
+  fetchEligibleAtlits,
+  ageOptions,
+  weightOptions,
+  poomsaeOptions,
+  fetchAgeOptions,
+  fetchWeightOptions,
+  fetchKelasPoomsae,
+  validateRegistration,           // ✅ ADD THIS
+  registerAtlet,                 // ✅ ADD THIS  
+  getRegistrationsByKompetisi,   // ✅ ADD THIS
+  isPoomsaeTeam,                 // ✅ ADD THIS (replaces local function)
+  requiresTwoAthletes,           // ✅ ADD THIS
+  getSelectedAthletes            // ✅ ADD THIS
+
+} = useRegistration();
+
+const [existingRegistrations, setExistingRegistrations] = useState<RegistrationType[]>([]);
+
+
+useEffect(() => {
+  if (isOpen) {
+    fetchAgeOptions();
+    // Fetch existing registrations for validation
+    getRegistrationsByKompetisi(kompetisiId).then(registrations => {
+      console.log("🎯 Loaded existing registrations:", registrations);
+      setExistingRegistrations(registrations);
+    });
+  }
+}, [isOpen, fetchAgeOptions, getRegistrationsByKompetisi, kompetisiId]);
+
 
   // Fetch kelas usia waktu modal dibuka
   useEffect(() => {
@@ -73,29 +88,32 @@ const UnifiedRegistration = ({
     }
   }, [isOpen, fetchAgeOptions]);
 
-  // Fetch kelas berat kalau sudah pilih usia + gender
+  // Fetch kelas berat kalau sudah pilih usia + gender (hanya untuk KYORUGI)
   useEffect(() => {
-    if (formData.selectedAge && formData.selectedGender) {
+    if (formData.selectedAge && formData.selectedGender && formData.styleType === "KYORUGI") {
       fetchWeightOptions(Number(formData.selectedAge.value), formData.selectedGender.value as "LAKI_LAKI" | "PEREMPUAN");
     }
-  }, [formData.selectedAge, formData.selectedGender, fetchWeightOptions]);
+  }, [formData.selectedAge, formData.selectedGender, formData.styleType, fetchWeightOptions]);
 
-  // fetch kelas poomsae jika styleType POOMSAE dan sudah pilih kelas umur
+  // ✅ UPDATED: fetch kelas poomsae jika styleType POOMSAE dan sudah pilih kelas umur
   useEffect(() => {
     if (formData.styleType === "POOMSAE" && formData.selectedAge) {
       fetchKelasPoomsae(Number(formData.selectedAge.value));
     }
   }, [formData.styleType, formData.selectedAge, fetchKelasPoomsae]);
 
-  // ✅ UPDATED: useEffect untuk fetch eligible atlits dengan poomsae support
+  // ✅ UPDATED: useEffect untuk fetch eligible atlits dengan poomsae team support
   useEffect(() => {
     // Reset ketika tidak memenuhi criteria minimum
-    if (!formData.styleType || !formData.selectedGender || !formData.categoryType || !user?.pelatih?.id_dojang) {
+    if (!formData.styleType || !formData.categoryType || !user?.pelatih?.id_dojang) {
       return;
     }
 
-    // Untuk kategori pemula, cukup gender saja
+    // Untuk kategori pemula, cukup gender saja (untuk kyorugi)
     if (formData.categoryType === "pemula") {
+      // Pemula tetap perlu gender untuk semua style
+      if (!formData.selectedGender) return;
+      
       fetchEligibleAtlits(kompetisiId, {
         styleType: formData.styleType,
         gender: formData.selectedGender.value as "LAKI_LAKI" | "PEREMPUAN",
@@ -112,24 +130,42 @@ const UnifiedRegistration = ({
       return;
     }
 
-    // Untuk KYORUGI prestasi, perlu kelas berat juga
-    if (formData.styleType === "KYORUGI" && !formData.selectedWeight) {
-      return;
+    // Untuk KYORUGI prestasi, perlu gender dan kelas berat
+    if (formData.styleType === "KYORUGI") {
+      if (!formData.selectedGender || !formData.selectedWeight) {
+        return;
+      }
     }
 
-    // ✅ ADDED: Untuk POOMSAE prestasi, perlu kelas poomsae juga
-    if (formData.styleType === "POOMSAE" && !formData.selectedPoomsae) {
-      return;
+    // ✅ UPDATED: Untuk POOMSAE prestasi
+    if (formData.styleType === "POOMSAE") {
+      if (!formData.selectedPoomsae) {
+        return;
+      }
+      
+      // Jika individu, perlu gender
+      if (!isPoomsaeTeam() && !formData.selectedGender) {
+        return;
+      }
     }
 
     // Semua kriteria terpenuhi, fetch eligible atlits
     const filter: any = {
       styleType: formData.styleType,
-      gender: formData.selectedGender.value as "LAKI_LAKI" | "PEREMPUAN",
       umurId: Number(formData.selectedAge.value),
       categoryType: formData.categoryType,
       dojangId: user.pelatih.id_dojang,
     };
+
+    // ✅ FIXED: ONLY add gender if it's required for the specific category
+    const shouldIncludeGender = (
+      formData.styleType === "KYORUGI" || 
+      (formData.styleType === "POOMSAE" && !isPoomsaeTeam())
+    );
+
+    if (shouldIncludeGender && formData.selectedGender) {
+      filter.gender = formData.selectedGender.value as "LAKI_LAKI" | "PEREMPUAN";
+    }
 
     // ✅ CONDITIONAL: Add weight for KYORUGI
     if (formData.styleType === "KYORUGI" && formData.selectedWeight) {
@@ -149,7 +185,7 @@ const UnifiedRegistration = ({
     formData.selectedGender,
     formData.selectedAge,
     formData.selectedWeight,
-    formData.selectedPoomsae, // ✅ ADDED: Watch for poomsae changes
+    formData.selectedPoomsae,
     formData.categoryType,
     user?.pelatih?.id_dojang,
     kompetisiId,
@@ -158,7 +194,6 @@ const UnifiedRegistration = ({
   const totalSteps = 3;
 
   // Get existing registrations for this competition
-  const existingRegistrations = getRegistrationsByKompetisi();
 
   const genderOptions: OptionType[] = [
     { value: "LAKI_LAKI", label: "Laki-Laki" },
@@ -169,13 +204,14 @@ const UnifiedRegistration = ({
     availableAtlits,
     isArray: Array.isArray(availableAtlits),
     length: availableAtlits?.length,
+    isPoomsaeTeam: isPoomsaeTeam(),
     formData: {
       styleType: formData.styleType,
       categoryType: formData.categoryType,
       gender: formData.selectedGender?.value,
       age: formData.selectedAge?.value,
       weight: formData.selectedWeight?.value,
-      poomsae: formData.selectedPoomsae?.value, // ✅ ADDED
+      poomsae: formData.selectedPoomsae?.value,
     }
   });
 
@@ -188,6 +224,11 @@ const UnifiedRegistration = ({
 
   const selectedAtlitData = (availableAtlits || []).find(
     (a) => a.id.toString() === formData.selectedAtlit?.value
+  );
+
+  // ✅ ADDED: For team poomsae, we need second athlete
+  const selectedAtlit2Data = (availableAtlits || []).find(
+    (a) => a.id.toString() === formData.selectedAtlit2?.value
   );
 
   const selectClassNames = {
@@ -210,9 +251,44 @@ const UnifiedRegistration = ({
       return;
     }
 
-    if (currentStep === 2 && (!formData.selectedGender)){
-      toast.error("Anda harus memilih gender terlebih dahulu");
-      return
+    // ✅ UPDATED: Validation untuk step 2 dengan poomsae team logic
+    if (currentStep === 2) {
+      // Jika pemula, perlu gender
+      if (formData.categoryType === "pemula" && !formData.selectedGender) {
+        toast.error("Anda harus memilih jenis kelamin terlebih dahulu");
+        return;
+      }
+
+      // Jika prestasi, perlu kelas umur
+      if (formData.categoryType === "prestasi" && !formData.selectedAge) {
+        toast.error("Anda harus memilih kelas umur terlebih dahulu");
+        return;
+      }
+
+      // Untuk KYORUGI prestasi, perlu gender dan kelas berat
+      if (formData.styleType === "KYORUGI" && formData.categoryType === "prestasi") {
+        if (!formData.selectedGender) {
+          toast.error("Anda harus memilih jenis kelamin terlebih dahulu");
+          return;
+        }
+        if (!formData.selectedWeight) {
+          toast.error("Anda harus memilih kelas berat terlebih dahulu");
+          return;
+        }
+      }
+
+      // ✅ UPDATED: Untuk POOMSAE prestasi
+      if (formData.styleType === "POOMSAE" && formData.categoryType === "prestasi") {
+        if (!formData.selectedPoomsae) {
+          toast.error("Anda harus memilih kelas poomsae terlebih dahulu");
+          return;
+        }
+        // Jika individu, perlu gender
+        if (!isPoomsaeTeam() && !formData.selectedGender) {
+          toast.error("Anda harus memilih jenis kelamin terlebih dahulu");
+          return;
+        }
+      }
     }
 
     if (currentStep === 3 && (!formData.selectedAtlit)){
@@ -238,6 +314,7 @@ const UnifiedRegistration = ({
           selectedWeight: null,
           selectedGender: null,
           selectedAtlit: null,
+          selectedAtlit2: null, // ✅ ADDED
           selectedPoomsae: null
         });
       } else if (currentStep === 3) {
@@ -248,7 +325,8 @@ const UnifiedRegistration = ({
           selectedAge: null,
           selectedWeight: null,
           selectedAtlit: null,
-          selectedPoomsae: null // ✅ ADDED
+          selectedAtlit2: null, // ✅ ADDED
+          selectedPoomsae: null
         });
       }
 
@@ -258,92 +336,91 @@ const UnifiedRegistration = ({
     }
   };
 
-  const handleSubmit = () => {
-    if (!selectedAtlitData || selectedAtlitData.id === undefined) {
-      toast.error("Data atlet tidak ditemukan!");
+const handleSubmit = async () => {
+  try {
+    console.log("🎯 Starting registration submission...");
+    
+    // Use validation from context
+    const validation = validateRegistration(kompetisiId);
+    
+    console.log("📋 Validation result:", validation);
+    
+    if (!validation.isValid) {
+      console.error("❌ Validation failed:", validation.errors);
+      validation.errors.forEach(error => toast.error(error));
       return;
     }
-    if (!formData.selectedAtlit){
-      toast.error("Anda harus memilih atlit terlebih dahulu");
-      return
+
+    // Show warnings if any
+    validation.warnings.forEach(warning => toast.error(warning));
+
+    console.log("✅ Validation passed, proceeding with registration...");
+
+    // Use registerAtlet from context
+    const result = await registerAtlet(kompetisiId);
+    
+    if (result) {
+      toast.success("Pendaftaran berhasil!");
+      
+      // Refresh existing registrations
+      const updatedRegistrations = await getRegistrationsByKompetisi(kompetisiId);
+      setExistingRegistrations(updatedRegistrations);
+      
+      setCurrentStep(1);
+      onClose();
     }
 
-    // Validate weight category for kyorugi
-    if (formData.styleType === "KYORUGI" && formData.categoryType === "prestasi" && selectedAtlitData.bb) {
-      const atlitWeight = selectedAtlitData.bb;
-      const selectedWeightValue = formData.selectedWeight?.value;
-      
-      let isValidWeight = false;
-      if (selectedWeightValue === "+87" && atlitWeight > 87) isValidWeight = true;
-      else if (selectedWeightValue && selectedWeightValue !== "+87") {
-        const maxWeight = parseInt(selectedWeightValue.replace("-", ""));
-        isValidWeight = atlitWeight <= maxWeight;
-      }
-      
-      if (!isValidWeight) {
-        toast.error(`Berat badan atlet (${atlitWeight}kg) tidak sesuai dengan kategori yang dipilih!`);
-        return;
-      }
-    }
+  } catch (error: any) {
+    console.error("❌ Registration error:", error);
+    toast.error(error.message || "Gagal mendaftarkan atlet");
+  }
+};
 
-    // ✅ UPDATED: Include poomsae in registration data
-    const registrationData = {
-      atlitId: selectedAtlitData.id,
-      atlitName: selectedAtlitData.nama,
-      kompetisiId: kompetisiId ?? 1,
-      kompetisiName,
-      styleType: formData.styleType!,
-      categoryType: formData.categoryType!,
-      gender: formData.selectedGender!.value as "Laki-Laki" | "Perempuan",
-      ageCategory: formData.selectedAge?.value,
-      weightCategory: formData.selectedWeight?.value,
-      poomsaeCategory: formData.selectedPoomsae?.value, // ✅ ADDED
-      biayaPendaftaran
-    };
-
-    addRegistration(registrationData);
-    
-    // Reset form
-    setCurrentStep(1);
-    setFormData({
-      styleType: null,
-      categoryType: null,
-      selectedAge: null,
-      selectedWeight: null,
-      selectedGender: null,
-      selectedAtlit: null,
-      selectedPoomsae: null,
-    });
-    
-    onClose();
-  };
 
   const canProceedStep1 = formData.styleType && formData.categoryType;
   
-  // ✅ UPDATED: canProceedStep2 untuk include poomsae validation
+  // ✅ UPDATED: canProceedStep2 dengan logic poomsae team
   const canProceedStep2 = () => {
-    if (!formData.selectedGender) return false;
-    
     // Jika pemula, cukup gender saja
-    if (formData.categoryType === "pemula") return true;
+    if (formData.categoryType === "pemula") {
+      return !!formData.selectedGender;
+    }
     
     // Jika prestasi, perlu kelas umur
     if (!formData.selectedAge) return false;
     
-    // Jika kyorugi prestasi, perlu kelas berat juga
+    // Jika kyorugi prestasi, perlu gender dan kelas berat
     if (formData.styleType === "KYORUGI" && formData.categoryType === "prestasi") {
-      return !!formData.selectedWeight;
+      return !!(formData.selectedGender && formData.selectedWeight);
     }
     
-    // ✅ ADDED: Jika poomsae prestasi, perlu kelas poomsae juga
+    // ✅ UPDATED: Jika poomsae prestasi
     if (formData.styleType === "POOMSAE" && formData.categoryType === "prestasi") {
-      return !!formData.selectedPoomsae;
+      if (!formData.selectedPoomsae) return false;
+      
+      // Jika individu, perlu gender juga
+      if (!isPoomsaeTeam()) {
+        return !!formData.selectedGender;
+      }
+      
+      // Jika tim, tidak perlu gender
+      return true;
     }
     
     return true;
   };
 
-  const canSubmit = canProceedStep2() && formData.selectedAtlit;
+  // ✅ UPDATED: canSubmit dengan validation untuk team
+  const canSubmit = () => {
+    if (!canProceedStep2() || !formData.selectedAtlit) return false;
+    
+    // Jika poomsae team, perlu atlit kedua juga
+    if (isPoomsaeTeam()) {
+      return !!(formData.selectedAtlit2 && formData.selectedAtlit.value !== formData.selectedAtlit2.value);
+    }
+    
+    return true;
+  };
 
   const renderStepContent = () => {
     switch (currentStep) {
@@ -369,7 +446,8 @@ const UnifiedRegistration = ({
                       styleType: "KYORUGI", 
                       selectedAge: null, 
                       selectedWeight: null,
-                      selectedPoomsae: null // ✅ ADDED: Reset poomsae when switching to KYORUGI
+                      selectedPoomsae: null,
+                      selectedAtlit2: null // ✅ ADDED
                     })}
                     className={`p-8 rounded-xl border-2 transition-all duration-300 font-bebas text-4xl ${
                       formData.styleType === "KYORUGI"
@@ -384,8 +462,9 @@ const UnifiedRegistration = ({
                     onClick={() => setFormData({
                       ...formData, 
                       styleType: "POOMSAE", 
-                      selectedWeight: null, // ✅ Reset weight when switching to POOMSAE
-                      selectedPoomsae: null // ✅ Reset poomsae to allow fresh selection
+                      selectedWeight: null,
+                      selectedPoomsae: null,
+                      selectedAtlit2: null // ✅ ADDED
                     })}
                     className={`p-8 rounded-xl border-2 transition-all duration-300 font-bebas text-4xl ${
                       formData.styleType === "POOMSAE"
@@ -421,7 +500,8 @@ const UnifiedRegistration = ({
                       categoryType: "pemula", 
                       selectedAge: null, 
                       selectedWeight: null,
-                      selectedPoomsae: null // ✅ ADDED: Reset poomsae for pemula
+                      selectedPoomsae: null,
+                      selectedAtlit2: null // ✅ ADDED
                     })}
                     className={`p-8 rounded-xl border-2 transition-all duration-300 font-bebas text-4xl ${
                       formData.categoryType === "pemula"
@@ -454,34 +534,8 @@ const UnifiedRegistration = ({
             </div>
 
             <div className="space-y-6">
-              {/* Gender - Always first and required */}
-              <div>
-                <label className="block text-black mb-3 text-lg font-plex font-semibold pl-2">
-                  Jenis Kelamin <span className="text-red">*</span>
-                </label>
-                <LockedSelect
-                  unstyled
-                  options={genderOptions}
-                  value={formData.selectedGender}
-                  onChange={(value: OptionType | null) => setFormData({
-                    ...formData, 
-                    selectedGender: value,
-                    // Reset subsequent fields when gender changes
-                    selectedAge: null,
-                    selectedWeight: null,
-                    selectedPoomsae: null,
-                    selectedAtlit: null
-                  })}
-                  placeholder="Pilih jenis kelamin..."
-                  isSearchable={false}
-                  classNames={selectClassNames}
-                  disabled={false}
-                  message=""
-                />
-              </div>
-
-              {/* Kelas Umur - Only for non-pemula, requires gender first */}
-              {formData.categoryType !== "pemula" && (
+              {/* ✅ UPDATED: Kelas Umur - Show first for POOMSAE prestasi */}
+              {formData.categoryType === "prestasi" && (
                 <div>
                   <label className="block text-black mb-3 text-lg font-plex font-semibold pl-2">
                     Kelas Umur <span className="text-red">*</span>
@@ -496,18 +550,20 @@ const UnifiedRegistration = ({
                       // Reset subsequent fields when age changes
                       selectedWeight: null,
                       selectedPoomsae: null,
-                      selectedAtlit: null
+                      selectedGender: null,
+                      selectedAtlit: null,
+                      selectedAtlit2: null // ✅ ADDED
                     })}
                     placeholder="Pilih kelas umur..."
                     isSearchable
                     classNames={selectClassNames}
-                    disabled={!formData.selectedGender}
-                    message="Harap pilih jenis kelamin terlebih dahulu"
+                    disabled={false}
+                    message=""
                   />
                 </div>
               )}
 
-              {/* ✅ UPDATED: Kelas Poomsae - Only for POOMSAE style */}
+              {/* ✅ UPDATED: Kelas Poomsae - Show after age for POOMSAE */}
               {formData.styleType === "POOMSAE" && formData.categoryType === "prestasi" && (
                 <div>
                   <label className="block text-black mb-3 text-lg font-plex font-semibold pl-2">
@@ -520,7 +576,9 @@ const UnifiedRegistration = ({
                     onChange={(value: OptionType | null) => setFormData({
                       ...formData, 
                       selectedPoomsae: value,
-                      selectedAtlit: null // Reset athlete when poomsae changes
+                      selectedGender: null, // Reset gender when poomsae changes
+                      selectedAtlit: null,
+                      selectedAtlit2: null // ✅ ADDED
                     })}
                     placeholder="Pilih kelas poomsae..."
                     isSearchable
@@ -528,10 +586,50 @@ const UnifiedRegistration = ({
                     disabled={!formData.selectedAge}
                     message="Harap pilih kelas umur terlebih dahulu"
                   />
+                  {/* ✅ ADDED: Show info about team vs individual */}
+                  {formData.selectedPoomsae && (
+                    <p className="text-xs text-blue-600 mt-2 pl-2">
+                      {isPoomsaeTeam() 
+                        ? "Kategori Tim - Tidak perlu pilih jenis kelamin (bisa campuran)"
+                        : "Kategori Individu - Perlu pilih jenis kelamin"
+                      }
+                    </p>
+                  )}
                 </div>
               )}
 
-              {/* Kelas Berat - Only for kyorugi prestasi, requires age first */}
+              {/* ✅ UPDATED: Gender - Conditional rendering */}
+              {(
+                formData.categoryType === "pemula" || 
+                (formData.styleType === "KYORUGI" && formData.categoryType === "prestasi") ||
+                (formData.styleType === "POOMSAE" && formData.categoryType === "prestasi" && !isPoomsaeTeam())
+              ) && (
+                <div>
+                  <label className="block text-black mb-3 text-lg font-plex font-semibold pl-2">
+                    Jenis Kelamin <span className="text-red">*</span>
+                  </label>
+                  <LockedSelect
+                    unstyled
+                    options={genderOptions}
+                    value={formData.selectedGender}
+                    onChange={(value: OptionType | null) => setFormData({
+                      ...formData, 
+                      selectedGender: value,
+                      // Reset subsequent fields when gender changes
+                      selectedWeight: null,
+                      selectedAtlit: null,
+                      selectedAtlit2: null // ✅ ADDED
+                    })}
+                    placeholder="Pilih jenis kelamin..."
+                    isSearchable={false}
+                    classNames={selectClassNames}
+                    disabled={formData.styleType === "POOMSAE" && formData.categoryType === "prestasi" && !formData.selectedPoomsae}
+                    message={formData.styleType === "POOMSAE" ? "Harap pilih kelas poomsae terlebih dahulu" : ""}
+                  />
+                </div>
+              )}
+
+              {/* Kelas Berat - Only for kyorugi prestasi, requires age and gender first */}
               {formData.styleType === "KYORUGI" && formData.categoryType === "prestasi" && (
                 <div>
                   <label className="block text-black mb-3 text-lg font-plex font-semibold pl-2">
@@ -544,13 +642,14 @@ const UnifiedRegistration = ({
                     onChange={(value: OptionType | null) => setFormData({
                       ...formData, 
                       selectedWeight: value,
-                      selectedAtlit: null // Reset athlete when weight changes
+                      selectedAtlit: null,
+                      selectedAtlit2: null // ✅ ADDED
                     })}
                     placeholder="Pilih kelas berat..."
                     isSearchable={false}
                     classNames={selectClassNames}
-                    disabled={!formData.selectedAge}
-                    message="Harap pilih kelas umur terlebih dahulu"
+                    disabled={!formData.selectedAge || !formData.selectedGender}
+                    message="Harap pilih kelas umur dan jenis kelamin terlebih dahulu"
                   />
                   <p className="text-xs text-gray-500 mt-2 pl-2">
                     * Kelas berat akan divalidasi dengan berat badan atlet
@@ -578,6 +677,14 @@ const UnifiedRegistration = ({
                   }).format(biayaPendaftaran)}</strong>
                 </p>
               </div>
+              {/* ✅ ADDED: Show team info for poomsae */}
+              {isPoomsaeTeam() && (
+                <div className="mt-2 p-3 bg-purple-50 rounded-lg">
+                  <p className="font-plex text-purple-700 text-sm">
+                    <strong>Kategori Tim:</strong> {formData.selectedPoomsae?.label} - Pilih 2 atlet
+                  </p>
+                </div>
+              )}
             </div>
 
             <div className="space-y-6">
@@ -591,28 +698,57 @@ const UnifiedRegistration = ({
                 <>
                   <div>
                     <label className="block text-black mb-3 text-lg font-plex font-semibold pl-2">
-                      Nama Atlit <span className="text-red">*</span>
+                      {isPoomsaeTeam() ? "Atlet Pertama" : "Nama Atlit"} <span className="text-red">*</span>
                     </label>
                     <LockedSelect
                       unstyled
                       options={atlitOptions}
                       value={formData.selectedAtlit}
-                      onChange={(value: OptionType | null) => setFormData({...formData, selectedAtlit: value})}
+                      onChange={(value: OptionType | null) => setFormData({
+                        ...formData, 
+                        selectedAtlit: value,
+                        // Reset second athlete if first athlete changes
+                        selectedAtlit2: formData.selectedAtlit2?.value === value?.value ? null : formData.selectedAtlit2
+                      })}
                       placeholder="Pilih nama atlit..."
                       isSearchable
                       classNames={selectClassNames}
                       disabled={!canProceedStep2()}
                       message="Harap lengkapi data sebelumnya terlebih dahulu"
                     />
-                    {existingRegistrations.length > 0 && (
-                      <p className="text-xs text-blue-600 mt-2 pl-2">
-                        {existingRegistrations.length} atlet sudah terdaftar untuk kompetisi ini
-                      </p>
-                    )}
                   </div>
 
+                  {/* ✅ ADDED: Second athlete selection for team poomsae */}
+                  {isPoomsaeTeam() && (
+                    <div>
+                      <label className="block text-black mb-3 text-lg font-plex font-semibold pl-2">
+                        Atlet Kedua <span className="text-red">*</span>
+                      </label>
+                      <LockedSelect
+                        unstyled
+                        options={atlitOptions.filter(option => option.value !== formData.selectedAtlit?.value)}
+                        value={formData.selectedAtlit2}
+                        onChange={(value: OptionType | null) => setFormData({...formData, selectedAtlit2: value})}
+                        placeholder="Pilih atlet kedua..."
+                        isSearchable
+                        classNames={selectClassNames}
+                        disabled={!formData.selectedAtlit}
+                        message="Harap pilih atlet pertama terlebih dahulu"
+                      />
+                      {formData.selectedAtlit && formData.selectedAtlit2?.value === formData.selectedAtlit.value && (
+                        <p className="text-xs text-red-600 mt-2 pl-2">
+                          Tidak dapat memilih atlet yang sama untuk kedua posisi
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* ✅ UPDATED: Display athlete details */}
                   {selectedAtlitData && (
-                    <>
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-plex font-semibold text-black">
+                        Detail {isPoomsaeTeam() ? "Atlet Pertama" : "Atlet"}
+                      </h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                           <label className="block text-black mb-3 text-lg font-plex font-semibold pl-2">
@@ -666,43 +802,83 @@ const UnifiedRegistration = ({
                           />
                         </div>
                       </div>
+                    </div>
+                  )}
 
-                      {/* Weight validation warning */}
-                      {formData.styleType === "KYORUGI" && 
-                      formData.categoryType === "prestasi" && 
-                      formData.selectedWeight && 
-                      selectedAtlitData.bb && (
-                        <div className="p-4 bg-orange-50 rounded-lg border-l-4 border-orange-400">
-                          <p className="font-plex text-orange-700 text-sm">
-                            <strong>Validasi Berat Badan:</strong> 
-                            {(() => {
-                              const atlitWeight = selectedAtlitData.bb;
-                              const selectedWeightValue = formData.selectedWeight.value;
-                              
-                              if (selectedWeightValue === "+87") {
-                                return atlitWeight > 87 
-                                  ? ` Sesuai (${atlitWeight}kg untuk kategori Over 87kg)`
-                                  : ` Tidak sesuai (${atlitWeight}kg untuk kategori Over 87kg)`;
-                              } else {
-                                const maxWeight = parseInt(selectedWeightValue.replace("-", ""));
-                                return atlitWeight <= maxWeight 
-                                  ? ` Sesuai (${atlitWeight}kg untuk kategori Under ${maxWeight}kg)`
-                                  : ` Tidak sesuai (${atlitWeight}kg untuk kategori Under ${maxWeight}kg)`;
-                              }
-                            })()}
-                          </p>
+                  {/* ✅ ADDED: Display second athlete details for team poomsae */}
+                  {isPoomsaeTeam() && selectedAtlit2Data && (
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-plex font-semibold text-black">
+                        Detail Atlet Kedua
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-black mb-3 text-lg font-plex font-semibold pl-2">
+                            Berat Badan (kg)
+                          </label>
+                          <TextInput
+                            value={selectedAtlit2Data.bb?.toString() || "Tidak tersedia"}
+                            placeholder="Berat badan"
+                            className="h-12 w-full bg-gray-50"
+                            onChange={() => {}}
+                            disabled
+                          />
                         </div>
-                      )}
 
-                      {/* ✅ ADDED: Poomsae category display for POOMSAE */}
-                      {formData.styleType === "POOMSAE" && formData.selectedPoomsae && (
-                        <div className="p-4 bg-blue-50 rounded-lg border-l-4 border-blue-400">
-                          <p className="font-plex text-blue-700 text-sm">
-                            <strong>Kategori Poomsae:</strong> {formData.selectedPoomsae.label}
-                          </p>
+                        <div>
+                          <label className="block text-black mb-3 text-lg font-plex font-semibold pl-2">
+                            Tinggi Badan (cm)
+                          </label>
+                          <TextInput
+                            value={selectedAtlit2Data.tb?.toString() || "Tidak tersedia"}
+                            placeholder="Tinggi badan"
+                            className="h-12 w-full bg-gray-50"
+                            onChange={() => {}}
+                            disabled
+                          />
                         </div>
-                      )}
-                    </>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-black mb-3 text-lg font-plex font-semibold pl-2">
+                            Provinsi
+                          </label>
+                          <TextInput
+                            value={selectedAtlit2Data.provinsi}
+                            className="h-12 w-full bg-gray-50"
+                            onChange={() => {}}
+                            disabled
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-black mb-3 text-lg font-plex font-semibold pl-2">
+                            Belt/Sabuk
+                          </label>
+                          <TextInput
+                            value={selectedAtlit2Data.belt || "Tidak tersedia"}
+                            className="h-12 w-full bg-gray-50"
+                            onChange={() => {}}
+                            disabled
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ✅ UPDATED: Poomsae category display */}
+                  {formData.styleType === "POOMSAE" && formData.selectedPoomsae && (
+                    <div className="p-4 bg-blue-50 rounded-lg border-l-4 border-blue-400">
+                      <p className="font-plex text-blue-700 text-sm">
+                        <strong>Kategori Poomsae:</strong> {formData.selectedPoomsae.label}
+                        {isPoomsaeTeam() && (
+                          <span className="block mt-1">
+                            <strong>Tim:</strong> Dapat memilih atlet dengan jenis kelamin berbeda
+                          </span>
+                        )}
+                      </p>
+                    </div>
                   )}
                 </>
               )}
@@ -714,6 +890,7 @@ const UnifiedRegistration = ({
         return null;
     }
   };
+
   return (
     <Modal isOpen={isOpen}>
       <div className="bg-gradient-to-b from-white/90 to-white/80 h-screen md:h-[85vh] w-screen md:w-[80vw] lg:w-[70vw] xl:w-[60vw] rounded-xl flex flex-col justify-start items-center overflow-y-scroll font-plex">
@@ -782,7 +959,7 @@ const UnifiedRegistration = ({
                   label="Daftar Sekarang"
                   onClick={handleSubmit}
                   className={`h-12 px-8 rounded-lg font-semibold transition-colors duration-300 ${
-                    canSubmit && availableAtlits.length > 0
+                    canSubmit() && availableAtlits.length > 0
                       ? 'bg-green-500 border-2 border-green-500 text-white hover:bg-green-600'
                       : 'bg-gray-300 border-2 border-gray-300 text-gray-500 cursor-not-allowed'
                   }`}

@@ -28,7 +28,7 @@ export const kelasService = {
 
 getKelasKejuaraan: async (kompetisiId: number, filter: {
   styleType: Cabang,
-  gender?: JenisKelamin,
+  gender?: JenisKelamin, // ✅ MADE OPTIONAL
   categoryType?: string,
   kelompokId?: number,
   kelasBeratId?: number,
@@ -73,42 +73,20 @@ getKelasKejuaraan: async (kompetisiId: number, filter: {
       ];
     }
 
-    console.log("🔍 Final Prisma where condition:", JSON.stringify(whereCondition, null, 2));
-
-    // ✅ DEBUGGING: Check if any data exists for this competition
-    const totalKelas = await prisma.tb_kelas_kejuaraan.count({
-      where: { id_kompetisi: kompetisiId }
-    });
-    console.log(`📊 Total kelas for competition ${kompetisiId}:`, totalKelas);
-
-    // ✅ DEBUGGING: Check specific combinations
-    const kelasByKompetisi = await prisma.tb_kelas_kejuaraan.findMany({
-      where: { 
-        id_kompetisi: kompetisiId,
-        cabang: filter.styleType 
-      },
-      select: {
-        id_kelas_kejuaraan: true,
-        cabang: true,
-        id_kategori_event: true,
-        id_kelompok: true,
-        id_kelas_berat: true,
-        id_poomsae: true
-      }
-    });
-    console.log(`🔍 Available kelas for ${filter.styleType}:`, kelasByKompetisi);
-
-    // ✅ DEBUGGING: Check exact match without complex conditions
-    const exactMatch = await prisma.tb_kelas_kejuaraan.findFirst({
-      where: {
-        id_kompetisi: kompetisiId,
-        cabang: filter.styleType,
-        id_kategori_event: filter.categoryType === "prestasi" ? 2 : 1,
-        id_kelompok: filter.kelompokId,
+    // ✅ NEW: Handle gender filtering for kelas_berat
+    // For KYORUGI, we need to filter kelas_berat by gender
+    // For team POOMSAE, we skip gender filtering to get mixed gender class
+    if (filter.styleType === "KYORUGI" && filter.gender && filter.kelasBeratId) {
+      // Add gender constraint through kelas_berat relation
+      whereCondition.kelas_berat = {
         id_kelas_berat: filter.kelasBeratId,
-      }
-    });
-    console.log("🎯 Exact match result:", exactMatch);
+        jenis_kelamin: filter.gender
+      };
+      // Remove the direct id_kelas_berat since we're using relation
+      delete whereCondition.id_kelas_berat;
+    }
+
+    console.log("🔍 Final Prisma where condition:", JSON.stringify(whereCondition, null, 2));
 
     const kelas = await prisma.tb_kelas_kejuaraan.findMany({
       where: whereCondition,
@@ -132,6 +110,6 @@ getKelasKejuaraan: async (kompetisiId: number, filter: {
     if (err instanceof Error) console.error("Stack:", err.stack);
     throw err;
   }
-}
+},
 
 };

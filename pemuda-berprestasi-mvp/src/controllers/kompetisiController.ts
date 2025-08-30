@@ -92,23 +92,43 @@ export class KompetisiController {
   }
 
   static async registerAtlet(req: Request, res: Response) {
-    try {
-      const { atlitId, kelasKejuaraanId } = req.body;
-
-      if (!atlitId || !kelasKejuaraanId) {
-        return sendError(res, 'atlitId dan kelasKejuaraanId wajib diisi', 400);
-      }
-
-      const peserta = await KompetisiService.registerAtlet({
-        atlitId: Number(atlitId),
-        kelasKejuaraanId: Number(kelasKejuaraanId),
-      });
-
-      return sendSuccess(res, peserta, 'Atlet berhasil didaftarkan ke kelas kejuaraan', 201);
-    } catch (error: any) {
-      return sendError(res, error.message, 400);
+  try {
+    const { atlitId, kelasKejuaraanId, atlitId2 } = req.body;
+    
+    // Basic validation
+    if (!atlitId || !kelasKejuaraanId) {
+      return sendError(res, 'atlitId dan kelasKejuaraanId wajib diisi', 400);
     }
+
+    // Validate atlitId2 if provided
+    if (atlitId2 && atlitId === atlitId2) {
+      return sendError(res, 'Atlet pertama dan kedua tidak boleh sama', 400);
+    }
+
+    // Prepare service data
+    const registrationData = {
+      atlitId: Number(atlitId),
+      kelasKejuaraanId: Number(kelasKejuaraanId),
+      ...(atlitId2 ? { atlitId2: Number(atlitId2) } : {}),
+    };
+
+    console.log("🎯 Controller - Registration data:", registrationData);
+
+    const peserta = await KompetisiService.registerAtlet(registrationData);
+
+    // Prepare response message
+    const message = atlitId2 
+      ? 'Tim atlet berhasil didaftarkan ke kelas kejuaraan'
+      : 'Atlet berhasil didaftarkan ke kelas kejuaraan';
+
+    return sendSuccess(res, peserta, message, 201);
+    
+  } catch (error: any) {
+    console.error("❌ Controller - Registration error:", error);
+    return sendError(res, error.message, 400);
   }
+}
+
 
   static async getAtletsByKompetisi(req: Request, res: Response) {
     try {
