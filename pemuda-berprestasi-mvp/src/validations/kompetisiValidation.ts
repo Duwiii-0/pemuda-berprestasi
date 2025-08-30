@@ -141,14 +141,6 @@ export const kompetisiValidation = {
     status: Joi.string().valid('PENDING', 'APPROVED', 'REJECTED').required().messages({
       'any.only': 'Status harus salah satu dari: PENDING, APPROVED, REJECTED',
       'any.required': 'Status wajib diisi'
-    }),
-    reason: Joi.string().max(500).when('status', {
-      is: 'REJECTED',
-      then: Joi.required(),
-      otherwise: Joi.optional()
-    }).messages({
-      'string.max': 'Alasan maksimal 500 karakter',
-      'any.required': 'Alasan wajib diisi jika status REJECTED'
     })
   }),
 

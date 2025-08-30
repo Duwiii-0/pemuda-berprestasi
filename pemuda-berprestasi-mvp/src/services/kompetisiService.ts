@@ -245,8 +245,29 @@ export class KompetisiService {
       },
     },
     include: {
-      atlet: true,
-      kelas_kejuaraan: true,
+      atlet: { 
+        include: { 
+          dojang: true 
+        } 
+      },
+      kelas_kejuaraan: {
+        include: {
+          kategori_event: true,
+          kelompok: true,
+          kelas_berat: true,
+          poomsae: true
+        }
+      },
+      // TAMBAHKAN INI: Include data anggota tim
+      anggota_tim: {
+        include: {
+          atlet: {
+            include: {
+              dojang: true
+            }
+          }
+        }
+      }
     },
     skip,
     take: limit,
@@ -262,6 +283,34 @@ export class KompetisiService {
 
   return { peserta, total };
 }
+
+static async updateRegistrationStatus(
+    kompetisiId: number,
+    participantId: number,
+    status: StatusPendaftaran
+  ) {
+    // cek kompetisi
+    const kompetisi = await prisma.tb_kompetisi.findUnique({
+      where: { id_kompetisi: kompetisiId },
+    });
+    if (!kompetisi) {
+      throw new Error("Kompetisi tidak ditemukan");
+    }
+
+    // cek peserta
+    const peserta = await prisma.tb_peserta_kompetisi.findUnique({
+      where: { id_peserta_kompetisi: participantId },
+    });
+    if (!peserta) {
+      throw new Error("Peserta kompetisi tidak ditemukan");
+    }
+
+    // update status
+    return prisma.tb_peserta_kompetisi.update({
+      where: { id_peserta_kompetisi: participantId },
+      data: { status },
+    });
+  }
 
 
 

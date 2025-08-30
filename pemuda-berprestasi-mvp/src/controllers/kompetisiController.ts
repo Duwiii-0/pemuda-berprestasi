@@ -174,5 +174,28 @@ export class KompetisiController {
     }
   }
   
+  static async updateRegistrationStatus(req: Request, res: Response) {
+    try {
+      const { id, participantId } = req.params;
+      const { status } = req.body;
+
+      if (!["PENDING", "APPROVED", "REJECTED"].includes(status)) {
+        return res.status(400).json({ message: "Invalid status value" });
+      }
+
+      const updatedPeserta = await KompetisiService.updateRegistrationStatus(
+        Number(id),
+        Number(participantId),
+        status
+      );
+
+      return res.status(200).json({
+        message: "Status peserta berhasil diperbarui",
+        data: updatedPeserta,
+      });
+    } catch (error: any) {
+      return res.status(400).json({ message: error.message });
+    }
+  }
 
 }

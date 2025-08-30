@@ -31,11 +31,11 @@ router.delete('/:id', KompetisiController.delete);
 // Registration management
 router.get("/:id/atlet", authenticate, KompetisiController.getAtletsByKompetisi);
 router.post('/:id/register', authenticate, KompetisiController.registerAtlet);
-// router.put(
-//   '/:id/participants/:participantId/status',
-//   validateRequest(kompetisiValidation.updateStatus),
-//   KompetisiController.updateRegistrationStatus
-// );
+ router.put(
+   '/:id/participants/:participantId/status',
+   validateRequest(kompetisiValidation.updateStatus),
+   KompetisiController.updateRegistrationStatus
+ );
 // Tournament management
 // router.post('/:id/brackets', KompetisiController.generateBrackets);
 // router.get('/:id/brackets', KompetisiController.getBrackets);
