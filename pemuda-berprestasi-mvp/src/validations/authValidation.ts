@@ -1,4 +1,4 @@
-// src/validations/authValidation.ts
+// pemuda-berprestasi-mvp/src/validations/authValidation.ts
 import Joi from 'joi'
 
 // Register validation for pelatih
@@ -94,7 +94,7 @@ export const changePasswordSchema = Joi.object({
     .required()
     .messages({
       'string.min': 'New password must be at least 8 characters long',
-      'string.pattern.base': 'New password must contain at least one uppercase letter, one lowercase letter, and one number',
+      'string.pattern.base': 'New password must contain at least one letter and one number',
       'any.required': 'New password is required'
     }),
     
@@ -104,5 +104,34 @@ export const changePasswordSchema = Joi.object({
     .messages({
       'any.only': 'New password confirmation does not match',
       'any.required': 'New password confirmation is required'
+    })
+})
+
+// NEW: Reset password validation
+export const resetPasswordSchema = Joi.object({
+  email: Joi.string()
+    .email()
+    .required()
+    .messages({
+      'string.email': 'Email must be a valid email address',
+      'any.required': 'Email is required'
+    }),
+    
+  newPassword: Joi.string()
+    .min(8)
+    .pattern(/^(?=.*[A-Za-z])(?=.*\d).+$/)
+    .required()
+    .messages({
+      'string.min': 'New password must be at least 8 characters long',
+      'string.pattern.base': 'New password must contain at least one letter and one number',
+      'any.required': 'New password is required'
+    }),
+    
+  confirmNewPassword: Joi.string()
+    .valid(Joi.ref('newPassword'))
+    .required()
+    .messages({
+      'any.only': 'Password confirmation does not match',
+      'any.required': 'Password confirmation is required'
     })
 })

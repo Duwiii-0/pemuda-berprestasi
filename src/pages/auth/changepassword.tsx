@@ -1,81 +1,268 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Mail, KeyRound } from "lucide-react";
-import { useAuth } from "../../context/authContext";
+import { Mail, Eye, EyeOff, KeyRound } from "lucide-react";
 import GeneralButton from "../../components/generalButton";
 import TextInput from "../../components/textInput";
 import toast from "react-hot-toast";
 
 const ResetPassword = () => {
-  const [oldPassword, setOldPassword] = useState("");
+  const navigate = useNavigate();
+  const [email, setEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (!oldPassword || !newPassword) {
+    // Validasi frontend
+    if (!email || !newPassword || !confirmNewPassword) {
       toast.error("Semua field harus diisi");
       return;
     }
 
-    if (oldPassword === newPassword) {
-      toast.error("Password baru tidak boleh sama dengan password lama");
+    // Validasi email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      toast.error("Format email tidak valid");
       return;
     }
 
-    // TODO: panggil API reset password di sini
-    toast.success("Password berhasil direset (dummy)!");
+    if (newPassword.length < 8) {
+      toast.error("Password baru minimal 8 karakter");
+      return;
+    }
+
+    if (newPassword !== confirmNewPassword) {
+      toast.error("Konfirmasi password baru tidak cocok");
+      return;
+    }
+
+    // Validasi pattern (minimal satu huruf dan satu angka)
+    if (!/^(?=.*[A-Za-z])(?=.*\d).+$/.test(newPassword)) {
+      toast.error("Password baru harus mengandung minimal satu huruf dan satu angka");
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const response = await fetch('http://localhost:3000/api/auth/reset-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          newPassword,
+          confirmNewPassword
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Gagal mereset password');
+      }
+
+      if (data.success) {
+        toast.success("Password berhasil direset!");
+        
+        // Reset form
+        setEmail("");
+        setNewPassword("");
+        setConfirmNewPassword("");
+        
+        // Redirect ke login setelah berhasil
+        setTimeout(() => {
+          navigate("/login");
+        }, 1500);
+      } else {
+        throw new Error(data.message || 'Gagal mereset password');
+      }
+    } catch (error: any) {
+      console.error('Reset password error:', error);
+      
+      // Handle specific error messages
+      if (error.message === 'Email not found') {
+        toast.error("Email tidak terdaftar dalam sistem");
+      } else if (error.message === 'Password confirmation does not match') {
+        toast.error("Konfirmasi password tidak cocok");
+      } else if (error.message.includes('validation')) {
+        toast.error("Data yang dimasukkan tidak valid");
+      } else {
+        toast.error(error.message || "Terjadi kesalahan. Silakan coba lagi.");
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <div
-      className="h-screen w-full flex items-center justify-center bg-cover bg-center"
-      style={{ backgroundImage: "url('src/assets/photos/login.jpg')" }}
-    >
-      <div className="px-10 sm:px-25 bg-gradient-to-b from-white/90 to-white/80 h-screen md:h-[80vh] w-full md:w-[72vw] lg:w-[56vw] xl:w-[32vw] rounded-xl flex flex-col justify-center items-center gap-8 pt-0 font-plex ">
-        <div className="flex flex-col gap-2 justify-center items-center">
-          <img
-            src="src/assets/logo/logojv.png"
-            alt="taekwondo logo"
-            className="h-50 w-50"
-          />
-          <label className="font-bebas text-6xl text-red text-center">Reset Password</label>
+    <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-red/15 via-white to-red/10">
+      {/* Reset Password Container */}
+      <div className="w-full max-w-sm mx-4 sm:max-w-md sm:mx-6">
+        <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl border border-white/30 p-6 sm:p-7 md:p-8">
+          
+          {/* Header Section */}
+          <div className="text-center mb-6 md:mb-8">
+            {/* Logo */}
+            <div className="relative mb-4 md:mb-6">
+              <div className="absolute -inset-1 bg-gradient-to-r from-red/10 to-red/5 rounded-full blur-md opacity-60"></div>
+              <img 
+                src="src/assets/logo/logojv.png" 
+                alt="Taekwondo Logo" 
+                className="relative h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20 mx-auto drop-shadow-md"
+              />
+            </div>
+
+            {/* Title */}
+            <div className="space-y-2">
+              <h1 className="font-bebas text-3xl sm:text-4xl md:text-5xl leading-none tracking-wide">
+                <span className="bg-gradient-to-r from-red via-red/90 to-red/80 bg-clip-text text-transparent">
+                  RESET PASSWORD
+                </span>
+              </h1>
+              <div className="w-16 md:w-24 h-0.5 bg-gradient-to-r from-red/40 via-red to-red/40 mx-auto rounded-full"></div>
+              <p className="text-xs md:text-sm font-plex text-black/70 mt-2 md:mt-3">
+                Masukkan email dan password baru untuk reset akun Anda
+              </p>
+            </div>
+          </div>
+
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="space-y-4 md:space-y-5">
+            
+            {/* Email Input */}
+            <div className="space-y-1.5">
+              <label className="text-xs md:text-sm font-plex font-medium text-black/80 block">
+                Email <span className="text-red">*</span>
+              </label>
+              <div className="relative group">
+                <TextInput
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="h-11 md:h-12 border-2 border-red/25 focus:border-red rounded-xl bg-white/80 backdrop-blur-sm text-sm md:text-base font-plex pl-10 md:pl-12 pr-4 transition-all duration-300 group-hover:border-red/40 focus:bg-white focus:shadow-md focus:shadow-red/10"
+                  placeholder="Masukkan email Anda"
+                  disabled={isLoading}
+                />
+                <Mail className="absolute left-3 md:left-4 top-1/2 transform -translate-y-1/2 text-red/60 group-hover:text-red transition-colors" size={16} />
+              </div>
+            </div>
+
+            {/* New Password Input */}
+            <div className="space-y-1.5">
+              <label className="text-xs md:text-sm font-plex font-medium text-black/80 block">
+                Password Baru <span className="text-red">*</span>
+              </label>
+              <div className="relative group">
+                <TextInput
+                  type={showNewPassword ? "text" : "password"}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="h-11 md:h-12 border-2 border-red/25 focus:border-red rounded-xl bg-white/80 backdrop-blur-sm text-sm md:text-base font-plex pl-10 md:pl-12 pr-10 md:pr-12 transition-all duration-300 group-hover:border-red/40 focus:bg-white focus:shadow-md focus:shadow-red/10"
+                  placeholder="Masukkan password baru"
+                  disabled={isLoading}
+                />
+                <KeyRound className="absolute left-3 md:left-4 top-1/2 transform -translate-y-1/2 text-red/60 group-hover:text-red transition-colors" size={16} />
+                <button
+                  type="button"
+                  onClick={() => setShowNewPassword(!showNewPassword)}
+                  className="absolute right-3 md:right-4 top-1/2 transform -translate-y-1/2 text-black/50 hover:text-red transition-colors"
+                  disabled={isLoading}
+                >
+                  {showNewPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </div>
+
+            {/* Confirm New Password Input */}
+            <div className="space-y-1.5">
+              <label className="text-xs md:text-sm font-plex font-medium text-black/80 block">
+                Konfirmasi Password Baru <span className="text-red">*</span>
+              </label>
+              <div className="relative group">
+                <TextInput
+                  type={showConfirmPassword ? "text" : "password"}
+                  value={confirmNewPassword}
+                  onChange={(e) => setConfirmNewPassword(e.target.value)}
+                  className="h-11 md:h-12 border-2 border-red/25 focus:border-red rounded-xl bg-white/80 backdrop-blur-sm text-sm md:text-base font-plex pl-10 md:pl-12 pr-10 md:pr-12 transition-all duration-300 group-hover:border-red/40 focus:bg-white focus:shadow-md focus:shadow-red/10"
+                  placeholder="Konfirmasi password baru"
+                  disabled={isLoading}
+                />
+                <KeyRound className="absolute left-3 md:left-4 top-1/2 transform -translate-y-1/2 text-red/60 group-hover:text-red transition-colors" size={16} />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-3 md:right-4 top-1/2 transform -translate-y-1/2 text-black/50 hover:text-red transition-colors"
+                  disabled={isLoading}
+                >
+                  {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </div>
+
+            {/* Password Requirements */}
+            <div className="bg-gradient-to-r from-amber-50 to-amber-50/70 border border-amber-200/60 rounded-xl p-4">
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0 w-5 h-5 rounded-full bg-amber-100 flex items-center justify-center mt-0.5">
+                  <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
+                </div>
+                <div className="flex-1">
+                  <p className="font-medium text-sm text-amber-900 mb-2">Syarat Password Baru:</p>
+                  <ul className="text-xs text-amber-800 space-y-1">
+                    <li className="flex items-start gap-2">
+                      <span className="text-amber-500 mt-1">•</span>
+                      <span>Minimal 8 karakter</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-amber-500 mt-1">•</span>
+                      <span>Mengandung minimal satu huruf dan satu angka</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-amber-500 mt-1">•</span>
+                      <span>Email harus terdaftar di sistem</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-amber-500 mt-1">•</span>
+                      <span>Konfirmasi password harus sama</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+            
+            {/* Reset Password Button */}
+            <div className="pt-2 md:pt-3">
+              <GeneralButton
+                label={isLoading ? "Mereset Password..." : "Reset Password"}
+                type="submit"
+                disabled={isLoading}
+                className={`w-full h-11 md:h-12 rounded-xl text-white text-sm md:text-base font-plex font-semibold transition-all duration-300 ${
+                  isLoading
+                    ? "bg-gray-400 border-gray-400 cursor-not-allowed opacity-50"
+                    : "bg-gradient-to-r from-red to-red/90 hover:from-red/90 hover:to-red border-2 border-red hover:shadow-lg hover:shadow-red/25 hover:-translate-y-0.5 active:scale-[0.98]"
+                }`}
+              />
+            </div>
+            
+            {/* Navigation Links */}
+            <div className="text-center pt-3 md:pt-4 space-y-2">
+              <p className="text-xs md:text-sm font-plex text-black/70">
+                Sudah ingat password?{" "}
+                <Link 
+                  to="/login" 
+                  className="font-medium text-red hover:text-red/80 underline underline-offset-2 transition-colors duration-300"
+                >
+                  Login
+                </Link>
+              </p>
+            </div>
+          </form>
         </div>
-
-        <form onSubmit={handleSubmit} className="w-full flex flex-col gap-4">
-          <div className="w-full">
-            <TextInput
-              type="password"
-              value={oldPassword}
-              onChange={(e) => setOldPassword(e.target.value)}
-              className="h-12 border-red"
-              placeholder="your old password"
-              icon={<Mail className="text-black" size={20} />}
-            />
-          </div>
-
-          <div className="w-full">
-            <TextInput
-              type="password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              className="h-12  border-red"
-              placeholder="your new password"
-              icon={<KeyRound className="text-black" size={20} />}
-            />
-          </div>
-
-          <div className="w-full flex flex-col gap-2">
-            <GeneralButton
-              label="Reset"
-              type={ "submit" as any }
-              className="active:scale-97 w-full bg-red border-2 border-red h-12 rounded-xl text-white text-lg font-semibold hover:scale-101 transition-discrete duration-300 hover:shadow-xl"
-            />
-            <Link to="/login" className="pl-1 underline hover:text-red">
-              Login here
-            </Link>
-          </div>
-        </form>
       </div>
     </div>
   );

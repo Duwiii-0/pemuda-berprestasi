@@ -208,6 +208,29 @@ class AuthService {
     return accountData
   }
 
+  // FIXED: Reset Password method
+  async resetPassword(email: string, newPassword: string) {
+    // Check if email exists
+    const existingUser = await prisma.tb_akun.findUnique({
+      where: { email }
+    })
+    
+    if (!existingUser) {
+      throw new Error('Email not found')
+    }
+    
+    // Hash new password using the existing hashPassword utility
+    const password_hash = await hashPassword(newPassword)
+    
+    // Update password with correct field name
+    await prisma.tb_akun.update({
+      where: { email },
+      data: { password_hash }  // Fixed: use password_hash instead of password
+    })
+    
+    return { message: 'Password reset successfully' }
+  }
+
   async changePassword(id_akun: number, currentPassword: string, newPassword: string) {
     const account = await prisma.tb_akun.findUnique({
       where: { id_akun }

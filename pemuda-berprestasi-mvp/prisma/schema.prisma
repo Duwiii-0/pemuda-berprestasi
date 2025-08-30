@@ -27,7 +27,7 @@
     jenis_kelamin    JenisKelamin?
     provinsi         String?     @db.VarChar(100)
     kota             String?     @db.VarChar(100)
-    alamat           String?     @db.VarChar(100)y
+    alamat           String?     @db.VarChar(100)
 
     sertifikat_sabuk String?     @db.VarChar(255)
 
