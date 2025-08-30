@@ -13,6 +13,7 @@ const AllAtlets: React.FC = () => {
   const [filterGender, setFilterGender] = useState<"ALL" | "LAKI_LAKI" | "PEREMPUAN">("ALL");
   const [error, setError] = useState<string | null>(null);
   const { token } = useAuth();
+  const [filterAgeCategory, setFilterAgeCategory] = useState<"ALL" | "CADET" | "JUNIOR" | "SENIOR">("ALL");
 
 
     // Set token global sekali aja
@@ -37,10 +38,21 @@ const AllAtlets: React.FC = () => {
     fetchData();
   }, []);
 
+  const getAgeCategory = (umur: number | undefined): "CADET" | "JUNIOR" | "SENIOR" | undefined => {
+    if (!umur) return undefined;
+    if (umur >= 10 && umur <= 12) return "CADET";     // misal sekarang 2025 → lahir 2013-2011
+    if (umur >= 13 && umur <= 15) return "JUNIOR";   // lahir 2010-2008
+    if (umur >= 16) return "SENIOR";                 // lahir 2007 ke atas
+  };
+
   const filteredAtlits = atlits.filter((atlet) => {
     const matchesSearch = atlet.nama_atlet.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesGender = filterGender === "ALL" || atlet.jenis_kelamin === filterGender;
-    return matchesSearch && matchesGender;
+
+    const category = getAgeCategory(atlet.umur);
+    const matchesAgeCategory = filterAgeCategory === "ALL" || category === filterAgeCategory;
+
+    return matchesSearch && matchesGender && matchesAgeCategory;
   });
 
   const formatDate = (dateString: string) => {
@@ -54,6 +66,13 @@ const AllAtlets: React.FC = () => {
       return "Invalid date";
     }
   };
+
+  const ageCategories = [
+    { value: "ALL", label: "Semua Kelompok Umur" },
+    { value: "CADET", label: "Cadet (2011-2013)" },
+    { value: "JUNIOR", label: "Junior (2008-2010)" },
+    { value: "SENIOR", label: "Senior (2007 ke atas)" },
+  ];
 
   const getGenderBadge = (gender: string) => {
     const styles = {
@@ -103,7 +122,7 @@ const AllAtlets: React.FC = () => {
 
       {/* Filters and Search */}
       <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
           <div className="relative md:col-span-2">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
             <input
@@ -114,7 +133,6 @@ const AllAtlets: React.FC = () => {
               className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
             />
           </div>
-
           <select
             value={filterGender}
             onChange={(e) => setFilterGender(e.target.value as any)}
@@ -125,6 +143,16 @@ const AllAtlets: React.FC = () => {
               <option key={opt.value} value={opt.value}>
                 {opt.label}
               </option>
+            ))}
+          </select>
+
+          <select
+            value={filterAgeCategory}
+            onChange={(e) => setFilterAgeCategory(e.target.value as any)}
+            className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+          >
+            {ageCategories.map((opt) => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
             ))}
           </select>
         </div>
