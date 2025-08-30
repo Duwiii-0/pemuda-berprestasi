@@ -1,188 +1,309 @@
-import { Menu, X, ChevronUp, ChevronDown } from "lucide-react";
+import { ChevronDown, Menu, X, User, Settings, LogOut, Home } from "lucide-react";
 import GeneralButton from "../generalButton";
 import { Link, useLocation } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../../context/authContext";
 
 const NavbarLomba = ({ onLogoutRequest }: { onLogoutRequest: () => void }) => {
   const location = useLocation();
-
   const { user } = useAuth(); 
   const [showDropdown, setShowDropdown] = useState(false);
   const [isBurgerOpen, setIsBurgerOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
+  // Handle scroll effect for navbar background
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 50);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Close mobile menu on route change
+  useEffect(() => {
+    setIsBurgerOpen(false);
+    setShowDropdown(false);
+  }, [location]);
+
+  // Prevent body scroll when mobile menu is open
+  useEffect(() => {
+    if (isBurgerOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isBurgerOpen]);
+
+  // Navigation items
+  const navItems = [
+    { to: "/lomba/home", label: "Beranda" },
+    { to: "/lomba/timeline", label: "Timeline" },
+    { to: "/lomba/faq", label: "FAQ" }
+  ];
+
+  const userMenuItems = [
+    { to: "/dashboard/dojang", label: "Dashboard", icon: Home },
+    { to: "/settings", label: "Settings", icon: Settings }
+  ];
+
+  // Styling yang konsisten dengan warna merah
+  const getNavbarStyles = () => {
+    return {
+      bg: isScrolled ? "bg-red/95 backdrop-blur-md shadow-lg" : "bg-red",
+      text: "text-white",
+      logo: "text-yellow drop-shadow-lg",
+      buttonBorder: "border-white/80",
+      buttonText: "text-white",
+      buttonBg: "bg-white text-red hover:bg-white/90 hover:scale-105",
+      hoverText: "hover:text-yellow/80 hover:scale-105",
+      dropdownBg: "bg-white/95 backdrop-blur-md"
+    };
+  };
+
+  const styles = getNavbarStyles();
 
   return (
-    <div className="bg-red absolute top-0 left-0 h-24 w-full flex justify-between items-center px-4 md:px-10 lg:px-12 z-50">
-      {/* Logo */}
-      <Link
-        to="/"
-        className="block md:hidden lg:block text-h3 xl:px-10 text-yellow font-bebas tracking-wider uppercase"
-      >
-        pemuda berprestasi
-      </Link>
+    <>
+      {/* Navbar */}
+      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ease-out ${styles.bg}`}>
+        <div className="w-full px-[5%] sm:px-[8%] lg:px-[10%] py-4 md:py-6">
+          <div className="flex justify-between items-center h-16 md:h-20">
+            
+            {/* Logo */}
+            <Link 
+              to="/" 
+              className={`text-xl sm:text-2xl lg:text-3xl ${styles.logo} font-bebas tracking-wider uppercase transition-all duration-300 ease-out hover:scale-105`}
+            >
+              pemuda berprestasi
+            </Link>
 
-      {/* Menu Desktop */}
-      <div className="hidden md:flex md:gap-10  xl:gap-20 items-center ">
-        <Link
-          to="/lomba/home"
-          className={`active:scale-95 transition-all duration-300 relative text-lg font-plex  ${
-            location.pathname === "/lomba/home" ? "text-yellow" : "text-white hover:text-yellow/70"
-          }`}
-        >
-          Beranda
-          <span
-            className={`absolute left-0 -bottom-1 h-[2px] bg-yellow transition-all duration-300 ${
-              location.pathname === "/lomba/home" ? "w-full" : "w-0"
-            }`}
-          />
-        </Link>
-        <Link
-          to="/lomba/timeline"
-          className={`active:scale-95 transition-all duration-300 relative text-lg font-plex  ${
-            location.pathname === "/lomba/timeline" ? "text-yellow" : "text-white hover:text-yellow/70"
-          }`}
-        >
-          Timeline
-          <span
-            className={`absolute left-0 -bottom-1 h-[2px] bg-yellow transition-all duration-300 ${
-              location.pathname === "/lomba/timeline" ? "w-full" : "w-0"
-            }`}
-          />
-        </Link>
-        <Link
-          to="/lomba/faq"
-          className={`active:scale-95 transition-all duration-300 relative text-lg font-plex ${
-            location.pathname === "/lomba/faq" ? "text-yellow" : "text-white hover:text-yellow/70"
-          }`}
-        >
-          Faq
-          <span
-            className={`absolute left-0 -bottom-1 h-[2px] bg-yellow transition-all duration-300 ${
-              location.pathname === "/lomba/faq" ? "w-full" : "w-0"
-            }`}
-          />
-        </Link>
-      </div>
-
-      {/* Button Desktop */}
-      {!user ? (
-        <div className="hidden md:flex gap-10">
-          <GeneralButton
-            type="navbar"
-            to="/register"
-            label="Register"
-            className="active:scale-95 h-12 text-lg border-2 border-white text-white font-plex"
-          />
-          <GeneralButton
-            type="navbar"
-            to="/login"
-            label="Login"
-            className="active:scale-95 h-12 text-lg border-2 bg-white border-white text-red font-plex"
-          />
-        </div>
-      ) : (
-        <div className="hidden md:block relative">
-          <button
-            onClick={() => setShowDropdown((prev) => !prev)}
-            className={`${showDropdown && 'border-yellow'} h-12 px-6 text-lg border-2 bg-white border-yellow text-red font-plex rounded-lg transition-all duration-300 ${showDropdown && "rounded-b-none border-b-transparent pt-4"}`}
-          >
-            <span className="flex gap-2 items-center justify-center">
-              <span className="max-w-32 lg:max-w-42 xl:max-w-full truncate">
-                {user?.pelatih?.nama_pelatih ?? "Nama tidak tersedia"}
-              </span>
-              {showDropdown ? (
-                <ChevronUp size={26} className="transition-all duration-500" />
-              ) : (
-                <ChevronUp size={26} className="transition-all duration-500 -rotate-180" />
-              )}
-            </span>
-          </button>
-
-          {showDropdown && (
-            <div className={`absolute right-0 -mt-2 bg-white w-full pt-6 shadow-lg rounded-lg rounded-t-none border-2 border-t-transparent border-white ${showDropdown && 'border-yellow'} z-50`}>
-              <Link
-                to="/dashboard/dojang"
-                className={`text-lg block px-4 py-2 text-red hover:font-semibold transition-all duration-300 hover:text-yellow`} 
-                onClick={() => setShowDropdown(false)}
-              >
-                Dashboard
-              </Link>
-              <Link
-                to="/settings"
-                className={`text-lg block px-4 py-2 text-red hover:font-semibold transition-all duration-300 hover:text-yellow`} 
-                onClick={() => setShowDropdown(false)}
-              >
-                Settings
-              </Link>
-              <button
-                onClick={() => {
-                  setShowDropdown(false);
-                  onLogoutRequest();
-                }}
-                className={`text-lg w-full text-left px-4 py-2 text-red hover:font-semibold transition-all duration-300 hover:text-yellow`}
-              >
-                Logout
-              </button>
+            {/* Desktop Navigation */}
+            <div className="hidden lg:flex items-center space-x-8">
+              {navItems.map(({ to, label }) => (
+                <Link
+                  key={to}
+                  to={to}
+                  className={`relative px-4 py-2 text-lg ${styles.text} font-plex font-medium transition-all duration-300 ease-out ${
+                    location.pathname === to ? "text-yellow font-semibold" : styles.hoverText
+                  } group`}
+                >
+                  {label}
+                  {/* Animated underline */}
+                  <span 
+                    className={`absolute bottom-0 left-1/2 transform -translate-x-1/2 h-0.5 bg-yellow transition-all duration-300 ease-out ${
+                      location.pathname === to ? "w-full" : "w-0 group-hover:w-full"
+                    }`}
+                  />
+                </Link>
+              ))}
             </div>
-          )}
-        </div>
-      )}
 
-      {/* Burger Mobile */}
-      <div className="md:hidden">
-        <button onClick={() => setIsBurgerOpen((prev) => !prev)}>
-          {isBurgerOpen ? (
-            <X size={32} className="text-white" />
-          ) : (
-            <Menu size={32} className="text-white" />
-          )}
-        </button>
+            {/* Desktop Auth Section */}
+            <div className="hidden lg:flex items-center">
+              {!user ? (
+                <div className="flex items-center space-x-4">
+                  <Link
+                    to="/register"
+                    className={`px-6 py-2.5 text-base border-2 ${styles.buttonBorder} ${styles.buttonText} font-plex rounded-lg transition-all duration-300 ease-out hover:bg-white hover:text-red hover:scale-105 hover:shadow-lg`}
+                  >
+                    Register
+                  </Link>
+                  <Link
+                    to="/login"
+                    className={`px-8 py-2.5 text-base border-2 ${styles.buttonBorder} ${styles.buttonBg} font-plex rounded-lg transition-all duration-300 ease-out hover:shadow-lg`}
+                  >
+                    Login
+                  </Link>
+                </div>
+              ) : (
+                <div className="relative" ref={dropdownRef}>
+                  <button
+                    onClick={() => setShowDropdown(!showDropdown)}
+                    className={`flex items-center space-x-2 px-4 py-2.5 text-base border-2 ${styles.buttonBorder} ${styles.buttonText} font-plex rounded-lg transition-all duration-300 ease-out hover:bg-white hover:text-red hover:scale-105 hover:shadow-lg group`}
+                  >
+                    <User size={18} className="transition-transform duration-300 group-hover:scale-110" />
+                    <span className="max-w-32 truncate">
+                      {user?.pelatih?.nama_pelatih ?? "User"}
+                    </span>
+                    <ChevronDown 
+                      size={18} 
+                      className={`transition-all duration-300 ease-out ${showDropdown ? "rotate-180" : ""} group-hover:scale-110`} 
+                    />
+                  </button>
 
-        <div
-          className={`fixed top-0 left-0 w-full bg-white shadow-lg border-b border-gray-200 z-40 flex flex-col transform transition-transform duration-300 ${
-            isBurgerOpen ? "translate-y-0" : "-translate-y-full"
-          }`}
-        >
-          <div className="flex justify-end items-center h-20 px-6 border-b border-gray-200">
-            <button onClick={() => setIsBurgerOpen(false)}>
-              <X size={28} className="text-gray-700" />
+                  {/* User Dropdown */}
+                  {showDropdown && (
+                    <div className={`absolute right-0 mt-2 w-52 ${styles.dropdownBg} rounded-xl border border-gray-200/50 shadow-2xl overflow-hidden z-50 transform transition-all duration-300 ease-out animate-in fade-in slide-in-from-top-2`}>
+                      {userMenuItems.map(({ to, label, icon: Icon }) => (
+                        <Link
+                          key={to}
+                          to={to}
+                          className="flex items-center space-x-3 px-4 py-3 text-red font-plex transition-all duration-200 ease-out hover:bg-red hover:text-white group"
+                          onClick={() => setShowDropdown(false)}
+                        >
+                          <Icon size={16} className="transition-transform duration-200 group-hover:scale-110" />
+                          <span>{label}</span>
+                        </Link>
+                      ))}
+                      <div className="border-t border-gray-100 my-1"></div>
+                      <button
+                        onClick={() => {
+                          setShowDropdown(false);
+                          onLogoutRequest();
+                        }}
+                        className="flex items-center space-x-3 w-full px-4 py-3 text-red font-plex transition-all duration-200 ease-out hover:bg-red hover:text-white group"
+                      >
+                        <LogOut size={16} className="transition-transform duration-200 group-hover:scale-110" />
+                        <span>Logout</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Mobile Menu Button */}
+            <button
+              onClick={() => setIsBurgerOpen(!isBurgerOpen)}
+              className={`lg:hidden p-3 ${styles.text} hover:bg-white hover:text-red rounded-xl transition-all duration-300 ease-out hover:scale-110 hover:shadow-lg group`}
+            >
+              <div className="relative w-6 h-6">
+                <Menu 
+                  size={24} 
+                  className={`absolute inset-0 transition-all duration-300 ease-out ${isBurgerOpen ? 'opacity-0 rotate-180 scale-75' : 'opacity-100 rotate-0 scale-100'}`} 
+                />
+                <X 
+                  size={24} 
+                  className={`absolute inset-0 transition-all duration-300 ease-out ${isBurgerOpen ? 'opacity-100 rotate-0 scale-100' : 'opacity-0 rotate-180 scale-75'}`} 
+                />
+              </div>
             </button>
           </div>
+        </div>
+      </nav>
 
-          <div className="flex flex-col p-4 text-lg text-center">
-            {!user ? (
-              <>
-                <Link to="/lomba/home" className="px-4 py-3 text-black hover:bg-gray-100 rounded" onClick={() => setIsBurgerOpen(false)}>Beranda</Link>
-                <Link to="/lomba/timeline" className="px-4 py-3 text-black hover:bg-gray-100 rounded" onClick={() => setIsBurgerOpen(false)}>Timeline</Link>
-                <Link to="/lomba/faq" className="px-4 py-3 text-black hover:bg-gray-100 rounded" onClick={() => setIsBurgerOpen(false)}>FAQ</Link>
-                <Link to="/register" className="px-4 py-3 text-black hover:bg-gray-100 rounded" onClick={() => setIsBurgerOpen(false)}>Register</Link>
-                <Link to="/login" className="px-4 py-3 text-black hover:bg-gray-100 rounded" onClick={() => setIsBurgerOpen(false)}>Login</Link>
-              </>
-            ) : (
-              <>
-                <Link to="/lomba/home" className="px-4 py-3 text-black hover:bg-gray-100 rounded" onClick={() => setIsBurgerOpen(false)}>Beranda</Link>
-                <Link to="/lomba/timeline" className="px-4 py-3 text-black hover:bg-gray-100 rounded" onClick={() => setIsBurgerOpen(false)}>Timeline</Link>
-                <Link to="/lomba/faq" className="px-4 py-3 text-black hover:bg-gray-100 rounded" onClick={() => setIsBurgerOpen(false)}>FAQ</Link>
-                <Link to="/dashboard/dojang" className="px-4 py-3 text-black hover:bg-gray-100 rounded" onClick={() => setIsBurgerOpen(false)}>Dashboard</Link>
-                <Link to="/settings" className="px-4 py-3 text-black hover:bg-gray-100 rounded" onClick={() => setIsBurgerOpen(false)}>Settings</Link>
-                <button
-                  onClick={() => {
-                    setIsBurgerOpen(false);
-                    localStorage.removeItem("loggedUser");
-                    window.location.href = "/";
+      {/* Mobile Menu Overlay */}
+      <div className={`fixed inset-0 z-40 lg:hidden transition-all duration-500 ease-out ${
+        isBurgerOpen ? 'opacity-100 visible' : 'opacity-0 invisible'
+      }`}>
+        {/* Background overlay */}
+        <div 
+          className={`absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-500 ease-out ${
+            isBurgerOpen ? 'opacity-100' : 'opacity-0'
+          }`}
+          onClick={() => setIsBurgerOpen(false)}
+        />
+        
+        {/* Mobile menu panel */}
+        <div className={`absolute top-20 md:top-24 left-4 right-4 sm:left-8 sm:right-8 bg-white rounded-xl shadow-2xl transform transition-all duration-500 ease-out ${
+          isBurgerOpen ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0'
+        }`}>
+          <div className="px-4 py-5 max-h-[calc(100vh-6rem)] overflow-y-auto">
+            
+            {/* Mobile Navigation Links */}
+            <div className="space-y-1 mb-5">
+              {navItems.map(({ to, label }, index) => (
+                <Link
+                  key={to}
+                  to={to}
+                  className={`block px-4 py-3 text-base font-plex font-medium rounded-lg transition-all duration-300 ease-out hover:scale-[1.02] hover:shadow-md ${
+                    location.pathname === to 
+                      ? "bg-red text-white shadow-lg" 
+                      : "text-red hover:bg-red hover:text-white"
+                  }`}
+                  onClick={() => setIsBurgerOpen(false)}
+                  style={{
+                    transitionDelay: isBurgerOpen ? `${index * 100}ms` : '0ms'
                   }}
-                  className="px-4 py-3 text-gray-700 hover:bg-gray-100 rounded"
                 >
-                  Logout
-                </button>
-              </>
-            )}
+                  {label}
+                </Link>
+              ))}
+            </div>
+
+            {/* Mobile Auth Section */}
+            <div className="pt-4 border-t border-gray-200">
+              {!user ? (
+                <div className="space-y-3">
+                  <Link
+                    to="/register"
+                    className="block w-full py-4 text-lg text-center border-2 border-red text-red font-plex font-semibold rounded-xl hover:bg-red hover:text-white transition-all duration-300 ease-out hover:scale-[1.02] hover:shadow-lg"
+                    onClick={() => setIsBurgerOpen(false)}
+                  >
+                    Register
+                  </Link>
+                  <Link
+                    to="/login"
+                    className="block w-full py-4 text-lg text-center border-2 border-red bg-red text-white font-plex font-semibold rounded-xl hover:bg-red/90 transition-all duration-300 ease-out hover:scale-[1.02] hover:shadow-lg"
+                    onClick={() => setIsBurgerOpen(false)}
+                  >
+                    Login
+                  </Link>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {/* User Info */}
+                  <div className="flex items-center space-x-3 px-4 py-3 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg border border-gray-200">
+                    <div className="w-8 h-8 bg-red rounded-full flex items-center justify-center shadow-md">
+                      <User size={16} className="text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-plex font-semibold text-red truncate text-sm">
+                        {user?.pelatih?.nama_pelatih ?? "User"}
+                      </p>
+                      <p className="text-xs text-gray-500">Logged in</p>
+                    </div>
+                  </div>
+
+                  {/* User Menu Items */}
+                  <div className="space-y-1">
+                    {userMenuItems.map(({ to, label, icon: Icon }) => (
+                      <Link
+                        key={to}
+                        to={to}
+                        className="flex items-center space-x-3 px-4 py-3 text-red font-plex rounded-lg hover:bg-red hover:text-white transition-all duration-300 ease-out hover:scale-[1.02] hover:shadow-md group"
+                        onClick={() => setIsBurgerOpen(false)}
+                      >
+                        <Icon size={16} className="transition-transform duration-300 group-hover:scale-110" />
+                        <span className="text-base">{label}</span>
+                      </Link>
+                    ))}
+
+                    {/* Logout Button */}
+                    <button
+                      onClick={() => {
+                        setIsBurgerOpen(false);
+                        onLogoutRequest();
+                      }}
+                      className="flex items-center space-x-3 w-full px-4 py-3 text-red font-plex rounded-lg hover:bg-red hover:text-white transition-all duration-300 ease-out hover:scale-[1.02] hover:shadow-md border-t border-gray-200 mt-4 pt-3 group"
+                    >
+                      <LogOut size={16} className="transition-transform duration-200 group-hover:scale-110" />
+                      <span className="text-base">Logout</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

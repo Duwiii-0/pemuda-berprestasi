@@ -1,6 +1,13 @@
 import { Home, Wrench } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const NotFound = () => {
+  const navigate = useNavigate();
+
+  const handleGoHome = () => {
+    navigate('/');
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       {/* Navbar */}
@@ -54,7 +61,10 @@ const NotFound = () => {
 
             {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <button className="group relative inline-flex items-center gap-3 bg-gradient-to-r from-red to-red/90 hover:from-red/90 hover:to-red text-white font-plex font-medium px-6 md:px-8 py-3 md:py-4 rounded-lg md:rounded-xl transition-all duration-300 hover:shadow-lg hover:shadow-red/25 hover:-translate-y-0.5 text-sm md:text-base">
+              <button 
+                onClick={handleGoHome}
+                className="group relative inline-flex items-center gap-3 bg-gradient-to-r from-red to-red/90 hover:from-red/90 hover:to-red text-white font-plex font-medium px-6 md:px-8 py-3 md:py-4 rounded-lg md:rounded-xl transition-all duration-300 hover:shadow-lg hover:shadow-red/25 hover:-translate-y-0.5 text-sm md:text-base cursor-pointer"
+              >
                 <Home className="w-4 h-4 md:w-5 md:h-5" />
                 <span>Kembali ke Beranda</span>
               </button>
