@@ -14,28 +14,72 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
 
   const handleLogin = async () => {
+    // Basic validation
+    if (!email || !password) {
+      toast.error("Email dan password harus diisi");
+      return;
+    }
+
+    if (!email.includes("@")) {
+      toast.error("Format email tidak valid");
+      return;
+    }
+
     try {
-      await login(email, password);
+      const result = await login(email, password);
+      
+      // Check if login was successful
+      if (result && (result as any).success !== false) {
+        toast.success("Login berhasil!");
+        
+        // Force navigation after successful login
+        setTimeout(() => {
+          if (isAdmin) {
+            navigate("/dashboard", { replace: true });
+          } else if (isPelatih) {
+            navigate("/", { replace: true });
+          } else {
+            // Default redirect for regular users
+            navigate("/", { replace: true });
+          }
+        }, 100);
+      }
     } catch (error: any) {
-      toast.error(error.message || 'Email atau password salah');
+      console.error("Login error:", error);
+      toast.error(error?.message || error?.response?.data?.message || 'Email atau password salah');
     }
   };
 
+  // Alternative useEffect for handling authentication state changes
   React.useEffect(() => {
     if (isAuthenticated) {
-      if (isAdmin) {
-        navigate("/dashboard");
-        toast.success("Login berhasil sebagai Admin!");
-      } else if (isPelatih) {
-        navigate("/");
-        toast.success("Login berhasil sebagai Pelatih!");
-      }
+      const redirectTimeout = setTimeout(() => {
+        if (isAdmin) {
+          navigate("/dashboard", { replace: true });
+          toast.success("Login berhasil sebagai Admin!");
+        } else if (isPelatih) {
+          navigate("/", { replace: true });
+          toast.success("Login berhasil sebagai Pelatih!");
+        } else {
+          navigate("/", { replace: true });
+          toast.success("Login berhasil!");
+        }
+      }, 500);
+
+      return () => clearTimeout(redirectTimeout);
     }
   }, [isAuthenticated, isAdmin, isPelatih, navigate]);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     handleLogin();
+  };
+
+  // Handle Enter key press
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && !loading) {
+      handleLogin();
+    }
   };
 
   return (
@@ -84,6 +128,7 @@ const Login = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={loading}
+                  required
                 />
                 <Mail className="absolute left-3 md:left-4 top-1/2 transform -translate-y-1/2 text-red/60 group-hover:text-red transition-colors" size={16} />
               </div>
@@ -102,12 +147,14 @@ const Login = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={loading}
+                  required
                 />
                 <KeyRound className="absolute left-3 md:left-4 top-1/2 transform -translate-y-1/2 text-red/60 group-hover:text-red transition-colors" size={16} />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 md:right-4 top-1/2 transform -translate-y-1/2 text-black/50 hover:text-red transition-colors"
+                  disabled={loading}
                 >
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
@@ -127,8 +174,10 @@ const Login = () => {
             {/* Login Button */}
             <div className="pt-2 md:pt-3">
               <GeneralButton
+                type="submit"
                 label={loading ? "Masuk..." : "Login"}
-                disabled={loading}
+                disabled={loading || !email || !password}
+                onClick={handleLogin}
                 className="w-full h-11 md:h-12 bg-gradient-to-r from-red to-red/90 hover:from-red/90 hover:to-red border-2 border-red rounded-xl text-white text-sm md:text-base font-plex font-semibold transition-all duration-300 hover:shadow-lg hover:shadow-red/25 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
               />
             </div>

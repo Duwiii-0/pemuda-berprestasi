@@ -1,7 +1,7 @@
 // src/pages/atlit/TambahAtlit.tsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, User, Phone, MapPinned, CalendarFold, Scale, Ruler, IdCard, Save } from "lucide-react";
+import { ArrowLeft, User, Phone, MapPinned, CalendarFold, Scale, Ruler, IdCard, Save, Menu } from "lucide-react";
 import Select from "react-select";
 import TextInput from "../../components/textInput";
 import FileInput from "../../components/fileInput";
@@ -78,6 +78,15 @@ const TambahAtlit: React.FC = () => {
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // Handle window resize for responsive sidebar
+  useEffect(() => {
+    const onResize = () => {
+      if (window.innerWidth >= 1024) setSidebarOpen(false);
+    };
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
   const handleBack = () => navigate("/dashboard/atlit");
 
   const handleInputChange = (field: keyof AtletForm, value: any) => {
@@ -140,74 +149,72 @@ const TambahAtlit: React.FC = () => {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  if (!validateForm()) {
-    toast.error("Mohon periksa kembali data yang diisi");
-    return;
-  }
-
-  if (!user?.pelatih?.id_pelatih || !user?.pelatih?.id_dojang) {
-    toast.error("Data pelatih tidak ditemukan, silakan login ulang");
-    return;
-  }
-
-  setIsSubmitting(true);
-
-  try {
-    const formDataSend = new FormData();
-    formDataSend.append("nama_atlet", formData.name.trim());
-    formDataSend.append("jenis_kelamin", formData.gender);
-    formDataSend.append("tanggal_lahir", formData.tanggal_lahir);
-    formDataSend.append("id_dojang", String(user.pelatih.id_dojang));
-    formDataSend.append("id_pelatih_pembuat", String(user?.pelatih?.id_pelatih));
-
-    if (formData.belt) formDataSend.append("belt", formData.belt);
-    if (formData.alamat?.trim()) formDataSend.append("alamat", formData.alamat.trim());
-    if (formData.provinsi) formDataSend.append("provinsi", formData.provinsi);
-    if (formData.phone?.trim()) formDataSend.append("no_telp", formData.phone.trim());
-    if (formData.nik?.trim()) formDataSend.append("nik", formData.nik.trim());
-    if (formData.bb) formDataSend.append("berat_badan", String(formData.bb));
-    if (formData.tb) formDataSend.append("tinggi_badan", String(formData.tb));
-
-    // ✅ FILES (wajib sesuai backend field name)
-    if (formData.akte_kelahiran) formDataSend.append("akte_kelahiran", formData.akte_kelahiran);
-    if (formData.pas_foto) formDataSend.append("pas_foto", formData.pas_foto);
-    if (formData.sertifikat_belt) formDataSend.append("sertifikat_belt", formData.sertifikat_belt);
-    if (formData.ktp) formDataSend.append("ktp", formData.ktp);
-
-    const result = await createAtlet(formDataSend); // kirim FormData
-
-    if (result) {
-      setSubmitSuccess(true);
-      toast.success("Berhasil menambahkan Atlet!");
-      setFormData({
-        name: "",
-        phone: "",
-        nik: "",
-        tanggal_lahir: "",
-        alamat: "",
-        provinsi: "",
-        bb: "",
-        tb: "",
-        gender: "",
-        belt: "",
-        akte_kelahiran: null,
-        pas_foto: null,
-        sertifikat_belt: null,
-        ktp: null,
-      });
-      setTimeout(() => navigate("/dashboard/atlit"), 1000);
+    if (!validateForm()) {
+      toast.error("Mohon periksa kembali data yang diisi");
+      return;
     }
-  } catch (error: any) {
-    console.error("Error creating athlete:", error);
-    toast.error(error.message || "Gagal menambahkan Atlet");
-  } finally {
-    setIsSubmitting(false);
-  }
-};
 
+    if (!user?.pelatih?.id_pelatih || !user?.pelatih?.id_dojang) {
+      toast.error("Data pelatih tidak ditemukan, silakan login ulang");
+      return;
+    }
 
+    setIsSubmitting(true);
+
+    try {
+      const formDataSend = new FormData();
+      formDataSend.append("nama_atlet", formData.name.trim());
+      formDataSend.append("jenis_kelamin", formData.gender);
+      formDataSend.append("tanggal_lahir", formData.tanggal_lahir);
+      formDataSend.append("id_dojang", String(user.pelatih.id_dojang));
+      formDataSend.append("id_pelatih_pembuat", String(user?.pelatih?.id_pelatih));
+
+      if (formData.belt) formDataSend.append("belt", formData.belt);
+      if (formData.alamat?.trim()) formDataSend.append("alamat", formData.alamat.trim());
+      if (formData.provinsi) formDataSend.append("provinsi", formData.provinsi);
+      if (formData.phone?.trim()) formDataSend.append("no_telp", formData.phone.trim());
+      if (formData.nik?.trim()) formDataSend.append("nik", formData.nik.trim());
+      if (formData.bb) formDataSend.append("berat_badan", String(formData.bb));
+      if (formData.tb) formDataSend.append("tinggi_badan", String(formData.tb));
+
+      // FILES (wajib sesuai backend field name)
+      if (formData.akte_kelahiran) formDataSend.append("akte_kelahiran", formData.akte_kelahiran);
+      if (formData.pas_foto) formDataSend.append("pas_foto", formData.pas_foto);
+      if (formData.sertifikat_belt) formDataSend.append("sertifikat_belt", formData.sertifikat_belt);
+      if (formData.ktp) formDataSend.append("ktp", formData.ktp);
+
+      const result = await createAtlet(formDataSend);
+
+      if (result) {
+        setSubmitSuccess(true);
+        toast.success("Berhasil menambahkan Atlet!");
+        setFormData({
+          name: "",
+          phone: "",
+          nik: "",
+          tanggal_lahir: "",
+          alamat: "",
+          provinsi: "",
+          bb: "",
+          tb: "",
+          gender: "",
+          belt: "",
+          akte_kelahiran: null,
+          pas_foto: null,
+          sertifikat_belt: null,
+          ktp: null,
+        });
+        setTimeout(() => navigate("/dashboard/atlit"), 1000);
+      }
+    } catch (error: any) {
+      console.error("Error creating athlete:", error);
+      toast.error(error.message || "Gagal menambahkan Atlet");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   // Helper function to get select value for react-select
   const getSelectValue = (options: any[], value: string) => {
@@ -215,20 +222,35 @@ const TambahAtlit: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-white via-red/5 to-yellow/10 flex justify-center items-center">
-      {/* Main Content */}
-      <div className="min-h-screen py-10">
-        <div className="overflow-y-auto bg-white/40 backdrop-blur-md border-white/30 w-full min-h-screen flex flex-col gap-8 pt-8 pb-12 px-4 md:px-8 rounded-lg">
+    <div className="min-h-screen w-full bg-gradient-to-br from-white via-red/5 to-yellow/10">
+      {/* Desktop Navbar */}
+      <NavbarDashboard />
 
-          {/* Success Message */}
-          {submitSuccess && (
-            <div className="fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-xl shadow-xl z-50 animate-pulse">
-              Data atlet berhasil disimpan!
-            </div>
-          )}
+      {/* Success Message */}
+      {submitSuccess && (
+        <div className="fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-xl shadow-xl z-50 animate-pulse">
+          Data atlet berhasil disimpan!
+        </div>
+      )}
+
+      {/* Main Content */}
+      <div className="lg:ml-72 min-h-screen">
+        <div className="bg-white/40 backdrop-blur-md border-white/30 w-full min-h-screen flex flex-col gap-8 pt-8 pb-12 px-4 lg:px-8">
           
           {/* Header Section */}
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+            {/* Mobile Menu Button */}
+            <div className="lg:hidden">
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="p-3 rounded-xl hover:bg-white/50 transition-all duration-300 border border-red/20"
+                aria-label="Open menu"
+              >
+                <Menu size={24} className="text-red" />
+              </button>
+            </div>
+
+            {/* Title */}
             <div className="space-y-2 flex-1">
               <button 
                 onClick={handleBack}
@@ -250,7 +272,7 @@ const TambahAtlit: React.FC = () => {
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-8">
             {/* Data Pribadi */}
-            <div className="bg-white/60 backdrop-blur-sm rounded-3xl p-6 md:p-8 shadow-xl border border-white/50 z-10">
+            <div className="bg-white/60 backdrop-blur-sm rounded-3xl p-6 md:p-8 shadow-xl border border-white/50">
               <div className="flex items-center gap-3 mb-6">
                 <div className="p-2 bg-red/10 rounded-xl">
                   <User className="text-red" size={20} />
@@ -317,7 +339,7 @@ const TambahAtlit: React.FC = () => {
                 {/* Provinsi */}
                 <div className="space-y-2">
                   <label className="block font-plex font-medium text-black/70">
-                    Provinsi <span className="text-red">*</span>
+                    Provinsi
                   </label>
                   <Select
                     value={getSelectValue(provinsiOptions, formData.provinsi)}
@@ -325,16 +347,14 @@ const TambahAtlit: React.FC = () => {
                     options={provinsiOptions}
                     placeholder="Pilih provinsi"
                     isDisabled={isSubmitting}
-                    className={`react-select-container ${
-                      errors.provinsi ? 'border-red-500' : 'border-red/20'
-                    }`}
+                    className="react-select-container"
                     classNamePrefix="react-select"
                     styles={{
                       control: (base, state) => ({
                         ...base,
                         backgroundColor: 'rgba(255, 255, 255, 0.5)',
                         backdropFilter: 'blur(4px)',
-                        borderColor: errors.provinsi ? '#ef4444' : state.isFocused ? '#dc2626' : 'rgba(220, 38, 38, 0.2)',
+                        borderColor: state.isFocused ? '#dc2626' : 'rgba(220, 38, 38, 0.2)',
                         borderRadius: '0.75rem',
                         minHeight: '3rem',
                         boxShadow: 'none',
@@ -344,9 +364,6 @@ const TambahAtlit: React.FC = () => {
                       }),
                     }}
                   />
-                  {errors.provinsi && (
-                    <p className="text-red-500 text-sm font-plex">{errors.provinsi}</p>
-                  )}
                 </div>
 
                 {/* Gender */}
@@ -360,9 +377,7 @@ const TambahAtlit: React.FC = () => {
                     options={genderOptions}
                     placeholder="Pilih gender"
                     isDisabled={isSubmitting}
-                    className={`react-select-container ${
-                      errors.gender ? 'border-red-500' : 'border-red/20'
-                    }`}
+                    className="react-select-container"
                     classNamePrefix="react-select"
                     styles={{
                       control: (base, state) => ({
@@ -391,7 +406,8 @@ const TambahAtlit: React.FC = () => {
                   </label>
                   <TextInput
                     className={`h-12 bg-white/50 backdrop-blur-sm rounded-xl focus:border-red transition-all duration-300 ${
-                      errors.tanggal_lahir ? 'border-red-500' : 'border-red/20'}`}
+                      errors.tanggal_lahir ? 'border-red-500' : 'border-red/20'
+                    }`}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, tanggal_lahir: e.target.value })}
                     value={formData.tanggal_lahir}
                     type="date"
@@ -402,7 +418,6 @@ const TambahAtlit: React.FC = () => {
                   {errors.tanggal_lahir && (
                     <p className="text-red-500 text-sm font-plex">{errors.tanggal_lahir}</p>
                   )}
-                  {/* Display calculated age */}
                   {formData.tanggal_lahir && !errors.tanggal_lahir && (
                     <p className="text-green-600 text-sm font-plex">
                       Umur: {calculateAge(formData.tanggal_lahir)} tahun
@@ -413,7 +428,7 @@ const TambahAtlit: React.FC = () => {
                 {/* Sabuk */}
                 <div className="space-y-2">
                   <label className="block font-plex font-medium text-black/70">
-                    Tingkat Sabuk <span className="text-red">*</span>
+                    Tingkat Sabuk
                   </label>
                   <Select
                     value={getSelectValue(beltOptions, formData.belt)}
@@ -421,16 +436,14 @@ const TambahAtlit: React.FC = () => {
                     options={beltOptions}
                     placeholder="Pilih tingkat sabuk"
                     isDisabled={isSubmitting}
-                    className={`react-select-container ${
-                      errors.belt ? 'border-red-500' : 'border-red/20'
-                    }`}
+                    className="react-select-container"
                     classNamePrefix="react-select"
                     styles={{
                       control: (base, state) => ({
                         ...base,
                         backgroundColor: 'rgba(255, 255, 255, 0.5)',
                         backdropFilter: 'blur(4px)',
-                        borderColor: errors.belt ? '#ef4444' : state.isFocused ? '#dc2626' : 'rgba(220, 38, 38, 0.2)',
+                        borderColor: state.isFocused ? '#dc2626' : 'rgba(220, 38, 38, 0.2)',
                         borderRadius: '0.75rem',
                         minHeight: '3rem',
                         boxShadow: 'none',
@@ -440,15 +453,12 @@ const TambahAtlit: React.FC = () => {
                       }),
                     }}
                   />
-                  {errors.belt && (
-                    <p className="text-red-500 text-sm font-plex">{errors.belt}</p>
-                  )}
                 </div>
               </div>
             </div>
 
             {/* Data Fisik */}
-            <div className="bg-white/60 backdrop-blur-sm rounded-3xl p-6 md:p-8 shadow-xl border border-white/50 z-auto">
+            <div className="bg-white/60 backdrop-blur-sm rounded-3xl p-6 md:p-8 shadow-xl border border-white/50">
               <div className="flex items-center gap-3 mb-6">
                 <div className="p-2 bg-blue-500/10 rounded-xl">
                   <Scale className="text-blue-500" size={20} />
@@ -514,7 +524,6 @@ const TambahAtlit: React.FC = () => {
                     }`}
                     value={formData.nik}
                     onChange={(e) => {
-                      // Only allow numbers
                       const value = e.target.value.replace(/\D/g, '');
                       handleInputChange('nik', value);
                     }}
