@@ -26,45 +26,89 @@ export const kelasService = {
     });
   },
 
-  getKelasKejuaraan: async (kompetisiId: number, filter: {
+getKelasKejuaraan: async (kompetisiId: number, filter: {
   styleType: Cabang,
   gender?: JenisKelamin,
-  categoryType?: string,  // "prestasi" | "pemula"
-  kelompokId?: number,    // ID dari kelompok umur
-  kelasBeratId?: number,  // ID dari kelas berat
+  categoryType?: string,
+  kelompokId?: number,
+  kelasBeratId?: number,
+  poomsaeId?: number,
 }) => {
   try {
     console.log("🔍 Backend filter received:", filter);
 
-    // 1. Mapping categoryType ke kategori_event
-    let kategoriEventCondition = {};
-    if (filter.categoryType) {
-      // Asumsi: prestasi = id 1, pemula = id 2 (sesuaikan dengan database)
-      const kategoriEventId = filter.categoryType === "prestasi" ? 1 : 2;
-      kategoriEventCondition = { id_kategori_event: kategoriEventId };
-    }
-
-    // 2. Build where condition
-    const whereCondition = {
+    // Base condition
+    let whereCondition: any = {
       id_kompetisi: kompetisiId,
       cabang: filter.styleType,
-      ...kategoriEventCondition,
-      
-      // Optional conditions berdasarkan ID
-      ...(filter.kelompokId ? { id_kelompok: filter.kelompokId } : {}),
-      ...(filter.kelasBeratId ? { id_kelas_berat: filter.kelasBeratId } : {}),
-      
-      // Untuk pemula, mungkin tidak perlu kelompok/berat
-      ...(filter.categoryType === "pemula" ? {
-        // Pemula biasanya tidak ada klasifikasi ketat
-        OR: [
-          { id_kelompok: null, id_kelas_berat: null },
-          { id_kelompok: filter.kelompokId || undefined }
-        ]
-      } : {}),
     };
 
-    console.log("🔍 Prisma where condition:", JSON.stringify(whereCondition, null, 2));
+    // Kategori event condition
+    if (filter.categoryType) {
+      const kategoriEventId = filter.categoryType === "prestasi" ? 2 : 1;
+      whereCondition.id_kategori_event = kategoriEventId;
+    }
+
+    // Handle different category types
+    if (filter.categoryType === "prestasi") {
+      if (filter.kelompokId) {
+        whereCondition.id_kelompok = filter.kelompokId;
+      }
+      
+      if (filter.styleType === "KYORUGI" && filter.kelasBeratId) {
+        whereCondition.id_kelas_berat = filter.kelasBeratId;
+      }
+      
+      if (filter.styleType === "POOMSAE" && filter.poomsaeId) {
+        whereCondition.id_poomsae = filter.poomsaeId;
+      }
+    } else if (filter.categoryType === "pemula") {
+      whereCondition.OR = [
+        { 
+          id_kelompok: null, 
+          id_kelas_berat: null,
+          id_poomsae: null 
+        },
+        ...(filter.kelompokId ? [{ id_kelompok: filter.kelompokId }] : [])
+      ];
+    }
+
+    console.log("🔍 Final Prisma where condition:", JSON.stringify(whereCondition, null, 2));
+
+    // ✅ DEBUGGING: Check if any data exists for this competition
+    const totalKelas = await prisma.tb_kelas_kejuaraan.count({
+      where: { id_kompetisi: kompetisiId }
+    });
+    console.log(`📊 Total kelas for competition ${kompetisiId}:`, totalKelas);
+
+    // ✅ DEBUGGING: Check specific combinations
+    const kelasByKompetisi = await prisma.tb_kelas_kejuaraan.findMany({
+      where: { 
+        id_kompetisi: kompetisiId,
+        cabang: filter.styleType 
+      },
+      select: {
+        id_kelas_kejuaraan: true,
+        cabang: true,
+        id_kategori_event: true,
+        id_kelompok: true,
+        id_kelas_berat: true,
+        id_poomsae: true
+      }
+    });
+    console.log(`🔍 Available kelas for ${filter.styleType}:`, kelasByKompetisi);
+
+    // ✅ DEBUGGING: Check exact match without complex conditions
+    const exactMatch = await prisma.tb_kelas_kejuaraan.findFirst({
+      where: {
+        id_kompetisi: kompetisiId,
+        cabang: filter.styleType,
+        id_kategori_event: filter.categoryType === "prestasi" ? 2 : 1,
+        id_kelompok: filter.kelompokId,
+        id_kelas_berat: filter.kelasBeratId,
+      }
+    });
+    console.log("🎯 Exact match result:", exactMatch);
 
     const kelas = await prisma.tb_kelas_kejuaraan.findMany({
       where: whereCondition,
@@ -78,7 +122,6 @@ export const kelasService = {
 
     console.log("✅ Query berhasil, hasil:", kelas);
     
-    // Return first match dengan struktur yang diharapkan frontend
     if (kelas.length > 0) {
       return { id_kelas_kejuaraan: kelas[0].id_kelas_kejuaraan };
     }
@@ -90,8 +133,5 @@ export const kelasService = {
     throw err;
   }
 }
-
-
-
 
 };

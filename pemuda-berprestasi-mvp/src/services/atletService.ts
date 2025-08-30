@@ -461,61 +461,74 @@ export class AtletService {
   }
 
   // Get eligible atlet for competition class
-  static async getEligible(
-    kelasId: number,
-    filter: { 
-      id_dojang: number;
-      jenis_kelamin: 'LAKI_LAKI' | 'PEREMPUAN';
-      umur: number;
-      berat_badan: number;
-    }
-  ) {
-    // cari kelompok umur yang sesuai
-    const kelompok = await prisma.tb_kelompok_usia.findFirst({
-      where: {
-        usia_min: { lte: filter.umur },
-        usia_max: { gte: filter.umur },
-      }
-    });
-
-    const kelasBerat = await prisma.tb_kelas_berat.findFirst({
-      where: {
-        batas_min: { lte: filter.berat_badan },
-        batas_max: { gte: filter.berat_badan },
-      }
-    });
-
-    if (!kelompok || !kelasBerat) {
-      return []; // tidak ada kelompok/kelas yg cocok
-    }
-
-    // cari atlet eligible
-    const atletEligible = await prisma.tb_atlet.findMany({
-      where: {
-        id_dojang: filter.id_dojang,
-        jenis_kelamin: filter.jenis_kelamin,
-        umur: {
-      gte: kelompok.usia_min,
-      lte: kelompok.usia_max,
-    },
-    berat_badan: {
-      gte: kelasBerat.batas_min,
-      lte: kelasBerat.batas_max,
-    },
-
-      },
-      include: {
-        dojang: { select: { id_dojang: true, nama_dojang: true } }
-      }
-    });
-
-    // filter manual berdasarkan kelompok & kelas berat
-    return atletEligible.filter(a => 
-      a.umur != null && a.berat_badan != null &&
-      a.umur >= kelompok.usia_min && a.umur <= kelompok.usia_max &&
-      a.berat_badan >= kelasBerat.batas_min && a.berat_badan <= kelasBerat.batas_max
-    );
+  // SERVICE - Fixed TypeScript errors
+static async getEligible(
+  kelasId: number,
+  filter: { 
+    id_dojang: number;
+    jenis_kelamin: 'LAKI_LAKI' | 'PEREMPUAN';
+    kelompokUsiaId?: number;
+    kelasBeratId?: number;
   }
+) {
+  console.log("🔍 Service filter received:", filter);
+
+  // Build where condition dynamically
+  const whereCondition: any = {
+    id_dojang: filter.id_dojang,
+    jenis_kelamin: filter.jenis_kelamin,
+  };
+
+  // ✅ FIXED: Handle kelompok usia filter
+  if (filter.kelompokUsiaId) {
+    const kelompok = await prisma.tb_kelompok_usia.findUnique({
+      where: { id_kelompok: filter.kelompokUsiaId }
+    });
+    
+    console.log("📋 Found kelompok:", kelompok);
+    
+    if (kelompok) {
+      whereCondition.umur = {
+        gte: kelompok.usia_min,
+        lte: kelompok.usia_max,
+      };
+    }
+  }
+
+  // ✅ FIXED: Handle kelas berat filter
+  if (filter.kelasBeratId) {
+    const kelasBerat = await prisma.tb_kelas_berat.findUnique({
+      where: { id_kelas_berat: filter.kelasBeratId }
+    });
+    
+    console.log("⚖️ Found kelasBerat:", kelasBerat);
+    
+    if (kelasBerat) {
+      whereCondition.berat_badan = {
+        gte: kelasBerat.batas_min,
+        lte: kelasBerat.batas_max,
+      };
+    }
+  }
+
+  console.log("🎯 Final where condition:", JSON.stringify(whereCondition, null, 2));
+
+  // Cari atlet yang eligible
+  const atletEligible = await prisma.tb_atlet.findMany({
+    where: whereCondition,
+    include: {
+      dojang: { select: { id_dojang: true, nama_dojang: true } }
+    }
+  });
+
+  console.log("👥 Found athletes:", atletEligible.length);
+  console.log("🔍 Sample athlete data:", atletEligible[0] || "No athletes found");
+
+  return atletEligible;
+}
+
+
+
 
 
   // Get atlet statistics

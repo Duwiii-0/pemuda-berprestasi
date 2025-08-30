@@ -157,37 +157,73 @@ export class AtletController {
   // Get eligible atlet for competition class
   static async getEligible(req: Request, res: Response) {
   try {
-    const { kelasId, ...filter } = req.body;
+    const { kelasId, dojangId, gender, kelompokUsiaId, kelasBeratId } = req.body;
 
-    console.log("🔄 Received request:", { kelasId, filter });
+    console.log("🔄 Controller received:", { 
+      kelasId, 
+      dojangId, 
+      gender, 
+      kelompokUsiaId, 
+      kelasBeratId 
+    });
 
+    // ✅ Validation
     if (!kelasId) {
       return res.status(400).json({ message: "kelasId is required" });
     }
+
+    if (!dojangId) {
+      return res.status(400).json({ message: "dojangId is required" });
+    }
+
+    if (!gender) {
+      return res.status(400).json({ message: "gender is required" });
+    }
+
+    // ✅ Map gender value to match database enum
+    const jenisKelamin = gender === 'LAKI_LAKI' || gender === 'PEREMPUAN' 
+      ? gender 
+      : gender.toUpperCase() as 'LAKI_LAKI' | 'PEREMPUAN';
+
+    console.log("🎯 Mapped jenis_kelamin:", jenisKelamin);
+
+    const filter = {
+      id_dojang: Number(dojangId),
+      jenis_kelamin: jenisKelamin,
+      kelompokUsiaId: kelompokUsiaId ? Number(kelompokUsiaId) : undefined,
+      kelasBeratId: kelasBeratId ? Number(kelasBeratId) : undefined,
+    };
+
+    console.log("📋 Service filter:", filter);
 
     const eligibleAtlits = await AtletService.getEligible(kelasId, filter);
     
     console.log("👥 Found eligible atlits:", eligibleAtlits?.length || 0);
 
-    // ✅ FIXED: Pastikan response structure konsisten
-    // Mapping untuk format yang diharapkan frontend
+    // ✅ Mapping untuk format yang konsisten
     const formattedAtlits = eligibleAtlits.map(atlet => ({
-      id: atlet.id_atlet || atlet.id_atlet, // sesuaikan dengan field database
-      nama: atlet.nama_atlet || atlet.nama_atlet,
+      id: atlet.id_atlet,
+      nama: atlet.nama_atlet,
       provinsi: atlet.provinsi,
       bb: atlet.berat_badan,
       tb: atlet.tinggi_badan,
-      belt: atlet.belt || atlet.belt,
+      belt: atlet.belt,
+      umur: atlet.umur,
+      jenis_kelamin: atlet.jenis_kelamin,
+      dojang: atlet.dojang?.nama_dojang
     }));
 
-    // Return array langsung (bukan wrapped dalam data property)
+    console.log("📤 Formatted response:", formattedAtlits);
     res.json(formattedAtlits);
     
   } catch (err) {
     console.error("❌ Error fetching eligible atlits:", err);
-    res.status(500).json({ message: "fakyu" });
+    res.status(500).json({ 
+      message: "Internal server error", 
+      error: process.env.NODE_ENV === 'development' ? err : undefined 
+    });
   }
-}
+  }
 
   // Get atlet statistics
   static async getStats(req: Request, res: Response) {

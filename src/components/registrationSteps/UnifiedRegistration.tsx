@@ -60,8 +60,10 @@ const UnifiedRegistration = ({
     fetchEligibleAtlits,
     ageOptions,
     weightOptions,
+    poomsaeOptions,
     fetchAgeOptions,
     fetchWeightOptions,
+    fetchKelasPoomsae,
   } = useRegistration();
 
   // Fetch kelas usia waktu modal dibuka
@@ -78,7 +80,14 @@ const UnifiedRegistration = ({
     }
   }, [formData.selectedAge, formData.selectedGender, fetchWeightOptions]);
 
-  // FIXED: useEffect untuk fetch eligible atlits - tanpa fetchEligibleAtlits di dependency
+  // fetch kelas poomsae jika styleType POOMSAE dan sudah pilih kelas umur
+  useEffect(() => {
+    if (formData.styleType === "POOMSAE" && formData.selectedAge) {
+      fetchKelasPoomsae(Number(formData.selectedAge.value));
+    }
+  }, [formData.styleType, formData.selectedAge, fetchKelasPoomsae]);
+
+  // ✅ UPDATED: useEffect untuk fetch eligible atlits dengan poomsae support
   useEffect(() => {
     // Reset ketika tidak memenuhi criteria minimum
     if (!formData.styleType || !formData.selectedGender || !formData.categoryType || !user?.pelatih?.id_dojang) {
@@ -108,24 +117,42 @@ const UnifiedRegistration = ({
       return;
     }
 
+    // ✅ ADDED: Untuk POOMSAE prestasi, perlu kelas poomsae juga
+    if (formData.styleType === "POOMSAE" && !formData.selectedPoomsae) {
+      return;
+    }
+
     // Semua kriteria terpenuhi, fetch eligible atlits
-    fetchEligibleAtlits(kompetisiId, {
+    const filter: any = {
       styleType: formData.styleType,
       gender: formData.selectedGender.value as "LAKI_LAKI" | "PEREMPUAN",
       umurId: Number(formData.selectedAge.value),
-      beratBadanId: Number(formData.selectedWeight?.value),
       categoryType: formData.categoryType,
       dojangId: user.pelatih.id_dojang,
-    });
+    };
+
+    // ✅ CONDITIONAL: Add weight for KYORUGI
+    if (formData.styleType === "KYORUGI" && formData.selectedWeight) {
+      filter.beratBadanId = Number(formData.selectedWeight.value);
+    }
+
+    // ✅ CONDITIONAL: Add poomsae for POOMSAE
+    if (formData.styleType === "POOMSAE" && formData.selectedPoomsae) {
+      filter.poomsaeId = Number(formData.selectedPoomsae.value);
+      filter.beratBadanId = 0; // Not needed for POOMSAE
+    }
+
+    console.log("🚀 Fetching atlits with filter:", filter);
+    fetchEligibleAtlits(kompetisiId, filter);
   }, [
     formData.styleType,
     formData.selectedGender,
     formData.selectedAge,
     formData.selectedWeight,
+    formData.selectedPoomsae, // ✅ ADDED: Watch for poomsae changes
     formData.categoryType,
     user?.pelatih?.id_dojang,
     kompetisiId,
-    // ✅ REMOVED: fetchEligibleAtlits - ini yang menyebabkan infinite loop
   ]);
 
   const totalSteps = 3;
@@ -148,6 +175,7 @@ const UnifiedRegistration = ({
       gender: formData.selectedGender?.value,
       age: formData.selectedAge?.value,
       weight: formData.selectedWeight?.value,
+      poomsae: formData.selectedPoomsae?.value, // ✅ ADDED
     }
   });
 
@@ -199,6 +227,31 @@ const UnifiedRegistration = ({
 
   const handleBack = () => {
     if (currentStep > 1) {
+      // Reset field step sebelumnya
+      if (currentStep === 2) {
+        // Step 1 → reset styleType & categoryType
+        setFormData({
+          ...formData,
+          styleType: null,
+          categoryType: null,
+          selectedAge: null,
+          selectedWeight: null,
+          selectedGender: null,
+          selectedAtlit: null,
+          selectedPoomsae: null
+        });
+      } else if (currentStep === 3) {
+        // Step 2 → reset gender, age, weight, poomsae
+        setFormData({
+          ...formData,
+          selectedGender: null,
+          selectedAge: null,
+          selectedWeight: null,
+          selectedAtlit: null,
+          selectedPoomsae: null // ✅ ADDED
+        });
+      }
+
       setCurrentStep(currentStep - 1);
     } else {
       onClose();
@@ -233,6 +286,7 @@ const UnifiedRegistration = ({
       }
     }
 
+    // ✅ UPDATED: Include poomsae in registration data
     const registrationData = {
       atlitId: selectedAtlitData.id,
       atlitName: selectedAtlitData.nama,
@@ -243,6 +297,7 @@ const UnifiedRegistration = ({
       gender: formData.selectedGender!.value as "Laki-Laki" | "Perempuan",
       ageCategory: formData.selectedAge?.value,
       weightCategory: formData.selectedWeight?.value,
+      poomsaeCategory: formData.selectedPoomsae?.value, // ✅ ADDED
       biayaPendaftaran
     };
 
@@ -256,7 +311,8 @@ const UnifiedRegistration = ({
       selectedAge: null,
       selectedWeight: null,
       selectedGender: null,
-      selectedAtlit: null
+      selectedAtlit: null,
+      selectedPoomsae: null,
     });
     
     onClose();
@@ -264,7 +320,7 @@ const UnifiedRegistration = ({
 
   const canProceedStep1 = formData.styleType && formData.categoryType;
   
-  // Untuk step 2: berurutan gender -> kelas umur -> kelas berat (jika perlu)
+  // ✅ UPDATED: canProceedStep2 untuk include poomsae validation
   const canProceedStep2 = () => {
     if (!formData.selectedGender) return false;
     
@@ -277,6 +333,11 @@ const UnifiedRegistration = ({
     // Jika kyorugi prestasi, perlu kelas berat juga
     if (formData.styleType === "KYORUGI" && formData.categoryType === "prestasi") {
       return !!formData.selectedWeight;
+    }
+    
+    // ✅ ADDED: Jika poomsae prestasi, perlu kelas poomsae juga
+    if (formData.styleType === "POOMSAE" && formData.categoryType === "prestasi") {
+      return !!formData.selectedPoomsae;
     }
     
     return true;
@@ -303,7 +364,13 @@ const UnifiedRegistration = ({
                 </label>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <button
-                    onClick={() => setFormData({...formData, styleType: "KYORUGI", selectedAge: null, selectedWeight: null})}
+                    onClick={() => setFormData({
+                      ...formData, 
+                      styleType: "KYORUGI", 
+                      selectedAge: null, 
+                      selectedWeight: null,
+                      selectedPoomsae: null // ✅ ADDED: Reset poomsae when switching to KYORUGI
+                    })}
                     className={`p-8 rounded-xl border-2 transition-all duration-300 font-bebas text-4xl ${
                       formData.styleType === "KYORUGI"
                         ? 'border-red bg-red text-white scale-105'
@@ -314,7 +381,12 @@ const UnifiedRegistration = ({
                     <div className="font-plex text-lg mt-2">(Tarung/Sparring)</div>
                   </button>
                   <button
-                    onClick={() => setFormData({...formData, styleType: "POOMSAE", selectedWeight: null})}
+                    onClick={() => setFormData({
+                      ...formData, 
+                      styleType: "POOMSAE", 
+                      selectedWeight: null, // ✅ Reset weight when switching to POOMSAE
+                      selectedPoomsae: null // ✅ Reset poomsae to allow fresh selection
+                    })}
                     className={`p-8 rounded-xl border-2 transition-all duration-300 font-bebas text-4xl ${
                       formData.styleType === "POOMSAE"
                         ? 'border-red bg-red text-white scale-105'
@@ -344,7 +416,13 @@ const UnifiedRegistration = ({
                     <div className="font-plex text-lg mt-2">(Berpengalaman)</div>
                   </button>
                   <button
-                    onClick={() => setFormData({...formData, categoryType: "pemula", selectedAge: null, selectedWeight: null})}
+                    onClick={() => setFormData({
+                      ...formData, 
+                      categoryType: "pemula", 
+                      selectedAge: null, 
+                      selectedWeight: null,
+                      selectedPoomsae: null // ✅ ADDED: Reset poomsae for pemula
+                    })}
                     className={`p-8 rounded-xl border-2 transition-all duration-300 font-bebas text-4xl ${
                       formData.categoryType === "pemula"
                         ? 'border-red bg-red text-white scale-105'
@@ -385,7 +463,15 @@ const UnifiedRegistration = ({
                   unstyled
                   options={genderOptions}
                   value={formData.selectedGender}
-                  onChange={(value: OptionType | null) => setFormData({...formData, selectedGender: value})}
+                  onChange={(value: OptionType | null) => setFormData({
+                    ...formData, 
+                    selectedGender: value,
+                    // Reset subsequent fields when gender changes
+                    selectedAge: null,
+                    selectedWeight: null,
+                    selectedPoomsae: null,
+                    selectedAtlit: null
+                  })}
                   placeholder="Pilih jenis kelamin..."
                   isSearchable={false}
                   classNames={selectClassNames}
@@ -404,12 +490,43 @@ const UnifiedRegistration = ({
                     unstyled
                     options={ageOptions}
                     value={formData.selectedAge}
-                    onChange={(value: OptionType | null) => setFormData({...formData, selectedAge: value})}
+                    onChange={(value: OptionType | null) => setFormData({
+                      ...formData, 
+                      selectedAge: value,
+                      // Reset subsequent fields when age changes
+                      selectedWeight: null,
+                      selectedPoomsae: null,
+                      selectedAtlit: null
+                    })}
                     placeholder="Pilih kelas umur..."
                     isSearchable
                     classNames={selectClassNames}
                     disabled={!formData.selectedGender}
                     message="Harap pilih jenis kelamin terlebih dahulu"
+                  />
+                </div>
+              )}
+
+              {/* ✅ UPDATED: Kelas Poomsae - Only for POOMSAE style */}
+              {formData.styleType === "POOMSAE" && formData.categoryType === "prestasi" && (
+                <div>
+                  <label className="block text-black mb-3 text-lg font-plex font-semibold pl-2">
+                    Kelas Poomsae <span className="text-red">*</span>
+                  </label>
+                  <LockedSelect
+                    unstyled
+                    options={poomsaeOptions}
+                    value={formData.selectedPoomsae}
+                    onChange={(value: OptionType | null) => setFormData({
+                      ...formData, 
+                      selectedPoomsae: value,
+                      selectedAtlit: null // Reset athlete when poomsae changes
+                    })}
+                    placeholder="Pilih kelas poomsae..."
+                    isSearchable
+                    classNames={selectClassNames}
+                    disabled={!formData.selectedAge}
+                    message="Harap pilih kelas umur terlebih dahulu"
                   />
                 </div>
               )}
@@ -424,7 +541,11 @@ const UnifiedRegistration = ({
                     unstyled
                     options={weightOptions}
                     value={formData.selectedWeight}
-                    onChange={(value: OptionType | null) => setFormData({...formData, selectedWeight: value})}
+                    onChange={(value: OptionType | null) => setFormData({
+                      ...formData, 
+                      selectedWeight: value,
+                      selectedAtlit: null // Reset athlete when weight changes
+                    })}
                     placeholder="Pilih kelas berat..."
                     isSearchable={false}
                     classNames={selectClassNames}
@@ -572,6 +693,15 @@ const UnifiedRegistration = ({
                           </p>
                         </div>
                       )}
+
+                      {/* ✅ ADDED: Poomsae category display for POOMSAE */}
+                      {formData.styleType === "POOMSAE" && formData.selectedPoomsae && (
+                        <div className="p-4 bg-blue-50 rounded-lg border-l-4 border-blue-400">
+                          <p className="font-plex text-blue-700 text-sm">
+                            <strong>Kategori Poomsae:</strong> {formData.selectedPoomsae.label}
+                          </p>
+                        </div>
+                      )}
                     </>
                   )}
                 </>
@@ -584,7 +714,6 @@ const UnifiedRegistration = ({
         return null;
     }
   };
-
   return (
     <Modal isOpen={isOpen}>
       <div className="bg-gradient-to-b from-white/90 to-white/80 h-screen md:h-[85vh] w-screen md:w-[80vw] lg:w-[70vw] xl:w-[60vw] rounded-xl flex flex-col justify-start items-center overflow-y-scroll font-plex">

@@ -134,7 +134,7 @@ async function seedAtlet() {
         akte_kelahiran: 'akte_ahmad.pdf',
         pas_foto: 'ahmad.jpg',
         sertifikat_belt: 'belt_ahmad.pdf'
-      },
+      },  
       {
         nama_atlet: 'Dewi Putri',
         nik: '3201012007070004',
@@ -433,12 +433,37 @@ async function seedKelasKejuaraan(idKompetisi: number) {
   const data: any[] = [];
 
   for (const kategori of kategoriEvents) {
+    if (kategori.nama_kategori.toLowerCase() === "pemula") {
+      // KYORUGI pemula → gender saja
+      data.push({
+        id_kompetisi: idKompetisi,
+        cabang: "KYORUGI",
+        id_kategori_event: kategori.id_kategori_event,
+        id_kelompok: null,
+        id_kelas_berat: null,
+        id_poomsae: null
+      });
+
+      // POOMSAE pemula → gender saja
+      data.push({
+        id_kompetisi: idKompetisi,
+        cabang: "POOMSAE",
+        id_kategori_event: kategori.id_kategori_event,
+        id_kelompok: null,
+        id_kelas_berat: null,
+        id_poomsae: null
+      });
+
+      // Skip loop kelompok & kelas untuk pemula
+      continue;
+    }
+
+    // kategori prestasi → lakukan loop seperti biasa
     for (const kelompok of kelompokUsia) {
-      // KYORUGI → ambil semua kelas berat dari kelompok ini
       const kelasBeratByKelompok = kelasBerat.filter(k => k.id_kelompok === kelompok.id_kelompok);
       for (const kb of kelasBeratByKelompok) {
         data.push({
-          id_kompetisi: idKompetisi, // contoh kompetisi id 1
+          id_kompetisi: idKompetisi,
           cabang: "KYORUGI",
           id_kategori_event: kategori.id_kategori_event,
           id_kelompok: kelompok.id_kelompok,
@@ -447,11 +472,10 @@ async function seedKelasKejuaraan(idKompetisi: number) {
         });
       }
 
-      // POOMSAE → ambil semua kelas poomsae dari kelompok ini
       const kelasPoomsaeByKelompok = kelasPoomsae.filter(p => p.id_kelompok === kelompok.id_kelompok);
       for (const kp of kelasPoomsaeByKelompok) {
         data.push({
-          id_kompetisi: 1,
+          id_kompetisi: idKompetisi,
           cabang: "POOMSAE",
           id_kategori_event: kategori.id_kategori_event,
           id_kelompok: kelompok.id_kelompok,
@@ -466,6 +490,7 @@ async function seedKelasKejuaraan(idKompetisi: number) {
     data,
     skipDuplicates: true
   });
+
   console.log("✅ Kelas Kejuaraan seeded,", data.length);
 }
 

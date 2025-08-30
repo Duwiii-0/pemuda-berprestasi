@@ -59,12 +59,12 @@ async getKelasKejuaraan(req: Request, res: Response) {
       categoryType,
       kelompokId,
       kelasBeratId,
+      poomsaeId, // ✅ ADDED
     } = req.body;
 
     console.log("🔹 Request params:", req.params);
     console.log("🔹 Request body (filter):", req.body);
 
-    // Validasi parameter wajib
     if (!styleType) {
       return res.status(400).json({ message: "styleType is required" });
     }
@@ -79,6 +79,7 @@ async getKelasKejuaraan(req: Request, res: Response) {
       categoryType,
       kelompokId: kelompokId ? Number(kelompokId) : undefined,
       kelasBeratId: kelasBeratId ? Number(kelasBeratId) : undefined,
+      poomsaeId: poomsaeId ? Number(poomsaeId) : undefined, // ✅ ADDED
     };
 
     console.log("🔹 Processed filter:", filter);

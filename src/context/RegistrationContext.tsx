@@ -19,6 +19,7 @@ type KelasKejuaraanFilter = {
   umurId: number;
   beratBadanId: number;
   categoryType: "prestasi" | "pemula";
+  poomsaeId?: number; // ✅ ADDED: Optional poomsae ID for POOMSAE style
 };
 
 export type RegistrationFormData = {
@@ -28,6 +29,7 @@ export type RegistrationFormData = {
   selectedWeight: OptionType | null;
   selectedGender: OptionType | null;
   selectedAtlit: OptionType | null;
+  selectedPoomsae: OptionType | null; 
 };
 
 type RegistrationContextType = {
@@ -44,6 +46,8 @@ type RegistrationContextType = {
     kompetisiId: number,
     filter: KelasKejuaraanFilter & { dojangId: number }
   ) => Promise<void>;
+  poomsaeOptions: OptionType[];
+  fetchKelasPoomsae: (kelompokId: number) => Promise<void>;
 };
 
 const defaultFormData: RegistrationFormData = {
@@ -53,6 +57,7 @@ const defaultFormData: RegistrationFormData = {
   selectedWeight: null,
   selectedGender: null,
   selectedAtlit: null,
+  selectedPoomsae: null, 
 };
 
 const RegistrationContext = createContext<RegistrationContextType>({
@@ -62,8 +67,10 @@ const RegistrationContext = createContext<RegistrationContextType>({
   availableAtlits: [],
   ageOptions: [],
   weightOptions: [],
+  poomsaeOptions: [],
   fetchAgeOptions: async () => {},
   fetchWeightOptions: async () => {},
+  fetchKelasPoomsae: async () => {},
   fetchKelasKejuaraan: async () => null,
   fetchEligibleAtlits: async () => {},
 });
@@ -77,6 +84,7 @@ export const RegistrationProvider = ({ children }: Props) => {
   const [availableAtlits, setAvailableAtlits] = useState<Atlit[]>([]);
   const [ageOptions, setAgeOptions] = useState<OptionType[]>([]);
   const [weightOptions, setWeightOptions] = useState<OptionType[]>([]);
+  const [poomsaeOptions, setPoomsaeOptions] = useState<OptionType[]>([]);
 
   const setFormData = (data: RegistrationFormData) => setFormDataState(data);
   const resetForm = () => setFormDataState(defaultFormData);
@@ -120,6 +128,33 @@ export const RegistrationProvider = ({ children }: Props) => {
     }
   }, []);
 
+  const fetchKelasPoomsae = useCallback(async (kelompokId: number) => {
+    try {
+      if (!kelompokId) {
+        setPoomsaeOptions([]);
+        return;
+      }
+
+      const data: { id_poomsae: number; nama_kelas: string }[] =
+        await apiClient.get(`/kelas/poomsae?kelompokId=${kelompokId}`);
+
+      if (!data || data.length === 0) {
+        setPoomsaeOptions([]);
+        return;
+      }
+
+      setPoomsaeOptions(
+        data.map((kp) => ({
+          value: kp.id_poomsae.toString(),
+          label: kp.nama_kelas,
+        }))
+      );
+    } catch (err) {
+      console.error("Error fetching kelas poomsae:", err);
+      setPoomsaeOptions([]);
+    }
+  }, []);
+
   const fetchKelasKejuaraan = useCallback(async (
     kompetisiId: number,
     filter: {
@@ -128,6 +163,7 @@ export const RegistrationProvider = ({ children }: Props) => {
       categoryType: "prestasi" | "pemula";
       kelompokId?: number;
       kelasBeratId?: number;
+      poomsaeId?: number; // ✅ ADDED: Include poomsae ID
     }
   ) => {
     try {
@@ -140,7 +176,7 @@ export const RegistrationProvider = ({ children }: Props) => {
     }
   }, []);
 
-  // ✅ FIXED: Menggunakan useCallback untuk mencegah infinite loop
+  // ✅ UPDATED: Include poomsae in filter when calling fetchKelasKejuaraan
   const fetchEligibleAtlits = useCallback(async (
     kompetisiId: number,
     filter: KelasKejuaraanFilter & { dojangId: number }
@@ -148,14 +184,17 @@ export const RegistrationProvider = ({ children }: Props) => {
     try {
       console.log("🔄 Fetching eligible atlits with filter:", filter);
       
-      //  . Dapatkan kelasId terlebih dahulu
-      const kelasId = await fetchKelasKejuaraan(kompetisiId, {
+      // 1. Dapatkan kelasId terlebih dahulu
+      const kelasFilter = {
         styleType: filter.styleType,
         gender: filter.gender,
         categoryType: filter.categoryType,
-        kelompokId: filter.umurId, // ✅ FIXED: Ini adalah ID kelompok, bukan umur literal
-        kelasBeratId: filter.beratBadanId, // ✅ FIXED: Ini adalah ID kelas berat, bukan berat literal
-      });
+        kelompokId: filter.umurId,
+        kelasBeratId: filter.beratBadanId,
+        poomsaeId: filter.poomsaeId, // ✅ ADDED
+      };
+
+      const kelasId = await fetchKelasKejuaraan(kompetisiId, kelasFilter);
 
       if (!kelasId) {
         console.warn("⚠️ No kelasId found for the given filter");
@@ -170,13 +209,14 @@ export const RegistrationProvider = ({ children }: Props) => {
         kelasId,
         dojangId: filter.dojangId,
         gender: filter.gender,
-        kelompokUsiaId: filter.umurId,        // ✅ renamed to be more clear
-        kelasBeratId: filter.beratBadanId,  // ✅ renamed to be more clear  
+        kelompokUsiaId: filter.umurId,
+        kelasBeratId: filter.beratBadanId,
+        // ✅ ADDED: Include poomsae ID in atlet eligibility check if needed
+        ...(filter.poomsaeId ? { poomsaeId: filter.poomsaeId } : {}),
       });
 
       console.log("📊 API Response:", response);
 
-      // ✅ FIXED: Backend mengembalikan array langsung, bukan response.data
       const data: Atlit[] = Array.isArray(response) ? response : [];
       
       console.log("👥 Available atlits:", data);
@@ -186,7 +226,7 @@ export const RegistrationProvider = ({ children }: Props) => {
       console.error("❌ Error fetching eligible atlits:", err);
       setAvailableAtlits([]);
     }
-  }, [fetchKelasKejuaraan]); // ✅ Hanya bergantung pada fetchKelasKejuaraan
+  }, [fetchKelasKejuaraan]);
 
   return (
     <RegistrationContext.Provider
@@ -197,8 +237,10 @@ export const RegistrationProvider = ({ children }: Props) => {
         availableAtlits,
         ageOptions,
         weightOptions,
+        poomsaeOptions,
         fetchAgeOptions,
         fetchWeightOptions,
+        fetchKelasPoomsae,
         fetchKelasKejuaraan,
         fetchEligibleAtlits,
       }}
