@@ -57,7 +57,7 @@ const OngoingComp = () => {
         {/* Enhanced Competition Card Section */}
         <div className="mb-12 md:mb-16 lg:mb-20">
           {/* Desktop Layout */}
-          <div className="hidden lg:flex items-center gap-8 xl:gap-12 w-full">
+          <div className="hidden lg:flex items-center justify-center gap-8 xl:gap-12 w-full">
             <div className="flex-shrink-0">
               <button 
                 onClick={() => handleNavClick('prev')}
@@ -70,7 +70,7 @@ const OngoingComp = () => {
               </button>
             </div>
             
-            <div className="flex-1">
+            <div className="flex-1 max-w-6xl flex justify-center">
               <div className="border-2 border-red/20 rounded-2xl lg:rounded-3xl p-1 bg-gradient-to-r from-red/5 to-red/10 shadow-lg hover:shadow-xl transition-all duration-300">
                 <CompCard />
               </div>
@@ -90,8 +90,8 @@ const OngoingComp = () => {
           </div>
 
           {/* Enhanced Mobile Layout */}
-          <div className="lg:hidden">
-            <div className="px-4 mb-6">
+          <div className="lg:hidden flex flex-col items-center">
+            <div className="w-full max-w-4xl mb-6 flex justify-center">
               <div className="border-2 border-red/20 rounded-xl md:rounded-2xl p-1 bg-gradient-to-r from-red/5 to-red/10 shadow-lg">
                 <CompCard />
               </div>
