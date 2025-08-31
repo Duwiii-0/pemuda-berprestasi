@@ -80,7 +80,7 @@ const NavbarDashboard: React.FC<NavbarProps> = ({ mobile = false, onClose }) => 
           <div className="flex items-center justify-between mb-4">
             <button 
               onClick={() => navigate('/')}
-              className="flex items-center gap-2 transition-colors duration-200"
+              className="cursor-pointer flex items-center gap-2 transition-colors duration-200"
               style={{ 
                 color: '#990D35',
                 fontFamily: 'IBM Plex Sans, sans-serif'

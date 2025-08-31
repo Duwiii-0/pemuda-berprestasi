@@ -60,7 +60,7 @@ const NavbarLanding = ({ onLogoutRequest }: { onLogoutRequest: () => void }) => 
         buttonBorder: "border-white/80",
         buttonText: "text-white",
         buttonBg: "bg-white text-red hover:bg-white/90 hover:scale-105",
-        hoverText: "hover:text-white/80 hover:scale-105",
+        hoverText: "hover:text-white/80 ",
         dropdownBg: "bg-white/95 backdrop-blur-md"
       };
     }
@@ -71,7 +71,7 @@ const NavbarLanding = ({ onLogoutRequest }: { onLogoutRequest: () => void }) => 
       buttonBorder: "border-red/80",
       buttonText: "text-red",
       buttonBg: "bg-red text-white hover:bg-red/90 hover:scale-105",
-      hoverText: "hover:text-red/80 hover:scale-105",
+      hoverText: "hover:text-red/80 ",
       dropdownBg: "bg-white/95 backdrop-blur-md"
     };
   };
@@ -99,7 +99,7 @@ const NavbarLanding = ({ onLogoutRequest }: { onLogoutRequest: () => void }) => 
             {/* Logo */}
             <Link 
               to="/" 
-              className={`text-xl sm:text-2xl lg:text-3xl ${styles.logo} font-bebas tracking-wider uppercase transition-all duration-300 ease-out hover:scale-105`}
+              className={`text-xl sm:text-2xl lg:text-4xl ${styles.logo} font-bebas tracking-wider uppercase transition-all duration-300 ease-out hover:scale-105`}
             >
               pemuda berprestasi
             </Link>
@@ -110,14 +110,14 @@ const NavbarLanding = ({ onLogoutRequest }: { onLogoutRequest: () => void }) => 
                 <Link
                   key={to}
                   to={to}
-                  className={`relative px-4 py-2 text-lg ${styles.text} font-plex font-medium transition-all duration-300 ease-out ${
+                  className={`text-xl relative px-4 py-2 ${styles.text} font-plex font-medium transition-all duration-300 ease-out ${
                     location.pathname === to ? "text-red font-semibold" : styles.hoverText
                   } group`}
                 >
                   {label}
                   {/* Animated underline */}
                   <span 
-                    className={`absolute bottom-0 left-1/2 transform -translate-x-1/2 h-0.5 bg-red transition-all duration-300 ease-out ${
+                    className={`absolute bottom-0 left-1/2 transform -translate-x-1/2 h-0.5 bg-yellow transition-all duration-300 ease-out ${
                       location.pathname === to ? "w-full" : "w-0 group-hover:w-full"
                     }`}
                   />
@@ -146,10 +146,10 @@ const NavbarLanding = ({ onLogoutRequest }: { onLogoutRequest: () => void }) => 
                 <div className="relative" ref={dropdownRef}>
                   <button
                     onClick={() => setShowDropdown(!showDropdown)}
-                    className={`flex items-center space-x-2 px-4 py-2.5 text-base border-2 ${styles.buttonBorder} ${styles.buttonText} font-plex rounded-lg transition-all duration-300 ease-out hover:bg-red hover:text-white hover:scale-105 hover:shadow-lg group`}
+                    className={`flex items-center space-x-2 px-4 py-2.5 text-xl border-2 ${styles.buttonBorder} ${styles.buttonText} font-plex rounded-lg transition-all duration-300 ease-out hover:bg-red hover:text-white hover:scale-105 hover:shadow-lg group`}
                   >
                     <User size={18} className="transition-transform duration-300 group-hover:scale-110" />
-                    <span className="max-w-32 truncate">
+                    <span className="max-w-48 truncate">
                       {user?.pelatih?.nama_pelatih ?? "User"}
                     </span>
                     <ChevronDown 
@@ -160,25 +160,24 @@ const NavbarLanding = ({ onLogoutRequest }: { onLogoutRequest: () => void }) => 
 
                   {/* User Dropdown - dengan animasi smooth */}
                   {showDropdown && (
-                    <div className={`absolute right-0 mt-2 w-52 ${styles.dropdownBg} rounded-xl border border-gray-200/50 shadow-2xl overflow-hidden z-50 transform transition-all duration-300 ease-out animate-in fade-in slide-in-from-top-2`}>
+                    <div className={`absolute right-0 mt-2 w-52 ${styles.dropdownBg} rounded-lg border border-gray-200/50 shadow-2xl overflow-hidden z-50 transform transition-all duration-300 ease-out animate-in fade-in slide-in-from-top-2`}>
                       {userMenuItems.map(({ to, label, icon: Icon }) => (
                         <Link
                           key={to}
                           to={to}
-                          className="flex items-center space-x-3 px-4 py-3 text-red font-plex transition-all duration-200 ease-out hover:bg-red hover:text-white group"
+                          className="text-xl flex items-center space-x-3 px-4 py-3 text-red font-plex transition-all duration-200 ease-out hover:bg-red hover:text-white group"
                           onClick={() => setShowDropdown(false)}
                         >
                           <Icon size={16} className="transition-transform duration-200 group-hover:scale-110" />
                           <span>{label}</span>
                         </Link>
                       ))}
-                      <div className="border-t border-gray-100 my-1"></div>
                       <button
                         onClick={() => {
                           setShowDropdown(false);
                           onLogoutRequest();
                         }}
-                        className="flex items-center space-x-3 w-full px-4 py-3 text-red font-plex transition-all duration-200 ease-out hover:bg-red hover:text-white group"
+                        className="text-xl flex items-center space-x-3 w-full px-4 py-3 text-red font-plex transition-all duration-200 ease-out hover:bg-red hover:text-white group"
                       >
                         <LogOut size={16} className="transition-transform duration-200 group-hover:scale-110" />
                         <span>Logout</span>

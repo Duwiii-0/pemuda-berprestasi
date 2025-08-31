@@ -88,7 +88,7 @@ const NavbarLomba = ({ onLogoutRequest }: { onLogoutRequest: () => void }) => {
             {/* Logo */}
             <Link 
               to="/" 
-              className={`text-xl sm:text-2xl lg:text-3xl ${styles.logo} font-bebas tracking-wider uppercase transition-all duration-300 ease-out hover:scale-105`}
+              className={`text-xl sm:text-2xl lg:text-4xl ${styles.logo} font-bebas tracking-wider uppercase transition-all duration-300 ease-out hover:scale-105`}
             >
               pemuda berprestasi
             </Link>
@@ -99,7 +99,7 @@ const NavbarLomba = ({ onLogoutRequest }: { onLogoutRequest: () => void }) => {
                 <Link
                   key={to}
                   to={to}
-                  className={`relative px-4 py-2 text-lg ${styles.text} font-plex font-medium transition-all duration-300 ease-out ${
+                  className={`text-xl relative px-4 py-2 ${styles.text} font-plex font-medium transition-all duration-300 ease-out ${
                     location.pathname === to ? "text-yellow font-semibold" : styles.hoverText
                   } group`}
                 >
@@ -135,10 +135,10 @@ const NavbarLomba = ({ onLogoutRequest }: { onLogoutRequest: () => void }) => {
                 <div className="relative" ref={dropdownRef}>
                   <button
                     onClick={() => setShowDropdown(!showDropdown)}
-                    className={`flex items-center space-x-2 px-4 py-2.5 text-base border-2 ${styles.buttonBorder} ${styles.buttonText} font-plex rounded-lg transition-all duration-300 ease-out hover:bg-white hover:text-red hover:scale-105 hover:shadow-lg group`}
+                    className={`flex items-center space-x-2 px-4 py-2.5 text-xl border-2 ${styles.buttonBorder} ${styles.buttonText} font-plex rounded-lg transition-all duration-300 ease-out hover:bg-white hover:text-red hover:scale-105 hover:shadow-lg group`}
                   >
                     <User size={18} className="transition-transform duration-300 group-hover:scale-110" />
-                    <span className="max-w-32 truncate">
+                    <span className="max-w-48 truncate">
                       {user?.pelatih?.nama_pelatih ?? "User"}
                     </span>
                     <ChevronDown 
@@ -154,20 +154,19 @@ const NavbarLomba = ({ onLogoutRequest }: { onLogoutRequest: () => void }) => {
                         <Link
                           key={to}
                           to={to}
-                          className="flex items-center space-x-3 px-4 py-3 text-red font-plex transition-all duration-200 ease-out hover:bg-red hover:text-white group"
+                          className="text-xl flex items-center space-x-3 px-4 py-3 text-red font-plex transition-all duration-200 ease-out hover:bg-red hover:text-white group"
                           onClick={() => setShowDropdown(false)}
                         >
                           <Icon size={16} className="transition-transform duration-200 group-hover:scale-110" />
                           <span>{label}</span>
                         </Link>
                       ))}
-                      <div className="border-t border-gray-100 my-1"></div>
                       <button
                         onClick={() => {
                           setShowDropdown(false);
                           onLogoutRequest();
                         }}
-                        className="flex items-center space-x-3 w-full px-4 py-3 text-red font-plex transition-all duration-200 ease-out hover:bg-red hover:text-white group"
+                        className="text-xl flex items-center space-x-3 w-full px-4 py-3 text-red font-plex transition-all duration-200 ease-out hover:bg-red hover:text-white group"
                       >
                         <LogOut size={16} className="transition-transform duration-200 group-hover:scale-110" />
                         <span>Logout</span>
