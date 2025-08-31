@@ -883,7 +883,7 @@ const handleSubmit = async () => {
 
   return (
     <Modal isOpen={isOpen}>
-      <div className="bg-gradient-to-b from-white/90 to-white/80 h-screen md:h-[85vh] w-screen md:w-[80vw] lg:w-[70vw] xl:w-[60vw] rounded-xl flex flex-col justify-start items-center overflow-y-scroll font-plex">
+      <div className="bg-gradient-to-b from-white/90 to-white/80 h-screen md:h-[70vh] w-screen md:w-[80vw] lg:w-[70vw] xl:w-[60vw] rounded-xl flex flex-col justify-start items-center overflow-y-scroll font-plex">
         <div className="w-full p-8">
           {/* Header dengan tombol back dan progress */}
           <div className="flex items-center justify-between mb-8">
