@@ -362,6 +362,10 @@ const TambahAtlit: React.FC = () => {
                   </label>                 
                     <Select
                       unstyled
+                      menuPortalTarget={document.body}
+                      styles={{
+                        menuPortal: base => ({ ...base, zIndex: 50 })
+                      }}
                       isDisabled={isSubmitting}
                       value={getSelectValue(provinsiOptions, formData.provinsi)}
                       onChange={(selected) => handleInputChange('provinsi', selected?.value || '')}
@@ -394,6 +398,10 @@ const TambahAtlit: React.FC = () => {
                     Gender <span className="text-red">*</span>
                   </label>
                     <Select
+                      menuPortalTarget={document.body}
+                      styles={{
+                        menuPortal: base => ({ ...base, zIndex: 50 })
+                      }}
                       unstyled
                       isDisabled={isSubmitting}
                       value={getSelectValue(genderOptions, formData.gender)}
@@ -459,6 +467,10 @@ const TambahAtlit: React.FC = () => {
                   </label>
                     <Select
                       unstyled
+                      menuPortalTarget={document.body}
+                      styles={{
+                        menuPortal: base => ({ ...base, zIndex: 50 })
+                      }}
                       isDisabled={isSubmitting}
                       value={getSelectValue(beltOptions, formData.belt)}
                       onChange={(selected) => handleInputChange('belt', selected?.value || '')}
