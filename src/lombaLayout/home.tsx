@@ -1,8 +1,7 @@
-import GeneralButton from "../components/generalButton";
-import Steps from "../components/steps";
 import TextInput from "../components/textInput";
-import TextArea from "../components/textArea";  
-import { Mail, User, PenLine, MapPin, Phone, } from 'lucide-react';
+import TextArea from "../components/textArea";
+import Steps from "../components/steps";  
+import { Mail, User, PenLine, MapPin, Phone, Award, Trophy, Users, Target } from 'lucide-react';
 import sriwijaya from "../assets/logo/sriwijaya.png";
 import heroLomba from "../assets/photos/heroLomba.jpg";
 import UnifiedRegistration from "../components/registrationSteps/UnifiedRegistration";
@@ -22,7 +21,6 @@ const LandingPage = () => {
     setIsRegistrationOpen(true);
   };
 
-
   useEffect(() => {
     if (isRegistrationOpen) {
       document.body.style.overflow = "hidden";
@@ -40,155 +38,490 @@ const LandingPage = () => {
     {
       number: 1,
       title: "Buat Akun",
-      desc:
-        "Daftar di website resmi kejuaraan dengan mengisi informasi pribadi dan data tim secara lengkap."
+      desc: "Daftar di website resmi kejuaraan dengan mengisi informasi pribadi dan data tim secara lengkap."
     },
     {
       number: 2,
       title: "Login dan Pilih Kategori",
-      desc:
-        "Masuk menggunakan akun yang sudah terdaftar lalu pilih kategori lomba sesuai kelompok usia dan kemampuan."
+      desc: "Masuk menggunakan akun yang sudah terdaftar lalu pilih kategori lomba sesuai kelompok usia dan kemampuan."
     },
     {
       number: 3,
       title: "Unggah Dokumen",
-      desc:
-        "Upload dokumen yang dibutuhkan seperti kartu identitas, foto, dan bukti pembayaran."
+      desc: "Upload dokumen yang dibutuhkan seperti kartu identitas, foto, dan bukti pembayaran."
     },
     {
       number: 4,
       title: "Konfirmasi & Selesai",
-      desc:
-        "Periksa kembali data yang telah diisi, lalu konfirmasi pendaftaran untuk mendapatkan nomor peserta."
+      desc: "Periksa kembali data yang telah diisi, lalu konfirmasi pendaftaran untuk mendapatkan nomor peserta."
     }
+  ];
+
+  const achievementStats = [
+    { icon: Trophy, number: "500+", label: "Peserta Internasional" },
+    { icon: Award, number: "25+", label: "Negara Berpartisipasi" },
+    { icon: Users, number: "50+", label: "Juri Bersertifikat" },
+    { icon: Target, number: "15+", label: "Kategori Kompetisi" }
   ];
 
   return(
     <div className="min-h-screen w-full">
-      {/* hero */}
+      {/* Enhanced Hero Section - Professional & Clean */}
       <div
-        className="h-screen w-full flex items-center justify-center bg-cover bg-center 2xl:bg-top"
+        className="relative min-h-screen w-full flex items-center justify-center bg-cover bg-center 2xl:bg-top overflow-hidden pt-20 md:pt-24"
         style={{ backgroundImage: `url(${heroLomba})` }}
       >
-        <div className="w-[80vw] h-[40vh] md:h-[80vh] flex flex-col justify-center items-center">
-          <img
-            src={sriwijaya}
-            alt="sriwijaya logo"
-            className="h-60 w-60 md:h-80 md:w-80 2xl:h-100 2xl:w-100"
-          />
-          <div className="flex flex-col justify-center items-center gap-5">
-            <div className="text-3xl sm:text-4xl md:text-5xl font-bebas text-yellow leading-none text-center">
-              Sriwijawa international taekwondo championship 2025
+        {/* Enhanced Gradient Overlays - More Professional */}
+        <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-black/60" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/50" />
+        
+        {/* Subtle Grid Pattern Overlay */}
+        <div className="absolute inset-0 opacity-5">
+          <div className="absolute inset-0" style={{
+            backgroundImage: `
+              linear-gradient(rgba(255,255,255,.1) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(255,255,255,.1) 1px, transparent 1px)
+            `,
+            backgroundSize: '20px 20px'
+          }}></div>
+        </div>
+
+        <div className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16 lg:py-20">
+          <div className="w-full max-w-7xl flex flex-col justify-center items-center space-y-6 md:space-y-8 lg:space-y-12 text-center mx-auto">
+            
+            {/* Enhanced Logo Section */}
+            <div className="relative group mt-8 md:mt-12">
+              {/* Subtle backdrop circle */}
+              <div className="absolute inset-0 bg-yellow/5 rounded-full blur-3xl scale-150 opacity-60"></div>
+              <div className="absolute inset-0 bg-white/5 rounded-full blur-2xl scale-125"></div>
+              
+              <img
+                src={sriwijaya}
+                alt="Sriwijaya International Taekwondo Championship Logo"
+                className="relative z-10 h-32 w-32 sm:h-40 sm:w-40 md:h-48 md:w-48 lg:h-64 lg:w-64 xl:h-80 xl:w-80 drop-shadow-2xl group-hover:scale-[1.02] transition-transform duration-700"
+              />
+              
+              {/* Decorative elements */}
+              <div className="absolute -top-2 -right-2 w-3 h-3 md:w-4 md:h-4 bg-yellow/40 rounded-full blur-sm"></div>
+              <div className="absolute -bottom-3 -left-3 w-4 h-4 md:w-6 md:h-6 bg-yellow/30 rounded-full blur-sm"></div>
             </div>
-            <div className="text-sm sm:text-md md:text-lg font-plex font-semibold text-white text-center">
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do
-              eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut
-              enim ad minim veniam, quis nostrud exercitation ullamco laboris
+            
+            {/* Enhanced Title Section - Better Typography */}
+            <div className="space-y-4 md:space-y-6 px-4 max-w-5xl">
+              {/* Main Title */}
+              <div className="relative">
+                <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl 2xl:text-7xl font-bebas text-yellow leading-[0.9] tracking-wide drop-shadow-2xl">
+                  <span className="block bg-gradient-to-r from-yellow via-yellow/95 to-yellow/90 bg-clip-text text-transparent">
+                    Sriwijaya International
+                  </span>
+                  <span className="block bg-gradient-to-r from-yellow/95 via-yellow to-yellow/95 bg-clip-text text-transparent">
+                    Taekwondo Championship
+                  </span>
+                </h1>
+                <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-20 md:w-32 h-1 bg-gradient-to-r from-yellow to-yellow/60 rounded-full"></div>
+              </div>
+              
+              {/* Year Badge */}
+              <div className="inline-block bg-yellow/10 backdrop-blur-sm border border-yellow/30 rounded-xl px-6 py-3">
+                <span className="text-2xl md:text-3xl lg:text-4xl font-bebas bg-gradient-to-r from-yellow to-yellow/90 bg-clip-text text-transparent">
+                  2025
+                </span>
+              </div>
+              
+              {/* Description */}
+              <div className="max-w-4xl mx-auto">
+                <p className="text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl font-plex font-light text-white/95 leading-relaxed drop-shadow-lg">
+                  Kompetisi taekwondo internasional bergengsi yang menggabungkan tradisi dan inovasi, 
+                  menghadirkan standar kompetisi kelas dunia untuk para atlet berprestasi.
+                </p>
+              </div>
             </div>
-          </div>
-          <div className="flex justify-center items-center md:justify-start md:items-start pt-8">
-            <GeneralButton
-              label="Join the Competitions"
-              type="action"
-              to=""
-              className=" text-center h-12 md:text-lg xl:text-xl border-2 border-white text-white active:scale-97"
-              onClick={handleJoinClick} 
-            />
+
+            {/* Enhanced CTA Button */}
+            <div className="pt-2 md:pt-4">
+              <button
+                onClick={handleJoinClick}
+                className="group relative inline-flex items-center gap-3 px-8 md:px-12 py-4 md:py-5 text-base md:text-lg lg:text-xl font-plex font-semibold bg-yellow text-black hover:bg-yellow/90 transition-all duration-300 rounded-xl hover:scale-105 hover:shadow-2xl hover:shadow-yellow/30"
+              >
+                <span className="relative z-10">Daftar Kompetisi</span>
+                <svg className="w-5 h-5 md:w-6 md:h-6 group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* About */}
-      <div className="relative h-[70vh] 2xl:h-[90vh] w-full flex items-center justify-center sm:pr-4">
-        <div className="w-full h-full flex flex-col gap-5 md:gap-10 px-4 sm:px-10 xl:pl-30 justify-center">
-            <div className="text-6xl lg:text-8xl font-bebas text-red leading-none text-center md:text-left">Tentang Kejuaraan</div>
-            <div className="text-md sm:text-lg md:text-xl font-plex text-black text-center md:text-left xl:pr-50">Sriwijaya Competition 2025, di bawah naungan Pengurus Besar Taekwondo Indonesia (PBTI), merupakan edisi ke-7 sejak 2015 yang menghadirkan kategori Kyorugi, Poomsae, dan Freestyle Poomsae untuk berbagai kelompok usia. Kejuaraan ini digelar untuk mengasah prestasi, menjunjung sportivitas, serta menjaring atlet potensial menuju tingkat internasional.
-            </div>
+      {/* Enhanced About Section - Consistent Padding */}
+      <section className="relative w-full flex items-center bg-gradient-to-br from-white via-red/[0.02] to-white overflow-hidden py-12 md:py-16 lg:py-20">
+        {/* Subtle background pattern */}
+        <div className="absolute inset-0 opacity-[0.02]">
+          <div className="absolute inset-0" style={{
+            backgroundImage: `
+              linear-gradient(rgba(220,38,38,.3) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(220,38,38,.3) 1px, transparent 1px)
+            `,
+            backgroundSize: '40px 40px'
+          }}></div>
         </div>
-        <div className="w-1/2 h-full hidden md:block">
-            <div className="md:w-full xl:w-2/3 h-full flex flex-col justify-center items-center">
-              <div className="group flex flex-col w-66 gap-4 justify-center items-center">
-                <img src="src/assets/logo/taekwondo.png" alt="foto bapak" className="group-hover:scale-103 transition-discrete duration-300 rounded-lg border-2 border-yellow shadow-xl h-68 w-51 xl:w-66 xl:h-88 bg-blue-100"/>
-                <div className="text-center group-hover:scale-108 transition-discrete duration-300">
-                    <div className="font-bebas text-3xl text-red">
-                      Muhammad Rafif Dwiarka
-                    </div>
-                    <div className="font-plex text-sm text-black">
-                      Direktur sriwijaya championship
-                    </div>
+
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12 xl:gap-16 items-center max-w-7xl mx-auto">
+            
+            {/* Text Content */}
+            <div className="space-y-6 md:space-y-8 text-center lg:text-left">
+              {/* Section Label */}
+              <div className="inline-block group">
+                <span className="text-red font-plex font-semibold text-xs sm:text-sm uppercase tracking-[0.2em] border-l-4 border-red pl-4 md:pl-6 relative">
+                  Tentang Kejuaraan
+                  <div className="absolute -left-1 top-0 bottom-0 w-1 bg-red/20 group-hover:bg-red/40 transition-colors duration-300"></div>
+                </span>
+              </div>
+              
+              {/* Main Heading */}
+              <div className="relative">
+                <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-5xl xl:text-6xl 2xl:text-7xl font-bebas leading-[0.85] tracking-wide">
+                  <span className="bg-gradient-to-r from-red via-red/90 to-red/80 bg-clip-text text-transparent">
+                    Kompetisi
+                  </span>
+                  <span className="block bg-gradient-to-r from-red/90 via-red to-red/90 bg-clip-text text-transparent">
+                    Berstandar
+                  </span>
+                  <span className="block bg-gradient-to-r from-red/80 via-red/90 to-red bg-clip-text text-transparent">
+                    Internasional
+                  </span>
+                </h2>
+                <div className="absolute -bottom-2 left-1/2 lg:left-0 transform -translate-x-1/2 lg:transform-none w-16 md:w-20 h-1 bg-gradient-to-r from-red to-red/60 rounded-full"></div>
+              </div>
+              
+              {/* Enhanced Description */}
+              <div className="space-y-4 md:space-y-6 max-w-2xl mx-auto lg:mx-0">
+                <p className="text-sm md:text-base lg:text-lg xl:text-xl font-plex text-black/85 leading-relaxed font-light px-2 lg:px-0">
+                  Sriwijaya Competition 2025, di bawah naungan Pengurus Besar Taekwondo Indonesia (PBTI), 
+                  merupakan edisi ke-7 sejak 2015 yang menghadirkan kategori Kyorugi, Poomsae, dan Freestyle Poomsae 
+                  untuk berbagai kelompok usia.
+                </p>
+                <p className="text-xs md:text-sm lg:text-base font-plex text-black/70 leading-relaxed px-2 lg:px-0">
+                  Kejuaraan ini digelar untuk mengasah prestasi, menjunjung sportivitas, 
+                  serta menjaring atlet potensial menuju tingkat internasional.
+                </p>
+              </div>
+
+              {/* Enhanced Features Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4 pt-6 md:pt-8 px-2 lg:px-0">
+                <div className="group space-y-2 md:space-y-3 p-3 md:p-4 lg:p-5 rounded-xl hover:bg-red/[0.02] transition-all duration-500 hover:shadow-lg hover:shadow-red/10">
+                  <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-red/10 to-red/5 rounded-xl flex items-center justify-center group-hover:from-red/15 group-hover:to-red/8 transition-all duration-300 group-hover:scale-110">
+                    <Trophy className="w-4 h-4 md:w-5 md:h-5 text-red" strokeWidth={1.5} />
+                  </div>
+                  <h3 className="text-sm md:text-base font-plex font-semibold text-red group-hover:text-red/90 transition-colors">
+                    Standar PBTI
+                  </h3>
+                  <p className="text-xs md:text-sm text-black/70 font-plex leading-relaxed">
+                    Kejuaraan resmi di bawah naungan Pengurus Besar Taekwondo Indonesia
+                  </p>
+                </div>
+                
+                <div className="group space-y-2 md:space-y-3 p-3 md:p-4 lg:p-5 rounded-xl hover:bg-red/[0.02] transition-all duration-500 hover:shadow-lg hover:shadow-red/10">
+                  <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-red/10 to-red/5 rounded-xl flex items-center justify-center group-hover:from-red/15 group-hover:to-red/8 transition-all duration-300 group-hover:scale-110">
+                    <Award className="w-4 h-4 md:w-5 md:h-5 text-red" strokeWidth={1.5} />
+                  </div>
+                  <h3 className="text-sm md:text-base font-plex font-semibold text-red group-hover:text-red/90 transition-colors">
+                    Multi Kategori
+                  </h3>
+                  <p className="text-xs md:text-sm text-black/70 font-plex leading-relaxed">
+                    Kyorugi, Poomsae, dan Freestyle Poomsae untuk semua kelompok usia
+                  </p>
                 </div>
               </div>
             </div>
-        </div>
-        <div className="absolute bottom-10 sm:bottom-10 md:hidden h-[2px] w-[80vw] bg-black/10"></div>
-      </div>
 
-      {/* how to enter */}
-      <div className=" min-h-screen w-full flex flex-col justify-center items-center gap-4">
-          <div className="text-6xl lg:text-8xl font-bebas text-red leading-none text-center px-2"> Tata cara mendaftar</div>
-          <div className="text-lg md:text-xl px-10 xl:px-0 font-plex text-black max-w-7xl text-center">Tata Cara Pendaftaran Peserta Kejuaraan Taekwondo Sriwijaya Competition Tahun 2025, Meliputi Pengisian Formulir, Pengiriman Dokumen, dan Proses Verifikasi</div>
-          <div className="h-full w-full lg:w-1/2 flex flex-col gap-8 py-10 px-4">
-            {registerStep.map((step) => (
-              <Steps
-                key={step.number}
-                number={step.number}
-                title={step.title}
-                desc={step.desc}
-              />
-            ))}
-          </div>
-      </div>
-
-      {/* contact us */}
-      <div className="min-h- w-full flex flex-col justify-center items-center gap-4 py-20  px-10 lg:px-0">
-          <div className="text-6xl lg:text-8xl font-bebas text-red leading-none text-center"> Punya pertanyaan?</div>
-          <div className="text-lg md:text-xl font-plex  xl:px-0 text-black max-w-7xl text-center">Jangan ragu untuk menghubungi kami melalui formulir atau kontak yang tersedia untuk mendapatkan informasi lebih lanjut.</div>
-
-          <div className="hover:scale-102 transition-all duration-300 border-3 gap-4 xl:gap-0 flex flex-col xl:flex-row bg-white border-yellow h-full w-full xl:h-[56vh] lg:w-[65vw] rounded-2xl mt-20 py-8 shadow-2xl">
-            <div  className=" w-full xl:w-1/2 h-full flex flex-col items-center gap-6 ">
-              <div className="font-bebas text-red text-4xl">Contact Us</div>
-              <div className="flex justify-center w-full gap-2 px-12 ">
-                      <TextInput
-                      className="h-12 placeholder-red flex-1 border-red"
-                      placeholder="your name"
-                      icon={<User className="text-black" size={20} />}
-                      />
-                      <TextInput
-                      className="h-12 placeholder-red border-red flex-1"
-                      placeholder="your email address"
-                      icon={<Mail className="text-black" size={20} />}
-                      />
-              </div>
-              <div className="w-full px-12">
-                  <TextArea 
-                  placeholder="your massage here"
-                  icon={<PenLine className="text-black w-full h-full" size={20} />}
-                  rows={13}
-                  />
-              </div>
-            </div>
-            <div className="w-full xl:w-1/2 h-full flex flex-col items-center gap-5 px-12 pb-4">
-              <div className="font-bebas text-red text-4xl text-center">Sriwijaya Championship</div>
-              <div className="flex flex-col justify-center items-center gap-2">
-                  <div className="flex gap-2 items-start justify-start"><MapPin size={20} className="text-black"/> Jl.Puri Depok Mas Blok L no.15 pancoran mas, Depok  </div>
-                  <div className="flex gap-2 justify-center items-center">
-                      <span className="flex gap-2"><Phone size={20} className="text-black"/> 0812-1302-0861</span>
-                      <span className="flex gap-2"><Mail size={20} className="text-black"/> Sriwijaya@gmail.com</span>
+            {/* Enhanced Director Section */}
+            <div className="relative order-1 lg:order-2 flex justify-center items-center py-8 lg:py-0">
+              <div className="relative w-full max-w-sm group flex justify-center items-center">
+                
+                <div className="group/card flex flex-col w-full gap-4 md:gap-6 justify-center items-center hover:scale-[1.02] transition-all duration-500">
+                  
+                  {/* Enhanced Image Container */}
+                  <div className="relative overflow-hidden rounded-xl md:rounded-2xl border-2 border-yellow shadow-lg md:shadow-xl bg-gradient-to-br from-blue-50 to-blue-100 mx-auto group-hover:shadow-xl md:group-hover:shadow-2xl group-hover:shadow-yellow/20 transition-all duration-700">
+                    {/* Subtle overlay patterns */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white/5 to-transparent"></div>
+                    
+                    <img 
+                      src="src/assets/logo/taekwondo.png" 
+                      alt="Muhammad Rafif Dwiarka - Direktur Sriwijaya Championship" 
+                      className="h-48 w-36 sm:h-56 sm:w-42 md:h-64 md:w-48 lg:h-72 lg:w-54 xl:h-80 xl:w-60 object-cover group-hover/card:scale-105 transition-transform duration-700"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent"></div>
+                    
+                    {/* Corner decorative elements */}
+                    <div className="absolute top-2 right-2 md:top-3 md:right-3 w-1.5 h-1.5 md:w-2 md:h-2 bg-yellow/60 rounded-full"></div>
+                    <div className="absolute bottom-2 left-2 md:bottom-3 md:left-3 w-1 h-1 md:w-1.5 md:h-1.5 bg-yellow/40 rounded-full"></div>
                   </div>
-              </div>
-              <div className="border-2 w-full h-92 xl:h-full border-red rounded-lg">
-              <iframe
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3965.1798162429486!2d106.82109567593805!3d-6.370770862321453!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e69ec1cabb59bdf%3A0x28b4f84e4677f329!2sJakarta%20State%20Polytechnic!5e0!3m2!1sen!2sid!4v1755283210158!5m2!1sen!2sid"
-                style={{ border: 0 }}
-                allowFullScreen
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-                className="rounded-md w-full h-full"
-              />
+                  
+                  {/* Enhanced Text Section */}
+                  <div className="text-center space-y-2 md:space-y-3 group-hover/card:scale-105 transition-transform duration-500 px-2">
+                    <div className="space-y-1">
+                      <h3 className="font-bebas text-lg sm:text-xl md:text-2xl lg:text-3xl bg-gradient-to-r from-red to-red/80 bg-clip-text text-transparent">
+                        Muhammad Rafif Dwiarka
+                      </h3>
+                      <p className="font-plex text-xs md:text-sm text-black/70 font-medium tracking-wide">
+                        Direktur Sriwijaya Championship
+                      </p>
+                    </div>
+                    <div className="w-12 md:w-16 h-0.5 bg-gradient-to-r from-red/60 to-transparent mx-auto"></div>
+                    <p className="text-xs md:text-sm text-black/60 font-plex leading-relaxed max-w-xs">
+                      Memimpin penyelenggaraan kejuaraan dengan dedikasi tinggi untuk kemajuan taekwondo Indonesia
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>  
-      </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Enhanced Registration Steps Section - Consistent Padding */}
+      <section className="relative w-full flex flex-col justify-center items-center bg-gradient-to-br from-white via-yellow/[0.02] to-white overflow-hidden py-12 md:py-16 lg:py-20">
+        {/* Background pattern */}
+        <div className="absolute inset-0 opacity-[0.02]">
+          <div className="absolute inset-0" style={{
+            backgroundImage: `
+              linear-gradient(rgba(251,191,36,.4) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(251,191,36,.4) 1px, transparent 1px)
+            `,
+            backgroundSize: '60px 60px'
+          }}></div>
+        </div>
+
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          {/* Section Header */}
+          <div className="text-center space-y-4 md:space-y-6 mb-8 md:mb-12 lg:mb-16">
+            {/* Section Label */}
+            <div className="inline-block group">
+              <span className="text-red font-plex font-semibold text-xs sm:text-sm uppercase tracking-[0.2em] border-l-4 border-red pl-4 md:pl-6 relative">
+                Cara Pendaftaran
+                <div className="absolute -left-1 top-0 bottom-0 w-1 bg-red/20 group-hover:bg-red/40 transition-colors duration-300"></div>
+              </span>
+            </div>
+            
+            <div className="relative">
+              <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-5xl xl:text-6xl 2xl:text-7xl font-bebas leading-[0.85] tracking-wide">
+                <span className="bg-gradient-to-r from-red via-red/90 to-red/80 bg-clip-text text-transparent">
+                  Panduan
+                </span>
+                <span className="block bg-gradient-to-r from-red/80 via-red/90 to-red bg-clip-text text-transparent">
+                  Pendaftaran
+                </span>
+              </h2>
+              <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-16 md:w-20 h-1 bg-gradient-to-r from-red to-red/60 rounded-full"></div>
+            </div>
+            
+            <p className="text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl px-4 xl:px-0 font-plex text-black/80 max-w-4xl mx-auto leading-relaxed font-light">
+              Ikuti langkah-langkah berikut untuk mendaftar sebagai peserta Sriwijaya Competition 2025 
+              dengan mudah dan efisien.
+            </p>
+          </div>
+
+          {/* Enhanced Steps Container */}
+          <div className="max-w-6xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 py-4 md:py-6">
+              {registerStep.map((step) => (
+                <div 
+                  key={step.number}
+                  className="group relative bg-white/90 backdrop-blur-sm rounded-xl p-6 sm:p-7 md:p-8 border border-red/10 hover:border-red/20 shadow-lg hover:shadow-xl hover:shadow-red/10 transition-all duration-500 hover:-translate-y-2"
+                >
+                  {/* Enhanced Step Content */}
+                  <Steps
+                    number={step.number}
+                    title={step.title}
+                    desc={step.desc}
+                  />
+                  
+                  {/* Decorative elements */}
+                  <div className="absolute top-4 right-4 md:top-6 md:right-6 w-1.5 h-1.5 md:w-2 md:h-2 bg-red/20 rounded-full group-hover:bg-red/40 transition-colors duration-300"></div>
+                  <div className="absolute bottom-4 left-4 md:bottom-6 md:left-6 w-1 h-1 md:w-1.5 md:h-1.5 bg-red/15 rounded-full group-hover:bg-red/30 transition-colors duration-300"></div>
+                  
+                  {/* Hover Effect Overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-red/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-xl"></div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Enhanced Contact Section - Consistent Padding */}
+      <section className="relative w-full flex flex-col justify-center items-center bg-gradient-to-br from-white via-blue/[0.02] to-white overflow-hidden py-12 md:py-16 lg:py-20">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          {/* Section Header */}
+          <div className="text-center space-y-4 md:space-y-6 mb-8 md:mb-12 lg:mb-16">
+            <div className="inline-block group">
+              <span className="text-red font-plex font-semibold text-xs sm:text-sm uppercase tracking-[0.2em] border-l-4 border-red pl-4 md:pl-6 relative">
+                Hubungi Kami
+                <div className="absolute -left-1 top-0 bottom-0 w-1 bg-red/20 group-hover:bg-red/40 transition-colors duration-300"></div>
+              </span>
+            </div>
+            
+            <div className="relative">
+              <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-5xl xl:text-6xl 2xl:text-7xl font-bebas leading-[0.85] tracking-wide">
+                <span className="bg-gradient-to-r from-red via-red/90 to-red/80 bg-clip-text text-transparent">
+                  Butuh
+                </span>
+                <span className="block bg-gradient-to-r from-red/80 via-red/90 to-red bg-clip-text text-transparent">
+                  Bantuan?
+                </span>
+              </h2>
+              <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-16 md:w-20 h-1 bg-gradient-to-r from-red to-red/60 rounded-full"></div>
+            </div>
+            
+            <p className="text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl font-plex text-black/80 max-w-4xl mx-auto leading-relaxed font-light px-4">
+              Tim kami siap membantu menjawab pertanyaan dan memberikan informasi detail 
+              mengenai Sriwijaya Competition 2025.
+            </p>
+          </div>
+
+          {/* Enhanced Contact Card */}
+          <div className="max-w-7xl mx-auto">
+            <div className="group relative bg-white/95 backdrop-blur-sm border-2 border-yellow/30 rounded-2xl md:rounded-3xl shadow-xl hover:shadow-2xl hover:shadow-yellow/20 transition-all duration-700 overflow-hidden hover:scale-[1.01]">
+              
+              <div className="absolute inset-0 bg-gradient-to-br from-yellow/[0.03] via-transparent to-yellow/[0.02]"></div>
+              
+              <div className="relative z-10 grid grid-cols-1 xl:grid-cols-2 gap-8 xl:gap-12 p-6 sm:p-8 md:p-10">
+                
+                {/* Contact Form Side */}
+                <div className="w-full h-full flex flex-col items-center space-y-6 md:space-y-8">
+                  <div className="text-center space-y-3 md:space-y-4">
+                    <h3 className="font-bebas text-red text-xl sm:text-2xl md:text-3xl lg:text-4xl">Kirim Pesan</h3>
+                    <div className="w-12 md:w-16 h-0.5 bg-gradient-to-r from-red to-red/60 mx-auto"></div>
+                    <p className="text-xs md:text-sm font-plex text-black/70 max-w-md">
+                      Sampaikan pertanyaan atau saran Anda melalui formulir di bawah ini
+                    </p>
+                  </div>
+                  
+                  {/* Enhanced Form */}
+                  <div className="w-full space-y-4 md:space-y-6 max-w-md mx-auto">
+                    <div className="flex flex-col sm:flex-row gap-3 md:gap-4 w-full">
+                      <div className="flex-1">
+                        <TextInput
+                          className="h-10 md:h-12 placeholder-red/60 border-red/20 hover:border-red/40 focus:border-red transition-all duration-300 rounded-xl text-xs md:text-sm bg-white/80"
+                          placeholder="Nama Lengkap"
+                          icon={<User className="text-red/60" size={16} />}
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <TextInput
+                          className="h-10 md:h-12 placeholder-red/60 border-red/20 hover:border-red/40 focus:border-red transition-all duration-300 rounded-xl text-xs md:text-sm bg-white/80"
+                          placeholder="Email Anda"
+                          icon={<Mail className="text-red/60" size={16} />}
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="w-full">
+                      <TextArea 
+                        placeholder="Tulis pesan atau pertanyaan Anda di sini..."
+                        icon={<PenLine className="text-red/60" size={16} />}
+                        rows={4}
+                        className="border-red/20 hover:border-red/40 focus:border-red transition-all duration-300 rounded-xl resize-none text-xs md:text-sm bg-white/80"
+                      />
+                    </div>
+                    
+                    {/* Enhanced Submit Button */}
+                    <div className="pt-2 md:pt-4">
+                      <button className="group relative w-full px-4 md:px-6 py-3 md:py-4 bg-gradient-to-r from-red to-red/90 hover:from-red/90 hover:to-red text-white font-plex font-semibold rounded-xl transition-all duration-300 hover:shadow-lg hover:shadow-red/30 hover:-translate-y-1 text-xs md:text-sm">
+                        <span className="relative z-10 flex items-center justify-center gap-2">
+                          <span>Kirim Pesan</span>
+                          <svg className="w-3 h-3 md:w-4 md:h-4 group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                          </svg>
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Contact Info Side */}
+                <div className="w-full h-full flex flex-col space-y-6 md:space-y-8">
+                  <div className="text-center xl:text-left space-y-3 md:space-y-4">
+                    <h3 className="font-bebas text-red text-lg sm:text-xl md:text-2xl lg:text-3xl">Informasi Kontak</h3>
+                    <div className="w-16 md:w-20 h-0.5 bg-gradient-to-r from-red to-red/60 mx-auto xl:mx-0"></div>
+                  </div>
+                  
+                  {/* Enhanced Contact Details */}
+                  <div className="space-y-4 md:space-y-6">
+                    {/* Address */}
+                    <div className="group flex items-start gap-3 md:gap-4 p-4 md:p-6 rounded-xl hover:bg-red/[0.02] transition-all duration-300 border border-transparent hover:border-red/10">
+                      <div className="flex-shrink-0 w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-red/10 to-red/5 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                        <MapPin className="w-4 h-4 md:w-5 md:h-5 text-red" strokeWidth={1.5} />
+                      </div>
+                      <div className="flex-1 space-y-1 md:space-y-2">
+                        <h4 className="font-plex font-semibold text-black/80 text-xs md:text-sm">Alamat Sekretariat</h4>
+                        <p className="text-xs md:text-sm font-plex text-black/70 leading-relaxed">
+                          Jl. Puri Depok Mas Blok L No.15, Pancoran Mas, Depok, Jawa Barat
+                        </p>
+                      </div>
+                    </div>
+                    
+                    {/* Phone & Email */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
+                      <div className="group flex items-center gap-3 md:gap-4 p-4 md:p-6 rounded-xl hover:bg-red/[0.02] transition-all duration-300 border border-transparent hover:border-red/10">
+                        <div className="flex-shrink-0 w-8 h-8 md:w-10 md:h-10 bg-gradient-to-br from-red/10 to-red/5 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                          <Phone className="w-3 h-3 md:w-4 md:h-4 text-red" strokeWidth={1.5} />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-xs text-black/60 font-plex mb-1">Telepon</p>
+                          <p className="text-xs md:text-sm font-plex text-black/80 font-medium">0812-1302-0861</p>
+                        </div>
+                      </div>
+                      
+                      <div className="group flex items-center gap-3 md:gap-4 p-4 md:p-6 rounded-xl hover:bg-red/[0.02] transition-all duration-300 border border-transparent hover:border-red/10">
+                        <div className="flex-shrink-0 w-8 h-8 md:w-10 md:h-10 bg-gradient-to-br from-red/10 to-red/5 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                          <Mail className="w-3 h-3 md:w-4 md:h-4 text-red" strokeWidth={1.5} />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-xs text-black/60 font-plex mb-1">Email</p>
+                          <p className="text-xs md:text-sm font-plex text-black/80 font-medium">Sriwijaya@gmail.com</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Enhanced Map */}
+                  <div className="w-full h-48 md:h-64 lg:h-72 border-2 border-red/15 rounded-xl overflow-hidden shadow-lg hover:shadow-xl hover:shadow-red/10 transition-all duration-500 group/map">
+                    <iframe
+                      src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3965.1798162429486!2d106.82109567593805!3d-6.370770862321453!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e69ec1cabb59bdf%3A0x28b4f84e4677f329!2sJakarta%20State%20Polytechnic!5e0!3m2!1sen!2sid!4v1755283210158!5m2!1sen!2sid"
+                      style={{ border: 0 }}
+                      allowFullScreen
+                      loading="lazy"
+                      referrerPolicy="no-referrer-when-downgrade"
+                      className="w-full h-full group-hover/map:scale-[1.02] transition-transform duration-700"
+                      title="Lokasi Sekretariat Sriwijaya Championship"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Bottom CTA Section */}
+              <div className="border-t border-red/10 p-6 md:p-8 bg-gradient-to-r from-red/[0.01] to-transparent">
+                <div className="text-center space-y-4 md:space-y-6">
+                  <p className="text-xs md:text-sm font-plex text-black/70">
+                    Untuk informasi lebih detail tentang aturan kompetisi, kategori, dan biaya pendaftaran
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center items-center">
+                    <button className="px-6 md:px-8 py-3 md:py-4 bg-white border border-red/30 text-red hover:bg-red hover:text-white font-plex font-medium rounded-lg transition-all duration-300 text-xs md:text-sm">
+                      Download Buku Panduan
+                    </button>
+                    <button className="px-6 md:px-8 py-3 md:py-4 bg-red text-white hover:bg-red/90 font-plex font-medium rounded-lg transition-all duration-300 text-xs md:text-sm">
+                      Lihat FAQ
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>  
+      </section>
 
       {/* Unified Registration Modal */}
       <UnifiedRegistration
