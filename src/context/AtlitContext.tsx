@@ -5,7 +5,7 @@ import { apiClient } from "../../pemuda-berprestasi-mvp/src/config/api";
 
 // Interface Atlet sesuai response API
 export interface Atlet {
-  id_atlet?: number;
+  id_atlet: number;
   nama_atlet: string;
   jenis_kelamin: "LAKI_LAKI" | "PEREMPUAN";
   tanggal_lahir: string;

@@ -187,7 +187,7 @@ export default function AppRoutes() {
 
         {/* Dashboard - protected routes */}
         <Route path="/dashboard" element={
-          <ProtectedRoute requiredRole="PELATIH">
+          <ProtectedRoute>
             <DashboardLayout />
           </ProtectedRoute>
         }>
@@ -213,7 +213,11 @@ export default function AppRoutes() {
           } />
 
           {/* Competition data */}
-          <Route path="dataKompetisi" element={<DataKompetisi />} />
+          <Route path="dataKompetisi" element={            
+            <ProtectedRoute requiredRole="PELATIH">
+              <TambahAtlit />
+            </ProtectedRoute>
+} />
         </Route>
 
         {/* Lomba pages */}

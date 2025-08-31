@@ -13,6 +13,7 @@ import  { beltOptions } from "../../context/AtlitContext";
 import  { genderOptions } from "../../context/AtlitContext";
 import { calculateAge } from "../../context/AtlitContext";
 import toast from "react-hot-toast";
+import { useAuth } from "../../context/authContext";
 
 
 
@@ -37,6 +38,7 @@ const Profile = () => {
   const [originalData, setOriginalData] = useState<Atlet | null>(null); // 🆕 simpan data asli dari DB
   const [formData, setFormData] = useState<Atlet | null>();
   const [isEditing, setIsEditing] = useState(false);
+  const { user } = useAuth(); // misal user punya { role: 'ADMIN' | 'ATLET' }
 
   const { fetchAtletById, updateAtlet } = useAtletContext();
 
@@ -120,14 +122,6 @@ const Profile = () => {
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-white via-red/5 to-yellow/10">
       <div className="overflow-y-auto bg-white/40 backdrop-blur-md border-white/30 w-full h-screen flex flex-col gap-8 pt-8 pb-12 px-8">
-        <button 
-          onClick={() => {navigate('/dashboard/atlit')}}
-          className="text-red hover:text-red/80 font-plex mb-4 flex items-center gap-2 transition-colors"
-        >
-          <ArrowLeft size={20} />
-          Kembali ke Data Atlit
-        </button>
-
         {/* Header Section */}
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
           <div className="space-y-2 flex-1">
@@ -169,28 +163,33 @@ const Profile = () => {
               </div>
             </div>
             {/* Action Buttons */}
-                <div className="flex gap-3 ml-auto">
-                   {!isEditing ? (
-                     <GeneralButton
-                       label="Ubah Data Atlit"
-                       className="text-white bg-gradient-to-r from-red to-red/80 hover:from-red/90 hover:to-red/70 border-0 shadow-lg flex items-center gap-2"
-                       onClick={() => setIsEditing(true)}
-                     />
-                   ) : (
-                     <div className="flex gap-3">
-                       <GeneralButton
-                         label="Batal"
-                         className="text-red bg-white hover:bg-red/5 border-2 border-red/30 hover:border-red/50"
-                         onClick={handleCancel}
-                       />
-                       <GeneralButton
-                         label="Simpan"
-                         className="text-white bg-gradient-to-r from-red to-red/80 hover:from-red/90 hover:to-red/70 border-0 shadow-lg flex items-center gap-2"
-                         onClick={handleUpdate}
-                       />
-                     </div>
-                   )}
-                </div>
+<div className="flex gap-3 ml-auto">
+  {user?.role === 'ADMIN' ? (
+    <></> // kosongkan tombol untuk admin
+  ) : (
+    !isEditing ? (
+      <GeneralButton
+        label="Ubah Data Atlit"
+        className="text-white bg-gradient-to-r from-red to-red/80 hover:from-red/90 hover:to-red/70 border-0 shadow-lg flex items-center gap-2"
+        onClick={() => setIsEditing(true)}
+      />
+    ) : (
+      <div className="flex gap-3">
+        <GeneralButton
+          label="Batal"
+          className="text-red bg-white hover:bg-red/5 border-2 border-red/30 hover:border-red/50"
+          onClick={handleCancel}
+        />
+        <GeneralButton
+          label="Simpan"
+          className="text-white bg-gradient-to-r from-red to-red/80 hover:from-red/90 hover:to-red/70 border-0 shadow-lg flex items-center gap-2"
+          onClick={handleUpdate}
+        />
+      </div>
+    )
+  )}
+</div>
+
           </div>
 
           {/* Form Grid */}

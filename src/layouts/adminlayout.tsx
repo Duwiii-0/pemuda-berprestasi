@@ -95,7 +95,7 @@ const AdminLayout: React.FC = () => {
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#F5FBEF' }}>
       {/* Desktop Sidebar */}
-      <aside className="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-50 lg:block lg:w-72 lg:overflow-y-auto">
+      <aside className="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-50 lg:block lg:w-72 lg:overflow-y-auto shadow-2xl">
         <div className="h-full shadow-2xl" style={{ backgroundColor: '#F5FBEF' }}>
           {/* Header */}
           <div className="p-6 border-b" style={{ borderColor: '#990D35' }}>

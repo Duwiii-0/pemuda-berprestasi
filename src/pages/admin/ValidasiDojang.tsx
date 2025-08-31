@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Eye, Loader, Building2 } from 'lucide-react';
+import { Eye, Loader, Building2, Search } from 'lucide-react';
 import { useDojang } from '../../context/dojangContext'; // pastikan context ada
 import toast from 'react-hot-toast';
 
@@ -7,12 +7,11 @@ const ValidasiDojang: React.FC = () => {
   const { dojangs, refreshDojang, isLoading } = useDojang(); 
   const [selectedDojang, setSelectedDojang] = useState<number | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
-  // Fetch data dojang saat component mount
   useEffect(() => {
-  refreshDojang().catch((err: unknown) => toast.error('Gagal memuat data dojang'));
-}, []);
-
+    refreshDojang().catch(() => toast.error('Gagal memuat data dojang'));
+  }, []);
 
   const handleViewDetail = (id: number) => {
     setSelectedDojang(id);
@@ -24,6 +23,10 @@ const ValidasiDojang: React.FC = () => {
     return date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
   };
 
+  const filteredDojangs = dojangs.filter(d =>
+    d.nama_dojang.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   if (isLoading) {
     return (
       <div className="p-6 flex items-center justify-center min-h-96">
@@ -34,26 +37,33 @@ const ValidasiDojang: React.FC = () => {
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      <div className="mb-6 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Building2 className="text-gray-600" size={24} />
+    <div className="p-8 max-w-full mx-auto space-y-10 px-48">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <Building2 className="text-blue-500" size={60} />
           <div>
-            <h1 className="text-3xl font-bold text-gray-800">Validasi Dojang</h1>
-            <p className="text-gray-600">Kelola pendaftaran dojang</p>
+            <h1 className="text-7xl font-bebas text-black/90">Validasi Dojang</h1>
+            <p className="text-black/60 text-xl mt-1">Kelola pendaftaran dojang</p>
           </div>
         </div>
-        <button 
-          onClick={() => refreshDojang().catch(() => toast.error('Gagal refresh'))}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          <Loader size={16} />
-          Refresh
-        </button>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-        {dojangs.length === 0 ? (
+      {/* Search */}
+      <div className="relative max-w-md mb-6">
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={22} />
+        <input
+          type="text"
+          placeholder="Cari dojang..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full pl-12 pr-4 py-4 rounded-3xl border border-gray-200 shadow-lg focus:ring-2 focus:ring-blue-400 focus:border-transparent text-lg transition placeholder-gray-400"
+        />
+      </div>
+
+      {/* Table */}
+      <div className="bg-white/90 backdrop-blur-md border border-white/40 rounded-2xl shadow-lg overflow-hidden">
+        {filteredDojangs.length === 0 ? (
           <div className="text-center py-16">
             <div className="text-gray-300 mb-4">
               <Building2 size={64} className="mx-auto" />
@@ -63,34 +73,36 @@ const ValidasiDojang: React.FC = () => {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50">
+            <table className="w-full border-collapse text-left text-lg">
+              <thead className="bg-yellow">
                 <tr>
-                  <th className="text-left py-4 px-6 font-semibold text-gray-900">Nama Dojang</th>
-                  <th className="text-left py-4 px-6 font-semibold text-gray-900">Jumlah Atlet</th>
-                  <th className="text-left py-4 px-6 font-semibold text-gray-900">Provinsi</th>
-                  <th className="text-left py-4 px-6 font-semibold text-gray-900">Tanggal Daftar</th>
-                  <th className="text-left py-4 px-6 font-semibold text-gray-900">Aksi</th>
+                  <th className="py-5 px-6 font-semibold text-black/80">Nama Dojang</th>
+                  <th className="py-5 px-6 font-semibold text-black/80 text-center">Jumlah Atlet</th>
+                  <th className="py-5 px-6 font-semibold text-black/80 text-center">Provinsi</th>
+                  <th className="py-5 px-6 font-semibold text-black/80 text-center">Tanggal Daftar</th>
+                  <th className="py-5 px-6 font-semibold text-black/80 text-center">Aksi</th>
                 </tr>
               </thead>
               <tbody>
-                {dojangs.map((d) => (
+                {filteredDojangs.map((d) => (
                   <tr
                     key={d.id_dojang}
-                    className="border-t border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer"
-                    onClick={() => {
-                      setSelectedDojang(d.id_dojang);
-                      setShowDetailModal(true);
-                    }}
+                    className="border-t border-gray-200 hover:bg-yellow/10 transition-colors cursor-pointer"
+                    onClick={() => handleViewDetail(d.id_dojang)}
                   >
-                    <td className="py-4 px-6 font-medium text-gray-900">{d.nama_dojang}</td>
-                    <td className="py-4 px-6 text-gray-600">{d.jumlah_atlet || 0}</td>
-                    <td className="py-4 px-6 text-gray-600">{d.provinsi || '-'}</td>
-                    <td className="py-4 px-6 text-gray-600">{formatDate(d.created_at)}</td>
-                    <td className="py-4 px-6">
+                    <td className="py-4 px-6 font-medium text-black/90">{d.nama_dojang}</td>
+                    <td className="py-4 px-6 text-center text-black/70">{d.jumlah_atlet || 0}</td>
+                    <td className="py-4 px-6 text-center text-black/70">{d.provinsi || '-'}</td>
+                    <td className="py-4 px-6 text-center text-black/70">{formatDate(d.created_at)}</td>
+                    <td className="py-4 px-6 flex justify-center">
                       <button
-                        className="px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm"
+                        className="px-4 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-colors flex items-center gap-2 justify-center"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toast.success(`Hapus dojang ${d.nama_dojang}`);
+                        }}
                       >
+                        <Eye size={16} />
                         Hapus
                       </button>
                     </td>

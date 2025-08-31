@@ -5,6 +5,7 @@ import { useAtletContext, genderOptions } from "../../context/AtlitContext";
 import type { Atlet } from "../../context/AtlitContext";
 import { setAuthToken } from "../../../pemuda-berprestasi-mvp/src/config/api";
 import { useAuth } from "../../context/authContext";
+import { useNavigate } from "react-router-dom"; // tambahkan import
 
 const AllAtlets: React.FC = () => {
   const { atlits, fetchAllAtlits } = useAtletContext();
@@ -13,6 +14,7 @@ const AllAtlets: React.FC = () => {
   const [filterGender, setFilterGender] = useState<"ALL" | "LAKI_LAKI" | "PEREMPUAN">("ALL");
   const [error, setError] = useState<string | null>(null);
   const { token } = useAuth();
+  const navigate = useNavigate();
   const [filterAgeCategory, setFilterAgeCategory] = useState<"ALL" | "CADET" | "JUNIOR" | "SENIOR">("ALL");
 
 
@@ -96,114 +98,122 @@ const AllAtlets: React.FC = () => {
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      <div className="mb-6">
-        <div className="flex items-center gap-2 mb-2">
-          <Users className="text-gray-600" size={24} />
-          <h1 className="text-3xl font-bold text-gray-800">Semua Atlet</h1>
-        </div>
-        <p className="text-gray-600">Kelola data semua atlet</p>
-      </div>
-
-      {error && (
-        <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg flex items-center gap-2">
-          <AlertTriangle size={20} />
-          <div>
-            <strong>Error:</strong> {error}
-            <button
-              onClick={fetchAllAtlits}
-              className="ml-4 text-red-800 underline hover:no-underline"
-            >
-              Coba lagi
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Filters and Search */}
-      <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-          <div className="relative md:col-span-2">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-            <input
-              type="text"
-              placeholder="Cari berdasarkan nama atlet..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-            />
-          </div>
-          <select
-            value={filterGender}
-            onChange={(e) => setFilterGender(e.target.value as any)}
-            className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-          >
-            <option value="ALL">Semua Jenis Kelamin</option>
-            {genderOptions.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
-
-          <select
-            value={filterAgeCategory}
-            onChange={(e) => setFilterAgeCategory(e.target.value as any)}
-            className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-          >
-            {ageCategories.map((opt) => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
-            ))}
-          </select>
-        </div>
-
-        <p className="text-gray-600">
-          Menampilkan <span className="font-semibold">{filteredAtlits.length}</span> dari <span className="font-semibold">{atlits.length}</span> atlet
-        </p>
-      </div>
-
-      {/* Atlet Table */}
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="text-left py-4 px-6 font-semibold text-gray-900">Nama Atlet</th>
-                <th className="text-left py-4 px-6 font-semibold text-gray-900">Jenis Kelamin</th>
-                <th className="text-left py-4 px-6 font-semibold text-gray-900">Tanggal Lahir</th>
-                <th className="text-left py-4 px-6 font-semibold text-gray-900">Umur</th>
-                <th className="text-left py-4 px-6 font-semibold text-gray-900">Aksi</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredAtlits.map((atlet) => (
-                <tr key={atlet.id_atlet} className="border-t border-gray-200 hover:bg-gray-50 transition-colors">
-                  <td className="py-4 px-6 font-medium text-gray-900">{atlet.nama_atlet}</td>
-                  <td className="py-4 px-6">{getGenderBadge(atlet.jenis_kelamin)}</td>
-                  <td className="py-4 px-6 text-gray-600">{formatDate(atlet.tanggal_lahir)}</td>
-                  <td className="py-4 px-6 text-gray-600">{atlet.umur ?? '-'}</td>
-                  <td className="py-4 px-6">
-                    <button
-                      className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors tooltip"
-                      title="Lihat Detail"
-                    >
-                      <Eye size={16} />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {filteredAtlits.length === 0 && !loading && (
-          <div className="text-center py-12">
-            <Users size={48} className="mx-auto mb-4 text-gray-300" />
-            <p className="text-gray-500 text-lg">Tidak ada atlet yang ditemukan</p>
-          </div>
-        )}
+<div className="p-8 max-w-full mx-auto space-y-10 px-48">
+  {/* Header */}
+  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div className="flex items-center gap-4">
+      <Users className="text-red-500" size={60} />
+      <div>
+        <h1 className="text-7xl font-bebas text-black/90">Semua Atlet</h1>
+        <p className="text-black/60 text-xl mt-1">Kelola data semua atlet</p>
       </div>
     </div>
+  </div>
+
+  {error && (
+    <div className="flex items-center gap-3 p-4 bg-red-50 border border-red-300 rounded-2xl text-red-700">
+      <AlertTriangle size={22} />
+      <div className="flex-1 flex items-center justify-between">
+        <span>{error}</span>
+        <button
+          onClick={fetchAllAtlits}
+          className="text-red-600 font-semibold underline hover:no-underline"
+        >
+          Coba lagi
+        </button>
+      </div>
+    </div>
+  )}
+
+{/* Filters */}
+<div className="bg-white/90 backdrop-blur-md border border-white/40 rounded-2xl p-6 shadow-lg space-y-5">
+  <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
+    {/* Search */}
+    <div className="relative md:col-span-2">
+      <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={24} />
+      <input
+        type="text"
+        placeholder="Cari berdasarkan nama atlet..."
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        className="w-full pl-14 pr-4 py-4 rounded-3xl border border-gray-200 shadow-lg focus:ring-2 focus:ring-red-400 focus:border-transparent text-lg transition placeholder-gray-400"
+      />
+    </div>
+
+    {/* Gender Filter */}
+    <select
+      value={filterGender}
+      onChange={(e) => setFilterGender(e.target.value as any)}
+      className="px-6 py-4 rounded-3xl border border-gray-200 shadow-lg focus:border-transparent text-lg transition bg-gray-50 hover:bg-gray-100"
+    >
+      <option value="ALL">Semua Jenis Kelamin</option>
+      {genderOptions.map((opt) => (
+        <option key={opt.value} value={opt.value}>{opt.label}</option>
+      ))}
+    </select>
+
+    {/* Age Category Filter */}
+    <select
+      value={filterAgeCategory}
+      onChange={(e) => setFilterAgeCategory(e.target.value as any)}
+      className="px-6 py-4 rounded-3xl border border-gray-200 shadow-lg focus:border-transparent text-lg transition bg-gray-50 hover:bg-gray-100"
+    >
+      {ageCategories.map((opt) => (
+        <option key={opt.value} value={opt.value}>{opt.label}</option>
+      ))}
+    </select>
+  </div>
+
+  <p className="text-gray-600 text-base">
+    Menampilkan <span className="font-semibold">{filteredAtlits.length}</span> dari <span className="font-semibold">{atlits.length}</span> atlet
+  </p>
+</div>
+
+  {/* Table */}
+  <div className="bg-white/90 backdrop-blur-md border border-white/40 rounded-2xl shadow-lg overflow-hidden">
+    <div className="overflow-x-auto">
+      <table className="w-full border-collapse text-left text-lg">
+        <thead className="bg-yellow">
+          <tr>
+            <th className="py-5 px-6 font-semibold text-black/80">Nama Atlet</th>
+            <th className="py-5 px-6 font-semibold text-black/80 text-center">Jenis Kelamin</th>
+            <th className="py-5 px-6 font-semibold text-black/80 text-center">Tanggal Lahir</th>
+            <th className="py-5 px-6 font-semibold text-black/80 text-center">Umur</th>
+            <th className="py-5 px-6 font-semibold text-black/80 text-center">Aksi</th>
+          </tr>
+        </thead>
+        <tbody>
+          {filteredAtlits.map((atlet) => (
+            <tr key={atlet.id_atlet} 
+                onClick={() => navigate(`/dashboard/atlit/${atlet.id_atlet}`)} 
+                className="border-t border-gray-200 hover:bg-yellow/10 transition cursor-pointer">
+              <td className="py-4 px-6 font-medium text-black/90 w-2/6">{atlet.nama_atlet}</td>
+              <td className="py-4 px-6 text-center w-1/5">{getGenderBadge(atlet.jenis_kelamin)}</td>
+              <td className="py-4 px-6 text-black/70 text-center w-1/5">{formatDate(atlet.tanggal_lahir)}</td>
+              <td className="py-4 px-6 text-black/70 text-center w-1/5">{atlet.umur ?? '-'}</td>
+              <td className="py-4 px-6 text-center">
+                <button
+                  className=" cursor-pointer p-2 text-white hover:bg-red-700 rounded-lg transition flex items-center gap-6 bg-red-500 px-4"
+                  title="Lihat Detail"
+                >
+                  <Eye size={18} />
+                  Delete
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+
+    {filteredAtlits.length === 0 && !loading && (
+      <div className="py-16 text-center text-gray-400">
+        <Users size={52} className="mx-auto mb-4" />
+        <p className="text-lg">Tidak ada atlet yang ditemukan</p>
+      </div>
+    )}
+  </div>
+</div>
   );
 };
 

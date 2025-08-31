@@ -140,6 +140,7 @@ if (showPeserta && selectedKompetisi) {
       kategori,
       jenisKategori,
       status,
+      atletId: isTeam ? null : peserta.atlet?.id_atlet,
     };
   });
 
@@ -186,6 +187,13 @@ if (showPeserta && selectedKompetisi) {
                     <tr
                       key={p.id}
                       className="transition-all duration-200 hover:bg-white/50 cursor-pointer"
+                      onClick={() => {
+                        if (p.atletId) {
+                          navigate(`/dashboard/atlit/${p.atletId}`); // redirect ke detail personal atlet
+                        } else {
+                          toast("Ini peserta tim, tidak ada detail personal");
+                        }
+                      }}
                     >
                       <td className="px-6 py-4 font-plex">{p.nama}</td>
                       <td className="px-6 py-4 text-center font-plex">{p.gender}</td>
