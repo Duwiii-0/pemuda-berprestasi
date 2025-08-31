@@ -93,13 +93,13 @@ const NavbarLanding = ({ onLogoutRequest }: { onLogoutRequest: () => void }) => 
     <>
       {/* Navbar - Tanpa border bottom */}
       <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ease-out ${styles.bg}`}>
-        <div className="w-full px-[5%] sm:px-[8%] lg:px-[10%] py-4 md:py-6">
+        <div className="w-full px-[5%] sm:px-[8%] lg:px-[10%] py-2">
           <div className="flex justify-between items-center h-16 md:h-20">
             
             {/* Logo */}
             <Link 
               to="/" 
-              className={`text-xl sm:text-2xl lg:text-4xl ${styles.logo} font-bebas tracking-wider uppercase transition-all duration-300 ease-out hover:scale-105`}
+              className={`text-xl sm:text-2xl lg:text-3xl xl:text-4xl ${styles.logo} font-bebas tracking-wider uppercase transition-all duration-300 ease-out hover:scale-105`}
             >
               pemuda berprestasi
             </Link>
@@ -110,7 +110,7 @@ const NavbarLanding = ({ onLogoutRequest }: { onLogoutRequest: () => void }) => 
                 <Link
                   key={to}
                   to={to}
-                  className={`text-xl relative px-4 py-2 ${styles.text} font-plex font-medium transition-all duration-300 ease-out ${
+                  className={`text-base xl:text-xl relative px-4 py-2 ${styles.text} font-plex font-medium transition-all duration-300 ease-out ${
                     location.pathname === to ? "text-red font-semibold" : styles.hoverText
                   } group`}
                 >
@@ -131,13 +131,13 @@ const NavbarLanding = ({ onLogoutRequest }: { onLogoutRequest: () => void }) => 
                 <div className="flex items-center space-x-4">
                   <Link
                     to="/register"
-                    className={`px-6 py-2.5 text-base border-2 ${styles.buttonBorder} ${styles.buttonText} font-plex rounded-lg transition-all duration-300 ease-out hover:bg-red hover:text-white hover:scale-105 hover:shadow-lg`}
+                    className={`px-6 py-2.5 text-md xl:text-2xl border-2 ${styles.buttonBorder} ${styles.buttonText} font-plex rounded-lg transition-all duration-300 ease-out hover:bg-red hover:text-white hover:scale-105 hover:shadow-lg`}
                   >
                     Register
                   </Link>
                   <Link
                     to="/login"
-                    className={`px-8 py-2.5 text-base border-2 ${styles.buttonBorder} ${styles.buttonBg} font-plex rounded-lg transition-all duration-300 ease-out hover:shadow-lg`}
+                    className={`px-8 py-2.5 text-md xl:text-2xl border-2 ${styles.buttonBorder} ${styles.buttonBg} font-plex rounded-lg transition-all duration-300 ease-out hover:shadow-lg`}
                   >
                     Login
                   </Link>
@@ -146,9 +146,9 @@ const NavbarLanding = ({ onLogoutRequest }: { onLogoutRequest: () => void }) => 
                 <div className="relative" ref={dropdownRef}>
                   <button
                     onClick={() => setShowDropdown(!showDropdown)}
-                    className={`flex items-center space-x-2 px-4 py-2.5 text-xl border-2 ${styles.buttonBorder} ${styles.buttonText} font-plex rounded-lg transition-all duration-300 ease-out hover:bg-red hover:text-white hover:scale-105 hover:shadow-lg group`}
+                    className={`flex items-center space-x-2 px-4 py-2.5 text-md xl:text-2xl border-2 ${styles.buttonBorder} ${styles.buttonText} font-plex rounded-lg transition-all duration-300 ease-out hover:bg-red hover:text-white hover:scale-105 hover:shadow-lg group`}
                   >
-                    <User size={18} className="transition-transform duration-300 group-hover:scale-110" />
+                    <User size={24} className="transition-transform duration-300 group-hover:scale-110" />
                     <span className="max-w-48 truncate">
                       {user?.pelatih?.nama_pelatih ?? "User"}
                     </span>

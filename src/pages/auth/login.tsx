@@ -35,8 +35,7 @@ const Login = () => {
         // Don't navigate here, let useEffect handle it after state updates
       }
     } catch (error: any) {
-      console.error("Login error:", error);
-      toast.error(error?.message || error?.response?.data?.message || 'Email atau password salah');
+      toast.error('Email atau password salah');
     }
   };
 

@@ -1,5 +1,6 @@
 // src/context/authContext.tsx
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import toast from 'react-hot-toast';
 
 // ===== API CONFIGURATION =====
 const API_BASE_URL = 'http://localhost:3000/api';
@@ -181,6 +182,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Login failed';
       console.error('❌ Login error:', error);
+      toast.error('email atau password salah')
       return {
         success: false,
         message: errorMessage

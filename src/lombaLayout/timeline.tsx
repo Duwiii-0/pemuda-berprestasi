@@ -213,15 +213,9 @@ export default function Timeline() {
               <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-4">
                 <button 
                   onClick={ handleDaftarSekarang }
-                  className="px-8 py-4 bg-red text-white hover:bg-red/90 font-plex font-semibold rounded-xl transition-all duration-300 hover:shadow-lg hover:shadow-red/30 hover:-translate-y-1 text-sm md:text-base"
+                  className="px-10 py-6 bg-red text-white hover:bg-yellow hover:text-black font-plex font-semibold rounded-xl transition-all duration-300 hover:shadow-lg hover:shadow-red/30 hover:-translate-y-1 text-sm md:text-base"
                 >
                   Daftar Sekarang
-                </button>
-                <button 
-                  onClick={handleDownloadPanduan}
-                  className="px-8 py-4 bg-white border border-red/30 text-red hover:bg-red hover:text-white font-plex font-medium rounded-xl transition-all duration-300 text-sm md:text-base"
-                >
-                  Download Panduan
                 </button>
               </div>
             </div>

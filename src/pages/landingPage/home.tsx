@@ -8,9 +8,6 @@ const Home = () => {
       <Hero />
       <About />
       <OngoingComp />
-      
-      {/* Optional: Add spacing for navbar if needed */}
-      <div className="h-20"></div>
     </main>
   );
 };

@@ -15,15 +15,7 @@ const OngoingComp = () => {
 
   return (
     <section className="relative w-full bg-gradient-to-br from-white via-red/[0.02] to-white overflow-hidden py-8 md:py-12 lg:py-16">
-      {/* Animated Background Elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-48 md:w-72 lg:w-96 h-48 md:h-72 lg:h-96 border border-red/[0.08] rounded-full animate-pulse opacity-40"></div>
-        <div className="absolute bottom-1/4 right-1/4 w-36 md:w-56 lg:w-72 h-36 md:h-56 lg:h-72 border border-red/[0.06] rounded-full animate-pulse opacity-30 animation-delay-1000"></div>
-        <div className="absolute top-1/2 right-1/3 w-2 h-2 bg-red/20 rounded-full animate-bounce opacity-60"></div>
-        <div className="absolute bottom-1/3 left-1/4 w-1 h-1 bg-red/30 rounded-full animate-bounce animation-delay-500"></div>
-      </div>
-
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         
         {/* Enhanced Header Section */}
         <div className="text-left mb-12 md:mb-16 lg:mb-20 max-w-4xl">
@@ -71,9 +63,7 @@ const OngoingComp = () => {
             </div>
             
             <div className="flex-1 max-w-6xl flex justify-center">
-              <div className="border-2 border-red/20 rounded-2xl lg:rounded-3xl p-1 bg-gradient-to-r from-red/5 to-red/10 shadow-lg hover:shadow-xl transition-all duration-300">
                 <CompCard />
-              </div>
             </div>
             
             <div className="flex-shrink-0">
@@ -108,44 +98,6 @@ const OngoingComp = () => {
           </div>
         </div>
 
-        {/* Enhanced Features Section */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 md:gap-8 lg:gap-10 max-w-6xl mx-auto">
-          <div className="group space-y-3 md:space-y-4 p-4 md:p-6 rounded-xl md:rounded-2xl hover:bg-red/[0.02] transition-all duration-500 hover:shadow-lg hover:shadow-red/10 text-center">
-            <div className="w-12 h-12 md:w-14 md:h-14 bg-gradient-to-br from-red/10 to-red/5 rounded-xl md:rounded-2xl flex items-center justify-center mx-auto group-hover:from-red/15 group-hover:to-red/8 transition-all duration-300 group-hover:scale-110">
-              <Trophy className="w-6 h-6 md:w-7 md:h-7 text-red" />
-            </div>
-            <h3 className="text-base md:text-lg lg:text-xl font-plex font-semibold text-red group-hover:text-red/90 transition-colors">
-              Prestasi Tinggi
-            </h3>
-            <p className="text-xs md:text-sm lg:text-base text-black/70 font-plex leading-relaxed">
-              Kompetisi berstandar internasional dengan sistem penilaian yang fair dan transparan
-            </p>
-          </div>
-
-          <div className="group space-y-3 md:space-y-4 p-4 md:p-6 rounded-xl md:rounded-2xl hover:bg-red/[0.02] transition-all duration-500 hover:shadow-lg hover:shadow-red/10 text-center">
-            <div className="w-12 h-12 md:w-14 md:h-14 bg-gradient-to-br from-red/10 to-red/5 rounded-xl md:rounded-2xl flex items-center justify-center mx-auto group-hover:from-red/15 group-hover:to-red/8 transition-all duration-300 group-hover:scale-110">
-              <Calendar className="w-6 h-6 md:w-7 md:h-7 text-red" />
-            </div>
-            <h3 className="text-base md:text-lg lg:text-xl font-plex font-semibold text-red group-hover:text-red/90 transition-colors">
-              Jadwal Fleksibel
-            </h3>
-            <p className="text-xs md:text-sm lg:text-base text-black/70 font-plex leading-relaxed">
-              Berbagai kategori waktu kompetisi yang disesuaikan dengan kebutuhan atlet
-            </p>
-          </div>
-
-          <div className="group space-y-3 md:space-y-4 p-4 md:p-6 rounded-xl md:rounded-2xl hover:bg-red/[0.02] transition-all duration-500 hover:shadow-lg hover:shadow-red/10 text-center sm:col-span-3 md:col-span-1">
-            <div className="w-12 h-12 md:w-14 md:h-14 bg-gradient-to-br from-red/10 to-red/5 rounded-xl md:rounded-2xl flex items-center justify-center mx-auto group-hover:from-red/15 group-hover:to-red/8 transition-all duration-300 group-hover:scale-110">
-              <MapPin className="w-6 h-6 md:w-7 md:h-7 text-red" />
-            </div>
-            <h3 className="text-base md:text-lg lg:text-xl font-plex font-semibold text-red group-hover:text-red/90 transition-colors">
-              Jangkauan Global
-            </h3>
-            <p className="text-xs md:text-sm lg:text-base text-black/70 font-plex leading-relaxed">
-              Peserta dari berbagai negara dengan level kompetisi yang beragam dan menantang
-            </p>
-          </div>
-        </div>
       </div>
     </section>
   );

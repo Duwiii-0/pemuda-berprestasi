@@ -27,13 +27,10 @@ const About = () => {
             <div className="relative">
               <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bebas leading-[0.85] tracking-wide">
                 <span className="bg-gradient-to-r from-red via-red/90 to-red/80 bg-clip-text text-transparent">
-                  Embrace the
-                </span>
-                <span className="block bg-gradient-to-r from-red/90 via-red to-red/90 bg-clip-text text-transparent">
-                  Spirit of
+                  Embrace the Spirit
                 </span>
                 <span className="block bg-gradient-to-r from-red/80 via-red/90 to-red bg-clip-text text-transparent">
-                  Competition
+                  of Competition
                 </span>
               </h2>
               {/* Subtle underline accent */}
@@ -53,7 +50,7 @@ const About = () => {
             </div>
 
             {/* Enhanced Features Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6 lg:gap-8 pt-6 md:pt-8">
+            <div className="hidden lg:grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6 lg:gap-8 pt-6 md:pt-8">
               <div className="group space-y-3 md:space-y-4 p-4 md:p-6 rounded-xl md:rounded-2xl hover:bg-red/[0.02] transition-all duration-500 hover:shadow-lg hover:shadow-red/10">
                 <div className="w-12 h-12 md:w-14 md:h-14 bg-gradient-to-br from-red/10 to-red/5 rounded-xl md:rounded-2xl flex items-center justify-center group-hover:from-red/15 group-hover:to-red/8 transition-all duration-300 group-hover:scale-110">
                   <div className="w-5 h-5 md:w-6 md:h-6 bg-gradient-to-br from-red to-red/80 rounded-lg shadow-sm"></div>
@@ -90,16 +87,6 @@ const About = () => {
                 </p>
               </div>
             </div>
-
-            {/* Call-to-Action Button */}
-            <div className="pt-4 md:pt-6">
-              <button className="group relative inline-flex items-center gap-2 md:gap-3 bg-gradient-to-r from-red to-red/90 hover:from-red/90 hover:to-red text-white font-plex font-medium px-6 md:px-8 py-3 md:py-4 rounded-lg md:rounded-xl transition-all duration-300 hover:shadow-lg hover:shadow-red/25 hover:-translate-y-0.5 text-sm md:text-base">
-                <span>Pelajari Lebih Lanjut</span>
-                <svg className="w-4 h-4 md:w-5 md:h-5 group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                </svg>
-              </button>
-            </div>
           </div>
 
           {/* Enhanced Image Section */}
@@ -128,18 +115,6 @@ const About = () => {
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-red/5"></div>                
               </div>
               
-              {/* Enhanced Achievement Badge */}
-              <div className="absolute -bottom-4 -left-4 md:-bottom-6 md:-left-6 bg-white/95 backdrop-blur-sm rounded-xl md:rounded-2xl shadow-lg md:shadow-2xl p-4 md:p-6 border border-red/10 group-hover:-translate-y-1 md:group-hover:-translate-y-2 group-hover:shadow-xl transition-all duration-500">
-                <div className="text-center space-y-0.5 md:space-y-1">
-                  <div className="text-2xl md:text-3xl font-bebas bg-gradient-to-r from-red to-red/80 bg-clip-text text-transparent">
-                    2025
-                  </div>
-                  <div className="text-xs md:text-sm font-plex text-black/70 font-medium tracking-wide">
-                    Championship
-                  </div>
-                  <div className="w-6 md:w-8 h-0.5 bg-gradient-to-r from-red/60 to-transparent mx-auto mt-1 md:mt-2"></div>
-                </div>
-              </div>
             </div>
           </div>
         </div>

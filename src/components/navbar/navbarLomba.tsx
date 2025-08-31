@@ -120,13 +120,13 @@ const NavbarLomba = ({ onLogoutRequest }: { onLogoutRequest: () => void }) => {
                 <div className="flex items-center space-x-4">
                   <Link
                     to="/register"
-                    className={`px-6 py-2.5 text-base border-2 ${styles.buttonBorder} ${styles.buttonText} font-plex rounded-lg transition-all duration-300 ease-out hover:bg-white hover:text-red hover:scale-105 hover:shadow-lg`}
+                    className={`px-6 py-2.5 text-md xl:text-2xl border-2 ${styles.buttonBorder} ${styles.buttonText} font-plex rounded-lg transition-all duration-300 ease-out hover:bg-white hover:text-red hover:scale-105 hover:shadow-lg`}
                   >
                     Register
                   </Link>
                   <Link
                     to="/login"
-                    className={`px-8 py-2.5 text-base border-2 ${styles.buttonBorder} ${styles.buttonBg} font-plex rounded-lg transition-all duration-300 ease-out hover:shadow-lg`}
+                    className={`px-8 py-2.5 text-md xl:text-2xl border-2 ${styles.buttonBorder} ${styles.buttonBg} font-plex rounded-lg transition-all duration-300 ease-out hover:shadow-lg`}
                   >
                     Login
                   </Link>
@@ -135,9 +135,9 @@ const NavbarLomba = ({ onLogoutRequest }: { onLogoutRequest: () => void }) => {
                 <div className="relative" ref={dropdownRef}>
                   <button
                     onClick={() => setShowDropdown(!showDropdown)}
-                    className={`flex items-center space-x-2 px-4 py-2.5 text-xl border-2 ${styles.buttonBorder} ${styles.buttonText} font-plex rounded-lg transition-all duration-300 ease-out hover:bg-white hover:text-red hover:scale-105 hover:shadow-lg group`}
+                    className={`flex items-center space-x-2 px-4 py-2.5 text-md xl:text-2xl border-2 ${styles.buttonBorder} ${styles.buttonText} font-plex rounded-lg transition-all duration-300 ease-out hover:bg-white hover:text-red hover:scale-105 hover:shadow-lg group`}
                   >
-                    <User size={18} className="transition-transform duration-300 group-hover:scale-110" />
+                    <User size={24} className="transition-transform duration-300 group-hover:scale-110" />
                     <span className="max-w-48 truncate">
                       {user?.pelatih?.nama_pelatih ?? "User"}
                     </span>

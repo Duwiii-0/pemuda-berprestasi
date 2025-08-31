@@ -391,10 +391,10 @@ const LandingPage = () => {
                 
                 {/* Contact Form Side */}
                 <div className="w-full h-full flex flex-col items-center space-y-6 md:space-y-8">
-                  <div className="text-center space-y-3 md:space-y-4">
+                  <div className="text-center ">
                     <h3 className="font-bebas text-red text-xl sm:text-2xl md:text-3xl lg:text-4xl">Kirim Pesan</h3>
                     <div className="w-12 md:w-16 h-0.5 bg-gradient-to-r from-red to-red/60 mx-auto"></div>
-                    <p className="text-xs md:text-sm font-plex text-black/70 max-w-md">
+                    <p className="text-xs md:text-sm font-plex text-black/70 max-w-md pt-3">
                       Sampaikan pertanyaan atau saran Anda melalui formulir di bawah ini
                     </p>
                   </div>
@@ -418,17 +418,17 @@ const LandingPage = () => {
                       </div>
                     </div>
                     
-                    <div className="w-full">
+                    <div className="w-full h-full">
                       <TextArea 
                         placeholder="Tulis pesan atau pertanyaan Anda di sini..."
                         icon={<PenLine className="text-red/60" size={16} />}
                         rows={4}
-                        className="border-red/20 hover:border-red/40 focus:border-red transition-all duration-300 rounded-xl resize-none text-xs md:text-sm bg-white/80"
+                        className="h-full border-red/20 hover:border-red/40 focus:border-red transition-all duration-300 rounded-xl resize-none text-xs md:text-sm bg-white/80"
                       />
                     </div>
                     
                     {/* Enhanced Submit Button */}
-                    <div className="pt-2 md:pt-4">
+                    <div className="">
                       <button className="group relative w-full px-4 md:px-6 py-3 md:py-4 bg-gradient-to-r from-red to-red/90 hover:from-red/90 hover:to-red text-white font-plex font-semibold rounded-xl transition-all duration-300 hover:shadow-lg hover:shadow-red/30 hover:-translate-y-1 text-xs md:text-sm">
                         <span className="relative z-10 flex items-center justify-center gap-2">
                           <span>Kirim Pesan</span>
@@ -443,26 +443,14 @@ const LandingPage = () => {
                 
                 {/* Contact Info Side */}
                 <div className="w-full h-full flex flex-col space-y-6 md:space-y-8">
-                  <div className="text-center xl:text-left space-y-3 md:space-y-4">
-                    <h3 className="font-bebas text-red text-lg sm:text-xl md:text-2xl lg:text-3xl">Informasi Kontak</h3>
-                    <div className="w-16 md:w-20 h-0.5 bg-gradient-to-r from-red to-red/60 mx-auto xl:mx-0"></div>
+                  <div className="text-center">
+                    <h3 className="font-bebas text-red text-xl sm:text-2xl md:text-3xl lg:text-4xl">Kirim Pesan</h3>
+                    <div className="w-12 md:w-16 h-0.5 bg-gradient-to-r from-red to-red/60 mx-auto"></div>
                   </div>
+
                   
                   {/* Enhanced Contact Details */}
-                  <div className="space-y-4 md:space-y-6">
-                    {/* Address */}
-                    <div className="group flex items-start gap-3 md:gap-4 p-4 md:p-6 rounded-xl hover:bg-red/[0.02] transition-all duration-300 border border-transparent hover:border-red/10">
-                      <div className="flex-shrink-0 w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-red/10 to-red/5 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                        <MapPin className="w-4 h-4 md:w-5 md:h-5 text-red" strokeWidth={1.5} />
-                      </div>
-                      <div className="flex-1 space-y-1 md:space-y-2">
-                        <h4 className="font-plex font-semibold text-black/80 text-xs md:text-sm">Alamat Sekretariat</h4>
-                        <p className="text-xs md:text-sm font-plex text-black/70 leading-relaxed">
-                          Jl. Puri Depok Mas Blok L No.15, Pancoran Mas, Depok, Jawa Barat
-                        </p>
-                      </div>
-                    </div>
-                    
+                  <div className="space-y-4 md:space-y-6">                    
                     {/* Phone & Email */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
                       <div className="group flex items-center gap-3 md:gap-4 p-4 md:p-6 rounded-xl hover:bg-red/[0.02] transition-all duration-300 border border-transparent hover:border-red/10">
@@ -498,23 +486,6 @@ const LandingPage = () => {
                       className="w-full h-full group-hover/map:scale-[1.02] transition-transform duration-700"
                       title="Lokasi Sekretariat Sriwijaya Championship"
                     />
-                  </div>
-                </div>
-              </div>
-
-              {/* Bottom CTA Section */}
-              <div className="border-t border-red/10 p-6 md:p-8 bg-gradient-to-r from-red/[0.01] to-transparent">
-                <div className="text-center space-y-4 md:space-y-6">
-                  <p className="text-xs md:text-sm font-plex text-black/70">
-                    Untuk informasi lebih detail tentang aturan kompetisi, kategori, dan biaya pendaftaran
-                  </p>
-                  <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center items-center">
-                    <button className="px-6 md:px-8 py-3 md:py-4 bg-white border border-red/30 text-red hover:bg-red hover:text-white font-plex font-medium rounded-lg transition-all duration-300 text-xs md:text-sm">
-                      Download Buku Panduan
-                    </button>
-                    <button className="px-6 md:px-8 py-3 md:py-4 bg-red text-white hover:bg-red/90 font-plex font-medium rounded-lg transition-all duration-300 text-xs md:text-sm">
-                      Lihat FAQ
-                    </button>
                   </div>
                 </div>
               </div>
