@@ -123,7 +123,7 @@ const Dojang = () => {
         });
       } catch (err: any) {
         console.error(err);
-        toast.error(err.response?.data?.message || "Gagal mengambil data dojang");
+        toast.error("Gagal mengambil data dojang");
       }
     };
 
@@ -171,7 +171,7 @@ const Dojang = () => {
 
     } catch (err: any) {
       console.error(err);
-      toast.error(err.response?.data?.message || "Update dojang gagal");
+      toast.error("update dojang gagal");
     }
   };
 

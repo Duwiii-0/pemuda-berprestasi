@@ -40,14 +40,7 @@ const Register = () => {
   const handleRegister = async () => {
     try {
       setIsLoading(true);
-      
-      // Debug: Log semua data yang akan dikirim
-      console.log('=== REGISTRATION DEBUG ===');
-      console.log('Raw NIK value:', nik);
-      console.log('NIK length:', nik.length);
-      console.log('NIK type:', typeof nik);
-      console.log('Is NIK valid digits?', /^\d+$/.test(nik));
-      
+            
       // Prepare data according to backend schema and API
       const registerData = {
         email: email.toLowerCase().trim(),
@@ -58,10 +51,6 @@ const Register = () => {
         nik: nik.trim(), // Pastikan NIK di-trim untuk menghilangkan spasi
         id_dojang: Number(selectedDojang?.value)
       };
-
-      console.log('Final registration payload:', registerData);
-      console.log('NIK in payload:', registerData.nik);
-      console.log('===========================');
 
       // Use register method from useAuth context
       const result = await register(registerData);
@@ -190,10 +179,10 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-red/15 via-white to-red/10 py-6 px-4">
+    <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-red/15 via-white to-red/10">
       {/* Register Container */}
-      <div className="w-full max-w-md mx-auto">
-        <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl border border-white/30 p-6 sm:p-7 md:p-8">
+      <div className="w-full max-w-lg mx-4 sm:max-w-xl sm:mx-6 2xl:max-w-2xl">
+        <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl border border-white/30 p-6 sm:p-7 md:p-8 ">
           
           {/* Header Section */}
           <div className="text-center mb-6">

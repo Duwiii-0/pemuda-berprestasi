@@ -47,7 +47,7 @@ const adminService = {
       const data: UserResponse = await response.json();
       return data.users || data as any; // Handle both wrapped and unwrapped responses
     } catch (error: any) {
-      console.error('Error fetching users:', error);
+      console.error('Error fetching users:');
       
       // Return mock data for development
       const mockUsers: User[] = [
@@ -169,7 +169,7 @@ const AdminUsers: React.FC = () => {
       const data = await adminService.getUsers();
       setUsers(data);
     } catch (err: any) {
-      console.error('Error fetching users:', err);
+      console.error('Error fetching users:');
       setError(err.data?.message || 'Gagal memuat data user');
     } finally {
       setLoading(false);
@@ -191,7 +191,7 @@ const AdminUsers: React.FC = () => {
       ));
       
     } catch (err: any) {
-      console.error('Error updating user status:', err);
+      console.error('Error updating user status:');
       alert(err.data?.message || 'Gagal mengupdate status user');
     } finally {
       setActionLoading(null);
@@ -211,7 +211,7 @@ const AdminUsers: React.FC = () => {
       setUsers(prev => prev.filter(user => user.id_akun !== userId));
       
     } catch (err: any) {
-      console.error('Error deleting user:', err);
+      console.error('Error deleting user:');
       alert(err.data?.message || 'Gagal menghapus user');
     } finally {
       setActionLoading(null);

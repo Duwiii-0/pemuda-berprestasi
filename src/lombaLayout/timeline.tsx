@@ -28,10 +28,6 @@ export default function Timeline() {
     window.scrollTo(0, 0)
   };
 
-  const handleDownloadPanduan = () => {
-    // You can implement download functionality here
-    console.log('Download panduan clicked');
-  };
   return (
     <div className="relative w-full min-h-screen bg-gradient-to-br from-white via-red/[0.01] to-white overflow-hidden">
       {/* Background Pattern */}

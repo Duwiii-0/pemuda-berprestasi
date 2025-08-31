@@ -125,11 +125,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       
       const savedToken = tokenManager.getToken();
       if (savedToken) {
-        console.log('🔍 Found saved token, verifying...');
         try {
           const response = await authAPI.verifyToken();
           if (response.success && response.data?.user) {
-            console.log('✅ Token valid, user authenticated:', response.data.user.email);
+            console.log('✅ Token valid, user authenticated:');
             setUser(response.data.user);
             setToken(savedToken);
           } else {
@@ -137,7 +136,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             tokenManager.removeToken();
           }
         } catch (error) {
-          console.error('❌ Token verification failed:', error);
+          console.error('❌ Token verification failed:');
           tokenManager.removeToken();
         }
       } else {
@@ -173,7 +172,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           message: response.message || 'Login successful'
         };
       } else {
-        console.log('❌ Login failed:', response.message);
+        console.log('❌ Login failed');
         return {
           success: false,
           message: response.message || 'Login failed'
@@ -181,7 +180,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Login failed';
-      console.error('❌ Login error:', error);
+      console.error('❌ Login error');
       toast.error('email atau password salah')
       return {
         success: false,
@@ -203,10 +202,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     
     // Optional: Call backend logout endpoint - jangan throw error jika gagal
     authAPI.logout().then((response) => {
-      console.log('✅ Backend logout successful:', response.message);
+      console.log('✅ logout successful:');
     }).catch((error) => {
-      // Jangan log sebagai error karena sudah logout di frontend
-      console.log('ℹ️ Backend logout info:', error.message || 'Token might already be expired');
     });
     
     console.log('✅ Logout completed');
@@ -219,7 +216,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       
       const response = await authAPI.register(userData);
       
-      console.log(response.success ? '✅ Registration successful' : '❌ Registration failed:', response.message);
+      console.log(response.success ? '✅ Registration successful' : '❌ Registration failed:');
       
       return {
         success: response.success,
@@ -227,7 +224,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Registration failed';
-      console.error('❌ Registration error:', error);
+      console.error('❌ Registration error:');
       return {
         success: false,
         message: errorMessage
@@ -259,16 +256,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     isPelatih,
     userName,
   };
-
-  // Debug logging (remove in production)
-  useEffect(() => {
-    console.log('🔍 Auth State:', {
-      isAuthenticated,
-      role: user?.role,
-      userName,
-      hasToken: !!token
-    });
-  }, [isAuthenticated, user, token]);
 
   return (
     <AuthContext.Provider value={value}>

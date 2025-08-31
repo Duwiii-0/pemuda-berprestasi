@@ -91,7 +91,7 @@ export const AtletProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const res = await apiClient.get("/atlet"); // endpoint fetch semua atlet
       if (res.data && Array.isArray(res.data)) setAtlits(res.data);
     } catch (err) {
-      console.error("Gagal fetch semua atlet:", err);
+      console.error("Gagal fetch semua atlet:");
     }
   };
 
@@ -106,7 +106,7 @@ export const AtletProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           setAtlits(prev => [...prev.filter(a => a.id_atlet !== id), atlet!]);
         }
       } catch (err) {
-        console.error(`Gagal fetch atlet dengan ID ${id}:`, err);
+        console.error(`Gagal fetch atlet dengan ID`);
       }
     }
     return atlet;
@@ -120,7 +120,7 @@ const createAtlet = async (formData: FormData) => {
     setAtlits(prev => [...prev, data]);
     return data;
   } catch (err) {
-    console.error("Error creating athlete:", err);
+    console.error("Error creating athlete:");
     throw err;
   }
 };
@@ -136,7 +136,7 @@ const updateAtlet = async (updated: Atlet) => {
       return res.data; // return biar caller bisa pakai data terbaru
     }
   } catch (err) {
-    console.error(`Gagal update atlet dengan ID ${updated.id_atlet}:`, err);
+    console.error(`Gagal update atlet dengan ID`);
     throw err; // biar bisa ditangkap di UI
   }
 };

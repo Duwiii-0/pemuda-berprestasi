@@ -209,7 +209,7 @@ const TambahAtlit: React.FC = () => {
         setTimeout(() => navigate("/dashboard/atlit"), 1000);
       }
     } catch (error: any) {
-      console.error("Error creating athlete:", error);
+      console.error("Error creating athlete:");
       toast.error(error.message || "Gagal menambahkan Atlet");
     } finally {
       setIsSubmitting(false);

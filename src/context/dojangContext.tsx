@@ -60,7 +60,7 @@ export const DojangProvider = ({ children }: Props) => {
     setDojangOptions(options);
     setDojangs(listDojang);
   } catch (err: any) {
-    console.error("Gagal mengambil data dojang:", err);
+    console.error("Gagal mengambil data dojang:");
     toast.error("Tidak dapat mengambil data dojang");
     throw err; 
   } finally {

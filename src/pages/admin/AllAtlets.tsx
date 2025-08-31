@@ -31,7 +31,7 @@ const AllAtlets: React.FC = () => {
         setError(null);
         await fetchAllAtlits();
       } catch (err: any) {
-        console.error("Error fetching athletes:", err);
+        console.error("Error fetching athletes:");
         setError("Gagal memuat data atlet");
       } finally {
         setLoading(false);

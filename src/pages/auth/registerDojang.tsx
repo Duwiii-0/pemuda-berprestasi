@@ -25,10 +25,6 @@ const RegisterDojang = () => {
         provinsi: provinsi.trim() || "",
         kota: kabupaten.trim() || "",
       };
-
-      console.log("Sending payload:", payload);
-      console.log("Payload yang dikirim ke backend:", payload);
-
       const response = await apiClient.post("/dojang", payload);
 
       toast.success("Registrasi dojang berhasil! Silahkan registrasi.");
@@ -41,14 +37,10 @@ const RegisterDojang = () => {
       setProvinsi("");
       setNegara("");
 
-      console.log("Registration successful:", response);
     } catch (err: any) {
-      console.error("Registration error:", err);
       if (err.data?.errors) {
-        console.table(err.data.errors);
-        toast.error("Ada field yang tidak valid. Cek console untuk detail.");
+        toast.error("Ada field yang tidak valid.");
       } else {
-        toast.error(err.message || "Terjadi kesalahan sistem.");
       }
     } finally {
       setIsLoading(false);
@@ -84,7 +76,7 @@ const RegisterDojang = () => {
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-red/15 via-white to-red/10 py-8">
       {/* Register Container */}
-      <div className="w-full max-w-lg mx-4 sm:max-w-xl sm:mx-6">
+      <div className="w-full max-w-lg mx-4 sm:max-w-xl sm:mx-6 2xl:max-w-2xl">
         <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl border border-white/30 p-6 sm:p-7 md:p-8">
           
           {/* Header Section */}

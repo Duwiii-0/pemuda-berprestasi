@@ -229,15 +229,13 @@ export const KompetisiProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const fetchKompetisiById = async (id_kompetisi: number) => {
-    console.log("[fetchKompetisiById] start with id:", id_kompetisi);
     setLoadingKompetisi(true);
     setErrorKompetisi(null);
     try {
       const res = await apiClient.get(`/kompetisi/${id_kompetisi}`);
-      console.log("[fetchKompetisiById] response:", res.data);
       setKompetisiDetail(res.data?.data || null);
     } catch (err: any) {
-      console.error("[fetchKompetisiById] error:", err);
+      console.error("[fetchKompetisiById] error:");
       setErrorKompetisi(
         err.response?.data?.message ||
           err.message ||
@@ -254,12 +252,6 @@ export const KompetisiProvider = ({ children }: { children: ReactNode }) => {
     cabang?: "kyorugi" | "poomsae",
     id_dojang?: number
   ) => {
-    console.log("[fetchAtletByKompetisi] start with:", {
-      id_kompetisi,
-      cabang,
-      page: atletPagination.page,
-      limit: atletPagination.limit,
-    });
     setLoadingAtlet(true);
     setErrorAtlet(null);
     try {
@@ -267,10 +259,8 @@ export const KompetisiProvider = ({ children }: { children: ReactNode }) => {
       if (cabang) url += `&cabang=${cabang}`;
       if (id_dojang) url += `&id_dojang=${id_dojang}`; 
 
-      console.log("[fetchAtletByKompetisi] request url:", url);
 
       const res = await apiClient.get(url);
-      console.log("[fetchAtletByKompetisi] response:", res.data);
 
       setPesertaList(Array.isArray(res.data) ? res.data as PesertaKompetisi[] : res.data.data as PesertaKompetisi[] ?? []);
       setAtletPagination((prev) => ({
@@ -279,7 +269,7 @@ export const KompetisiProvider = ({ children }: { children: ReactNode }) => {
         totalPages: res.data?.meta?.totalPages || 0,
       }));
     } catch (err: any) {
-      console.error("[fetchAtletByKompetisi] error:", err);
+      console.error("[fetchAtletByKompetisi] error:");
       setErrorAtlet(
         err.response?.data?.message ||
           err.message ||
@@ -292,12 +282,10 @@ export const KompetisiProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const setAtletPage = (page: number) => {
-    console.log("[setAtletPage]", page);
     setAtletPagination((prev) => ({ ...prev, page }));
   };
 
   const setAtletLimit = (limit: number) => {
-    console.log("[setAtletLimit]", limit);
     setAtletPagination((prev) => ({ ...prev, limit, page: 1 }));
   };
 
@@ -317,7 +305,7 @@ export const KompetisiProvider = ({ children }: { children: ReactNode }) => {
 
     return res.data;
   } catch (err: any) {
-    console.error("[updatePesertaStatus] error:", err);
+    console.error("[updatePesertaStatus] error:");
     throw err;
   }
 };

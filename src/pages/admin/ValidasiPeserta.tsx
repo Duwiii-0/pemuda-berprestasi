@@ -48,18 +48,16 @@ const ValidasiPeserta: React.FC = () => {
   };
 
   useEffect(() => {
-    console.log("[ValidasiPeserta] Fetching kompetisi list...");
     fetchKompetisiList();
   }, []);
 
   useEffect(() => {
-    console.log("[ValidasiPeserta] Kompetisi list updated:", kompetisiList);
   }, [kompetisiList]);
 
   useEffect(() => {
     if (selectedKompetisiId) {
       console.log(
-        `[ValidasiPeserta] Kompetisi dipilih ID: ${selectedKompetisiId}, fetching peserta...`
+        `[ValidasiPeserta] Kompetisi dipilih, fetching peserta...`
       );
       fetchAtletByKompetisi(selectedKompetisiId);
     }
@@ -67,33 +65,16 @@ const ValidasiPeserta: React.FC = () => {
 
   // FIX: Ganti atletList dengan pesertaList
   useEffect(() => {
-    console.log("[ValidasiPeserta] Peserta list state updated:", pesertaList);
     
     // Debug struktur data lengkap
     if (pesertaList.length > 0) {
-      console.log("=== DEBUGGING STRUKTUR DATA ===");
-      console.log("Sample data item 0:", pesertaList[0]);
-      console.log("Available keys:", Object.keys(pesertaList[0]));
       
       // Cek apakah ada nested objects
       Object.keys(pesertaList[0]).forEach(key => {
         if (typeof (pesertaList[0] as any) [key] === 'object' && (pesertaList[0] as any) [key] !== null) {
-          console.log(`Nested object in ${key}:`, (pesertaList[0] as any)[key]);
         }
       });
-      
-      // Cek item yang is_team: false (individual)
-      const individualPeserta = pesertaList.find(item => !item.is_team);
-      if (individualPeserta) {
-        console.log("Individual peserta sample:", individualPeserta);
-      }
-      
-      // Cek item yang is_team: true (tim)
-      const teamPeserta = pesertaList.find(item => item.is_team);
-      if (teamPeserta) {
-        console.log("Team peserta sample:", teamPeserta);
-      }
-      console.log("=== END DEBUGGING ===");
+            
     }
   }, [pesertaList]); // FIX: pesertaList bukan atletList
 
@@ -102,9 +83,8 @@ const ValidasiPeserta: React.FC = () => {
   setProcessing(id);
   try {
     await updatePesertaStatus(selectedKompetisiId, id, "APPROVED");
-    console.log(`[ValidasiPeserta] Peserta ID ${id} sudah disetujui.`);
   } catch (err) {
-    console.error("Gagal menyetujui peserta:", err);
+    console.error("Gagal menyetujui peserta:");
   } finally {
     setProcessing(null);
   }
@@ -115,9 +95,8 @@ const handleRejection = async (id: number) => {
   setProcessing(id);
   try {
     await updatePesertaStatus(selectedKompetisiId, id, "REJECTED");
-    console.log(`[ValidasiPeserta] Peserta ID ${id} sudah ditolak.`);
   } catch (err) {
-    console.error("Gagal menolak peserta:", err);
+    console.error("Gagal menolak peserta:");
   } finally {
     setProcessing(null);
   }
@@ -228,12 +207,6 @@ const handleRejection = async (id: number) => {
     );
   }
 
-  // FIX: Ganti atletList dengan pesertaList
-  console.log(
-    "[ValidasiPeserta] Menampilkan peserta kompetisi ID:",
-    selectedKompetisiId,
-    pesertaList
-  );
 
   // FIX: Update filtering logic untuk pesertaList
   const displayedPesertas = pesertaList.filter((peserta) => {

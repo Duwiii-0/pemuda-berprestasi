@@ -196,7 +196,7 @@
           }))
         );
       } catch (err) {
-        console.error("Error fetching age options:", err);
+        console.error("Error fetching age options:");
         setAgeOptions([]);
       } finally {
         setIsLoading(false);
@@ -222,7 +222,7 @@
           }))
         );
       } catch (err) {
-        console.error("Error fetching weight options:", err);
+        console.error("Error fetching weight options:");
         setWeightOptions([]);
       } finally {
         setIsLoading(false);
@@ -252,7 +252,7 @@
           }))
         );
       } catch (err) {
-        console.error("Error fetching kelas poomsae:", err);
+        console.error("Error fetching kelas poomsae:");
         setPoomsaeOptions([]);
       } finally {
         setIsLoading(false);
@@ -292,26 +292,8 @@
         payload.poomsaeId = filter.poomsaeId;
       }
 
-      console.log("🚀 [fetchKelasKejuaraan] Request Details:", {
-        url: `/kelas/kejuaraan/${kompetisiId}/filter`,
-        method: "POST",
-        kompetisiId: kompetisiId,
-        originalFilter: filter,
-        requestPayload: payload,
-        timestamp: new Date().toISOString()
-      });
-
       const res = await apiClient.post(`/kelas/kejuaraan/${kompetisiId}/filter`, payload);
       
-      console.log("📥 [fetchKelasKejuaraan] API Response:", {
-        success: !!res,
-        hasIdKelasKejuaraan: !!(res?.id_kelas_kejuaraan),
-        fullResponse: res,
-        responseType: typeof res,
-        responseKeys: res ? Object.keys(res) : [],
-        kelasKejuaraanId: res?.id_kelas_kejuaraan
-      });
-
       if (!res) {
         console.warn("⚠️ [fetchKelasKejuaraan] No response from API");
         return null;
@@ -324,30 +306,10 @@
         });
         return null;
       }
-
-      console.log("✅ [fetchKelasKejuaraan] Success:", {
-        kelasKejuaraanId: res.id_kelas_kejuaraan,
-        forFilter: {
-          styleType: filter.styleType,
-          categoryType: filter.categoryType,
-          gender: filter.gender || "NOT_SPECIFIED",
-          kelompokId: filter.kelompokId,
-          poomsaeId: filter.poomsaeId
-        }
-      });
-
       return res.id_kelas_kejuaraan;
       
     } catch (err: any) {
-      console.error("❌ [fetchKelasKejuaraan] API Error:", {
-        error: err,
-        errorMessage: err.message,
-        httpStatus: err.status || err.response?.status,
-        apiResponse: err.response?.data,
-        requestFilter: filter,
-        kompetisiId: kompetisiId,
-        timestamp: new Date().toISOString()
-      });
+      console.error("❌ [fetchKelasKejuaraan] API Error");
       return null;
     }
   }, []);
@@ -358,11 +320,9 @@
     ) => {
       try {
         setIsLoading(true);
-        console.log("🔄 Fetching eligible atlits with filter:", filter);
         
         // For team poomsae without gender, fetch both genders and combine
         if (filter.styleType === "POOMSAE" && !filter.gender && filter.poomsaeId) {
-          console.log("🎯 Fetching mixed gender team for poomsae");
           
           try {
             const maleKelasId = await fetchKelasKejuaraan(kompetisiId, {
@@ -392,7 +352,7 @@
                   allAtlets.push(...maleResponse);
                 }
               } catch (maleErr) {
-                console.warn("Failed to fetch male athletes:", maleErr);
+                console.warn("Failed to fetch male athletes");
               }
             }
 
@@ -411,16 +371,16 @@
                   allAtlets.push(...femaleResponse);
                 }
               } catch (femaleErr) {
-                console.warn("Failed to fetch female athletes:", femaleErr);
+                console.warn("Failed to fetch female athletes:");
               }
             }
 
-            console.log("👥 Combined athletes (male + female):", allAtlets);
+            console.log("👥 Combined athletes (male + female):");
             setAvailableAtlits(allAtlets);
             return;
             
           } catch (teamErr) {
-            console.error("❌ Error fetching team athletes:", teamErr);
+            console.error("❌ Error fetching team athletes:");
             setAvailableAtlits([]);
             return;
           }
@@ -444,7 +404,7 @@
           return;
         }
 
-        console.log("✅ KelasId found:", kelasId);
+        console.log("✅ KelasId found:");
 
         // Store kelasId in form data for registration
         setFormDataState(prev => ({
@@ -466,17 +426,13 @@
         if (filter.poomsaeId) {
           atlitPayload.poomsaeId = filter.poomsaeId;
         }
-
-        console.log("🚀 Sending atlet payload:", atlitPayload);
-
         const response = await apiClient.post("/atlet/eligible", atlitPayload);
         const data: Atlit[] = Array.isArray(response) ? response : [];
         
-        console.log("👥 Available atlits:", data);
         setAvailableAtlits(data);
         
       } catch (err) {
-        console.error("❌ Error fetching eligible atlits:", err);
+        console.error("❌ Error fetching eligible atlits:");
         setAvailableAtlits([]);
       } finally {
         setIsLoading(false);
@@ -494,11 +450,10 @@
         // Store in state for caching
         setExistingRegistrations(data);
         
-        console.log(`📋 Found ${data.length} existing registrations for competition ${kompetisiId}`);
         return data;
         
       } catch (err) {
-        console.error("Error fetching existing registrations:", err);
+        console.error("Error fetching existing registrations:");
         setExistingRegistrations([]);
         return [];
       } finally {
@@ -591,7 +546,6 @@
         const selectedAthletes = getSelectedAthletes();
 
         // Validasi langsung pakai kelasKejuaraanId dan selectedAthletes
-        console.log("💡 Debug before validation:", { kelasKejuaraanId, selectedAthletes });
         const validation = validateRegistration(kelasKejuaraanId, selectedAthletes);
         if (!validation.isValid) {
           throw new Error(`Validasi gagal: ${validation.errors.join(', ')}`);
@@ -606,13 +560,12 @@
           payload.atlitId2 = Number(selectedAthletes[1].id);
         }
 
-        console.log("🎯 Registering with payload:", payload);
 
         const response = await apiClient.post(`/kompetisi/${kompetisiId}/register`, payload);
 
         if (!response) throw new Error("Gagal mendaftarkan atlet");
 
-        console.log("✅ Registration successful:", response);
+        console.log("✅ Registration successful:");
 
         // Reset form
         resetForm();
@@ -621,7 +574,7 @@
         return response as RegistrationResponse;
 
       } catch (err: any) {
-        console.error("❌ Registration error:", err);
+        console.error("❌ Registration error:");
         throw new Error(err.message || "Gagal mendaftarkan atlet");
       } finally {
         setIsLoading(false);

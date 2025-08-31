@@ -51,7 +51,6 @@ const DataAtlit = () => {
       if (!id_dojang) return;
 
       const res = await apiClient.get(`/atlet/dojang/${id_dojang}`);
-      console.log("Res data:", res.data);
 
       if (res.success) {
         const profileData = res.data;
@@ -66,7 +65,7 @@ const DataAtlit = () => {
       }
       setAtlits(res.data); // sesuai dengan AtletController.sendSuccess
     } catch (err) {
-      console.error("Gagal ambil data atlet:", err);
+      console.error("Gagal ambil data atlet:");
     }
   };
 

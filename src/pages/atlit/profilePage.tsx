@@ -90,7 +90,7 @@ const Profile = () => {
         toast.success("Data atlet berhasil diperbarui ✅")
       }
     } catch (err) {
-      console.error("Gagal update atlet:", err);
+      console.error("Gagal update atlet:");
       toast.error("Semua field harus diisi dengan benar"); 
     }
   }

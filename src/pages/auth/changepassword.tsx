@@ -83,7 +83,7 @@ const ResetPassword = () => {
         throw new Error(data.message || 'Gagal mereset password');
       }
     } catch (error: any) {
-      console.error('Reset password error:', error);
+      console.error('Reset password error:');
       
       // Handle specific error messages
       if (error.message === 'Email not found') {

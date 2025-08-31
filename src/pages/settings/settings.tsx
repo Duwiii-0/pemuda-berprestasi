@@ -62,8 +62,6 @@ const Settings = () => {
 
       try {
         const res = await apiClient.get('/pelatih/files');
-        console.log('Fetched files:', res);
-
         if (res.success) {
           setFiles({
             fotoKtp: res.data.foto_ktp?.path || null,
@@ -105,7 +103,7 @@ const Settings = () => {
           setInitialData(data);
         }
       } catch (error) {
-        console.error('Error fetching profile:', error);
+        console.error('Error fetching profile:');
         toast.error('Gagal mengambil data profil');
       } finally {
         setLoading(false);
@@ -141,8 +139,6 @@ const Settings = () => {
         Object.entries(updateData).filter(([_, value]) => value !== null && value !== '')
       );
 
-      console.log('Sending update data:', filteredData);
-
       const response = await apiClient.put("/pelatih/profile", filteredData);
       
       if (!response.success) {
@@ -172,7 +168,7 @@ const Settings = () => {
       setIsEditing(false);
       toast.success("Profil berhasil diperbarui");
     } catch (error) {
-      console.error("Error updating profile:", error);
+      console.error("Error updating profile:");
       toast.error("Pastikan semua data sudah sesuai");
     } finally {
       setLoading(false);
