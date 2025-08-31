@@ -147,10 +147,11 @@ export class KompetisiController {
       const kompetisiId = parseInt(id, 10);
       const pageNum = parseInt(page as string, 10);
       const limitNum = parseInt(limit as string, 10);
-
+      
       if (isNaN(kompetisiId)) {
         return res.status(400).json({ message: "Invalid kompetisiId" });
       }
+      console.log("Role:", req.user?.role, "idDojang:", idDojang);
 
       // role PELATIH → selalu pakai id_dojang dari token
       if (req.user?.role === "PELATIH" && req.user.id_dojang) {

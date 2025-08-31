@@ -244,37 +244,49 @@ static async getAtletsByKompetisi(
   const skip = (page - 1) * limit;
 
   const peserta = await prisma.tb_peserta_kompetisi.findMany({
-    where: {
-      kelas_kejuaraan: {
-        id_kompetisi: kompetisiId,
-      },
-      // filter jika ada idDojang
-      ...(idDojang ? {
-        OR: [
-          { atlet: { id_dojang: idDojang } },
-          { anggota_tim: { some: { atlet: { id_dojang: idDojang } } } }
-        ]
-      } : {})
+  where: {
+    kelas_kejuaraan: {
+      id_kompetisi: kompetisiId,
     },
-    include: {
-      atlet: { include: { dojang: true } },
-      kelas_kejuaraan: {
-        include: {
-          kategori_event: true,
-          kelompok: true,
-          kelas_berat: true,
-          poomsae: true,
+    ...(idDojang && {
+      OR: [
+        // Individu
+        {
+          AND: [
+            { is_team: false },
+            { atlet: { id_dojang: idDojang } }
+          ]
         },
-      },
-      anggota_tim: {
-        include: {
-          atlet: { include: { dojang: true } },
-        },
+        // Tim (semua anggota harus dari dojang yg sama)
+        {
+          AND: [
+            { is_team: true },
+            { anggota_tim: { every: { atlet: { id_dojang: idDojang } } } }
+          ]
+        }
+      ]
+    })
+  },
+  include: {
+    atlet: { include: { dojang: true } },   // <-- tetap include meski null kalau tim
+    anggota_tim: {
+      include: {
+        atlet: { include: { dojang: true } }, // <-- nama atlet tim ada di sini
       },
     },
-    skip,
-    take: limit,
-  });
+    kelas_kejuaraan: {
+      include: {
+        kategori_event: true,
+        kelompok: true,
+        kelas_berat: true,
+        poomsae: true,
+      },
+    },
+  },
+  skip,
+  take: limit,
+});
+
 
   const total = await prisma.tb_peserta_kompetisi.count({
     where: {

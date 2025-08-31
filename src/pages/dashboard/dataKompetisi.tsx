@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Trophy, Calendar, Users, MapPin, Search, Clock, CheckCircle } from 'lucide-react';
+import { Trophy, Users, Search, Clock, CheckCircle } from 'lucide-react';
+import toast from "react-hot-toast";
 import NavbarDashboard from "../../components/navbar/navbarDashboard";
 import { useAuth } from "../../context/authContext";
 import { useKompetisi } from "../../context/KompetisiContext";
 import type { Kompetisi } from "../../context/KompetisiContext";
-import { apiClient, setAuthToken } from "../../../pemuda-berprestasi-mvp/src/config/api";
+import { setAuthToken } from "../../../pemuda-berprestasi-mvp/src/config/api";
 
 interface StatsCardProps {
   icon: React.ComponentType<{ size?: number; className?: string }>;
@@ -46,10 +47,14 @@ const DataKompetisi = () => {
   }, []);
 
   const handleKompetisiClick = async (kompetisi: Kompetisi) => {
-    setSelectedKompetisi(kompetisi);
-    setShowPeserta(true);
-    await fetchAtletByKompetisi(kompetisi.id_kompetisi); 
-  };
+  setSelectedKompetisi(kompetisi);
+  setShowPeserta(true);
+
+  // kalau role pelatih, lemparkan id_dojang ke API
+  const idDojang = user?.pelatih?.id_dojang;
+  await fetchAtletByKompetisi(kompetisi.id_kompetisi, undefined, idDojang);
+};
+
 
   const formatTanggal = (date: string | Date) => {
     return new Date(date).toLocaleDateString('id-ID', {
@@ -110,24 +115,34 @@ const DataKompetisi = () => {
   // Halaman detail peserta
 if (showPeserta && selectedKompetisi) {
   const peserta = pesertaList.map((peserta) => {
-    const isTeam = peserta.is_team; // pastikan field ini ada di API
+    const isTeam = peserta.is_team;
 
     const nama = isTeam
       ? peserta.anggota_tim?.map((m: any) => m.atlet.nama_atlet).join(", ")
       : peserta.atlet?.nama_atlet || "-";
 
-    const gender = isTeam
-      ? "Tim"
-      : peserta.atlet?.jenis_kelamin === "LAKI_LAKI"
-        ? "Laki-Laki"
-        : "Perempuan";
+    const gender = isTeam ? "Tim" : (peserta.atlet?.jenis_kelamin === "LAKI_LAKI" ? "Laki-Laki" : "Perempuan");
+
+    // ambil kategori dari kelas kejuaraan
+    const kategori = peserta.kelas_kejuaraan?.kategori_event?.nama_kategori || "-";
+    const jenisKategori = peserta.kelas_kejuaraan?.kelompok?.nama_kelompok || "-";
+    const status =
+      peserta.status === "PENDING"
+        ? "Pending"
+        : peserta.status === "APPROVED"
+        ? "Approved"
+        : "Rejected";
 
     return {
-      id: peserta.id_peserta_kompetisi, // pakai id peserta kompetisi supaya unik
+      id: peserta.id_peserta_kompetisi,
       nama,
       gender,
+      kategori,
+      jenisKategori,
+      status,
     };
   });
+
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-white via-red/5 to-yellow/10">
@@ -160,6 +175,10 @@ if (showPeserta && selectedKompetisi) {
                   <tr>
                     <th className="px-6 py-4 text-left font-bebas text-lg">Nama Peserta</th>
                     <th className="px-6 py-4 text-center font-bebas text-lg">Jenis</th>
+                    <th className="px-6 py-4 text-center font-bebas text-lg">Kategori</th>
+                    <th className="px-6 py-4 text-center font-bebas text-lg">Jenis Kategori</th>
+                    <th className="px-6 py-4 text-center font-bebas text-lg">Status</th>
+                    <th className="px-6 py-4 text-center font-bebas text-lg">Aksi</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/30">
@@ -167,10 +186,23 @@ if (showPeserta && selectedKompetisi) {
                     <tr
                       key={p.id}
                       className="transition-all duration-200 hover:bg-white/50 cursor-pointer"
-                      onClick={() => navigate(`/dashboard/peserta/${p.id}`)}
                     >
                       <td className="px-6 py-4 font-plex">{p.nama}</td>
                       <td className="px-6 py-4 text-center font-plex">{p.gender}</td>
+                      <td className="px-6 py-4 text-center font-plex">{p.kategori}</td>
+                      <td className="px-6 py-4 text-center font-plex">{p.jenisKategori}</td>
+                      <td className="px-6 py-4 text-center font-plex">{p.status}</td>
+                      <td className="px-6 py-4 text-center font-plex">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation(); // jangan ikut trigger klik row
+                            toast.error("Fitur ini akan segera tersedia 🚧");
+                          }}
+                          className="px-3 py-1 rounded-lg bg-red-500 text-white font-plex hover:bg-red-600 transition-all"
+                        >
+                          Hapus
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>

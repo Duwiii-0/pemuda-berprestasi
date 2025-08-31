@@ -150,6 +150,7 @@ class AuthService {
 
     if (account.role === 'PELATIH' && account.pelatih) {
       tokenPayload.pelatihId = account.pelatih.id_pelatih
+      tokenPayload.id_dojang = account.pelatih.id_dojang
     } else if (account.role === 'ADMIN' && account.admin) {
       tokenPayload.adminId = account.admin.id_admin
     }
