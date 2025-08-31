@@ -143,3 +143,8 @@ secrets/
 # Local development
 local/
 dev-data/
+
+# Google Drive Credentials
+credentials/
+*.json
+!package*.json

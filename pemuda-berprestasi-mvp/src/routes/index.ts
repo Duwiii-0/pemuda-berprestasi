@@ -9,6 +9,9 @@ import dojangRoutes from './dojang';
 import atletRoutes from './atlet';
 import kompetisiRoutes from './kompetisi';
 
+// Import upload routes
+import uploadRoutes from './upload';
+
 const router = Router();
 
 // API version prefix
@@ -22,6 +25,9 @@ router.use(`${API_VERSION}/pelatih`, pelatihRoutes);
 router.use(`${API_VERSION}/dojang`, dojangRoutes);
 router.use(`${API_VERSION}/atlet`, atletRoutes);
 router.use(`${API_VERSION}/kompetisi`, kompetisiRoutes);
+
+// Upload routes
+router.use(`${API_VERSION}/upload`, uploadRoutes);
 
 // Health check endpoint
 router.get('/health', (req, res) => {
@@ -94,6 +100,19 @@ router.get('/docs', (req, res) => {
           'DELETE /:id - Delete competition',
           'POST /:id/classes - Create competition class',
           'POST /:id/register - Register athlete to competition'
+        ]
+      },
+      upload: {
+        prefix: `${API_VERSION}/upload`,
+        endpoints: [
+          'POST /atlet/:id_atlet/files - Upload multiple athlete files',
+          'POST /pelatih/:id_pelatih/files - Upload multiple coach files',
+          'POST /atlet/:id_atlet/file/:fileType - Upload single athlete file',
+          'POST /pelatih/:id_pelatih/file/:fileType - Upload single coach file',
+          'PUT /:userType/:userId/file/:fileType - Replace existing file',
+          'DELETE /:userType/:userId/file/:fileType - Delete file',
+          'GET /:userType/:userId/file/:fileType/info - Get file info',
+          'GET /health - Check Google Drive connection'
         ]
       }
     }
