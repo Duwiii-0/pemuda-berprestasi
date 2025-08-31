@@ -524,9 +524,10 @@
         errors.push("Category type (prestasi/pemula) harus dipilih");
       }
 
-      if (!formData.selectedAge) {
-        errors.push("Kelompok usia harus dipilih");
+      if (formData.categoryType !== "pemula" && !formData.selectedAge) {
+        errors.push("Kelompok usia harus dipilih untuk kategori prestasi");
       }
+
 
       if (!formData.selectedAtlit) {
         errors.push("Atlet pertama harus dipilih");
@@ -534,13 +535,14 @@
 
       // Style-specific
       if (formData.styleType === "KYORUGI") {
-        if (!formData.selectedWeight) {
-          errors.push("Kelas berat harus dipilih untuk Kyorugi");
-        }
-        if (!formData.selectedGender) {
-          errors.push("Jenis kelamin harus dipilih untuk Kyorugi");
-        }
-      }
+    // Hanya wajib pilih kelas berat jika categoryType === 'prestasi'
+    if (formData.categoryType === 'prestasi' && !formData.selectedWeight) {
+      errors.push("Kelas berat harus dipilih untuk Kyorugi prestasi");
+    }
+    if (!formData.selectedGender) {
+      errors.push("Jenis kelamin harus dipilih untuk Kyorugi");
+    }
+}
 
       if (formData.styleType === "POOMSAE") {
         if (!formData.selectedPoomsae) {

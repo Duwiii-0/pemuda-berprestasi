@@ -215,7 +215,7 @@ export default function AppRoutes() {
           {/* Competition data */}
           <Route path="dataKompetisi" element={            
             <ProtectedRoute requiredRole="PELATIH">
-              <TambahAtlit />
+              <DataKompetisi />
             </ProtectedRoute>
 } />
         </Route>

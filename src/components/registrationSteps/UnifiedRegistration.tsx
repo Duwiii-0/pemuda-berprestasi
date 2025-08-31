@@ -98,10 +98,20 @@ useEffect(() => {
 
   // ✅ UPDATED: fetch kelas poomsae jika styleType POOMSAE dan sudah pilih kelas umur
   useEffect(() => {
-    if (formData.styleType === "POOMSAE" && formData.selectedAge) {
-      fetchKelasPoomsae(Number(formData.selectedAge.value));
+  if (formData.styleType === "POOMSAE") {
+    let kelompokId = formData.selectedAge ? Number(formData.selectedAge.value) : undefined;
+
+    // Otomatis pakai kelompokId 4 untuk pemula
+    if (formData.categoryType === "pemula") {
+      kelompokId = 4;
     }
-  }, [formData.styleType, formData.selectedAge, fetchKelasPoomsae]);
+
+    if (kelompokId) {
+      fetchKelasPoomsae(kelompokId);
+    }
+  }
+}, [formData.styleType, formData.selectedAge, formData.categoryType, fetchKelasPoomsae]);
+
 
 
   // fetch kelas kejuaraan
@@ -640,7 +650,7 @@ const handleSubmit = async () => {
               )}
 
               {/* ✅ UPDATED: Kelas Poomsae - Show after age for POOMSAE */}
-              {formData.styleType === "POOMSAE" && formData.categoryType === "prestasi" && (
+              {formData.styleType === "POOMSAE" && (formData.categoryType === "prestasi" || formData.categoryType === "pemula") && (
                 <div>
                   <label className="block text-black mb-3 text-lg font-plex font-semibold pl-2">
                     Kelas Poomsae <span className="text-red">*</span>
@@ -659,8 +669,8 @@ const handleSubmit = async () => {
                     placeholder="Pilih kelas poomsae..."
                     isSearchable
                     classNames={selectClassNames}
-                    disabled={!formData.selectedAge}
-                    message="Harap pilih kelas umur terlebih dahulu"
+                    disabled={false}
+                    message="Harap pilih jenis kelamin terlebih dahulu"
                   />
                   {/* ✅ ADDED: Show info about team vs individual */}
                   {formData.selectedPoomsae && (
@@ -883,7 +893,7 @@ const handleSubmit = async () => {
 
   return (
     <Modal isOpen={isOpen}>
-      <div className="bg-gradient-to-b from-white/90 to-white/80 h-screen md:h-[70vh] w-screen md:w-[80vw] lg:w-[70vw] xl:w-[60vw] rounded-xl flex flex-col justify-start items-center overflow-y-scroll font-plex">
+      <div className="bg-gradient-to-b from-white/90 to-white/80 h-screen md:h-[vh] w-screen md:w-[80vw] lg:w-[70vw] xl:w-[60vw] rounded-xl flex flex-col justify-start items-center overflow-y-scroll font-plex">
         <div className="w-full p-8">
           {/* Header dengan tombol back dan progress */}
           <div className="flex items-center justify-between mb-8">

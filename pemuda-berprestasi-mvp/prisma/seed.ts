@@ -269,7 +269,8 @@ async function seedKelompokUsia() {
     data: [
       { nama_kelompok: "Cadet", usia_min: 11, usia_max: 13 },
       { nama_kelompok: "Junior", usia_min: 14, usia_max: 17 },
-      { nama_kelompok: "Senior", usia_min: 18, usia_max: 40 }
+      { nama_kelompok: "Senior", usia_min: 18, usia_max: 40 },
+      { nama_kelompok: 'pemula', usia_min: 1, usia_max: 999}
     ],
     skipDuplicates: true
   });
