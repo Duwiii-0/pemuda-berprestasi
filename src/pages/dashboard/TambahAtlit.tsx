@@ -29,27 +29,46 @@ interface AtletForm {
 }
 
 const provinsiOptions = [
-  { value: "Jawa Barat", label: "Jawa Barat" },
-  { value: "Jawa Tengah", label: "Jawa Tengah" },
-  { value: "DKI Jakarta", label: "DKI Jakarta" },
-  { value: "Banten", label: "Banten" },
-  { value: "Jawa Timur", label: "Jawa Timur" },
+  { value: "Aceh", label: "Aceh" },
   { value: "Sumatera Utara", label: "Sumatera Utara" },
   { value: "Sumatera Barat", label: "Sumatera Barat" },
+  { value: "Riau", label: "Riau" },
+  { value: "Kepulauan Riau", label: "Kepulauan Riau" },
+  { value: "Jambi", label: "Jambi" },
   { value: "Sumatera Selatan", label: "Sumatera Selatan" },
+  { value: "Bangka Belitung", label: "Bangka Belitung" },
+  { value: "Bengkulu", label: "Bengkulu" },
   { value: "Lampung", label: "Lampung" },
-  { value: "Kalimantan Barat", label: "Kalimantan Barat" },
-  { value: "Kalimantan Timur", label: "Kalimantan Timur" },
-  { value: "Kalimantan Selatan", label: "Kalimantan Selatan" },
-  { value: "Sulawesi Utara", label: "Sulawesi Utara" },
-  { value: "Sulawesi Selatan", label: "Sulawesi Selatan" },
+  { value: "DKI Jakarta", label: "DKI Jakarta" },
+  { value: "Jawa Barat", label: "Jawa Barat" },
+  { value: "Banten", label: "Banten" },
+  { value: "Jawa Tengah", label: "Jawa Tengah" },
+  { value: "Yogyakarta", label: "Yogyakarta" },
+  { value: "Jawa Timur", label: "Jawa Timur" },
   { value: "Bali", label: "Bali" },
   { value: "Nusa Tenggara Barat", label: "Nusa Tenggara Barat" },
   { value: "Nusa Tenggara Timur", label: "Nusa Tenggara Timur" },
-  { value: "Papua", label: "Papua" },
+  { value: "Kalimantan Barat", label: "Kalimantan Barat" },
+  { value: "Kalimantan Tengah", label: "Kalimantan Tengah" },
+  { value: "Kalimantan Selatan", label: "Kalimantan Selatan" },
+  { value: "Kalimantan Timur", label: "Kalimantan Timur" },
+  { value: "Kalimantan Utara", label: "Kalimantan Utara" },
+  { value: "Sulawesi Utara", label: "Sulawesi Utara" },
+  { value: "Sulawesi Tengah", label: "Sulawesi Tengah" },
+  { value: "Sulawesi Selatan", label: "Sulawesi Selatan" },
+  { value: "Sulawesi Tenggara", label: "Sulawesi Tenggara" },
+  { value: "Gorontalo", label: "Gorontalo" },
+  { value: "Sulawesi Barat", label: "Sulawesi Barat" },
   { value: "Maluku", label: "Maluku" },
-  { value: "Yogyakarta", label: "Yogyakarta" },
+  { value: "Maluku Utara", label: "Maluku Utara" },
+  { value: "Papua", label: "Papua" },
+  { value: "Papua Tengah", label: "Papua Tengah" },
+  { value: "Papua Pegunungan", label: "Papua Pegunungan" },
+  { value: "Papua Selatan", label: "Papua Selatan" },
+  { value: "Papua Barat", label: "Papua Barat" },
+  { value: "Papua Barat Daya", label: "Papua Barat Daya" },
 ];
+
 
 const TambahAtlit: React.FC = () => {
   const navigate = useNavigate();
@@ -340,30 +359,33 @@ const TambahAtlit: React.FC = () => {
                 <div className="space-y-2">
                   <label className="block font-plex font-medium text-black/70">
                     Provinsi
-                  </label>
-                  <Select
-                    value={getSelectValue(provinsiOptions, formData.provinsi)}
-                    onChange={(selected) => handleInputChange('provinsi', selected?.value || '')}
-                    options={provinsiOptions}
-                    placeholder="Pilih provinsi"
-                    isDisabled={isSubmitting}
-                    className="react-select-container"
-                    classNamePrefix="react-select"
-                    styles={{
-                      control: (base, state) => ({
-                        ...base,
-                        backgroundColor: 'rgba(255, 255, 255, 0.5)',
-                        backdropFilter: 'blur(4px)',
-                        borderColor: state.isFocused ? '#dc2626' : 'rgba(220, 38, 38, 0.2)',
-                        borderRadius: '0.75rem',
-                        minHeight: '3rem',
-                        boxShadow: 'none',
-                        '&:hover': {
-                          borderColor: '#dc2626',
-                        },
-                      }),
-                    }}
-                  />
+                  </label>                 
+                    <Select
+                      unstyled
+                      isDisabled={isSubmitting}
+                      value={getSelectValue(provinsiOptions, formData.provinsi)}
+                      onChange={(selected) => handleInputChange('provinsi', selected?.value || '')}
+                      options={provinsiOptions}
+                      placeholder="Pilih provinsi"
+                      classNames={{
+                        control: () =>
+                          `flex items-center border-2 ${
+                            !isSubmitting 
+                              ? 'border-red/20 hover:border-red/40 focus-within:border-red bg-white/80' 
+                              : 'border-gray-200 bg-gray-50'
+                          } rounded-xl px-4 py-3 gap-3 backdrop-blur-sm transition-all duration-300 hover:shadow-lg`,
+                        valueContainer: () => "px-1",
+                        placeholder: () => "text-gray-400 font-plex text-sm",
+                        menu: () => "border border-red/20 bg-white/95 backdrop-blur-sm rounded-xl shadow-xl mt-2 overflow-hidden z-50",
+                        menuList: () => "max-h-32 overflow-y-auto",
+                        option: ({ isFocused, isSelected }) =>
+                          [
+                            "px-4 py-3 cursor-pointer font-plex text-sm transition-colors duration-200 hover:text-red",
+                            isFocused ? "bg-red/10 text-red" : "text-black/80",
+                            isSelected ? "bg-red text-white" : ""
+                          ].join(" "),
+                      }}
+                    />
                 </div>
 
                 {/* Gender */}
@@ -371,29 +393,34 @@ const TambahAtlit: React.FC = () => {
                   <label className="block font-plex font-medium text-black/70">
                     Gender <span className="text-red">*</span>
                   </label>
-                  <Select
-                    value={getSelectValue(genderOptions, formData.gender)}
-                    onChange={(selected) => handleInputChange('gender', selected?.value || '')}
-                    options={genderOptions}
-                    placeholder="Pilih gender"
-                    isDisabled={isSubmitting}
-                    className="react-select-container"
-                    classNamePrefix="react-select"
-                    styles={{
-                      control: (base, state) => ({
-                        ...base,
-                        backgroundColor: 'rgba(255, 255, 255, 0.5)',
-                        backdropFilter: 'blur(4px)',
-                        borderColor: errors.gender ? '#ef4444' : state.isFocused ? '#dc2626' : 'rgba(220, 38, 38, 0.2)',
-                        borderRadius: '0.75rem',
-                        minHeight: '3rem',
-                        boxShadow: 'none',
-                        '&:hover': {
-                          borderColor: '#dc2626',
-                        },
-                      }),
-                    }}
-                  />
+                    <Select
+                      unstyled
+                      isDisabled={isSubmitting}
+                      value={getSelectValue(genderOptions, formData.gender)}
+                      onChange={(selected) => handleInputChange('gender', selected?.value || '')}
+                      options={genderOptions}
+                      placeholder="Pilih gender"
+                      classNames={{
+                        control: () =>
+                          `flex items-center border-2 ${
+                            errors.gender
+                              ? 'border-red bg-white/80' 
+                              : !isSubmitting
+                                ? 'border-red/20 hover:border-red/40 focus-within:border-red bg-white/80' 
+                                : 'border-gray-200 bg-gray-50'
+                          } rounded-xl px-4 py-3 gap-3 backdrop-blur-sm transition-all duration-300 hover:shadow-lg`,
+                        valueContainer: () => "px-1",
+                        placeholder: () => "text-gray-400 font-plex text-sm",
+                        menu: () => "border border-red/20 bg-white/95 backdrop-blur-sm rounded-xl shadow-xl mt-2 overflow-hidden z-50",
+                        menuList: () => "max-h-32 overflow-y-auto",
+                        option: ({ isFocused, isSelected }) =>
+                          [
+                            "px-4 py-3 cursor-pointer font-plex text-sm transition-colors duration-200 hover:text-red",
+                            isFocused ? "bg-red/10 text-red" : "text-black/80",
+                            isSelected ? "bg-red text-white" : "text-black/80"
+                          ].join(" "),
+                      }}
+                    />
                   {errors.gender && (
                     <p className="text-red-500 text-sm font-plex">{errors.gender}</p>
                   )}
@@ -430,29 +457,32 @@ const TambahAtlit: React.FC = () => {
                   <label className="block font-plex font-medium text-black/70">
                     Tingkat Sabuk
                   </label>
-                  <Select
-                    value={getSelectValue(beltOptions, formData.belt)}
-                    onChange={(selected) => handleInputChange('belt', selected?.value || '')}
-                    options={beltOptions}
-                    placeholder="Pilih tingkat sabuk"
-                    isDisabled={isSubmitting}
-                    className="react-select-container"
-                    classNamePrefix="react-select"
-                    styles={{
-                      control: (base, state) => ({
-                        ...base,
-                        backgroundColor: 'rgba(255, 255, 255, 0.5)',
-                        backdropFilter: 'blur(4px)',
-                        borderColor: state.isFocused ? '#dc2626' : 'rgba(220, 38, 38, 0.2)',
-                        borderRadius: '0.75rem',
-                        minHeight: '3rem',
-                        boxShadow: 'none',
-                        '&:hover': {
-                          borderColor: '#dc2626',
-                        },
-                      }),
-                    }}
-                  />
+                    <Select
+                      unstyled
+                      isDisabled={isSubmitting}
+                      value={getSelectValue(beltOptions, formData.belt)}
+                      onChange={(selected) => handleInputChange('belt', selected?.value || '')}
+                      options={beltOptions}
+                      placeholder="Pilih tingkat sabuk"
+                      classNames={{
+                        control: () =>
+                          `flex items-center border-2 ${
+                            !isSubmitting
+                              ? 'border-red/20 hover:border-red/40 focus-within:border-red bg-white/80'
+                              : 'border-gray-200 bg-gray-50'
+                          } rounded-xl px-4 py-3 gap-3 backdrop-blur-sm transition-all duration-300 hover:shadow-lg`,
+                        valueContainer: () => "px-1",
+                        placeholder: () => "text-gray-400 font-plex text-sm",
+                        menu: () => "border border-red/20 bg-white/95 backdrop-blur-sm rounded-xl shadow-xl mt-2 overflow-hidden z-50",
+                        menuList: () => "max-h-32 overflow-y-auto",
+                        option: ({ isFocused, isSelected }) =>
+                          [
+                            "px-4 py-3 cursor-pointer font-plex text-sm transition-colors duration-200 hover:text-red",
+                            isFocused ? "bg-red/10 text-red" : "text-black/80",
+                            isSelected ? "bg-red text-white" : ""
+                          ].join(" "),
+                      }}
+                    />
                 </div>
               </div>
             </div>

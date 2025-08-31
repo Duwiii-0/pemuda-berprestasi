@@ -122,61 +122,6 @@ const Register = () => {
     handleRegister();
   };
 
-  // Custom select styles matching the design
-  const selectStyles = {
-    control: (base: any, state: any) => ({
-      ...base,
-      height: '44px',
-      minHeight: '44px',
-      border: `2px solid ${state.isFocused ? '#dc2626' : 'rgba(220, 38, 38, 0.25)'}`,
-      borderRadius: '12px',
-      backgroundColor: 'rgba(255, 255, 255, 0.8)',
-      backdropFilter: 'blur(4px)',
-      boxShadow: state.isFocused ? '0 4px 6px -1px rgba(220, 38, 38, 0.1)' : 'none',
-      fontSize: '14px',
-      fontFamily: 'Inter',
-      paddingLeft: '40px',
-      '&:hover': {
-        border: `2px solid rgba(220, 38, 38, 0.4)`,
-      },
-    }),
-    valueContainer: (base: any) => ({
-      ...base,
-      paddingLeft: '0',
-    }),
-    placeholder: (base: any) => ({
-      ...base,
-      color: 'rgba(220, 38, 38, 0.5)',
-      fontSize: '14px',
-    }),
-    menu: (base: any) => ({
-      ...base,
-      border: '2px solid rgba(220, 38, 38, 0.25)',
-      borderRadius: '12px',
-      backgroundColor: 'white',
-      boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
-      marginTop: '4px',
-    }),
-    menuList: (base: any) => ({
-      ...base,
-      maxHeight: '160px',
-    }),
-    option: (base: any, state: any) => ({
-      ...base,
-      backgroundColor: state.isFocused 
-        ? 'rgba(220, 38, 38, 0.1)' 
-        : state.isSelected 
-          ? '#dc2626' 
-          : 'white',
-      color: state.isSelected ? 'white' : 'black',
-      padding: '8px 16px',
-      cursor: 'pointer',
-      fontSize: '14px',
-      '&:active': {
-        backgroundColor: state.isSelected ? '#dc2626' : 'rgba(220, 38, 38, 0.2)',
-      },
-    }),
-  };
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-red/15 via-white to-red/10">
@@ -298,15 +243,31 @@ const Register = () => {
               </label>
               <div className="relative group">
                 <Select
+                  unstyled
                   options={dojangOptions}
                   value={selectedDojang}
                   onChange={setSelectedDojang}
                   placeholder="Pilih dojang..."
                   isSearchable
                   isDisabled={isLoading}
-                  styles={selectStyles}
-                  className="react-select-container"
-                  classNamePrefix="react-select"
+                  classNames={{
+                    control: () =>
+                      `flex items-center border-2 ${
+                        !isLoading
+                          ? 'border-red/20 hover:border-red/40 focus-within:border-red bg-white/80'
+                          : 'border-gray-200 bg-gray-50'
+                      } rounded-xl px-4 py-3 gap-3 backdrop-blur-sm transition-all duration-300 hover:shadow-lg`,
+                    valueContainer: () => "pl-3",
+                    placeholder: () => "text-gray-400 font-plex text-sm",
+                    menu: () => "border border-red/20 bg-white/95 backdrop-blur-sm rounded-xl shadow-xl mt-2 overflow-hidden z-50",
+                    menuList: () => "max-h-32 overflow-y-auto",
+                    option: ({ isFocused, isSelected }) =>
+                      [
+                        "px-4 py-3 cursor-pointer font-plex text-sm transition-colors duration-200",
+                        isFocused ? "bg-red/10 text-red" : "text-black/80",
+                        isSelected ? "bg-red text-white" : ""
+                      ].join(" "),
+                  }}
                 />
                 <Building className="absolute left-3 top-1/2 transform -translate-y-1/2 text-red/60 pointer-events-none z-10" size={16} />
               </div>

@@ -7,6 +7,7 @@ import { useAuth } from "../../context/authContext";
 import { Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import SelectTeamMemberModal from "../../components/selectTeamModal";
+import Select from "react-select";
 
 const ValidasiPeserta: React.FC = () => {
   const { token } = useAuth();
@@ -33,7 +34,7 @@ const ValidasiPeserta: React.FC = () => {
   );
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState<"ALL" | "PENDING" | "APPROVED" | "REJECTED">("ALL");
-  const [filterCategory, setFilterCategory] = useState<"ALL" | "DOJANG" | "POOMSAE">("ALL");
+  const [filterCategory, setFilterCategory] = useState<"ALL" | "KYORUGI" | "POOMSAE">("ALL");
   const [teamModalOpen, setTeamModalOpen] = useState(false);
   const [selectedTeam, setSelectedTeam] = useState<any>(null);
   const navigate = useNavigate();
@@ -253,40 +254,77 @@ const handleRejection = async (id: number) => {
         placeholder="Cari peserta..."
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
-        className="w-full pl-10 pr-4 py-3 rounded-full border border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-400 focus:border-transparent text-sm md:text-base placeholder-gray-400 transition-colors"
+        className="w-full pl-12 pr-4 py-4 rounded-3xl border border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-400 focus:border-transparent text-sm md:text-base placeholder-gray-400 transition-colors"
       />
     </div>
 
     {/* Filter Status */}
     <div>
       <label className="block text-gray-600 text-xs md:text-sm mb-1">Status</label>
-      <select
-        value={filterStatus}
-        onChange={(e) => setFilterStatus(e.target.value as any)}
-        className="w-full px-4 py-3 rounded-full border border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-400 focus:border-transparent text-sm md:text-base transition-colors"
-      >
-        {["ALL", "PENDING", "APPROVED", "REJECTED"].map((s) => (
-          <option key={s} value={s}>
-            {s === "ALL" ? "Semua Status" : s}
-          </option>
-        ))}
-      </select>
+<Select
+  unstyled
+  value={{
+    value: filterStatus,
+    label:
+      filterStatus === "ALL"
+        ? "Semua Status"
+        : filterStatus.charAt(0) + filterStatus.slice(1).toLowerCase(),
+  }}
+  onChange={(selected) => setFilterStatus(selected?.value as any)}
+  options={[
+    { value: "ALL", label: "Semua Status" },
+    { value: "PENDING", label: "Pending" },
+    { value: "APPROVED", label: "Approved" },
+    { value: "REJECTED", label: "Rejected" },
+  ]}
+  placeholder="Pilih status"
+  classNames={{
+    control: () =>
+      `w-full py-4 flex items-center border-2 border-gray-300 rounded-3xl px-4 py-3 gap-3 backdrop-blur-sm transition-all duration-300 hover:shadow-lg`,
+    valueContainer: () => "px-1",
+    placeholder: () => "text-gray-400 font-plex text-sm",
+    menu: () =>
+      "border border-red/20 bg-white/95 backdrop-blur-sm rounded-xl shadow-xl mt-2 overflow-hidden z-50",
+    menuList: () => "max-h-32 overflow-y-auto",
+    option: ({ isFocused, isSelected }) =>
+      [
+        "px-4 py-3 cursor-pointer font-plex text-sm transition-colors duration-200 hover:text-red",
+        isFocused ? "bg-red/10 text-red" : "text-black/80",
+        isSelected ? "bg-red text-white" : "",
+      ].join(" "),
+  }}
+/>
     </div>
 
     {/* Filter Kategori */}
     <div>
       <label className="block text-gray-600 text-xs md:text-sm mb-1">Kategori</label>
-      <select
-        value={filterCategory}
-        onChange={(e) => setFilterCategory(e.target.value as any)}
-        className="w-full px-4 py-3 rounded-full border border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-400 focus:border-transparent text-sm md:text-base transition-colors"
-      >
-        {["ALL", "POOMSAE", "KYORUGI"].map((c) => (
-          <option key={c} value={c}>
-            {c === "ALL" ? "Semua Kategori" : c}
-          </option>
-        ))}
-      </select>
+<Select
+  unstyled
+  value={{ value: filterCategory, label: filterCategory === "ALL" ? "Semua Kategori" : filterCategory }}
+  onChange={(selected) => setFilterCategory(selected?.value as any)}
+  options={[
+    { value: "ALL", label: "Semua Kategori" },
+    { value: "POOMSAE", label: "POOMSAE" },
+    { value: "KYORUGI", label: "KYORUGI" },
+  ]}
+  placeholder="Pilih kategori"
+  classNames={{
+    control: () =>
+      `w-full py-4 flex items-center border-2 border-gray-300 rounded-3xl px-4 py-3 gap-3 backdrop-blur-sm transition-all duration-300 hover:shadow-lg`,
+    valueContainer: () => "px-1",
+    placeholder: () => "text-gray-400 font-plex text-sm",
+    menu: () => "border border-red/20 bg-white/95 backdrop-blur-sm rounded-xl shadow-xl mt-2 overflow-hidden z-50",
+    menuList: () => "max-h-32 overflow-y-auto",
+    option: ({ isFocused, isSelected }) =>
+      [
+        "px-4 py-3 cursor-pointer font-plex text-sm transition-colors duration-200 hover:text-red",
+        isFocused ? "bg-red/10 text-red" : "text-black/80",
+        isSelected ? "bg-red text-white" : ""
+      ].join(" "),
+  }}
+/>
+
     </div>
   </div>
 </div>
@@ -381,7 +419,7 @@ const handleRejection = async (id: number) => {
                       handleRejection(peserta.id_peserta_kompetisi);
                     }}
                     disabled={processing === peserta.id_peserta_kompetisi}
-                    className="cursor-pointer flex items-center gap-1 px-3 md:px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-50 transition-all text-xs md:text-sm font-medium"
+                    className="cursor-pointer flex items-center gap-1 px-3 md:px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition-all text-xs md:text-sm font-medium"
                   >
                     {processing === peserta.id_peserta_kompetisi ? <Loader size={16} className="animate-spin" /> : <XCircle size={16} />}
                     Tolak

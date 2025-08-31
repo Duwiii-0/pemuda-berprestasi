@@ -141,27 +141,58 @@ const AllAtlets: React.FC = () => {
     </div>
 
     {/* Gender Filter */}
-    <select
-      value={filterGender}
-      onChange={(e) => setFilterGender(e.target.value as any)}
-      className="px-6 py-4 rounded-3xl border border-gray-200 shadow-lg focus:border-transparent text-lg transition bg-gray-50 hover:bg-gray-100"
-    >
-      <option value="ALL">Semua Jenis Kelamin</option>
-      {genderOptions.map((opt) => (
-        <option key={opt.value} value={opt.value}>{opt.label}</option>
-      ))}
-    </select>
+<select
+  value={filterGender}
+  onChange={(e) => setFilterGender(e.target.value as any)}
+  className="
+    w-full
+    px-4
+    py-4
+    rounded-3xl
+    border-2
+    border-gray-300
+    bg-white/80
+    backdrop-blur-sm
+    shadow-lg
+    text-sm md:text-base
+    font-plex
+    transition-all
+    duration-300
+    hover:shadow-xl
+    hover:border-red/40
+    focus:outline-none
+    focus:border-red
+    focus:shadow-red/10
+  "
+>
+  <option value="ALL">Semua Jenis Kelamin</option>
+  {genderOptions.map((opt) => (
+    <option key={opt.value} value={opt.value} className="text-lg">
+      {opt.label}
+    </option>
+  ))}
+</select>
 
     {/* Age Category Filter */}
-    <select
-      value={filterAgeCategory}
-      onChange={(e) => setFilterAgeCategory(e.target.value as any)}
-      className="px-6 py-4 rounded-3xl border border-gray-200 shadow-lg focus:border-transparent text-lg transition bg-gray-50 hover:bg-gray-100"
-    >
-      {ageCategories.map((opt) => (
-        <option key={opt.value} value={opt.value}>{opt.label}</option>
-      ))}
-    </select>
+<select
+  value={filterAgeCategory}
+  onChange={(e) => setFilterAgeCategory(e.target.value as any)}
+  className="
+    w-full
+    px-4
+    py-4
+    rounded-3xl
+    border-2
+    border-gray-300
+    bg-white/80 backdrop-blur-sm shadow-lg text-sm md:text-base font-plex transition-all duration-300 hover:shadow-xl hover:border-red/40 focus:outline-none focus:border-red focus:shadow-red/10
+  "
+>
+  {ageCategories.map((opt) => (
+    <option key={opt.value} value={opt.value} className="text-lg">
+      {opt.label}
+    </option>
+  ))}
+</select>
   </div>
 
   <p className="text-gray-600 text-base">
