@@ -180,14 +180,14 @@ export default function AppRoutes() {
 
         {/* Settings - protected route */}
         <Route path="/settings" element={
-          <ProtectedRoute>
+          <ProtectedRoute requiredRole="PELATIH">
             <Settings />
           </ProtectedRoute>
         } />
 
         {/* Dashboard - protected routes */}
         <Route path="/dashboard" element={
-          <ProtectedRoute>
+          <ProtectedRoute requiredRole="PELATIH">
             <DashboardLayout />
           </ProtectedRoute>
         }>

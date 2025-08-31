@@ -235,7 +235,12 @@ export class KompetisiService {
 }
 
 
-  static async getAtletsByKompetisi(kompetisiId: number, page: number, limit: number) {
+static async getAtletsByKompetisi(
+  kompetisiId: number, 
+  page: number, 
+  limit: number, 
+  idDojang?: number // <-- tambahkan optional filter
+) {
   const skip = (page - 1) * limit;
 
   const peserta = await prisma.tb_peserta_kompetisi.findMany({
@@ -243,31 +248,29 @@ export class KompetisiService {
       kelas_kejuaraan: {
         id_kompetisi: kompetisiId,
       },
+      // filter jika ada idDojang
+      ...(idDojang ? {
+        OR: [
+          { atlet: { id_dojang: idDojang } },
+          { anggota_tim: { some: { atlet: { id_dojang: idDojang } } } }
+        ]
+      } : {})
     },
     include: {
-      atlet: { 
-        include: { 
-          dojang: true 
-        } 
-      },
+      atlet: { include: { dojang: true } },
       kelas_kejuaraan: {
         include: {
           kategori_event: true,
           kelompok: true,
           kelas_berat: true,
-          poomsae: true
-        }
+          poomsae: true,
+        },
       },
-      // TAMBAHKAN INI: Include data anggota tim
       anggota_tim: {
         include: {
-          atlet: {
-            include: {
-              dojang: true
-            }
-          }
-        }
-      }
+          atlet: { include: { dojang: true } },
+        },
+      },
     },
     skip,
     take: limit,
@@ -278,6 +281,12 @@ export class KompetisiService {
       kelas_kejuaraan: {
         id_kompetisi: kompetisiId,
       },
+      ...(idDojang ? {
+        OR: [
+          { atlet: { id_dojang: idDojang } },
+          { anggota_tim: { some: { atlet: { id_dojang: idDojang } } } }
+        ]
+      } : {})
     },
   });
 

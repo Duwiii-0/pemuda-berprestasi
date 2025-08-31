@@ -31,7 +31,7 @@ const StatsCard: React.FC<StatsCardProps> = ({ icon: Icon, title, value, color }
 const DataKompetisi = () => {
   const navigate = useNavigate();
   const { user, token } = useAuth();
-  const { kompetisiList, loadingKompetisi, errorKompetisi, fetchKompetisiList, fetchAtletByKompetisi, atletList } = useKompetisi();
+  const { kompetisiList, loadingKompetisi, errorKompetisi, fetchKompetisiList, fetchAtletByKompetisi, pesertaList } = useKompetisi();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "PENDAFTARAN" | "SEDANG_DIMULAI" | "SELESAI">("all");
   const [selectedKompetisi, setSelectedKompetisi] = useState<Kompetisi | null>(null);
@@ -48,7 +48,7 @@ const DataKompetisi = () => {
   const handleKompetisiClick = async (kompetisi: Kompetisi) => {
     setSelectedKompetisi(kompetisi);
     setShowPeserta(true);
-    await fetchAtletByKompetisi(kompetisi.id_penyelenggara);
+    await fetchAtletByKompetisi(kompetisi.id_kompetisi); 
   };
 
   const formatTanggal = (date: string | Date) => {
@@ -108,74 +108,91 @@ const DataKompetisi = () => {
   }
 
   // Halaman detail peserta
-  if (showPeserta && selectedKompetisi) {
-    const peserta = atletList.map(atlet => ({
-      id: atlet.id_atlet,
-      nama: atlet.nama_atlet,
-      gender: atlet.jenis_kelamin === 'LAKI_LAKI' ? 'Laki-Laki' : 'Perempuan'
-    }));
+if (showPeserta && selectedKompetisi) {
+  const peserta = pesertaList.map((peserta) => {
+    const isTeam = peserta.is_team; // pastikan field ini ada di API
 
-    return (
-      <div className="min-h-screen w-full bg-gradient-to-br from-white via-red/5 to-yellow/10">
-        <NavbarDashboard />
-        <div className="lg:ml-72 w-full">
-          <div className="px-4 lg:px-8 py-8 pb-16">
-            {/* Back Button */}
-            <button 
-              onClick={() => setShowPeserta(false)} 
-              className="text-red hover:text-red/80 mb-6 font-plex transition-colors duration-200"
-            >
-              ← Kembali
-            </button>
+    const nama = isTeam
+      ? peserta.anggota_tim?.map((m: any) => m.atlet.nama_atlet).join(", ")
+      : peserta.atlet?.nama_atlet || "-";
 
-            {/* Header */}
-            <div className="mb-8">
-              <h1 className="font-bebas text-4xl lg:text-6xl text-black/80 tracking-wider">
-                {selectedKompetisi.nama_event}
-              </h1>
-              <p className="font-plex text-black/60 text-lg mt-2">
-                Daftar peserta yang terdaftar
-              </p>
-            </div>
+    const gender = isTeam
+      ? "Tim"
+      : peserta.atlet?.jenis_kelamin === "LAKI_LAKI"
+        ? "Laki-Laki"
+        : "Perempuan";
 
-            {/* Peserta Table */}
-            <div className="bg-white/60 backdrop-blur-sm rounded-3xl p-6 shadow-xl border border-white/50">
-              <div className="overflow-x-auto rounded-2xl border border-white/50">
-                <table className="w-full">
-                  <thead className="bg-gradient-to-r from-red to-red/80 text-white">
-                    <tr>
-                      <th className="px-6 py-4 text-left font-bebas text-lg">Nama Atlet</th>
-                      <th className="px-6 py-4 text-center font-bebas text-lg">Gender</th>
+    return {
+      id: peserta.id_peserta_kompetisi, // pakai id peserta kompetisi supaya unik
+      nama,
+      gender,
+    };
+  });
+
+  return (
+    <div className="min-h-screen w-full bg-gradient-to-br from-white via-red/5 to-yellow/10">
+      <NavbarDashboard />
+      <div className="lg:ml-72 w-full">
+        <div className="px-4 lg:px-8 py-8 pb-16">
+          {/* Back Button */}
+          <button
+            onClick={() => setShowPeserta(false)}
+            className="text-red hover:text-red/80 mb-6 font-plex transition-colors duration-200"
+          >
+            ← Kembali
+          </button>
+
+          {/* Header */}
+          <div className="mb-8">
+            <h1 className="font-bebas text-4xl lg:text-6xl text-black/80 tracking-wider">
+              {selectedKompetisi.nama_event}
+            </h1>
+            <p className="font-plex text-black/60 text-lg mt-2">
+              Daftar peserta yang terdaftar
+            </p>
+          </div>
+
+          {/* Peserta Table */}
+          <div className="bg-white/60 backdrop-blur-sm rounded-3xl p-6 shadow-xl border border-white/50">
+            <div className="overflow-x-auto rounded-2xl border border-white/50">
+              <table className="w-full">
+                <thead className="bg-gradient-to-r from-red to-red/80 text-white">
+                  <tr>
+                    <th className="px-6 py-4 text-left font-bebas text-lg">Nama Peserta</th>
+                    <th className="px-6 py-4 text-center font-bebas text-lg">Jenis</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/30">
+                  {peserta.map((p) => (
+                    <tr
+                      key={p.id}
+                      className="transition-all duration-200 hover:bg-white/50 cursor-pointer"
+                      onClick={() => navigate(`/dashboard/peserta/${p.id}`)}
+                    >
+                      <td className="px-6 py-4 font-plex">{p.nama}</td>
+                      <td className="px-6 py-4 text-center font-plex">{p.gender}</td>
                     </tr>
-                  </thead>
-                  <tbody className="divide-y divide-white/30">
-                    {peserta.map(p => (
-                      <tr 
-                        key={p.id} 
-                        className="transition-all duration-200 hover:bg-white/50 cursor-pointer"
-                        onClick={() => navigate(`/dashboard/atlit/${p.id}`)}
-                      >
-                        <td className="px-6 py-4 font-plex">{p.nama}</td>
-                        <td className="px-6 py-4 text-center font-plex">{p.gender}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                  ))}
+                </tbody>
+              </table>
 
-                {peserta.length === 0 && (
-                  <div className="text-center py-12">
-                    <Users className="mx-auto text-gray-400 mb-4" size={48} />
-                    <p className="font-plex text-gray-500">Belum ada atlet yang mendaftar</p>
-                    <p className="font-plex text-sm text-gray-400 mt-2">Peserta akan muncul setelah mendaftar kompetisi</p>
-                  </div>
-                )}
-              </div>
+              {peserta.length === 0 && (
+                <div className="text-center py-12">
+                  <Users className="mx-auto text-gray-400 mb-4" size={48} />
+                  <p className="font-plex text-gray-500">Belum ada peserta yang mendaftar</p>
+                  <p className="font-plex text-sm text-gray-400 mt-2">
+                    Peserta akan muncul setelah mendaftar kompetisi
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </div>
       </div>
-    );
-  }
+    </div>
+  );
+}
+
 
   // Halaman utama daftar kompetisi dengan search + filter
   return (
@@ -302,7 +319,7 @@ const DataKompetisi = () => {
                 <tbody className="divide-y divide-white/30">
                   {filteredKompetisi.map((k) => (
                     <tr
-                      key={k.id_penyelenggara}
+                      key={k.id_kompetisi}
                       className="transition-all duration-200 hover:bg-white/50 cursor-pointer"
                       onClick={() => handleKompetisiClick(k)}
                     >

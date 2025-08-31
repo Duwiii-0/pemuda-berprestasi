@@ -9,6 +9,7 @@ export interface JwtPayload {
   role: string
   pelatihId?: number
   adminId?: number
+  id_dojang?: number;
 }
 
 export const generateToken = (payload: JwtPayload): string => {

@@ -174,7 +174,8 @@ export interface KompetisiContextType {
   fetchKompetisiById: (id_kompetisi: number) => Promise<void>;
   fetchAtletByKompetisi: (
     id_kompetisi: number,
-    cabang?: "kyorugi" | "poomsae"
+    cabang?: "kyorugi" | "poomsae",
+    id_dojang?: number
   ) => Promise<void>;
   setAtletPage: (page: number) => void;
   setAtletLimit: (limit: number) => void;
@@ -250,7 +251,8 @@ export const KompetisiProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchAtletByKompetisi = async (
     id_kompetisi: number,
-    cabang?: "kyorugi" | "poomsae"
+    cabang?: "kyorugi" | "poomsae",
+    id_dojang?: number
   ) => {
     console.log("[fetchAtletByKompetisi] start with:", {
       id_kompetisi,
@@ -263,6 +265,7 @@ export const KompetisiProvider = ({ children }: { children: ReactNode }) => {
     try {
       let url = `/kompetisi/${id_kompetisi}/atlet?page=${atletPagination.page}&limit=${atletPagination.limit}`;
       if (cabang) url += `&cabang=${cabang}`;
+      if (id_dojang) url += `&id_dojang=${id_dojang}`; 
 
       console.log("[fetchAtletByKompetisi] request url:", url);
 

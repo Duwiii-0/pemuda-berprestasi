@@ -141,7 +141,8 @@ export class KompetisiController {
   static async getAtletsByKompetisi(req: Request, res: Response) {
     try {
       const { id } = req.params;
-      const { page = "1", limit = "20" } = req.query;
+      const { page = "1", limit = "20", id_dojang: idDojangQuery } = req.query; // ⬅️ ambil query
+      let idDojang: number | undefined = undefined;
 
       const kompetisiId = parseInt(id, 10);
       const pageNum = parseInt(page as string, 10);
@@ -151,10 +152,21 @@ export class KompetisiController {
         return res.status(400).json({ message: "Invalid kompetisiId" });
       }
 
+      // role PELATIH → selalu pakai id_dojang dari token
+      if (req.user?.role === "PELATIH" && req.user.id_dojang) {
+        idDojang = req.user.id_dojang;
+      }
+      // role ADMIN → boleh filter manual lewat query
+      else if (req.user?.role === "ADMIN" && idDojangQuery) {
+        idDojang = parseInt(idDojangQuery as string, 10);
+      }
+
+
       const result = await KompetisiService.getAtletsByKompetisi(
         kompetisiId,
         pageNum,
-        limitNum
+        limitNum,
+        idDojang
       );
 
       return res.status(200).json({
