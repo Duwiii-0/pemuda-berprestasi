@@ -100,6 +100,9 @@ const NavbarLanding = ({ onLogoutRequest }: { onLogoutRequest: () => void }) => 
             <Link 
               to="/" 
               className={`text-xl sm:text-2xl lg:text-3xl xl:text-4xl ${styles.logo} font-bebas tracking-wider uppercase transition-all duration-300 ease-out hover:scale-105`}
+              onClick={() => {
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
             >
               pemuda berprestasi
             </Link>

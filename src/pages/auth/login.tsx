@@ -48,7 +48,7 @@ const Login = () => {
           navigate("/admin", { replace: true });
           toast.success("Login berhasil sebagai Admin!");
         } else if (user.role === 'PELATIH') {
-          navigate("/dashboard/dojang", { replace: true });
+          navigate("/", { replace: true });
           toast.success("Login berhasil sebagai Pelatih!");
         } else {
           // Default redirect for other users

@@ -193,6 +193,11 @@ export default function AppRoutes() {
         }>
 
           {/* Dojang management - only for PELATIH */}
+          <Route index element={
+            <Navigate to="/dashboard/dojang" replace />
+          } />
+
+          {/* Dojang management - only for PELATIH */}
           <Route path="dojang" element={
             <ProtectedRoute requiredRole="PELATIH">
               <Dojang />

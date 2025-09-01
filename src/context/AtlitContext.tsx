@@ -45,16 +45,16 @@ export const genderOptions = [
   ];
 
 export const beltOptions = [
-    { value: "putih", label: "Putih" },
-    { value: "kuning", label: "Kuning" },
-    { value: "kuningHijau", label: "Kuning strip Hijau" },
-    { value: "hijau", label: "Hijau" },
-    { value: "hijauBiru", label: "Hijau strip Biru" },
-    { value: "biru", label: "Biru" },
-    { value: "biruMerah", label: "Biru strip Merah" },
-    { value: "merah", label: "Merah" },
-    { value: "merahHitam", label: "Merah strip Coklat" },
-    { value: "coklat", label: "Coklat" },
+    { value: "putih", label: "Putih/Geup 10" },
+    { value: "putihKuning", label: "putih strip kuning/Geoup 9" },
+    { value: "kuning", label: "Kuning/Geup 8" },
+    { value: "kuningHijau", label: "Kuning strip Hijau/Geup 7" },
+    { value: "hijau", label: "Hijau/Geup 6" },
+    { value: "hijauBiru", label: "Hijau strip Biru/Geup 5" },
+    { value: "biru", label: "Biru/Geup 4" },
+    { value: "biruMerah", label: "Biru strip Merah/Geup 3" },
+    { value: "merah", label: "Merah/Geup 2" },
+    { value: "merahHitam", label: "Merah strip Coklat/Geup 1" },
     { value: "hitam", label: "Hitam" },
   ];
 
