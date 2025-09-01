@@ -1,3 +1,4 @@
+// src/routes/atlet.ts
 import { Router } from 'express';
 import { AtletController } from '../controllers/atletController';
 import { authenticate } from '../middleware/auth';
@@ -17,12 +18,7 @@ router.use(authenticate);
 router.post(
   '/',
   authenticate,
-  uploadMiddleware.fields([
-    { name: 'akte_kelahiran', maxCount: 1 },
-    { name: 'pas_foto', maxCount: 1 },
-    { name: 'sertifikat_belt', maxCount: 1 },
-    { name: 'ktp', maxCount: 1 }
-  ]),
+  uploadMiddleware.atletFiles(), // Fixed: use atletFiles() instead of fields()
   validateRequest(atletValidation.create),
   AtletController.create
 );
@@ -36,12 +32,7 @@ router.delete('/:id', AtletController.delete);
 
 // File upload routes
 router.post('/:id/upload-documents', 
-  uploadMiddleware.fields([
-    { name: 'akte_kelahiran', maxCount: 1 },
-    { name: 'pas_foto', maxCount: 1 },
-    { name: 'sertifikat_belt', maxCount: 1 },
-    { name: 'ktp', maxCount: 1 }
-  ]), 
+  uploadMiddleware.atletFiles(), // Fixed: use atletFiles() instead of fields()
   AtletController.uploadDocuments
 );
 
@@ -50,6 +41,5 @@ router.get(
   '/kompetisi/:id_kompetisi/atlet',
   AtletController.getByKompetisi
 );
-
 
 export default router;
