@@ -24,12 +24,12 @@ const NavbarDashboard: React.FC<NavbarProps> = ({ mobile = false, onClose }) => 
   };
 
   const navItems = [
-    { 
-      path: '/dashboard', 
-      label: 'Dashboard', 
-      icon: Home,
-      exact: true // Only match exact path for dashboard home
-    },
+//    { 
+//      path: '/dashboard', 
+//      label: 'Dashboard', 
+//      icon: Home,
+//      exact: true // Only match exact path for dashboard home
+//    },
     { 
       path: '/dashboard/dojang', 
       label: 'Data Dojang', 

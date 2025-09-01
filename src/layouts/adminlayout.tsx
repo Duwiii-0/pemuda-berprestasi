@@ -60,30 +60,30 @@ const AdminLayout: React.FC = () => {
       path: '/admin/validasi-dojang',
       active: location.pathname === '/admin/validasi-dojang'
     },
-    {
-      icon: Users,
-      label: 'Manajemen User',
-      path: '/admin/users',
-      active: location.pathname === '/admin/users'
-    },
-    {
-      icon: BarChart3,
-      label: 'Statistik',
-      path: '/admin/statistik',
-      active: location.pathname === '/admin/statistik'
-    },
-    {
-      icon: FileText,
-      label: 'Laporan',
-      path: '/admin/reports',
-      active: location.pathname === '/admin/reports'
-    },
-    {
-      icon: Settings,
-      label: 'Pengaturan',
-      path: '/admin/settings',
-      active: location.pathname === '/admin/settings'
-    }
+//    {
+//      icon: Users,
+//      label: 'Manajemen User',
+//      path: '/admin/users',
+//      active: location.pathname === '/admin/users'
+//    },
+//    {
+//      icon: BarChart3,
+//      label: 'Statistik',
+//      path: '/admin/statistik',
+//      active: location.pathname === '/admin/statistik'
+//    },
+//    {
+//      icon: FileText,
+//      label: 'Laporan',
+//      path: '/admin/reports',
+//      active: location.pathname === '/admin/reports'
+//    },
+//    {
+//      icon: Settings,
+//      label: 'Pengaturan',
+//      path: '/admin/settings',
+//      active: location.pathname === '/admin/settings'
+//    }
   ];
 
   if (!isAdmin) {
