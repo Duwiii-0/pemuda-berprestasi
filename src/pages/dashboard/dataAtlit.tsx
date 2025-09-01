@@ -97,7 +97,7 @@ const avgAge = Math.round(atlits.reduce((sum, a) => sum + a.age, 0) / (atlits.le
 
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-white via-red/5 to-yellow/10">
+    <div className="min-h-screen max-w-screen bg-gradient-to-br from-white via-red/5 to-yellow/10">
       {/* Desktop Navbar */}
       <NavbarDashboard />
 
@@ -241,19 +241,19 @@ const avgAge = Math.round(atlits.reduce((sum, a) => sum + a.age, 0) / (atlits.le
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="bg-gradient-to-r from-red to-red/80 text-white">
-                      <th className="px-6 py-4 text-left font-bebas text-lg tracking-wide">NAMA</th>
-                      <th className="px-6 py-4 text-center font-bebas text-lg tracking-wide">PROVINSI</th>
-                      <th className="px-6 py-4 text-center font-bebas text-lg tracking-wide">GENDER</th>
-                      <th className="px-6 py-4 text-center font-bebas text-lg tracking-wide">UMUR</th>
-                      <th className="px-6 py-4 text-center font-bebas text-lg tracking-wide">AKSI</th>
+                    <tr className="bg-gradient-to-r from-red to-red/80 text-white text-2xl">
+                      <th className="px-6 py-4 text-left font-bebas  tracking-wide">NAMA</th>
+                      <th className="px-6 py-4 text-center font-bebas  tracking-wide">PROVINSI</th>
+                      <th className="px-6 py-4 text-center font-bebas  tracking-wide">GENDER</th>
+                      <th className="px-6 py-4 text-center font-bebas  tracking-wide">UMUR</th>
+                      <th className="px-6 py-4 text-center font-bebas  tracking-wide">AKSI</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/30">
                     {filteredAtlits.map((atlit, index) => (
                       <tr
                         key={atlit.id_atlet}
-                        className={`transition-all duration-200 hover:bg-white/50 cursor-pointer ${
+                        className={`transition-all duration-200 hover:bg-red/10 cursor-pointer ${
                           index % 2 === 0 ? "bg-white/20" : "bg-white/10"
                         }`}
                         onClick={() => navigate(`/dashboard/atlit/${atlit.id_atlet}`)}
