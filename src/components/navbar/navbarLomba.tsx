@@ -102,6 +102,9 @@ const NavbarLomba = ({ onLogoutRequest }: { onLogoutRequest: () => void }) => {
                   className={`text-xl relative px-4 py-2 ${styles.text} font-plex font-medium transition-all duration-300 ease-out ${
                     location.pathname === to ? "text-yellow font-semibold" : styles.hoverText
                   } group`}
+                  onClick={() => {
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  }}
                 >
                   {label}
                   {/* Animated underline */}
@@ -210,7 +213,7 @@ const NavbarLomba = ({ onLogoutRequest }: { onLogoutRequest: () => void }) => {
         />
         
         {/* Mobile menu panel */}
-        <div className={`absolute top-20 md:top-24 left-4 right-4 sm:left-8 sm:right-8 bg-white rounded-xl shadow-2xl transform transition-all duration-500 ease-out ${
+        <div className={`absolute top-30 md:top-24 left-4 right-4 sm:left-8 sm:right-8 bg-white rounded-xl shadow-2xl transform transition-all duration-500 ease-out ${
           isBurgerOpen ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0'
         }`}>
           <div className="px-4 py-5 max-h-[calc(100vh-6rem)] overflow-y-auto">
@@ -226,7 +229,10 @@ const NavbarLomba = ({ onLogoutRequest }: { onLogoutRequest: () => void }) => {
                       ? "bg-red text-white shadow-lg" 
                       : "text-red hover:bg-red hover:text-white"
                   }`}
-                  onClick={() => setIsBurgerOpen(false)}
+                  onClick={() => {
+                    setIsBurgerOpen(false);
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  }}
                   style={{
                     transitionDelay: isBurgerOpen ? `${index * 100}ms` : '0ms'
                   }}

@@ -29,7 +29,7 @@ export default function Timeline() {
   };
 
   return (
-    <div className="relative w-full min-h-screen bg-gradient-to-br from-white via-red/[0.01] to-white overflow-hidden">
+    <div className="relative w-full min-h-screen bg-gradient-to-br from-white via-red/[0.01] to-white overflow-hidden pt-10 lg:pt-0">
       {/* Background Pattern */}
       <div className="absolute inset-0 opacity-[0.015]">
         <div className="absolute inset-0" style={{
@@ -46,7 +46,7 @@ export default function Timeline() {
         {/* Enhanced Title Section */}
         <div className="text-center space-y-6 md:space-y-8 mb-16 md:mb-20 lg:mb-24">
           {/* Section Label */}
-          <div className="inline-block group">
+          <div className="hidden lg:inline-block group">
             <span className="text-red font-plex font-semibold text-xs sm:text-sm uppercase tracking-[0.2em] border-l-4 border-red pl-4 md:pl-6 relative">
               Jadwal Kegiatan
               <div className="absolute -left-1 top-0 bottom-0 w-1 bg-red/20 group-hover:bg-red/40 transition-colors duration-300"></div>
@@ -94,7 +94,7 @@ export default function Timeline() {
                     <div key={index} className="w-full">
                       
                       {/* Desktop Layout */}
-                      <div className="hidden lg:flex w-full items-start justify-center relative group mb-8 md:mb-12">
+                      <div className="hidden md:flex w-full items-start justify-center relative group mb-8 md:mb-12">
                         
                         {/* Left Card */}
                         <div className={`w-1/2 flex justify-end pr-8 xl:pr-12 2xl:pr-16 ${item.side === 'left' ? '' : 'invisible'}`}>
@@ -131,7 +131,7 @@ export default function Timeline() {
                       </div>
 
                       {/* Tablet Layout */}
-                      <div className="hidden sm:flex lg:hidden w-full justify-start items-start gap-6 md:gap-8 px-4 md:px-6 mb-8 group">
+                      <div className="hidden sm:flex md:hidden w-full justify-start items-start gap-6 md:gap-8 px-4 md:px-6 mb-8 group">
                         
                         {/* Enhanced Timeline Dot */}
                         <div className="relative flex flex-col items-center justify-start pt-6 md:pt-8">
@@ -158,7 +158,7 @@ export default function Timeline() {
                       </div>
 
                       {/* Mobile Layout */}
-                      <div className="sm:hidden flex justify-start items-start gap-4 px-4 mb-6 group">
+                      <div className="sm:hidden flex justify-center items-center gap-4 px-4 mb-6 group pl-16 md:pl-0">
                         
                         {/* Enhanced Mobile Timeline Dot */}
                         <div className="relative flex flex-col items-center justify-start pt-5">
@@ -174,7 +174,7 @@ export default function Timeline() {
                           
                           {/* Month connector */}
                           {index === monthEvents.length - 1 && monthIndex !== Object.entries(groupedEvents).length - 1 && (
-                            <div className="w-0.5 h-20 bg-gradient-to-b from-red/30 to-transparent mt-1" />
+                            <div className="w-0.5 h-12 bg-gradient-to-b from-red/30 to-transparent mt-1" />
                           )}
                         </div>
 

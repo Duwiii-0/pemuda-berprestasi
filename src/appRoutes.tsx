@@ -24,7 +24,7 @@ import DataAtlit from "./pages/dashboard/dataAtlit";
 import Dojang from "./pages/dashboard/dataDojang";
 import TambahAtlit from "./pages/dashboard/TambahAtlit";
 import DataKompetisi from "./pages/dashboard/dataKompetisi";
-import Dashboard from "./pages/dashboard/dashboard"; 
+// import Dashboard from "./pages/dashboard/dashboard"; 
 
 // Admin - Fixed import paths
 import AdminLayout from "./layouts/adminlayout";
@@ -191,8 +191,6 @@ export default function AppRoutes() {
             <DashboardLayout />
           </ProtectedRoute>
         }>
-          {/* Dashboard home - overview page */}
-          <Route index element={<Dashboard />} />
 
           {/* Dojang management - only for PELATIH */}
           <Route path="dojang" element={

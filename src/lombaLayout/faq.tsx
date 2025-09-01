@@ -72,7 +72,7 @@ const FAQ = () => {
     ];
 
     return(
-        <div className="min-h-screen w-full bg-gradient-to-br from-white via-yellow/[0.01] to-white">
+        <div className="min-h-screen w-full bg-gradient-to-br from-white via-yellow/[0.01] to-white pt-10 lg:pt-0">
             {/* Enhanced Hero Section */}
             <section className="relative w-full flex flex-col justify-center items-center bg-gradient-to-br from-white via-red/[0.02] to-white overflow-hidden pt-24 sm:pt-28 md:pt-32 lg:pt-36 pb-6 sm:pb-8 md:pb-12 lg:pb-16">
                 {/* Background pattern */}
@@ -89,7 +89,7 @@ const FAQ = () => {
                 <div className="container mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 relative z-10 w-full max-w-7xl">
                     <div className="text-center space-y-4 sm:space-y-6 md:space-y-8">
                         {/* Section Label */}
-                        <div className="inline-block group">
+                        <div className="hidden lg:inline-block group">
                             <span className="text-red font-plex font-semibold text-xs sm:text-sm uppercase tracking-[0.2em] border-l-4 border-red pl-3 sm:pl-4 md:pl-6 relative">
                                 Pusat Bantuan
                                 <div className="absolute -left-1 top-0 bottom-0 w-1 bg-red/20 group-hover:bg-red/40 transition-colors duration-300"></div>
@@ -98,7 +98,7 @@ const FAQ = () => {
                         
                         {/* Main Title */}
                         <div className="relative">
-                            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl 2xl:text-7xl font-bebas leading-[0.85] tracking-wide">
+                            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl 2xl:text-9xl font-bebas leading-[0.85] tracking-wide">
                                 <span className="bg-gradient-to-r from-red via-red/90 to-red/80 bg-clip-text text-transparent">
                                     Frequently Asked
                                 </span>
@@ -137,13 +137,13 @@ const FAQ = () => {
 
                     <div className="container mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 relative z-10 w-full max-w-7xl">
                         <div className="max-w-full mx-auto">
-                            <div className="grid grid-cols-1 lg:grid-cols-5 xl:grid-cols-3 gap-4 sm:gap-6 md:gap-8 lg:gap-10 xl:gap-12 2xl:gap-16 items-start">
+                            <div className="grid grid-cols-1 lg:grid-cols-5 xl:grid-cols-5 gap-4 sm:gap-6 md:gap-8 lg:gap-10 xl:gap-12 2xl:gap-16 items-start">
                                 
                                 {/* Section Info */}
-                                <div className="lg:col-span-2 xl:col-span-1 space-y-3 sm:space-y-4 md:space-y-6 text-center lg:text-left">
+                                <div className="lg:col-span-2 xl:col-span-2 space-y-3 sm:space-y-4 md:space-y-6 text-center lg:text-left">
                                     {/* Section Title */}
                                     <div className="relative">
-                                        <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-2xl xl:text-3xl 2xl:text-4xl font-bebas leading-[0.9] tracking-wide">
+                                        <h2 className="text-3xl sm:text-3xl md:text-5xl lg:text-5xl xl:text-6xl font-bebas leading-[0.9] tracking-wide">
                                             <span className="bg-gradient-to-r from-red via-red/90 to-red/80 bg-clip-text text-transparent">
                                                 {section.title.split(' ')[0]}
                                             </span>
@@ -153,7 +153,7 @@ const FAQ = () => {
                                                 </span>
                                             )}
                                         </h2>
-                                        <div className="absolute -bottom-1 left-1/2 lg:left-0 transform -translate-x-1/2 lg:transform-none w-10 sm:w-12 md:w-16 h-0.5 bg-gradient-to-r from-red to-red/60 rounded-full"></div>
+                                        <div className="absolute -bottom-1 left-1/2 lg:left-0 transform -translate-x-1/2 lg:transform-none w-10 sm:w-12 md:w-16 h-0.5 bg-gradient-to-r from-red to-yellow rounded-full"></div>
                                     </div>
                                     
                                     {/* Section Description */}
@@ -163,8 +163,8 @@ const FAQ = () => {
                                 </div>
                                 
                                 {/* FAQ Cards - Wider Span */}
-                                <div className="lg:col-span-3 xl:col-span-2">
-                                    <div className="w-full flex flex-col border-t-2 border-yellow/60 bg-white/40 backdrop-blur-sm rounded-t-xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-500">
+                                <div className="lg:col-span-3 xl:col-span-3">
+                                    <div className="w-full flex flex-col border-t-2 border-yellow/60 bg-white/40 backdrop-blur-sm transition-all duration-500">
                                         {section.questions.map((faq, questionIndex) => (
                                             <div 
                                                 key={questionIndex}

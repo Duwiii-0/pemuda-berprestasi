@@ -16,7 +16,7 @@ const FaqCard = ({ question, answer }: FaqCardProps) => {
         className="flex justify-between items-center"
         onClick={() => setIsOpen(!isOpen)}
       >
-        <div className="font-bebas text-red text-2xl md:text-2xl lg:text-4xl leading-none group-hover:scale-103 transition-discrete duration-300 pr-4">
+        <div className="font-bebas text-red text-2xl sm:text-3xl md:text-4xl lg:text-4xl leading-none group-hover:scale-103 transition-discrete duration-300 pr-4">
           {question}
         </div>
         <div

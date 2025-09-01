@@ -113,6 +113,9 @@ const NavbarLanding = ({ onLogoutRequest }: { onLogoutRequest: () => void }) => 
                   className={`text-base xl:text-xl relative px-4 py-2 ${styles.text} font-plex font-medium transition-all duration-300 ease-out ${
                     location.pathname === to ? "text-red font-semibold" : styles.hoverText
                   } group`}
+                  onClick={() => {
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  }}
                 >
                   {label}
                   {/* Animated underline */}
@@ -190,6 +193,7 @@ const NavbarLanding = ({ onLogoutRequest }: { onLogoutRequest: () => void }) => 
 
             {/* Mobile Menu Button */}
             <button
+              
               onClick={() => setIsBurgerOpen(!isBurgerOpen)}
               className={`lg:hidden p-3 ${styles.text} hover:bg-red hover:text-white rounded-xl transition-all duration-300 ease-out hover:scale-110 hover:shadow-lg group`}
             >
@@ -237,7 +241,10 @@ const NavbarLanding = ({ onLogoutRequest }: { onLogoutRequest: () => void }) => 
                       ? "bg-red text-white shadow-lg" 
                       : "text-red hover:bg-red hover:text-white"
                   }`}
-                  onClick={() => setIsBurgerOpen(false)}
+                  onClick={() => {
+                    setIsBurgerOpen(false);
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  }}
                   style={{
                     transitionDelay: isBurgerOpen ? `${index * 100}ms` : '0ms'
                   }}
