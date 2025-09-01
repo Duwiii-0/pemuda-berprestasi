@@ -47,7 +47,7 @@ router.post('/:id/upload-documents',
 
 // Get all athletes in a specific competition with optional cabang filter
 router.get(
-  '/kompetisi/:id_kompetisi/atlet',
+  '/kompetisi/:id_kompetisi/atlet', authenticate,
   AtletController.getByKompetisi
 );
 

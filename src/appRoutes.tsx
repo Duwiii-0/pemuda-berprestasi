@@ -46,11 +46,12 @@ import FAQ from "./lombaLayout/faq";
 // settings
 import Settings from "./pages/settings/settings";
 import AllAtlets from "./pages/admin/AllAtlets";
+import AllPeserta from "./pages/adminkomp/AllPeserta";
 
 // Protected Route Component
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  requiredRole?: 'ADMIN' | 'PELATIH';
+  requiredRole?: 'ADMIN' | 'PELATIH' | 'ADMIN_KOMPETISI';
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole }) => {
@@ -117,7 +118,9 @@ const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       return <Navigate to="/admin" replace />;
     } else if (user.role === 'PELATIH') {
       return <Navigate to="/dashboard" replace />;
-    } else {
+    } else if (user.role === 'ADMIN_KOMPETISI') {
+      return <Navigate to="/admin-kompetisi" replace />;
+    }else {
       return <Navigate to="/" replace />;
     }
   }
@@ -130,6 +133,15 @@ export default function AppRoutes() {
     <>
       <Toaster position="top-right" reverseOrder={false} />
       <Routes>
+        {/*adminkomp route */}
+        <Route path="/admin-kompetisi" element={
+          <ProtectedRoute requiredRole="ADMIN_KOMPETISI">
+            <AllPeserta />
+          </ProtectedRoute>
+        }>
+          <Route index element={<AllPeserta />} />
+        </Route>
+
         {/* Admin routes - protected for ADMIN role only */}
         <Route path="/admin" element={
           <ProtectedRoute requiredRole="ADMIN">

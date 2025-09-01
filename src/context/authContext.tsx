@@ -73,7 +73,7 @@ const authAPI = {
 interface User {
   id_akun: number;
   email: string;
-  role: 'ADMIN' | 'PELATIH';
+  role: 'ADMIN' | 'PELATIH' | 'ADMIN_KOMPETISI';
   admin?: {
     id_admin: number;
     nama_admin: string;
@@ -90,6 +90,12 @@ interface User {
     nik: string;
     jenis_kelamin: 'LAKI_LAKI' | 'PEREMPUAN' | null;  
   };
+  adminKompetisi?: {   // ➕ info kompetisi yang dia pegang
+    id_admin_kompetisi: number;
+    nama: string;
+    id_kompetisi: number;
+  }[];
+
 }
 
 interface AuthContextType {
@@ -107,6 +113,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isAdmin: boolean;
   isPelatih: boolean;
+  isAdminKompetisi: boolean;
   userName: string;
 }
 
@@ -236,7 +243,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const isAuthenticated = !!user && !!token;
   const isAdmin = user?.role === 'ADMIN';
   const isPelatih = user?.role === 'PELATIH';
-  const userName = user?.admin?.nama_admin || user?.pelatih?.nama_pelatih || user?.email || 'User';
+  const isAdminKompetisi =user?.role === 'ADMIN_KOMPETISI';
+  const userName = user?.admin?.nama_admin || user?.pelatih?.nama_pelatih || user?.adminKompetisi?.[0]?.nama || user?.email || 'User';
 
   // ===== CONTEXT VALUE =====
   const value: AuthContextType = {
@@ -254,6 +262,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     isAuthenticated,
     isAdmin,
     isPelatih,
+    isAdminKompetisi,
     userName,
   };
 

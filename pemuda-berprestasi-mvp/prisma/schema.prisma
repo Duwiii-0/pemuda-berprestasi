@@ -15,6 +15,7 @@
 
     pelatih tb_pelatih?
     admin   tb_admin?
+    admin_kompetisi tb_admin_kompetisi[]
   }
 
   model tb_pelatih {
@@ -44,9 +45,23 @@
     id_admin Int    @id @default(autoincrement())
     nama     String @db.VarChar(150)
 
-    id_akun Int @unique
+    id_akun Int     @unique
     akun    tb_akun @relation(fields: [id_akun], references: [id_akun])
   }
+
+  model tb_admin_kompetisi {
+    id_admin_kompetisi Int     @id @default(autoincrement())
+    id_kompetisi       Int
+    nama               String
+  
+    id_akun            Int     @unique
+    akun      tb_akun      @relation(fields: [id_akun], references: [id_akun])
+    kompetisi tb_kompetisi @relation(fields: [id_kompetisi], references: [id_kompetisi])
+   
+    @@index([id_akun], map: "tb_admin_kompetisi_id_akun_fkey")
+    @@index([id_kompetisi], map: "tb_admin_kompetisi_id_kompetisi_fkey")
+  }
+
 
   model tb_penyelenggara {
     id_penyelenggara   Int            @id @default(autoincrement())
@@ -126,7 +141,8 @@
     tanggal_selesai  DateTime
     nama_event       String               @db.VarChar(255)
     status           StatusKompetisi
-
+    
+    admin            tb_admin_kompetisi[]   
     penyelenggara    tb_penyelenggara     @relation(fields: [id_penyelenggara], references: [id_penyelenggara])
     bagan            tb_bagan[]
     kelas_kejuaraan  tb_kelas_kejuaraan[]
@@ -315,11 +331,6 @@
     PENDING
     APPROVED
     REJECTED
-  }
-
-  enum ROLE {
-    ADMIN
-    PELATIH
   }
 
   enum StatusKompetisi {

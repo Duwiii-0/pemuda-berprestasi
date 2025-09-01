@@ -9,6 +9,7 @@ export interface JwtPayload {
   role: string
   pelatihId?: number
   adminId?: number
+  adminKompetisiId?: number
   id_dojang?: number;
 }
 
