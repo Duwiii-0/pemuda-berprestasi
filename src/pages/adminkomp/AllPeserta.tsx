@@ -20,8 +20,8 @@ const AllPeserta: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState<"ALL" | "PENDING" | "APPROVED" | "REJECTED">("ALL");
   const [filterCategory, setFilterCategory] = useState<"ALL" | "KYORUGI" | "POOMSAE">("ALL");
-  const [filterKelasBerat, setFilterKelasBerat] = useState<string | null>(null);
-  const [filterKelasUsia, setFilterKelasUsia] = useState<string | null>(null);
+  const [filterKelasBerat] = useState<string | null>(null);
+  const [filterKelasUsia] = useState<string | null>(null);
   const [filterLevel, setFilterLevel] = useState<"pemula" | "prestasi" | null>(null);
 
   const kompetisiId = user?.role === "ADMIN_KOMPETISI" ? user?.admin_kompetisi?.id_kompetisi : null;

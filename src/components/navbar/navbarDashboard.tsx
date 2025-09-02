@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from "react-router-dom";
-import { Menu, X, ArrowLeft, Home, Users, Trophy, Settings, LogOut } from 'lucide-react';
+import { X, ArrowLeft, Home, Users, Trophy, Settings, LogOut } from 'lucide-react';
 
 interface NavbarProps {
   mobile?: boolean;

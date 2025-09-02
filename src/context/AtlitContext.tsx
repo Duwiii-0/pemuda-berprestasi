@@ -115,8 +115,6 @@ export const AtletProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 const createAtlet = async (formData: FormData) => {
   try {
     const data = await apiClient.postFormData("/atlet", formData); // ✅ pakai postFormData
-    const id_dojang = Number(data.id_dojang);
-    const id_pelatih = Number(data.id_pelatih);
     setAtlits(prev => [...prev, data]);
     return data;
   } catch (err) {

@@ -208,9 +208,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     tokenManager.removeToken();
     
     // Optional: Call backend logout endpoint - jangan throw error jika gagal
-    authAPI.logout().then((response) => {
+    authAPI.logout().then(() => {
       console.log('✅ logout successful:');
-    }).catch((error) => {
+    }).catch(() => {
     });
     
     console.log('✅ Logout completed');

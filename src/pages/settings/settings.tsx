@@ -2,7 +2,6 @@ import { ArrowLeft, Mail, IdCard, Phone, CalendarFold, Map, MapPinned, User, Set
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
-import { GeneralButton } from '../dashboard/dataDojang';
 import { TextInput } from '../dashboard/dataDojang';
 import { useAuth } from "../../context/authContext";
 import { apiClient, setAuthToken } from "../../../pemuda-berprestasi-mvp/src/config/api";

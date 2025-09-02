@@ -1,6 +1,6 @@
 import { useState } from "react";
 import TextInput from "../../components/textInput";
-import { Home, Phone, MapPin, Map, User, Mail } from "lucide-react";
+import { Home, Phone, MapPin, Map, Mail } from "lucide-react";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import { apiClient } from "../../../pemuda-berprestasi-mvp/src/config/api";
@@ -25,7 +25,7 @@ const RegisterDojang = () => {
         provinsi: provinsi.trim() || "",
         kota: kabupaten.trim() || "",
       };
-      const response = await apiClient.post("/dojang", payload);
+      await apiClient.post("/dojang", payload);
 
       toast.success("Registrasi dojang berhasil! Silahkan registrasi.");
 

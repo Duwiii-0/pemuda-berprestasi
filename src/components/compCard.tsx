@@ -1,9 +1,6 @@
 import GeneralButton from "./generalButton";
-import { useNavigate } from "react-router-dom";
 
 const CompCard = () => { 
-  const navigate = useNavigate();
-
   return (
     <div className="bg-white border-2 border-yellow shadow-2xl rounded-2xl hover:-translate-y-2 hover:scale-[1.02] transition-all duration-300 ease-in-out 
                     flex flex-col md:flex-row items-center gap-4 md:gap-6 lg:gap-8 xl:gap-12 

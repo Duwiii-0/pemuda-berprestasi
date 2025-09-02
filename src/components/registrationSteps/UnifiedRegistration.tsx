@@ -32,7 +32,6 @@ const UnifiedRegistration = ({
   isOpen,
   onClose,
   kompetisiId = 1, // default value
-  kompetisiName = "Kejuaraan Karate Nasional 2024",
   biayaPendaftaran = 150000
 }: UnifiedRegistrationProps) => {
   // Temporary mock functions until you implement the actual registration system
@@ -62,12 +61,11 @@ const UnifiedRegistration = ({
   getRegistrationsByKompetisi,   // ✅ ADD THIS
   isPoomsaeTeam,                 // ✅ ADD THIS (replaces local function)
   fetchKelasKejuaraan,
-  requiresTwoAthletes,           // ✅ ADD THIS
   getSelectedAthletes            // ✅ ADD THIS
 
 } = useRegistration();
 
-const [existingRegistrations, setExistingRegistrations] = useState<RegistrationType[]>([]);
+const [, setExistingRegistrations] = useState<RegistrationType[]>([]);
 
 
 useEffect(() => {

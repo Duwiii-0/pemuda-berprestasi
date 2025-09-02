@@ -1,4 +1,4 @@
-import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Outlet, useNavigate } from "react-router-dom";
 import NavbarLomba from "../components/navbar/navbarLomba";
 import FooterLomba from '../components/footerLomba';
 import { useState, useEffect } from "react";

@@ -32,7 +32,7 @@ const StatsCard: React.FC<StatsCardProps> = ({ icon: Icon, title, value, color }
 const DataKompetisi = () => {
   const navigate = useNavigate();
   const { user, token } = useAuth();
-  const { kompetisiList, loadingKompetisi, errorKompetisi, fetchKompetisiList, fetchAtletByKompetisi, pesertaList } = useKompetisi();
+  const { kompetisiList, loadingKompetisi, fetchKompetisiList, fetchAtletByKompetisi, pesertaList } = useKompetisi();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "PENDAFTARAN" | "SEDANG_DIMULAI" | "SELESAI">("all");
   const [selectedKompetisi, setSelectedKompetisi] = useState<Kompetisi | null>(null);

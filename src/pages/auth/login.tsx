@@ -66,13 +66,6 @@ const Login = () => {
     handleLogin();
   };
 
-  // Handle Enter key press
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && !loading) {
-      handleLogin();
-    }
-  };
-
 return (
   <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-red/15 via-white to-red/10">
     {/* Login Container */}
@@ -118,9 +111,7 @@ return (
                 placeholder="your.email@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                onKeyPress={handleKeyPress}
                 disabled={loading}
-                required
               />
               <Mail className="absolute left-3 md:left-4 2xl:left-5 top-1/2 transform -translate-y-1/2 text-red/60 group-hover:text-red transition-colors" size={16} />
             </div>
@@ -138,9 +129,7 @@ return (
                 type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                onKeyPress={handleKeyPress}
                 disabled={loading}
-                required
               />
               <KeyRound className="absolute left-3 md:left-4 2xl:left-5 top-1/2 transform -translate-y-1/2 text-red/60 group-hover:text-red transition-colors" size={16} />
               <button

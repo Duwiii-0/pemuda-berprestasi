@@ -4,15 +4,12 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { 
   Shield, 
   Users, 
-  Trophy, 
-  FileText, 
-  Settings, 
+  Trophy,  
   LogOut, 
   Menu, 
   X,
   ChevronRight,
   UserCheck,
-  BarChart3
 } from 'lucide-react';
 import { useAuth } from '../context/authContext';
 

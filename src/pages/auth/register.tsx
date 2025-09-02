@@ -23,7 +23,7 @@ const Register = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [selectedDojang, setSelectedDojang] = useState<OptionType | null>(null);
-  const { dojangOptions, isLoading: isDojangLoading, refreshDojang } = useDojang();
+  const { dojangOptions, refreshDojang } = useDojang();
   
   // UI states
   const [isLoading, setIsLoading] = useState(false);
@@ -208,8 +208,6 @@ const Register = () => {
                     setNik(value);
                   }}
                   disabled={isLoading}
-                  inputMode="numeric"
-                  pattern="[0-9]*"
                 />
                 <IdCard className="absolute left-3 top-1/2 transform -translate-y-1/2 text-red/60 group-hover:text-red transition-colors" size={16} />
                 <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs text-gray-500">
