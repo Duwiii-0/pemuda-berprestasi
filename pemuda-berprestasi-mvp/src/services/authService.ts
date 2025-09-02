@@ -34,8 +34,14 @@ export interface LoginResponse {
       id_admin: number
       nama: string
     }
+    admin_kompetisi?: {     // tambahkan ini
+      id_admin_kompetisi: number
+      nama: string
+      id_kompetisi: number
+    }
   }
 }
+
 
 class AuthService {
   async register(data: RegisterData): Promise<LoginResponse> {
@@ -118,17 +124,18 @@ class AuthService {
     const { email, password } = data
 
     // Find account with related data
-    const account = await prisma.tb_akun.findUnique({
-      where: { email },
+const account = await prisma.tb_akun.findUnique({
+  where: { email },
+  include: {
+    pelatih: {
       include: {
-        pelatih: {
-          include: {
-            dojang: true
-          }
-        },
-        admin: true
+        dojang: true
       }
-    })
+    },
+    admin: true,
+    admin_kompetisi: true // ✅ tambahkan ini
+  }
+})
 
     if (!account) {
       throw new Error('Invalid credentials')
@@ -153,7 +160,9 @@ class AuthService {
       tokenPayload.id_dojang = account.pelatih.id_dojang
     } else if (account.role === 'ADMIN' && account.admin) {
       tokenPayload.adminId = account.admin.id_admin
-    }
+    } else if (account.role === 'ADMIN_KOMPETISI' && account.admin_kompetisi) {
+      tokenPayload.adminKompetisiId = account.admin_kompetisi.id_admin_kompetisi
+  }
 
     const token = generateToken(tokenPayload)
 
@@ -163,6 +172,15 @@ class AuthService {
       email: account.email,
       role: account.role
     }
+
+    if (account.admin_kompetisi && account.role === 'ADMIN_KOMPETISI') {
+  userResponse.admin_kompetisi = {
+    id_admin_kompetisi: account.admin_kompetisi.id_admin_kompetisi,
+    nama: account.admin_kompetisi.nama,
+    id_kompetisi: account.admin_kompetisi.id_kompetisi
+  }
+}
+
 
     if (account.pelatih) {
       userResponse.pelatih = {

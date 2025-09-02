@@ -90,11 +90,11 @@ interface User {
     nik: string;
     jenis_kelamin: 'LAKI_LAKI' | 'PEREMPUAN' | null;  
   };
-  adminKompetisi?: {   // ➕ info kompetisi yang dia pegang
+  admin_kompetisi?: {
     id_admin_kompetisi: number;
     nama: string;
     id_kompetisi: number;
-  }[];
+  };
 
 }
 
@@ -244,7 +244,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const isAdmin = user?.role === 'ADMIN';
   const isPelatih = user?.role === 'PELATIH';
   const isAdminKompetisi =user?.role === 'ADMIN_KOMPETISI';
-  const userName = user?.admin?.nama_admin || user?.pelatih?.nama_pelatih || user?.adminKompetisi?.[0]?.nama || user?.email || 'User';
+  const userName = user?.admin?.nama_admin || user?.pelatih?.nama_pelatih || user?.admin_kompetisi?.nama || user?.email || 'User';
 
   // ===== CONTEXT VALUE =====
   const value: AuthContextType = {

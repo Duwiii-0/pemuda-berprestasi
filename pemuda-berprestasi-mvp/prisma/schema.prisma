@@ -15,7 +15,7 @@
 
     pelatih tb_pelatih?
     admin   tb_admin?
-    admin_kompetisi tb_admin_kompetisi[]
+    admin_kompetisi   tb_admin_kompetisi?  // 🔥 pakai object tunggal, bukan []
   }
 
   model tb_pelatih {
@@ -55,7 +55,7 @@
     nama               String
   
     id_akun            Int     @unique
-    akun      tb_akun      @relation(fields: [id_akun], references: [id_akun])
+    akun tb_akun @relation(fields: [id_akun], references: [id_akun])
     kompetisi tb_kompetisi @relation(fields: [id_kompetisi], references: [id_kompetisi])
    
     @@index([id_akun], map: "tb_admin_kompetisi_id_akun_fkey")
