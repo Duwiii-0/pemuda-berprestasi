@@ -7,6 +7,7 @@ import TextInput from "../../components/textInput";
 import toast from "react-hot-toast";
 import { useAuth } from "../../context/authContext";
 import { useDojang } from "../../context/dojangContext";
+import Logo from '../../assets/logo/logo.png';
 
 
 type OptionType = { value: string; label: string };
@@ -135,7 +136,7 @@ const Register = () => {
             <div className="relative mb-4">
               <div className="absolute -inset-1 bg-gradient-to-r from-red/10 to-red/5 rounded-full blur-md opacity-60"></div>
               <img 
-                src="src/assets/logo/logojv.png" 
+                src={Logo}
                 alt="Taekwondo Logo" 
                 className="relative h-12 w-12 sm:h-16 sm:w-16 mx-auto drop-shadow-md"
               />

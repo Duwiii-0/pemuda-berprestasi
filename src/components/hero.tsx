@@ -1,12 +1,12 @@
 import { Link } from "react-router-dom";
-
+import hero from '../assets/photos/hero.png'
 const Hero = () => {
   return (
     <div className="relative h-[85vh] md:h-[90vh] lg:h-screen w-full flex items-center justify-center overflow-hidden">
       {/* Background with Gradient Overlay */}
       <div 
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-        style={{backgroundImage: "url('src/assets/photos/hero.png')"}}
+        style={{backgroundImage: `url(${hero})`}}
       />
       <div className="absolute inset-0 bg-gradient-to-r from-red/90 via-red/70 to-red/40" />
       <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/40" />
