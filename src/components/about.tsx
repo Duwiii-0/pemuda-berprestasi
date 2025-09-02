@@ -1,3 +1,5 @@
+import belt from '../assets/photos/belt.jpg'
+
 const About = () => {
   return (
     <section className="relative w-full flex items-center bg-gradient-to-br from-white via-red/[0.02] to-white overflow-hidden py-8 md:py-12 lg:py-16">
@@ -105,7 +107,7 @@ const About = () => {
                 <div className="absolute inset-0 bg-white/10 backdrop-blur-[1px]"></div>
                 
                 <img 
-                  src="src/assets/photos/belt.jpg" 
+                  src={belt} 
                   alt="Taekwondo Belt - Symbol of Achievement and Dedication" 
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000 ease-out"
                 />
