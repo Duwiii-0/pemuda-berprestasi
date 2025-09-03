@@ -5,6 +5,19 @@ import { promisify } from 'util';
 const unlinkAsync = promisify(fs.unlink);
 const existsAsync = promisify(fs.exists);
 
+// Define Multer file interface locally
+interface MulterFile {
+  fieldname: string;
+  originalname: string;
+  encoding: string;
+  mimetype: string;
+  size: number;
+  destination: string;
+  filename: string;
+  path: string;
+  buffer: Buffer;
+}
+
 export interface FileInfo {
   originalName: string;
   filename: string;
@@ -261,10 +274,10 @@ export class FileManager {
    * @returns Processed file paths
    */
   static async processAthleteFiles(files: {
-    akte_kelahiran?: Express.Multer.File[];
-    pas_foto?: Express.Multer.File[];
-    sertifikat_belt?: Express.Multer.File[];
-    ktp?: Express.Multer.File[];
+    akte_kelahiran?: MulterFile[];
+    pas_foto?: MulterFile[];
+    sertifikat_belt?: MulterFile[];
+    ktp?: MulterFile[];
   }): Promise<{
     akte_kelahiran?: string;
     pas_foto?: string;

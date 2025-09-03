@@ -4,13 +4,24 @@ import { sendSuccess, sendError } from '../utils/response';
 import { JenisKelamin} from '@prisma/client';
 import prisma from '../config/database'
 
-
+// Define Multer file interface locally
+interface MulterFile {
+  fieldname: string;
+  originalname: string;
+  encoding: string;
+  mimetype: string;
+  size: number;
+  destination: string;
+  filename: string;
+  path: string;
+  buffer: Buffer;
+}
 
 export class AtletController {
   // Create new atlet
   static async create(req: Request, res: Response) {
   try {
-    const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+    const files = req.files as { [fieldname: string]: MulterFile[] };
     
     const atletData: any = {
       ...req.body,
