@@ -55,7 +55,14 @@ export const beltOptions = [
     { value: "biruMerah", label: "Biru strip Merah/Geup 3" },
     { value: "merah", label: "Merah/Geup 2" },
     { value: "merahHitam", label: "Merah strip Coklat/Geup 1" },
-    { value: "hitam", label: "Hitam" },
+    { value: "hitam1", label: "Hitam/Dan 1" },
+    { value: "hitam2", label: "Hitam/Dan 2" },
+    { value: "hitam3", label: "Hitam/Dan 3" },
+    { value: "hitam4", label: "Hitam/Dan 4" },
+    { value: "hitam5", label: "Hitam/Dan 5" },
+    { value: "hitam6", label: "Hitam/Dan 6" },
+    { value: "hitam7", label: "Hitam/Dan 7" },
+    { value: "hitam8", label: "Hitam/Dan 8" },
   ];
 
 export const calculateAge = (birthDate: string): number => {
