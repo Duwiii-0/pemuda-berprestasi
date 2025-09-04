@@ -1,4 +1,4 @@
-import { PrismaClient, StatusKompetisi, Cabang, StatusPendaftaran } from '@prisma/client';
+import { PrismaClient, StatusKompetisi, StatusPendaftaran } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
