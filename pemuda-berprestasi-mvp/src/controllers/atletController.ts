@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { AtletService } from '../services/atletService';
 import { sendSuccess, sendError } from '../utils/response';
-import { JenisKelamin} from '@prisma/client';
+import { JenisKelamin } from '@prisma/client';
 import prisma from '../config/database'
 
 // Define Multer file interface locally
