@@ -2,9 +2,6 @@
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import toast from 'react-hot-toast';
 
-// ===== API CONFIGURATION =====
-const API_BASE_URL = 'http://localhost:3000/api';
-
 // Token management (using memory storage for Claude.ai compatibility)
 const tokenManager = {
   getToken: (): string | null => (window as any).__auth_token || null,
@@ -25,7 +22,8 @@ const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
     return { success: true, message: 'Already logged out' };
   }
   
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+  // ✅ FIX: Use dynamic endpoint instead of hardcoded /auth/login
+  const response = await fetch(`${import.meta.env.VITE_API_URL}${endpoint}`, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -158,45 +156,45 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   // ===== LOGIN FUNCTION =====
   const login = async (email: string, password: string): Promise<{success: boolean; message: string}> => {
-    try {
-      setLoading(true);
-      console.log('🔐 Attempting login for:', email);
-      
-      const response = await authAPI.login(email, password);
-      
-      if (response.success && response.data) {
-        const { token: newToken, user: userData } = response.data;
-        
-        console.log('✅ Login successful:', userData.email, userData.role);
-        
-        // Store token and user data
+  try {
+    setLoading(true);
+    console.log('🔐 Attempting login for:', email);
+
+    const response = await authAPI.login(email, password);
+
+    if (response.success && response.data) {
+      const { token: newToken, user: userData } = response.data;
+      console.log('✅ Login successful:', userData.email, userData.role);
+
+      // Store token safely
+      if (typeof window !== 'undefined') {
         tokenManager.setToken(newToken);
         setToken(newToken);
-        setUser(userData);
-        
-        return {
-          success: true,
-          message: response.message || 'Login successful'
-        };
-      } else {
-        console.log('❌ Login failed');
-        return {
-          success: false,
-          message: response.message || 'Login failed'
-        };
       }
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Login failed';
-      console.error('❌ Login error');
-      toast.error('email atau password salah')
+      setUser(userData);
+
+      return {
+        success: true,
+        message: response.message || 'Login successful'
+      };
+    } else {
+      console.log('❌ Login failed');
       return {
         success: false,
-        message: errorMessage
+        message: response.message || 'Login failed'
       };
-    } finally {
-      setLoading(false);
     }
-  };
+  } catch (error) {
+    console.error('❌ Login error', error);
+    if (typeof window !== 'undefined') toast.error('Email atau password salah');
+    return {
+      success: false,
+      message: (error as any)?.message || 'Login failed'
+    };
+  } finally {
+    setLoading(false);
+  }
+};
 
   // ===== LOGOUT FUNCTION =====
   const logout = () => {

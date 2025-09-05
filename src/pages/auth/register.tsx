@@ -34,7 +34,7 @@ const Register = () => {
   useEffect(() => {
   // Fetch data dojang terbaru setiap kali halaman dibuka
   refreshDojang();
-}, [refreshDojang]);
+}, []);
 
 
   // Handle registration
