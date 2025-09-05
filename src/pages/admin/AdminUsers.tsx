@@ -1,6 +1,6 @@
 // src/pages/admin/AdminUsers.tsx
 import React, { useState, useEffect } from 'react';
-import { Search, Filter, MoreVertical, Edit, Trash2, UserPlus, Loader, AlertTriangle, Users, Eye, Ban, CheckCircle } from 'lucide-react';
+import { Search, Trash2, UserPlus, Loader, AlertTriangle, Users, Eye, Ban, CheckCircle } from 'lucide-react';
 
 interface User {
   id_akun: number;

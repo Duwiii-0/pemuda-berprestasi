@@ -1,8 +1,7 @@
 // src/pages/Profile.tsx
 import { useParams } from "react-router-dom";
-import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { Phone, User, CalendarFold, IdCard, MapPinned, Map, Scale, Ruler, ArrowLeft } from "lucide-react";
+import { Phone, User, CalendarFold, IdCard, MapPinned, Map, Scale, Ruler } from "lucide-react";
 import TextInput from "../../components/textInput";
 import FileInput from "../../components/fileInput";
 import Select from "react-select";
@@ -23,17 +22,7 @@ function toInputDateFormat(dateStr: string): string {
   return dateStr.slice(0, 10);
 }
 
-// Convert date from yyyy-mm-dd to mm/dd/yyyy format
-function toMMDDYYYY(dateStr: string): string {
-  // yyyy-mm-dd -> mm/dd/yyyy
-  if (!dateStr) return "";
-  const [year, month, day] = dateStr.split("-");
-  if (!year || !month || !day) return "";
-  return `${month}/${day}/${year}`;
-}
-
 const Profile = () => {
-  const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const [originalData, setOriginalData] = useState<Atlet | null>(null); // 🆕 simpan data asli dari DB
   const [formData, setFormData] = useState<Atlet | null>();

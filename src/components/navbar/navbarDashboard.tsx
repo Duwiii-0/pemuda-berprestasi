@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from "react-router-dom";
-import { Menu, X, ArrowLeft, Home, Users, Trophy, Settings, LogOut } from 'lucide-react';
+import { X, ArrowLeft, Home, Users, Trophy, Settings, LogOut } from 'lucide-react';
 
 interface NavbarProps {
   mobile?: boolean;
@@ -24,12 +24,12 @@ const NavbarDashboard: React.FC<NavbarProps> = ({ mobile = false, onClose }) => 
   };
 
   const navItems = [
-    { 
-      path: '/dashboard', 
-      label: 'Dashboard', 
-      icon: Home,
-      exact: true // Only match exact path for dashboard home
-    },
+//    { 
+//      path: '/dashboard', 
+//      label: 'Dashboard', 
+//      icon: Home,
+//      exact: true // Only match exact path for dashboard home
+//    },
     { 
       path: '/dashboard/dojang', 
       label: 'Data Dojang', 

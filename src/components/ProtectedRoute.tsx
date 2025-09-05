@@ -65,7 +65,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
               <div className="flex justify-between">
                 <span className="font-medium">Logged as:</span>
                 <span className="text-gray-700 font-medium">
-                  {user?.admin?.nama || user?.pelatih?.nama || user?.email}
+                  {user?.admin?.nama_admin || user?.pelatih?.nama_pelatih || user?.email}
                 </span>
               </div>
             </div>

@@ -24,7 +24,7 @@ const PORT = process.env.PORT || 3000
 
 // CORS configuration
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: process.env.FRONTEND_URL,
   credentials: true
 }))
 
@@ -106,6 +106,24 @@ app.get('/health', (req, res) => {
   })
 })
 
+app.get('/api', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Pemuda Berprestasi API is running',
+    version: '1.0.0',
+    endpoints: [
+      'GET /health',
+      'POST /api/auth/login',
+      'POST /api/auth/register',
+      'GET /api/pelatih',
+      'GET /api/dojang',
+      'GET /api/atlet',
+      'GET /api/kompetisi',
+      'GET /api/kelas'
+    ]
+  })
+})
+
 // API routes
 app.use('/api/auth', authRoutes)
 app.use('/api/pelatih', pelatihRoutes)
@@ -115,7 +133,7 @@ app.use('/api/dojang', dojangRoutes)
 app.use('/api/atlet', atletRoutes)
 app.use('/api/kompetisi', kompetisiRoutes)
 // app.use('/api/admin', adminRoutes)
-app.use('/api/kelas', kelasRoutes) // Contoh tambahan route
+app.use('/api/kelas', kelasRoutes) 
 // 404 handler
 app.use(notFoundHandler)
 

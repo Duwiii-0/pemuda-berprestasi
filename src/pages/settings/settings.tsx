@@ -2,7 +2,6 @@ import { ArrowLeft, Mail, IdCard, Phone, CalendarFold, Map, MapPinned, User, Set
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
-import { GeneralButton } from '../dashboard/dataDojang';
 import { TextInput } from '../dashboard/dataDojang';
 import { useAuth } from "../../context/authContext";
 import { apiClient, setAuthToken } from "../../../pemuda-berprestasi-mvp/src/config/api";
@@ -256,8 +255,8 @@ const Settings = () => {
             </div>
             
             {/* Main Title - Mobile Responsive */}
-            <div className="flex flex-col sm:flex-row sm:items-end gap-4 sm:gap-6 mb-4 sm:mb-6">
-              <div className="p-3 sm:p-4 bg-gradient-to-br from-red to-red/90 rounded-xl sm:rounded-2xl shadow-lg w-fit">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 mb-4 sm:mb-6">
+              <div className="p-3 sm:p-4 flex bg-gradient-to-br from-red to-red/90 rounded-xl sm:rounded-2xl shadow-lg w-fit">
                 <SettingsIcon className="text-white" size={24} />
               </div>
               <div className="space-y-1 sm:space-y-2">
@@ -296,7 +295,7 @@ const Settings = () => {
                   <div className="relative inline-block">
                     <div 
                       onClick={() => toast.error("Fitur upload foto akan segera hadir")} 
-                      className='h-20 w-20 sm:h-28 sm:w-28 rounded-xl sm:rounded-2xl overflow-hidden border-3 sm:border-4 border-red/20 shadow-lg bg-gradient-to-br from-red to-red/90 mx-auto cursor-pointer hover:border-red/40 hover:shadow-xl transition-all duration-300 hover:scale-105 group/avatar'
+                      className='h-20 w-20 sm:h-28 sm:w-28 rounded-xl sm:rounded-full overflow-hidden shadow-lg bg-gradient-to-br from-red/70 to-red/90 mx-auto cursor-pointer hover:border-red/40 hover:shadow-xl transition-all duration-300 hover:scale-105 group/avatar'
                     >
                       <div className="w-full h-full flex items-center justify-center text-white group-hover/avatar:bg-red/90 transition-colors duration-300">
                         <User strokeWidth={1.5} size={32} className="sm:w-10 sm:h-10"/>

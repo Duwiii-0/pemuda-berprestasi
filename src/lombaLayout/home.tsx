@@ -1,7 +1,7 @@
 import TextInput from "../components/textInput";
 import TextArea from "../components/textArea";
 import Steps from "../components/steps";  
-import { Mail, User, PenLine, MapPin, Phone, Award, Trophy, Users, Target } from 'lucide-react';
+import { Mail, User, PenLine, Phone, Award, Trophy } from 'lucide-react';
 import sriwijaya from "../assets/logo/sriwijaya.png";
 import heroLomba from "../assets/photos/heroLomba.jpg";
 import UnifiedRegistration from "../components/registrationSteps/UnifiedRegistration";
@@ -55,13 +55,6 @@ const LandingPage = () => {
       title: "Konfirmasi & Selesai",
       desc: "Periksa kembali data yang telah diisi, lalu konfirmasi pendaftaran untuk mendapatkan nomor peserta."
     }
-  ];
-
-  const achievementStats = [
-    { icon: Trophy, number: "500+", label: "Peserta Internasional" },
-    { icon: Award, number: "25+", label: "Negara Berpartisipasi" },
-    { icon: Users, number: "50+", label: "Juri Bersertifikat" },
-    { icon: Target, number: "15+", label: "Kategori Kompetisi" }
   ];
 
   return(

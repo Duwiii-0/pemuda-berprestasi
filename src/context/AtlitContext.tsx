@@ -45,17 +45,24 @@ export const genderOptions = [
   ];
 
 export const beltOptions = [
-    { value: "putih", label: "Putih" },
-    { value: "kuning", label: "Kuning" },
-    { value: "kuningHijau", label: "Kuning strip Hijau" },
-    { value: "hijau", label: "Hijau" },
-    { value: "hijauBiru", label: "Hijau strip Biru" },
-    { value: "biru", label: "Biru" },
-    { value: "biruMerah", label: "Biru strip Merah" },
-    { value: "merah", label: "Merah" },
-    { value: "merahHitam", label: "Merah strip Coklat" },
-    { value: "coklat", label: "Coklat" },
-    { value: "hitam", label: "Hitam" },
+    { value: "putih", label: "Putih/Geup 10" },
+    { value: "putihKuning", label: "putih strip kuning/Geoup 9" },
+    { value: "kuning", label: "Kuning/Geup 8" },
+    { value: "kuningHijau", label: "Kuning strip Hijau/Geup 7" },
+    { value: "hijau", label: "Hijau/Geup 6" },
+    { value: "hijauBiru", label: "Hijau strip Biru/Geup 5" },
+    { value: "biru", label: "Biru/Geup 4" },
+    { value: "biruMerah", label: "Biru strip Merah/Geup 3" },
+    { value: "merah", label: "Merah/Geup 2" },
+    { value: "merahHitam", label: "Merah strip Coklat/Geup 1" },
+    { value: "hitam1", label: "Hitam/Dan 1" },
+    { value: "hitam2", label: "Hitam/Dan 2" },
+    { value: "hitam3", label: "Hitam/Dan 3" },
+    { value: "hitam4", label: "Hitam/Dan 4" },
+    { value: "hitam5", label: "Hitam/Dan 5" },
+    { value: "hitam6", label: "Hitam/Dan 6" },
+    { value: "hitam7", label: "Hitam/Dan 7" },
+    { value: "hitam8", label: "Hitam/Dan 8" },
   ];
 
 export const calculateAge = (birthDate: string): number => {
@@ -115,8 +122,6 @@ export const AtletProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 const createAtlet = async (formData: FormData) => {
   try {
     const data = await apiClient.postFormData("/atlet", formData); // ✅ pakai postFormData
-    const id_dojang = Number(data.id_dojang);
-    const id_pelatih = Number(data.id_pelatih);
     setAtlits(prev => [...prev, data]);
     return data;
   } catch (err) {

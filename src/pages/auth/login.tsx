@@ -5,6 +5,7 @@ import { useAuth } from "../../context/authContext";
 import GeneralButton from "../../components/generalButton";
 import TextInput from "../../components/textInput";
 import toast from "react-hot-toast";
+import Logo from '../../assets/logo/logo.png';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -48,7 +49,7 @@ const Login = () => {
           navigate("/admin", { replace: true });
           toast.success("Login berhasil sebagai Admin!");
         } else if (user.role === 'PELATIH') {
-          navigate("/dashboard", { replace: true });
+          navigate("/", { replace: true });
           toast.success("Login berhasil sebagai Pelatih!");
         } else {
           // Default redirect for other users
@@ -66,13 +67,6 @@ const Login = () => {
     handleLogin();
   };
 
-  // Handle Enter key press
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && !loading) {
-      handleLogin();
-    }
-  };
-
 return (
   <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-red/15 via-white to-red/10">
     {/* Login Container */}
@@ -85,7 +79,7 @@ return (
           <div className="relative mb-4 md:mb-6 2xl:mb-8">
             <div className="absolute -inset-1 bg-gradient-to-r from-red/10 to-red/5 rounded-full blur-md opacity-60"></div>
             <img 
-              src="src/assets/logo/logojv.png" 
+              src={Logo}
               alt="Taekwondo Logo" 
               className="relative h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20 2xl:h-28 2xl:w-28 mx-auto drop-shadow-md"
             />
@@ -118,9 +112,7 @@ return (
                 placeholder="your.email@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                onKeyPress={handleKeyPress}
                 disabled={loading}
-                required
               />
               <Mail className="absolute left-3 md:left-4 2xl:left-5 top-1/2 transform -translate-y-1/2 text-red/60 group-hover:text-red transition-colors" size={16} />
             </div>
@@ -138,9 +130,7 @@ return (
                 type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                onKeyPress={handleKeyPress}
                 disabled={loading}
-                required
               />
               <KeyRound className="absolute left-3 md:left-4 2xl:left-5 top-1/2 transform -translate-y-1/2 text-red/60 group-hover:text-red transition-colors" size={16} />
               <button

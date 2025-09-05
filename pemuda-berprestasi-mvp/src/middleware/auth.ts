@@ -69,3 +69,16 @@ export const requireAdmin = (req: Request, res: Response, next: NextFunction) =>
   
   next()
 }
+
+// Middleware untuk admin kompetisi
+export const requireAdminKompetisi = (req: Request, res: Response, next: NextFunction) => {
+  if (!req.user) {
+    return sendUnauthorized(res, 'Authentication required')
+  }
+
+  if (req.user.role !== 'ADMINKOMPETISI' || !req.user.adminKompetisiId) {
+    return sendForbidden(res, 'Admin Kompetisi access required')
+  }
+
+  next()
+}

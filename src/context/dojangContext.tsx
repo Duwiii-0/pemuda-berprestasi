@@ -1,5 +1,5 @@
 // src/context/dojangContext.tsx
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useState } from "react";
 import type { ReactNode } from "react";
 import toast from "react-hot-toast";
 import { apiClient } from "../../pemuda-berprestasi-mvp/src/config/api"; // import apiClient
@@ -39,7 +39,6 @@ export const DojangProvider = ({ children }: Props) => {
   const [dojangs, setDojangs] = useState<Dojang[]>([]);
 
   const fetchDojang = async (): Promise<void>  => {
-  setIsLoading(true);
   try {
     const data = await apiClient.get("/dojang/listdojang");
 

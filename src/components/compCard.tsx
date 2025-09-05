@@ -1,9 +1,7 @@
 import GeneralButton from "./generalButton";
-import { useNavigate } from "react-router-dom";
+import sriwijaya from "../assets/logo/sriwijaya.png";
 
 const CompCard = () => { 
-  const navigate = useNavigate();
-
   return (
     <div className="bg-white border-2 border-yellow shadow-2xl rounded-2xl hover:-translate-y-2 hover:scale-[1.02] transition-all duration-300 ease-in-out 
                     flex flex-col md:flex-row items-center gap-4 md:gap-6 lg:gap-8 xl:gap-12 
@@ -13,7 +11,7 @@ const CompCard = () => {
       {/* Image Container */}
       <div className="flex-shrink-0 flex items-center justify-center">
         <img 
-          src="src/assets/logo/sriwijaya.png" 
+          src={sriwijaya} 
           alt="Sriwijaya Championship Logo" 
           className="h-24 w-24 sm:h-32 sm:w-32 md:h-36 md:w-36 lg:h-40 lg:w-40 xl:h-48 xl:w-48 2xl:h-56 2xl:w-56 
                      object-contain transition-transform duration-300 hover:scale-105" 

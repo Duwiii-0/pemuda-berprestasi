@@ -146,7 +146,7 @@
     const [weightOptions, setWeightOptions] = useState<OptionType[]>([]);
     const [poomsaeOptions, setPoomsaeOptions] = useState<OptionType[]>([]);
     const [isLoading, setIsLoading] = useState(false);
-    const [existingRegistrations, setExistingRegistrations] = useState<RegistrationType[]>([]); // ✅ ADD THIS
+    const [, setExistingRegistrations] = useState<RegistrationType[]>([]); // ✅ ADD THIS
 
     const setFormData = (data: RegistrationFormData) => setFormDataState(data);
     const resetForm = () => setFormDataState(defaultFormData);

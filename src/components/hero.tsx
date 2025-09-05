@@ -1,13 +1,12 @@
-import GeneralButton from "./generalButton";
 import { Link } from "react-router-dom";
-
+import hero from '../assets/photos/hero.png'
 const Hero = () => {
   return (
     <div className="relative h-[85vh] md:h-[90vh] lg:h-screen w-full flex items-center justify-center overflow-hidden">
       {/* Background with Gradient Overlay */}
       <div 
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-        style={{backgroundImage: "url('src/assets/photos/hero.png')"}}
+        style={{backgroundImage: `url(${hero})`}}
       />
       <div className="absolute inset-0 bg-gradient-to-r from-red/90 via-red/70 to-red/40" />
       <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/40" />
@@ -40,7 +39,7 @@ const Hero = () => {
           <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start items-center pt-2">
             <Link
               to="/event"
-              className="group relative w-full sm:w-auto px-8 py-4 text-lg font-plex font-semibold border-2 border-white text-white bg-transparent hover:bg-white hover:text-red transition-all duration-300 rounded-xl backdrop-blur-sm hover:scale-105 hover:shadow-2xl overflow-hidden"
+              className="group relative w-auto px-8 py-4 text-xs md:text-lg font-plex font-semibold border-2 border-white text-white bg-transparent hover:bg-white hover:text-red transition-all duration-300 rounded-xl backdrop-blur-sm hover:scale-105 hover:shadow-2xl overflow-hidden"
             >
               <span className="relative px-4 z-10">Lihat Kompetisi</span>
               <div className="absolute inset-0 bg-white transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></div>

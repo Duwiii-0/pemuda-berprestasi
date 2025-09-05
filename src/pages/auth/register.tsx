@@ -7,6 +7,7 @@ import TextInput from "../../components/textInput";
 import toast from "react-hot-toast";
 import { useAuth } from "../../context/authContext";
 import { useDojang } from "../../context/dojangContext";
+import Logo from '../../assets/logo/logo.png';
 
 
 type OptionType = { value: string; label: string };
@@ -23,7 +24,7 @@ const Register = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [selectedDojang, setSelectedDojang] = useState<OptionType | null>(null);
-  const { dojangOptions, isLoading: isDojangLoading, refreshDojang } = useDojang();
+  const { dojangOptions, refreshDojang } = useDojang();
   
   // UI states
   const [isLoading, setIsLoading] = useState(false);
@@ -33,7 +34,7 @@ const Register = () => {
   useEffect(() => {
   // Fetch data dojang terbaru setiap kali halaman dibuka
   refreshDojang();
-}, [refreshDojang]);
+}, []);
 
 
   // Handle registration
@@ -135,7 +136,7 @@ const Register = () => {
             <div className="relative mb-4">
               <div className="absolute -inset-1 bg-gradient-to-r from-red/10 to-red/5 rounded-full blur-md opacity-60"></div>
               <img 
-                src="src/assets/logo/logojv.png" 
+                src={Logo}
                 alt="Taekwondo Logo" 
                 className="relative h-12 w-12 sm:h-16 sm:w-16 mx-auto drop-shadow-md"
               />
@@ -208,8 +209,6 @@ const Register = () => {
                     setNik(value);
                   }}
                   disabled={isLoading}
-                  inputMode="numeric"
-                  pattern="[0-9]*"
                 />
                 <IdCard className="absolute left-3 top-1/2 transform -translate-y-1/2 text-red/60 group-hover:text-red transition-colors" size={16} />
                 <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs text-gray-500">

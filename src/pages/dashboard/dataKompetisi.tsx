@@ -22,7 +22,7 @@ const StatsCard: React.FC<StatsCardProps> = ({ icon: Icon, title, value, color }
         <Icon size={24} className="text-white" />
       </div>
       <div>
-        <h3 className="font-plex font-medium text-black/60 text-sm">{title}</h3>
+        <h3 className="font-plex text-sm text-black/60">{title}</h3>
         <p className="font-bebas text-2xl text-black/80">{value}</p>
       </div>
     </div>
@@ -32,7 +32,7 @@ const StatsCard: React.FC<StatsCardProps> = ({ icon: Icon, title, value, color }
 const DataKompetisi = () => {
   const navigate = useNavigate();
   const { user, token } = useAuth();
-  const { kompetisiList, loadingKompetisi, errorKompetisi, fetchKompetisiList, fetchAtletByKompetisi, pesertaList } = useKompetisi();
+  const { kompetisiList, loadingKompetisi, fetchKompetisiList, fetchAtletByKompetisi, pesertaList } = useKompetisi();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "PENDAFTARAN" | "SEDANG_DIMULAI" | "SELESAI">("all");
   const [selectedKompetisi, setSelectedKompetisi] = useState<Kompetisi | null>(null);
@@ -91,22 +91,10 @@ const DataKompetisi = () => {
   // Loading state with proper layout
   if (loadingKompetisi) {
     return (
-      <div className="min-h-screen w-full bg-gradient-to-br from-white via-red/5 to-yellow/10">
+      <div className="min-h-screen max-w-screen bg-gradient-to-br from-white via-red/5 to-yellow/10">
         <NavbarDashboard />
-        <div className="lg:ml-72 min-h-screen flex items-center justify-center">
+        <div className="lg:ml-72 w-full min-h-screen flex items-center justify-center">
           <p className="font-plex text-lg text-black/60">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Error state with proper layout
-  if (errorKompetisi) {
-    return (
-      <div className="min-h-screen w-full bg-gradient-to-br from-white via-red/5 to-yellow/10">
-        <NavbarDashboard />
-        <div className="lg:ml-72 min-h-screen flex items-center justify-center">
-          <p className="font-plex text-lg text-red-600">{errorKompetisi}</p>
         </div>
       </div>
     );
@@ -148,7 +136,7 @@ if (showPeserta && selectedKompetisi) {
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-white via-red/5 to-yellow/10">
       <NavbarDashboard />
-      <div className="lg:ml-72 w-full">
+      <div className="lg:ml-72">
         <div className="px-4 lg:px-8 py-8 pb-16">
           {/* Back Button */}
           <button
@@ -169,9 +157,9 @@ if (showPeserta && selectedKompetisi) {
           </div>
 
           {/* Peserta Table */}
-          <div className="bg-white/60 backdrop-blur-sm rounded-3xl p-6 shadow-xl border border-white/50">
-            <div className="overflow-x-auto rounded-2xl border border-white/50">
-              <table className="w-full">
+          <div className="w-full bg-white/60 backdrop-blur-sm rounded-3xl p-6 shadow-xl border border-white/50">
+            <div className="w-full rounded-2xl overflow-hidden border border-white/50">
+              <table className="min-w-full table-auto">
                 <thead className="bg-gradient-to-r from-red to-red/80 text-white">
                   <tr>
                     <th className="px-6 py-4 text-left font-bebas text-lg">Nama Peserta</th>
@@ -186,7 +174,7 @@ if (showPeserta && selectedKompetisi) {
                   {peserta.map((p) => (
                     <tr
                       key={p.id}
-                      className="transition-all duration-200 hover:bg-white/50 cursor-pointer"
+                      className="transition-all duration-200 hover:bg-red/10 cursor-pointer"
                       onClick={() => {
                         if (p.atletId) {
                           navigate(`/dashboard/atlit/${p.atletId}`); // redirect ke detail personal atlet
@@ -206,7 +194,7 @@ if (showPeserta && selectedKompetisi) {
                             e.stopPropagation(); // jangan ikut trigger klik row
                             toast.error("Fitur ini akan segera tersedia 🚧");
                           }}
-                          className="px-3 py-1 rounded-lg bg-red-500 text-white font-plex hover:bg-red-600 transition-all"
+                          className="cursor-pointer px-3 py-1 rounded-lg bg-red-500 text-white font-plex hover:bg-red-700 transition-all"
                         >
                           Hapus
                         </button>
@@ -236,9 +224,9 @@ if (showPeserta && selectedKompetisi) {
 
   // Halaman utama daftar kompetisi dengan search + filter
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-white via-red/5 to-yellow/10">
+    <div className="min-h-screen w-screen bg-gradient-to-br from-white via-red/5 to-yellow/10">
       <NavbarDashboard />
-      <div className="lg:ml-72 w-full">
+      <div className="lg:ml-72 max-w-full">
         <div className="px-4 lg:px-8 py-8 pb-16">
           {/* Header */}
           <div className="mb-8">
@@ -345,29 +333,29 @@ if (showPeserta && selectedKompetisi) {
           </div>
 
           {/* Tabel Kompetisi */}
-          <div className="bg-white/60 backdrop-blur-sm rounded-3xl p-6 shadow-xl border border-white/50">
-            <div className="overflow-x-auto rounded-2xl border border-white/50">
-              <table className="w-full">
-                <thead className="bg-gradient-to-r from-red to-red/80 text-white">
+          <div className="overflow-x-hidden w-full bg-white/60 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-white/50">
+            <div className="rounded-2xl overflow-hidden border border-white/50">
+              <table className="w-full rounded-3xl">
+                <thead className="bg-gradient-to-r from-red to-red/80 text-white rounded-2xl text-2xl tracking-wide">
                   <tr>
-                    <th className="px-6 py-4 text-left font-bebas text-lg">Nama Kompetisi</th>
-                    <th className="px-6 py-4 text-center font-bebas text-lg">Tanggal Mulai</th>
-                    <th className="px-6 py-4 text-center font-bebas text-lg">Lokasi</th>
-                    <th className="px-6 py-4 text-center font-bebas text-lg">Status</th>
+                    <th className="px-6 py-4 text-left font-bebas">Nama Kompetisi</th>
+                    <th className="px-6 py-4 text-center font-bebas">Tanggal Mulai</th>
+                    <th className="px-6 py-4 text-center font-bebas">Lokasi</th>
+                    <th className="px-6 py-4 text-center font-bebas">Status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/30">
                   {filteredKompetisi.map((k) => (
                     <tr
                       key={k.id_kompetisi}
-                      className="transition-all duration-200 hover:bg-white/50 cursor-pointer"
+                      className="transition-all duration-200 hover:bg-red/10 cursor-pointer"
                       onClick={() => handleKompetisiClick(k)}
                     >
                       <td className="px-6 py-4 font-plex">{k.nama_event}</td>
                       <td className="px-6 py-4 text-center font-plex">{formatTanggal(k.tanggal_mulai)}</td>
                       <td className="px-6 py-4 text-center font-plex">{k.lokasi || "-"}</td>
                       <td className="px-6 py-4 text-center">
-                        <span className={`px-3 py-1 rounded-full text-xs font-plex ${getStatusColor(k.status)}`}>
+                        <span className={`px-3 py-1 rounded-full text-md font-plex ${getStatusColor(k.status)}`}>
                           {k.status === "PENDAFTARAN"
                             ? "Pendaftaran"
                             : k.status === "SEDANG_DIMULAI"

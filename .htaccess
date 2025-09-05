@@ -1,0 +1,16 @@
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /SystemKompetisi/
+
+  # ✅ Do not rewrite files inside assets (CSS/JS/images)
+  RewriteCond %{REQUEST_URI} ^/SystemKompetisi/assets/ [NC]
+  RewriteRule ^ - [L]
+
+  # ✅ Do not rewrite real files or dirs
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # ✅ Everything else goes to index.html
+  RewriteRule . /SystemKompetisi/index.html [L]
+</IfModule>

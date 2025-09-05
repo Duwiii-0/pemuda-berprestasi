@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Play, Clock, BookOpen, Users, Trophy, PencilLine, CheckCircle, Check } from 'lucide-react';
+import { Play, Clock, BookOpen, Users, Trophy, PencilLine, CheckCircle } from 'lucide-react';
 
 // Define Tutorial interface
 interface Tutorial {

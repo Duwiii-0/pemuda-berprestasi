@@ -1,10 +1,7 @@
 // src/pages/admin/Reports.tsx
 import React, { useState } from 'react';
 import { 
-  FileText, 
   Download, 
-  Calendar, 
-  Filter,
   BarChart3,
   PieChart,
   TrendingUp,

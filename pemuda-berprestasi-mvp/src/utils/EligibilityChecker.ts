@@ -20,7 +20,7 @@ export interface AthleteData {
   nama_atlet: string;
   tanggal_lahir: Date;
   berat_badan: number;
-  jenis_kelamin: 'L' | 'P';
+  jenis_kelamin: 'LAKI_LAKI' | 'PEREMPUAN'; // Sesuai enum JenisKelamin
 }
 
 export class EligibilityChecker {
@@ -74,8 +74,8 @@ export class EligibilityChecker {
         };
       }
 
-      // Check competition status
-      if (competition.status !== 'PUBLISHED') {
+      // Check competition status - gunakan enum StatusKompetisi yang sesuai
+      if (competition.status !== 'PENDAFTARAN') {
         return {
           isEligible: false,
           reasons: ['Kompetisi belum dibuka untuk pendaftaran'],
@@ -186,8 +186,8 @@ export class EligibilityChecker {
 
     // Check weight class eligibility (for KYORUGI)
     if (competitionClass.cabang === 'KYORUGI' && competitionClass.kelas_berat) {
-      // Check gender
-      if (competitionClass.kelas_berat.gender !== athlete.jenis_kelamin) {
+      // Check gender - gunakan jenis_kelamin bukan gender
+      if (competitionClass.kelas_berat.jenis_kelamin !== athlete.jenis_kelamin) {
         reasons.push('Jenis kelamin tidak sesuai');
       }
 
@@ -245,7 +245,7 @@ export class EligibilityChecker {
     try {
       const recommendations = await prisma.tb_kelas_berat.findMany({
         where: {
-          gender: athlete.jenis_kelamin,
+          jenis_kelamin: athlete.jenis_kelamin, // Gunakan jenis_kelamin bukan gender
           batas_min: { lte: athlete.berat_badan },
           batas_max: { gte: athlete.berat_badan },
           kelas_kejuaraan: {
@@ -256,7 +256,7 @@ export class EligibilityChecker {
           }
         },
         include: {
-          kelompok: true,
+          kelompok: true, // Include kelompok relation
           kelas_kejuaraan: {
             where: {
               id_kompetisi: competitionId

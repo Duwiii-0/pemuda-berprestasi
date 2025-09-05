@@ -1,9 +1,9 @@
 import toast from "react-hot-toast";
 import CompCard from "./compCard";
-import { ChevronLeft, ChevronRight, Trophy, Calendar, MapPin } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 const OngoingComp = () => {
-  const handleNavClick = (direction: string) => {
+  const handleNavClick = () => {
     toast.error("Hanya ada satu kompetisi untuk sekarang", {
       style: {
         background: '#990D35',
@@ -52,7 +52,7 @@ const OngoingComp = () => {
           <div className="hidden lg:flex items-center justify-center gap-8 xl:gap-12 w-full">
             <div className="flex-shrink-0">
               <button 
-                onClick={() => handleNavClick('prev')}
+                onClick={() => handleNavClick()}
                 className="group relative p-4 xl:p-6 rounded-2xl xl:rounded-3xl bg-white/90 backdrop-blur-md border border-red/10 hover:border-red/20 hover:bg-red transition-all duration-500 hover:shadow-2xl hover:shadow-red/25"
               >
                 <ChevronLeft 
@@ -68,7 +68,7 @@ const OngoingComp = () => {
             
             <div className="flex-shrink-0">
               <button 
-                onClick={() => handleNavClick('next')}
+                onClick={() => handleNavClick()}
                 className="group relative p-4 xl:p-6 rounded-2xl xl:rounded-3xl bg-white/90 backdrop-blur-md border border-red/10 hover:border-red/20 hover:bg-red transition-all duration-500 hover:shadow-2xl hover:shadow-red/25"
               >
                 <ChevronRight 

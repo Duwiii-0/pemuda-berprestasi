@@ -1,12 +1,10 @@
 import React, { useState } from 'react';
 import { 
-  Settings, 
   User, 
   Shield, 
   Bell, 
   Database,
   Mail,
-  Lock,
   Save,
   Eye,
   EyeOff,

@@ -28,6 +28,35 @@ async function seedAdmin() {
   }
 }
 
+
+async function seedAdminKompetisi() {
+  const existingAdmin = await prisma.tb_akun.findUnique({
+    where: { email: "adminkompetisi@example.com" },
+  });
+
+  if (!existingAdmin) {
+    const hashedPassword = await bcrypt.hash("adminkompetisi123", 10);
+
+    await prisma.tb_akun.create({
+      data: {
+        email: "adminkompetisi@example.com",
+        password_hash: hashedPassword,
+        role: "ADMIN_KOMPETISI",
+        admin_kompetisi: { // sesuai relasi di Prisma schema
+          create: {
+            nama: "Admin Kompetisi 1",
+            id_kompetisi: 1,
+          },
+        },
+      },
+    });
+
+    console.log("✅ Admin Kompetisi account created");
+  } else {
+    console.log("ℹ️ Admin Kompetisi already exists");
+  }
+}
+
 async function seedPelatihDojang() {
   const existingPelatih = await prisma.tb_akun.findUnique({
     where: { email: 'pelatih@example.com' }
@@ -544,6 +573,7 @@ async function main() {
 
   await seedAdmin();
   await seedPelatihDojang();
+  await seedAdminKompetisi();
   await seedKelompokUsia();
   await seedAtlet();
   await seedKelasBerat();
