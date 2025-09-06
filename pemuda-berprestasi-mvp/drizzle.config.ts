@@ -1,5 +1,9 @@
-// drizzle.config.ts (di root project)
+// drizzle.config.ts (di root project) - FIXED VERSION
 import type { Config } from 'drizzle-kit';
+import { config } from 'dotenv';
+
+// Load environment variables
+config();
 
 export default {
   schema: './src/db/schema/index.ts',

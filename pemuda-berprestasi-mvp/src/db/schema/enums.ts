@@ -1,15 +1,28 @@
 // src/db/schema/enums.ts
-export const jenisKelaminEnum = ['LAKI_LAKI', 'PEREMPUAN'] as const;
-export type JenisKelamin = typeof jenisKelaminEnum[number];
+import { mysqlEnum } from 'drizzle-orm/mysql-core';
 
-export const cabangEnum = ['POOMSAE', 'KYORUGI'] as const;
-export type Cabang = typeof cabangEnum[number];
+// Define all enums used in the database
+export const jenisKelaminEnum = mysqlEnum('jenis_kelamin', ['LAKI_LAKI', 'PEREMPUAN']);
 
-export const statusPendaftaranEnum = ['PENDING', 'APPROVED', 'REJECTED'] as const;
-export type StatusPendaftaran = typeof statusPendaftaranEnum[number];
+export const cabangEnum = mysqlEnum('cabang', ['POOMSAE', 'KYORUGI']);
 
-export const roleEnum = ['ADMIN', 'PELATIH'] as const;
-export type Role = typeof roleEnum[number];
+export const statusPendaftaranEnum = mysqlEnum('status_pendaftaran', [
+  'PENDING', 
+  'APPROVED', 
+  'REJECTED'
+]);
 
-export const statusKompetisiEnum = ['PENDAFTARAN', 'SEDANG_DIMULAI', 'SELESAI'] as const;
-export type StatusKompetisi = typeof statusKompetisiEnum[number];
+export const roleEnum = mysqlEnum('role', ['ADMIN', 'PELATIH']);
+
+export const statusKompetisiEnum = mysqlEnum('status_kompetisi', [
+  'PENDAFTARAN',
+  'SEDANG_DIMULAI', 
+  'SELESAI'
+]);
+
+// Export types for TypeScript
+export type JenisKelamin = 'LAKI_LAKI' | 'PEREMPUAN';
+export type Cabang = 'POOMSAE' | 'KYORUGI';
+export type StatusPendaftaran = 'PENDING' | 'APPROVED' | 'REJECTED';
+export type Role = 'ADMIN' | 'PELATIH';
+export type StatusKompetisi = 'PENDAFTARAN' | 'SEDANG_DIMULAI' | 'SELESAI';
