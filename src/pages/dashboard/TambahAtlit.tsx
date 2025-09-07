@@ -18,6 +18,7 @@ interface AtletForm {
   tanggal_lahir: string;
   alamat: string;
   provinsi: string;
+  kota: string; // Changed from 'provinsi' to 'kota' for city
   bb: number | string;
   tb: number | string;
   gender: string;
@@ -28,47 +29,52 @@ interface AtletForm {
   ktp?: File | null;
 }
 
-const provinsiOptions = [
-  { value: "Aceh", label: "Aceh" },
-  { value: "Sumatera Utara", label: "Sumatera Utara" },
-  { value: "Sumatera Barat", label: "Sumatera Barat" },
-  { value: "Riau", label: "Riau" },
-  { value: "Kepulauan Riau", label: "Kepulauan Riau" },
-  { value: "Jambi", label: "Jambi" },
-  { value: "Sumatera Selatan", label: "Sumatera Selatan" },
-  { value: "Bangka Belitung", label: "Bangka Belitung" },
-  { value: "Bengkulu", label: "Bengkulu" },
-  { value: "Lampung", label: "Lampung" },
-  { value: "DKI Jakarta", label: "DKI Jakarta" },
-  { value: "Jawa Barat", label: "Jawa Barat" },
-  { value: "Banten", label: "Banten" },
-  { value: "Jawa Tengah", label: "Jawa Tengah" },
-  { value: "Yogyakarta", label: "Yogyakarta" },
-  { value: "Jawa Timur", label: "Jawa Timur" },
-  { value: "Bali", label: "Bali" },
-  { value: "Nusa Tenggara Barat", label: "Nusa Tenggara Barat" },
-  { value: "Nusa Tenggara Timur", label: "Nusa Tenggara Timur" },
-  { value: "Kalimantan Barat", label: "Kalimantan Barat" },
-  { value: "Kalimantan Tengah", label: "Kalimantan Tengah" },
-  { value: "Kalimantan Selatan", label: "Kalimantan Selatan" },
-  { value: "Kalimantan Timur", label: "Kalimantan Timur" },
-  { value: "Kalimantan Utara", label: "Kalimantan Utara" },
-  { value: "Sulawesi Utara", label: "Sulawesi Utara" },
-  { value: "Sulawesi Tengah", label: "Sulawesi Tengah" },
-  { value: "Sulawesi Selatan", label: "Sulawesi Selatan" },
-  { value: "Sulawesi Tenggara", label: "Sulawesi Tenggara" },
-  { value: "Gorontalo", label: "Gorontalo" },
-  { value: "Sulawesi Barat", label: "Sulawesi Barat" },
-  { value: "Maluku", label: "Maluku" },
-  { value: "Maluku Utara", label: "Maluku Utara" },
-  { value: "Papua", label: "Papua" },
-  { value: "Papua Tengah", label: "Papua Tengah" },
-  { value: "Papua Pegunungan", label: "Papua Pegunungan" },
-  { value: "Papua Selatan", label: "Papua Selatan" },
-  { value: "Papua Barat", label: "Papua Barat" },
-  { value: "Papua Barat Daya", label: "Papua Barat Daya" },
-];
+// Data provinsi dan kota - integrated from RegisterDojang
+const provinsiKotaData = {
+  "Aceh": ["Banda Aceh", "Langsa", "Lhokseumawe", "Meulaboh", "Sabang", "Subulussalam"],
+  "Sumatera Utara": ["Medan", "Binjai", "Gunungsitoli", "Padang Sidempuan", "Pematangsiantar", "Sibolga", "Tanjungbalai", "Tebing Tinggi"],
+  "Sumatera Barat": ["Padang", "Bukittinggi", "Padang Panjang", "Pariaman", "Payakumbuh", "Sawahlunto", "Solok"],
+  "Riau": ["Pekanbaru", "Dumai"],
+  "Kepulauan Riau": ["Tanjung Pinang", "Batam"],
+  "Jambi": ["Jambi", "Sungai Penuh"],
+  "Sumatera Selatan": ["Palembang", "Lubuklinggau", "Pagar Alam", "Prabumulih"],
+  "Bangka Belitung": ["Pangkal Pinang"],
+  "Bengkulu": ["Bengkulu"],
+  "Lampung": ["Bandar Lampung", "Metro"],
+  "DKI Jakarta": ["Jakarta Pusat", "Jakarta Utara", "Jakarta Barat", "Jakarta Selatan", "Jakarta Timur", "Kepulauan Seribu"],
+  "Jawa Barat": ["Bandung", "Bekasi", "Bogor", "Cimahi", "Cirebon", "Depok", "Sukabumi", "Tasikmalaya", "Banjar"],
+  "Banten": ["Serang", "Tangerang", "Tangerang Selatan", "Cilegon"],
+  "Jawa Tengah": ["Semarang", "Magelang", "Pekalongan", "Purwokerto", "Salatiga", "Solo", "Tegal"],
+  "Yogyakarta": ["Yogyakarta"],
+  "Jawa Timur": ["Surabaya", "Malang", "Batu", "Blitar", "Kediri", "Madiun", "Mojokerto", "Pasuruan", "Probolinggo"],
+  "Bali": ["Denpasar"],
+  "Nusa Tenggara Barat": ["Mataram", "Bima"],
+  "Nusa Tenggara Timur": ["Kupang"],
+  "Kalimantan Barat": ["Pontianak", "Singkawang"],
+  "Kalimantan Tengah": ["Palangka Raya"],
+  "Kalimantan Selatan": ["Banjarmasin", "Banjarbaru"],
+  "Kalimantan Timur": ["Samarinda", "Balikpapan", "Bontang"],
+  "Kalimantan Utara": ["Tarakan"],
+  "Sulawesi Utara": ["Manado", "Bitung", "Kotamobagu", "Tomohon"],
+  "Sulawesi Tengah": ["Palu"],
+  "Sulawesi Selatan": ["Makassar", "Palopo", "Parepare"],
+  "Sulawesi Tenggara": ["Kendari", "Bau-Bau"],
+  "Gorontalo": ["Gorontalo"],
+  "Sulawesi Barat": ["Mamuju"],
+  "Maluku": ["Ambon", "Tual"],
+  "Maluku Utara": ["Ternate", "Tidore Kepulauan"],
+  "Papua": ["Jayapura"],
+  "Papua Tengah": ["Nabire"],
+  "Papua Pegunungan": ["Wamena"],
+  "Papua Selatan": ["Merauke"],
+  "Papua Barat": ["Manokwari", "Sorong"],
+  "Papua Barat Daya": ["Sorong"]
+};
 
+const provinsiOptions = Object.keys(provinsiKotaData).map(provinsi => ({
+  value: provinsi,
+  label: provinsi
+}));
 
 const TambahAtlit: React.FC = () => {
   const navigate = useNavigate();
@@ -85,6 +91,7 @@ const TambahAtlit: React.FC = () => {
     tanggal_lahir: "",
     alamat: "",
     provinsi: "",
+    kota: "",
     bb: "",
     tb: "",
     gender: "",
@@ -96,6 +103,12 @@ const TambahAtlit: React.FC = () => {
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Get city options based on selected province
+  const kotaOptions = formData.provinsi ? provinsiKotaData[formData.provinsi]?.map(kota => ({
+    value: kota,
+    label: kota
+  })) || [] : [];
 
   // Handle window resize for responsive sidebar
   useEffect(() => {
@@ -114,6 +127,26 @@ const TambahAtlit: React.FC = () => {
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: "" }));
     }
+  };
+
+  const handleProvinsiChange = (selectedOption: any) => {
+    const newProvinsi = selectedOption?.value || "";
+    setFormData((prev) => ({ 
+      ...prev, 
+      provinsi: newProvinsi,
+      kota: "" // Reset city when province changes
+    }));
+    // Clear errors
+    if (errors.provinsi) {
+      setErrors((prev) => ({ ...prev, provinsi: "" }));
+    }
+    if (errors.kota) {
+      setErrors((prev) => ({ ...prev, kota: "" }));
+    }
+  };
+
+  const handleKotaChange = (selectedOption: any) => {
+    handleInputChange('kota', selectedOption?.value || '');
   };
 
   const handleFileChange = (field: keyof AtletForm, file: File | null) => {
@@ -193,6 +226,7 @@ const TambahAtlit: React.FC = () => {
       if (formData.belt) formDataSend.append("belt", formData.belt);
       if (formData.alamat?.trim()) formDataSend.append("alamat", formData.alamat.trim());
       if (formData.provinsi) formDataSend.append("provinsi", formData.provinsi);
+      if (formData.kota) formDataSend.append("kota", formData.kota); // Send city data
       if (formData.phone?.trim()) formDataSend.append("no_telp", formData.phone.trim());
       if (formData.nik?.trim()) formDataSend.append("nik", formData.nik.trim());
       if (formData.bb) formDataSend.append("berat_badan", String(formData.bb));
@@ -216,6 +250,7 @@ const TambahAtlit: React.FC = () => {
           tanggal_lahir: "",
           alamat: "",
           provinsi: "",
+          kota: "",
           bb: "",
           tb: "",
           gender: "",
@@ -368,13 +403,50 @@ const TambahAtlit: React.FC = () => {
                       }}
                       isDisabled={isSubmitting}
                       value={getSelectValue(provinsiOptions, formData.provinsi)}
-                      onChange={(selected) => handleInputChange('provinsi', selected?.value || '')}
+                      onChange={handleProvinsiChange}
                       options={provinsiOptions}
                       placeholder="Pilih provinsi"
                       classNames={{
                         control: () =>
                           `flex items-center border-2 ${
                             !isSubmitting 
+                              ? 'border-red/20 hover:border-red/40 focus-within:border-red bg-white/80' 
+                              : 'border-gray-200 bg-gray-50'
+                          } rounded-xl px-4 py-3 gap-3 backdrop-blur-sm transition-all duration-300 hover:shadow-lg`,
+                        valueContainer: () => "px-1",
+                        placeholder: () => "text-gray-400 font-plex text-sm",
+                        menu: () => "border border-red/20 bg-white/95 backdrop-blur-sm rounded-xl shadow-xl mt-2 overflow-hidden z-50",
+                        menuList: () => "max-h-32 overflow-y-auto",
+                        option: ({ isFocused, isSelected }) =>
+                          [
+                            "px-4 py-3 cursor-pointer font-plex text-sm transition-colors duration-200 hover:text-red",
+                            isFocused ? "bg-red/10 text-red" : "text-black/80",
+                            isSelected ? "bg-red text-white" : ""
+                          ].join(" "),
+                      }}
+                    />
+                </div>
+
+                {/* Kota */}
+                <div className="space-y-2">
+                  <label className="block font-plex font-medium text-black/70">
+                    Kota
+                  </label>                 
+                    <Select
+                      unstyled
+                      menuPortalTarget={document.body}
+                      styles={{
+                        menuPortal: base => ({ ...base, zIndex: 50 })
+                      }}
+                      isDisabled={isSubmitting || !formData.provinsi}
+                      value={getSelectValue(kotaOptions, formData.kota)}
+                      onChange={handleKotaChange}
+                      options={kotaOptions}
+                      placeholder={formData.provinsi ? "Pilih kota" : "Pilih provinsi dulu"}
+                      classNames={{
+                        control: () =>
+                          `flex items-center border-2 ${
+                            !isSubmitting && formData.provinsi
                               ? 'border-red/20 hover:border-red/40 focus-within:border-red bg-white/80' 
                               : 'border-gray-200 bg-gray-50'
                           } rounded-xl px-4 py-3 gap-3 backdrop-blur-sm transition-all duration-300 hover:shadow-lg`,
