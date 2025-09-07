@@ -1,10 +1,58 @@
 import { useState } from "react";
+import Select from "react-select";
 import TextInput from "../../components/textInput";
-import { Home, Phone, MapPin, Map, Mail } from "lucide-react";
+import { Home, Phone, Mail } from "lucide-react";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import { apiClient } from "../../config/api";
 import Logo from '../../assets/logo/logo.png';
+
+// Data provinsi dan kota
+const provinsiKotaData = {
+  "Aceh": ["Banda Aceh", "Langsa", "Lhokseumawe", "Meulaboh", "Sabang", "Subulussalam"],
+  "Sumatera Utara": ["Medan", "Binjai", "Gunungsitoli", "Padang Sidempuan", "Pematangsiantar", "Sibolga", "Tanjungbalai", "Tebing Tinggi"],
+  "Sumatera Barat": ["Padang", "Bukittinggi", "Padang Panjang", "Pariaman", "Payakumbuh", "Sawahlunto", "Solok"],
+  "Riau": ["Pekanbaru", "Dumai"],
+  "Kepulauan Riau": ["Tanjung Pinang", "Batam"],
+  "Jambi": ["Jambi", "Sungai Penuh"],
+  "Sumatera Selatan": ["Palembang", "Lubuklinggau", "Pagar Alam", "Prabumulih"],
+  "Bangka Belitung": ["Pangkal Pinang"],
+  "Bengkulu": ["Bengkulu"],
+  "Lampung": ["Bandar Lampung", "Metro"],
+  "DKI Jakarta": ["Jakarta Pusat", "Jakarta Utara", "Jakarta Barat", "Jakarta Selatan", "Jakarta Timur", "Kepulauan Seribu"],
+  "Jawa Barat": ["Bandung", "Bekasi", "Bogor", "Cimahi", "Cirebon", "Depok", "Sukabumi", "Tasikmalaya", "Banjar"],
+  "Banten": ["Serang", "Tangerang", "Tangerang Selatan", "Cilegon"],
+  "Jawa Tengah": ["Semarang", "Magelang", "Pekalongan", "Purwokerto", "Salatiga", "Solo", "Tegal"],
+  "Yogyakarta": ["Yogyakarta"],
+  "Jawa Timur": ["Surabaya", "Malang", "Batu", "Blitar", "Kediri", "Madiun", "Mojokerto", "Pasuruan", "Probolinggo"],
+  "Bali": ["Denpasar"],
+  "Nusa Tenggara Barat": ["Mataram", "Bima"],
+  "Nusa Tenggara Timur": ["Kupang"],
+  "Kalimantan Barat": ["Pontianak", "Singkawang"],
+  "Kalimantan Tengah": ["Palangka Raya"],
+  "Kalimantan Selatan": ["Banjarmasin", "Banjarbaru"],
+  "Kalimantan Timur": ["Samarinda", "Balikpapan", "Bontang"],
+  "Kalimantan Utara": ["Tarakan"],
+  "Sulawesi Utara": ["Manado", "Bitung", "Kotamobagu", "Tomohon"],
+  "Sulawesi Tengah": ["Palu"],
+  "Sulawesi Selatan": ["Makassar", "Palopo", "Parepare"],
+  "Sulawesi Tenggara": ["Kendari", "Bau-Bau"],
+  "Gorontalo": ["Gorontalo"],
+  "Sulawesi Barat": ["Mamuju"],
+  "Maluku": ["Ambon", "Tual"],
+  "Maluku Utara": ["Ternate", "Tidore Kepulauan"],
+  "Papua": ["Jayapura"],
+  "Papua Tengah": ["Nabire"],
+  "Papua Pegunungan": ["Wamena"],
+  "Papua Selatan": ["Merauke"],
+  "Papua Barat": ["Manokwari", "Sorong"],
+  "Papua Barat Daya": ["Sorong"]
+};
+
+const provinsiOptions = Object.keys(provinsiKotaData).map(provinsi => ({
+  value: provinsi,
+  label: provinsi
+}));
 
 const RegisterDojang = () => {
   const [namaDojang, setNamaDojang] = useState("");
@@ -14,6 +62,25 @@ const RegisterDojang = () => {
   const [provinsi, setProvinsi] = useState("");
   const [negara, setNegara] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  // Get city options based on selected province
+  const kotaOptions = provinsi ? provinsiKotaData[provinsi]?.map(kota => ({
+    value: kota,
+    label: kota
+  })) || [] : [];
+
+  const handleProvinsiChange = (selectedOption) => {
+    setProvinsi(selectedOption?.value || "");
+    setKabupaten(""); 
+  };
+
+  const handleKotaChange = (selectedOption) => {
+    setKabupaten(selectedOption?.value || "");
+  };
+
+  const getSelectValue = (options, value) => {
+    return options.find(option => option.value === value) || null;
+  };
 
   const handleRegister = async () => {
     setIsLoading(true);
@@ -30,7 +97,6 @@ const RegisterDojang = () => {
 
       toast.success("Registrasi dojang berhasil! Silahkan registrasi.");
 
-      // Reset form
       setNamaDojang("");
       setEmail("");
       setno_telp("");
@@ -38,7 +104,7 @@ const RegisterDojang = () => {
       setProvinsi("");
       setNegara("");
 
-    } catch (err: any) {
+    } catch (err) {
       if (err.data?.errors) {
         toast.error("Ada field yang tidak valid.");
       } else {
@@ -48,7 +114,7 @@ const RegisterDojang = () => {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
 
     if (!namaDojang.trim()) {
@@ -164,38 +230,80 @@ const RegisterDojang = () => {
 
             {/* Location Fields Row */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Kabupaten/Kota */}
-              <div className="space-y-1.5">
-                <label className="text-xs md:text-sm font-plex font-medium text-black/80 block">
-                  Kota <span className="text-xs text-black/50">(Opsional)</span>
-                </label>
-                <div className="relative group">
-                  <TextInput
-                    value={kabupaten}
-                    onChange={(e) => setKabupaten(e.target.value)}
-                    className="h-11 md:h-12 border-2 border-red/25 focus:border-red rounded-xl bg-white/80 backdrop-blur-sm text-sm md:text-base font-plex pl-10 md:pl-12 pr-4 transition-all duration-300 group-hover:border-red/40 focus:bg-white focus:shadow-md focus:shadow-red/10"
-                    placeholder="Jakarta Selatan"
-                    disabled={isLoading}
-                  />
-                  <MapPin className="absolute left-3 md:left-4 top-1/2 transform -translate-y-1/2 text-red/60 group-hover:text-red transition-colors" size={16} />
-                </div>
-              </div>
-
               {/* Provinsi */}
               <div className="space-y-1.5">
                 <label className="text-xs md:text-sm font-plex font-medium text-black/80 block">
                   Provinsi <span className="text-xs text-black/50">(Opsional)</span>
                 </label>
-                <div className="relative group">
-                  <TextInput
-                    value={provinsi}
-                    onChange={(e) => setProvinsi(e.target.value)}
-                    className="h-11 md:h-12 border-2 border-red/25 focus:border-red rounded-xl bg-white/80 backdrop-blur-sm text-sm md:text-base font-plex pl-10 md:pl-12 pr-4 transition-all duration-300 group-hover:border-red/40 focus:bg-white focus:shadow-md focus:shadow-red/10"
-                    placeholder="DKI Jakarta"
-                    disabled={isLoading}
-                  />
-                  <Map className="absolute left-3 md:left-4 top-1/2 transform -translate-y-1/2 text-red/60 group-hover:text-red transition-colors" size={16} />
-                </div>
+                <Select
+                  unstyled
+                  menuPortalTarget={document.body}
+                  styles={{
+                    menuPortal: base => ({ ...base, zIndex: 50 })
+                  }}
+                  isDisabled={isLoading}
+                  value={getSelectValue(provinsiOptions, provinsi)}
+                  onChange={handleProvinsiChange}
+                  options={provinsiOptions}
+                  placeholder="Pilih provinsi"
+                  classNames={{
+                    control: () =>
+                      `flex items-center border-2 ${
+                        !isLoading 
+                          ? 'border-red/25 hover:border-red/40 focus-within:border-red bg-white/80' 
+                          : 'border-gray-200 bg-gray-50'
+                      } rounded-xl px-3 md:px-4 py-2 md:py-3 gap-2 backdrop-blur-sm transition-all duration-300 hover:shadow-md hover:shadow-red/10`,
+                    valueContainer: () => "px-1",
+                    placeholder: () => "text-gray-400 font-plex text-xs md:text-sm",
+                    singleValue: () => "text-black/80 font-plex text-xs md:text-sm",
+                    menu: () => "border border-red/20 bg-white/95 backdrop-blur-sm rounded-xl shadow-xl mt-2 overflow-hidden z-50",
+                    menuList: () => "max-h-32 overflow-y-auto",
+                    option: ({ isFocused, isSelected }) =>
+                      [
+                        "px-4 py-3 cursor-pointer font-plex text-sm transition-colors duration-200 hover:text-red",
+                        isFocused ? "bg-red/10 text-red" : "text-black/80",
+                        isSelected ? "bg-red text-white" : ""
+                      ].join(" "),
+                  }}
+                />
+              </div>
+
+              {/* Kota */}
+              <div className="space-y-1.5">
+                <label className="text-xs md:text-sm font-plex font-medium text-black/80 block">
+                  Kota <span className="text-xs text-black/50">(Opsional)</span>
+                </label>
+                <Select
+                  unstyled
+                  menuPortalTarget={document.body}
+                  styles={{
+                    menuPortal: base => ({ ...base, zIndex: 50 })
+                  }}
+                  isDisabled={isLoading || !provinsi}
+                  value={getSelectValue(kotaOptions, kabupaten)}
+                  onChange={handleKotaChange}
+                  options={kotaOptions}
+                  placeholder={provinsi ? "Pilih kota" : "Pilih provinsi dulu"}
+                  classNames={{
+                    control: () =>
+                      `flex items-center border-2 ${
+                        !isLoading && provinsi
+                          ? 'border-red/25 hover:border-red/40 focus-within:border-red bg-white/80' 
+                          : 'border-gray-200 bg-gray-50'
+                      } rounded-xl px-3 md:px-4 py-2 md:py-3 gap-2 backdrop-blur-sm transition-all duration-300 hover:shadow-md hover:shadow-red/10`,
+                    valueContainer: () => "px-1",
+                    placeholder: () => "text-gray-400 font-plex text-xs md:text-sm",
+                    singleValue: () => "text-black/80 font-plex text-xs md:text-sm",
+                    menu: () => "border border-red/20 bg-white/95 backdrop-blur-sm rounded-xl shadow-xl mt-2 overflow-hidden z-50",
+                    menuList: () => "max-h-32 overflow-y-auto",
+                    option: ({ isFocused, isSelected }) =>
+                      [
+                        "px-4 py-3 cursor-pointer font-plex text-sm transition-colors duration-200 hover:text-red",
+                        isFocused ? "bg-red/10 text-red" : "text-black/80",
+                        isSelected ? "bg-red text-white" : ""
+                      ].join(" "),
+                  }}
+                />
               </div>
             </div>
 
@@ -208,11 +316,10 @@ const RegisterDojang = () => {
                 <TextInput
                   value={negara}
                   onChange={(e) => setNegara(e.target.value)}
-                  className="h-11 md:h-12 border-2 border-red/25 focus:border-red rounded-xl bg-white/80 backdrop-blur-sm text-sm md:text-base font-plex pl-10 md:pl-12 pr-4 transition-all duration-300 group-hover:border-red/40 focus:bg-white focus:shadow-md focus:shadow-red/10"
+                  className="h-11 md:h-12 border-2 border-red/25 focus:border-red rounded-xl bg-white/80 backdrop-blur-sm text-sm md:text-base font-plex pl-4 pr-4 transition-all duration-300 group-hover:border-red/40 focus:bg-white focus:shadow-md focus:shadow-red/10"
                   placeholder="Indonesia"
                   disabled={isLoading}
                 />
-                <Map className="absolute left-3 md:left-4 top-1/2 transform -translate-y-1/2 text-red/60 group-hover:text-red transition-colors" size={16} />
               </div>
             </div>
 
