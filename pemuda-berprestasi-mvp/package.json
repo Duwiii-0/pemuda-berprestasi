@@ -10,8 +10,7 @@
     "db:generate": "npx prisma generate",
     "db:migrate": "npx prisma migrate deploy",
     "db:seed": "npm run seed",
-    "db:reset": "npx prisma migrate reset && npm run db:seed",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "db:reset": "npx prisma migrate reset && npm run db:seed"
   },
   "keywords": [],
   "author": "",
