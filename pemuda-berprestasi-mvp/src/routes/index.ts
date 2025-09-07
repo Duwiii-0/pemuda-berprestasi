@@ -12,7 +12,7 @@ import kompetisiRoutes from './kompetisi';
 const router = Router();
 
 // API version prefix
-const API_VERSION = '/api/v1';
+const API_VERSION = '/api';
 
 // Developer A routes (Authentication & Foundation)
 router.use(`${API_VERSION}/auth`, authRoutes);
