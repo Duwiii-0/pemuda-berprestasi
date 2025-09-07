@@ -9,6 +9,53 @@ import Select from "react-select";
 import toast from 'react-hot-toast';
 import FileInput from "../../components/fileInput";
 
+// Data provinsi dan kota
+const provinsiKotaData = {
+  "Aceh": ["Banda Aceh", "Langsa", "Lhokseumawe", "Meulaboh", "Sabang", "Subulussalam"],
+  "Sumatera Utara": ["Medan", "Binjai", "Gunungsitoli", "Padang Sidempuan", "Pematangsiantar", "Sibolga", "Tanjungbalai", "Tebing Tinggi"],
+  "Sumatera Barat": ["Padang", "Bukittinggi", "Padang Panjang", "Pariaman", "Payakumbuh", "Sawahlunto", "Solok"],
+  "Riau": ["Pekanbaru", "Dumai"],
+  "Kepulauan Riau": ["Tanjung Pinang", "Batam"],
+  "Jambi": ["Jambi", "Sungai Penuh"],
+  "Sumatera Selatan": ["Palembang", "Lubuklinggau", "Pagar Alam", "Prabumulih"],
+  "Bangka Belitung": ["Pangkal Pinang"],
+  "Bengkulu": ["Bengkulu"],
+  "Lampung": ["Bandar Lampung", "Metro"],
+  "DKI Jakarta": ["Jakarta Pusat", "Jakarta Utara", "Jakarta Barat", "Jakarta Selatan", "Jakarta Timur", "Kepulauan Seribu"],
+  "Jawa Barat": ["Bandung", "Bekasi", "Bogor", "Cimahi", "Cirebon", "Depok", "Sukabumi", "Tasikmalaya", "Banjar"],
+  "Banten": ["Serang", "Tangerang", "Tangerang Selatan", "Cilegon"],
+  "Jawa Tengah": ["Semarang", "Magelang", "Pekalongan", "Purwokerto", "Salatiga", "Solo", "Tegal"],
+  "Yogyakarta": ["Yogyakarta"],
+  "Jawa Timur": ["Surabaya", "Malang", "Batu", "Blitar", "Kediri", "Madiun", "Mojokerto", "Pasuruan", "Probolinggo"],
+  "Bali": ["Denpasar"],
+  "Nusa Tenggara Barat": ["Mataram", "Bima"],
+  "Nusa Tenggara Timur": ["Kupang"],
+  "Kalimantan Barat": ["Pontianak", "Singkawang"],
+  "Kalimantan Tengah": ["Palangka Raya"],
+  "Kalimantan Selatan": ["Banjarmasin", "Banjarbaru"],
+  "Kalimantan Timur": ["Samarinda", "Balikpapan", "Bontang"],
+  "Kalimantan Utara": ["Tarakan"],
+  "Sulawesi Utara": ["Manado", "Bitung", "Kotamobagu", "Tomohon"],
+  "Sulawesi Tengah": ["Palu"],
+  "Sulawesi Selatan": ["Makassar", "Palopo", "Parepare"],
+  "Sulawesi Tenggara": ["Kendari", "Bau-Bau"],
+  "Gorontalo": ["Gorontalo"],
+  "Sulawesi Barat": ["Mamuju"],
+  "Maluku": ["Ambon", "Tual"],
+  "Maluku Utara": ["Ternate", "Tidore Kepulauan"],
+  "Papua": ["Jayapura"],
+  "Papua Tengah": ["Nabire"],
+  "Papua Pegunungan": ["Wamena"],
+  "Papua Selatan": ["Merauke"],
+  "Papua Barat": ["Manokwari", "Sorong"],
+  "Papua Barat Daya": ["Sorong"]
+};
+
+const provinsiOptions = Object.keys(provinsiKotaData).map(provinsi => ({
+  value: provinsi,
+  label: provinsi
+}));
+
 const Settings = () => {
   const { user, token } = useAuth();
   const navigate = useNavigate();
@@ -47,6 +94,28 @@ const Settings = () => {
     { value: "LAKI_LAKI", label: "Laki-Laki" },
     { value: "PEREMPUAN", label: "Perempuan" },
   ];
+
+  // Get city options based on selected province
+  const kotaOptions = formData.Provinsi ? provinsiKotaData[formData.Provinsi]?.map(kota => ({
+    value: kota,
+    label: kota
+  })) || [] : [];
+
+  const handleProvinsiChange = (selectedOption) => {
+    setFormData({ 
+      ...formData, 
+      Provinsi: selectedOption?.value || "",
+      kota: "" // Reset city when province changes
+    });
+  };
+
+  const handleKotaChange = (selectedOption) => {
+    setFormData({ ...formData, kota: selectedOption?.value || "" });
+  };
+
+  const getSelectValue = (options, value) => {
+    return options.find(option => option.value === value) || null;
+  };
 
   // Set token ke API client saat component mount
   useEffect(() => {
@@ -93,10 +162,10 @@ const Settings = () => {
             no_telp: profileData.no_telp || '',
             nik: profileData.nik || '',
             tanggal_lahir: profileData.tanggal_lahir || '',
-            kota: profileData.kota || null,
-            Alamat: profileData.alamat || null,
-            Provinsi: profileData.provinsi || null,
-            jenis_kelamin: profileData.jenis_kelamin || null
+            kota: profileData.kota || '',
+            Alamat: profileData.alamat || '',
+            Provinsi: profileData.provinsi || '',
+            jenis_kelamin: profileData.jenis_kelamin || ''
           };
           setFormData(data);
           setInitialData(data);
@@ -572,34 +641,86 @@ const Settings = () => {
                       </div>
                     </div>
 
-                    {/* Kota */}
-                    <div className="space-y-2 sm:space-y-3">
-                      <label className="block font-plex font-semibold text-black/80 text-sm">
-                        Kota
-                      </label>
-                      <TextInput
-                        className="w-full"
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, kota: e.target.value })}
-                        disabled={!isEditing}
-                        value={formData.kota}
-                        placeholder="Masukkan kota"
-                        icon={<Map className={isEditing ? "text-red/60" : "text-gray-400"} size={20} />}
-                      />
-                    </div>
-
                     {/* Provinsi */}
                     <div className="space-y-2 sm:space-y-3">
                       <label className="block font-plex font-semibold text-black/80 text-sm">
                         Provinsi
                       </label>
-                      <TextInput
-                        className="w-full"
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, Provinsi: e.target.value })}
-                        disabled={!isEditing}
-                        value={formData.Provinsi}
-                        placeholder="Masukkan provinsi"
-                        icon={<Map className={isEditing ? "text-red/60" : "text-gray-400"} size={20} />}
-                      />
+                      <div className='relative'>
+                        <Select
+                          unstyled
+                          menuPortalTarget={document.body}
+                          styles={{
+                            menuPortal: base => ({ ...base, zIndex: 50 })
+                          }}
+                          isDisabled={!isEditing}
+                          value={getSelectValue(provinsiOptions, formData.Provinsi)}
+                          onChange={handleProvinsiChange}
+                          options={provinsiOptions}
+                          placeholder="Pilih provinsi"
+                          classNames={{
+                            control: () =>
+                              `flex items-center border-2 ${
+                                isEditing 
+                                  ? 'border-red/20 hover:border-red/40 focus-within:border-red bg-white/80' 
+                                  : 'border-gray-200 bg-gray-50'
+                              } rounded-xl px-4 py-3 gap-3 backdrop-blur-sm transition-all duration-300 hover:shadow-lg`,
+                            valueContainer: () => "px-1",
+                            placeholder: () => "text-gray-400 font-plex text-sm",
+                            singleValue: () => "text-black/80 font-plex text-sm",
+                            menu: () => "border border-red/20 bg-white/95 backdrop-blur-sm rounded-xl shadow-xl mt-2 overflow-hidden z-50",
+                            menuList: () => "max-h-32 overflow-y-auto",
+                            option: ({ isFocused, isSelected }) =>
+                              [
+                                "px-4 py-3 cursor-pointer font-plex text-sm transition-colors duration-200 hover:text-red",
+                                isFocused ? "bg-red/10 text-red" : "text-black/80",
+                                isSelected ? "bg-red text-white" : ""
+                              ].join(" "),
+                          }}
+                        />
+                        {!isEditing && <div className="absolute inset-0 bg-gray-100/50 rounded-xl" />}
+                      </div>
+                    </div>
+
+                    {/* Kota */}
+                    <div className="space-y-2 sm:space-y-3">
+                      <label className="block font-plex font-semibold text-black/80 text-sm">
+                        Kota
+                      </label>
+                      <div className='relative'>
+                        <Select
+                          unstyled
+                          menuPortalTarget={document.body}
+                          styles={{
+                            menuPortal: base => ({ ...base, zIndex: 50 })
+                          }}
+                          isDisabled={!isEditing || !formData.Provinsi}
+                          value={getSelectValue(kotaOptions, formData.kota)}
+                          onChange={handleKotaChange}
+                          options={kotaOptions}
+                          placeholder={formData.Provinsi ? "Pilih kota" : "Pilih provinsi dulu"}
+                          classNames={{
+                            control: () =>
+                              `flex items-center border-2 ${
+                                isEditing && formData.Provinsi
+                                  ? 'border-red/20 hover:border-red/40 focus-within:border-red bg-white/80' 
+                                  : 'border-gray-200 bg-gray-50'
+                              } rounded-xl px-4 py-3 gap-3 backdrop-blur-sm transition-all duration-300 hover:shadow-lg`,
+                            valueContainer: () => "px-1",
+                            placeholder: () => "text-gray-400 font-plex text-sm",
+                            singleValue: () => "text-black/80 font-plex text-sm",
+                            menu: () => "border border-red/20 bg-white/95 backdrop-blur-sm rounded-xl shadow-xl mt-2 overflow-hidden z-50",
+                            menuList: () => "max-h-32 overflow-y-auto",
+                            option: ({ isFocused, isSelected }) =>
+                              [
+                                "px-4 py-3 cursor-pointer font-plex text-sm transition-colors duration-200 hover:text-red",
+                                isFocused ? "bg-red/10 text-red" : "text-black/80",
+                                isSelected ? "bg-red text-white" : ""
+                              ].join(" "),
+                          }}
+                        />
+                        {!isEditing && <div className="absolute inset-0 bg-gray-100/50 rounded-xl" />}
+                      </div>
                     </div>
 
                     {/* Alamat */}
