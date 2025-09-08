@@ -344,7 +344,7 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* Enhanced Contact Section - Consistent Padding */}
+      {/* Enhanced Contact Section - Fixed Layout */}
       <section className="relative w-full flex flex-col justify-center items-center bg-gradient-to-br from-white via-blue/[0.02] to-white overflow-hidden py-12 md:py-16 lg:py-20">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           {/* Section Header */}
@@ -374,7 +374,7 @@ const LandingPage = () => {
             </p>
           </div>
 
-          {/* Enhanced Contact Card */}
+          {/* Enhanced Contact Card - Fixed Layout */}
           <div className="max-w-7xl mx-auto">
             <div className="group relative bg-white/95 backdrop-blur-sm border-2 border-yellow/30 rounded-2xl md:rounded-3xl shadow-xl hover:shadow-2xl hover:shadow-yellow/20 transition-all duration-700 overflow-hidden hover:scale-[1.01]">
               
@@ -384,44 +384,46 @@ const LandingPage = () => {
                 
                 {/* Contact Form Side */}
                 <div className="w-full h-full flex flex-col items-center space-y-6 md:space-y-8">
-                  <div className="text-center ">
-                    <h3 className="font-bebas text-red text-xl sm:text-2xl md:text-3xl lg:text-4xl">Kirim Pesan</h3>
-                    <div className="w-12 md:w-16 h-0.5 bg-gradient-to-r from-red to-red/60 mx-auto"></div>
-                    <p className="text-xs md:text-sm font-plex text-black/70 max-w-md pt-3">
+                  <div className="text-center w-full">
+                    <h3 className="font-bebas text-red text-xl sm:text-2xl md:text-3xl lg:text-4xl mb-2">Kirim Pesan</h3>
+                    <div className="w-12 md:w-16 h-0.5 bg-gradient-to-r from-red to-red/60 mx-auto mb-3"></div>
+                    <p className="text-xs md:text-sm font-plex text-black/70 max-w-md mx-auto">
                       Sampaikan pertanyaan atau saran Anda melalui formulir di bawah ini
                     </p>
                   </div>
                   
-                  {/* Enhanced Form */}
+                  {/* Enhanced Form - Fixed Mobile Layout */}
                   <div className="w-full space-y-4 md:space-y-6 max-w-md mx-auto">
-                    <div className="flex flex-col sm:flex-row gap-3 md:gap-4 w-full">
-                      <div className="flex-1">
+                    {/* Name and Email - Stack on Mobile */}
+                    <div className="flex flex-col gap-3 md:gap-4 w-full">
+                      <div className="w-full">
                         <TextInput
-                          className="h-10 md:h-12 placeholder-red/60 border-red/20 hover:border-red/40 focus:border-red transition-all duration-300 rounded-xl text-xs md:text-sm bg-white/80"
+                          className="h-10 md:h-12 w-full placeholder-red/60 border-red/20 hover:border-red/40 focus:border-red transition-all duration-300 rounded-xl text-xs md:text-sm bg-white/80"
                           placeholder="Nama Lengkap"
                           icon={<User className="text-red/60" size={16} />}
                         />
                       </div>
-                      <div className="flex-1">
+                      <div className="w-full">
                         <TextInput
-                          className="h-10 md:h-12 placeholder-red/60 border-red/20 hover:border-red/40 focus:border-red transition-all duration-300 rounded-xl text-xs md:text-sm bg-white/80"
+                          className="h-10 md:h-12 w-full placeholder-red/60 border-red/20 hover:border-red/40 focus:border-red transition-all duration-300 rounded-xl text-xs md:text-sm bg-white/80"
                           placeholder="Email Anda"
                           icon={<Mail className="text-red/60" size={16} />}
                         />
                       </div>
                     </div>
                     
-                    <div className="w-full h-full">
+                    {/* Message TextArea */}
+                    <div className="w-full">
                       <TextArea 
                         placeholder="Tulis pesan atau pertanyaan Anda di sini..."
                         icon={<PenLine className="text-red/60" size={16} />}
                         rows={4}
-                        className="h-full border-red/20 hover:border-red/40 focus:border-red transition-all duration-300 rounded-xl resize-none text-xs md:text-sm bg-white/80"
+                        className="w-full min-h-[100px] md:min-h-[120px] border-red/20 hover:border-red/40 focus:border-red transition-all duration-300 rounded-xl resize-none text-xs md:text-sm bg-white/80"
                       />
                     </div>
                     
                     {/* Enhanced Submit Button */}
-                    <div className="">
+                    <div className="w-full pt-2">
                       <button className="group relative w-full px-4 md:px-6 py-3 md:py-4 bg-gradient-to-r from-red to-red/90 hover:from-red/90 hover:to-red text-white font-plex font-semibold rounded-xl transition-all duration-300 hover:shadow-lg hover:shadow-red/30 hover:-translate-y-1 text-xs md:text-sm">
                         <span className="relative z-10 flex items-center justify-center gap-2">
                           <span>Kirim Pesan</span>
@@ -435,40 +437,42 @@ const LandingPage = () => {
                 </div>
                 
                 {/* Contact Info Side */}
-                <div className="w-full h-full flex flex-col space-y-6 md:space-y-8">
-                  <div className="text-center">
-                    <h3 className="font-bebas text-red text-xl sm:text-2xl md:text-3xl lg:text-4xl">Kirim Pesan</h3>
-                    <div className="w-12 md:w-16 h-0.5 bg-gradient-to-r from-red to-red/60 mx-auto"></div>
+                <div className="w-full h-full flex flex-col space-y-6 md:space-y-8 xl:border-l xl:border-red/10 xl:pl-8">
+                  <div className="text-center w-full">
+                    <h3 className="font-bebas text-red text-xl sm:text-2xl md:text-3xl lg:text-4xl mb-2">Info Kontak</h3>
+                    <div className="w-12 md:w-16 h-0.5 bg-gradient-to-r from-red to-red/60 mx-auto mb-3"></div>
+                    <p className="text-xs md:text-sm font-plex text-black/70 max-w-md mx-auto">
+                      Hubungi kami melalui kontak di bawah ini
+                    </p>
                   </div>
-
                   
-                  {/* Enhanced Contact Details */}
+                  {/* Enhanced Contact Details - Fixed Mobile Layout */}
                   <div className="space-y-4 md:space-y-6">                    
-                    {/* Phone & Email */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
-                      <div className="group flex items-center gap-3 md:gap-4 p-4 md:p-6 rounded-xl hover:bg-red/[0.02] transition-all duration-300 border border-transparent hover:border-red/10">
-                        <div className="flex-shrink-0 w-8 h-8 md:w-10 md:h-10 bg-gradient-to-br from-red/10 to-red/5 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                    {/* Phone & Email - Stack on Mobile, Side by Side on Desktop */}
+                    <div className="flex flex-col md:grid md:grid-cols-2 gap-4 md:gap-6">
+                      <div className="group flex items-start gap-3 md:gap-4 p-4 md:p-6 rounded-xl hover:bg-red/[0.02] transition-all duration-300 border border-transparent hover:border-red/10">
+                        <div className="flex-shrink-0 w-8 h-8 md:w-10 md:h-10 bg-gradient-to-br from-red/10 to-red/5 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300 mt-1">
                           <Phone className="w-3 h-3 md:w-4 md:h-4 text-red" strokeWidth={1.5} />
                         </div>
-                        <div className="flex-1">
+                        <div className="flex-1 min-w-0">
                           <p className="text-xs text-black/60 font-plex mb-1">Telepon</p>
-                          <p className="text-xs md:text-sm font-plex text-black/80 font-medium">0812-1302-0861</p>
+                          <p className="text-xs md:text-sm font-plex text-black/80 font-medium break-all">0812-1302-0861</p>
                         </div>
                       </div>
                       
-                      <div className="group flex items-center gap-3 md:gap-4 p-4 md:p-6 rounded-xl hover:bg-red/[0.02] transition-all duration-300 border border-transparent hover:border-red/10">
-                        <div className="flex-shrink-0 w-8 h-8 md:w-10 md:h-10 bg-gradient-to-br from-red/10 to-red/5 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                      <div className="group flex items-start gap-3 md:gap-4 p-4 md:p-6 rounded-xl hover:bg-red/[0.02] transition-all duration-300 border border-transparent hover:border-red/10">
+                        <div className="flex-shrink-0 w-8 h-8 md:w-10 md:h-10 bg-gradient-to-br from-red/10 to-red/5 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300 mt-1">
                           <Mail className="w-3 h-3 md:w-4 md:h-4 text-red" strokeWidth={1.5} />
                         </div>
-                        <div className="flex-1">
+                        <div className="flex-1 min-w-0">
                           <p className="text-xs text-black/60 font-plex mb-1">Email</p>
-                          <p className="text-xs md:text-sm font-plex text-black/80 font-medium">Sriwijaya@gmail.com</p>
+                          <p className="text-xs md:text-sm font-plex text-black/80 font-medium break-all">Sriwijaya@gmail.com</p>
                         </div>
                       </div>
                     </div>
                   </div>
                   
-                  {/* Enhanced Map */}
+                  {/* Enhanced Map - Fixed Mobile Layout */}
                   <div className="w-full h-48 md:h-64 lg:h-72 border-2 border-red/15 rounded-xl overflow-hidden shadow-lg hover:shadow-xl hover:shadow-red/10 transition-all duration-500 group/map">
                     <iframe
                       src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3965.1798162429486!2d106.82109567593805!3d-6.370770862321453!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e69ec1cabb59bdf%3A0x28b4f84e4677f329!2sJakarta%20State%20Polytechnic!5e0!3m2!1sen!2sid!4v1755283210158!5m2!1sen!2sid"
