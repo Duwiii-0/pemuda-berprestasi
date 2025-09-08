@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Trophy, Users, Search, Clock, CheckCircle } from 'lucide-react';
+import { Trophy, Users, Search, Clock, CheckCircle, Menu } from 'lucide-react';
 import toast from "react-hot-toast";
 import NavbarDashboard from "../../components/navbar/navbarDashboard";
 import { useAuth } from "../../context/authContext";
@@ -37,6 +37,7 @@ const DataKompetisi = () => {
   const [statusFilter, setStatusFilter] = useState<"all" | "PENDAFTARAN" | "SEDANG_DIMULAI" | "SELESAI">("all");
   const [selectedKompetisi, setSelectedKompetisi] = useState<Kompetisi | null>(null);
   const [showPeserta, setShowPeserta] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     // Token handled by apiClient automatically
@@ -44,6 +45,15 @@ const DataKompetisi = () => {
 
   useEffect(() => {
     fetchKompetisiList();
+  }, []);
+
+  // Close mobile sidebar on window resize
+  useEffect(() => {
+    const onResize = () => {
+      if (window.innerWidth >= 1024) setSidebarOpen(false);
+    };
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
   }, []);
 
   const handleKompetisiClick = async (kompetisi: Kompetisi) => {
@@ -138,13 +148,27 @@ if (showPeserta && selectedKompetisi) {
       <NavbarDashboard />
       <div className="lg:ml-72">
         <div className="px-4 lg:px-8 py-8 pb-16">
-          {/* Back Button */}
-          <button
-            onClick={() => setShowPeserta(false)}
-            className="text-red hover:text-red/80 mb-6 font-plex transition-colors duration-200"
-          >
-            ← Kembali
-          </button>
+          {/* Mobile Menu Button + Back Button */}
+          <div className="flex items-center gap-4 mb-6">
+            {/* Mobile Menu Button */}
+            <div className="lg:hidden">
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="p-3 rounded-xl hover:bg-white/50 transition-all duration-300 border border-red/20"
+                aria-label="Open menu"
+              >
+                <Menu size={24} className="text-red" />
+              </button>
+            </div>
+            
+            {/* Back Button */}
+            <button
+              onClick={() => setShowPeserta(false)}
+              className="text-red hover:text-red/80 font-plex transition-colors duration-200"
+            >
+              ← Kembali
+            </button>
+          </div>
 
           {/* Header */}
           <div className="mb-8">
@@ -217,6 +241,19 @@ if (showPeserta && selectedKompetisi) {
           </div>
         </div>
       </div>
+      
+      {/* Mobile Sidebar */}
+      {sidebarOpen && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/60 z-40 lg:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
+          <div className="lg:hidden z-50">
+            <NavbarDashboard mobile onClose={() => setSidebarOpen(false)} />
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -228,6 +265,17 @@ if (showPeserta && selectedKompetisi) {
       <NavbarDashboard />
       <div className="lg:ml-72 max-w-full">
         <div className="px-4 lg:px-8 py-8 pb-16">
+          {/* Mobile Menu Button */}
+          <div className="lg:hidden mb-6">
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="p-3 rounded-xl hover:bg-white/50 transition-all duration-300 border border-red/20"
+              aria-label="Open menu"
+            >
+              <Menu size={24} className="text-red" />
+            </button>
+          </div>
+
           {/* Header */}
           <div className="mb-8">
             <h1 className="font-bebas text-4xl lg:text-6xl xl:text-7xl text-black/80 tracking-wider">
@@ -379,6 +427,19 @@ if (showPeserta && selectedKompetisi) {
           </div>
         </div>
       </div>
+
+      {/* Mobile Sidebar */}
+      {sidebarOpen && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/60 z-40 lg:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
+          <div className="lg:hidden z-50">
+            <NavbarDashboard mobile onClose={() => setSidebarOpen(false)} />
+          </div>
+        </>
+      )}
     </div>
   );
 };
