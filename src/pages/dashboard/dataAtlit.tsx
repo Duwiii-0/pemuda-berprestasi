@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { Menu, Users, Award, TrendingUp, Search, Eye, UserPlus } from 'lucide-react';
 import NavbarDashboard from "../../components/navbar/navbarDashboard"
 import { useAuth } from "../../context/authContext";
-import { apiClient, setAuthToken } from "../../../pemuda-berprestasi-mvp/src/config/api";
+import { apiClient } from "../../config/api";
+import { useLocation } from "react-router-dom";
 
 interface StatsCardProps {
   icon: React.ComponentType<{ size?: number; className?: string }>;
@@ -35,12 +36,46 @@ const DataAtlit = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [genderFilter, setGenderFilter] = useState<"all" | "LAKI_LAKI" | "PEREMPUAN">("all");
+  const location = useLocation();
 
     useEffect(() => {
     if (token) {
-      setAuthToken(token);
+      // Token handled by apiClient automatically
     }
   }, [token]);
+
+useEffect(() => {
+    if (location.state?.refresh) {
+const fetchAtlits = async () => {
+    try {
+      // asumsi kamu sudah punya user login dengan id_dojang
+      const id_dojang = user?.pelatih?.id_dojang; 
+      if (!id_dojang) return;
+
+      const res = await apiClient.get(`/atlet/dojang/${id_dojang}`);
+
+      if (res.success) {
+        const profileData = res.data;
+        const data = {
+          name: profileData.nama_atlet,
+          tb: profileData.tinggi_badan,
+          bb: profileData.berat_badan,
+          tglLahir: profileData.tanggal_lahir ,
+          jeniskelamin: profileData.jenis_kelamin,
+        };
+        setAtlits([data]);
+      }
+      setAtlits(res.data); // sesuai dengan AtletController.sendSuccess
+    } catch (err) {
+      console.error("Gagal ambil data atlet:");
+    }
+  };
+
+      fetchAtlits(); // panggil ulang API
+      window.history.replaceState({}, document.title); // hapus state biar nggak refetch terus
+    }
+  }, [location.state]);
+
   
   // Fetch data atlit 
   useEffect(() => {
@@ -84,7 +119,7 @@ const DataAtlit = () => {
   // Filter
 const filteredAtlits = (atlits).filter(atlit => {
   const matchesSearch = atlit.nama_atlet.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                       atlit.dojang?.provinsi?.toLowerCase().includes(searchTerm.toLowerCase());
+                       atlit.provinsi?.toLowerCase().includes(searchTerm.toLowerCase());
   const matchesGender = genderFilter === "all" || atlit.jenis_kelamin === genderFilter;
   return matchesSearch && matchesGender;
 });
@@ -269,7 +304,7 @@ const avgAge = Math.round(atlits.reduce((sum, a) => sum + a.age, 0) / (atlits.le
                           </div>
                         </td>
                         <td className="px-6 py-4 text-center">
-                          <span className="font-plex text-black/70">{atlit.dojang?.provinsi || "-"}</span>
+                          <span className="font-plex text-black/70">{atlit.provinsi || "-"}</span>
                         </td>
                         <td className="px-6 py-4 text-center">
                           <span

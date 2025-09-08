@@ -1,7 +1,7 @@
 // src/pages/admin/AdminStats.tsx
 import React, { useState, useEffect } from 'react';
 import { Users, Trophy, Building2, Activity, TrendingUp, Loader } from 'lucide-react';
-import { apiClient } from "../../../pemuda-berprestasi-mvp/src/config/api";
+import { apiClient } from "../../config/api";
 
 interface Stats {
   totalUsers: number;

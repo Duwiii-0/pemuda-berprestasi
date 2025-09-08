@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
 import { TextInput } from '../dashboard/dataDojang';
 import { useAuth } from "../../context/authContext";
-import { apiClient, setAuthToken } from "../../../pemuda-berprestasi-mvp/src/config/api";
+import { apiClient } from "../../config/api";
 import Select from "react-select";
 import toast from 'react-hot-toast';
 import FileInput from "../../components/fileInput";
@@ -51,7 +51,7 @@ const Settings = () => {
   // Set token ke API client saat component mount
   useEffect(() => {
     if (token) {
-      setAuthToken(token);
+      // Token handled by apiClient automatically
     }
   }, [token]);
 

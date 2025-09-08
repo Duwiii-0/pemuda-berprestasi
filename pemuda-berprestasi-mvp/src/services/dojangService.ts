@@ -12,6 +12,7 @@ interface CreateDojangData {
 
 interface UpdateDojangData extends Partial<CreateDojangData> {
   id_dojang: number;
+  alamat?: string;
 }
 
 export class DojangService {

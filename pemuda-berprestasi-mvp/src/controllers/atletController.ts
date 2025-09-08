@@ -59,7 +59,7 @@ export class AtletController {
     try {
       const filters = {
         page: parseInt(req.query.page as string) || 1,
-        limit: parseInt(req.query.limit as string) || 10,
+        limit: parseInt(req.query.limit as string) || 100,
         search: req.query.search as string,
         id_dojang: req.query.id_dojang ? parseInt(req.query.id_dojang as string) : undefined,
         jenis_kelamin: req.query.jenis_kelamin as JenisKelamin,

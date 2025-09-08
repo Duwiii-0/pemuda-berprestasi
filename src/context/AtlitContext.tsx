@@ -1,7 +1,7 @@
 // src/context/atletContext.tsx
 import React, { createContext, useContext, useState } from "react";
 import { useCallback } from "react";
-import { apiClient } from "../../pemuda-berprestasi-mvp/src/config/api";
+import { apiClient } from "../config/api";
 
 // Interface Atlet sesuai response API
 export interface Atlet {

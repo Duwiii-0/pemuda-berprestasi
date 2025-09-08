@@ -6,7 +6,7 @@ import NavbarDashboard from "../../components/navbar/navbarDashboard";
 import { useAuth } from "../../context/authContext";
 import { useKompetisi } from "../../context/KompetisiContext";
 import type { Kompetisi } from "../../context/KompetisiContext";
-import { setAuthToken } from "../../../pemuda-berprestasi-mvp/src/config/api";
+import { apiClient } from "../../config/api";
 
 interface StatsCardProps {
   icon: React.ComponentType<{ size?: number; className?: string }>;
@@ -39,7 +39,7 @@ const DataKompetisi = () => {
   const [showPeserta, setShowPeserta] = useState(false);
 
   useEffect(() => {
-    if (token) setAuthToken(token);
+    // Token handled by apiClient automatically
   }, [token]);
 
   useEffect(() => {

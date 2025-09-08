@@ -1,5 +1,6 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import { X, ArrowLeft, Home, Users, Trophy, Settings, LogOut } from 'lucide-react';
+import { useAuth } from '../../context/authContext'
 
 interface NavbarProps {
   mobile?: boolean;
@@ -9,6 +10,7 @@ interface NavbarProps {
 const NavbarDashboard: React.FC<NavbarProps> = ({ mobile = false, onClose }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { logout } = useAuth(); 
 
   const handleNavigation = (path: string) => {
     navigate(path);
@@ -16,11 +18,8 @@ const NavbarDashboard: React.FC<NavbarProps> = ({ mobile = false, onClose }) => 
   };
 
   const handleLogout = () => {
-    // Clear authentication data
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('userData');
-    // Navigate to login page
-    handleNavigation('/login');
+    logout();
+    navigate("/");
   };
 
   const navItems = [

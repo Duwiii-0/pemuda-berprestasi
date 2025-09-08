@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import { CheckCircle, XCircle, Loader, Search, Users } from "lucide-react";
 import { useAuth } from "../../context/authContext";
 import { useKompetisi } from "../../context/KompetisiContext";
-import { setAuthToken } from "../../../pemuda-berprestasi-mvp/src/config/api";
+import { apiClient } from "../../config/api";
 import Select from "react-select";
 import { useNavigate } from "react-router-dom";
 import SelectTeamMemberModal from "../../components/selectTeamModal";
@@ -40,7 +40,7 @@ const AllPeserta: React.FC = () => {
 
 
   useEffect(() => {
-    if (token) setAuthToken(token);
+    // Token handled by apiClient automatically
   }, [token]);
 
   useEffect(() => {
