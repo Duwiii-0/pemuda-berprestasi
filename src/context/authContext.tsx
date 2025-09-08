@@ -85,18 +85,18 @@ const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
     return { success: true, message: 'Already logged out' };
   }
   
-  console.log(🌐 Making API request to: ${endpoint});
+  console.log(`Making API request to: ${endpoint}`);
   
-  const response = await fetch(${import.meta.env.VITE_API_URL}${endpoint}, {
+  const response = await fetch(`${import.meta.env.VITE_API_URL}${endpoint}`, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
-      ...(token && { 'Authorization': Bearer ${token} }),
+      ...(token && { 'Authorization': `Bearer ${token}` }),
       ...options.headers,
     },
   });
 
-  console.log(📡 API Response: ${response.status} ${response.statusText});
+  console.log(`API Response: ${response.status} ${response.statusText}`);
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
@@ -106,11 +106,11 @@ const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
       return { success: true, message: 'Token expired, logout successful' };
     }
     
-    throw new Error(errorData.message || HTTP error! status: ${response.status});
+    throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
   }
 
   const responseData = await response.json();
-  console.log('✅ API Response data:', responseData);
+  console.log('API Response data:', responseData);
   return responseData;
 };
 
@@ -125,8 +125,6 @@ const authAPI = {
   logout: () => 
     apiRequest('/auth/logout', { method: 'POST' }),
   
-  verifyToken: () => 
-    apiRequest('/auth/verify', { method: 'GET' }),
 
   register: (userData: any) =>
     apiRequest('/auth/register', {
@@ -197,7 +195,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       
       const savedToken = tokenManager.getToken();
       if (savedToken) {
-        console.log('🔍 Found saved token, verifying...');
+        console.log(' Found saved token, verifying...');
         setToken(savedToken);
         
         // Try to get user data from localStorage first
@@ -207,27 +205,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           setUser(savedUserData);
         }
 
-        try {
-          // Verify token with server
-          const response = await authAPI.verifyToken();
-          if (response.success && response.data?.user) {
-            console.log('✅ Token valid, user authenticated:', response.data.user);
-            setUser(response.data.user);
-            tokenManager.saveUserData(response.data.user);
-          } else {
-            console.log('❌ Token invalid, clearing stored data');
-            tokenManager.removeToken();
-            tokenManager.clearUserData();
-            setToken(null);
-            setUser(null);
-          }
-        } catch (error) {
-          console.error('❌ Token verification failed:', error);
-          tokenManager.removeToken();
-          tokenManager.clearUserData();
-          setToken(null);
-          setUser(null);
-        }
+	console.log('Authentication restored from localStorage');        
+
       } else {
         console.log('📋 No saved token found');
       }
@@ -245,7 +224,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       console.log('🔐 Attempting login for:', email);
 
       const response = await authAPI.login(email, password);
-      console.log('📊 Login API Response:', response);
+      console.log('📊 Login API Response:', response)
+
 
       if (response.success && response.data) {
         const { token: newToken, user: userData } = response.data;
@@ -258,7 +238,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setToken(newToken);
         setUser(userData);
 
-        toast.success(Selamat datang, ${userData.admin?.nama_admin || userData.pelatih?.nama_pelatih || userData.email}!);
+        toast.success(`Selamat datang, ${userData.admin?.nama_admin || userData.pelatih?.nama_pelatih || userData.email}!`);
 
         return {
           success: true,

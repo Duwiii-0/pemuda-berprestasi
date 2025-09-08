@@ -15,7 +15,7 @@ class APIClient {
   }
 
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    const token = (window as any).__auth_token;
+    const token = localStorage.getItem("auth_token");
     
     const config: RequestInit = {
       ...options,
@@ -59,7 +59,7 @@ class APIClient {
   }
 
   async postFormData<T>(endpoint: string, formData: FormData): Promise<T> {
-    const token = (window as any).__auth_token;
+    const token = localStorage.getItem("auth_token");
     
     const config: RequestInit = {
       method: 'POST',

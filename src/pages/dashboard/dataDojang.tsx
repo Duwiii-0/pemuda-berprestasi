@@ -395,7 +395,6 @@ const Dojang = () => {
           </div>
         </div>
       </div>
-
       {/* Mobile Sidebar */}
       {sidebarOpen && (
         <>
@@ -409,7 +408,7 @@ const Dojang = () => {
         </>
       )}
     </div>
-  );
+  </div>
+ );
 };
-
 export default Dojang;
