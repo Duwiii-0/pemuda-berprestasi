@@ -506,7 +506,7 @@ const TambahAtlit: React.FC = () => {
                   <Scale className="text-blue-500" size={20} />
                 </div>
                 <h3 className="font-bebas text-2xl text-black/80 tracking-wide">
-                  DATA FISIK (OPSIONAL)
+                  DATA FISIK
                 </h3>
               </div>
 
