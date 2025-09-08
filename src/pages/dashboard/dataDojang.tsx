@@ -215,29 +215,6 @@ const Dojang = () => {
                   Kelola informasi dojang dan lokasi pelatihan
                 </p>
               </div>
-              
-              {/* Quick Stats */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <StatsCard 
-                  icon={Award}
-                  title="Status"
-                  value="Aktif"
-                  color="bg-gradient-to-br from-red to-red/80"
-                />
-                <StatsCard 
-                  icon={Users}
-                  title="Atlet Terdaftar"
-                  value="127"
-                  color="bg-gradient-to-br from-yellow to-yellow/80"
-                />
-                <StatsCard 
-                  icon={Calendar}
-                  title="Tahun Berdiri"
-                  value="2018"
-                  color="bg-gradient-to-br from-black/70 to-black/50"
-                />
-              </div>
-            </div>
           </div>
 
           {/* Form Section */}
