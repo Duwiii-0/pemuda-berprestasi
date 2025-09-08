@@ -3,7 +3,7 @@ import TextInput from "../../components/textInput";
 import { Home, Phone, MapPin, Map, Mail } from "lucide-react";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
-import { apiClient } from "../../../pemuda-berprestasi-mvp/src/config/api";
+import { apiClient } from "../../config/api";
 import Logo from '../../assets/logo/logo.png';
 
 const RegisterDojang = () => {

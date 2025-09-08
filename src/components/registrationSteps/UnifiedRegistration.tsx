@@ -7,7 +7,7 @@ import { LockedSelect } from "../lockSelect";
 import { useRegistration } from "../../context/RegistrationContext";
 import GeneralButton from "../../components/generalButton";
 import toast from "react-hot-toast";
-import { setAuthToken } from "../../../pemuda-berprestasi-mvp/src/config/api";
+import { apiClient } from "../../config/api";
 import type { Atlit } from "../../context/RegistrationContext";
 import { useAuth } from "../../context/authContext";
 
@@ -41,7 +41,7 @@ const UnifiedRegistration = ({
   const { token, user } = useAuth();  
   
   useEffect(() => {
-      if (token) setAuthToken(token);
+      // Token handled by apiClient automatically
     }, [token]);
     
   const [currentStep, setCurrentStep] = useState(1);

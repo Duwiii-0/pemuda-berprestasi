@@ -1,6 +1,6 @@
   import { createContext, useContext, useState, useCallback } from "react";
   import type { ReactNode } from "react";
-  import { apiClient } from "../../pemuda-berprestasi-mvp/src/config/api";
+  import { apiClient } from "../config/api";
 
   type OptionType = { value: string; label: string };
 

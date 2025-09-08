@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { CheckCircle, XCircle, Loader, Eye, Trophy } from "lucide-react";
 import { useKompetisi } from "../../context/KompetisiContext";
-import { setAuthToken } from "../../../pemuda-berprestasi-mvp/src/config/api";
+import { apiClient } from "../../config/api";
 import { useAuth } from "../../context/authContext";
 import { Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -14,7 +14,7 @@ const ValidasiPeserta: React.FC = () => {
 
   useEffect(() => {
     if (token) {
-      setAuthToken(token);
+      // Token handled by apiClient automatically
     }
   }, [token]);
 

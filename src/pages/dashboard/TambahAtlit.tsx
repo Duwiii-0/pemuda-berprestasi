@@ -225,7 +225,7 @@ const TambahAtlit: React.FC = () => {
           sertifikat_belt: null,
           ktp: null,
         });
-        setTimeout(() => navigate("/dashboard/atlit"), 1000);
+        setTimeout(() => navigate("/dashboard/atlit", { state: { refresh: true } }), 1000);
       }
     } catch (error: any) {
       console.error("Error creating athlete:");

@@ -1,0 +1,35 @@
+    const fetchDojang = async () => {
+      try {
+        // Get current user info from auth context
+        const currentUser = user; // dari useAuth()
+        
+        // Fetch all dojangs
+        const response = await apiClient.get("/dojang/listdojang");
+        const allDojangs = response.data;
+        
+        // Find user's dojang based on pelatih data
+        let userDojang = null;
+        for (const dojang of allDojangs) {
+          const pelatihMatch = dojang.pelatih?.find(p => p.id_akun === currentUser?.id_akun);
+          if (pelatihMatch) {
+            userDojang = dojang;
+            break;
+          }
+        }
+        
+        if (userDojang) {
+          setUserDojang(userDojang);
+          setFormData({
+            name: userDojang.nama_dojang || "",
+            email: userDojang.email || "",
+            phone: userDojang.no_telp || "",
+            negara: userDojang.negara || "",
+            provinsi: userDojang.provinsi || "",
+            kota: userDojang.kota || "",
+            kecamatan: userDojang.kecamatan || "",
+            kelurahan: userDojang.kelurahan || "",
+            alamat: userDojang.alamat || "",
+          });
+        } else {
+          toast.error("Dojang tidak ditemukan untuk user ini");
+        }

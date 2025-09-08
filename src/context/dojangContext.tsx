@@ -2,7 +2,7 @@
 import { createContext, useContext, useState } from "react";
 import type { ReactNode } from "react";
 import toast from "react-hot-toast";
-import { apiClient } from "../../pemuda-berprestasi-mvp/src/config/api"; // import apiClient
+import { apiClient } from "../config/api"; // import apiClient
 
 type OptionType = { value: string; label: string };
 

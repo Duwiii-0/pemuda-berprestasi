@@ -126,7 +126,7 @@ export class AtletService {
     try {
       const {
         page = 1,
-        limit = 10,
+        limit = 100,
         search,
         id_dojang,
         jenis_kelamin,
