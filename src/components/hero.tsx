@@ -31,7 +31,7 @@ const Hero = () => {
             {/* Subtitle */}
             <p className="text-base sm:text-lg md:text-xl lg:text-2xl font-plex font-medium text-white/95 max-w-3xl mx-auto md:mx-0 leading-relaxed drop-shadow-lg">
               Tempat di mana semangat kompetisi bertemu dengan prestasi luar biasa. 
-              Bergabunglah dalam pertandingan taekwondo tingkat internasional.
+              Bergabunglah dalam pertandingan taekwondo dengan standar internasional.
             </p>
           </div>
 
@@ -44,24 +44,6 @@ const Hero = () => {
               <span className="relative px-4 z-10">Lihat Kompetisi</span>
               <div className="absolute inset-0 bg-white transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></div>
             </Link>
-          </div>
-
-          {/* Stats */}
-          <div className="flex items-center justify-center md:justify-start space-x-6 lg:space-x-8 pt-4 lg:pt-6">
-            <div className="text-center group hover:scale-105 transition-transform duration-300">
-              <div className="text-2xl lg:text-3xl font-bebas text-white drop-shadow-lg">100+</div>
-              <div className="text-sm font-plex text-white/80">Peserta</div>
-            </div>
-            <div className="w-px h-8 bg-white/30"></div>
-            <div className="text-center group hover:scale-105 transition-transform duration-300">
-              <div className="text-2xl lg:text-3xl font-bebas text-white drop-shadow-lg">15+</div>
-              <div className="text-sm font-plex text-white/80">Negara</div>
-            </div>
-            <div className="w-px h-8 bg-white/30"></div>
-            <div className="text-center group hover:scale-105 transition-transform duration-300">
-              <div className="text-2xl lg:text-3xl font-bebas text-white drop-shadow-lg">5</div>
-              <div className="text-sm font-plex text-white/80">Kategori</div>
-            </div>
           </div>
         </div>
       </div>
