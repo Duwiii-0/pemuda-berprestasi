@@ -357,30 +357,60 @@ const DataKompetisi = () => {
               </p>
             </div>
 
-            {/* Filter Section - Extended with more filtering options */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 mb-6">
+            {/* FILTER + SEARCH - Sama seperti AllPeserta */}
+            <div className="rounded-xl shadow-sm border p-4 sm:p-6 mb-6" style={{ backgroundColor: '#F5FBEF', borderColor: '#990D35' }}>
               <div className="space-y-4">
-                {/* Search */}
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                  <input
-                    type="text"
-                    placeholder="Cari peserta..."
-                    value={searchPeserta}
-                    onChange={(e) => setSearchPeserta(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 rounded-2xl border border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-400 focus:border-transparent text-sm"
-                  />
+                {/* Search - Full width */}
+                <div className="w-full">
+                  <div className="relative">
+                    <Search
+                      className="absolute left-3 top-1/2 -translate-y-1/2"
+                      style={{ color: '#050505', opacity: 0.4 }}
+                      size={18}
+                    />
+                    <input
+                      type="text"
+                      placeholder="Cari peserta..."
+                      value={searchPeserta}
+                      onChange={(e) => setSearchPeserta(e.target.value)}
+                      className="w-full pl-10 pr-4 py-3 rounded-xl border shadow-sm focus:ring-2 focus:border-transparent text-sm placeholder-gray-400 transition-colors"
+                      style={{ 
+                        borderColor: '#990D35', 
+                        backgroundColor: '#F5FBEF',
+                        color: '#050505'
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.outline = 'none';
+                        e.target.style.boxShadow = '0 0 0 2px rgba(153, 13, 53, 0.2)';
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.boxShadow = '';
+                      }}
+                    />
+                  </div>
                 </div>
-              
-                {/* Filters dalam grid yang diperluas */}
+
+                {/* Filter dalam grid responsif */}
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
-                  {/* Status */}
+                  {/* Filter Status */}
                   <div className="col-span-2 sm:col-span-1">
-                    <label className="block text-gray-600 text-xs mb-2 font-medium">Status</label>
+                    <label className="block text-xs mb-2 font-medium" style={{ color: '#050505', opacity: 0.6 }}>Status</label>
                     <select
                       value={filterStatus}
                       onChange={(e) => setFilterStatus(e.target.value as any)}
-                      className="w-full px-3 py-2.5 rounded-xl border border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-400 focus:border-transparent text-sm"
+                      className="w-full px-3 py-2.5 rounded-xl border shadow-sm focus:ring-2 focus:border-transparent text-sm transition-colors"
+                      style={{ 
+                        borderColor: '#990D35', 
+                        backgroundColor: '#F5FBEF',
+                        color: '#050505'
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.outline = 'none';
+                        e.target.style.boxShadow = '0 0 0 2px rgba(153, 13, 53, 0.2)';
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.boxShadow = '';
+                      }}
                     >
                       {statusOptions.map((opt) => (
                         <option key={opt.value} value={opt.value}>
@@ -389,14 +419,26 @@ const DataKompetisi = () => {
                       ))}
                     </select>
                   </div>
-                    
-                  {/* Kategori */}
+
+                  {/* Filter Kategori */}
                   <div className="col-span-2 sm:col-span-1">
-                    <label className="block text-gray-600 text-xs mb-2 font-medium">Kategori</label>
+                    <label className="block text-xs mb-2 font-medium" style={{ color: '#050505', opacity: 0.6 }}>Kategori</label>
                     <select
                       value={filterCategory}
                       onChange={(e) => setFilterCategory(e.target.value as any)}
-                      className="w-full px-3 py-2.5 rounded-xl border border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-400 focus:border-transparent text-sm"
+                      className="w-full px-3 py-2.5 rounded-xl border shadow-sm focus:ring-2 focus:border-transparent text-sm transition-colors"
+                      style={{ 
+                        borderColor: '#990D35', 
+                        backgroundColor: '#F5FBEF',
+                        color: '#050505'
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.outline = 'none';
+                        e.target.style.boxShadow = '0 0 0 2px rgba(153, 13, 53, 0.2)';
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.boxShadow = '';
+                      }}
                     >
                       {categoryOptions.map((opt) => (
                         <option key={opt.value} value={opt.value}>
@@ -406,13 +448,25 @@ const DataKompetisi = () => {
                     </select>
                   </div>
 
-                  {/* Level */}
+                  {/* Filter Level */}
                   <div className="col-span-2 sm:col-span-1">
-                    <label className="block text-gray-600 text-xs mb-2 font-medium">Level</label>
+                    <label className="block text-xs mb-2 font-medium" style={{ color: '#050505', opacity: 0.6 }}>Level</label>
                     <select
                       value={filterLevel || ""}
                       onChange={(e) => setFilterLevel(e.target.value as "pemula" | "prestasi" | null || null)}
-                      className="w-full px-3 py-2.5 rounded-xl border border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-400 focus:border-transparent text-sm"
+                      className="w-full px-3 py-2.5 rounded-xl border shadow-sm focus:ring-2 focus:border-transparent text-sm transition-colors"
+                      style={{ 
+                        borderColor: '#990D35', 
+                        backgroundColor: '#F5FBEF',
+                        color: '#050505'
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.outline = 'none';
+                        e.target.style.boxShadow = '0 0 0 2px rgba(153, 13, 53, 0.2)';
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.boxShadow = '';
+                      }}
                     >
                       {levelOptions.map((opt) => (
                         <option key={opt.value || "null"} value={opt.value || ""}>
@@ -421,14 +475,26 @@ const DataKompetisi = () => {
                       ))}
                     </select>
                   </div>
-                    
-                  {/* Kelompok Usia */}
+
+                  {/* Filter Kelompok Usia */}
                   <div className="col-span-2 sm:col-span-1">
-                    <label className="block text-gray-600 text-xs mb-2 font-medium">Usia</label>
+                    <label className="block text-xs mb-2 font-medium" style={{ color: '#050505', opacity: 0.6 }}>Usia</label>
                     <select
                       value={filterKelompokUsia}
                       onChange={(e) => setFilterKelompokUsia(e.target.value as any)}
-                      className="w-full px-3 py-2.5 rounded-xl border border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-400 focus:border-transparent text-sm"
+                      className="w-full px-3 py-2.5 rounded-xl border shadow-sm focus:ring-2 focus:border-transparent text-sm transition-colors"
+                      style={{ 
+                        borderColor: '#990D35', 
+                        backgroundColor: '#F5FBEF',
+                        color: '#050505'
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.outline = 'none';
+                        e.target.style.boxShadow = '0 0 0 2px rgba(153, 13, 53, 0.2)';
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.boxShadow = '';
+                      }}
                     >
                       {ageOptions.map((opt) => (
                         <option key={opt.value} value={opt.value}>
@@ -438,13 +504,25 @@ const DataKompetisi = () => {
                     </select>
                   </div>
 
-                  {/* Dojang */}
+                  {/* Filter Dojang */}
                   <div className="col-span-4 sm:col-span-3 lg:col-span-1">
-                    <label className="block text-gray-600 text-xs mb-2 font-medium">Dojang</label>
+                    <label className="block text-xs mb-2 font-medium" style={{ color: '#050505', opacity: 0.6 }}>Dojang</label>
                     <select
                       value={filterDojang}
                       onChange={(e) => setFilterDojang(e.target.value)}
-                      className="w-full px-3 py-2.5 rounded-xl border border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-400 focus:border-transparent text-sm"
+                      className="w-full px-3 py-2.5 rounded-xl border shadow-sm focus:ring-2 focus:border-transparent text-sm transition-colors"
+                      style={{ 
+                        borderColor: '#990D35', 
+                        backgroundColor: '#F5FBEF',
+                        color: '#050505'
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.outline = 'none';
+                        e.target.style.boxShadow = '0 0 0 2px rgba(153, 13, 53, 0.2)';
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.boxShadow = '';
+                      }}
                     >
                       <option value="ALL">Semua Dojang</option>
                       {dojangOptions.map((opt) => (
@@ -455,15 +533,27 @@ const DataKompetisi = () => {
                     </select>
                   </div>
 
-                  {/* Kelas Berat */}
+                  {/* Filter Kelas Berat */}
                   <div className="col-span-2 sm:col-span-1">
-                    <label className="block text-gray-600 text-xs mb-2 font-medium">
+                    <label className="block text-xs mb-2 font-medium" style={{ color: '#050505', opacity: 0.6 }}>
                       Kelas Berat
                     </label>
                     <select
                       value={filterKelasBerat}
                       onChange={(e) => setFilterKelasBerat(e.target.value)}
-                      className="w-full px-3 py-2.5 rounded-xl border border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-400 focus:border-transparent text-sm"
+                      className="w-full px-3 py-2.5 rounded-xl border shadow-sm focus:ring-2 focus:border-transparent text-sm transition-colors"
+                      style={{
+                        borderColor: '#990D35',
+                        backgroundColor: '#F5FBEF',
+                        color: '#050505'
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.outline = 'none';
+                        e.target.style.boxShadow = '0 0 0 2px rgba(153, 13, 53, 0.2)';
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.boxShadow = '';
+                      }}
                     >
                       {kelasBeratOptions.map((opt) => (
                         <option key={opt.value} value={opt.value}>
@@ -475,11 +565,11 @@ const DataKompetisi = () => {
                 </div>
 
                 {/* Info hasil */}
-                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 pt-2 border-t border-gray-200">
-                  <p className="text-sm text-gray-600">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 pt-2 border-t" style={{ borderColor: 'rgba(153, 13, 53, 0.2)' }}>
+                  <p className="text-sm" style={{ color: '#050505', opacity: 0.6 }}>
                     Menampilkan <span className="font-semibold">{startIndex + 1}-{Math.min(endIndex, displayedPesertas.length)}</span> dari <span className="font-semibold">{displayedPesertas.length}</span> peserta
                   </p>
-                  <p className="text-xs sm:text-sm text-gray-500">
+                  <p className="text-xs sm:text-sm" style={{ color: '#050505', opacity: 0.5 }}>
                     Halaman {currentPage} dari {totalPages}
                   </p>
                 </div>
