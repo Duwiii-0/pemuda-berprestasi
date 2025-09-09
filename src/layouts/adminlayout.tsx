@@ -73,7 +73,7 @@ const AdminLayout: React.FC = () => {
           {/* Header */}
           <div className="p-6 border-b border-gray-200">
             <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-blue-600 shadow-sm">
+              <div className="p-2.5 rounded-xl bg-red-600 shadow-sm">
                 <Shield className="text-white" size={24} />
               </div>
               <div>
@@ -97,7 +97,7 @@ const AdminLayout: React.FC = () => {
                 <p className="font-semibold text-gray-900 text-base">
                   {displayName}
                 </p>
-                <p className="text-sm text-blue-600 font-medium">
+                <p className="text-sm text-red-600 font-medium">
                   Administrator
                 </p>
               </div>
@@ -112,8 +112,8 @@ const AdminLayout: React.FC = () => {
                 onClick={() => navigate(item.path)}
                 className={`w-full flex items-center justify-between p-4 rounded-xl transition-all duration-200 group ${
                   item.active 
-                    ? 'bg-blue-500 text-white shadow-md' 
-                    : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700'
+                    ? 'bg-red-500 text-white shadow-md' 
+                    : 'text-gray-700 hover:bg-red-50 hover:text-red-700'
                 }`}
               >
                 <div className="flex items-center gap-3">
@@ -122,7 +122,7 @@ const AdminLayout: React.FC = () => {
                     className={`${
                       item.active 
                         ? 'text-yellow-400' 
-                        : 'text-gray-500 group-hover:text-blue-600'
+                        : 'text-gray-500 group-hover:text-red-600'
                     } transition-colors`}
                   />
                   <span className="font-medium text-base">
@@ -134,7 +134,7 @@ const AdminLayout: React.FC = () => {
                   className={`${
                     item.active 
                       ? 'text-yellow-400' 
-                      : 'text-gray-400 group-hover:text-blue-600'
+                      : 'text-gray-400 group-hover:text-red-600'
                   } transition-all duration-200 group-hover:translate-x-0.5`}
                 />
               </button>
@@ -166,7 +166,7 @@ const AdminLayout: React.FC = () => {
             <Menu size={24} />
           </button>
           <div className="flex items-center gap-2">
-            <Shield className="text-blue-600" size={20} />
+            <Shield className="text-red-600" size={20} />
             <h1 className="text-xl font-bold text-gray-900">
               ADMIN
             </h1>
@@ -189,7 +189,7 @@ const AdminLayout: React.FC = () => {
           <aside className="fixed inset-y-0 left-0 z-50 w-72 bg-white shadow-xl lg:hidden">
             <div className="p-6 border-b border-gray-200 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="p-2 rounded-xl bg-blue-600">
+                <div className="p-2 rounded-xl bg-red-600">
                   <Shield className="text-white" size={20} />
                 </div>
                 <div>
@@ -215,7 +215,7 @@ const AdminLayout: React.FC = () => {
                   <p className="font-semibold text-gray-900 text-base">
                     {displayName}
                   </p>
-                  <p className="text-sm text-blue-600 font-medium">
+                  <p className="text-sm text-red-600 font-medium">
                     Administrator
                   </p>
                 </div>
