@@ -232,8 +232,8 @@ const AdminLayout: React.FC = () => {
                   }}
                   className={`w-full flex items-center justify-between p-4 rounded-xl transition-all duration-200 ${
                     item.active 
-                      ? 'bg-blue-500 text-white shadow-md' 
-                      : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700'
+                      ? 'bg-red-700 text-white shadow-md' 
+                      : 'text-gray-700 hover:bg-red-50 hover:text-red-700'
                   }`}
                 >
                   <div className="flex items-center gap-3">
