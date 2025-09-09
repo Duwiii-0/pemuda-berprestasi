@@ -130,8 +130,22 @@ useEffect(() => {
     categoryType: formData.categoryType,
   };
 
+  // Tentukan kelompokId otomatis jika POOMSAE pemula
+  let kelompokId: number | undefined;
+
+  if (formData.styleType === "POOMSAE" && formData.categoryType === "pemula") {
+    kelompokId = 4;
+
+    // Update selectedAge supaya UI tetap sinkron
+    if (!formData.selectedAge || Number(formData.selectedAge.value) !== 4) {
+      formData.selectedAge = { value: "4", label: "Pemula" }; // langsung assign
+    }
+  } else if (formData.selectedAge) {
+    kelompokId = Number(formData.selectedAge.value);
+  }
+
   if (formData.selectedGender) kelasFilter.gender = formData.selectedGender.value as "LAKI_LAKI" | "PEREMPUAN";
-  if (formData.selectedAge) kelasFilter.kelompokId = Number(formData.selectedAge.value);
+  if (kelompokId) kelasFilter.kelompokId = kelompokId;
   if (formData.selectedWeight) kelasFilter.kelasBeratId = Number(formData.selectedWeight.value);
   if (formData.selectedPoomsae) kelasFilter.poomsaeId = Number(formData.selectedPoomsae.value);
 
@@ -162,9 +176,6 @@ useEffect(() => {
   user?.pelatih?.id_dojang,
   fetchKelasKejuaraan,
 ]);
-
-
-
 
   // ✅ UPDATED: useEffect untuk fetch eligible atlits dengan poomsae team support
   useEffect(() => {
