@@ -233,36 +233,6 @@ const Dojang = () => {
                   Kelola informasi dojang dan lokasi pelatihan
                 </p>
               </div>
-              
-              {/* Quick Stats */}
-              {userDojang && (
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
-                  <StatsCard 
-                    icon={Building}
-                    title="Status Dojang"
-                    value="Aktif"
-                    color="bg-gradient-to-br from-red to-red/80"
-                  />
-                  <StatsCard 
-                    icon={MapPin}
-                    title="Lokasi"
-                    value={userDojang.kota || "Tidak diketahui"}
-                    color="bg-gradient-to-br from-blue-500 to-blue-600"
-                  />
-                  <StatsCard 
-                    icon={Calendar}
-                    title="Tahun Aktif"
-                    value={yearsActive > 0 ? `${yearsActive} Tahun` : "Baru"}
-                    color="bg-gradient-to-br from-yellow to-yellow/80"
-                  />
-                  <StatsCard 
-                    icon={Award}
-                    title="Provinsi"
-                    value={userDojang.provinsi || "Tidak diketahui"}
-                    color="bg-gradient-to-br from-green-500 to-green-600"
-                  />
-                </div>
-              )}
             </div>
           </div>
 
