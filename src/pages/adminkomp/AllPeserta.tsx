@@ -7,6 +7,7 @@ import { apiClient } from "../../config/api";
 import Select from "react-select";
 import { useNavigate } from "react-router-dom";
 import SelectTeamMemberModal from "../../components/selectTeamModal";
+import { useDojang } from "../../context/dojangContext";
 
 
 const AllPeserta: React.FC = () => {
@@ -23,6 +24,12 @@ const AllPeserta: React.FC = () => {
   const [filterKelasBerat] = useState<string | null>(null);
   const [filterKelasUsia, setFilterKelasUsia] = useState<"ALL" | "Cadet" | "Junior" | "Senior">("ALL");
   const [filterLevel, setFilterLevel] = useState<"pemula" | "prestasi" | null>(null);
+  const [filterDojang, setFilterDojang] = useState<string>("ALL");
+  const { dojangOptions, refreshDojang, isLoading } = useDojang();
+
+  useEffect(() => {
+    refreshDojang();
+  }, []);
 
   const kompetisiId = user?.role === "ADMIN_KOMPETISI" ? user?.admin_kompetisi?.id_kompetisi : null;
 
@@ -109,7 +116,14 @@ const AllPeserta: React.FC = () => {
   const level = peserta.kelas_kejuaraan?.kategori_event?.nama_kategori?.toUpperCase() || "";
   const matchesLevel = !filterLevel || level === filterLevel.toUpperCase();
 
-  return matchesSearch && matchesStatus && matchesCategory && matchesKelasBerat && matchesKelasUsia && matchesLevel;
+  // Dojang
+  const pesertaDojang = peserta.is_team
+    ? peserta.anggota_tim?.[0]?.atlet?.dojang?.id_dojang?.toString() || ""
+    : peserta.atlet?.dojang?.id_dojang?.toString() || "";
+
+  const matchesDojang = filterDojang === "ALL" || pesertaDojang === filterDojang;
+
+  return matchesSearch && matchesStatus && matchesCategory && matchesKelasBerat && matchesKelasUsia && matchesLevel && matchesDojang;
 });
 
 
@@ -137,12 +151,13 @@ const AllPeserta: React.FC = () => {
       onChange={(e) => setSearchTerm(e.target.value)}
       className="w-full pl-10 md:pl-14 pr-3 md:pr-4 py-2.5 md:py-4 rounded-2xl md:rounded-3xl 
                  border border-gray-200 shadow 
+                 focus:ring-2 focus:ring-red-400 focus:border-transparent 
                  text-sm md:text-lg transition placeholder-gray-400"
     />
   </div>
 
   {/* Filter Options */}
-  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+  <div className="grid grid-cols-1 md:grid-cols-4 gap-3 md:gap-4">
     {/* Filter Status */}
     <Select
       unstyled
@@ -183,7 +198,7 @@ const AllPeserta: React.FC = () => {
     />
 
     {/* Filter Kategori */}
-    <Select<CategoryOption>
+    <Select
       unstyled
       value={{
         value: filterCategory || "ALL",
@@ -289,6 +304,41 @@ const AllPeserta: React.FC = () => {
       }}
       menuPortalTarget={document.body}
     />
+
+    {/* Filter Dojang */}
+<Select
+  unstyled
+  value={{
+    value: filterDojang,
+    label:
+      filterDojang === "ALL"
+        ? "Semua Dojang"
+        : dojangOptions.find((opt) => opt.value === filterDojang)?.label || "Pilih Dojang",
+  }}
+  onChange={(selected) => setFilterDojang(selected?.value || "ALL")}
+  options={[{ value: "ALL", label: "Semua Dojang" }, ...dojangOptions]}
+  placeholder="Pilih dojang"
+  classNames={{
+    control: () =>
+      `w-full flex items-center border-2 border-gray-300 
+       rounded-2xl md:rounded-3xl px-3 md:px-4 py-2 md:py-3 gap-2 md:gap-3 
+       backdrop-blur-sm text-sm md:text-base 
+       transition-all duration-300 hover:shadow`,
+    valueContainer: () => "px-1",
+    placeholder: () => "text-gray-400 font-plex text-xs md:text-sm",
+    menu: () =>
+      "border border-red/20 bg-white/95 backdrop-blur-sm rounded-xl shadow-xl mt-2 overflow-hidden z-50",
+    menuList: () => "max-h-32 overflow-y-auto",
+    option: ({ isFocused, isSelected }) =>
+      [
+        "px-3 md:px-4 py-2 md:py-3 cursor-pointer font-plex text-xs md:text-sm transition-colors duration-200 hover:text-red",
+        isFocused ? "bg-red/10 text-red" : "text-black/80",
+        isSelected ? "bg-red text-white" : "",
+      ].join(" "),
+  }}
+  menuPortalTarget={document.body}
+/>
+
   </div>
 </div>
 
