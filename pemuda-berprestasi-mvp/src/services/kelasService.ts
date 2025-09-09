@@ -28,7 +28,7 @@ export const kelasService = {
 
 getKelasKejuaraan: async (kompetisiId: number, filter: {
   styleType: Cabang,
-  gender?: JenisKelamin,
+  gender?: JenisKelamin, // ✅ MADE OPTIONAL
   categoryType?: string,
   kelompokId?: number,
   kelasBeratId?: number,
@@ -37,50 +37,63 @@ getKelasKejuaraan: async (kompetisiId: number, filter: {
   try {
     console.log("🔍 Backend filter received:", filter);
 
+    // Base condition
     let whereCondition: any = {
       id_kompetisi: kompetisiId,
       cabang: filter.styleType,
     };
 
-    // Kategori event
+    // Kategori event condition
     if (filter.categoryType) {
       const kategoriEventId = filter.categoryType === "prestasi" ? 2 : 1;
       whereCondition.id_kategori_event = kategoriEventId;
     }
 
-    // Handle POOMSAE
-    if (filter.styleType === "POOMSAE") {
-      if (filter.categoryType === "prestasi") {
-        if (filter.kelompokId) whereCondition.id_kelompok = filter.kelompokId;
-        if (filter.poomsaeId) whereCondition.id_poomsae = filter.poomsaeId;
-        if (filter.gender) whereCondition.gender = filter.gender; // optional
-      } else if (filter.categoryType === "pemula") {
-        if (filter.poomsaeId) whereCondition.id_poomsae = filter.poomsaeId;
-        // gender dan kelompok diabaikan
-      }
-    }
+    // Handle different category types
+    if (filter.categoryType === "prestasi") {
+  if (filter.kelompokId) {
+    whereCondition.id_kelompok = filter.kelompokId;
+  }
 
-    // Handle KYORUGI
-    if (filter.styleType === "KYORUGI") {
-      if (filter.categoryType === "prestasi") {
-        if (filter.kelompokId) whereCondition.id_kelompok = filter.kelompokId;
-        if (filter.kelasBeratId) whereCondition.id_kelas_berat = filter.kelasBeratId;
-        if (filter.gender) {
-          // filter gender via relation ke kelas_berat
-          whereCondition.kelas_berat = {
-            id_kelas_berat: filter.kelasBeratId,
-            jenis_kelamin: filter.gender
-          };
-          delete whereCondition.id_kelas_berat; // pakai relation
-        }
-      } else if (filter.categoryType === "pemula") {
-        if (filter.gender) {
-          whereCondition.kelas_berat = {
-            jenis_kelamin: filter.gender
-          };
-        }
-        // umur dan kelas berat diabaikan
-      }
+  if (filter.styleType === "KYORUGI" && filter.kelasBeratId) {
+    whereCondition.id_kelas_berat = filter.kelasBeratId;
+  }
+
+  if (filter.styleType === "POOMSAE" && filter.poomsaeId) {
+    whereCondition.id_poomsae = filter.poomsaeId;
+  }
+} else if (filter.categoryType === "pemula") {
+  // Buat array OR yang fleksibel sesuai styleType
+  const orConditions: any[] = [
+    { id_kelompok: null, id_kelas_berat: null, id_poomsae: null } // fallback semua pemula
+  ];
+
+  if (filter.kelompokId) {
+    orConditions.push({ id_kelompok: filter.kelompokId });
+  }
+
+  if (filter.styleType === "KYORUGI" && filter.kelasBeratId) {
+    orConditions.push({ id_kelas_berat: filter.kelasBeratId });
+  }
+
+  if (filter.styleType === "POOMSAE" && filter.poomsaeId) {
+    orConditions.push({ id_poomsae: filter.poomsaeId });
+  }
+
+  whereCondition.OR = orConditions;
+}
+
+    // ✅ NEW: Handle gender filtering for kelas_berat
+    // For KYORUGI, we need to filter kelas_berat by gender
+    // For team POOMSAE, we skip gender filtering to get mixed gender class
+    if (filter.styleType === "KYORUGI" && filter.gender && filter.kelasBeratId) {
+      // Add gender constraint through kelas_berat relation
+      whereCondition.kelas_berat = {
+        id_kelas_berat: filter.kelasBeratId,
+        jenis_kelamin: filter.gender
+      };
+      // Remove the direct id_kelas_berat since we're using relation
+      delete whereCondition.id_kelas_berat;
     }
 
     console.log("🔍 Final Prisma where condition:", JSON.stringify(whereCondition, null, 2));
@@ -107,7 +120,6 @@ getKelasKejuaraan: async (kompetisiId: number, filter: {
     if (err instanceof Error) console.error("Stack:", err.stack);
     throw err;
   }
-}
-
+},
 
 };
