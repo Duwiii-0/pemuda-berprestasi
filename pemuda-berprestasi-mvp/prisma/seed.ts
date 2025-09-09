@@ -465,29 +465,36 @@ async function seedKelasKejuaraan(idKompetisi: number) {
 
   for (const kategori of kategoriEvents) {
     if (kategori.nama_kategori.toLowerCase() === "pemula") {
-      // KYORUGI pemula → gender saja
-      data.push({
-        id_kompetisi: idKompetisi,
-        cabang: "KYORUGI",
-        id_kategori_event: kategori.id_kategori_event,
-        id_kelompok: null,
-        id_kelas_berat: null,
-        id_poomsae: null
-      });
+  // KYORUGI pemula → tetap null
+  data.push({
+    id_kompetisi: idKompetisi,
+    cabang: "KYORUGI",
+    id_kategori_event: kategori.id_kategori_event,
+    id_kelompok: null,
+    id_kelas_berat: null,
+    id_poomsae: null
+  });
 
-      // POOMSAE pemula → gender saja
-      data.push({
-        id_kompetisi: idKompetisi,
-        cabang: "POOMSAE",
-        id_kategori_event: kategori.id_kategori_event,
-        id_kelompok: null,
-        id_kelas_berat: null,
-        id_poomsae: null
-      });
+  // POOMSAE pemula → semua kelas POOMSAE pemula
+  const poomsaePemula = kelasPoomsae.filter(kp => {
+    const kelompok = kelompokUsia.find(k => k.id_kelompok === kp.id_kelompok);
+    return kelompok?.nama_kelompok.toLowerCase() === "pemula";
+  });
 
-      // Skip loop kelompok & kelas untuk pemula
-      continue;
-    }
+  for (const kp of poomsaePemula) {
+    data.push({
+      id_kompetisi: idKompetisi,
+      cabang: "POOMSAE",
+      id_kategori_event: kategori.id_kategori_event,
+      id_kelompok: kp.id_kelompok,
+      id_kelas_berat: null,
+      id_poomsae: kp.id_poomsae
+    });
+  }
+
+  // Skip loop kelompok & kelas untuk kategori pemula
+  continue;
+}
 
     // kategori prestasi → lakukan loop seperti biasa
     for (const kelompok of kelompokUsia) {
