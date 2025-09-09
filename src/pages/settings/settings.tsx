@@ -244,7 +244,7 @@ const Settings = () => {
   };
 
   const handlePasswordReset = () => {
-    window.location.href = 'http://localhost:5173/resetpassword';
+    window.location.href = 'https://pemudaberprestasi.com/resetpassword';
   };
 
   // Redirect jika tidak login
