@@ -63,25 +63,23 @@ getKelasKejuaraan: async (kompetisiId: number, filter: {
     whereCondition.id_poomsae = filter.poomsaeId;
   }
 } else if (filter.categoryType === "pemula") {
-  // Buat array OR yang fleksibel sesuai styleType
-  const orConditions: any[] = [
-    { id_kelompok: null, id_kelas_berat: null, id_poomsae: null } // fallback semua pemula
-  ];
-
-  if (filter.kelompokId) {
-    orConditions.push({ id_kelompok: filter.kelompokId });
+  if (filter.styleType === "POOMSAE") {
+    // POOMSAE pemula: cukup filter poomsae jika ada
+    if (filter.poomsaeId) {
+      whereCondition.id_poomsae = filter.poomsaeId;
+    }
+    // Jangan tambahkan OR array atau field lain
+  } else {
+    // Untuk KYORUGI pemula tetap OR array atau aturan lain
+    const orConditions: any[] = [
+      { id_kelompok: null, id_kelas_berat: null, id_poomsae: null } // fallback
+    ];
+    if (filter.kelompokId) orConditions.push({ id_kelompok: filter.kelompokId });
+    if (filter.styleType === "KYORUGI" && filter.kelasBeratId) orConditions.push({ id_kelas_berat: filter.kelasBeratId });
+    whereCondition.OR = orConditions;
   }
-
-  if (filter.styleType === "KYORUGI" && filter.kelasBeratId) {
-    orConditions.push({ id_kelas_berat: filter.kelasBeratId });
-  }
-
-  if (filter.styleType === "POOMSAE" && filter.poomsaeId) {
-    orConditions.push({ id_poomsae: filter.poomsaeId });
-  }
-
-  whereCondition.OR = orConditions;
 }
+
 
     // ✅ NEW: Handle gender filtering for kelas_berat
     // For KYORUGI, we need to filter kelas_berat by gender
