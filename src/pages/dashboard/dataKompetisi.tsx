@@ -207,243 +207,129 @@ if (showPeserta && selectedKompetisi) {
           <div className="w-full bg-white backdrop-blur-sm rounded-3xl p-6 shadow-xl border border-white/50">
             {/* Desktop Table View */}
             <div className="hidden lg:block">
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-
-                                  <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 mb-6">
-                    <div className="space-y-4">
-                      {/* Search */}
-                      <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                        <input
-                          type="text"
-                          placeholder="Cari peserta..."
-                          value={searchTerm}
-                          onChange={(e) => setSearchPeserta(e.target.value)}
-                          className="w-full pl-10 pr-4 py-3 rounded-2xl border border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-400 focus:border-transparent text-sm"
-                        />
-                      </div>
-                    
-                      {/* Filters */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {/* Status */}
-                        <div>
-                          <label className="block text-gray-600 text-xs mb-2 font-medium">Status</label>
-                          <Select
-                            unstyled
-                            value={{
-                              value: filterStatus,
-                              label:
-                                filterStatus === "ALL"
-                                  ? "Semua Status"
-                                  : filterStatus.charAt(0) + filterStatus.slice(1).toLowerCase(),
-                            }}
-                            onChange={(selected) => setFilterStatus(selected?.value as any)}
-                            options={[
-                              { value: "ALL", label: "Semua Status" },
-                              { value: "PENDING", label: "Pending" },
-                              { value: "APPROVED", label: "Approved" },
-                              { value: "REJECTED", label: "Rejected" },
-                            ]}
-                            placeholder="Pilih status"
-                            classNames={{
-                              control: () =>
-                                `w-full flex items-center border border-gray-300 rounded-2xl px-3 py-3 gap-2 transition-all duration-300 hover:shadow-sm`,
-                              valueContainer: () => "px-1",
-                              placeholder: () => "text-gray-400 text-sm",
-                              menu: () =>
-                                "border border-gray-200 bg-white rounded-xl shadow-lg mt-2 overflow-hidden z-50",
-                              menuList: () => "max-h-40 overflow-y-auto",
-                              option: ({ isFocused, isSelected }) =>
-                                [
-                                  "px-3 py-3 cursor-pointer text-sm transition-colors duration-200",
-                                  isFocused ? "bg-blue-50 text-blue-700" : "text-gray-800",
-                                  isSelected ? "bg-blue-500 text-white" : "",
-                                ].join(" "),
-                            }}
-                          />
-                        </div>
-                          
-                        {/* Kategori */}
-                        <div>
-                          <label className="block text-gray-600 text-xs mb-2 font-medium">Kategori</label>
-                            <Select
-                              unstyled
-                              value={{ value: filterCategory, label: filterCategory === "ALL" ? "Semua Kategori" : filterCategory }}
-                              onChange={(selected) => setFilterCategory(selected?.value as any)}
-                              options={[
-                                { value: "ALL", label: "Semua Kategori" },
-                                { value: "POOMSAE", label: "POOMSAE" },
-                                { value: "KYORUGI", label: "KYORUGI" },
-                              ]}
-                              placeholder="Pilih kategori"
-                              classNames={{
-                                control: () =>
-                                  `w-full flex items-center border border-gray-300 rounded-2xl px-3 py-3 gap-2 transition-all duration-300 hover:shadow-sm`,
-                                valueContainer: () => "px-1",
-                                placeholder: () => "text-gray-400 text-sm",
-                                menu: () => "border border-gray-200 bg-white rounded-xl shadow-lg mt-2 overflow-hidden z-50",
-                                menuList: () => "max-h-40 overflow-y-auto",
-                                option: ({ isFocused, isSelected }) =>
-                                  [
-                                    "px-3 py-3 cursor-pointer text-sm transition-colors duration-200",
-                                    isFocused ? "bg-blue-50 text-blue-700" : "text-gray-800",
-                                    isSelected ? "bg-blue-500 text-white" : ""
-                                  ].join(" "),
-                              }}
-                            />
-                        </div>
-
-                        {/* Kelompok Usia */}
-                        <div>
-                          <label className="block text-gray-600 text-xs mb-2 font-medium">Kelompok Usia</label>
-                          <Select
-                            unstyled
-                            value={{
-                              value: filterKelompokUsia,
-                              label:
-                                filterKelompokUsia === "ALL" ? "Semua Usia" : filterKelompokUsia,
-                            }}
-                            onChange={(selected) => setFilterKelompokUsia(selected?.value as any)}
-                            options={[
-                              { value: "ALL", label: "Semua Usia" },
-                              { value: "Cadet", label: "Cadet" },
-                              { value: "Junior", label: "Junior" },
-                              { value: "Senior", label: "Senior" },
-                            ]}
-                            placeholder="Pilih kelompok usia"
-                            classNames={{
-                              control: () =>
-                                `w-full flex items-center border border-gray-300 rounded-2xl px-3 py-3 gap-2 transition-all duration-300 hover:shadow-sm`,
-                              valueContainer: () => "px-1",
-                              placeholder: () => "text-gray-400 text-sm",
-                              menu: () =>
-                                "border border-gray-200 bg-white rounded-xl shadow-lg mt-2 overflow-hidden z-50",
-                              menuList: () => "max-h-40 overflow-y-auto",
-                              option: ({ isFocused, isSelected }) =>
-                                [
-                                  "px-3 py-3 cursor-pointer text-sm transition-colors duration-200",
-                                  isFocused ? "bg-blue-50 text-blue-700" : "text-gray-800",
-                                  isSelected ? "bg-blue-500 text-white" : "",
-                                ].join(" "),
-                            }}
-                          />
-                        </div>
-                          
-                      </div>
+              {/* Filter Section (selalu tampil) */}
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 mb-6">
+                <div className="space-y-4">
+                  {/* Search */}
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                    <input
+                      type="text"
+                      placeholder="Cari peserta..."
+                      value={searchPeserta}
+                      onChange={(e) => setSearchPeserta(e.target.value)}
+                      className="w-full pl-10 pr-4 py-3 rounded-2xl border border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-400 focus:border-transparent text-sm"
+                    />
+                  </div>
+                
+                  {/* Filters */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    {/* Status */}
+                    <div>
+                      <label className="block text-gray-600 text-xs mb-2 font-medium">Status</label>
+                      <Select
+                        unstyled
+                        value={{
+                          value: filterStatus,
+                          label: filterStatus === "ALL" ? "Semua Status" : filterStatus,
+                        }}
+                        onChange={(selected) => setFilterStatus(selected?.value as any)}
+                        options={[
+                          { value: "ALL", label: "Semua Status" },
+                          { value: "PENDING", label: "Pending" },
+                          { value: "APPROVED", label: "Approved" },
+                          { value: "REJECTED", label: "Rejected" },
+                        ]}
+                        classNames={{
+                          control: () =>
+                            `w-full flex items-center border border-gray-300 rounded-2xl px-3 py-3 gap-2 transition-all duration-300 hover:shadow-sm`,
+                          menu: () =>
+                            "border border-gray-200 bg-white rounded-xl shadow-lg mt-2 overflow-hidden z-50",
+                          option: ({ isFocused, isSelected }) =>
+                            [
+                              "px-3 py-3 cursor-pointer text-sm transition-colors duration-200",
+                              isFocused ? "bg-blue-50 text-blue-700" : "text-gray-800",
+                              isSelected ? "bg-blue-500 text-white" : "",
+                            ].join(" "),
+                        }}
+                      />
+                    </div>
+                      
+                    {/* Kategori */}
+                    <div>
+                      <label className="block text-gray-600 text-xs mb-2 font-medium">Kategori</label>
+                      <Select
+                        unstyled
+                        value={{ value: filterCategory, label: filterCategory === "ALL" ? "Semua Kategori" : filterCategory }}
+                        onChange={(selected) => setFilterCategory(selected?.value as any)}
+                        options={[
+                          { value: "ALL", label: "Semua Kategori" },
+                          { value: "POOMSAE", label: "POOMSAE" },
+                          { value: "KYORUGI", label: "KYORUGI" },
+                        ]}
+                        classNames={{
+                          control: () =>
+                            `w-full flex items-center border border-gray-300 rounded-2xl px-3 py-3 gap-2 transition-all duration-300 hover:shadow-sm`,
+                          menu: () =>
+                            "border border-gray-200 bg-white rounded-xl shadow-lg mt-2 overflow-hidden z-50",
+                        }}
+                      />
+                    </div>
+                      
+                    {/* Kelompok Usia */}
+                    <div>
+                      <label className="block text-gray-600 text-xs mb-2 font-medium">Kelompok Usia</label>
+                      <Select
+                        unstyled
+                        value={{
+                          value: filterKelompokUsia,
+                          label: filterKelompokUsia === "ALL" ? "Semua Usia" : filterKelompokUsia,
+                        }}
+                        onChange={(selected) => setFilterKelompokUsia(selected?.value as any)}
+                        options={[
+                          { value: "ALL", label: "Semua Usia" },
+                          { value: "Cadet", label: "Cadet" },
+                          { value: "Junior", label: "Junior" },
+                          { value: "Senior", label: "Senior" },
+                        ]}
+                        classNames={{
+                          control: () =>
+                            `w-full flex items-center border border-gray-300 rounded-2xl px-3 py-3 gap-2 transition-all duration-300 hover:shadow-sm`,
+                          menu: () =>
+                            "border border-gray-200 bg-white rounded-xl shadow-lg mt-2 overflow-hidden z-50",
+                        }}
+                      />
                     </div>
                   </div>
-
-                <div className="overflow-x-auto">
-                  <table className="w-full min-w-[1000px]">
-                    <thead className="bg-yellow-400">
-                      <tr>
-                        {["Nama", "Kategori", "Kelas Berat", "Kelas Poomsae", "Kelompok Usia", "Jenis Kelamin", "Nama Dojang", "Status", "Aksi"].map((header) => (
-                          <th
-                            key={header}
-                            className={`py-3 px-4 font-semibold text-gray-900 text-sm ${
-                              header === "Status" || header === "Aksi" ? "text-center" : "text-left"
-                            }`}
-                          >
-                            {header}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200">
-                      {displayedPesertas.map((peserta: any) => {
-                        const isTeam = peserta.is_team;
-                        const cabang = peserta.kelas_kejuaraan?.cabang || "-";
-                        const level = peserta.kelas_kejuaraan?.kategori_event?.nama_kategori || "-";
-                      
-                        const kelasBerat =
-                          cabang === "KYORUGI"
-                            ? peserta.kelas_kejuaraan?.kelas_berat?.nama_kelas ||
-                              (peserta.atlet?.berat_badan ? `${peserta.atlet.berat_badan} kg` : "-")
-                            : "-";
-                      
-                        const kelasPoomsae =
-                          cabang === "POOMSAE"
-                            ? peserta.kelas_kejuaraan?.poomsae?.nama_kelas || peserta.atlet?.belt || "-"
-                            : "-";
-                      
-                        const namaPeserta = isTeam
-                          ? peserta.anggota_tim?.map((m: any) => m.atlet.nama_atlet).join(", ")
-                          : peserta.atlet?.nama_atlet || "-";
-                      
-                        const dojang = isTeam && peserta.anggota_tim?.length
-                          ? peserta.anggota_tim[0]?.atlet?.dojang?.nama_dojang || "-"
-                          : peserta.atlet?.dojang?.nama_dojang || "-";
-                      
-                        return (
-                          <tr
-                            key={peserta.id_peserta_kompetisi}
-                            className="hover:bg-yellow-50 transition-colors cursor-pointer"
-                            onClick={() => {
-                              if (!isTeam && peserta.atlet?.id_atlet) {
-                                navigate(`/dashboard/atlit/${peserta.atlet.id_atlet}`);
-                              } else {
-                                toast("Ini peserta tim, tidak ada detail personal");
-                              }
-                            }}
-                          >
-                            <td className="py-4 px-4 font-medium text-gray-800 text-sm">{namaPeserta}</td>
-                            <td className="py-4 px-4 text-gray-700 text-sm">{`${cabang} - ${level}`}</td>
-                            <td className="py-4 px-4 text-gray-700 text-sm">{kelasBerat}</td>
-                            <td className="py-4 px-4 text-center text-gray-700 text-sm">{kelasPoomsae}</td>
-                            <td className="py-4 px-4 text-center text-gray-700 text-sm">
-                              {peserta.kelas_kejuaraan?.kelompok?.nama_kelompok || "-"}
-                            </td>
-                            <td className="py-4 px-4 text-center text-sm">
-                              {!isTeam ? (
-                                peserta.atlet?.jenis_kelamin === "LAKI_LAKI"
-                                  ? <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs">Laki-Laki</span>
-                                  : <span className="px-2 py-1 bg-pink-100 text-pink-700 rounded-full text-xs">Perempuan</span>
-                              ) : "-"}
-                            </td>
-                            <td className="py-4 px-4 text-gray-700 text-sm">{dojang}</td>
-                            <td className="py-4 px-4 text-center">
-                              <span
-                                className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
-                                  peserta.status === "PENDING"
-                                    ? "bg-yellow-100 text-yellow-800"
-                                    : peserta.status === "APPROVED"
-                                    ? "bg-green-100 text-green-800"
-                                    : "bg-red-100 text-red-800"
-                                }`}
-                              >
-                                {peserta.status}
-                              </span>
-                            </td>
-                            <td className="py-4 px-4">
-                              <div className="flex gap-2 justify-center">
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    toast.success("Disetujui!");
-                                    // TODO: panggil API approve
-                                  }}
-                                  className="flex items-center gap-1 px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 text-xs font-medium"
-                                >
-                                  Setujui
-                                </button>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    toast.error("Ditolak!");
-                                    // TODO: panggil API reject
-                                  }}
-                                  className="flex items-center gap-1 px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 text-xs font-medium"
-                                >
-                                  Tolak
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
                 </div>
+              </div>
+                      
+              {/* Table Section */}
+              <div className="overflow-x-auto bg-white rounded-xl shadow-sm border border-gray-200">
+                <table className="w-full min-w-[1000px] rounded-xl overflow-hidden">
+                  <thead className="bg-yellow-400">
+                    <tr>
+                      {["Nama", "Kategori", "Kelas Berat", "Kelas Poomsae", "Kelompok Usia", "Jenis Kelamin", "Nama Dojang", "Status", "Aksi"].map((header) => (
+                        <th key={header} className="py-3 px-4 font-semibold text-gray-900 text-sm text-left">
+                          {header}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {displayedPesertas.map((peserta: any) => (
+                      <tr key={peserta.id_peserta_kompetisi} className="hover:bg-yellow-50 transition-colors">
+                        {/* ...kolom peserta */}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                  
+                {displayedPesertas.length === 0 && (
+                  <div className="text-center py-12 text-gray-500">
+                    Tidak ada peserta ditemukan
+                  </div>
+                )}
               </div>
             </div>
 
