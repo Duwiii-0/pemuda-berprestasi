@@ -275,22 +275,21 @@
         styleType: filter.styleType,
         categoryType: filter.categoryType,
       };
-      
-      if (filter.styleType === "KYORUGI") {
-        if (filter.gender) payload.gender = filter.gender;
-        if (filter.kelasBeratId) payload.kelasBeratId = filter.kelasBeratId;
-        if (filter.kelompokId) payload.kelompokId = filter.kelompokId;
+
+      if (filter.gender) {
+        payload.gender = filter.gender;
       }
-      
-      if (filter.styleType === "POOMSAE") {
-        if (filter.categoryType === "prestasi") {
-          if (filter.gender) payload.gender = filter.gender;
-          if (filter.kelompokId) payload.kelompokId = filter.kelompokId;
-          if (filter.poomsaeId) payload.poomsaeId = filter.poomsaeId;
-        } else if (filter.categoryType === "pemula") {
-          if (filter.poomsaeId) payload.poomsaeId = filter.poomsaeId;
-          // gender dan kelompok tidak dikirim
-        }
+
+      if (filter.kelompokId) {
+        payload.kelompokId = filter.kelompokId;
+      }
+
+      if (filter.kelasBeratId) {
+        payload.kelasBeratId = filter.kelasBeratId;
+      }
+
+      if (filter.poomsaeId) {
+        payload.poomsaeId = filter.poomsaeId;
       }
 
       const res = await apiClient.post(`/kelas/kejuaraan/${kompetisiId}/filter`, payload);
