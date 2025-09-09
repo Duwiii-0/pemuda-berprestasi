@@ -21,7 +21,7 @@ const AllPeserta: React.FC = () => {
   const [filterStatus, setFilterStatus] = useState<"ALL" | "PENDING" | "APPROVED" | "REJECTED">("ALL");
   const [filterCategory, setFilterCategory] = useState<"ALL" | "KYORUGI" | "POOMSAE">("ALL");
   const [filterKelasBerat] = useState<string | null>(null);
-  const [filterKelasUsia] = useState<string | null>(null);
+  const [filterKelasUsia, setFilterKelasUsia] = useState<"ALL" | "Cadet" | "Junior" | "Senior">("ALL");
   const [filterLevel, setFilterLevel] = useState<"pemula" | "prestasi" | null>(null);
 
   const kompetisiId = user?.role === "ADMIN_KOMPETISI" ? user?.admin_kompetisi?.id_kompetisi : null;
@@ -103,7 +103,7 @@ const AllPeserta: React.FC = () => {
 
   // Kelas usia / kelompok
   const kelasUsia = peserta.kelas_kejuaraan?.kelompok?.nama_kelompok?.toUpperCase() || "";
-  const matchesKelasUsia = !filterKelasUsia || kelasUsia === filterKelasUsia.toUpperCase();
+  const matchesKelasUsia = filterKelasUsia === "ALL" || kelasUsia === filterKelasUsia;
 
   // Level / kategori event
   const level = peserta.kelas_kejuaraan?.kategori_event?.nama_kategori?.toUpperCase() || "";
@@ -125,119 +125,165 @@ const AllPeserta: React.FC = () => {
     </div>
 
     {/* FILTER & SEARCH */}
-    <div className="bg-white/90 backdrop-blur-md border border-white/40 rounded-2xl p-6 shadow-lg mb-6 z-50">
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
-        {/* Search */}
-        <div className="relative md:col-span-2">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={24} />
-          <input
-            type="text"
-            placeholder="Cari peserta..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-14 pr-4 py-4 rounded-3xl border border-gray-200 shadow-lg focus:ring-2 focus:ring-red-400 focus:border-transparent text-lg transition placeholder-gray-400"
-          />
-        </div>
+<div className="bg-white/90 backdrop-blur-md border border-white/40 rounded-2xl p-6 shadow-lg mb-6 z-50">
 
-        {/* Filter Status */}
-<Select
-  unstyled
-  value={{
-    value: filterStatus,
-    label:
-      filterStatus === "ALL"
-        ? "Semua Status"
-        : filterStatus.charAt(0) + filterStatus.slice(1).toLowerCase(),
-  }}
-  onChange={(selected) => setFilterStatus(selected?.value as any)}
-  options={[
-    { value: "ALL", label: "Semua Status" },
-    { value: "PENDING", label: "Pending" },
-    { value: "APPROVED", label: "Approved" },
-    { value: "REJECTED", label: "Rejected" },
-  ]}
-  placeholder="Pilih status"
-  classNames={{
-    control: () =>
-      `w-full py-4 flex items-center border-2 border-gray-300 rounded-3xl px-4 py-3 gap-3 backdrop-blur-sm transition-all duration-300 hover:shadow-lg`,
-    valueContainer: () => "px-1",
-    placeholder: () => "text-gray-400 font-plex text-sm",
-    menu: () =>
-      "border border-red/20 bg-white/95 backdrop-blur-sm rounded-xl shadow-xl mt-2 overflow-hidden z-50",
-    menuList: () => "max-h-32 overflow-y-auto",
-    option: ({ isFocused, isSelected }) =>
-      [
-        "px-4 py-3 cursor-pointer font-plex text-sm transition-colors duration-200 hover:text-red",
-        isFocused ? "bg-red/10 text-red" : "text-black/80",
-        isSelected ? "bg-red text-white" : "",
-      ].join(" "),
-  }}
-  menuPortalTarget={document.body}
-/>
+  {/* Search Bar */}
+  <div className="relative mb-6">
+    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={24} />
+    <input
+      type="text"
+      placeholder="Cari peserta..."
+      value={searchTerm}
+      onChange={(e) => setSearchTerm(e.target.value)}
+      className="w-full pl-14 pr-4 py-4 rounded-3xl border border-gray-200 shadow-lg 
+                 focus:ring-2 focus:ring-red-400 focus:border-transparent 
+                 text-lg transition placeholder-gray-400"
+    />
+  </div>
 
+  {/* Filter Options */}
+  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+    {/* Filter Status */}
+    <Select
+      unstyled
+      value={{
+        value: filterStatus,
+        label:
+          filterStatus === "ALL"
+            ? "Semua Status"
+            : filterStatus.charAt(0) + filterStatus.slice(1).toLowerCase(),
+      }}
+      onChange={(selected) => setFilterStatus(selected?.value as any)}
+      options={[
+        { value: "ALL", label: "Semua Status" },
+        { value: "PENDING", label: "Pending" },
+        { value: "APPROVED", label: "Approved" },
+        { value: "REJECTED", label: "Rejected" },
+      ]}
+      placeholder="Pilih status"
+      classNames={{
+        control: () =>
+          `w-full py-4 flex items-center border-2 border-gray-300 rounded-3xl px-4 py-3 gap-3 
+           backdrop-blur-sm transition-all duration-300 hover:shadow-lg`,
+        valueContainer: () => "px-1",
+        placeholder: () => "text-gray-400 font-plex text-sm",
+        menu: () =>
+          "border border-red/20 bg-white/95 backdrop-blur-sm rounded-xl shadow-xl mt-2 overflow-hidden z-50",
+        menuList: () => "max-h-32 overflow-y-auto",
+        option: ({ isFocused, isSelected }) =>
+          [
+            "px-4 py-3 cursor-pointer font-plex text-sm transition-colors duration-200 hover:text-red",
+            isFocused ? "bg-red/10 text-red" : "text-black/80",
+            isSelected ? "bg-red text-white" : "",
+          ].join(" "),
+      }}
+      menuPortalTarget={document.body}
+    />
 
-{/* Filter Kategori */}
-<Select<CategoryOption>
-  unstyled
-  value={{
-    value: filterCategory || "ALL",
-    label: filterCategory === "ALL" ? "Semua Kategori" : filterCategory,
-  }}
-  onChange={(selected) => setFilterCategory(selected?.value || "ALL")}
-  options={[
-    { value: "ALL", label: "Semua Kategori" },
-    { value: "KYORUGI", label: "KYORUGI" },
-    { value: "POOMSAE", label: "POOMSAE" },
-  ]}
-  placeholder="Pilih kategori"
-  classNames={{
-    control: () =>
-      `w-full py-4 flex items-center border-2 border-gray-300 rounded-3xl px-4 py-3 gap-3 backdrop-blur-sm transition-all duration-300 hover:shadow-lg`,
-    valueContainer: () => "px-1",
-    placeholder: () => "text-gray-400 font-plex text-sm",
-    menu: () =>
-      "border border-red/20 bg-white/95 backdrop-blur-sm rounded-xl shadow-xl mt-2 overflow-hidden z-50",
-    menuList: () => "max-h-32 overflow-y-auto",
-    option: ({ isFocused, isSelected }) =>
-      [
-        "px-4 py-3 cursor-pointer font-plex text-sm transition-colors duration-200 hover:text-red",
-        isFocused ? "bg-red/10 text-red" : "text-black/80",
-        isSelected ? "bg-red text-white" : "",
-      ].join(" "),
-  }}
-  menuPortalTarget={document.body}
-/>
+    {/* Filter Kategori */}
+    <Select<CategoryOption>
+      unstyled
+      value={{
+        value: filterCategory || "ALL",
+        label: filterCategory === "ALL" ? "Semua Kategori" : filterCategory,
+      }}
+      onChange={(selected) => setFilterCategory(selected?.value || "ALL")}
+      options={[
+        { value: "ALL", label: "Semua Kategori" },
+        { value: "KYORUGI", label: "KYORUGI" },
+        { value: "POOMSAE", label: "POOMSAE" },
+      ]}
+      placeholder="Pilih kategori"
+      classNames={{
+        control: () =>
+          `w-full py-4 flex items-center border-2 border-gray-300 rounded-3xl px-4 py-3 gap-3 
+           backdrop-blur-sm transition-all duration-300 hover:shadow-lg`,
+        valueContainer: () => "px-1",
+        placeholder: () => "text-gray-400 font-plex text-sm",
+        menu: () =>
+          "border border-red/20 bg-white/95 backdrop-blur-sm rounded-xl shadow-xl mt-2 overflow-hidden z-50",
+        menuList: () => "max-h-32 overflow-y-auto",
+        option: ({ isFocused, isSelected }) =>
+          [
+            "px-4 py-3 cursor-pointer font-plex text-sm transition-colors duration-200 hover:text-red",
+            isFocused ? "bg-red/10 text-red" : "text-black/80",
+            isSelected ? "bg-red text-white" : "",
+          ].join(" "),
+      }}
+      menuPortalTarget={document.body}
+    />
 
-{/* Filter Level */}
-<Select
-  unstyled
-  value={{ value: filterLevel || null, label: filterLevel || "Semua" }}
-  onChange={(selected) => setFilterLevel(selected?.value as "pemula" | "prestasi" | null || null)}
-  options={[
-    { value: null, label: "Semua" },
-    { value: "pemula", label: "Pemula" },
-    { value: "prestasi", label: "Prestasi" },
-  ]}
-  placeholder="Pilih level"
-  classNames={{
-    control: () =>
-      `w-full py-4 flex items-center border-2 border-gray-300 rounded-3xl px-4 py-3 gap-3 backdrop-blur-sm transition-all duration-300 hover:shadow-lg`,
-    valueContainer: () => "px-1",
-    placeholder: () => "text-gray-400 font-plex text-sm",
-    menu: () =>
-      "border border-red/20 bg-white/95 backdrop-blur-sm rounded-xl shadow-xl mt-2 overflow-hidden z-50",
-    menuList: () => "max-h-32 overflow-y-auto",
-    option: ({ isFocused, isSelected }) =>
-      [
-        "px-4 py-3 cursor-pointer font-plex text-sm transition-colors duration-200 hover:text-red",
-        isFocused ? "bg-red/10 text-red" : "text-black/80",
-        isSelected ? "bg-red text-white" : "",
-      ].join(" "),
-  }}
-  menuPortalTarget={document.body}
-/>
-      </div>
-    </div>
+    {/* Filter Level */}
+    <Select
+      unstyled
+      value={{ value: filterLevel || null, label: filterLevel || "Semua" }}
+      onChange={(selected) =>
+        setFilterLevel(selected?.value as "pemula" | "prestasi" | null || null)
+      }
+      options={[
+        { value: null, label: "Semua" },
+        { value: "pemula", label: "Pemula" },
+        { value: "prestasi", label: "Prestasi" },
+      ]}
+      placeholder="Pilih level"
+      classNames={{
+        control: () =>
+          `w-full py-4 flex items-center border-2 border-gray-300 rounded-3xl px-4 py-3 gap-3 
+           backdrop-blur-sm transition-all duration-300 hover:shadow-lg`,
+        valueContainer: () => "px-1",
+        placeholder: () => "text-gray-400 font-plex text-sm",
+        menu: () =>
+          "border border-red/20 bg-white/95 backdrop-blur-sm rounded-xl shadow-xl mt-2 overflow-hidden z-50",
+        menuList: () => "max-h-32 overflow-y-auto",
+        option: ({ isFocused, isSelected }) =>
+          [
+            "px-4 py-3 cursor-pointer font-plex text-sm transition-colors duration-200 hover:text-red",
+            isFocused ? "bg-red/10 text-red" : "text-black/80",
+            isSelected ? "bg-red text-white" : "",
+          ].join(" "),
+      }}
+      menuPortalTarget={document.body}
+    />
+
+    {/* Filter Kelompok Usia */}
+    <Select
+      unstyled
+      value={{
+        value: filterKelasUsia,
+        label:
+          filterKelasUsia === "ALL"
+            ? "Semua Usia"
+            : filterKelasUsia.charAt(0) + filterKelasUsia.slice(1).toLowerCase(),
+      }}
+      onChange={(selected) => setFilterKelasUsia(selected?.value as any)}
+      options={[
+        { value: "ALL", label: "Semua Usia" },
+        { value: "Cadet", label: "Cadet" },
+        { value: "Junior", label: "Junior" },
+        { value: "Senior", label: "Senior" },
+      ]}
+      placeholder="Pilih usia"
+      classNames={{
+        control: () =>
+          `w-full py-4 flex items-center border-2 border-gray-300 rounded-3xl px-4 py-3 gap-3 
+           backdrop-blur-sm transition-all duration-300 hover:shadow-lg`,
+        valueContainer: () => "px-1",
+        placeholder: () => "text-gray-400 font-plex text-sm",
+        menu: () =>
+          "border border-red/20 bg-white/95 backdrop-blur-sm rounded-xl shadow-xl mt-2 overflow-hidden z-50",
+        menuList: () => "max-h-32 overflow-y-auto",
+        option: ({ isFocused, isSelected }) =>
+          [
+            "px-4 py-3 cursor-pointer font-plex text-sm transition-colors duration-200 hover:text-red",
+            isFocused ? "bg-red/10 text-red" : "text-black/80",
+            isSelected ? "bg-red text-white" : "",
+          ].join(" "),
+      }}
+      menuPortalTarget={document.body}
+    />
+  </div>
+</div>
+
 
     {/* TABLE */}
     <div className="bg-white/90 backdrop-blur-md border border-white/40 rounded-2xl shadow-lg overflow-hidden">
@@ -298,7 +344,7 @@ const AllPeserta: React.FC = () => {
           ? peserta.kelas_kejuaraan?.poomsae?.nama_kelas || peserta.atlet?.belt || "-"
           : "-";
 
-      const kelasUsia = peserta.kelas_kejuaraan?.kelompok?.nama_kelompok || (peserta.atlet?.umur ? `${peserta.atlet.umur} th` : "-");
+      const kelasUsia = peserta.kelas_kejuaraan?.kelompok?.nama_kelompok || "-";
 
       const jenisKelamin = !isTeam ? peserta.atlet?.jenis_kelamin || "-" : "-";
 
