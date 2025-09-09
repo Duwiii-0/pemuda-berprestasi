@@ -14,8 +14,8 @@ const LandingPage = () => {
   const { user } = useAuth();
 
   const handleJoinClick = () => {
-    if (!user) {
-      toast.error("Anda harus login terlebih dahulu!");
+    if (user?.role != "PELATIH") {
+      toast.error("Hanya pelatih yang bisa mendaftar kompetisi!");
       return;
     }
     setIsRegistrationOpen(true);
