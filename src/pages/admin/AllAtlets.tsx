@@ -90,11 +90,11 @@ const AllAtlets: React.FC = () => {
 
   const getGenderBadge = (gender: string) => {
     return gender === "LAKI_LAKI" ? (
-      <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium">
+      <span className="px-2 py-1 rounded-full text-xs font-medium" style={{ backgroundColor: 'rgba(153, 13, 53, 0.1)', color: '#990D35' }}>
         Laki-Laki
       </span>
     ) : (
-      <span className="bg-pink-100 text-pink-800 px-2 py-1 rounded-full text-xs font-medium">
+      <span className="px-2 py-1 rounded-full text-xs font-medium" style={{ backgroundColor: 'rgba(245, 183, 0, 0.2)', color: '#050505' }}>
         Perempuan
       </span>
     );
@@ -141,17 +141,17 @@ const AllAtlets: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#F5FBEF' }}>
         <div className="flex flex-col items-center gap-3">
-          <Loader className="animate-spin text-blue-600" size={32} />
-          <p className="text-gray-600">Memuat data atlet...</p>
+          <Loader className="animate-spin" style={{ color: '#990D35' }} size={32} />
+          <p style={{ color: '#050505', opacity: 0.6 }}>Memuat data atlet...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen" style={{ backgroundColor: '#F5FBEF' }}>
       {/* CONTAINER UTAMA - Padding responsif yang sama dengan ValidasiPeserta */}
       <div className="px-4 py-6 sm:px-6 lg:px-8 xl:px-12 2xl:px-24 max-w-7xl mx-auto">
         
@@ -160,13 +160,14 @@ const AllAtlets: React.FC = () => {
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
             <Users 
               size={32} 
-              className="text-red-500 sm:w-10 sm:h-10 lg:w-12 lg:h-12 flex-shrink-0" 
+              className="sm:w-10 sm:h-10 lg:w-12 lg:h-12 flex-shrink-0" 
+              style={{ color: '#990D35' }}
             />
             <div className="flex-1 min-w-0">
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bebas text-black/90 leading-tight">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bebas leading-tight" style={{ color: '#050505' }}>
                 Semua Atlet
               </h1>
-              <p className="text-black/60 text-sm sm:text-base lg:text-lg mt-1 sm:mt-2">
+              <p className="text-sm sm:text-base lg:text-lg mt-1 sm:mt-2" style={{ color: '#050505', opacity: 0.6 }}>
                 Kelola data semua atlet yang terdaftar
               </p>
             </div>
@@ -175,14 +176,15 @@ const AllAtlets: React.FC = () => {
 
         {/* ERROR STATE */}
         {error && (
-          <div className="mb-6 bg-red-50 border border-red-200 rounded-xl p-4">
+          <div className="mb-6 border rounded-xl p-4" style={{ backgroundColor: 'rgba(153, 13, 53, 0.05)', borderColor: 'rgba(153, 13, 53, 0.2)' }}>
             <div className="flex items-start gap-3">
-              <AlertTriangle size={20} className="text-red-500 flex-shrink-0 mt-0.5" />
+              <AlertTriangle size={20} className="flex-shrink-0 mt-0.5" style={{ color: '#990D35' }} />
               <div className="flex-1">
-                <p className="text-red-700 text-sm sm:text-base">{error}</p>
+                <p className="text-sm sm:text-base" style={{ color: '#990D35' }}>{error}</p>
                 <button
                   onClick={fetchAllAtlits}
-                  className="mt-2 text-red-600 font-semibold underline hover:no-underline text-sm"
+                  className="mt-2 font-semibold underline hover:no-underline text-sm"
+                  style={{ color: '#990D35' }}
                 >
                   Coba lagi
                 </button>
@@ -192,13 +194,14 @@ const AllAtlets: React.FC = () => {
         )}
 
         {/* FILTER + SEARCH - Layout yang sama dengan ValidasiPeserta */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 mb-6">
+        <div className="rounded-xl shadow-sm border p-4 sm:p-6 mb-6" style={{ backgroundColor: '#F5FBEF', borderColor: '#990D35' }}>
           <div className="space-y-4">
             {/* Search - Full width di mobile */}
             <div className="w-full">
               <div className="relative">
                 <Search
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                  className="absolute left-3 top-1/2 -translate-y-1/2"
+                  style={{ color: '#050505', opacity: 0.4 }}
                   size={18}
                 />
                 <input
@@ -206,7 +209,19 @@ const AllAtlets: React.FC = () => {
                   placeholder="Cari berdasarkan nama atlet..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 rounded-2xl border border-gray-300 shadow-sm focus:ring-2 focus:ring-red-400 focus:border-transparent text-sm placeholder-gray-400 transition-colors"
+                  className="w-full pl-10 pr-4 py-3 rounded-2xl border shadow-sm focus:ring-2 focus:border-transparent text-sm placeholder-gray-400 transition-colors"
+                  style={{ 
+                    borderColor: '#990D35', 
+                    backgroundColor: '#F5FBEF',
+                    color: '#050505'
+                  }}
+                  onFocus={(e) => {
+                    e.target.style.outline = 'none';
+                    e.target.style.boxShadow = '0 0 0 2px rgba(153, 13, 53, 0.2)';
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.boxShadow = '';
+                  }}
                 />
               </div>
             </div>
@@ -215,11 +230,23 @@ const AllAtlets: React.FC = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Filter Gender */}
               <div>
-                <label className="block text-gray-600 text-xs mb-2 font-medium">Jenis Kelamin</label>
+                <label className="block text-xs mb-2 font-medium" style={{ color: '#050505', opacity: 0.6 }}>Jenis Kelamin</label>
                 <select
                   value={filterGender}
                   onChange={(e) => setFilterGender(e.target.value as any)}
-                  className="w-full px-3 py-3 rounded-2xl border border-gray-300 bg-white shadow-sm focus:ring-2 focus:ring-red-400 focus:border-transparent text-sm transition-colors"
+                  className="w-full px-3 py-3 rounded-2xl border shadow-sm focus:ring-2 focus:border-transparent text-sm transition-colors"
+                  style={{ 
+                    borderColor: '#990D35', 
+                    backgroundColor: '#F5FBEF',
+                    color: '#050505'
+                  }}
+                  onFocus={(e) => {
+                    e.target.style.outline = 'none';
+                    e.target.style.boxShadow = '0 0 0 2px rgba(153, 13, 53, 0.2)';
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.boxShadow = '';
+                  }}
                 >
                   <option value="ALL">Semua Jenis Kelamin</option>
                   {genderOptions.map((opt) => (
@@ -232,11 +259,23 @@ const AllAtlets: React.FC = () => {
 
               {/* Filter Age Category */}
               <div>
-                <label className="block text-gray-600 text-xs mb-2 font-medium">Kategori Umur</label>
+                <label className="block text-xs mb-2 font-medium" style={{ color: '#050505', opacity: 0.6 }}>Kategori Umur</label>
                 <select
                   value={filterAgeCategory}
                   onChange={(e) => setFilterAgeCategory(e.target.value as any)}
-                  className="w-full px-3 py-3 rounded-2xl border border-gray-300 bg-white shadow-sm focus:ring-2 focus:ring-red-400 focus:border-transparent text-sm transition-colors"
+                  className="w-full px-3 py-3 rounded-2xl border shadow-sm focus:ring-2 focus:border-transparent text-sm transition-colors"
+                  style={{ 
+                    borderColor: '#990D35', 
+                    backgroundColor: '#F5FBEF',
+                    color: '#050505'
+                  }}
+                  onFocus={(e) => {
+                    e.target.style.outline = 'none';
+                    e.target.style.boxShadow = '0 0 0 2px rgba(153, 13, 53, 0.2)';
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.boxShadow = '';
+                  }}
                 >
                   {ageCategories.map((opt) => (
                     <option key={opt.value} value={opt.value}>
@@ -248,11 +287,11 @@ const AllAtlets: React.FC = () => {
             </div>
 
             {/* Info hasil */}
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 pt-2 border-t border-gray-100">
-              <p className="text-gray-600 text-sm sm:text-base">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 pt-2 border-t" style={{ borderColor: 'rgba(153, 13, 53, 0.2)' }}>
+              <p className="text-sm sm:text-base" style={{ color: '#050505', opacity: 0.6 }}>
                 Menampilkan <span className="font-semibold">{startIndex + 1}-{Math.min(endIndex, filteredAtlits.length)}</span> dari <span className="font-semibold">{filteredAtlits.length}</span> atlet
               </p>
-              <p className="text-gray-500 text-xs sm:text-sm">
+              <p className="text-xs sm:text-sm" style={{ color: '#050505', opacity: 0.5 }}>
                 Halaman {currentPage} dari {totalPages}
               </p>
             </div>
@@ -263,8 +302,8 @@ const AllAtlets: React.FC = () => {
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <div className="flex flex-col items-center gap-3">
-              <Loader className="w-8 h-8 animate-spin text-red-500" />
-              <p className="text-gray-500 text-sm sm:text-base">Loading data atlet...</p>
+              <Loader className="w-8 h-8 animate-spin" style={{ color: '#990D35' }} />
+              <p className="text-sm sm:text-base" style={{ color: '#050505', opacity: 0.5 }}>Loading data atlet...</p>
             </div>
           </div>
         ) : (
@@ -274,7 +313,8 @@ const AllAtlets: React.FC = () => {
               {currentAtlits.map((atlet) => (
                 <div
                   key={atlet.id_atlet}
-                  className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
+                  className="rounded-xl shadow-sm border overflow-hidden hover:shadow-md transition-shadow"
+                  style={{ backgroundColor: '#F5FBEF', borderColor: '#990D35' }}
                 >
                   {/* Header Card */}
                   <div 
@@ -283,10 +323,10 @@ const AllAtlets: React.FC = () => {
                   >
                     <div className="flex justify-between items-start mb-3">
                       <div className="flex-1 min-w-0 pr-3">
-                        <h3 className="font-semibold text-base text-gray-800 leading-tight truncate">
+                        <h3 className="font-semibold text-base leading-tight truncate" style={{ color: '#050505' }}>
                           {atlet.nama_atlet}
                         </h3>
-                        <p className="text-sm text-gray-600 mt-1">
+                        <p className="text-sm mt-1" style={{ color: '#050505', opacity: 0.6 }}>
                           {getAgeCategory(atlet.umur) || 'Tidak diketahui'}
                         </p>
                       </div>
@@ -297,12 +337,12 @@ const AllAtlets: React.FC = () => {
                     
                     <div className="grid grid-cols-2 gap-3 text-xs">
                       <div>
-                        <span className="text-gray-500">Tanggal Lahir:</span>
-                        <p className="text-gray-800 font-medium">{formatDate(atlet.tanggal_lahir)}</p>
+                        <span style={{ color: '#050505', opacity: 0.5 }}>Tanggal Lahir:</span>
+                        <p className="font-medium" style={{ color: '#050505' }}>{formatDate(atlet.tanggal_lahir)}</p>
                       </div>
                       <div>
-                        <span className="text-gray-500">Umur:</span>
-                        <p className="text-gray-800 font-medium">{atlet.umur ?? '-'} tahun</p>
+                        <span style={{ color: '#050505', opacity: 0.5 }}>Umur:</span>
+                        <p className="font-medium" style={{ color: '#050505' }}>{atlet.umur ?? '-'} tahun</p>
                       </div>
                     </div>
                   </div>
@@ -314,7 +354,14 @@ const AllAtlets: React.FC = () => {
                         e.stopPropagation();
                         navigate(`/dashboard/atlit/${atlet.id_atlet}`);
                       }}
-                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-all text-sm font-medium"
+                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-white rounded-lg hover:shadow-md transition-all text-sm font-medium"
+                      style={{ backgroundColor: '#990D35' }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = 'rgba(153, 13, 53, 0.9)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = '#990D35';
+                      }}
                     >
                       <Eye size={16} />
                       Lihat Detail
@@ -326,35 +373,42 @@ const AllAtlets: React.FC = () => {
 
             {/* Desktop Table View - Layout yang lebih konsisten */}
             <div className="hidden lg:block">
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+              <div className="rounded-xl shadow-sm border overflow-hidden" style={{ backgroundColor: '#F5FBEF', borderColor: '#990D35' }}>
                 <div className="overflow-x-auto">
                   <table className="w-full min-w-[800px]">
-                    <thead className="bg-yellow-400">
+                    <thead style={{ backgroundColor: '#F5B700' }}>
                       <tr>
                         {["Nama Atlet", "Jenis Kelamin", "Tanggal Lahir", "Umur", "Kategori Umur", "Aksi"].map((header) => (
                           <th
                             key={header}
-                            className={`py-3 px-4 font-semibold text-gray-900 text-sm ${
+                            className={`py-3 px-4 font-semibold text-sm ${
                               header === "Aksi" ? "text-center" : "text-left"
                             }`}
+                            style={{ color: '#050505' }}
                           >
                             {header}
                           </th>
                         ))}
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-200">
+                    <tbody className="divide-y" style={{ borderColor: '#990D35' }}>
                       {currentAtlits.map((atlet) => (
                         <tr
                           key={atlet.id_atlet}
-                          className="hover:bg-yellow-50 transition-colors cursor-pointer"
+                          className="transition-colors cursor-pointer"
                           onClick={() => navigate(`/dashboard/atlit/${atlet.id_atlet}`)}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = 'rgba(245, 183, 0, 0.1)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = 'transparent';
+                          }}
                         >
-                          <td className="py-4 px-4 font-medium text-gray-800 text-sm">{atlet.nama_atlet}</td>
+                          <td className="py-4 px-4 font-medium text-sm" style={{ color: '#050505' }}>{atlet.nama_atlet}</td>
                           <td className="py-4 px-4 text-center">{getGenderBadge(atlet.jenis_kelamin)}</td>
-                          <td className="py-4 px-4 text-gray-700 text-sm">{formatDate(atlet.tanggal_lahir)}</td>
-                          <td className="py-4 px-4 text-gray-700 text-sm text-center">{atlet.umur ?? '-'} tahun</td>
-                          <td className="py-4 px-4 text-gray-700 text-sm text-center">
+                          <td className="py-4 px-4 text-sm" style={{ color: '#050505', opacity: 0.7 }}>{formatDate(atlet.tanggal_lahir)}</td>
+                          <td className="py-4 px-4 text-sm text-center" style={{ color: '#050505', opacity: 0.7 }}>{atlet.umur ?? '-'} tahun</td>
+                          <td className="py-4 px-4 text-sm text-center" style={{ color: '#050505', opacity: 0.7 }}>
                             {getAgeCategory(atlet.umur) || '-'}
                           </td>
                           <td className="py-4 px-4 text-center">
@@ -363,7 +417,14 @@ const AllAtlets: React.FC = () => {
                                 e.stopPropagation();
                                 navigate(`/dashboard/atlit/${atlet.id_atlet}`);
                               }}
-                              className="inline-flex items-center gap-2 px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm font-medium"
+                              className="inline-flex items-center gap-2 px-3 py-2 text-white rounded-lg hover:shadow-md transition-colors text-sm font-medium"
+                              style={{ backgroundColor: '#990D35' }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.backgroundColor = 'rgba(153, 13, 53, 0.9)';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor = '#990D35';
+                              }}
                             >
                               <Eye size={16} />
                               Detail
@@ -379,7 +440,7 @@ const AllAtlets: React.FC = () => {
 
             {/* Empty State - Konsisten untuk mobile dan desktop */}
             {filteredAtlits.length === 0 && (
-              <div className="py-16 text-center text-gray-400">
+              <div className="py-16 text-center" style={{ color: '#050505', opacity: 0.4 }}>
                 <Users size={52} className="mx-auto mb-4" />
                 <p className="text-lg">Tidak ada atlet yang ditemukan</p>
                 {(searchTerm || filterGender !== "ALL" || filterAgeCategory !== "ALL") && (
@@ -392,9 +453,9 @@ const AllAtlets: React.FC = () => {
 
         {/* Pagination - Konsisten dengan design ValidasiPeserta */}
         {totalPages > 1 && (
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 mt-6">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 rounded-xl shadow-sm border p-4 sm:p-6 mt-6" style={{ backgroundColor: '#F5FBEF', borderColor: '#990D35' }}>
             {/* Pagination Info */}
-            <div className="text-sm text-gray-600 order-2 sm:order-1">
+            <div className="text-sm order-2 sm:order-1" style={{ color: '#050505', opacity: 0.6 }}>
               Menampilkan {startIndex + 1} - {Math.min(endIndex, filteredAtlits.length)} dari {filteredAtlits.length} hasil
             </div>
 
@@ -404,7 +465,22 @@ const AllAtlets: React.FC = () => {
               <button
                 onClick={() => handlePageChange(currentPage - 1)}
                 disabled={currentPage === 1}
-                className="flex items-center gap-1 px-2 sm:px-3 py-2 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm sm:text-base"
+                className="flex items-center gap-1 px-2 sm:px-3 py-2 rounded-lg border hover:shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm sm:text-base"
+                style={{ 
+                  borderColor: '#990D35', 
+                  backgroundColor: '#F5FBEF', 
+                  color: '#050505' 
+                }}
+                onMouseEnter={(e) => {
+                  if (!e.currentTarget.disabled) {
+                    e.currentTarget.style.backgroundColor = 'rgba(153, 13, 53, 0.05)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!e.currentTarget.disabled) {
+                    e.currentTarget.style.backgroundColor = '#F5FBEF';
+                  }
+                }}
               >
                 <ChevronLeft size={16} />
                 <span className="hidden sm:inline">Prev</span>
@@ -414,16 +490,27 @@ const AllAtlets: React.FC = () => {
               <div className="flex items-center gap-1">
                 {getPageNumbers().map((pageNum, index) => (
                   pageNum === '...' ? (
-                    <span key={`ellipsis-${index}`} className="px-2 py-2 text-gray-400 text-sm sm:text-base">...</span>
+                    <span key={`ellipsis-${index}`} className="px-2 py-2 text-sm sm:text-base" style={{ color: '#050505', opacity: 0.4 }}>...</span>
                   ) : (
                     <button
                       key={pageNum}
                       onClick={() => handlePageChange(pageNum as number)}
-                      className={`px-2 sm:px-3 py-2 rounded-lg transition-colors text-sm sm:text-base min-w-[32px] sm:min-w-[40px] ${
-                        currentPage === pageNum
-                          ? 'bg-red-500 text-white'
-                          : 'border border-gray-300 bg-white hover:bg-gray-50'
-                      }`}
+                      className={`px-2 sm:px-3 py-2 rounded-lg transition-colors text-sm sm:text-base min-w-[32px] sm:min-w-[40px]`}
+                      style={{
+                        backgroundColor: currentPage === pageNum ? '#990D35' : '#F5FBEF',
+                        color: currentPage === pageNum ? '#F5FBEF' : '#050505',
+                        border: currentPage === pageNum ? 'none' : `1px solid #990D35`
+                      }}
+                      onMouseEnter={(e) => {
+                        if (currentPage !== pageNum) {
+                          e.currentTarget.style.backgroundColor = 'rgba(153, 13, 53, 0.05)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (currentPage !== pageNum) {
+                          e.currentTarget.style.backgroundColor = '#F5FBEF';
+                        }
+                      }}
                     >
                       {pageNum}
                     </button>
@@ -435,7 +522,22 @@ const AllAtlets: React.FC = () => {
               <button
                 onClick={() => handlePageChange(currentPage + 1)}
                 disabled={currentPage === totalPages}
-                className="flex items-center gap-1 px-2 sm:px-3 py-2 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm sm:text-base"
+                className="flex items-center gap-1 px-2 sm:px-3 py-2 rounded-lg border hover:shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm sm:text-base"
+                style={{ 
+                  borderColor: '#990D35', 
+                  backgroundColor: '#F5FBEF', 
+                  color: '#050505' 
+                }}
+                onMouseEnter={(e) => {
+                  if (!e.currentTarget.disabled) {
+                    e.currentTarget.style.backgroundColor = 'rgba(153, 13, 53, 0.05)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!e.currentTarget.disabled) {
+                    e.currentTarget.style.backgroundColor = '#F5FBEF';
+                  }
+                }}
               >
                 <span className="hidden sm:inline">Next</span>
                 <ChevronRight size={16} />
