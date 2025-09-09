@@ -49,29 +49,44 @@ const DataAtlit = () => {
   const [genderFilter, setGenderFilter] = useState<"all" | "LAKI_LAKI" | "PEREMPUAN">("all");
   const [loading, setLoading] = useState(false);
   
-  // Pagination states
+  // Pagination states - increased items per page
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(10);
+  const [itemsPerPage] = useState(25); // Increased from 10 to 25 for better UX
   
   const location = useLocation();
 
-  // Fetch ALL data function (client-side pagination)
+  // Fetch data function with proper response handling
   const fetchAtlits = async () => {
     try {
       setLoading(true);
       const id_dojang = user?.pelatih?.id_dojang;
-      if (!id_dojang) return;
+      if (!id_dojang) {
+        console.warn("No dojang ID found for user");
+        return;
+      }
 
-      // Fetch SEMUA data tanpa pagination parameter
-      const res = await apiClient.get(`/atlet/dojang/${id_dojang}`);
+      console.log("Fetching athletes for dojang:", id_dojang);
+      const response = await apiClient.get(`/atlet/dojang/${id_dojang}`);
 
-      if (res.success) {
-        // Set semua data ke state
-        const allAtlits = res.data.atlits || res.data || [];
-        setAtlits(allAtlits);
+      console.log("API Response:", {
+        success: response.success,
+        dataType: typeof response.data,
+        dataLength: Array.isArray(response.data) ? response.data.length : 'not array',
+        pagination: response.pagination
+      });
+
+      // Handle response properly based on backend structure
+      if (response.success && response.data) {
+        const atletData = Array.isArray(response.data) ? response.data : [];
+        setAtlits(atletData);
+        console.log(`Successfully loaded ${atletData.length} athletes`);
+      } else {
+        console.warn("Unexpected response structure:", response);
+        setAtlits([]);
       }
     } catch (err) {
-      console.error("Gagal ambil data atlet:", err);
+      console.error("Error fetching athletes:", err);
+      setAtlits([]);
     } finally {
       setLoading(false);
     }
@@ -87,9 +102,9 @@ const DataAtlit = () => {
 
   useEffect(() => {
     if (user?.pelatih?.id_dojang) {
-      fetchAtlits(); // Fetch semua data tanpa parameter currentPage
+      fetchAtlits();
     }
-  }, [user]); // Hapus currentPage dari dependency
+  }, [user]);
 
   useEffect(() => {
     const onResize = () => {
@@ -99,7 +114,7 @@ const DataAtlit = () => {
     return () => window.removeEventListener('resize', onResize);
   }, []);
 
-  // Filter data (client-side filtering pada semua data)
+  // Client-side filtering
   const filteredAtlits = atlits.filter(atlit => {
     const matchesSearch = atlit.nama_atlet.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          atlit.provinsi?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -107,7 +122,7 @@ const DataAtlit = () => {
     return matchesSearch && matchesGender;
   });
 
-  // Client-side pagination logic
+  // Client-side pagination
   const totalPages = Math.ceil(filteredAtlits.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
@@ -118,7 +133,7 @@ const DataAtlit = () => {
     setCurrentPage(1);
   }, [searchTerm, genderFilter]);
 
-  // Stats calculation (gunakan semua data asli, bukan yang di-filter)
+  // Stats calculation from all original data
   const totalAtlits = atlits.length;
   const lakiLakiCount = atlits.filter(a => a.jenis_kelamin === "LAKI_LAKI").length;
   const perempuanCount = atlits.filter(a => a.jenis_kelamin === "PEREMPUAN").length;
@@ -127,17 +142,20 @@ const DataAtlit = () => {
   // Pagination handlers
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handlePrevious = () => {
     if (currentPage > 1) {
       setCurrentPage(currentPage - 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
   const handleNext = () => {
     if (currentPage < totalPages) {
       setCurrentPage(currentPage + 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
@@ -285,6 +303,34 @@ const DataAtlit = () => {
                 </button>
               </div>
             </div>
+
+            {/* Filter Summary */}
+            {(searchTerm || genderFilter !== "all") && (
+              <div className="mt-4 pt-4 border-t border-white/30">
+                <div className="flex flex-wrap gap-2 items-center text-sm">
+                  <span className="font-plex text-black/60">Filter aktif:</span>
+                  {searchTerm && (
+                    <span className="px-2 py-1 bg-red/10 text-red rounded-lg font-plex">
+                      "{searchTerm}"
+                    </span>
+                  )}
+                  {genderFilter !== "all" && (
+                    <span className="px-2 py-1 bg-blue-500/10 text-blue-500 rounded-lg font-plex">
+                      {genderFilter === "LAKI_LAKI" ? "Laki-laki" : "Perempuan"}
+                    </span>
+                  )}
+                  <button
+                    onClick={() => {
+                      setSearchTerm("");
+                      setGenderFilter("all");
+                    }}
+                    className="ml-2 text-xs text-red hover:text-red/80 underline"
+                  >
+                    Clear filter
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Table Section */}
@@ -294,9 +340,15 @@ const DataAtlit = () => {
                 <div className="p-2 bg-red/10 rounded-xl">
                   <Users className="text-red" size={18} />
                 </div>
-                <h2 className="font-bebas text-xl lg:text-2xl text-black/80 tracking-wide">
-                  DAFTAR ATLET ({filteredAtlits.length})
-                </h2>
+                <div>
+                  <h2 className="font-bebas text-xl lg:text-2xl text-black/80 tracking-wide">
+                    DAFTAR ATLET
+                  </h2>
+                  <p className="font-plex text-sm text-black/60">
+                    Menampilkan {paginatedAtlits.length} dari {filteredAtlits.length} atlet
+                    {filteredAtlits.length !== totalAtlits && ` (Total: ${totalAtlits})`}
+                  </p>
+                </div>
               </div>
               {/* Action Buttons */}
               <div className="flex gap-2 lg:gap-3">
@@ -344,7 +396,7 @@ const DataAtlit = () => {
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-red to-red/80 flex items-center justify-center text-white font-bebas">
-                              {atlit.nama_atlet.charAt(0)}
+                              {atlit.nama_atlet.charAt(0).toUpperCase()}
                             </div>
                             <div>
                               <p className="font-plex font-semibold text-black/80">{atlit.nama_atlet}</p>
@@ -399,7 +451,7 @@ const DataAtlit = () => {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3 flex-1">
                       <div className="w-12 h-12 rounded-full bg-gradient-to-br from-red to-red/80 flex items-center justify-center text-white font-bebas text-lg">
-                        {atlit.nama_atlet.charAt(0)}
+                        {atlit.nama_atlet.charAt(0).toUpperCase()}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-plex font-semibold text-black/80 truncate">{atlit.nama_atlet}</p>
@@ -436,8 +488,18 @@ const DataAtlit = () => {
             {!loading && filteredAtlits.length === 0 && (
               <div className="text-center py-8 lg:py-12">
                 <Users className="mx-auto text-gray-400 mb-4" size={40} />
-                <p className="font-plex text-gray-500">Tidak ada atlet yang ditemukan</p>
-                <p className="font-plex text-sm text-gray-400 mt-2">Coba ubah kriteria pencarian atau filter</p>
+                <p className="font-plex text-gray-500">
+                  {atlits.length === 0 
+                    ? "Belum ada atlet yang terdaftar"
+                    : "Tidak ada atlet yang sesuai dengan filter"
+                  }
+                </p>
+                <p className="font-plex text-sm text-gray-400 mt-2">
+                  {atlits.length === 0
+                    ? "Silakan tambah atlet baru untuk memulai"
+                    : "Coba ubah kriteria pencarian atau filter"
+                  }
+                </p>
               </div>
             )}
 
@@ -445,10 +507,10 @@ const DataAtlit = () => {
             {!loading && filteredAtlits.length > 0 && totalPages > 1 && (
               <div className="mt-6 lg:mt-8">
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                  {/* Page Info - Update untuk menunjukkan info yang benar */}
+                  {/* Page Info */}
                   <div className="font-plex text-sm text-black/60">
-                    Menampilkan {startIndex + 1}-{Math.min(endIndex, filteredAtlits.length)} dari {filteredAtlits.length} atlet yang di-filter
-                    {filteredAtlits.length !== totalAtlits && ` (Total: ${totalAtlits} atlet)`}
+                    Halaman {currentPage} dari {totalPages} 
+                    ({startIndex + 1}-{Math.min(endIndex, filteredAtlits.length)} dari {filteredAtlits.length} atlet)
                   </div>
                   
                   {/* Pagination Controls */}
