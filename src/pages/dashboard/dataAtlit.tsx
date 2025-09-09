@@ -51,24 +51,24 @@ const DataAtlit = () => {
   
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(10); // You can make this configurable
-  const [totalPages, setTotalPages] = useState(1);
+  const [itemsPerPage] = useState(10);
   
   const location = useLocation();
 
-  // Fetch data function
-  const fetchAtlits = async (page: number = 1, limit: number = itemsPerPage) => {
+  // Fetch ALL data function (client-side pagination)
+  const fetchAtlits = async () => {
     try {
       setLoading(true);
       const id_dojang = user?.pelatih?.id_dojang;
       if (!id_dojang) return;
 
-      // Add pagination parameters to API call
-      const res = await apiClient.get(`/atlet/dojang/${id_dojang}?page=${page}&limit=${limit}`);
+      // Fetch SEMUA data tanpa pagination parameter
+      const res = await apiClient.get(`/atlet/dojang/${id_dojang}`);
 
       if (res.success) {
-        setAtlits(res.data.atlits || res.data); // Handle different response structures
-        setTotalPages(res.data.totalPages || Math.ceil((res.data.total || res.data.length) / limit));
+        // Set semua data ke state
+        const allAtlits = res.data.atlits || res.data || [];
+        setAtlits(allAtlits);
       }
     } catch (err) {
       console.error("Gagal ambil data atlet:", err);
@@ -80,16 +80,16 @@ const DataAtlit = () => {
   // Initial fetch and refresh handling
   useEffect(() => {
     if (location.state?.refresh) {
-      fetchAtlits(currentPage);
+      fetchAtlits();
       window.history.replaceState({}, document.title);
     }
   }, [location.state]);
 
   useEffect(() => {
     if (user?.pelatih?.id_dojang) {
-      fetchAtlits(currentPage);
+      fetchAtlits(); // Fetch semua data tanpa parameter currentPage
     }
-  }, [user, currentPage]);
+  }, [user]); // Hapus currentPage dari dependency
 
   useEffect(() => {
     const onResize = () => {
@@ -99,7 +99,7 @@ const DataAtlit = () => {
     return () => window.removeEventListener('resize', onResize);
   }, []);
 
-  // Filter data (client-side filtering for current page)
+  // Filter data (client-side filtering pada semua data)
   const filteredAtlits = atlits.filter(atlit => {
     const matchesSearch = atlit.nama_atlet.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          atlit.provinsi?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -107,7 +107,18 @@ const DataAtlit = () => {
     return matchesSearch && matchesGender;
   });
 
-  // Stats calculation
+  // Client-side pagination logic
+  const totalPages = Math.ceil(filteredAtlits.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedAtlits = filteredAtlits.slice(startIndex, endIndex);
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, genderFilter]);
+
+  // Stats calculation (gunakan semua data asli, bukan yang di-filter)
   const totalAtlits = atlits.length;
   const lakiLakiCount = atlits.filter(a => a.jenis_kelamin === "LAKI_LAKI").length;
   const perempuanCount = atlits.filter(a => a.jenis_kelamin === "PEREMPUAN").length;
@@ -322,7 +333,7 @@ const DataAtlit = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/30">
-                    {filteredAtlits.map((atlit, index) => (
+                    {paginatedAtlits.map((atlit, index) => (
                       <tr
                         key={atlit.id_atlet}
                         className={`transition-all duration-200 hover:bg-red/10 cursor-pointer ${
@@ -379,7 +390,7 @@ const DataAtlit = () => {
 
             {/* Mobile Cards */}
             <div className="lg:hidden space-y-3">
-              {filteredAtlits.map((atlit, index) => (
+              {paginatedAtlits.map((atlit, index) => (
                 <div
                   key={atlit.id_atlet}
                   className="bg-white/80 rounded-xl p-4 shadow-md border border-white/50 transition-all duration-200 hover:shadow-lg cursor-pointer"
@@ -434,9 +445,10 @@ const DataAtlit = () => {
             {!loading && filteredAtlits.length > 0 && totalPages > 1 && (
               <div className="mt-6 lg:mt-8">
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                  {/* Page Info */}
+                  {/* Page Info - Update untuk menunjukkan info yang benar */}
                   <div className="font-plex text-sm text-black/60">
-                    Halaman {currentPage} dari {totalPages} ({totalAtlits} total atlet)
+                    Menampilkan {startIndex + 1}-{Math.min(endIndex, filteredAtlits.length)} dari {filteredAtlits.length} atlet yang di-filter
+                    {filteredAtlits.length !== totalAtlits && ` (Total: ${totalAtlits} atlet)`}
                   </div>
                   
                   {/* Pagination Controls */}
