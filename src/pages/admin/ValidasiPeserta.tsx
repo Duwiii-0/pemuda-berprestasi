@@ -365,7 +365,7 @@ const handleRejection = async (id: number) => {
         </div>
 
         {/* Filter dalam grid 2 kolom di mobile */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {/* Filter Status */}
           <div>
             <label className="block text-gray-600 text-xs mb-2 font-medium">Status</label>

@@ -272,6 +272,12 @@ if (showPeserta && selectedKompetisi) {
                             `w-full flex items-center border border-gray-300 rounded-2xl px-3 py-3 gap-2 transition-all duration-300 hover:shadow-sm`,
                           menu: () =>
                             "border border-gray-200 bg-white rounded-xl shadow-lg mt-2 overflow-hidden z-50",
+                          option: ({ isFocused, isSelected }) =>
+                            [
+                              "px-3 py-3 cursor-pointer text-sm transition-colors duration-200",
+                              isFocused ? "bg-blue-50 text-blue-700" : "text-gray-800",
+                              isSelected ? "bg-blue-500 text-white" : "",
+                            ].join(" "),
                         }}
                       />
                     </div>
@@ -297,6 +303,12 @@ if (showPeserta && selectedKompetisi) {
                             `w-full flex items-center border border-gray-300 rounded-2xl px-3 py-3 gap-2 transition-all duration-300 hover:shadow-sm`,
                           menu: () =>
                             "border border-gray-200 bg-white rounded-xl shadow-lg mt-2 overflow-hidden z-50",
+                          option: ({ isFocused, isSelected }) =>
+                            [
+                              "px-3 py-3 cursor-pointer text-sm transition-colors duration-200",
+                              isFocused ? "bg-blue-50 text-blue-700" : "text-gray-800",
+                              isSelected ? "bg-blue-500 text-white" : "",
+                            ].join(" "),
                         }}
                       />
                     </div>
