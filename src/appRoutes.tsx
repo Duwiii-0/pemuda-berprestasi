@@ -6,6 +6,7 @@ import { useAuth } from "./context/authContext";
 import LandingLayout from "./layouts/layout";
 import DashboardLayout from "./layouts/dashboardLayout";
 import LombaLayout from "./layouts/lombaLayout";
+import AdminKompetisiLayout from "./layouts/adminKompLayout"; 
 
 // Auth page
 import Login from "./pages/auth/login";
@@ -132,13 +133,17 @@ export default function AppRoutes() {
     <>
       <Toaster position="top-right" reverseOrder={false} />
       <Routes>
-        {/*adminkomp route */}
+        {/* FIXED: Admin Kompetisi routes - using proper layout structure */}
         <Route path="/admin-kompetisi" element={
           <ProtectedRoute requiredRole="ADMIN_KOMPETISI">
-            <AllPeserta />
+            <AdminKompetisiLayout />
           </ProtectedRoute>
         }>
-          <Route index element={<AllPeserta />} />
+          <Route index element={<Navigate to="/admin-kompetisi/peserta" replace />} />
+          <Route path="peserta" element={<AllPeserta />} />
+          {/* Add other admin kompetisi routes here when needed */}
+          {/* <Route path="validasi-peserta" element={<ValidasiPesertaKomp />} /> */}
+          {/* <Route path="validasi-dojang" element={<ValidasiDojangKomp />} /> */}
         </Route>
 
         {/* Admin routes - protected for ADMIN role only */}
@@ -231,7 +236,7 @@ export default function AppRoutes() {
             <ProtectedRoute requiredRole="PELATIH">
               <DataKompetisi />
             </ProtectedRoute>
-} />
+          } />
         </Route>
 
         {/* Lomba pages */}
