@@ -274,8 +274,8 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* Enhanced Registration Steps Section - Consistent Padding */}
-      <section className="relative w-full flex flex-col justify-center items-center bg-gradient-to-br from-white via-yellow/[0.02] to-white overflow-hidden py-12 md:py-16 lg:py-20">
+      {/* Enhanced Registration Steps Section - Mobile Optimized */}
+      <section className="relative w-full flex flex-col justify-center items-center bg-gradient-to-br from-white via-yellow/[0.02] to-white overflow-hidden py-8 md:py-12 lg:py-16">
         {/* Background pattern */}
         <div className="absolute inset-0 opacity-[0.02]">
           <div className="absolute inset-0" style={{
@@ -287,19 +287,19 @@ const LandingPage = () => {
           }}></div>
         </div>
 
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div className="container mx-auto px-3 sm:px-4 lg:px-8 relative z-10">
           {/* Section Header */}
-          <div className="text-center space-y-4 md:space-y-6 mb-8 md:mb-12 lg:mb-16">
+          <div className="text-center space-y-3 md:space-y-6 mb-6 md:mb-12 lg:mb-16">
             {/* Section Label */}
             <div className="inline-block group">
-              <span className="text-red font-plex font-semibold text-xs sm:text-sm uppercase tracking-[0.2em] border-l-4 border-red pl-4 md:pl-6 relative">
+              <span className="text-red font-plex font-semibold text-xs sm:text-sm uppercase tracking-[0.2em] border-l-4 border-red pl-3 md:pl-6 relative">
                 Cara Pendaftaran
                 <div className="absolute -left-1 top-0 bottom-0 w-1 bg-red/20 group-hover:bg-red/40 transition-colors duration-300"></div>
               </span>
             </div>
             
             <div className="relative">
-              <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-5xl xl:text-6xl 2xl:text-7xl font-bebas leading-[0.85] tracking-wide">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bebas leading-[0.85] tracking-wide">
                 <span className="bg-gradient-to-r from-red via-red/90 to-red/80 bg-clip-text text-transparent">
                   Panduan
                 </span>
@@ -307,38 +307,65 @@ const LandingPage = () => {
                   Pendaftaran
                 </span>
               </h2>
-              <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-16 md:w-20 h-1 bg-gradient-to-r from-red to-red/60 rounded-full"></div>
+              <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-12 md:w-20 h-1 bg-gradient-to-r from-red to-red/60 rounded-full"></div>
             </div>
             
-            <p className="text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl px-4 xl:px-0 font-plex text-black/80 max-w-4xl mx-auto leading-relaxed font-light">
+            <p className="text-xs sm:text-sm md:text-base lg:text-lg px-2 sm:px-4 font-plex text-black/80 max-w-3xl mx-auto leading-relaxed font-light">
               Ikuti langkah-langkah berikut untuk mendaftar sebagai peserta Sriwijaya Competition 2025 
               dengan mudah dan efisien.
             </p>
           </div>
 
-          {/* Enhanced Steps Container */}
-          <div className="max-w-6xl mx-auto">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 py-4 md:py-6">
+          {/* Mobile Optimized Steps Container */}
+          <div className="max-w-5xl mx-auto">
+            {/* Mobile: Single Column, Tablet+: 2 Columns */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 md:gap-6 py-2 md:py-6">
               {registerStep.map((step) => (
                 <div 
                   key={step.number}
-                  className="group relative bg-white/90 backdrop-blur-sm rounded-xl p-6 sm:p-7 md:p-8 border border-red/10 hover:border-red/20 shadow-lg hover:shadow-xl hover:shadow-red/10 transition-all duration-500 hover:-translate-y-2"
+                  className="group relative bg-white/90 backdrop-blur-sm rounded-lg sm:rounded-xl p-3 sm:p-4 md:p-6 border border-red/10 hover:border-red/20 shadow-md hover:shadow-lg hover:shadow-red/10 transition-all duration-300 hover:-translate-y-1"
                 >
-                  {/* Enhanced Step Content */}
-                  <Steps
-                    number={step.number}
-                    title={step.title}
-                    desc={step.desc}
-                  />
+                  {/* Mobile Optimized Step Content */}
+                  <div className="flex items-start gap-2 sm:gap-3 md:gap-4">
+                    {/* Step Number - Smaller on Mobile */}
+                    <div className="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-gradient-to-br from-red to-red/80 rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                      <span className="text-white font-bebas text-sm sm:text-base md:text-lg font-bold">
+                        {step.number}
+                      </span>
+                    </div>
+                    
+                    {/* Content */}
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-bebas text-sm sm:text-base md:text-lg lg:text-xl text-red mb-1 sm:mb-2 leading-tight">
+                        {step.title}
+                      </h3>
+                      <p className="text-xs sm:text-sm md:text-sm text-black/70 font-plex leading-relaxed">
+                        {step.desc}
+                      </p>
+                    </div>
+                  </div>
                   
-                  {/* Decorative elements */}
-                  <div className="absolute top-4 right-4 md:top-6 md:right-6 w-1.5 h-1.5 md:w-2 md:h-2 bg-red/20 rounded-full group-hover:bg-red/40 transition-colors duration-300"></div>
-                  <div className="absolute bottom-4 left-4 md:bottom-6 md:left-6 w-1 h-1 md:w-1.5 md:h-1.5 bg-red/15 rounded-full group-hover:bg-red/30 transition-colors duration-300"></div>
+                  {/* Decorative elements - Smaller on Mobile */}
+                  <div className="absolute top-2 right-2 sm:top-3 sm:right-3 w-1 h-1 sm:w-1.5 sm:h-1.5 bg-red/20 rounded-full group-hover:bg-red/40 transition-colors duration-300"></div>
+                  <div className="absolute bottom-2 left-2 sm:bottom-3 sm:left-3 w-0.5 h-0.5 sm:w-1 sm:h-1 bg-red/15 rounded-full group-hover:bg-red/30 transition-colors duration-300"></div>
                   
                   {/* Hover Effect Overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-red/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-xl"></div>
+                  <div className="absolute inset-0 bg-gradient-to-br from-red/[0.01] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-lg sm:rounded-xl"></div>
                 </div>
               ))}
+            </div>
+            
+            {/* Mobile CTA Button */}
+            <div className="text-center mt-6 sm:mt-8 md:mt-10">
+              <button
+                onClick={handleJoinClick}
+                className="inline-flex items-center gap-2 px-6 sm:px-8 py-3 sm:py-4 text-sm sm:text-base font-plex font-semibold bg-red text-white hover:bg-red/90 transition-all duration-300 rounded-lg sm:rounded-xl hover:scale-105 hover:shadow-lg hover:shadow-red/30"
+              >
+                <span>Mulai Daftar Sekarang</span>
+                <svg className="w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                </svg>
+              </button>
             </div>
           </div>
         </div>
