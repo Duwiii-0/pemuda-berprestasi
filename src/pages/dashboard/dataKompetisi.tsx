@@ -306,24 +306,115 @@ if (showPeserta && selectedKompetisi) {
                       
               {/* Table Section */}
               <div className="overflow-x-auto bg-white rounded-xl shadow-sm border border-gray-200">
-                <table className="w-full min-w-[1000px] rounded-xl overflow-hidden">
-                  <thead className="bg-yellow-400">
-                    <tr>
-                      {["Nama", "Kategori", "Kelas Berat", "Kelas Poomsae", "Kelompok Usia", "Jenis Kelamin", "Nama Dojang", "Status", "Aksi"].map((header) => (
-                        <th key={header} className="py-3 px-4 font-semibold text-gray-900 text-sm text-left">
-                          {header}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {displayedPesertas.map((peserta: any) => (
-                      <tr key={peserta.id_peserta_kompetisi} className="hover:bg-yellow-50 transition-colors">
-                        {/* ...kolom peserta */}
+                <table className="w-full min-w-[1000px]">
+                    <thead className="bg-yellow-400">
+                      <tr>
+                        {["Nama", "Kategori", "Kelas Berat", "Kelas Poomsae", "Kelompok Usia", "Jenis Kelamin", "Nama Dojang", "Status", "Aksi"].map((header) => (
+                          <th
+                            key={header}
+                            className={`py-3 px-4 font-semibold text-gray-900 text-sm ${
+                              header === "Status" || header === "Aksi" ? "text-center" : "text-left"
+                            }`}
+                          >
+                            {header}
+                          </th>
+                        ))}
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {displayedPesertas.map((peserta: any) => {
+                        const isTeam = peserta.is_team;
+                        const cabang = peserta.kelas_kejuaraan?.cabang || "-";
+                        const level = peserta.kelas_kejuaraan?.kategori_event?.nama_kategori || "-";
+                      
+                        const kelasBerat =
+                          cabang === "KYORUGI"
+                            ? peserta.kelas_kejuaraan?.kelas_berat?.nama_kelas ||
+                              (peserta.atlet?.berat_badan ? `${peserta.atlet.berat_badan} kg` : "-")
+                            : "-";
+                      
+                        const kelasPoomsae =
+                          cabang === "POOMSAE"
+                            ? peserta.kelas_kejuaraan?.poomsae?.nama_kelas || peserta.atlet?.belt || "-"
+                            : "-";
+                      
+                        const namaPeserta = isTeam
+                          ? peserta.anggota_tim?.map((m: any) => m.atlet.nama_atlet).join(", ")
+                          : peserta.atlet?.nama_atlet || "-";
+                      
+                        const dojang = isTeam && peserta.anggota_tim?.length
+                          ? peserta.anggota_tim[0]?.atlet?.dojang?.nama_dojang || "-"
+                          : peserta.atlet?.dojang?.nama_dojang || "-";
+                      
+                        return (
+                          <tr
+                            key={peserta.id_peserta_kompetisi}
+                            className="hover:bg-yellow-50 transition-colors cursor-pointer"
+                            onClick={() => {
+                              if (!isTeam && peserta.atlet?.id_atlet) {
+                                navigate(`/dashboard/atlit/${peserta.atlet.id_atlet}`);
+                              } else {
+                                toast("Ini peserta tim, tidak ada detail personal");
+                              }
+                            }}
+                          >
+                            <td className="py-4 px-4 font-medium text-gray-800 text-sm">{namaPeserta}</td>
+                            <td className="py-4 px-4 text-gray-700 text-sm">{`${cabang} - ${level}`}</td>
+                            <td className="py-4 px-4 text-gray-700 text-sm">{kelasBerat}</td>
+                            <td className="py-4 px-4 text-center text-gray-700 text-sm">{kelasPoomsae}</td>
+                            <td className="py-4 px-4 text-center text-gray-700 text-sm">
+                              {peserta.kelas_kejuaraan?.kelompok?.nama_kelompok || "-"}
+                            </td>
+                            <td className="py-4 px-4 text-center text-sm">
+                              {!isTeam ? (
+                                peserta.atlet?.jenis_kelamin === "LAKI_LAKI"
+                                  ? <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs">Laki-Laki</span>
+                                  : <span className="px-2 py-1 bg-pink-100 text-pink-700 rounded-full text-xs">Perempuan</span>
+                              ) : "-"}
+                            </td>
+                            <td className="py-4 px-4 text-gray-700 text-sm">{dojang}</td>
+                            <td className="py-4 px-4 text-center">
+                              <span
+                                className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
+                                  peserta.status === "PENDING"
+                                    ? "bg-yellow-100 text-yellow-800"
+                                    : peserta.status === "APPROVED"
+                                    ? "bg-green-100 text-green-800"
+                                    : "bg-red-100 text-red-800"
+                                }`}
+                              >
+                                {peserta.status}
+                              </span>
+                            </td>
+                            <td className="py-4 px-4">
+                              <div className="flex gap-2 justify-center">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    toast.success("Disetujui!");
+                                    // TODO: panggil API approve
+                                  }}
+                                  className="flex items-center gap-1 px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 text-xs font-medium"
+                                >
+                                  Setujui
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    toast.error("Ditolak!");
+                                    // TODO: panggil API reject
+                                  }}
+                                  className="flex items-center gap-1 px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 text-xs font-medium"
+                                >
+                                  Tolak
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
                   
                 {displayedPesertas.length === 0 && (
                   <div className="text-center py-12 text-gray-500">
