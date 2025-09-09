@@ -151,7 +151,7 @@ const AllPeserta: React.FC = () => {
 
     // Kelas usia / kelompok
     const kelasUsia = peserta.kelas_kejuaraan?.kelompok?.nama_kelompok?.toUpperCase() || "";
-    const matchesKelasUsia = filterKelasUsia === "ALL" || kelasUsia === filterKelasUsia;
+    const matchesKelasUsia = filterKelasUsia === "ALL" || kelasUsia === filterKelasUsia.toUpperCase();
 
     // Level / kategori event
     const level = peserta.kelas_kejuaraan?.kategori_event?.nama_kategori?.toUpperCase() || "";
