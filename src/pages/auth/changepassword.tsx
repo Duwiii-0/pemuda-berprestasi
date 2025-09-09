@@ -5,6 +5,7 @@ import GeneralButton from "../../components/generalButton";
 import TextInput from "../../components/textInput";
 import toast from "react-hot-toast";
 import Logo from '../../assets/logo/logo.png';
+import { apiClient } from "../../config/api";
 
 const ResetPassword = () => {
   const navigate = useNavigate();
@@ -50,23 +51,11 @@ const ResetPassword = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch('http://localhost:3000/api/auth/reset-password', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email,
-          newPassword,
-          confirmNewPassword
-        }),
+      const data = await apiClient.post('/api/auth/reset-password', {
+        email,
+        newPassword,
+        confirmNewPassword
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Gagal mereset password');
-      }
 
       if (data.success) {
         toast.success("Password berhasil direset!");
@@ -84,17 +73,17 @@ const ResetPassword = () => {
         throw new Error(data.message || 'Gagal mereset password');
       }
     } catch (error: any) {
-      console.error('Reset password error:');
+      console.error('Reset password error:', error);
       
       // Handle specific error messages
-      if (error.message === 'Email not found') {
+      if (error.status === 404 || error.data?.message === 'Email not found') {
         toast.error("Email tidak terdaftar dalam sistem");
-      } else if (error.message === 'Password confirmation does not match') {
+      } else if (error.data?.message === 'Password confirmation does not match') {
         toast.error("Konfirmasi password tidak cocok");
-      } else if (error.message.includes('validation')) {
+      } else if (error.data?.message?.includes('validation')) {
         toast.error("Data yang dimasukkan tidak valid");
       } else {
-        toast.error(error.message || "Terjadi kesalahan. Silakan coba lagi.");
+        toast.error(error.data?.message || error.message || "Terjadi kesalahan. Silakan coba lagi.");
       }
     } finally {
       setIsLoading(false);
