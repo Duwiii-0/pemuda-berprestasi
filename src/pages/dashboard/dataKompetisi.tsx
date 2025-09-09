@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Trophy, Users, Search, Clock, CheckCircle, Menu } from 'lucide-react';
+import { Trophy, Users, Search, Clock, CheckCircle, Menu, ChevronLeft, ChevronRight, Loader, XCircle } from 'lucide-react';
 import toast from "react-hot-toast";
 import NavbarDashboard from "../../components/navbar/navbarDashboard";
 import { useAuth } from "../../context/authContext";
 import { useKompetisi } from "../../context/KompetisiContext";
+import { useDojang } from "../../context/dojangContext";
 import type { Kompetisi } from "../../context/KompetisiContext";
 import Select from "react-select";
 
@@ -32,16 +33,61 @@ const StatsCard: React.FC<StatsCardProps> = ({ icon: Icon, title, value, color }
 const DataKompetisi = () => {
   const navigate = useNavigate();
   const { user, token } = useAuth();
-  const { kompetisiList, loadingKompetisi, fetchKompetisiList, fetchAtletByKompetisi, pesertaList } = useKompetisi();
+  const { kompetisiList, loadingKompetisi, fetchKompetisiList, fetchAtletByKompetisi, pesertaList, updatePesertaStatus } = useKompetisi();
+  const { dojangOptions, refreshDojang } = useDojang();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "PENDAFTARAN" | "SEDANG_DIMULAI" | "SELESAI">("all");
   const [selectedKompetisi, setSelectedKompetisi] = useState<Kompetisi | null>(null);
   const [showPeserta, setShowPeserta] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  
+  // Filtering states untuk halaman peserta
   const [searchPeserta, setSearchPeserta] = useState("");
   const [filterStatus, setFilterStatus] = useState<"ALL" | "PENDING" | "APPROVED" | "REJECTED">("ALL");
   const [filterCategory, setFilterCategory] = useState<"ALL" | "KYORUGI" | "POOMSAE">("ALL");
   const [filterKelompokUsia, setFilterKelompokUsia] = useState<"ALL" | "Cadet" | "Junior" | "Senior">("ALL");
+  const [filterKelasBerat, setFilterKelasBerat] = useState<string>("ALL");
+  const [filterLevel, setFilterLevel] = useState<"pemula" | "prestasi" | null>(null);
+  const [filterDojang, setFilterDojang] = useState<string>("ALL");
+  
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
+  const [processing, setProcessing] = useState<number | null>(null);
+
+  const kelasBeratOptions = [
+    { value: "ALL", label: "Semua Kelas" },
+    { value: "Under 33 kg", label: "Under 33 kg" },
+    { value: "Under 37 kg", label: "Under 37 kg" },
+    { value: "Under 41 kg", label: "Under 41 kg" },
+    { value: "Under 45 kg", label: "Under 45 kg" },
+    { value: "Under 49 kg", label: "Under 49 kg" },
+    { value: "Under 53 kg", label: "Under 53 kg" },
+    { value: "Under 55 kg", label: "Under 55 kg" },
+    { value: "Under 57 kg", label: "Under 57 kg" },
+    { value: "Under 59 kg", label: "Under 59 kg" },
+    { value: "Under 61 kg", label: "Under 61 kg" },
+    { value: "Under 62 kg", label: "Under 62 kg" },
+    { value: "Under 63 kg", label: "Under 63 kg" },
+    { value: "Under 65 kg", label: "Under 65 kg" },
+    { value: "Under 67 kg", label: "Under 67 kg" },
+    { value: "Under 68 kg", label: "Under 68 kg" },
+    { value: "Under 73 kg", label: "Under 73 kg" },
+    { value: "Under 74 kg", label: "Under 74 kg" },
+    { value: "Under 78 kg", label: "Under 78 kg" },
+    { value: "Under 80 kg", label: "Under 80 kg" },
+    { value: "Under 87 kg", label: "Under 87 kg" },
+    { value: "Over 59 kg", label: "Over 59 kg" },
+    { value: "Over 65 kg", label: "Over 65 kg" },
+    { value: "Over 68 kg", label: "Over 68 kg" },
+    { value: "Over 73 kg", label: "Over 73 kg" },
+    { value: "Over 78 kg", label: "Over 78 kg" },
+    { value: "Over 87 kg", label: "Over 87 kg" },
+  ];
+
+  useEffect(() => {
+    refreshDojang();
+  }, []);
 
   useEffect(() => {
     // Token handled by apiClient automatically
@@ -60,15 +106,45 @@ const DataKompetisi = () => {
     return () => window.removeEventListener('resize', onResize);
   }, []);
 
+  // Reset pagination when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchPeserta, filterStatus, filterCategory, filterKelasBerat, filterKelompokUsia, filterLevel, filterDojang]);
+
   const handleKompetisiClick = async (kompetisi: Kompetisi) => {
-  setSelectedKompetisi(kompetisi);
-  setShowPeserta(true);
+    setSelectedKompetisi(kompetisi);
+    setShowPeserta(true);
 
-  // kalau role pelatih, lemparkan id_dojang ke API
-  const idDojang = user?.pelatih?.id_dojang;
-  await fetchAtletByKompetisi(kompetisi.id_kompetisi, undefined, idDojang);
-};
+    // kalau role pelatih, lemparkan id_dojang ke API
+    const idDojang = user?.pelatih?.id_dojang;
+    await fetchAtletByKompetisi(kompetisi.id_kompetisi, undefined, idDojang);
+  };
 
+  const handleApproval = async (id: number) => {
+    if (!selectedKompetisi?.id_kompetisi) return;
+    setProcessing(id);
+    try {
+      await updatePesertaStatus(selectedKompetisi.id_kompetisi, id, "APPROVED");
+      toast.success("Peserta disetujui!");
+    } catch (error) {
+      toast.error("Gagal menyetujui peserta");
+    } finally {
+      setProcessing(null);
+    }
+  };
+
+  const handleRejection = async (id: number) => {
+    if (!selectedKompetisi?.id_kompetisi) return;
+    setProcessing(id);
+    try {
+      await updatePesertaStatus(selectedKompetisi.id_kompetisi, id, "REJECTED");
+      toast.success("Peserta ditolak!");
+    } catch (error) {
+      toast.error("Gagal menolak peserta");
+    } finally {
+      setProcessing(null);
+    }
+  };
 
   const formatTanggal = (date: string | Date) => {
     return new Date(date).toLocaleDateString('id-ID', {
@@ -87,6 +163,23 @@ const DataKompetisi = () => {
     }
   };
 
+  const getStatusBadge = (status: string) => {
+    const statusMap = {
+      PENDING: { bg: 'rgba(245, 183, 0, 0.2)', text: '#050505' },
+      APPROVED: { bg: 'rgba(34, 197, 94, 0.2)', text: '#059669' },
+      REJECTED: { bg: 'rgba(153, 13, 53, 0.1)', text: '#990D35' },
+    };
+    const colors = statusMap[status as keyof typeof statusMap] || statusMap.PENDING;
+    
+    return (
+      <span
+        className="px-2 py-1 rounded-full text-xs font-medium"
+        style={{ backgroundColor: colors.bg, color: colors.text }}
+      >
+        {status}
+      </span>
+    );
+  };
 
   // Hitung statistik berdasarkan status
   const stats = {
@@ -103,6 +196,90 @@ const DataKompetisi = () => {
     return matchesSearch && matchesStatus;
   });
 
+  // Filter peserta dengan logika yang sama seperti AllPeserta
+  const displayedPesertas = pesertaList.filter((peserta: any) => {
+    // Nama peserta (team atau individu)
+    const namaPeserta = peserta.is_team
+      ? peserta.anggota_tim?.map((a: any) => a.atlet.nama_atlet).join(" ") || ""
+      : peserta.atlet?.nama_atlet || "";
+
+    const matchesSearch = namaPeserta.toLowerCase().includes(searchPeserta.toLowerCase());
+
+    // Status
+    const pesertaStatus = peserta.status?.toUpperCase() || "";
+    const matchesStatus = filterStatus === "ALL" || pesertaStatus === filterStatus.toUpperCase();
+
+    // Kategori / cabang
+    const kategori = peserta.kelas_kejuaraan?.cabang?.toUpperCase() || "";
+    const matchesCategory = filterCategory === "ALL" || kategori === filterCategory.toUpperCase();
+
+    // Kelas berat
+    const kelasBerat = peserta.kelas_kejuaraan?.kelas_berat?.nama_kelas?.toUpperCase() || "";
+    const matchesKelasBerat = filterKelasBerat === "ALL" || kelasBerat === filterKelasBerat.toUpperCase();
+
+    // Kelas usia / kelompok
+    const kelasUsia = peserta.kelas_kejuaraan?.kelompok?.nama_kelompok?.toUpperCase() || "";
+    const matchesKelasUsia = filterKelompokUsia === "ALL" || kelasUsia === filterKelompokUsia.toUpperCase();
+
+    // Level / kategori event
+    const level = peserta.kelas_kejuaraan?.kategori_event?.nama_kategori?.toUpperCase() || "";
+    const matchesLevel = !filterLevel || level === filterLevel.toUpperCase();
+
+    // Dojang
+    const pesertaDojang = peserta.is_team
+      ? peserta.anggota_tim?.[0]?.atlet?.dojang?.id_dojang?.toString() || ""
+      : peserta.atlet?.dojang?.id_dojang?.toString() || "";
+
+    const matchesDojang = filterDojang === "ALL" || pesertaDojang === filterDojang;
+
+    return matchesSearch && matchesStatus && matchesCategory && matchesKelasBerat && matchesKelasUsia && matchesLevel && matchesDojang;
+  });
+
+  // Pagination logic
+  const totalPages = Math.ceil(displayedPesertas.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentPesertas = displayedPesertas.slice(startIndex, endIndex);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const getPageNumbers = () => {
+    const pageNumbers = [];
+    const maxVisiblePages = 5;
+    
+    if (totalPages <= maxVisiblePages) {
+      for (let i = 1; i <= totalPages; i++) {
+        pageNumbers.push(i);
+      }
+    } else {
+      if (currentPage <= 3) {
+        for (let i = 1; i <= 4; i++) {
+          pageNumbers.push(i);
+        }
+        pageNumbers.push('...');
+        pageNumbers.push(totalPages);
+      } else if (currentPage >= totalPages - 2) {
+        pageNumbers.push(1);
+        pageNumbers.push('...');
+        for (let i = totalPages - 3; i <= totalPages; i++) {
+          pageNumbers.push(i);
+        }
+      } else {
+        pageNumbers.push(1);
+        pageNumbers.push('...');
+        for (let i = currentPage - 1; i <= currentPage + 1; i++) {
+          pageNumbers.push(i);
+        }
+        pageNumbers.push('...');
+        pageNumbers.push(totalPages);
+      }
+    }
+    
+    return pageNumbers;
+  };
+
   // Loading state with proper layout
   if (loadingKompetisi) {
     return (
@@ -115,386 +292,497 @@ const DataKompetisi = () => {
     );
   }
 
-  // Halaman detail peserta
-if (showPeserta && selectedKompetisi) {
-  const peserta = pesertaList.map((peserta) => {
-    const isTeam = peserta.is_team;
+  // Halaman detail peserta dengan filtering terintegrasi
+  if (showPeserta && selectedKompetisi) {
+    const statusOptions = [
+      { value: "ALL", label: "Semua Status" },
+      { value: "PENDING", label: "Pending" },
+      { value: "APPROVED", label: "Approved" },
+      { value: "REJECTED", label: "Rejected" },
+    ];
 
-    const nama = isTeam
-      ? peserta.anggota_tim?.map((m: any) => m.atlet.nama_atlet).join(", ")
-      : peserta.atlet?.nama_atlet || "-";
+    const categoryOptions = [
+      { value: "ALL", label: "Semua Kategori" },
+      { value: "KYORUGI", label: "KYORUGI" },
+      { value: "POOMSAE", label: "POOMSAE" },
+    ];
 
-    const gender = isTeam ? "Tim" : (peserta.atlet?.jenis_kelamin === "LAKI_LAKI" ? "Laki-Laki" : "Perempuan");
+    const levelOptions = [
+      { value: null, label: "Semua Level" },
+      { value: "pemula", label: "Pemula" },
+      { value: "prestasi", label: "Prestasi" },
+    ];
 
-    // ambil kategori dari kelas kejuaraan
-    const kategori = peserta.kelas_kejuaraan?.kategori_event?.nama_kategori || "-";
-    const jenisKategori = peserta.kelas_kejuaraan?.kelompok?.nama_kelompok || "-";
-    const status =
-      peserta.status === "PENDING"
-        ? "Pending"
-        : peserta.status === "APPROVED"
-        ? "Approved"
-        : "Rejected";
+    const ageOptions = [
+      { value: "ALL", label: "Semua Usia" },
+      { value: "Cadet", label: "Cadet" },
+      { value: "Junior", label: "Junior" },
+      { value: "Senior", label: "Senior" },
+    ];
 
-    return {
-      id: peserta.id_peserta_kompetisi,
-      nama,
-      gender,
-      kategori,
-      jenisKategori,
-      status,
-      atletId: isTeam ? null : peserta.atlet?.id_atlet,
-    };
-  });
-
-  const displayedPesertas = pesertaList.filter((peserta) => {
-    const namaPeserta = peserta.is_team
-      ? peserta.anggota_tim?.map((a) => a.atlet.nama_atlet).join(" ") || ""
-      : peserta.atlet?.nama_atlet || "";
-    
-    const matchesSearch = namaPeserta.toLowerCase().includes(searchPeserta.toLowerCase());
-    const matchesStatus = filterStatus === "ALL" || peserta.status === filterStatus;
-    
-    const kategori = peserta.kelas_kejuaraan?.cabang?.toUpperCase() || "";
-    const matchesCategory =
-      filterCategory === "ALL" || kategori === filterCategory.toUpperCase();
-    
-    const kelompok = peserta.kelas_kejuaraan?.kelompok?.nama_kelompok || "";
-    const matchesKelompok =
-      filterKelompokUsia === "ALL" || kelompok.toLowerCase() === filterKelompokUsia.toLowerCase();
-    
-    return matchesSearch && matchesStatus && matchesCategory && matchesKelompok;
-  });
-
-  return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-white via-red/5 to-yellow/10">
-      <NavbarDashboard />
-      <div className="lg:ml-72">
-        <div className="px-4 lg:px-8 py-8 pb-16">
-          {/* Mobile Menu Button + Back Button */}
-          <div className="flex items-center gap-4 mb-6">
-            {/* Mobile Menu Button */}
-            <div className="lg:hidden">
+    return (
+      <div className="min-h-screen w-full bg-gradient-to-br from-white via-red/5 to-yellow/10">
+        <NavbarDashboard />
+        <div className="lg:ml-72">
+          <div className="px-4 lg:px-8 py-8 pb-16">
+            {/* Mobile Menu Button + Back Button */}
+            <div className="flex items-center gap-4 mb-6">
+              {/* Mobile Menu Button */}
+              <div className="lg:hidden">
+                <button
+                  onClick={() => setSidebarOpen(true)}
+                  className="p-3 rounded-xl hover:bg-white/50 transition-all duration-300 border border-red/20"
+                  aria-label="Open menu"
+                >
+                  <Menu size={24} className="text-red" />
+                </button>
+              </div>
+              
+              {/* Back Button */}
               <button
-                onClick={() => setSidebarOpen(true)}
-                className="p-3 rounded-xl hover:bg-white/50 transition-all duration-300 border border-red/20"
-                aria-label="Open menu"
+                onClick={() => setShowPeserta(false)}
+                className="text-red hover:text-red/80 font-plex transition-colors duration-200"
               >
-                <Menu size={24} className="text-red" />
+                ← Kembali
               </button>
             </div>
-            
-            {/* Back Button */}
-            <button
-              onClick={() => setShowPeserta(false)}
-              className="text-red hover:text-red/80 font-plex transition-colors duration-200"
-            >
-              ← Kembali
-            </button>
-          </div>
 
-          {/* Header */}
-          <div className="mb-8">
-            <h1 className="font-bebas text-4xl lg:text-6xl text-black/80 tracking-wider">
-              {selectedKompetisi.nama_event}
-            </h1>
-            <p className="font-plex text-black/60 text-lg mt-2">
-              Daftar peserta yang terdaftar
-            </p>
-          </div>
+            {/* Header */}
+            <div className="mb-8">
+              <h1 className="font-bebas text-4xl lg:text-6xl text-black/80 tracking-wider">
+                {selectedKompetisi.nama_event}
+              </h1>
+              <p className="font-plex text-black/60 text-lg mt-2">
+                Validasi peserta yang terdaftar
+              </p>
+            </div>
 
-          {/* Peserta Table */}
-          <div className="w-full bg-white backdrop-blur-sm rounded-3xl p-6 shadow-xl border border-white/50">
-            {/* Desktop Table View */}
-            <div className="hidden lg:block">
-              {/* Filter Section (selalu tampil) */}
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 mb-6">
-                <div className="space-y-4">
-                  {/* Search */}
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                    <input
-                      type="text"
-                      placeholder="Cari peserta..."
-                      value={searchPeserta}
-                      onChange={(e) => setSearchPeserta(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 rounded-2xl border border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-400 focus:border-transparent text-sm"
-                    />
+            {/* Filter Section - Extended with more filtering options */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 mb-6">
+              <div className="space-y-4">
+                {/* Search */}
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                  <input
+                    type="text"
+                    placeholder="Cari peserta..."
+                    value={searchPeserta}
+                    onChange={(e) => setSearchPeserta(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 rounded-2xl border border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-400 focus:border-transparent text-sm"
+                  />
+                </div>
+              
+                {/* Filters dalam grid yang diperluas */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
+                  {/* Status */}
+                  <div className="col-span-2 sm:col-span-1">
+                    <label className="block text-gray-600 text-xs mb-2 font-medium">Status</label>
+                    <select
+                      value={filterStatus}
+                      onChange={(e) => setFilterStatus(e.target.value as any)}
+                      className="w-full px-3 py-2.5 rounded-xl border border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-400 focus:border-transparent text-sm"
+                    >
+                      {statusOptions.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
                   </div>
-                
-                  {/* Filters */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    {/* Status */}
-                    <div>
-                      <label className="block text-gray-600 text-xs mb-2 font-medium">Status</label>
-                      <Select
-                        unstyled
-                        value={{
-                          value: filterStatus,
-                          label: filterStatus === "ALL" ? "Semua Status" : filterStatus,
-                        }}
-                        onChange={(selected) => setFilterStatus(selected?.value as any)}
-                        options={[
-                          { value: "ALL", label: "Semua Status" },
-                          { value: "PENDING", label: "Pending" },
-                          { value: "APPROVED", label: "Approved" },
-                          { value: "REJECTED", label: "Rejected" },
-                        ]}
-                        classNames={{
-                          control: () =>
-                            `w-full flex items-center border border-gray-300 rounded-2xl px-3 py-3 gap-2 transition-all duration-300 hover:shadow-sm`,
-                          menu: () =>
-                            "border border-gray-200 bg-white rounded-xl shadow-lg mt-2 overflow-hidden z-50",
-                          option: ({ isFocused, isSelected }) =>
-                            [
-                              "px-3 py-3 cursor-pointer text-sm transition-colors duration-200",
-                              isFocused ? "bg-blue-50 text-blue-700" : "text-gray-800",
-                              isSelected ? "bg-blue-500 text-white" : "",
-                            ].join(" "),
-                        }}
-                      />
-                    </div>
-                      
-                    {/* Kategori */}
-                    <div>
-                      <label className="block text-gray-600 text-xs mb-2 font-medium">Kategori</label>
-                      <Select
-                        unstyled
-                        value={{ value: filterCategory, label: filterCategory === "ALL" ? "Semua Kategori" : filterCategory }}
-                        onChange={(selected) => setFilterCategory(selected?.value as any)}
-                        options={[
-                          { value: "ALL", label: "Semua Kategori" },
-                          { value: "POOMSAE", label: "POOMSAE" },
-                          { value: "KYORUGI", label: "KYORUGI" },
-                        ]}
-                        classNames={{
-                          control: () =>
-                            `w-full flex items-center border border-gray-300 rounded-2xl px-3 py-3 gap-2 transition-all duration-300 hover:shadow-sm`,
-                          menu: () =>
-                            "border border-gray-200 bg-white rounded-xl shadow-lg mt-2 overflow-hidden z-50",
-                          option: ({ isFocused, isSelected }) =>
-                            [
-                              "px-3 py-3 cursor-pointer text-sm transition-colors duration-200",
-                              isFocused ? "bg-blue-50 text-blue-700" : "text-gray-800",
-                              isSelected ? "bg-blue-500 text-white" : "",
-                            ].join(" "),
-                        }}
-                      />
-                    </div>
-                      
-                    {/* Kelompok Usia */}
-                    <div>
-                      <label className="block text-gray-600 text-xs mb-2 font-medium">Kelompok Usia</label>
-                      <Select
-                        unstyled
-                        value={{
-                          value: filterKelompokUsia,
-                          label: filterKelompokUsia === "ALL" ? "Semua Usia" : filterKelompokUsia,
-                        }}
-                        onChange={(selected) => setFilterKelompokUsia(selected?.value as any)}
-                        options={[
-                          { value: "ALL", label: "Semua Usia" },
-                          { value: "Cadet", label: "Cadet" },
-                          { value: "Junior", label: "Junior" },
-                          { value: "Senior", label: "Senior" },
-                        ]}
-                        classNames={{
-                          control: () =>
-                            `w-full flex items-center border border-gray-300 rounded-2xl px-3 py-3 gap-2 transition-all duration-300 hover:shadow-sm`,
-                          menu: () =>
-                            "border border-gray-200 bg-white rounded-xl shadow-lg mt-2 overflow-hidden z-50",
-                          option: ({ isFocused, isSelected }) =>
-                            [
-                              "px-3 py-3 cursor-pointer text-sm transition-colors duration-200",
-                              isFocused ? "bg-blue-50 text-blue-700" : "text-gray-800",
-                              isSelected ? "bg-blue-500 text-white" : "",
-                            ].join(" "),
-                        }}
-                      />
-                    </div>
+                    
+                  {/* Kategori */}
+                  <div className="col-span-2 sm:col-span-1">
+                    <label className="block text-gray-600 text-xs mb-2 font-medium">Kategori</label>
+                    <select
+                      value={filterCategory}
+                      onChange={(e) => setFilterCategory(e.target.value as any)}
+                      className="w-full px-3 py-2.5 rounded-xl border border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-400 focus:border-transparent text-sm"
+                    >
+                      {categoryOptions.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Level */}
+                  <div className="col-span-2 sm:col-span-1">
+                    <label className="block text-gray-600 text-xs mb-2 font-medium">Level</label>
+                    <select
+                      value={filterLevel || ""}
+                      onChange={(e) => setFilterLevel(e.target.value as "pemula" | "prestasi" | null || null)}
+                      className="w-full px-3 py-2.5 rounded-xl border border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-400 focus:border-transparent text-sm"
+                    >
+                      {levelOptions.map((opt) => (
+                        <option key={opt.value || "null"} value={opt.value || ""}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                    
+                  {/* Kelompok Usia */}
+                  <div className="col-span-2 sm:col-span-1">
+                    <label className="block text-gray-600 text-xs mb-2 font-medium">Usia</label>
+                    <select
+                      value={filterKelompokUsia}
+                      onChange={(e) => setFilterKelompokUsia(e.target.value as any)}
+                      className="w-full px-3 py-2.5 rounded-xl border border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-400 focus:border-transparent text-sm"
+                    >
+                      {ageOptions.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Dojang */}
+                  <div className="col-span-4 sm:col-span-3 lg:col-span-1">
+                    <label className="block text-gray-600 text-xs mb-2 font-medium">Dojang</label>
+                    <select
+                      value={filterDojang}
+                      onChange={(e) => setFilterDojang(e.target.value)}
+                      className="w-full px-3 py-2.5 rounded-xl border border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-400 focus:border-transparent text-sm"
+                    >
+                      <option value="ALL">Semua Dojang</option>
+                      {dojangOptions.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Kelas Berat */}
+                  <div className="col-span-2 sm:col-span-1">
+                    <label className="block text-gray-600 text-xs mb-2 font-medium">
+                      Kelas Berat
+                    </label>
+                    <select
+                      value={filterKelasBerat}
+                      onChange={(e) => setFilterKelasBerat(e.target.value)}
+                      className="w-full px-3 py-2.5 rounded-xl border border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-400 focus:border-transparent text-sm"
+                    >
+                      {kelasBeratOptions.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 </div>
+
+                {/* Info hasil */}
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 pt-2 border-t border-gray-200">
+                  <p className="text-sm text-gray-600">
+                    Menampilkan <span className="font-semibold">{startIndex + 1}-{Math.min(endIndex, displayedPesertas.length)}</span> dari <span className="font-semibold">{displayedPesertas.length}</span> peserta
+                  </p>
+                  <p className="text-xs sm:text-sm text-gray-500">
+                    Halaman {currentPage} dari {totalPages}
+                  </p>
+                </div>
               </div>
-                      
-              {/* Table Section */}
-              <div className="overflow-x-auto bg-white rounded-xl shadow-sm border border-gray-200">
-                <table className="w-full min-w-[1000px]">
-                    <thead className="bg-yellow-400">
-                      <tr>
-                        {["Nama", "Kategori", "Kelas Berat", "Kelas Poomsae", "Kelompok Usia", "Jenis Kelamin", "Nama Dojang", "Status", "Aksi"].map((header) => (
-                          <th
-                            key={header}
-                            className={`py-3 px-4 font-semibold text-gray-900 text-sm ${
-                              header === "Status" || header === "Aksi" ? "text-center" : "text-left"
-                            }`}
-                          >
-                            {header}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200">
-                      {displayedPesertas.map((peserta: any) => {
-                        const isTeam = peserta.is_team;
-                        const cabang = peserta.kelas_kejuaraan?.cabang || "-";
-                        const level = peserta.kelas_kejuaraan?.kategori_event?.nama_kategori || "-";
-                      
-                        const kelasBerat =
-                          cabang === "KYORUGI"
-                            ? peserta.kelas_kejuaraan?.kelas_berat?.nama_kelas ||
-                              (peserta.atlet?.berat_badan ? `${peserta.atlet.berat_badan} kg` : "-")
-                            : "-";
-                      
-                        const kelasPoomsae =
-                          cabang === "POOMSAE"
-                            ? peserta.kelas_kejuaraan?.poomsae?.nama_kelas || peserta.atlet?.belt || "-"
-                            : "-";
-                      
-                        const namaPeserta = isTeam
-                          ? peserta.anggota_tim?.map((m: any) => m.atlet.nama_atlet).join(", ")
-                          : peserta.atlet?.nama_atlet || "-";
-                      
-                        const dojang = isTeam && peserta.anggota_tim?.length
-                          ? peserta.anggota_tim[0]?.atlet?.dojang?.nama_dojang || "-"
-                          : peserta.atlet?.dojang?.nama_dojang || "-";
-                      
-                        return (
-                          <tr
-                            key={peserta.id_peserta_kompetisi}
-                            className="hover:bg-yellow-50 transition-colors cursor-pointer"
-                            onClick={() => {
-                              if (!isTeam && peserta.atlet?.id_atlet) {
-                                navigate(`/dashboard/atlit/${peserta.atlet.id_atlet}`);
-                              } else {
-                                toast("Ini peserta tim, tidak ada detail personal");
-                              }
-                            }}
-                          >
-                            <td className="py-4 px-4 font-medium text-gray-800 text-sm">{namaPeserta}</td>
-                            <td className="py-4 px-4 text-gray-700 text-sm">{`${cabang} - ${level}`}</td>
-                            <td className="py-4 px-4 text-gray-700 text-sm">{kelasBerat}</td>
-                            <td className="py-4 px-4 text-center text-gray-700 text-sm">{kelasPoomsae}</td>
-                            <td className="py-4 px-4 text-center text-gray-700 text-sm">
-                              {peserta.kelas_kejuaraan?.kelompok?.nama_kelompok || "-"}
-                            </td>
-                            <td className="py-4 px-4 text-center text-sm">
-                              {!isTeam ? (
-                                peserta.atlet?.jenis_kelamin === "LAKI_LAKI"
-                                  ? <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs">Laki-Laki</span>
-                                  : <span className="px-2 py-1 bg-pink-100 text-pink-700 rounded-full text-xs">Perempuan</span>
-                              ) : "-"}
-                            </td>
-                            <td className="py-4 px-4 text-gray-700 text-sm">{dojang}</td>
-                            <td className="py-4 px-4 text-center">
-                              <span
-                                className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
-                                  peserta.status === "PENDING"
-                                    ? "bg-yellow-100 text-yellow-800"
-                                    : peserta.status === "APPROVED"
-                                    ? "bg-green-100 text-green-800"
-                                    : "bg-red-100 text-red-800"
-                                }`}
-                              >
-                                {peserta.status}
-                              </span>
-                            </td>
-                            <td className="py-4 px-4">
-                              <div className="flex gap-2 justify-center">
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    toast.success("Disetujui!");
-                                    // TODO: panggil API approve
-                                  }}
-                                  className="flex items-center gap-1 px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 text-xs font-medium"
-                                >
-                                  Setujui
-                                </button>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    toast.error("Ditolak!");
-                                    // TODO: panggil API reject
-                                  }}
-                                  className="flex items-center gap-1 px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 text-xs font-medium"
-                                >
-                                  Tolak
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                  
-                {displayedPesertas.length === 0 && (
+            </div>
+
+            {/* Peserta Table */}
+            <div className="w-full bg-white backdrop-blur-sm rounded-3xl p-6 shadow-xl border border-white/50">
+              {/* Desktop Table View */}
+              <div className="hidden lg:block">
+                {displayedPesertas.length > 0 ? (
+                  <div className="overflow-x-auto bg-white rounded-xl shadow-sm border border-gray-200">
+                    <table className="w-full min-w-[1200px]">
+                      <thead className="bg-yellow-400">
+                        <tr>
+                          {["Nama", "Kategori", "Level", "Kelas Berat", "Kelas Poomsae", "Kelompok Usia", "Jenis Kelamin", "Nama Dojang", "Status", "Aksi"].map((header) => (
+                            <th
+                              key={header}
+                              className={`py-3 px-4 font-semibold text-gray-900 text-sm ${
+                                header === "Status" || header === "Aksi" ? "text-center" : "text-left"
+                              }`}
+                            >
+                              {header}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        {currentPesertas.map((peserta: any) => {
+                          const isTeam = peserta.is_team;
+                          const cabang = peserta.kelas_kejuaraan?.cabang || "-";
+                          const level = peserta.kelas_kejuaraan?.kategori_event?.nama_kategori || "-";
+                        
+                          const kelasBerat =
+                            cabang === "KYORUGI"
+                              ? peserta.kelas_kejuaraan?.kelas_berat?.nama_kelas ||
+                                (peserta.atlet?.berat_badan ? `${peserta.atlet.berat_badan} kg` : "-")
+                              : "-";
+                        
+                          const kelasPoomsae =
+                            cabang === "POOMSAE"
+                              ? peserta.kelas_kejuaraan?.poomsae?.nama_kelas || peserta.atlet?.belt || "-"
+                              : "-";
+                        
+                          const namaPeserta = isTeam
+                            ? peserta.anggota_tim?.map((m: any) => m.atlet.nama_atlet).join(", ")
+                            : peserta.atlet?.nama_atlet || "-";
+                        
+                          const dojang = isTeam && peserta.anggota_tim?.length
+                            ? peserta.anggota_tim[0]?.atlet?.dojang?.nama_dojang || "-"
+                            : peserta.atlet?.dojang?.nama_dojang || "-";
+                        
+                          return (
+                            <tr
+                              key={peserta.id_peserta_kompetisi}
+                              className="hover:bg-yellow-50 transition-colors cursor-pointer"
+                              onClick={() => {
+                                if (!isTeam && peserta.atlet?.id_atlet) {
+                                  navigate(`/dashboard/atlit/${peserta.atlet.id_atlet}`);
+                                } else {
+                                  toast("Ini peserta tim, tidak ada detail personal");
+                                }
+                              }}
+                            >
+                              <td className="py-4 px-4 font-medium text-gray-800 text-sm">{namaPeserta}</td>
+                              <td className="py-4 px-4 text-gray-700 text-sm">{cabang}</td>
+                              <td className="py-4 px-4 text-gray-700 text-sm">{level}</td>
+                              <td className="py-4 px-4 text-gray-700 text-sm">{kelasBerat}</td>
+                              <td className="py-4 px-4 text-center text-gray-700 text-sm">{kelasPoomsae}</td>
+                              <td className="py-4 px-4 text-center text-gray-700 text-sm">
+                                {peserta.kelas_kejuaraan?.kelompok?.nama_kelompok || "-"}
+                              </td>
+                              <td className="py-4 px-4 text-center text-sm">
+                                {!isTeam ? (
+                                  peserta.atlet?.jenis_kelamin === "LAKI_LAKI"
+                                    ? <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs">Laki-Laki</span>
+                                    : <span className="px-2 py-1 bg-pink-100 text-pink-700 rounded-full text-xs">Perempuan</span>
+                                ) : "-"}
+                              </td>
+                              <td className="py-4 px-4 text-gray-700 text-sm">{dojang}</td>
+                              <td className="py-4 px-4 text-center">
+                                {getStatusBadge(peserta.status)}
+                              </td>
+                              <td className="py-4 px-4">
+                                <div className="flex gap-2 justify-center">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleApproval(peserta.id_peserta_kompetisi);
+                                    }}
+                                    disabled={processing === peserta.id_peserta_kompetisi}
+                                    className="flex items-center gap-1 px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50 text-xs font-medium transition-all"
+                                  >
+                                    {processing === peserta.id_peserta_kompetisi ? <Loader size={16} className="animate-spin" /> : <CheckCircle size={16} />}
+                                    Setujui
+                                  </button>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleRejection(peserta.id_peserta_kompetisi);
+                                    }}
+                                    disabled={processing === peserta.id_peserta_kompetisi}
+                                    className="flex items-center gap-1 px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-50 text-xs font-medium transition-all"
+                                  >
+                                    {processing === peserta.id_peserta_kompetisi ? <Loader size={16} className="animate-spin" /> : <XCircle size={16} />}
+                                    Tolak
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
                   <div className="text-center py-12 text-gray-500">
-                    Tidak ada peserta ditemukan
+                    <Users size={52} className="mx-auto mb-4" />
+                    <p className="text-lg">Tidak ada peserta ditemukan</p>
+                    {(searchPeserta || filterStatus !== "ALL" || filterCategory !== "ALL" || filterKelompokUsia !== "ALL" || filterLevel || filterDojang !== "ALL" || filterKelasBerat !== "ALL") && (
+                      <p className="text-sm mt-2">Coba ubah filter pencarian Anda</p>
+                    )}
                   </div>
                 )}
               </div>
-            </div>
 
-            {/* Mobile Card View */}
-            <div className="lg:hidden space-y-4">
-              {displayedPesertas.map((peserta: any) => (
-                <div
-                  key={peserta.id_peserta_kompetisi}
-                  className="bg-white rounded-xl shadow-md border border-gray-200 p-4"
-                  onClick={() => {
-                    if (!peserta.is_team && peserta.atlet?.id_atlet) {
-                      navigate(`/dashboard/atlit/${peserta.atlet.id_atlet}`);
-                    } else {
-                      toast("Ini peserta tim, tidak ada detail personal");
-                    }
-                  }}
-                >
-                  <h3 className="font-bebas text-lg mb-2">{peserta.atlet?.nama_atlet || "Tim"}</h3>
-                  <p className="text-sm text-gray-600"><b>Kategori:</b> {peserta.kelas_kejuaraan?.cabang} - {peserta.kelas_kejuaraan?.kategori_event?.nama_kategori}</p>
-                  <p className="text-sm text-gray-600"><b>Kelas Berat:</b> {peserta.kelas_kejuaraan?.kelas_berat?.nama_kelas || "-"}</p>
-                  <p className="text-sm text-gray-600"><b>Kelas Poomsae:</b> {peserta.kelas_kejuaraan?.poomsae?.nama_kelas || "-"}</p>
-                  <p className="text-sm text-gray-600"><b>Kelompok Usia:</b> {peserta.kelas_kejuaraan?.kelompok?.nama_kelompok || "-"}</p>
-                  <p className="text-sm text-gray-600"><b>Jenis Kelamin:</b> {peserta.atlet?.jenis_kelamin || "-"}</p>
-                  <p className="text-sm text-gray-600"><b>Dojang:</b> {peserta.atlet?.dojang?.nama_dojang || "-"}</p>
-                  <div className="flex justify-between items-center mt-3">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      peserta.status === "PENDING"
-                        ? "bg-yellow-100 text-yellow-800"
-                        : peserta.status === "APPROVED"
-                        ? "bg-green-100 text-green-800"
-                        : "bg-red-100 text-red-800"
-                    }`}>
-                      {peserta.status}
-                    </span>
-                    <div className="flex gap-2">
-                      <button className="px-3 py-1 bg-green-500 text-white rounded-lg text-xs">Setujui</button>
-                      <button className="px-3 py-1 bg-red-500 text-white rounded-lg text-xs">Tolak</button>
+              {/* Mobile Card View */}
+              <div className="lg:hidden space-y-4">
+                {currentPesertas.map((peserta: any) => {
+                  const isTeam = peserta.is_team;
+                  const namaPeserta = isTeam
+                    ? peserta.anggota_tim?.map((m: any) => m.atlet.nama_atlet).join(", ")
+                    : peserta.atlet?.nama_atlet || "-";
+
+                  const cabang = peserta.kelas_kejuaraan?.cabang || "-";
+                  const levelEvent = peserta.kelas_kejuaraan?.kategori_event?.nama_kategori || "-";
+                  const kelasUsia = peserta.kelas_kejuaraan?.kelompok?.nama_kelompok || "-";
+                  const dojang = isTeam && peserta.anggota_tim?.length
+                    ? peserta.anggota_tim[0]?.atlet?.dojang?.nama_dojang || "-"
+                    : peserta.atlet?.dojang?.nama_dojang || "-";
+
+                  return (
+                    <div
+                      key={peserta.id_peserta_kompetisi}
+                      className="bg-white rounded-xl shadow-md border border-gray-200 p-4"
+                      onClick={() => {
+                        if (!isTeam && peserta.atlet?.id_atlet) {
+                          navigate(`/dashboard/atlit/${peserta.atlet.id_atlet}`);
+                        } else {
+                          toast("Ini peserta tim, tidak ada detail personal");
+                        }
+                      }}
+                    >
+                      <div className="flex justify-between items-start mb-3">
+                        <div className="flex-1 min-w-0 pr-3">
+                          <h3 className="font-bebas text-lg leading-tight">{namaPeserta}</h3>
+                          <p className="text-sm text-gray-600 mt-1">{cabang} - {levelEvent}</p>
+                        </div>
+                        <div className="flex-shrink-0">
+                          {getStatusBadge(peserta.status)}
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-3 text-xs mb-3">
+                        <div>
+                          <span className="text-gray-500">Kelas:</span>
+                          <p className="font-medium text-gray-800">{kelasUsia}</p>
+                        </div>
+                        <div>
+                          <span className="text-gray-500">Dojang:</span>
+                          <p className="font-medium text-gray-800 truncate">{dojang}</p>
+                        </div>
+                        <div>
+                          <span className="text-gray-500">Kelas Berat:</span>
+                          <p className="font-medium text-gray-800">
+                            {cabang === "KYORUGI" 
+                              ? peserta.kelas_kejuaraan?.kelas_berat?.nama_kelas || "-"
+                              : "-"
+                            }
+                          </p>
+                        </div>
+                        <div>
+                          <span className="text-gray-500">Kelas Poomsae:</span>
+                          <p className="font-medium text-gray-800">
+                            {cabang === "POOMSAE" 
+                              ? peserta.kelas_kejuaraan?.poomsae?.nama_kelas || "-"
+                              : "-"
+                            }
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex gap-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleApproval(peserta.id_peserta_kompetisi);
+                          }}
+                          disabled={processing === peserta.id_peserta_kompetisi}
+                          className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50 text-xs font-medium transition-all"
+                        >
+                          {processing === peserta.id_peserta_kompetisi ? <Loader size={16} className="animate-spin" /> : <CheckCircle size={16} />}
+                          Setujui
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRejection(peserta.id_peserta_kompetisi);
+                          }}
+                          disabled={processing === peserta.id_peserta_kompetisi}
+                          className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-50 text-xs font-medium transition-all"
+                        >
+                          {processing === peserta.id_peserta_kompetisi ? <Loader size={16} className="animate-spin" /> : <XCircle size={16} />}
+                          Tolak
+                        </button>
+                      </div>
                     </div>
+                  );
+                })}
+
+                {displayedPesertas.length === 0 && (
+                  <div className="text-center py-12 text-gray-500">
+                    <Users size={52} className="mx-auto mb-4" />
+                    <p className="text-lg">Tidak ada peserta ditemukan</p>
+                    {(searchPeserta || filterStatus !== "ALL" || filterCategory !== "ALL" || filterKelompokUsia !== "ALL" || filterLevel || filterDojang !== "ALL" || filterKelasBerat !== "ALL") && (
+                      <p className="text-sm mt-2">Coba ubah filter pencarian Anda</p>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 mt-6">
+                  {/* Pagination Info */}
+                  <div className="text-sm order-2 sm:order-1 text-gray-600">
+                    Menampilkan {startIndex + 1} - {Math.min(endIndex, displayedPesertas.length)} dari {displayedPesertas.length} hasil
+                  </div>
+
+                  {/* Pagination Controls */}
+                  <div className="flex items-center gap-1 sm:gap-2 order-1 sm:order-2">
+                    {/* Previous Button */}
+                    <button
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      disabled={currentPage === 1}
+                      className="flex items-center gap-1 px-2 sm:px-3 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
+                    >
+                      <ChevronLeft size={16} />
+                      <span className="hidden sm:inline">Prev</span>
+                    </button>
+
+                    {/* Page Numbers */}
+                    <div className="flex items-center gap-1">
+                      {getPageNumbers().map((pageNum, index) => (
+                        pageNum === '...' ? (
+                          <span key={`ellipsis-${index}`} className="px-2 py-2 text-sm text-gray-400">...</span>
+                        ) : (
+                          <button
+                            key={pageNum}
+                            onClick={() => handlePageChange(pageNum as number)}
+                            className={`px-2 sm:px-3 py-2 rounded-lg transition-colors text-sm min-w-[32px] sm:min-w-[40px] ${
+                              currentPage === pageNum
+                                ? 'bg-blue-500 text-white'
+                                : 'border border-gray-300 hover:bg-gray-50'
+                            }`}
+                          >
+                            {pageNum}
+                          </button>
+                        )
+                      ))}
+                    </div>
+
+                    {/* Next Button */}
+                    <button
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                      className="flex items-center gap-1 px-2 sm:px-3 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
+                    >
+                      <span className="hidden sm:inline">Next</span>
+                      <ChevronRight size={16} />
+                    </button>
                   </div>
                 </div>
-              ))}
+              )}
             </div>
           </div>
         </div>
+        
+        {/* Mobile Sidebar */}
+        {sidebarOpen && (
+          <>
+            <div
+              className="fixed inset-0 bg-black/60 z-40 lg:hidden"
+              onClick={() => setSidebarOpen(false)}
+            />
+            <div className="lg:hidden z-50">
+              <NavbarDashboard mobile onClose={() => setSidebarOpen(false)} />
+            </div>
+          </>
+        )}
       </div>
-      
-      {/* Mobile Sidebar */}
-      {sidebarOpen && (
-        <>
-          <div
-            className="fixed inset-0 bg-black/60 z-40 lg:hidden"
-            onClick={() => setSidebarOpen(false)}
-          />
-          <div className="lg:hidden z-50">
-            <NavbarDashboard mobile onClose={() => setSidebarOpen(false)} />
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
-
+    );
+  }
 
   // Halaman utama daftar kompetisi dengan search + filter
   return (
