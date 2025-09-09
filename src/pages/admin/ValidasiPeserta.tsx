@@ -41,7 +41,7 @@ const ValidasiPeserta: React.FC = () => {
   const navigate = useNavigate();
   const [filterKelompokUsia, setFilterKelompokUsia] = useState<"ALL" | "Cadet" | "Junior" | "Senior">("ALL");
   const [filterLevel, setFilterLevel] = useState<"ALL" | "pemula" | "prestasi" | null>(null);
-  const [filterDojang, setFilterDojang] = useState<"ALL" | string>("ALL");
+  const [filterDojang, setFilterDojang] = useState<string>("ALL");
   const [filterKelasBerat, setFilterKelasBerat] = useState<"ALL" | string>("ALL");
   const { dojangOptions, refreshDojang, isLoading } = useDojang();
 
@@ -586,29 +586,42 @@ const handleRejection = async (id: number) => {
           </div>
           <div>
             <label className="block text-black/60 text-xs mb-2 font-medium font-inter">Kategori</label>
-            <Select
+    import Select from "react-select";
+
+<Select
   unstyled
-  value={{
-    value: filterDojang,
-    label: filterDojang === "ALL" ? "Semua Dojang" : filterDojang,
-  }}
-  onChange={(selected) => setFilterDojang(selected?.value as any)}
-  options={dojangOptions}
-  placeholder="Pilih dojang"
+  value={
+    filterDojang === "ALL"
+      ? { value: "ALL", label: "Semua Dojang" }
+      : dojangOptions.find((opt) => opt.value === filterDojang)
+  }
+  onChange={(selected) => setFilterDojang(selected?.value || "ALL")}
+  options={[{ value: "ALL", label: "Semua Dojang" }, ...dojangOptions]}
+  placeholder="Pilih Dojang"
   classNames={{
     control: () =>
-      `w-full flex items-center border border-black/20 rounded-2xl px-3 py-3 gap-2 transition-all duration-300 hover:shadow-sm focus-within:border-yellow-500 focus-within:ring-2 focus-within:ring-yellow-500/20`,
+      `w-full px-3 py-2.5 rounded-xl border shadow-sm text-sm transition-colors 
+       focus:ring-2 focus:border-transparent`,
     valueContainer: () => "px-1",
-    placeholder: () => "text-black/40 text-sm font-inter",
+    placeholder: () => "text-black/40 text-sm",
     menu: () =>
       "border border-black/10 bg-white rounded-xl shadow-lg mt-2 overflow-hidden z-50",
     menuList: () => "max-h-40 overflow-y-auto",
     option: ({ isFocused, isSelected }) =>
       [
-        "px-3 py-3 cursor-pointer text-sm transition-colors duration-200 font-inter",
+        "px-3 py-2.5 cursor-pointer text-sm transition-colors",
         isFocused ? "bg-yellow-50 text-black" : "text-black/70",
         isSelected ? "bg-yellow-500 text-black" : "",
       ].join(" "),
+  }}
+  styles={{
+    control: (base) => ({
+      ...base,
+      borderColor: "#990D35",
+      backgroundColor: "#F5FBEF",
+      color: "#050505",
+      boxShadow: "none",
+    }),
   }}
 />
 
