@@ -35,7 +35,7 @@ Kompetisi taekwondo internasional bergengsi yang menggabungkan tradisi dan inova
         </div>
 
         {/* Button Container */}
-        <div className="flex justify-center md:justify-start lg:justify-end">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center md:justify-start lg:justify-end">
           <GeneralButton 
             to="/lomba/home" 
             label="Join the Competition" 
@@ -44,6 +44,20 @@ Kompetisi taekwondo internasional bergengsi yang menggabungkan tradisi dan inova
                        shadow-red/30 transition-all duration-300 font-semibold 
                        h-10 sm:h-11 md:h-12 lg:h-12 xl:h-14
                        bg-red text-white rounded-2xl 
+                       text-xs sm:text-sm md:text-base lg:text-base xl:text-lg
+                       px-4 sm:px-5 md:px-6 lg:px-8 xl:px-10
+                       py-2 sm:py-2.5 md:py-3 lg:py-3 xl:py-4
+                       whitespace-nowrap"
+          />
+          
+          <GeneralButton 
+            to="https://drive.google.com/file/d/1vA7Rc6scIsrEHVjajt3WIagbhx_9i_po/view?usp=sharing" 
+            label="Download Proposal" 
+            type="external" 
+            className="active:scale-95 hover:shadow-lg hover:bg-red hover:text-white 
+                       shadow-yellow/30 transition-all duration-300 font-semibold 
+                       h-10 sm:h-11 md:h-12 lg:h-12 xl:h-14
+                       bg-yellow text-black rounded-2xl 
                        text-xs sm:text-sm md:text-base lg:text-base xl:text-lg
                        px-4 sm:px-5 md:px-6 lg:px-8 xl:px-10
                        py-2 sm:py-2.5 md:py-3 lg:py-3 xl:py-4
