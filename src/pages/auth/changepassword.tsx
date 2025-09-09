@@ -51,7 +51,7 @@ const ResetPassword = () => {
     setIsLoading(true);
 
     try {
-      const data = await apiClient.post('/api/auth/reset-password', {
+      const data = await apiClient.post('/auth/reset-password', {
         email,
         newPassword,
         confirmNewPassword
