@@ -190,211 +190,242 @@ const Dojang = () => {
 
       {/* Main Content */}
       <div className="lg:ml-72 min-h-screen">
-        <div className="w-full min-h-screen flex flex-col gap-8 pt-8 pb-12 px-4 lg:px-8">
+        <div className="w-full min-h-screen flex flex-col">
           
-          {/* Header Section */}
-          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
-            {/* Mobile Menu Button */}
-            <div className="lg:hidden">
-              <button
-                onClick={() => setSidebarOpen(true)}
-                className="p-3 rounded-xl hover:bg-white/50 transition-all duration-300 border border-red/20"
-                aria-label="Open menu"
-              >
-                <Menu size={24} className="text-red" />
-              </button>
-            </div>
+          {/* Header Section - Fixed positioning for desktop */}
+          <div className="sticky top-0 z-30 bg-gradient-to-br from-white via-red/5 to-yellow/10 border-b border-white/20 backdrop-blur-sm">
+            <div className="px-4 lg:px-8 py-6 lg:py-8">
+              <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+                {/* Mobile Menu Button */}
+                <div className="lg:hidden">
+                  <button
+                    onClick={() => setSidebarOpen(true)}
+                    className="p-3 rounded-xl hover:bg-white/50 transition-all duration-300 border border-red/20"
+                    aria-label="Open menu"
+                  >
+                    <Menu size={24} className="text-red" />
+                  </button>
+                </div>
 
-            {/* Title and Stats */}
-            <div className="space-y-6 flex-1">
-              <div>
-                <h1 className="font-bebas text-4xl lg:text-6xl xl:text-7xl text-black/80 tracking-wider">
-                  DATA DOJANG
-                </h1>
-                <p className="font-plex text-black/60 text-lg mt-2">
-                  Kelola informasi dojang dan lokasi pelatihan
-                </p>
+                {/* Title */}
+                <div className="flex-1">
+                  <h1 className="font-bebas text-4xl lg:text-5xl xl:text-6xl text-black/80 tracking-wider">
+                    DATA DOJANG
+                  </h1>
+                  <p className="font-plex text-black/60 text-base lg:text-lg mt-2">
+                    Kelola informasi dojang dan lokasi pelatihan
+                  </p>
+                </div>
+
+                {/* Desktop Action Buttons */}
+                <div className="hidden lg:flex gap-3">
+                  {!isEditing ? (
+                    <GeneralButton
+                      label="Ubah Data Dojang"
+                      className="cursor-pointer text-white bg-gradient-to-r from-red to-red/80 hover:from-red/90 hover:to-red/70 border-0 shadow-lg flex items-center gap-2"
+                      onClick={() => setIsEditing(true)}
+                    />
+                  ) : (
+                    <>
+                      <GeneralButton
+                        label="Batal"
+                        className="cursor-pointer text-red bg-white hover:bg-red/5 border-2 border-red/30 hover:border-red/50"
+                        onClick={handleCancel}
+                      />
+                      <GeneralButton
+                        label="Simpan"
+                        className="cursor-pointer text-white bg-gradient-to-r from-red to-red/80 hover:from-red/90 hover:to-red/70 border-0 shadow-lg flex items-center gap-2"
+                        onClick={handleUpdate}
+                      />
+                    </>
+                  )}
+                </div>
               </div>
+            </div>
           </div>
 
-          {/* Form Section */}
-          <div className="bg-white/60 backdrop-blur-sm rounded-3xl p-6 lg:p-8 shadow-xl border border-white/50">
-            <div className="flex flex-col lg:flex-row lg:items-center gap-4 lg:gap-3 mb-8">
-              <div className="flex items-center gap-3 flex-1">
-                <div className="p-2 bg-red/10 rounded-xl">
-                  <Building className="text-red" size={20} />
+          {/* Content Area */}
+          <div className="flex-1 px-4 lg:px-8 py-6 lg:py-8">
+            {/* Form Section */}
+            <div className="bg-white/60 backdrop-blur-sm rounded-3xl p-6 lg:p-8 shadow-xl border border-white/50 max-w-7xl mx-auto">
+              <div className="flex flex-col lg:flex-row lg:items-center gap-4 lg:gap-3 mb-8">
+                <div className="flex items-center gap-3 flex-1">
+                  <div className="p-2 bg-red/10 rounded-xl">
+                    <Building className="text-red" size={20} />
+                  </div>
+                  <h2 className="font-bebas text-2xl text-black/80 tracking-wide">
+                    INFORMASI DOJANG
+                  </h2>
                 </div>
-                <h2 className="font-bebas text-2xl text-black/80 tracking-wide">
-                  INFORMASI DOJANG
-                </h2>
-              </div>
-              
-              {/* Action Buttons */}
-              <div className="flex gap-3 lg:ml-auto">
-                {!isEditing ? (
-                  <GeneralButton
-                    label="Ubah Data Dojang"
-                    className="cursor-pointer text-white bg-gradient-to-r from-red to-red/80 hover:from-red/90 hover:to-red/70 border-0 shadow-lg flex items-center gap-2"
-                    onClick={() => setIsEditing(true)}
-                  />
-                ) : (
-                  <>
+                
+                {/* Mobile Action Buttons */}
+                <div className="flex gap-3 lg:hidden">
+                  {!isEditing ? (
                     <GeneralButton
-                      label="Batal"
-                      className="cursor-pointer text-red bg-white hover:bg-red/5 border-2 border-red/30 hover:border-red/50"
-                      onClick={handleCancel}
-                    />
-                    <GeneralButton
-                      label="Simpan"
+                      label="Ubah Data Dojang"
                       className="cursor-pointer text-white bg-gradient-to-r from-red to-red/80 hover:from-red/90 hover:to-red/70 border-0 shadow-lg flex items-center gap-2"
-                      onClick={handleUpdate}
+                      onClick={() => setIsEditing(true)}
                     />
-                  </>
-                )}
+                  ) : (
+                    <>
+                      <GeneralButton
+                        label="Batal"
+                        className="cursor-pointer text-red bg-white hover:bg-red/5 border-2 border-red/30 hover:border-red/50"
+                        onClick={handleCancel}
+                      />
+                      <GeneralButton
+                        label="Simpan"
+                        className="cursor-pointer text-white bg-gradient-to-r from-red to-red/80 hover:from-red/90 hover:to-red/70 border-0 shadow-lg flex items-center gap-2"
+                        onClick={handleUpdate}
+                      />
+                    </>
+                  )}
+                </div>
               </div>
+
+              {userDojang && (
+                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                  <div className="space-y-2">
+                    <label className="block font-plex font-medium text-black/70 text-sm">
+                      Nama Dojang
+                    </label>
+                    <TextInput
+                      className="w-full"
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, name: e.target.value })}
+                      disabled={!isEditing}
+                      value={formData.name}
+                      placeholder="Masukkan nama dojang"
+                      icon={<Building className="text-red/60" size={20} />}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="block font-plex font-medium text-black/70 text-sm">
+                      Email Dojang
+                    </label>
+                    <TextInput
+                      className="w-full"
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, email: e.target.value })}
+                      disabled={!isEditing}
+                      value={formData.email}
+                      placeholder="Masukkan email dojang"
+                      icon={<Mail className="text-red/60" size={20} />}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="block font-plex font-medium text-black/70 text-sm">
+                      Nomor Telepon
+                    </label>
+                    <TextInput
+                      className="w-full"
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, phone: e.target.value })}
+                      disabled={!isEditing}
+                      value={formData.phone}
+                      placeholder="Masukkan nomor telepon"
+                      icon={<Phone className="text-red/60" size={20} />}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="block font-plex font-medium text-black/70 text-sm">
+                      Negara
+                    </label>
+                    <TextInput
+                      className="w-full"
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, negara: e.target.value })}
+                      disabled={!isEditing}
+                      value={formData.negara}
+                      placeholder="Masukkan negara"
+                      icon={<Flag className="text-red/60" size={20} />}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="block font-plex font-medium text-black/70 text-sm">
+                      Provinsi
+                    </label>
+                    <TextInput
+                      className="w-full"
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, provinsi: e.target.value })}
+                      disabled={!isEditing}
+                      value={formData.provinsi}
+                      placeholder="Masukkan provinsi"
+                      icon={<Map className="text-red/60" size={20} />}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="block font-plex font-medium text-black/70 text-sm">
+                      Kabupaten/Kota
+                    </label>
+                    <TextInput
+                      className="w-full"
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, kota: e.target.value })}
+                      disabled={!isEditing}
+                      value={formData.kota}
+                      placeholder="Masukkan kabupaten/kota"
+                      icon={<Building className="text-red/60" size={20} />}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="block font-plex font-medium text-black/70 text-sm">
+                      Kecamatan
+                    </label>
+                    <TextInput
+                      className="w-full"
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, kecamatan: e.target.value })}
+                      disabled={!isEditing}
+                      value={formData.kecamatan}
+                      placeholder="Masukkan kecamatan"
+                      icon={<Map className="text-red/60" size={20} />}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="block font-plex font-medium text-black/70 text-sm">
+                      Kelurahan
+                    </label>
+                    <TextInput
+                      className="w-full"
+                      onChange={(e: React.ChangeChange<HTMLInputElement>) => setFormData({ ...formData, kelurahan: e.target.value })}
+                      disabled={!isEditing}
+                      value={formData.kelurahan}
+                      placeholder="Masukkan kelurahan"
+                      icon={<Map className="text-red/60" size={20} />}
+                    />
+                  </div>
+
+                  <div className="xl:col-span-1 space-y-2">
+                    <label className="block font-plex font-medium text-black/70 text-sm">
+                      Alamat Lengkap
+                    </label>
+                    <TextInput
+                      className="w-full"
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, alamat: e.target.value })}
+                      disabled={!isEditing}
+                      value={formData.alamat}
+                      placeholder="Masukkan alamat lengkap"
+                      icon={<MapPin className="text-red/60" size={20} />}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Save reminder for mobile */}
+              {isEditing && (
+                <div className="mt-6 p-4 bg-yellow/10 border border-yellow/30 rounded-xl lg:hidden">
+                  <p className="text-sm font-plex text-yellow">
+                    💡 Jangan lupa untuk menyimpan perubahan setelah selesai mengedit
+                  </p>
+                </div>
+              )}
             </div>
-
-            {userDojang && (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="block font-plex font-medium text-black/70 text-sm">
-                    Nama Dojang
-                  </label>
-                  <TextInput
-                    className="w-full"
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, name: e.target.value })}
-                    disabled={!isEditing}
-                    value={formData.name}
-                    placeholder="Masukkan nama dojang"
-                    icon={<Building className="text-red/60" size={20} />}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="block font-plex font-medium text-black/70 text-sm">
-                    Nomor Telepon
-                  </label>
-                  <TextInput
-                    className="w-full"
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, phone: e.target.value })}
-                    disabled={!isEditing}
-                    value={formData.phone}
-                    placeholder="Masukkan nomor telepon"
-                    icon={<Phone className="text-red/60" size={20} />}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="block font-plex font-medium text-black/70 text-sm">
-                    Email Dojang
-                  </label>
-                  <TextInput
-                    className="w-full"
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, email: e.target.value })}
-                    disabled={!isEditing}
-                    value={formData.email}
-                    placeholder="Masukkan email dojang"
-                    icon={<Mail className="text-red/60" size={20} />}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="block font-plex font-medium text-black/70 text-sm">
-                    Negara
-                  </label>
-                  <TextInput
-                    className="w-full"
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, negara: e.target.value })}
-                    disabled={!isEditing}
-                    value={formData.negara}
-                    placeholder="Masukkan negara"
-                    icon={<Flag className="text-red/60" size={20} />}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="block font-plex font-medium text-black/70 text-sm">
-                    Provinsi
-                  </label>
-                  <TextInput
-                    className="w-full"
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, provinsi: e.target.value })}
-                    disabled={!isEditing}
-                    value={formData.provinsi}
-                    placeholder="Masukkan provinsi"
-                    icon={<Map className="text-red/60" size={20} />}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="block font-plex font-medium text-black/70 text-sm">
-                    Kabupaten/Kota
-                  </label>
-                  <TextInput
-                    className="w-full"
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, kota: e.target.value })}
-                    disabled={!isEditing}
-                    value={formData.kota}
-                    placeholder="Masukkan kabupaten/kota"
-                    icon={<Building className="text-red/60" size={20} />}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="block font-plex font-medium text-black/70 text-sm">
-                    Kecamatan
-                  </label>
-                  <TextInput
-                    className="w-full"
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, kecamatan: e.target.value })}
-                    disabled={!isEditing}
-                    value={formData.kecamatan}
-                    placeholder="Masukkan kecamatan"
-                    icon={<Map className="text-red/60" size={20} />}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="block font-plex font-medium text-black/70 text-sm">
-                    Kelurahan
-                  </label>
-                  <TextInput
-                    className="w-full"
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, kelurahan: e.target.value })}
-                    disabled={!isEditing}
-                    value={formData.kelurahan}
-                    placeholder="Masukkan kelurahan"
-                    icon={<Map className="text-red/60" size={20} />}
-                  />
-                </div>
-
-                <div className="lg:col-span-2 space-y-2">
-                  <label className="block font-plex font-medium text-black/70 text-sm">
-                    Alamat Lengkap
-                  </label>
-                  <TextInput
-                    className="w-full"
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, alamat: e.target.value })}
-                    disabled={!isEditing}
-                    value={formData.alamat}
-                    placeholder="Masukkan alamat lengkap"
-                    icon={<MapPin className="text-red/60" size={20} />}
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* Save reminder for mobile */}
-            {isEditing && (
-              <div className="mt-6 p-4 bg-yellow/10 border border-yellow/30 rounded-xl">
-                <p className="text-sm font-plex text-yellow">
-                  💡 Jangan lupa untuk menyimpan perubahan setelah selesai mengedit
-                </p>
-              </div>
-            )}
           </div>
         </div>
       </div>
+
       {/* Mobile Sidebar */}
       {sidebarOpen && (
         <>
@@ -408,7 +439,7 @@ const Dojang = () => {
         </>
       )}
     </div>
-  </div>
- );
+  );
 };
+
 export default Dojang;
