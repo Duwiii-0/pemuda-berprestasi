@@ -152,7 +152,7 @@ export class AtletController {
       try {
         const id_dojang = parseInt(req.params.id_dojang);
         const page = parseInt(req.query.page as string) || 1;
-        const limit = parseInt(req.query.limit as string) || 10;
+        const limit = parseInt(req.query.limit as string) || 1000;
         if (isNaN(id_dojang)) {
           return sendError(res, 'ID dojang tidak valid', 400);
         }
@@ -300,7 +300,7 @@ static async getByKompetisi(req: Request, res: Response) {
     const id_kompetisi = parseInt(req.params.id_kompetisi);
     const cabang = (req.query.cabang as 'KYORUGI' | 'POOMSAE') || undefined;
     const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 10;
+    const limit = parseInt(req.query.limit as string) || 1000;
 
     if (isNaN(id_kompetisi)) {
       return sendError(res, 'ID kompetisi tidak valid', 400);
