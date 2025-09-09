@@ -85,6 +85,10 @@ const kelasBeratOptions = [
   };
 
   useEffect(() => {
+      refreshDojang();
+    }, []);
+    
+  useEffect(() => {
     fetchKompetisiList();
   }, []);
 
@@ -552,33 +556,31 @@ const handleRejection = async (id: number) => {
           <div>
             <label className="block text-black/60 text-xs mb-2 font-medium font-inter">Kategori</label>
             <Select
-  unstyled
-  value={{
-    value: filterKelasBerat,
-    label: filterKelasBerat === "ALL" ? "Semua Kelas Berat" : filterKelasBerat,
-  }}
-  onChange={(selected) => setFilterKelasBerat(selected?.value as any)}
-  options={kelasBeratOptions}
-  placeholder="Pilih kelas berat"
-  classNames={{
-    control: () =>
-      `w-full flex items-center border border-black/20 rounded-2xl px-3 py-3 gap-2 transition-all duration-300 hover:shadow-sm focus-within:border-yellow-500 focus-within:ring-2 focus-within:ring-yellow-500/20`,
-    valueContainer: () => "px-1",
-    placeholder: () => "text-black/40 text-sm font-inter",
-    menu: () =>
-      "border border-black/10 bg-white rounded-xl shadow-lg mt-2 overflow-hidden z-50",
-    menuList: () => "max-h-40 overflow-y-auto",
-    option: ({ isFocused, isSelected }) =>
-      [
-        "px-3 py-3 cursor-pointer text-sm transition-colors duration-200 font-inter",
-        isFocused ? "bg-yellow-50 text-black" : "text-black/70",
-        isSelected ? "bg-yellow-500 text-black" : "",
-      ].join(" "),
-  }}
-/>
-
+              unstyled
+              value={{
+                value: filterKelasBerat,
+                label: filterKelasBerat === "ALL" ? "Semua Kelas Berat" : filterKelasBerat,
+              }}
+              onChange={(selected) => setFilterKelasBerat(selected?.value as any)}
+              options={kelasBeratOptions}
+              placeholder="Pilih kelas berat"
+              classNames={{
+                control: () =>
+                  `w-full flex items-center border border-black/20 rounded-2xl px-3 py-3 gap-2 transition-all duration-300 hover:shadow-sm focus-within:border-yellow-500 focus-within:ring-2 focus-within:ring-yellow-500/20`,
+                valueContainer: () => "px-1",
+                placeholder: () => "text-black/40 text-sm font-inter",
+                menu: () =>
+                  "border border-black/10 bg-white rounded-xl shadow-lg mt-2 overflow-hidden z-50",
+                menuList: () => "max-h-40 overflow-y-auto",
+                option: ({ isFocused, isSelected }) =>
+                  [
+                    "px-3 py-3 cursor-pointer text-sm transition-colors duration-200 font-inter",
+                    isFocused ? "bg-yellow-50 text-black" : "text-black/70",
+                    isSelected ? "bg-yellow-500 text-black" : "",
+                  ].join(" "),
+              }}
+            />
           </div>
-
           <div>
             <label className="block text-black/60 text-xs mb-2 font-medium font-inter">Kategori</label>
             <Select
