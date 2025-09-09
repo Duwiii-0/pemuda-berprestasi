@@ -120,32 +120,6 @@ const DataKompetisi = () => {
     await fetchAtletByKompetisi(kompetisi.id_kompetisi, undefined, idDojang);
   };
 
-  const handleApproval = async (id: number) => {
-    if (!selectedKompetisi?.id_kompetisi) return;
-    setProcessing(id);
-    try {
-      await updatePesertaStatus(selectedKompetisi.id_kompetisi, id, "APPROVED");
-      toast.success("Peserta disetujui!");
-    } catch (error) {
-      toast.error("Gagal menyetujui peserta");
-    } finally {
-      setProcessing(null);
-    }
-  };
-
-  const handleRejection = async (id: number) => {
-    if (!selectedKompetisi?.id_kompetisi) return;
-    setProcessing(id);
-    try {
-      await updatePesertaStatus(selectedKompetisi.id_kompetisi, id, "REJECTED");
-      toast.success("Peserta ditolak!");
-    } catch (error) {
-      toast.error("Gagal menolak peserta");
-    } finally {
-      setProcessing(null);
-    }
-  };
-
   const formatTanggal = (date: string | Date) => {
     return new Date(date).toLocaleDateString('id-ID', {
       day: '2-digit',
@@ -585,7 +559,7 @@ const DataKompetisi = () => {
                     <table className="w-full min-w-[1200px]">
                       <thead className="bg-yellow-400">
                         <tr>
-                          {["Nama", "Kategori", "Level", "Kelas Berat", "Kelas Poomsae", "Kelompok Usia", "Jenis Kelamin", "Nama Dojang", "Status", "Aksi"].map((header) => (
+                          {["Nama", "Kategori", "Level", "Kelas Berat", "Kelas Poomsae", "Kelompok Usia", "Jenis Kelamin", "Nama Dojang", "Status"].map((header) => (
                             <th
                               key={header}
                               className={`py-3 px-4 font-semibold text-gray-900 text-sm ${
@@ -652,32 +626,6 @@ const DataKompetisi = () => {
                               <td className="py-4 px-4 text-gray-700 text-sm">{dojang}</td>
                               <td className="py-4 px-4 text-center">
                                 {getStatusBadge(peserta.status)}
-                              </td>
-                              <td className="py-4 px-4">
-                                <div className="flex gap-2 justify-center">
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleApproval(peserta.id_peserta_kompetisi);
-                                    }}
-                                    disabled={processing === peserta.id_peserta_kompetisi}
-                                    className="flex items-center gap-1 px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50 text-xs font-medium transition-all"
-                                  >
-                                    {processing === peserta.id_peserta_kompetisi ? <Loader size={16} className="animate-spin" /> : <CheckCircle size={16} />}
-                                    Setujui
-                                  </button>
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleRejection(peserta.id_peserta_kompetisi);
-                                    }}
-                                    disabled={processing === peserta.id_peserta_kompetisi}
-                                    className="flex items-center gap-1 px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-50 text-xs font-medium transition-all"
-                                  >
-                                    {processing === peserta.id_peserta_kompetisi ? <Loader size={16} className="animate-spin" /> : <XCircle size={16} />}
-                                    Tolak
-                                  </button>
-                                </div>
                               </td>
                             </tr>
                           );
