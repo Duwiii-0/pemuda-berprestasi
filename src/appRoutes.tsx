@@ -24,7 +24,6 @@ import DataAtlit from "./pages/dashboard/dataAtlit";
 import Dojang from "./pages/dashboard/dataDojang";
 import TambahAtlit from "./pages/dashboard/TambahAtlit";
 import DataKompetisi from "./pages/dashboard/dataKompetisi";
-// import Dashboard from "./pages/dashboard/dashboard"; 
 
 // Admin - Fixed import paths
 import AdminLayout from "./layouts/adminlayout";
@@ -47,6 +46,7 @@ import FAQ from "./lombaLayout/faq";
 import Settings from "./pages/settings/settings";
 import AllAtlets from "./pages/admin/AllAtlets";
 import AllPeserta from "./pages/adminkomp/AllPeserta";
+import ValidasiDojangAdminKomp from "./pages/adminkomp/ValidasiDojang"; // Komponen baru
 
 // Protected Route Component
 interface ProtectedRouteProps {
@@ -133,7 +133,7 @@ export default function AppRoutes() {
     <>
       <Toaster position="top-right" reverseOrder={false} />
       <Routes>
-        {/* FIXED: Admin Kompetisi routes - using proper layout structure */}
+        {/* Admin Kompetisi routes */}
         <Route path="/admin-kompetisi" element={
           <ProtectedRoute requiredRole="ADMIN_KOMPETISI">
             <AdminKompetisiLayout />
@@ -141,9 +141,7 @@ export default function AppRoutes() {
         }>
           <Route index element={<Navigate to="/admin-kompetisi/peserta" replace />} />
           <Route path="peserta" element={<AllPeserta />} />
-          {/* Add other admin kompetisi routes here when needed */}
-          {/* <Route path="validasi-peserta" element={<ValidasiPesertaKomp />} /> */}
-          {/* <Route path="validasi-dojang" element={<ValidasiDojangKomp />} /> */}
+          <Route path="validasi-dojang" element={<ValidasiDojangAdminKomp />} /> {/* Route baru */}
         </Route>
 
         {/* Admin routes - protected for ADMIN role only */}
