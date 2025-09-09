@@ -400,7 +400,7 @@ export class AtletService {
   }
 
   // Get atlet by dojang
-  static async getAtletByDojang(id_dojang: number, page: number = 1, limit: number = 10) {
+  static async getAtletByDojang(id_dojang: number, page: number = 1, limit: number = 1000) {
     try {
       const offset = (page - 1) * limit;
 
