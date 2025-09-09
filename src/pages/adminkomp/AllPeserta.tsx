@@ -19,7 +19,7 @@ const AllPeserta: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState<"ALL" | "PENDING" | "APPROVED" | "REJECTED">("ALL");
   const [filterCategory, setFilterCategory] = useState<"ALL" | "KYORUGI" | "POOMSAE">("ALL");
-  const [filterKelasBerat] = useState<string | null>(null);
+  const [filterKelasBerat, setFilterKelasBerat] = useState<string>("ALL");
   const [filterKelasUsia, setFilterKelasUsia] = useState<"ALL" | "Cadet" | "Junior" | "Senior">("ALL");
   const [filterLevel, setFilterLevel] = useState<"pemula" | "prestasi" | null>(null);
   const [filterDojang, setFilterDojang] = useState<string>("ALL");
@@ -28,6 +28,36 @@ const AllPeserta: React.FC = () => {
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
+
+  const kelasBeratOptions = [
+  { value: "ALL", label: "Semua Kelas" },
+  { value: "Under 33 kg", label: "Under 33 kg" },
+  { value: "Under 37 kg", label: "Under 37 kg" },
+  { value: "Under 41 kg", label: "Under 41 kg" },
+  { value: "Under 45 kg", label: "Under 45 kg" },
+  { value: "Under 49 kg", label: "Under 49 kg" },
+  { value: "Under 53 kg", label: "Under 53 kg" },
+  { value: "Under 55 kg", label: "Under 55 kg" },
+  { value: "Under 57 kg", label: "Under 57 kg" },
+  { value: "Under 59 kg", label: "Under 59 kg" },
+  { value: "Under 61 kg", label: "Under 61 kg" },
+  { value: "Under 62 kg", label: "Under 62 kg" },
+  { value: "Under 63 kg", label: "Under 63 kg" },
+  { value: "Under 65 kg", label: "Under 65 kg" },
+  { value: "Under 67 kg", label: "Under 67 kg" },
+  { value: "Under 68 kg", label: "Under 68 kg" },
+  { value: "Under 73 kg", label: "Under 73 kg" },
+  { value: "Under 74 kg", label: "Under 74 kg" },
+  { value: "Under 78 kg", label: "Under 78 kg" },
+  { value: "Under 80 kg", label: "Under 80 kg" },
+  { value: "Under 87 kg", label: "Under 87 kg" },
+  { value: "Over 59 kg", label: "Over 59 kg" },
+  { value: "Over 65 kg", label: "Over 65 kg" },
+  { value: "Over 68 kg", label: "Over 68 kg" },
+  { value: "Over 73 kg", label: "Over 73 kg" },
+  { value: "Over 78 kg", label: "Over 78 kg" },
+  { value: "Over 87 kg", label: "Over 87 kg" },
+]
 
   useEffect(() => {
     refreshDojang();
@@ -117,7 +147,7 @@ const AllPeserta: React.FC = () => {
 
     // Kelas berat
     const kelasBerat = peserta.kelas_kejuaraan?.kelas_berat?.nama_kelas?.toUpperCase() || "";
-    const matchesKelasBerat = !filterKelasBerat || kelasBerat === filterKelasBerat.toUpperCase();
+    const matchesKelasBerat = filterKelasBerat === "ALL" || kelasBerat === filterKelasBerat.toUpperCase();
 
     // Kelas usia / kelompok
     const kelasUsia = peserta.kelas_kejuaraan?.kelompok?.nama_kelompok?.toUpperCase() || "";
@@ -146,7 +176,7 @@ const AllPeserta: React.FC = () => {
   // Reset to first page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, filterStatus, filterCategory, filterKelasUsia, filterLevel, filterDojang]);
+  }, [searchTerm, filterStatus, filterCategory, filterKelasBerat, filterKelasUsia, filterLevel, filterDojang]);
 
   const statusOptions = [
     { value: "ALL", label: "Semua Status" },
@@ -414,7 +444,7 @@ const AllPeserta: React.FC = () => {
               </div>
 
               {/* Filter Dojang */}
-              <div className="col-span-4 sm:col-span-3 lg:col-span-2">
+              <div className="col-span-4 sm:col-span-3 lg:col-span-1">
                 <label className="block text-xs mb-2 font-medium" style={{ color: '#050505', opacity: 0.6 }}>Dojang</label>
                 <select
                   value={filterDojang}
@@ -435,6 +465,36 @@ const AllPeserta: React.FC = () => {
                 >
                   <option value="ALL">Semua Dojang</option>
                   {dojangOptions.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Filter Kelas Berat */}
+              <div className="col-span-2 sm:col-span-1">
+                <label className="block text-xs mb-2 font-medium" style={{ color: '#050505', opacity: 0.6 }}>
+                  Kelas Berat
+                </label>
+                <select
+                  value={filterKelasBerat}
+                  onChange={(e) => setFilterKelasBerat(e.target.value)}
+                  className="w-full px-3 py-2.5 rounded-xl border shadow-sm focus:ring-2 focus:border-transparent text-sm transition-colors"
+                  style={{
+                    borderColor: '#990D35',
+                    backgroundColor: '#F5FBEF',
+                    color: '#050505'
+                  }}
+                  onFocus={(e) => {
+                    e.target.style.outline = 'none';
+                    e.target.style.boxShadow = '0 0 0 2px rgba(153, 13, 53, 0.2)';
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.boxShadow = '';
+                  }}
+                >
+                  {kelasBeratOptions.map((opt) => (
                     <option key={opt.value} value={opt.value}>
                       {opt.label}
                     </option>
@@ -565,7 +625,7 @@ const AllPeserta: React.FC = () => {
                         <th
                           key={header}
                           className={`py-3 px-4 font-semibold text-sm ${
-                            ["Usia/Kelompok", "Jenis Kelamin", "Status", "Aksi"].includes(header) ? "text-center" : "text-left"
+                            ["Dojang","Usia/Kelompok", "Jenis Kelamin", "Status", "Aksi"].includes(header) ? "text-center" : "text-left"
                           }`}
                           style={{ color: '#050505' }}
                         >
@@ -623,7 +683,7 @@ const AllPeserta: React.FC = () => {
                           <td className="py-3 px-4 text-sm" style={{ color: '#050505', opacity: 0.7 }}>{kelasBerat || kelasPoomsae}</td>
                           <td className="py-3 px-4 text-center text-sm" style={{ color: '#050505', opacity: 0.7 }}>{kelasUsia}</td>
                           <td className="py-3 px-4 text-center text-sm" style={{ color: '#050505', opacity: 0.7 }}>{jenisKelamin}</td>
-                          <td className="py-3 px-4 text-sm" style={{ color: '#050505', opacity: 0.7 }}>
+                          <td className="py-3 px-4 text-sm text-center" style={{ color: '#050505', opacity: 0.7 }}>
                             <div className="max-w-[150px] truncate" title={dojang}>
                               {dojang}
                             </div>
