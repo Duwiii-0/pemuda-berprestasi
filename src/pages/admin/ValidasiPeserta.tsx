@@ -363,8 +363,11 @@ const handleRejection = async (id: number) => {
     filterKelompokUsia === "ALL" ||
     peserta.kelas_kejuaraan?.kelompok?.nama_kelompok.toLowerCase().includes(filterKelompokUsia.toLowerCase());
 
-  const dojang = peserta.is_team ? peserta.anggota_tim?.[0]?.atlet?.dojang?.nama_dojang : peserta.atlet?.dojang?.nama_dojang;
-  const matchesDojang = filterDojang === "ALL" || dojang === filterDojang;
+ const pesertaDojang = peserta.is_team
+      ? peserta.anggota_tim?.[0]?.atlet?.dojang?.id_dojang?.toString() || ""
+      : peserta.atlet?.dojang?.id_dojang?.toString() || "";
+
+    const matchesDojang = filterDojang === "ALL" || pesertaDojang === filterDojang;
 
   const kelasBerat = peserta.kelas_kejuaraan?.kelas_berat?.nama_kelas || (peserta.atlet?.berat_badan ? `${peserta.atlet.berat_badan} kg` : "-");
   const matchesKelasBerat = filterKelasBerat === "ALL" || kelasBerat === filterKelasBerat;
