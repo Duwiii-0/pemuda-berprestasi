@@ -30,8 +30,7 @@ const CompCard = () => {
           <p className="font-plex text-xs sm:text-sm md:text-sm lg:text-base xl:text-lg 2xl:text-xl 
                         text-black/80 leading-relaxed 
                         hidden sm:block md:line-clamp-3 lg:line-clamp-none">
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. 
-            Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.
+Kompetisi taekwondo internasional bergengsi yang menggabungkan tradisi dan inovasi, menghadirkan standar kompetisi kelas dunia untuk para atlet berprestasi.
           </p>
         </div>
 
