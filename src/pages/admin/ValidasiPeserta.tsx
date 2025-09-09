@@ -317,10 +317,11 @@ const handleRejection = async (id: number) => {
   const matchesCategory =
     filterCategory === "ALL" || kategori === filterCategory.toUpperCase();
 
-    const matchesKelompok =
-      filterKelompokUsia === "ALL" || peserta.kelas_kejuaraan?.kelompok?.nama_kelompok.toLowerCase() === filterKelompokUsia.toLowerCase();
+  const matchesKelompok =
+    filterKelompokUsia === "ALL" ||
+    peserta.kelas_kejuaraan?.kelompok?.nama_kelompok.toLowerCase().includes(filterKelompokUsia.toLowerCase());
 
-  return matchesSearch && matchesStatus && matchesCategory && matchesKelompok;
+    return matchesSearch && matchesStatus && matchesCategory && matchesKelompok;
 });
 
 
