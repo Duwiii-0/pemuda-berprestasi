@@ -38,6 +38,7 @@ const ValidasiPeserta: React.FC = () => {
   const [teamModalOpen, setTeamModalOpen] = useState(false);
   const [selectedTeam, setSelectedTeam] = useState<any>(null);
   const navigate = useNavigate();
+  const [filterKelompokUsia, setFilterKelompokUsia] = useState<"ALL" | "Cadet" | "Junior" | "Senior">("ALL");
 
   const handlePesertaClick = (peserta: any) => {
     if (peserta.is_team) {
@@ -424,6 +425,41 @@ const handleRejection = async (id: number) => {
                     "px-3 py-3 cursor-pointer text-sm transition-colors duration-200",
                     isFocused ? "bg-blue-50 text-blue-700" : "text-gray-800",
                     isSelected ? "bg-blue-500 text-white" : ""
+                  ].join(" "),
+              }}
+            />
+          </div>
+
+          <div>
+            <label className="block text-gray-600 text-xs mb-2 font-medium">Kelompok Usia</label>
+            <Select
+              unstyled
+              value={{
+                value: filterKelompokUsia,
+                label:
+                  filterKelompokUsia === "ALL" ? "Semua Usia" : filterKelompokUsia,
+              }}
+              onChange={(selected) => setFilterKelompokUsia(selected?.value as any)}
+              options={[
+                { value: "ALL", label: "Semua Usia" },
+                { value: "Cadet", label: "Cadet" },
+                { value: "Junior", label: "Junior" },
+                { value: "Senior", label: "Senior" },
+              ]}
+              placeholder="Pilih kelompok usia"
+              classNames={{
+                control: () =>
+                  `w-full flex items-center border border-gray-300 rounded-2xl px-3 py-3 gap-2 transition-all duration-300 hover:shadow-sm`,
+                valueContainer: () => "px-1",
+                placeholder: () => "text-gray-400 text-sm",
+                menu: () =>
+                  "border border-gray-200 bg-white rounded-xl shadow-lg mt-2 overflow-hidden z-50",
+                menuList: () => "max-h-40 overflow-y-auto",
+                option: ({ isFocused, isSelected }) =>
+                  [
+                    "px-3 py-3 cursor-pointer text-sm transition-colors duration-200",
+                    isFocused ? "bg-blue-50 text-blue-700" : "text-gray-800",
+                    isSelected ? "bg-blue-500 text-white" : "",
                   ].join(" "),
               }}
             />

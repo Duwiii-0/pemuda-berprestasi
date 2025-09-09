@@ -41,6 +41,7 @@ const DataKompetisi = () => {
   const [searchPeserta, setSearchPeserta] = useState("");
   const [filterStatus, setFilterStatus] = useState<"ALL" | "PENDING" | "APPROVED" | "REJECTED">("ALL");
   const [filterCategory, setFilterCategory] = useState<"ALL" | "KYORUGI" | "POOMSAE">("ALL");
+  const [filterKelompokUsia, setFilterKelompokUsia] = useState<"ALL" | "Cadet" | "Junior" | "Senior">("ALL");
 
   useEffect(() => {
     // Token handled by apiClient automatically
@@ -85,6 +86,7 @@ const DataKompetisi = () => {
       default: return "bg-gray-100 text-gray-600";
     }
   };
+
 
   // Hitung statistik berdasarkan status
   const stats = {
@@ -149,16 +151,20 @@ if (showPeserta && selectedKompetisi) {
     const namaPeserta = peserta.is_team
       ? peserta.anggota_tim?.map((a) => a.atlet.nama_atlet).join(" ") || ""
       : peserta.atlet?.nama_atlet || "";
-
+    
     const matchesSearch = namaPeserta.toLowerCase().includes(searchPeserta.toLowerCase());
     const matchesStatus = filterStatus === "ALL" || peserta.status === filterStatus;
-
+    
     const kategori = peserta.kelas_kejuaraan?.cabang?.toUpperCase() || "";
-    const matchesCategory = filterCategory === "ALL" || kategori === filterCategory.toUpperCase();
-
-    return matchesSearch && matchesStatus && matchesCategory;
+    const matchesCategory =
+      filterCategory === "ALL" || kategori === filterCategory.toUpperCase();
+    
+    const kelompok = peserta.kelas_kejuaraan?.kelompok?.nama_kelompok || "";
+    const matchesKelompok =
+      filterKelompokUsia === "ALL" || kelompok.toLowerCase() === filterKelompokUsia.toLowerCase();
+    
+    return matchesSearch && matchesStatus && matchesCategory && matchesKelompok;
   });
-
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-white via-red/5 to-yellow/10">
@@ -227,7 +233,10 @@ if (showPeserta && selectedKompetisi) {
                             unstyled
                             value={{
                               value: filterStatus,
-                              label: filterStatus === "ALL" ? "Semua Status" : filterStatus.toLowerCase(),
+                              label:
+                                filterStatus === "ALL"
+                                  ? "Semua Status"
+                                  : filterStatus.charAt(0) + filterStatus.slice(1).toLowerCase(),
                             }}
                             onChange={(selected) => setFilterStatus(selected?.value as any)}
                             options={[
@@ -236,11 +245,21 @@ if (showPeserta && selectedKompetisi) {
                               { value: "APPROVED", label: "Approved" },
                               { value: "REJECTED", label: "Rejected" },
                             ]}
+                            placeholder="Pilih status"
                             classNames={{
                               control: () =>
-                                `w-full flex items-center border border-gray-300 rounded-2xl px-3 py-3 hover:shadow-sm`,
+                                `w-full flex items-center border border-gray-300 rounded-2xl px-3 py-3 gap-2 transition-all duration-300 hover:shadow-sm`,
+                              valueContainer: () => "px-1",
+                              placeholder: () => "text-gray-400 text-sm",
+                              menu: () =>
+                                "border border-gray-200 bg-white rounded-xl shadow-lg mt-2 overflow-hidden z-50",
+                              menuList: () => "max-h-40 overflow-y-auto",
                               option: ({ isFocused, isSelected }) =>
-                                `px-3 py-2 cursor-pointer text-sm ${isFocused ? "bg-blue-50" : ""} ${isSelected ? "bg-blue-500 text-white" : ""}`,
+                                [
+                                  "px-3 py-3 cursor-pointer text-sm transition-colors duration-200",
+                                  isFocused ? "bg-blue-50 text-blue-700" : "text-gray-800",
+                                  isSelected ? "bg-blue-500 text-white" : "",
+                                ].join(" "),
                             }}
                           />
                         </div>
@@ -248,23 +267,69 @@ if (showPeserta && selectedKompetisi) {
                         {/* Kategori */}
                         <div>
                           <label className="block text-gray-600 text-xs mb-2 font-medium">Kategori</label>
+                            <Select
+                              unstyled
+                              value={{ value: filterCategory, label: filterCategory === "ALL" ? "Semua Kategori" : filterCategory }}
+                              onChange={(selected) => setFilterCategory(selected?.value as any)}
+                              options={[
+                                { value: "ALL", label: "Semua Kategori" },
+                                { value: "POOMSAE", label: "POOMSAE" },
+                                { value: "KYORUGI", label: "KYORUGI" },
+                              ]}
+                              placeholder="Pilih kategori"
+                              classNames={{
+                                control: () =>
+                                  `w-full flex items-center border border-gray-300 rounded-2xl px-3 py-3 gap-2 transition-all duration-300 hover:shadow-sm`,
+                                valueContainer: () => "px-1",
+                                placeholder: () => "text-gray-400 text-sm",
+                                menu: () => "border border-gray-200 bg-white rounded-xl shadow-lg mt-2 overflow-hidden z-50",
+                                menuList: () => "max-h-40 overflow-y-auto",
+                                option: ({ isFocused, isSelected }) =>
+                                  [
+                                    "px-3 py-3 cursor-pointer text-sm transition-colors duration-200",
+                                    isFocused ? "bg-blue-50 text-blue-700" : "text-gray-800",
+                                    isSelected ? "bg-blue-500 text-white" : ""
+                                  ].join(" "),
+                              }}
+                            />
+                        </div>
+
+                        {/* Kelompok Usia */}
+                        <div>
+                          <label className="block text-gray-600 text-xs mb-2 font-medium">Kelompok Usia</label>
                           <Select
                             unstyled
-                            value={{ value: filterCategory, label: filterCategory === "ALL" ? "Semua Kategori" : filterCategory }}
-                            onChange={(selected) => setFilterCategory(selected?.value as any)}
+                            value={{
+                              value: filterKelompokUsia,
+                              label:
+                                filterKelompokUsia === "ALL" ? "Semua Usia" : filterKelompokUsia,
+                            }}
+                            onChange={(selected) => setFilterKelompokUsia(selected?.value as any)}
                             options={[
-                              { value: "ALL", label: "Semua Kategori" },
-                              { value: "POOMSAE", label: "POOMSAE" },
-                              { value: "KYORUGI", label: "KYORUGI" },
+                              { value: "ALL", label: "Semua Usia" },
+                              { value: "Cadet", label: "Cadet" },
+                              { value: "Junior", label: "Junior" },
+                              { value: "Senior", label: "Senior" },
                             ]}
+                            placeholder="Pilih kelompok usia"
                             classNames={{
                               control: () =>
-                                `w-full flex items-center border border-gray-300 rounded-2xl px-3 py-3 hover:shadow-sm`,
+                                `w-full flex items-center border border-gray-300 rounded-2xl px-3 py-3 gap-2 transition-all duration-300 hover:shadow-sm`,
+                              valueContainer: () => "px-1",
+                              placeholder: () => "text-gray-400 text-sm",
+                              menu: () =>
+                                "border border-gray-200 bg-white rounded-xl shadow-lg mt-2 overflow-hidden z-50",
+                              menuList: () => "max-h-40 overflow-y-auto",
                               option: ({ isFocused, isSelected }) =>
-                                `px-3 py-2 cursor-pointer text-sm ${isFocused ? "bg-blue-50" : ""} ${isSelected ? "bg-blue-500 text-white" : ""}`,
+                                [
+                                  "px-3 py-3 cursor-pointer text-sm transition-colors duration-200",
+                                  isFocused ? "bg-blue-50 text-blue-700" : "text-gray-800",
+                                  isSelected ? "bg-blue-500 text-white" : "",
+                                ].join(" "),
                             }}
                           />
                         </div>
+                          
                       </div>
                     </div>
                   </div>
