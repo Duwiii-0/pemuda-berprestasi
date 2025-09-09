@@ -317,7 +317,10 @@ const handleRejection = async (id: number) => {
   const matchesCategory =
     filterCategory === "ALL" || kategori === filterCategory.toUpperCase();
 
-  return matchesSearch && matchesStatus && matchesCategory;
+    const matchesKelompok =
+      filterKelompokUsia === "ALL" || peserta.kelas_kejuaraan?.kelompok?.nama_kelompok.toLowerCase() === filterKelompokUsia.toLowerCase();
+
+  return matchesSearch && matchesStatus && matchesCategory && matchesKelompok;
 });
 
 
