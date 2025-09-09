@@ -8,6 +8,7 @@ import { Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import SelectTeamMemberModal from "../../components/selectTeamModal";
 import Select from "react-select";
+import { useDojang } from "../../context/dojangContext";
 
 const ValidasiPeserta: React.FC = () => {
   const { token } = useAuth();
@@ -42,8 +43,37 @@ const ValidasiPeserta: React.FC = () => {
   const [filterLevel, setFilterLevel] = useState<"ALL" | "pemula" | "prestasi" | null>(null);
   const [filterDojang, setFilterDojang] = useState<"ALL" | string>("ALL");
   const [filterKelasBerat, setFilterKelasBerat] = useState<"ALL" | string>("ALL");
+  const { dojangOptions, refreshDojang, isLoading } = useDojang();
 
-
+const kelasBeratOptions = [
+  { value: "ALL", label: "Semua Kelas" },
+  { value: "Under 33 kg", label: "Under 33 kg" },
+  { value: "Under 37 kg", label: "Under 37 kg" },
+  { value: "Under 41 kg", label: "Under 41 kg" },
+  { value: "Under 45 kg", label: "Under 45 kg" },
+  { value: "Under 49 kg", label: "Under 49 kg" },
+  { value: "Under 53 kg", label: "Under 53 kg" },
+  { value: "Under 55 kg", label: "Under 55 kg" },
+  { value: "Under 57 kg", label: "Under 57 kg" },
+  { value: "Under 59 kg", label: "Under 59 kg" },
+  { value: "Under 61 kg", label: "Under 61 kg" },
+  { value: "Under 62 kg", label: "Under 62 kg" },
+  { value: "Under 63 kg", label: "Under 63 kg" },
+  { value: "Under 65 kg", label: "Under 65 kg" },
+  { value: "Under 67 kg", label: "Under 67 kg" },
+  { value: "Under 68 kg", label: "Under 68 kg" },
+  { value: "Under 73 kg", label: "Under 73 kg" },
+  { value: "Under 74 kg", label: "Under 74 kg" },
+  { value: "Under 78 kg", label: "Under 78 kg" },
+  { value: "Under 80 kg", label: "Under 80 kg" },
+  { value: "Under 87 kg", label: "Under 87 kg" },
+  { value: "Over 59 kg", label: "Over 59 kg" },
+  { value: "Over 65 kg", label: "Over 65 kg" },
+  { value: "Over 68 kg", label: "Over 68 kg" },
+  { value: "Over 73 kg", label: "Over 73 kg" },
+  { value: "Over 78 kg", label: "Over 78 kg" },
+  { value: "Over 87 kg", label: "Over 87 kg" },
+]
 
   const handlePesertaClick = (peserta: any) => {
     if (peserta.is_team) {
@@ -481,6 +511,102 @@ const handleRejection = async (id: number) => {
                   ].join(" "),
               }}
             />
+          </div>
+
+          <div>
+            <label className="block text-black/60 text-xs mb-2 font-medium font-inter">Kategori</label>
+            <Select
+  unstyled
+  value={{
+    value: filterLevel,
+    label:
+      !filterLevel || filterLevel === "ALL"
+        ? "Semua Level"
+        : filterLevel.charAt(0).toUpperCase() + filterLevel.slice(1),
+  }}
+  onChange={(selected) => setFilterLevel(selected?.value as any)}
+  options={[
+    { value: "ALL", label: "Semua Level" },
+    { value: "pemula", label: "Pemula" },
+    { value: "prestasi", label: "Prestasi" },
+  ]}
+  placeholder="Pilih level"
+  classNames={{
+    control: () =>
+      `w-full flex items-center border border-black/20 rounded-2xl px-3 py-3 gap-2 transition-all duration-300 hover:shadow-sm focus-within:border-yellow-500 focus-within:ring-2 focus-within:ring-yellow-500/20`,
+    valueContainer: () => "px-1",
+    placeholder: () => "text-black/40 text-sm font-inter",
+    menu: () =>
+      "border border-black/10 bg-white rounded-xl shadow-lg mt-2 overflow-hidden z-50",
+    menuList: () => "max-h-40 overflow-y-auto",
+    option: ({ isFocused, isSelected }) =>
+      [
+        "px-3 py-3 cursor-pointer text-sm transition-colors duration-200 font-inter",
+        isFocused ? "bg-yellow-50 text-black" : "text-black/70",
+        isSelected ? "bg-yellow-500 text-black" : "",
+      ].join(" "),
+  }}
+/>
+          </div>
+
+          <div>
+            <label className="block text-black/60 text-xs mb-2 font-medium font-inter">Kategori</label>
+            <Select
+  unstyled
+  value={{
+    value: filterKelasBerat,
+    label: filterKelasBerat === "ALL" ? "Semua Kelas Berat" : filterKelasBerat,
+  }}
+  onChange={(selected) => setFilterKelasBerat(selected?.value as any)}
+  options={kelasBeratOptions}
+  placeholder="Pilih kelas berat"
+  classNames={{
+    control: () =>
+      `w-full flex items-center border border-black/20 rounded-2xl px-3 py-3 gap-2 transition-all duration-300 hover:shadow-sm focus-within:border-yellow-500 focus-within:ring-2 focus-within:ring-yellow-500/20`,
+    valueContainer: () => "px-1",
+    placeholder: () => "text-black/40 text-sm font-inter",
+    menu: () =>
+      "border border-black/10 bg-white rounded-xl shadow-lg mt-2 overflow-hidden z-50",
+    menuList: () => "max-h-40 overflow-y-auto",
+    option: ({ isFocused, isSelected }) =>
+      [
+        "px-3 py-3 cursor-pointer text-sm transition-colors duration-200 font-inter",
+        isFocused ? "bg-yellow-50 text-black" : "text-black/70",
+        isSelected ? "bg-yellow-500 text-black" : "",
+      ].join(" "),
+  }}
+/>
+
+          </div>
+
+          <div>
+            <label className="block text-black/60 text-xs mb-2 font-medium font-inter">Kategori</label>
+            <Select
+  unstyled
+  value={{
+    value: filterDojang,
+    label: filterDojang === "ALL" ? "Semua Dojang" : filterDojang,
+  }}
+  onChange={(selected) => setFilterDojang(selected?.value as any)}
+  options={dojangOptions}
+  placeholder="Pilih dojang"
+  classNames={{
+    control: () =>
+      `w-full flex items-center border border-black/20 rounded-2xl px-3 py-3 gap-2 transition-all duration-300 hover:shadow-sm focus-within:border-yellow-500 focus-within:ring-2 focus-within:ring-yellow-500/20`,
+    valueContainer: () => "px-1",
+    placeholder: () => "text-black/40 text-sm font-inter",
+    menu: () =>
+      "border border-black/10 bg-white rounded-xl shadow-lg mt-2 overflow-hidden z-50",
+    menuList: () => "max-h-40 overflow-y-auto",
+    option: ({ isFocused, isSelected }) =>
+      [
+        "px-3 py-3 cursor-pointer text-sm transition-colors duration-200 font-inter",
+        isFocused ? "bg-yellow-50 text-black" : "text-black/70",
+        isSelected ? "bg-yellow-500 text-black" : "",
+      ].join(" "),
+  }}
+/>
+
           </div>
         </div>
       </div>
