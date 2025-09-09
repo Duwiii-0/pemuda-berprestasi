@@ -34,7 +34,7 @@ const AdminKompetisiLayout: React.FC = () => {
     {
       icon: Users,
       label: 'Daftar Peserta',
-      path: '/admin-kompetisi/peserta',
+      path: '/admin-kompetisi/validasi-peserta',
       active: location.pathname === '/admin-kompetisi/peserta'
     },
     {
