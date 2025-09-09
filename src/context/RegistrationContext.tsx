@@ -527,10 +527,6 @@
         errors.push("Tidak ada atlet yang dipilih atau eligible");
       }
 
-      if (formData.styleType === "POOMSAE" && isPoomsaeTeam()) {
-        warnings.push("Pastikan kedua atlet siap untuk berkompetisi sebagai tim");
-      }
-
       return { isValid: errors.length === 0, errors, warnings };
     },
     [formData, isPoomsaeTeam]

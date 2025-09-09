@@ -39,6 +39,11 @@ const ValidasiPeserta: React.FC = () => {
   const [selectedTeam, setSelectedTeam] = useState<any>(null);
   const navigate = useNavigate();
   const [filterKelompokUsia, setFilterKelompokUsia] = useState<"ALL" | "Cadet" | "Junior" | "Senior">("ALL");
+  const [filterLevel, setFilterLevel] = useState<"ALL" | "pemula" | "prestasi" | null>(null);
+  const [filterDojang, setFilterDojang] = useState<"ALL" | string>("ALL");
+  const [filterKelasBerat, setFilterKelasBerat] = useState<"ALL" | string>("ALL");
+
+
 
   const handlePesertaClick = (peserta: any) => {
     if (peserta.is_team) {
@@ -317,11 +322,20 @@ const handleRejection = async (id: number) => {
   const matchesCategory =
     filterCategory === "ALL" || kategori === filterCategory.toUpperCase();
 
+  const level = peserta.kelas_kejuaraan?.kategori_event?.nama_kategori?.toLowerCase() || "";
+  const matchesLevel = !filterLevel || filterLevel === "ALL" || level === filterLevel;
+
   const matchesKelompok =
     filterKelompokUsia === "ALL" ||
     peserta.kelas_kejuaraan?.kelompok?.nama_kelompok.toLowerCase().includes(filterKelompokUsia.toLowerCase());
 
-    return matchesSearch && matchesStatus && matchesCategory && matchesKelompok;
+  const dojang = peserta.is_team ? peserta.anggota_tim?.[0]?.atlet?.dojang?.nama_dojang : peserta.atlet?.dojang?.nama_dojang;
+  const matchesDojang = filterDojang === "ALL" || dojang === filterDojang;
+
+  const kelasBerat = peserta.kelas_kejuaraan?.kelas_berat?.nama_kelas || (peserta.atlet?.berat_badan ? `${peserta.atlet.berat_badan} kg` : "-");
+  const matchesKelasBerat = filterKelasBerat === "ALL" || kelasBerat === filterKelasBerat;
+
+    return matchesSearch && matchesStatus && matchesCategory && matchesLevel && matchesKelompok && matchesDojang && matchesKelasBerat;
 });
 
 
