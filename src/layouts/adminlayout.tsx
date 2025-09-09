@@ -57,30 +57,6 @@ const AdminLayout: React.FC = () => {
       path: '/admin/validasi-dojang',
       active: location.pathname === '/admin/validasi-dojang'
     },
-//    {
-//      icon: Users,
-//      label: 'Manajemen User',
-//      path: '/admin/users',
-//      active: location.pathname === '/admin/users'
-//    },
-//    {
-//      icon: BarChart3,
-//      label: 'Statistik',
-//      path: '/admin/statistik',
-//      active: location.pathname === '/admin/statistik'
-//    },
-//    {
-//      icon: FileText,
-//      label: 'Laporan',
-//      path: '/admin/reports',
-//      active: location.pathname === '/admin/reports'
-//    },
-//    {
-//      icon: Settings,
-//      label: 'Pengaturan',
-//      path: '/admin/settings',
-//      active: location.pathname === '/admin/settings'
-//    }
   ];
 
   if (!isAdmin) {
@@ -90,34 +66,21 @@ const AdminLayout: React.FC = () => {
   const displayName = user?.admin?.nama_admin || user?.email || 'Admin';
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#F5FBEF' }}>
+    <div className="min-h-screen bg-gray-50">
       {/* Desktop Sidebar */}
-      <aside className="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-50 lg:block lg:w-72 lg:overflow-y-auto shadow-2xl">
-        <div className="h-full shadow-2xl" style={{ backgroundColor: '#F5FBEF' }}>
+      <aside className="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-50 lg:block lg:w-72 lg:overflow-y-auto">
+        <div className="h-full bg-white shadow-lg border-r border-gray-200">
           {/* Header */}
-          <div className="p-6 border-b" style={{ borderColor: '#990D35' }}>
+          <div className="p-6 border-b border-gray-200">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-xl" style={{ backgroundColor: '#990D35' }}>
+              <div className="p-2.5 rounded-xl bg-blue-600 shadow-sm">
                 <Shield className="text-white" size={24} />
               </div>
               <div>
-                <h1 
-                  className="font-bebas tracking-wide" 
-                  style={{ 
-                    fontSize: '41.89px',
-                    color: '#990D35',
-                    lineHeight: '1'
-                  }}
-                >
+                <h1 className="text-2xl font-bebas tracking-wide text-gray-900 leading-tight">
                   ADMIN PANEL
                 </h1>
-                <p 
-                  className="font-plex" 
-                  style={{ 
-                    fontSize: '16px',
-                    color: '#050505'
-                  }}
-                >
+                <p className="text-sm text-gray-600 font-medium">
                   Management System
                 </p>
               </div>
@@ -125,25 +88,16 @@ const AdminLayout: React.FC = () => {
           </div>
 
           {/* User Info */}
-          <div className="p-6 border-b" style={{ borderColor: '#990D35' }}>
+          <div className="p-6 border-b border-gray-200">
             <div className="flex items-center gap-3">
-              <div 
-                className="w-12 h-12 rounded-xl flex items-center justify-center font-inter font-bold text-lg"
-                style={{ backgroundColor: '#F5B700', color: '#050505' }}
-              >
+              <div className="w-12 h-12 rounded-xl bg-yellow-400 flex items-center justify-center font-bold text-lg text-gray-900 shadow-sm">
                 {displayName.charAt(0).toUpperCase()}
               </div>
               <div>
-                <p 
-                  className="font-inter font-semibold" 
-                  style={{ color: '#050505', fontSize: '16px' }}
-                >
+                <p className="font-semibold text-gray-900 text-base">
                   {displayName}
                 </p>
-                <p 
-                  className="font-inter" 
-                  style={{ color: '#990D35', fontSize: '14px' }}
-                >
+                <p className="text-sm text-blue-600 font-medium">
                   Administrator
                 </p>
               </div>
@@ -151,48 +105,37 @@ const AdminLayout: React.FC = () => {
           </div>
 
           {/* Navigation */}
-          <nav className="p-6 space-y-3">
+          <nav className="p-6 space-y-2">
             {menuItems.map((item) => (
               <button
                 key={item.path}
                 onClick={() => navigate(item.path)}
-                className={`w-full flex items-center justify-between p-4 rounded-xl transition-all duration-300 group ${
-                  item.active ? 'shadow-lg' : 'hover:shadow-md'
+                className={`w-full flex items-center justify-between p-4 rounded-xl transition-all duration-200 group ${
+                  item.active 
+                    ? 'bg-blue-500 text-white shadow-md' 
+                    : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700'
                 }`}
-                style={{
-                  backgroundColor: item.active ? '#990D35' : 'transparent',
-                  color: item.active ? '#F5FBEF' : '#050505'
-                }}
-                onMouseEnter={(e) => {
-                  if (!item.active) {
-                    e.currentTarget.style.backgroundColor = '#990D35';
-                    e.currentTarget.style.opacity = '0.8';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!item.active) {
-                    e.currentTarget.style.backgroundColor = 'transparent';
-                    e.currentTarget.style.opacity = '1';
-                  }
-                }}
               >
                 <div className="flex items-center gap-3">
                   <item.icon 
                     size={20} 
-                    style={{ color: item.active ? '#F5B700' : '#050505' }}
-                    className="group-hover:text-yellow-500 transition-colors"
+                    className={`${
+                      item.active 
+                        ? 'text-yellow-400' 
+                        : 'text-gray-500 group-hover:text-blue-600'
+                    } transition-colors`}
                   />
-                  <span 
-                    className="font-inter font-medium"
-                    style={{ fontSize: '16px' }}
-                  >
+                  <span className="font-medium text-base">
                     {item.label}
                   </span>
                 </div>
                 <ChevronRight 
                   size={16} 
-                  style={{ color: item.active ? '#F5B700' : '#050505' }}
-                  className="transition-transform group-hover:translate-x-1"
+                  className={`${
+                    item.active 
+                      ? 'text-yellow-400' 
+                      : 'text-gray-400 group-hover:text-blue-600'
+                  } transition-all duration-200 group-hover:translate-x-0.5`}
                 />
               </button>
             ))}
@@ -202,23 +145,10 @@ const AdminLayout: React.FC = () => {
           <div className="absolute bottom-6 left-6 right-6">
             <button
               onClick={handleLogout}
-              className="w-full flex items-center gap-3 p-4 rounded-xl transition-all duration-300 hover:shadow-md"
-              style={{ 
-                backgroundColor: 'transparent',
-                color: '#990D35',
-                border: `1px solid #990D35`
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#990D35';
-                e.currentTarget.style.color = '#F5FBEF';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = 'transparent';
-                e.currentTarget.style.color = '#990D35';
-              }}
+              className="w-full flex items-center gap-3 p-4 rounded-xl transition-all duration-200 text-red-600 border border-red-200 hover:bg-red-50 hover:border-red-300"
             >
               <LogOut size={20} />
-              <span className="font-inter font-medium" style={{ fontSize: '16px' }}>
+              <span className="font-medium text-base">
                 Logout
               </span>
             </button>
@@ -227,47 +157,23 @@ const AdminLayout: React.FC = () => {
       </aside>
 
       {/* Mobile Header */}
-      <div 
-        className="lg:hidden border-b px-4 py-3 flex items-center justify-between"
-        style={{ 
-          backgroundColor: '#050505',
-          borderColor: '#990D35'
-        }}
-      >
+      <div className="lg:hidden bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-3">
           <button
             onClick={() => setSidebarOpen(true)}
-            className="p-2 rounded-xl transition-all duration-300"
-            style={{ color: '#F5FBEF' }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = '#990D35';
-              e.currentTarget.style.color = '#F5FBEF';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = 'transparent';
-              e.currentTarget.style.color = '#990D35';
-            }}
+            className="p-2 rounded-xl text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors"
           >
             <Menu size={24} />
           </button>
           <div className="flex items-center gap-2">
-            <Shield style={{ color: '#F5B700' }} size={20} />
-            <h1 
-              className="font-inter font-bold"
-              style={{ 
-                fontSize: '20px',
-                color: '#F5B700'
-              }}
-            >
+            <Shield className="text-blue-600" size={20} />
+            <h1 className="text-xl font-bold text-gray-900">
               ADMIN
             </h1>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <div 
-            className="w-8 h-8 rounded-lg flex items-center justify-center font-inter font-bold text-sm"
-            style={{ backgroundColor: '#F5B700', color: '#050505' }}
-          >
+          <div className="w-8 h-8 rounded-lg bg-yellow-400 flex items-center justify-center font-bold text-sm text-gray-900">
             {displayName.charAt(0).toUpperCase()}
           </div>
         </div>
@@ -277,76 +183,46 @@ const AdminLayout: React.FC = () => {
       {sidebarOpen && (
         <>
           <div
-            className="fixed inset-0 bg-black/60 z-40 lg:hidden"
+            className="fixed inset-0 bg-black/50 z-40 lg:hidden"
             onClick={() => setSidebarOpen(false)}
           />
-          <aside 
-            className="fixed inset-y-0 left-0 z-50 w-72 shadow-2xl lg:hidden"
-            style={{ backgroundColor: '#050505' }}
-          >
-            <div 
-              className="p-6 border-b flex items-center justify-between"
-              style={{ borderColor: '#990D35' }}
-            >
+          <aside className="fixed inset-y-0 left-0 z-50 w-72 bg-white shadow-xl lg:hidden">
+            <div className="p-6 border-b border-gray-200 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div 
-                  className="p-2 rounded-xl"
-                  style={{ backgroundColor: '#990D35' }}
-                >
+                <div className="p-2 rounded-xl bg-blue-600">
                   <Shield className="text-white" size={20} />
                 </div>
                 <div>
-                  <h1 
-                    className="font-bebas"
-                    style={{ 
-                      fontSize: '25.89px',
-                      color: '#F5B700'
-                    }}
-                  >
+                  <h1 className="text-xl font-bebas text-gray-900">
                     ADMIN PANEL
                   </h1>
                 </div>
               </div>
               <button
                 onClick={() => setSidebarOpen(false)}
-                className="p-2 rounded-xl transition-all duration-300"
-                style={{ color: '#F5FBEF' }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#990D35'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                className="p-2 rounded-xl text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors"
               >
                 <X size={20} />
               </button>
             </div>
 
-            <div 
-              className="p-6 border-b"
-              style={{ borderColor: '#990D35' }}
-            >
+            <div className="p-6 border-b border-gray-200">
               <div className="flex items-center gap-3">
-                <div 
-                  className="w-10 h-10 rounded-full flex items-center justify-center font-bebas"
-                  style={{ backgroundColor: '#F5B700', color: '#050505' }}
-                >
+                <div className="w-10 h-10 rounded-xl bg-yellow-400 flex items-center justify-center font-bold text-gray-900">
                   {displayName.charAt(0).toUpperCase()}
                 </div>
                 <div>
-                  <p 
-                    className="font-plex font-semibold"
-                    style={{ color: '#F5FBEF', fontSize: '16px' }}
-                  >
+                  <p className="font-semibold text-gray-900 text-base">
                     {displayName}
                   </p>
-                  <p 
-                    className="font-plex"
-                    style={{ color: '#F5B700', fontSize: '14px' }}
-                  >
+                  <p className="text-sm text-blue-600 font-medium">
                     Administrator
                   </p>
                 </div>
               </div>
             </div>
 
-            <nav className="p-6 space-y-3">
+            <nav className="p-6 space-y-2">
               {menuItems.map((item) => (
                 <button
                   key={item.path}
@@ -354,35 +230,22 @@ const AdminLayout: React.FC = () => {
                     navigate(item.path);
                     setSidebarOpen(false);
                   }}
-                  className={`w-full flex items-center justify-between p-4 rounded-xl transition-all duration-300 ${
-                    item.active ? 'shadow-lg' : 'hover:shadow-md'
+                  className={`w-full flex items-center justify-between p-4 rounded-xl transition-all duration-200 ${
+                    item.active 
+                      ? 'bg-blue-500 text-white shadow-md' 
+                      : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700'
                   }`}
-                  style={{
-                    backgroundColor: item.active ? '#990D35' : 'transparent',
-                    color: '#F5FBEF'
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!item.active) {
-                      e.currentTarget.style.backgroundColor = '#990D35';
-                      e.currentTarget.style.opacity = '0.8';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!item.active) {
-                      e.currentTarget.style.backgroundColor = 'transparent';
-                      e.currentTarget.style.opacity = '1';
-                    }
-                  }}
                 >
                   <div className="flex items-center gap-3">
                     <item.icon 
                       size={20} 
-                      style={{ color: item.active ? '#F5B700' : '#F5FBEF' }}
+                      className={`${
+                        item.active 
+                          ? 'text-yellow-400' 
+                          : 'text-gray-500'
+                      } transition-colors`}
                     />
-                    <span 
-                      className="font-plex font-medium"
-                      style={{ fontSize: '16px' }}
-                    >
+                    <span className="font-medium text-base">
                       {item.label}
                     </span>
                   </div>
@@ -393,23 +256,10 @@ const AdminLayout: React.FC = () => {
             <div className="absolute bottom-6 left-6 right-6">
               <button
                 onClick={handleLogout}
-                className="w-full flex items-center gap-3 p-4 rounded-xl transition-all duration-300"
-                style={{ 
-                  backgroundColor: 'transparent',
-                  color: '#990D35',
-                  border: `1px solid #990D35`
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#990D35';
-                  e.currentTarget.style.color = '#F5FBEF';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'transparent';
-                  e.currentTarget.style.color = '#990D35';
-                }}
+                className="w-full flex items-center gap-3 p-4 rounded-xl transition-all duration-200 text-red-600 border border-red-200 hover:bg-red-50 hover:border-red-300"
               >
                 <LogOut size={20} />
-                <span className="font-plex font-medium" style={{ fontSize: '16px' }}>
+                <span className="font-medium text-base">
                   Logout
                 </span>
               </button>
