@@ -140,7 +140,7 @@ export default function AppRoutes() {
           </ProtectedRoute>
         }>
           <Route index element={<Navigate to="/admin-kompetisi/peserta" replace />} />
-          <Route path="peserta" element={<AllPeserta />} />
+          <Route path="validasi-peserta" element={<AllPeserta />} />
           <Route path="validasi-dojang" element={<ValidasiDojangAdminKomp />} /> {/* Route baru */}
         </Route>
 

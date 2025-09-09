@@ -38,12 +38,6 @@ const AdminKompetisiLayout: React.FC = () => {
       active: location.pathname === '/admin-kompetisi/peserta'
     },
     {
-      icon: Trophy,
-      label: 'Validasi Peserta',
-      path: '/admin-kompetisi/validasi-peserta',
-      active: location.pathname === '/admin-kompetisi/validasi-peserta'
-    },
-    {
       icon: UserCheck,
       label: 'Validasi Dojang',
       path: '/admin-kompetisi/validasi-dojang',
