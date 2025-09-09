@@ -125,24 +125,24 @@ const AllPeserta: React.FC = () => {
     </div>
 
     {/* FILTER & SEARCH */}
-<div className="bg-white/90 backdrop-blur-md border border-white/40 rounded-2xl p-6 shadow-lg mb-6 z-50">
+<div className="bg-white/90 backdrop-blur-md border border-white/40 rounded-2xl p-4 md:p-6 shadow-lg mb-6 z-50">
 
   {/* Search Bar */}
-  <div className="relative mb-6">
-    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={24} />
+  <div className="relative mb-4 md:mb-6">
+    <Search className="absolute left-3 md:left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
     <input
       type="text"
       placeholder="Cari peserta..."
       value={searchTerm}
       onChange={(e) => setSearchTerm(e.target.value)}
-      className="w-full pl-14 pr-4 py-4 rounded-3xl border border-gray-200 shadow-lg 
-                 focus:ring-2 focus:ring-red-400 focus:border-transparent 
-                 text-lg transition placeholder-gray-400"
+      className="w-full pl-10 md:pl-14 pr-3 md:pr-4 py-2.5 md:py-4 rounded-2xl md:rounded-3xl 
+                 border border-gray-200 shadow 
+                 text-sm md:text-lg transition placeholder-gray-400"
     />
   </div>
 
   {/* Filter Options */}
-  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
     {/* Filter Status */}
     <Select
       unstyled
@@ -163,16 +163,18 @@ const AllPeserta: React.FC = () => {
       placeholder="Pilih status"
       classNames={{
         control: () =>
-          `w-full py-4 flex items-center border-2 border-gray-300 rounded-3xl px-4 py-3 gap-3 
-           backdrop-blur-sm transition-all duration-300 hover:shadow-lg`,
+          `w-full flex items-center border-2 border-gray-300 
+           rounded-2xl md:rounded-3xl px-3 md:px-4 py-2 md:py-3 gap-2 md:gap-3 
+           backdrop-blur-sm text-sm md:text-base 
+           transition-all duration-300 hover:shadow`,
         valueContainer: () => "px-1",
-        placeholder: () => "text-gray-400 font-plex text-sm",
+        placeholder: () => "text-gray-400 font-plex text-xs md:text-sm",
         menu: () =>
           "border border-red/20 bg-white/95 backdrop-blur-sm rounded-xl shadow-xl mt-2 overflow-hidden z-50",
         menuList: () => "max-h-32 overflow-y-auto",
         option: ({ isFocused, isSelected }) =>
           [
-            "px-4 py-3 cursor-pointer font-plex text-sm transition-colors duration-200 hover:text-red",
+            "px-3 md:px-4 py-2 md:py-3 cursor-pointer font-plex text-xs md:text-sm transition-colors duration-200 hover:text-red",
             isFocused ? "bg-red/10 text-red" : "text-black/80",
             isSelected ? "bg-red text-white" : "",
           ].join(" "),
@@ -196,16 +198,18 @@ const AllPeserta: React.FC = () => {
       placeholder="Pilih kategori"
       classNames={{
         control: () =>
-          `w-full py-4 flex items-center border-2 border-gray-300 rounded-3xl px-4 py-3 gap-3 
-           backdrop-blur-sm transition-all duration-300 hover:shadow-lg`,
+          `w-full flex items-center border-2 border-gray-300 
+           rounded-2xl md:rounded-3xl px-3 md:px-4 py-2 md:py-3 gap-2 md:gap-3 
+           backdrop-blur-sm text-sm md:text-base 
+           transition-all duration-300 hover:shadow`,
         valueContainer: () => "px-1",
-        placeholder: () => "text-gray-400 font-plex text-sm",
+        placeholder: () => "text-gray-400 font-plex text-xs md:text-sm",
         menu: () =>
           "border border-red/20 bg-white/95 backdrop-blur-sm rounded-xl shadow-xl mt-2 overflow-hidden z-50",
         menuList: () => "max-h-32 overflow-y-auto",
         option: ({ isFocused, isSelected }) =>
           [
-            "px-4 py-3 cursor-pointer font-plex text-sm transition-colors duration-200 hover:text-red",
+            "px-3 md:px-4 py-2 md:py-3 cursor-pointer font-plex text-xs md:text-sm transition-colors duration-200 hover:text-red",
             isFocused ? "bg-red/10 text-red" : "text-black/80",
             isSelected ? "bg-red text-white" : "",
           ].join(" "),
@@ -228,16 +232,18 @@ const AllPeserta: React.FC = () => {
       placeholder="Pilih level"
       classNames={{
         control: () =>
-          `w-full py-4 flex items-center border-2 border-gray-300 rounded-3xl px-4 py-3 gap-3 
-           backdrop-blur-sm transition-all duration-300 hover:shadow-lg`,
+          `w-full flex items-center border-2 border-gray-300 
+           rounded-2xl md:rounded-3xl px-3 md:px-4 py-2 md:py-3 gap-2 md:gap-3 
+           backdrop-blur-sm text-sm md:text-base 
+           transition-all duration-300 hover:shadow`,
         valueContainer: () => "px-1",
-        placeholder: () => "text-gray-400 font-plex text-sm",
+        placeholder: () => "text-gray-400 font-plex text-xs md:text-sm",
         menu: () =>
           "border border-red/20 bg-white/95 backdrop-blur-sm rounded-xl shadow-xl mt-2 overflow-hidden z-50",
         menuList: () => "max-h-32 overflow-y-auto",
         option: ({ isFocused, isSelected }) =>
           [
-            "px-4 py-3 cursor-pointer font-plex text-sm transition-colors duration-200 hover:text-red",
+            "px-3 md:px-4 py-2 md:py-3 cursor-pointer font-plex text-xs md:text-sm transition-colors duration-200 hover:text-red",
             isFocused ? "bg-red/10 text-red" : "text-black/80",
             isSelected ? "bg-red text-white" : "",
           ].join(" "),
@@ -265,16 +271,18 @@ const AllPeserta: React.FC = () => {
       placeholder="Pilih usia"
       classNames={{
         control: () =>
-          `w-full py-4 flex items-center border-2 border-gray-300 rounded-3xl px-4 py-3 gap-3 
-           backdrop-blur-sm transition-all duration-300 hover:shadow-lg`,
+          `w-full flex items-center border-2 border-gray-300 
+           rounded-2xl md:rounded-3xl px-3 md:px-4 py-2 md:py-3 gap-2 md:gap-3 
+           backdrop-blur-sm text-sm md:text-base 
+           transition-all duration-300 hover:shadow`,
         valueContainer: () => "px-1",
-        placeholder: () => "text-gray-400 font-plex text-sm",
+        placeholder: () => "text-gray-400 font-plex text-xs md:text-sm",
         menu: () =>
           "border border-red/20 bg-white/95 backdrop-blur-sm rounded-xl shadow-xl mt-2 overflow-hidden z-50",
         menuList: () => "max-h-32 overflow-y-auto",
         option: ({ isFocused, isSelected }) =>
           [
-            "px-4 py-3 cursor-pointer font-plex text-sm transition-colors duration-200 hover:text-red",
+            "px-3 md:px-4 py-2 md:py-3 cursor-pointer font-plex text-xs md:text-sm transition-colors duration-200 hover:text-red",
             isFocused ? "bg-red/10 text-red" : "text-black/80",
             isSelected ? "bg-red text-white" : "",
           ].join(" "),
