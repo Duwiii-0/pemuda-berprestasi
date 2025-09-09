@@ -33,6 +33,7 @@ getKelasKejuaraan: async (kompetisiId: number, filter: {
   kelompokId?: number,
   kelasBeratId?: number,
   poomsaeId?: number,
+  isTeamPoomsae?: boolean, // tambahan untuk poomsae beregu/berpasangan
 }) => {
   try {
     console.log("🔍 Backend filter received:", filter);
@@ -52,11 +53,15 @@ getKelasKejuaraan: async (kompetisiId: number, filter: {
       if (filter.categoryType === "prestasi") {
         if (filter.kelompokId) whereCondition.id_kelompok = filter.kelompokId;
         if (filter.poomsaeId) whereCondition.id_poomsae = filter.poomsaeId;
-        if (filter.gender) whereCondition.gender = filter.gender; // optional
+
+        // Jika beregu/berpasangan, jangan kirim gender
+        if (!filter.isTeamPoomsae && filter.gender) {
+          whereCondition.gender = filter.gender;
+        }
       } else if (filter.categoryType === "pemula") {
-        // POOMSAE pemula: cukup poomsae + kategori event
+        // POOMSAE pemula: cukup filter poomsae
         if (filter.poomsaeId) whereCondition.id_poomsae = filter.poomsaeId;
-        // jangan tambahkan gender/kategori lain
+        // jangan kirim gender/kategori lain
       }
     }
 
@@ -64,6 +69,7 @@ getKelasKejuaraan: async (kompetisiId: number, filter: {
     if (filter.styleType === "KYORUGI") {
       if (filter.categoryType === "prestasi") {
         if (filter.kelompokId) whereCondition.id_kelompok = filter.kelompokId;
+
         if (filter.kelasBeratId) {
           if (filter.gender) {
             // filter gender via relation kelas_berat
@@ -76,10 +82,11 @@ getKelasKejuaraan: async (kompetisiId: number, filter: {
           }
         }
       } else if (filter.categoryType === "pemula") {
-        // KYORUGI pemula: umur/kls berat diabaikan, gender optional
+        // KYORUGI pemula: cukup gender
         if (filter.gender) {
           whereCondition.kelas_berat = { jenis_kelamin: filter.gender };
         }
+        // umur dan kelas berat diabaikan
       }
     }
 
@@ -109,5 +116,6 @@ getKelasKejuaraan: async (kompetisiId: number, filter: {
     throw err;
   }
 }
+
 
 };
