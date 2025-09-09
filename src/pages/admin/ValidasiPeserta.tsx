@@ -516,7 +516,7 @@ const handleRejection = async (id: number) => {
                     <div>
                       <span className="text-gray-500">Kelompok Usia:</span>
                       <p className="text-gray-800 font-medium">
-                        {peserta.kelas_kejuaraan?.kelompok?.nama_kelompok || (peserta.atlet?.umur ? `${peserta.atlet.umur} th` : "-")}
+                        {peserta.kelas_kejuaraan?.kelompok?.nama_kelompok}
                       </p>
                     </div>
                     {!isTeam && (

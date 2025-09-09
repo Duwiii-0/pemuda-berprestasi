@@ -6,7 +6,7 @@ import NavbarDashboard from "../../components/navbar/navbarDashboard";
 import { useAuth } from "../../context/authContext";
 import { useKompetisi } from "../../context/KompetisiContext";
 import type { Kompetisi } from "../../context/KompetisiContext";
-import { apiClient } from "../../config/api";
+import Select from "react-select";
 
 interface StatsCardProps {
   icon: React.ComponentType<{ size?: number; className?: string }>;
@@ -38,6 +38,9 @@ const DataKompetisi = () => {
   const [selectedKompetisi, setSelectedKompetisi] = useState<Kompetisi | null>(null);
   const [showPeserta, setShowPeserta] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [searchPeserta, setSearchPeserta] = useState("");
+  const [filterStatus, setFilterStatus] = useState<"ALL" | "PENDING" | "APPROVED" | "REJECTED">("ALL");
+  const [filterCategory, setFilterCategory] = useState<"ALL" | "KYORUGI" | "POOMSAE">("ALL");
 
   useEffect(() => {
     // Token handled by apiClient automatically
@@ -142,6 +145,20 @@ if (showPeserta && selectedKompetisi) {
     };
   });
 
+  const displayedPesertas = pesertaList.filter((peserta) => {
+    const namaPeserta = peserta.is_team
+      ? peserta.anggota_tim?.map((a) => a.atlet.nama_atlet).join(" ") || ""
+      : peserta.atlet?.nama_atlet || "";
+
+    const matchesSearch = namaPeserta.toLowerCase().includes(searchPeserta.toLowerCase());
+    const matchesStatus = filterStatus === "ALL" || peserta.status === filterStatus;
+
+    const kategori = peserta.kelas_kejuaraan?.cabang?.toUpperCase() || "";
+    const matchesCategory = filterCategory === "ALL" || kategori === filterCategory.toUpperCase();
+
+    return matchesSearch && matchesStatus && matchesCategory;
+  });
+
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-white via-red/5 to-yellow/10">
@@ -182,61 +199,227 @@ if (showPeserta && selectedKompetisi) {
 
           {/* Peserta Table */}
           <div className="w-full bg-white/60 backdrop-blur-sm rounded-3xl p-6 shadow-xl border border-white/50">
-            <div className="w-full rounded-2xl overflow-hidden border border-white/50">
-              <table className="min-w-full table-auto">
-                <thead className="bg-gradient-to-r from-red to-red/80 text-white">
-                  <tr>
-                    <th className="px-6 py-4 text-left font-bebas text-lg">Nama Peserta</th>
-                    <th className="px-6 py-4 text-center font-bebas text-lg">Jenis</th>
-                    <th className="px-6 py-4 text-center font-bebas text-lg">Kategori</th>
-                    <th className="px-6 py-4 text-center font-bebas text-lg">Jenis Kategori</th>
-                    <th className="px-6 py-4 text-center font-bebas text-lg">Status</th>
-                    <th className="px-6 py-4 text-center font-bebas text-lg">Aksi</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/30">
-                  {peserta.map((p) => (
-                    <tr
-                      key={p.id}
-                      className="transition-all duration-200 hover:bg-red/10 cursor-pointer"
-                      onClick={() => {
-                        if (p.atletId) {
-                          navigate(`/dashboard/atlit/${p.atletId}`); // redirect ke detail personal atlet
-                        } else {
-                          toast("Ini peserta tim, tidak ada detail personal");
-                        }
-                      }}
-                    >
-                      <td className="px-6 py-4 font-plex">{p.nama}</td>
-                      <td className="px-6 py-4 text-center font-plex">{p.gender}</td>
-                      <td className="px-6 py-4 text-center font-plex">{p.kategori}</td>
-                      <td className="px-6 py-4 text-center font-plex">{p.jenisKategori}</td>
-                      <td className="px-6 py-4 text-center font-plex">{p.status}</td>
-                      <td className="px-6 py-4 text-center font-plex">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation(); // jangan ikut trigger klik row
-                            toast.error("Fitur ini akan segera tersedia 🚧");
-                          }}
-                          className="cursor-pointer px-3 py-1 rounded-lg bg-red-500 text-white font-plex hover:bg-red-700 transition-all"
-                        >
-                          Hapus
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            {/* Desktop Table View */}
+            <div className="hidden lg:block">
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div className="overflow-x-auto">
 
-              {peserta.length === 0 && (
-                <div className="text-center py-12">
-                  <Users className="mx-auto text-gray-400 mb-4" size={48} />
-                  <p className="font-plex text-gray-500">Belum ada peserta yang mendaftar</p>
-                  <p className="font-plex text-sm text-gray-400 mt-2">
-                    Peserta akan muncul setelah mendaftar kompetisi
-                  </p>
+                  <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 mb-6">
+                    <div className="space-y-4">
+                      {/* Search */}
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                        <input
+                          type="text"
+                          placeholder="Cari peserta..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchPeserta(e.target.value)}
+                          className="w-full pl-10 pr-4 py-3 rounded-2xl border border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-400 focus:border-transparent text-sm"
+                        />
+                      </div>
+                    
+                      {/* Filters */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {/* Status */}
+                        <div>
+                          <label className="block text-gray-600 text-xs mb-2 font-medium">Status</label>
+                          <Select
+                            unstyled
+                            value={{
+                              value: filterStatus,
+                              label: filterStatus === "ALL" ? "Semua Status" : filterStatus.toLowerCase(),
+                            }}
+                            onChange={(selected) => setFilterStatus(selected?.value as any)}
+                            options={[
+                              { value: "ALL", label: "Semua Status" },
+                              { value: "PENDING", label: "Pending" },
+                              { value: "APPROVED", label: "Approved" },
+                              { value: "REJECTED", label: "Rejected" },
+                            ]}
+                            classNames={{
+                              control: () =>
+                                `w-full flex items-center border border-gray-300 rounded-2xl px-3 py-3 hover:shadow-sm`,
+                              option: ({ isFocused, isSelected }) =>
+                                `px-3 py-2 cursor-pointer text-sm ${isFocused ? "bg-blue-50" : ""} ${isSelected ? "bg-blue-500 text-white" : ""}`,
+                            }}
+                          />
+                        </div>
+                          
+                        {/* Kategori */}
+                        <div>
+                          <label className="block text-gray-600 text-xs mb-2 font-medium">Kategori</label>
+                          <Select
+                            unstyled
+                            value={{ value: filterCategory, label: filterCategory === "ALL" ? "Semua Kategori" : filterCategory }}
+                            onChange={(selected) => setFilterCategory(selected?.value as any)}
+                            options={[
+                              { value: "ALL", label: "Semua Kategori" },
+                              { value: "POOMSAE", label: "POOMSAE" },
+                              { value: "KYORUGI", label: "KYORUGI" },
+                            ]}
+                            classNames={{
+                              control: () =>
+                                `w-full flex items-center border border-gray-300 rounded-2xl px-3 py-3 hover:shadow-sm`,
+                              option: ({ isFocused, isSelected }) =>
+                                `px-3 py-2 cursor-pointer text-sm ${isFocused ? "bg-blue-50" : ""} ${isSelected ? "bg-blue-500 text-white" : ""}`,
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <table className="w-full min-w-[1000px]">
+                    <thead className="bg-yellow-400">
+                      <tr>
+                        {["Nama", "Kategori", "Kelas Berat", "Kelas Poomsae", "Kelompok Usia", "Jenis Kelamin", "Nama Dojang", "Status", "Aksi"].map((header) => (
+                          <th
+                            key={header}
+                            className={`py-3 px-4 font-semibold text-gray-900 text-sm ${
+                              header === "Status" || header === "Aksi" ? "text-center" : "text-left"
+                            }`}
+                          >
+                            {header}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {displayedPesertas.map((peserta: any) => {
+                        const isTeam = peserta.is_team;
+                        const cabang = peserta.kelas_kejuaraan?.cabang || "-";
+                        const level = peserta.kelas_kejuaraan?.kategori_event?.nama_kategori || "-";
+                      
+                        const kelasBerat =
+                          cabang === "KYORUGI"
+                            ? peserta.kelas_kejuaraan?.kelas_berat?.nama_kelas ||
+                              (peserta.atlet?.berat_badan ? `${peserta.atlet.berat_badan} kg` : "-")
+                            : "-";
+                      
+                        const kelasPoomsae =
+                          cabang === "POOMSAE"
+                            ? peserta.kelas_kejuaraan?.poomsae?.nama_kelas || peserta.atlet?.belt || "-"
+                            : "-";
+                      
+                        const namaPeserta = isTeam
+                          ? peserta.anggota_tim?.map((m: any) => m.atlet.nama_atlet).join(", ")
+                          : peserta.atlet?.nama_atlet || "-";
+                      
+                        const dojang = isTeam && peserta.anggota_tim?.length
+                          ? peserta.anggota_tim[0]?.atlet?.dojang?.nama_dojang || "-"
+                          : peserta.atlet?.dojang?.nama_dojang || "-";
+                      
+                        return (
+                          <tr
+                            key={peserta.id_peserta_kompetisi}
+                            className="hover:bg-yellow-50 transition-colors cursor-pointer"
+                            onClick={() => {
+                              if (!isTeam && peserta.atlet?.id_atlet) {
+                                navigate(`/dashboard/atlit/${peserta.atlet.id_atlet}`);
+                              } else {
+                                toast("Ini peserta tim, tidak ada detail personal");
+                              }
+                            }}
+                          >
+                            <td className="py-4 px-4 font-medium text-gray-800 text-sm">{namaPeserta}</td>
+                            <td className="py-4 px-4 text-gray-700 text-sm">{`${cabang} - ${level}`}</td>
+                            <td className="py-4 px-4 text-gray-700 text-sm">{kelasBerat}</td>
+                            <td className="py-4 px-4 text-center text-gray-700 text-sm">{kelasPoomsae}</td>
+                            <td className="py-4 px-4 text-center text-gray-700 text-sm">
+                              {peserta.kelas_kejuaraan?.kelompok?.nama_kelompok || (peserta.atlet?.umur ? `${peserta.atlet.umur} th` : "-")}
+                            </td>
+                            <td className="py-4 px-4 text-center text-sm">
+                              {!isTeam ? (
+                                peserta.atlet?.jenis_kelamin === "LAKI_LAKI"
+                                  ? <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs">Laki-Laki</span>
+                                  : <span className="px-2 py-1 bg-pink-100 text-pink-700 rounded-full text-xs">Perempuan</span>
+                              ) : "-"}
+                            </td>
+                            <td className="py-4 px-4 text-gray-700 text-sm">{dojang}</td>
+                            <td className="py-4 px-4 text-center">
+                              <span
+                                className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
+                                  peserta.status === "PENDING"
+                                    ? "bg-yellow-100 text-yellow-800"
+                                    : peserta.status === "APPROVED"
+                                    ? "bg-green-100 text-green-800"
+                                    : "bg-red-100 text-red-800"
+                                }`}
+                              >
+                                {peserta.status}
+                              </span>
+                            </td>
+                            <td className="py-4 px-4">
+                              <div className="flex gap-2 justify-center">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    toast.success("Disetujui!");
+                                    // TODO: panggil API approve
+                                  }}
+                                  className="flex items-center gap-1 px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 text-xs font-medium"
+                                >
+                                  Setujui
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    toast.error("Ditolak!");
+                                    // TODO: panggil API reject
+                                  }}
+                                  className="flex items-center gap-1 px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 text-xs font-medium"
+                                >
+                                  Tolak
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
                 </div>
-              )}
+              </div>
+            </div>
+
+            {/* Mobile Card View */}
+            <div className="lg:hidden space-y-4">
+              {displayedPesertas.map((peserta: any) => (
+                <div
+                  key={peserta.id_peserta_kompetisi}
+                  className="bg-white rounded-xl shadow-md border border-gray-200 p-4"
+                  onClick={() => {
+                    if (!peserta.is_team && peserta.atlet?.id_atlet) {
+                      navigate(`/dashboard/atlit/${peserta.atlet.id_atlet}`);
+                    } else {
+                      toast("Ini peserta tim, tidak ada detail personal");
+                    }
+                  }}
+                >
+                  <h3 className="font-bebas text-lg mb-2">{peserta.atlet?.nama_atlet || "Tim"}</h3>
+                  <p className="text-sm text-gray-600"><b>Kategori:</b> {peserta.kelas_kejuaraan?.cabang} - {peserta.kelas_kejuaraan?.kategori_event?.nama_kategori}</p>
+                  <p className="text-sm text-gray-600"><b>Kelas Berat:</b> {peserta.kelas_kejuaraan?.kelas_berat?.nama_kelas || "-"}</p>
+                  <p className="text-sm text-gray-600"><b>Kelas Poomsae:</b> {peserta.kelas_kejuaraan?.poomsae?.nama_kelas || "-"}</p>
+                  <p className="text-sm text-gray-600"><b>Kelompok Usia:</b> {peserta.kelas_kejuaraan?.kelompok?.nama_kelompok || "-"}</p>
+                  <p className="text-sm text-gray-600"><b>Jenis Kelamin:</b> {peserta.atlet?.jenis_kelamin || "-"}</p>
+                  <p className="text-sm text-gray-600"><b>Dojang:</b> {peserta.atlet?.dojang?.nama_dojang || "-"}</p>
+                  <div className="flex justify-between items-center mt-3">
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      peserta.status === "PENDING"
+                        ? "bg-yellow-100 text-yellow-800"
+                        : peserta.status === "APPROVED"
+                        ? "bg-green-100 text-green-800"
+                        : "bg-red-100 text-red-800"
+                    }`}>
+                      {peserta.status}
+                    </span>
+                    <div className="flex gap-2">
+                      <button className="px-3 py-1 bg-green-500 text-white rounded-lg text-xs">Setujui</button>
+                      <button className="px-3 py-1 bg-red-500 text-white rounded-lg text-xs">Tolak</button>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
