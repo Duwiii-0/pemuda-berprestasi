@@ -615,8 +615,9 @@ const AllPeserta: React.FC = () => {
                         "Nama Peserta",
                         "Kategori", 
                         "Level",
-                        "Kelas",
-                        "Usia/Kelompok",
+                        "Kelas Berat",
+                        "Kelas Poomsae",
+                        "Kelompok Usia",
                         "Jenis Kelamin",
                         "Dojang",
                         "Status",
@@ -647,14 +648,9 @@ const AllPeserta: React.FC = () => {
 
                       const kelasBerat =
                         cabang === "KYORUGI"
-                          ? peserta.kelas_kejuaraan?.kelas_berat?.nama_kelas || (peserta.atlet?.berat_badan ? `${peserta.atlet.berat_badan} kg` : "-")
+                          ? peserta.kelas_kejuaraan?.kelas_berat?.nama_kelas || "-"
                           : "-";
-
-                      const kelasPoomsae =
-                        cabang === "POOMSAE"
-                          ? peserta.kelas_kejuaraan?.poomsae?.nama_kelas || peserta.atlet?.belt || "-"
-                          : "-";
-
+                          
                       const kelasUsia = peserta.kelas_kejuaraan?.kelompok?.nama_kelompok || "-";
                       const jenisKelamin = !isTeam ? peserta.atlet?.jenis_kelamin || "-" : "-";
                       const dojang = isTeam && peserta.anggota_tim?.length
@@ -680,7 +676,13 @@ const AllPeserta: React.FC = () => {
                           </td>
                           <td className="py-3 px-4 text-sm" style={{ color: '#050505', opacity: 0.7 }}>{cabang}</td>
                           <td className="py-3 px-4 text-sm" style={{ color: '#050505', opacity: 0.7 }}>{levelEvent}</td>
-                          <td className="py-3 px-4 text-sm" style={{ color: '#050505', opacity: 0.7 }}>{kelasBerat || kelasPoomsae}</td>
+                          <td className="py-3 px-4 text-sm" style={{ color: '#050505', opacity: 0.7 }}>{kelasBerat}</td>
+                          {/* 🔥 Kelas Poomsae */}
+                          <td className="py-3 px-4 text-sm" style={{ color: '#050505', opacity: 0.7 }}>
+                            {peserta.kelas_kejuaraan?.cabang === "POOMSAE"
+                              ? peserta.kelas_kejuaraan?.poomsae?.nama_kelas || "-"
+                              : "-"}
+                          </td>
                           <td className="py-3 px-4 text-center text-sm" style={{ color: '#050505', opacity: 0.7 }}>{kelasUsia}</td>
                           <td className="py-3 px-4 text-center text-sm" style={{ color: '#050505', opacity: 0.7 }}>{jenisKelamin}</td>
                           <td className="py-3 px-4 text-sm text-center" style={{ color: '#050505', opacity: 0.7 }}>
