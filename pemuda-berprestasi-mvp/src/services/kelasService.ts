@@ -27,13 +27,12 @@ export const kelasService = {
   },
 
 getKelasKejuaraan: async (kompetisiId: number, filter: {
-  styleType: "KYORUGI" | "POOMSAE",
-  gender?: "LAKI_LAKI" | "PEREMPUAN",
-  categoryType?: "prestasi" | "pemula",
+  styleType: Cabang,
+  gender?: JenisKelamin,
+  categoryType?: string,
   kelompokId?: number,
   kelasBeratId?: number,
   poomsaeId?: number,
-  isTeamPoomsae?: boolean, // tambahan untuk poomsae beregu/berpasangan
 }) => {
   try {
     console.log("🔍 Backend filter received:", filter);
@@ -45,46 +44,40 @@ getKelasKejuaraan: async (kompetisiId: number, filter: {
 
     // Kategori event
     if (filter.categoryType) {
-      whereCondition.id_kategori_event = filter.categoryType === "prestasi" ? 2 : 1;
+      const kategoriEventId = filter.categoryType === "prestasi" ? 2 : 1;
+      whereCondition.id_kategori_event = kategoriEventId;
     }
 
-    // ----- POOMSAE -----
+    // Handle POOMSAE
     if (filter.styleType === "POOMSAE") {
       if (filter.categoryType === "prestasi") {
         if (filter.kelompokId) whereCondition.id_kelompok = filter.kelompokId;
         if (filter.poomsaeId) whereCondition.id_poomsae = filter.poomsaeId;
-
-        // Jika beregu/berpasangan, jangan kirim gender
-        if (!filter.isTeamPoomsae && filter.gender) {
-          whereCondition.gender = filter.gender;
-        }
+        if (filter.gender) whereCondition.gender = filter.gender; // optional
       } else if (filter.categoryType === "pemula") {
-        // POOMSAE pemula: cukup filter poomsae
         if (filter.poomsaeId) whereCondition.id_poomsae = filter.poomsaeId;
-        // jangan kirim gender/kategori lain
+        // gender dan kelompok diabaikan
       }
     }
 
-    // ----- KYORUGI -----
+    // Handle KYORUGI
     if (filter.styleType === "KYORUGI") {
       if (filter.categoryType === "prestasi") {
         if (filter.kelompokId) whereCondition.id_kelompok = filter.kelompokId;
-
-        if (filter.kelasBeratId) {
-          if (filter.gender) {
-            // filter gender via relation kelas_berat
-            whereCondition.kelas_berat = {
-              id_kelas_berat: filter.kelasBeratId,
-              jenis_kelamin: filter.gender
-            };
-          } else {
-            whereCondition.id_kelas_berat = filter.kelasBeratId;
-          }
+        if (filter.kelasBeratId) whereCondition.id_kelas_berat = filter.kelasBeratId;
+        if (filter.gender) {
+          // filter gender via relation ke kelas_berat
+          whereCondition.kelas_berat = {
+            id_kelas_berat: filter.kelasBeratId,
+            jenis_kelamin: filter.gender
+          };
+          delete whereCondition.id_kelas_berat; // pakai relation
         }
       } else if (filter.categoryType === "pemula") {
-        // KYORUGI pemula: cukup gender
         if (filter.gender) {
-          whereCondition.kelas_berat = { jenis_kelamin: filter.gender };
+          whereCondition.kelas_berat = {
+            jenis_kelamin: filter.gender
+          };
         }
         // umur dan kelas berat diabaikan
       }
@@ -103,13 +96,12 @@ getKelasKejuaraan: async (kompetisiId: number, filter: {
     });
 
     console.log("✅ Query berhasil, hasil:", kelas);
-
+    
     if (kelas.length > 0) {
       return { id_kelas_kejuaraan: kelas[0].id_kelas_kejuaraan };
     }
-
+    
     return null;
-
   } catch (err: any) {
     console.error("❌ Prisma error:", err);
     if (err instanceof Error) console.error("Stack:", err.stack);
