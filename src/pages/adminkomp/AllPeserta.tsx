@@ -4,7 +4,6 @@ import { CheckCircle, XCircle, Loader, Search, Users, AlertTriangle, ChevronLeft
 import { useAuth } from "../../context/authContext";
 import { useKompetisi } from "../../context/KompetisiContext";
 import { apiClient } from "../../config/api";
-import Select from "react-select";
 import { useNavigate } from "react-router-dom";
 import SelectTeamMemberModal from "../../components/selectTeamModal";
 import { useDojang } from "../../context/dojangContext";
@@ -55,8 +54,8 @@ const AllPeserta: React.FC = () => {
 
   if (user?.role !== "ADMIN_KOMPETISI") {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#F5FBEF' }}>
-        <div className="rounded-xl shadow-sm border p-6" style={{ backgroundColor: 'rgba(153, 13, 53, 0.05)', borderColor: 'rgba(153, 13, 53, 0.2)' }}>
+      <div className="min-h-screen flex items-center justify-center px-4" style={{ backgroundColor: '#F5FBEF' }}>
+        <div className="rounded-xl shadow-sm border p-6 max-w-md w-full" style={{ backgroundColor: 'rgba(153, 13, 53, 0.05)', borderColor: 'rgba(153, 13, 53, 0.2)' }}>
           <div className="flex items-start gap-3">
             <AlertTriangle size={20} className="flex-shrink-0 mt-0.5" style={{ color: '#990D35' }} />
             <p className="text-sm sm:text-base" style={{ color: '#990D35' }}>
@@ -70,8 +69,8 @@ const AllPeserta: React.FC = () => {
 
   if (!kompetisiId) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#F5FBEF' }}>
-        <div className="rounded-xl shadow-sm border p-6" style={{ backgroundColor: '#F5FBEF', borderColor: '#990D35' }}>
+      <div className="min-h-screen flex items-center justify-center px-4" style={{ backgroundColor: '#F5FBEF' }}>
+        <div className="rounded-xl shadow-sm border p-6 max-w-md w-full" style={{ backgroundColor: '#F5FBEF', borderColor: '#990D35' }}>
           <p className="text-sm sm:text-base" style={{ color: '#050505', opacity: 0.6 }}>
             ⚠ Tidak ada kompetisi terkait akun ini.
           </p>
@@ -234,7 +233,7 @@ const AllPeserta: React.FC = () => {
 
   if (loadingAtlet) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#F5FBEF' }}>
+      <div className="min-h-screen flex items-center justify-center px-4" style={{ backgroundColor: '#F5FBEF' }}>
         <div className="flex flex-col items-center gap-3">
           <Loader className="animate-spin" style={{ color: '#990D35' }} size={32} />
           <p style={{ color: '#050505', opacity: 0.6 }}>Memuat data peserta...</p>
@@ -245,32 +244,32 @@ const AllPeserta: React.FC = () => {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#F5FBEF' }}>
-      {/* CONTAINER UTAMA - Padding responsif yang sama dengan AllAtlets */}
-      <div className="px-4 py-6 sm:px-6 lg:px-8 xl:px-12 2xl:px-24 max-w-7xl mx-auto">
+      {/* CONTAINER - Disesuaikan untuk layout dengan sidebar */}
+      <div className="p-4 sm:p-6 lg:p-8 max-w-full">
         
-        {/* HEADER - Konsisten dengan AllAtlets */}
-        <div className="mb-6 sm:mb-8">
+        {/* HEADER */}
+        <div className="mb-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
             <Users 
-              size={32} 
-              className="sm:w-10 sm:h-10 lg:w-12 lg:h-12 flex-shrink-0" 
+              size={28} 
+              className="sm:w-8 sm:h-8 lg:w-10 lg:h-10 flex-shrink-0" 
               style={{ color: '#990D35' }}
             />
             <div className="flex-1 min-w-0">
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bebas leading-tight" style={{ color: '#050505' }}>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-bebas leading-tight" style={{ color: '#050505' }}>
                 Daftar Peserta Sriwijaya Cup
               </h1>
-              <p className="text-sm sm:text-base lg:text-lg mt-1 sm:mt-2" style={{ color: '#050505', opacity: 0.6 }}>
+              <p className="text-sm sm:text-base mt-1" style={{ color: '#050505', opacity: 0.6 }}>
                 Kelola semua peserta kompetisi Sriwijaya kompetisi
               </p>
             </div>
           </div>
         </div>
 
-        {/* FILTER + SEARCH - Layout yang sama dengan AllAtlets */}
+        {/* FILTER + SEARCH */}
         <div className="rounded-xl shadow-sm border p-4 sm:p-6 mb-6" style={{ backgroundColor: '#F5FBEF', borderColor: '#990D35' }}>
           <div className="space-y-4">
-            {/* Search - Full width di mobile */}
+            {/* Search - Full width */}
             <div className="w-full">
               <div className="relative">
                 <Search
@@ -283,7 +282,7 @@ const AllPeserta: React.FC = () => {
                   placeholder="Cari peserta..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 rounded-2xl border shadow-sm focus:ring-2 focus:border-transparent text-sm placeholder-gray-400 transition-colors"
+                  className="w-full pl-10 pr-4 py-3 rounded-xl border shadow-sm focus:ring-2 focus:border-transparent text-sm placeholder-gray-400 transition-colors"
                   style={{ 
                     borderColor: '#990D35', 
                     backgroundColor: '#F5FBEF',
@@ -300,15 +299,15 @@ const AllPeserta: React.FC = () => {
               </div>
             </div>
 
-            {/* Filter dalam grid 3 kolom di mobile, 6 kolom di desktop */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+            {/* Filter dalam grid responsif */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
               {/* Filter Status */}
-              <div>
+              <div className="col-span-2 sm:col-span-1">
                 <label className="block text-xs mb-2 font-medium" style={{ color: '#050505', opacity: 0.6 }}>Status</label>
                 <select
                   value={filterStatus}
                   onChange={(e) => setFilterStatus(e.target.value as any)}
-                  className="w-full px-3 py-3 rounded-2xl border shadow-sm focus:ring-2 focus:border-transparent text-sm transition-colors"
+                  className="w-full px-3 py-2.5 rounded-xl border shadow-sm focus:ring-2 focus:border-transparent text-sm transition-colors"
                   style={{ 
                     borderColor: '#990D35', 
                     backgroundColor: '#F5FBEF',
@@ -331,12 +330,12 @@ const AllPeserta: React.FC = () => {
               </div>
 
               {/* Filter Kategori */}
-              <div>
+              <div className="col-span-2 sm:col-span-1">
                 <label className="block text-xs mb-2 font-medium" style={{ color: '#050505', opacity: 0.6 }}>Kategori</label>
                 <select
                   value={filterCategory}
                   onChange={(e) => setFilterCategory(e.target.value as any)}
-                  className="w-full px-3 py-3 rounded-2xl border shadow-sm focus:ring-2 focus:border-transparent text-sm transition-colors"
+                  className="w-full px-3 py-2.5 rounded-xl border shadow-sm focus:ring-2 focus:border-transparent text-sm transition-colors"
                   style={{ 
                     borderColor: '#990D35', 
                     backgroundColor: '#F5FBEF',
@@ -359,12 +358,12 @@ const AllPeserta: React.FC = () => {
               </div>
 
               {/* Filter Level */}
-              <div>
+              <div className="col-span-2 sm:col-span-1">
                 <label className="block text-xs mb-2 font-medium" style={{ color: '#050505', opacity: 0.6 }}>Level</label>
                 <select
                   value={filterLevel || ""}
                   onChange={(e) => setFilterLevel(e.target.value as "pemula" | "prestasi" | null || null)}
-                  className="w-full px-3 py-3 rounded-2xl border shadow-sm focus:ring-2 focus:border-transparent text-sm transition-colors"
+                  className="w-full px-3 py-2.5 rounded-xl border shadow-sm focus:ring-2 focus:border-transparent text-sm transition-colors"
                   style={{ 
                     borderColor: '#990D35', 
                     backgroundColor: '#F5FBEF',
@@ -387,12 +386,12 @@ const AllPeserta: React.FC = () => {
               </div>
 
               {/* Filter Kelompok Usia */}
-              <div>
+              <div className="col-span-2 sm:col-span-1">
                 <label className="block text-xs mb-2 font-medium" style={{ color: '#050505', opacity: 0.6 }}>Usia</label>
                 <select
                   value={filterKelasUsia}
                   onChange={(e) => setFilterKelasUsia(e.target.value as any)}
-                  className="w-full px-3 py-3 rounded-2xl border shadow-sm focus:ring-2 focus:border-transparent text-sm transition-colors"
+                  className="w-full px-3 py-2.5 rounded-xl border shadow-sm focus:ring-2 focus:border-transparent text-sm transition-colors"
                   style={{ 
                     borderColor: '#990D35', 
                     backgroundColor: '#F5FBEF',
@@ -415,12 +414,12 @@ const AllPeserta: React.FC = () => {
               </div>
 
               {/* Filter Dojang */}
-              <div className="sm:col-span-2 lg:col-span-2 xl:col-span-2">
+              <div className="col-span-4 sm:col-span-3 lg:col-span-2">
                 <label className="block text-xs mb-2 font-medium" style={{ color: '#050505', opacity: 0.6 }}>Dojang</label>
                 <select
                   value={filterDojang}
                   onChange={(e) => setFilterDojang(e.target.value)}
-                  className="w-full px-3 py-3 rounded-2xl border shadow-sm focus:ring-2 focus:border-transparent text-sm transition-colors"
+                  className="w-full px-3 py-2.5 rounded-xl border shadow-sm focus:ring-2 focus:border-transparent text-sm transition-colors"
                   style={{ 
                     borderColor: '#990D35', 
                     backgroundColor: '#F5FBEF',
@@ -446,7 +445,7 @@ const AllPeserta: React.FC = () => {
 
             {/* Info hasil */}
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 pt-2 border-t" style={{ borderColor: 'rgba(153, 13, 53, 0.2)' }}>
-              <p className="text-sm sm:text-base" style={{ color: '#050505', opacity: 0.6 }}>
+              <p className="text-sm" style={{ color: '#050505', opacity: 0.6 }}>
                 Menampilkan <span className="font-semibold">{startIndex + 1}-{Math.min(endIndex, displayedPesertas.length)}</span> dari <span className="font-semibold">{displayedPesertas.length}</span> peserta
               </p>
               <p className="text-xs sm:text-sm" style={{ color: '#050505', opacity: 0.5 }}>
@@ -457,234 +456,234 @@ const AllPeserta: React.FC = () => {
         </div>
 
         {/* CONTENT */}
-        {loadingAtlet ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="flex flex-col items-center gap-3">
-              <Loader className="w-8 h-8 animate-spin" style={{ color: '#990D35' }} />
-              <p className="text-sm sm:text-base" style={{ color: '#050505', opacity: 0.5 }}>Loading data peserta...</p>
-            </div>
-          </div>
-        ) : (
-          <>
-            {/* Mobile Cards View */}
-            <div className="block lg:hidden space-y-4">
-              {currentPesertas.map((peserta: any) => {
-                const isTeam = peserta.is_team;
-                const namaPeserta = isTeam
-                  ? peserta.anggota_tim?.map((m: any) => m.atlet.nama_atlet).join(", ")
-                  : peserta.atlet?.nama_atlet || "-";
+        <>
+          {/* Mobile Cards View */}
+          <div className="block lg:hidden space-y-4">
+            {currentPesertas.map((peserta: any) => {
+              const isTeam = peserta.is_team;
+              const namaPeserta = isTeam
+                ? peserta.anggota_tim?.map((m: any) => m.atlet.nama_atlet).join(", ")
+                : peserta.atlet?.nama_atlet || "-";
 
-                const cabang = peserta.kelas_kejuaraan?.cabang || "-";
-                const levelEvent = peserta.kelas_kejuaraan?.kategori_event?.nama_kategori || "-";
-                const kelasUsia = peserta.kelas_kejuaraan?.kelompok?.nama_kelompok || "-";
-                const jenisKelamin = !isTeam ? peserta.atlet?.jenis_kelamin || "-" : "-";
-                const dojang = isTeam && peserta.anggota_tim?.length
-                  ? peserta.anggota_tim[0]?.atlet?.dojang?.nama_dojang || "-"
-                  : peserta.atlet?.dojang?.nama_dojang || "-";
+              const cabang = peserta.kelas_kejuaraan?.cabang || "-";
+              const levelEvent = peserta.kelas_kejuaraan?.kategori_event?.nama_kategori || "-";
+              const kelasUsia = peserta.kelas_kejuaraan?.kelompok?.nama_kelompok || "-";
+              const dojang = isTeam && peserta.anggota_tim?.length
+                ? peserta.anggota_tim[0]?.atlet?.dojang?.nama_dojang || "-"
+                : peserta.atlet?.dojang?.nama_dojang || "-";
 
-                return (
-                  <div
-                    key={peserta.id_peserta_kompetisi}
-                    className="rounded-xl shadow-sm border overflow-hidden hover:shadow-md transition-shadow"
-                    style={{ backgroundColor: '#F5FBEF', borderColor: '#990D35' }}
+              return (
+                <div
+                  key={peserta.id_peserta_kompetisi}
+                  className="rounded-xl shadow-sm border overflow-hidden hover:shadow-md transition-shadow"
+                  style={{ backgroundColor: '#F5FBEF', borderColor: '#990D35' }}
+                >
+                  {/* Header Card */}
+                  <div 
+                    className="p-4 cursor-pointer"
+                    onClick={() => handleRowClick(peserta)}
                   >
-                    {/* Header Card */}
-                    <div 
-                      className="p-4 cursor-pointer"
-                      onClick={() => handleRowClick(peserta)}
-                    >
-                      <div className="flex justify-between items-start mb-3">
-                        <div className="flex-1 min-w-0 pr-3">
-                          <h3 className="font-semibold text-base leading-tight truncate" style={{ color: '#050505' }}>
-                            {namaPeserta}
-                          </h3>
-                          <p className="text-sm mt-1" style={{ color: '#050505', opacity: 0.6 }}>
-                            {cabang} - {levelEvent}
-                          </p>
-                        </div>
-                        <div className="flex-shrink-0">
-                          {getStatusBadge(peserta.status)}
-                        </div>
+                    <div className="flex justify-between items-start mb-3">
+                      <div className="flex-1 min-w-0 pr-3">
+                        <h3 className="font-semibold text-base leading-tight" style={{ color: '#050505' }}>
+                          {namaPeserta}
+                        </h3>
+                        <p className="text-sm mt-1" style={{ color: '#050505', opacity: 0.6 }}>
+                          {cabang} - {levelEvent}
+                        </p>
                       </div>
-                      
-                      <div className="grid grid-cols-2 gap-3 text-xs">
-                        <div>
-                          <span style={{ color: '#050505', opacity: 0.5 }}>Kelas:</span>
-                          <p className="font-medium" style={{ color: '#050505' }}>{kelasUsia}</p>
-                        </div>
-                        <div>
-                          <span style={{ color: '#050505', opacity: 0.5 }}>Dojang:</span>
-                          <p className="font-medium" style={{ color: '#050505' }}>{dojang}</p>
-                        </div>
+                      <div className="flex-shrink-0">
+                        {getStatusBadge(peserta.status)}
                       </div>
                     </div>
                     
-                    {/* Action Buttons */}
-                    <div className="flex gap-2 p-4 pt-0">
-                      <button
-                        onClick={(e) => { e.stopPropagation(); handleApproval(peserta.id_peserta_kompetisi); }}
-                        disabled={processing === peserta.id_peserta_kompetisi}
-                        className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50 transition-all text-sm font-medium"
-                      >
-                        {processing === peserta.id_peserta_kompetisi ? <Loader size={16} className="animate-spin" /> : <CheckCircle size={16} />}
-                        Setujui
-                      </button>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); handleRejection(peserta.id_peserta_kompetisi); }}
-                        disabled={processing === peserta.id_peserta_kompetisi}
-                        className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 text-white rounded-lg hover:shadow-md disabled:opacity-50 transition-all text-sm font-medium"
-                        style={{ backgroundColor: '#990D35' }}
-                        onMouseEnter={(e) => {
-                          if (!e.currentTarget.disabled) {
-                            e.currentTarget.style.backgroundColor = 'rgba(153, 13, 53, 0.9)';
-                          }
-                        }}
-                        onMouseLeave={(e) => {
-                          if (!e.currentTarget.disabled) {
-                            e.currentTarget.style.backgroundColor = '#990D35';
-                          }
-                        }}
-                      >
-                        {processing === peserta.id_peserta_kompetisi ? <Loader size={16} className="animate-spin" /> : <XCircle size={16} />}
-                        Tolak
-                      </button>
+                    <div className="grid grid-cols-2 gap-3 text-xs">
+                      <div>
+                        <span style={{ color: '#050505', opacity: 0.5 }}>Kelas:</span>
+                        <p className="font-medium" style={{ color: '#050505' }}>{kelasUsia}</p>
+                      </div>
+                      <div>
+                        <span style={{ color: '#050505', opacity: 0.5 }}>Dojang:</span>
+                        <p className="font-medium truncate" style={{ color: '#050505' }}>{dojang}</p>
+                      </div>
                     </div>
                   </div>
-                );
-              })}
-            </div>
-
-            {/* Desktop Table View */}
-            <div className="hidden lg:block">
-              <div className="rounded-xl shadow-sm border overflow-hidden" style={{ backgroundColor: '#F5FBEF', borderColor: '#990D35' }}>
-                <div className="overflow-x-auto">
-                  <table className="w-full min-w-[1200px]">
-                    <thead style={{ backgroundColor: '#F5B700' }}>
-                      <tr>
-                        {[
-                          "Nama Peserta",
-                          "Kategori",
-                          "Level",
-                          "Kelas",
-                          "Usia/Kelompok",
-                          "Jenis Kelamin",
-                          "Dojang",
-                          "Status",
-                          "Aksi",
-                        ].map((header) => (
-                          <th
-                            key={header}
-                            className={`py-3 px-4 font-semibold text-sm ${
-                              ["Usia/Kelompok", "Jenis Kelamin", "Status", "Aksi"].includes(header) ? "text-center" : "text-left"
-                            }`}
-                            style={{ color: '#050505' }}
-                          >
-                            {header}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y" style={{ borderColor: '#990D35' }}>
-                      {currentPesertas.map((peserta: any) => {
-                        const isTeam = peserta.is_team;
-
-                        const namaPeserta = isTeam
-                          ? peserta.anggota_tim?.map((m: any) => m.atlet.nama_atlet).join(", ")
-                          : peserta.atlet?.nama_atlet || "-";
-
-                        const cabang = peserta.kelas_kejuaraan?.cabang || "-";
-                        const levelEvent = peserta.kelas_kejuaraan?.kategori_event?.nama_kategori || "-";
-
-                        const kelasBerat =
-                          cabang === "KYORUGI"
-                            ? peserta.kelas_kejuaraan?.kelas_berat?.nama_kelas || (peserta.atlet?.berat_badan ? `${peserta.atlet.berat_badan} kg` : "-")
-                            : "-";
-
-                        const kelasPoomsae =
-                          cabang === "POOMSAE"
-                            ? peserta.kelas_kejuaraan?.poomsae?.nama_kelas || peserta.atlet?.belt || "-"
-                            : "-";
-
-                        const kelasUsia = peserta.kelas_kejuaraan?.kelompok?.nama_kelompok || "-";
-                        const jenisKelamin = !isTeam ? peserta.atlet?.jenis_kelamin || "-" : "-";
-                        const dojang = isTeam && peserta.anggota_tim?.length
-                          ? peserta.anggota_tim[0]?.atlet?.dojang?.nama_dojang || "-"
-                          : peserta.atlet?.dojang?.nama_dojang || "-";
-
-                        return (
-                          <tr
-                            key={peserta.id_peserta_kompetisi}
-                            className="transition-colors cursor-pointer"
-                            onClick={() => handleRowClick(peserta)}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.backgroundColor = 'rgba(245, 183, 0, 0.1)';
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.backgroundColor = 'transparent';
-                            }}
-                          >
-                            <td className="py-4 px-4 font-medium text-sm" style={{ color: '#050505' }}>{namaPeserta}</td>
-                            <td className="py-4 px-4 text-sm" style={{ color: '#050505', opacity: 0.7 }}>{cabang}</td>
-                            <td className="py-4 px-4 text-sm" style={{ color: '#050505', opacity: 0.7 }}>{levelEvent}</td>
-                            <td className="py-4 px-4 text-sm" style={{ color: '#050505', opacity: 0.7 }}>{kelasBerat || kelasPoomsae}</td>
-                            <td className="py-4 px-4 text-center text-sm" style={{ color: '#050505', opacity: 0.7 }}>{kelasUsia}</td>
-                            <td className="py-4 px-4 text-center text-sm" style={{ color: '#050505', opacity: 0.7 }}>{jenisKelamin}</td>
-                            <td className="py-4 px-4 text-sm" style={{ color: '#050505', opacity: 0.7 }}>{dojang}</td>
-                            <td className="py-4 px-4 text-center">{getStatusBadge(peserta.status)}</td>
-                            <td className="py-4 px-4 text-center">
-                              <div className="flex gap-2 justify-center">
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); handleApproval(peserta.id_peserta_kompetisi); }}
-                                  disabled={processing === peserta.id_peserta_kompetisi}
-                                  className="inline-flex items-center gap-1 px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50 transition-all text-sm font-medium"
-                                >
-                                  {processing === peserta.id_peserta_kompetisi ? <Loader size={16} className="animate-spin" /> : <CheckCircle size={16} />}
-                                  <span className="hidden xl:inline">Setujui</span>
-                                </button>
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); handleRejection(peserta.id_peserta_kompetisi); }}
-                                  disabled={processing === peserta.id_peserta_kompetisi}
-                                  className="inline-flex items-center gap-1 px-3 py-2 text-white rounded-lg hover:shadow-md disabled:opacity-50 transition-all text-sm font-medium"
-                                  style={{ backgroundColor: '#990D35' }}
-                                  onMouseEnter={(e) => {
-                                    if (!e.currentTarget.disabled) {
-                                      e.currentTarget.style.backgroundColor = 'rgba(153, 13, 53, 0.9)';
-                                    }
-                                  }}
-                                  onMouseLeave={(e) => {
-                                    if (!e.currentTarget.disabled) {
-                                      e.currentTarget.style.backgroundColor = '#990D35';
-                                    }
-                                  }}
-                                >
-                                  {processing === peserta.id_peserta_kompetisi ? <Loader size={16} className="animate-spin" /> : <XCircle size={16} />}
-                                  <span className="hidden xl:inline">Tolak</span>
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                  
+                  {/* Action Buttons */}
+                  <div className="flex gap-2 p-4 pt-0">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleApproval(peserta.id_peserta_kompetisi); }}
+                      disabled={processing === peserta.id_peserta_kompetisi}
+                      className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50 transition-all text-sm font-medium"
+                    >
+                      {processing === peserta.id_peserta_kompetisi ? <Loader size={16} className="animate-spin" /> : <CheckCircle size={16} />}
+                      <span className="hidden xs:inline">Setujui</span>
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleRejection(peserta.id_peserta_kompetisi); }}
+                      disabled={processing === peserta.id_peserta_kompetisi}
+                      className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 text-white rounded-lg hover:shadow-md disabled:opacity-50 transition-all text-sm font-medium"
+                      style={{ backgroundColor: '#990D35' }}
+                      onMouseEnter={(e) => {
+                        if (!e.currentTarget.disabled) {
+                          e.currentTarget.style.backgroundColor = 'rgba(153, 13, 53, 0.9)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!e.currentTarget.disabled) {
+                          e.currentTarget.style.backgroundColor = '#990D35';
+                        }
+                      }}
+                    >
+                      {processing === peserta.id_peserta_kompetisi ? <Loader size={16} className="animate-spin" /> : <XCircle size={16} />}
+                      <span className="hidden xs:inline">Tolak</span>
+                    </button>
+                  </div>
                 </div>
+              );
+            })}
+          </div>
+
+          {/* Desktop Table View */}
+          <div className="hidden lg:block">
+            <div className="rounded-xl shadow-sm border overflow-hidden" style={{ backgroundColor: '#F5FBEF', borderColor: '#990D35' }}>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead style={{ backgroundColor: '#F5B700' }}>
+                    <tr>
+                      {[
+                        "Nama Peserta",
+                        "Kategori", 
+                        "Level",
+                        "Kelas",
+                        "Usia/Kelompok",
+                        "Jenis Kelamin",
+                        "Dojang",
+                        "Status",
+                        "Aksi",
+                      ].map((header) => (
+                        <th
+                          key={header}
+                          className={`py-3 px-4 font-semibold text-sm ${
+                            ["Usia/Kelompok", "Jenis Kelamin", "Status", "Aksi"].includes(header) ? "text-center" : "text-left"
+                          }`}
+                          style={{ color: '#050505' }}
+                        >
+                          {header}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y" style={{ borderColor: '#990D35' }}>
+                    {currentPesertas.map((peserta: any) => {
+                      const isTeam = peserta.is_team;
+
+                      const namaPeserta = isTeam
+                        ? peserta.anggota_tim?.map((m: any) => m.atlet.nama_atlet).join(", ")
+                        : peserta.atlet?.nama_atlet || "-";
+
+                      const cabang = peserta.kelas_kejuaraan?.cabang || "-";
+                      const levelEvent = peserta.kelas_kejuaraan?.kategori_event?.nama_kategori || "-";
+
+                      const kelasBerat =
+                        cabang === "KYORUGI"
+                          ? peserta.kelas_kejuaraan?.kelas_berat?.nama_kelas || (peserta.atlet?.berat_badan ? `${peserta.atlet.berat_badan} kg` : "-")
+                          : "-";
+
+                      const kelasPoomsae =
+                        cabang === "POOMSAE"
+                          ? peserta.kelas_kejuaraan?.poomsae?.nama_kelas || peserta.atlet?.belt || "-"
+                          : "-";
+
+                      const kelasUsia = peserta.kelas_kejuaraan?.kelompok?.nama_kelompok || "-";
+                      const jenisKelamin = !isTeam ? peserta.atlet?.jenis_kelamin || "-" : "-";
+                      const dojang = isTeam && peserta.anggota_tim?.length
+                        ? peserta.anggota_tim[0]?.atlet?.dojang?.nama_dojang || "-"
+                        : peserta.atlet?.dojang?.nama_dojang || "-";
+
+                      return (
+                        <tr
+                          key={peserta.id_peserta_kompetisi}
+                          className="transition-colors cursor-pointer"
+                          onClick={() => handleRowClick(peserta)}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = 'rgba(245, 183, 0, 0.1)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = 'transparent';
+                          }}
+                        >
+                          <td className="py-3 px-4 font-medium text-sm" style={{ color: '#050505' }}>
+                            <div className="max-w-[200px] truncate" title={namaPeserta}>
+                              {namaPeserta}
+                            </div>
+                          </td>
+                          <td className="py-3 px-4 text-sm" style={{ color: '#050505', opacity: 0.7 }}>{cabang}</td>
+                          <td className="py-3 px-4 text-sm" style={{ color: '#050505', opacity: 0.7 }}>{levelEvent}</td>
+                          <td className="py-3 px-4 text-sm" style={{ color: '#050505', opacity: 0.7 }}>{kelasBerat || kelasPoomsae}</td>
+                          <td className="py-3 px-4 text-center text-sm" style={{ color: '#050505', opacity: 0.7 }}>{kelasUsia}</td>
+                          <td className="py-3 px-4 text-center text-sm" style={{ color: '#050505', opacity: 0.7 }}>{jenisKelamin}</td>
+                          <td className="py-3 px-4 text-sm" style={{ color: '#050505', opacity: 0.7 }}>
+                            <div className="max-w-[150px] truncate" title={dojang}>
+                              {dojang}
+                            </div>
+                          </td>
+                          <td className="py-3 px-4 text-center">{getStatusBadge(peserta.status)}</td>
+                          <td className="py-3 px-4 text-center">
+                            <div className="flex gap-2 justify-center">
+                              <button
+                                onClick={(e) => { e.stopPropagation(); handleApproval(peserta.id_peserta_kompetisi); }}
+                                disabled={processing === peserta.id_peserta_kompetisi}
+                                className="inline-flex items-center gap-1 px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50 transition-all text-sm font-medium"
+                                title="Setujui peserta"
+                              >
+                                {processing === peserta.id_peserta_kompetisi ? <Loader size={16} className="animate-spin" /> : <CheckCircle size={16} />}
+                                <span className="hidden xl:inline">Setujui</span>
+                              </button>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); handleRejection(peserta.id_peserta_kompetisi); }}
+                                disabled={processing === peserta.id_peserta_kompetisi}
+                                className="inline-flex items-center gap-1 px-3 py-2 text-white rounded-lg hover:shadow-md disabled:opacity-50 transition-all text-sm font-medium"
+                                style={{ backgroundColor: '#990D35' }}
+                                title="Tolak peserta"
+                                onMouseEnter={(e) => {
+                                  if (!e.currentTarget.disabled) {
+                                    e.currentTarget.style.backgroundColor = 'rgba(153, 13, 53, 0.9)';
+                                  }
+                                }}
+                                onMouseLeave={(e) => {
+                                  if (!e.currentTarget.disabled) {
+                                    e.currentTarget.style.backgroundColor = '#990D35';
+                                  }
+                                }}
+                              >
+                                {processing === peserta.id_peserta_kompetisi ? <Loader size={16} className="animate-spin" /> : <XCircle size={16} />}
+                                <span className="hidden xl:inline">Tolak</span>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
             </div>
+          </div>
 
-            {/* Empty State - Konsisten untuk mobile dan desktop */}
-            {displayedPesertas.length === 0 && (
-              <div className="py-16 text-center" style={{ color: '#050505', opacity: 0.4 }}>
-                <Users size={52} className="mx-auto mb-4" />
-                <p className="text-lg">Tidak ada peserta yang ditemukan</p>
-                {(searchTerm || filterStatus !== "ALL" || filterCategory !== "ALL" || filterKelasUsia !== "ALL" || filterLevel || filterDojang !== "ALL") && (
-                  <p className="text-sm mt-2">Coba ubah filter pencarian Anda</p>
-                )}
-              </div>
-            )}
-          </>
-        )}
+          {/* Empty State */}
+          {displayedPesertas.length === 0 && (
+            <div className="py-16 text-center" style={{ color: '#050505', opacity: 0.4 }}>
+              <Users size={52} className="mx-auto mb-4" />
+              <p className="text-lg">Tidak ada peserta yang ditemukan</p>
+              {(searchTerm || filterStatus !== "ALL" || filterCategory !== "ALL" || filterKelasUsia !== "ALL" || filterLevel || filterDojang !== "ALL") && (
+                <p className="text-sm mt-2">Coba ubah filter pencarian Anda</p>
+              )}
+            </div>
+          )}
+        </>
 
-        {/* Pagination - Konsisten dengan design AllAtlets */}
+        {/* Pagination */}
         {totalPages > 1 && (
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 rounded-xl shadow-sm border p-4 sm:p-6 mt-6" style={{ backgroundColor: '#F5FBEF', borderColor: '#990D35' }}>
             {/* Pagination Info */}
@@ -698,7 +697,7 @@ const AllPeserta: React.FC = () => {
               <button
                 onClick={() => handlePageChange(currentPage - 1)}
                 disabled={currentPage === 1}
-                className="flex items-center gap-1 px-2 sm:px-3 py-2 rounded-lg border hover:shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm sm:text-base"
+                className="flex items-center gap-1 px-2 sm:px-3 py-2 rounded-lg border hover:shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
                 style={{ 
                   borderColor: '#990D35', 
                   backgroundColor: '#F5FBEF', 
@@ -723,12 +722,12 @@ const AllPeserta: React.FC = () => {
               <div className="flex items-center gap-1">
                 {getPageNumbers().map((pageNum, index) => (
                   pageNum === '...' ? (
-                    <span key={`ellipsis-${index}`} className="px-2 py-2 text-sm sm:text-base" style={{ color: '#050505', opacity: 0.4 }}>...</span>
+                    <span key={`ellipsis-${index}`} className="px-2 py-2 text-sm" style={{ color: '#050505', opacity: 0.4 }}>...</span>
                   ) : (
                     <button
                       key={pageNum}
                       onClick={() => handlePageChange(pageNum as number)}
-                      className={`px-2 sm:px-3 py-2 rounded-lg transition-colors text-sm sm:text-base min-w-[32px] sm:min-w-[40px]`}
+                      className={`px-2 sm:px-3 py-2 rounded-lg transition-colors text-sm min-w-[32px] sm:min-w-[40px]`}
                       style={{
                         backgroundColor: currentPage === pageNum ? '#990D35' : '#F5FBEF',
                         color: currentPage === pageNum ? '#F5FBEF' : '#050505',
@@ -755,7 +754,7 @@ const AllPeserta: React.FC = () => {
               <button
                 onClick={() => handlePageChange(currentPage + 1)}
                 disabled={currentPage === totalPages}
-                className="flex items-center gap-1 px-2 sm:px-3 py-2 rounded-lg border hover:shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm sm:text-base"
+                className="flex items-center gap-1 px-2 sm:px-3 py-2 rounded-lg border hover:shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
                 style={{ 
                   borderColor: '#990D35', 
                   backgroundColor: '#F5FBEF', 
