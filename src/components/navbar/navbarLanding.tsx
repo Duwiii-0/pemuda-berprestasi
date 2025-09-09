@@ -84,8 +84,15 @@ const NavbarLanding = ({ onLogoutRequest }: { onLogoutRequest: () => void }) => 
     { to: "/tutorial", label: "Tutorial" }
   ];
 
+  const getDashboardLink = () => {
+  if (user?.role === "PELATIH") return { to: "/dashboard/dojang", label: "Dashboard", icon: Home };
+  if (user?.role === "ADMIN") return { to: "/admin/validasi-peserta", label: "Dashboard", icon: Home };
+  if (user?.role === "ADMIN_KOMPETISI") return { to: "/admin-kompetisi", label: "Dashboard", icon: Home };
+  return { to: "/", label: "Dashboard", icon: Home }; // fallback
+};
+
   const userMenuItems = [
-    { to: "/dashboard/dojang", label: "Dashboard", icon: Home },
+    getDashboardLink(),
     { to: "/settings", label: "Settings", icon: Settings }
   ];
 
