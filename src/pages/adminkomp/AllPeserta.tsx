@@ -1,6 +1,6 @@
-// src/pages/admin/AllPeserta.tsx
+// src/pages/adminkomp/AllPeserta.tsx
 import React, { useEffect, useState } from "react";
-import { CheckCircle, XCircle, Loader, Search, Users } from "lucide-react";
+import { CheckCircle, XCircle, Loader, Search, Users, AlertTriangle, ChevronLeft, ChevronRight } from "lucide-react";
 import { useAuth } from "../../context/authContext";
 import { useKompetisi } from "../../context/KompetisiContext";
 import { apiClient } from "../../config/api";
@@ -8,7 +8,6 @@ import Select from "react-select";
 import { useNavigate } from "react-router-dom";
 import SelectTeamMemberModal from "../../components/selectTeamModal";
 import { useDojang } from "../../context/dojangContext";
-
 
 const AllPeserta: React.FC = () => {
   const { token, user } = useAuth();
@@ -27,14 +26,15 @@ const AllPeserta: React.FC = () => {
   const [filterDojang, setFilterDojang] = useState<string>("ALL");
   const { dojangOptions, refreshDojang, isLoading } = useDojang();
 
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
+
   useEffect(() => {
     refreshDojang();
   }, []);
 
   const kompetisiId = user?.role === "ADMIN_KOMPETISI" ? user?.admin_kompetisi?.id_kompetisi : null;
-
-
-  type CategoryOption = { value: "ALL" | "KYORUGI" | "POOMSAE"; label: string };
 
   const handleRowClick = (peserta: any) => {
     if (peserta.is_team) {
@@ -44,7 +44,6 @@ const AllPeserta: React.FC = () => {
       navigate(`/dashboard/atlit/${peserta.atlet.id_atlet}`);
     }
   };
-
 
   useEffect(() => {
     // Token handled by apiClient automatically
@@ -56,15 +55,28 @@ const AllPeserta: React.FC = () => {
 
   if (user?.role !== "ADMIN_KOMPETISI") {
     return (
-      <div className="p-6 text-red-600 font-semibold">
-        Akses ditolak. Hanya Admin Kompetisi yang dapat melihat daftar peserta.
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#F5FBEF' }}>
+        <div className="rounded-xl shadow-sm border p-6" style={{ backgroundColor: 'rgba(153, 13, 53, 0.05)', borderColor: 'rgba(153, 13, 53, 0.2)' }}>
+          <div className="flex items-start gap-3">
+            <AlertTriangle size={20} className="flex-shrink-0 mt-0.5" style={{ color: '#990D35' }} />
+            <p className="text-sm sm:text-base" style={{ color: '#990D35' }}>
+              Akses ditolak. Hanya Admin Kompetisi yang dapat melihat daftar peserta.
+            </p>
+          </div>
+        </div>
       </div>
     );
   }
 
   if (!kompetisiId) {
     return (
-      <div className="p-6 text-gray-600">⚠ Tidak ada kompetisi terkait akun ini.</div>
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#F5FBEF' }}>
+        <div className="rounded-xl shadow-sm border p-6" style={{ backgroundColor: '#F5FBEF', borderColor: '#990D35' }}>
+          <p className="text-sm sm:text-base" style={{ color: '#050505', opacity: 0.6 }}>
+            ⚠ Tidak ada kompetisi terkait akun ini.
+          </p>
+        </div>
+      </div>
     );
   }
 
@@ -89,394 +101,697 @@ const AllPeserta: React.FC = () => {
   };
 
   const displayedPesertas = pesertaList.filter((peserta: any) => {
-  // Nama peserta (team atau individu)
-  const namaPeserta = peserta.is_team
-    ? peserta.anggota_tim?.map((a: any) => a.atlet.nama_atlet).join(" ") || ""
-    : peserta.atlet?.nama_atlet || "";
+    // Nama peserta (team atau individu)
+    const namaPeserta = peserta.is_team
+      ? peserta.anggota_tim?.map((a: any) => a.atlet.nama_atlet).join(" ") || ""
+      : peserta.atlet?.nama_atlet || "";
 
-  const matchesSearch = namaPeserta.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = namaPeserta.toLowerCase().includes(searchTerm.toLowerCase());
 
-  // Status
-  const pesertaStatus = peserta.status?.toUpperCase() || "";
-  const matchesStatus = filterStatus === "ALL" || pesertaStatus === filterStatus.toUpperCase();
+    // Status
+    const pesertaStatus = peserta.status?.toUpperCase() || "";
+    const matchesStatus = filterStatus === "ALL" || pesertaStatus === filterStatus.toUpperCase();
 
-  // Kategori / cabang
-  const kategori = peserta.kelas_kejuaraan?.cabang?.toUpperCase() || "";
-  const matchesCategory = filterCategory === "ALL" || kategori === filterCategory.toUpperCase();
+    // Kategori / cabang
+    const kategori = peserta.kelas_kejuaraan?.cabang?.toUpperCase() || "";
+    const matchesCategory = filterCategory === "ALL" || kategori === filterCategory.toUpperCase();
 
-  // Kelas berat
-  const kelasBerat = peserta.kelas_kejuaraan?.kelas_berat?.nama_kelas?.toUpperCase() || "";
-  const matchesKelasBerat = !filterKelasBerat || kelasBerat === filterKelasBerat.toUpperCase();
+    // Kelas berat
+    const kelasBerat = peserta.kelas_kejuaraan?.kelas_berat?.nama_kelas?.toUpperCase() || "";
+    const matchesKelasBerat = !filterKelasBerat || kelasBerat === filterKelasBerat.toUpperCase();
 
-  // Kelas usia / kelompok
-  const kelasUsia = peserta.kelas_kejuaraan?.kelompok?.nama_kelompok?.toUpperCase() || "";
-  const matchesKelasUsia = filterKelasUsia === "ALL" || kelasUsia === filterKelasUsia;
+    // Kelas usia / kelompok
+    const kelasUsia = peserta.kelas_kejuaraan?.kelompok?.nama_kelompok?.toUpperCase() || "";
+    const matchesKelasUsia = filterKelasUsia === "ALL" || kelasUsia === filterKelasUsia;
 
-  // Level / kategori event
-  const level = peserta.kelas_kejuaraan?.kategori_event?.nama_kategori?.toUpperCase() || "";
-  const matchesLevel = !filterLevel || level === filterLevel.toUpperCase();
+    // Level / kategori event
+    const level = peserta.kelas_kejuaraan?.kategori_event?.nama_kategori?.toUpperCase() || "";
+    const matchesLevel = !filterLevel || level === filterLevel.toUpperCase();
 
-  // Dojang
-  const pesertaDojang = peserta.is_team
-    ? peserta.anggota_tim?.[0]?.atlet?.dojang?.id_dojang?.toString() || ""
-    : peserta.atlet?.dojang?.id_dojang?.toString() || "";
+    // Dojang
+    const pesertaDojang = peserta.is_team
+      ? peserta.anggota_tim?.[0]?.atlet?.dojang?.id_dojang?.toString() || ""
+      : peserta.atlet?.dojang?.id_dojang?.toString() || "";
 
-  const matchesDojang = filterDojang === "ALL" || pesertaDojang === filterDojang;
+    const matchesDojang = filterDojang === "ALL" || pesertaDojang === filterDojang;
 
-  return matchesSearch && matchesStatus && matchesCategory && matchesKelasBerat && matchesKelasUsia && matchesLevel && matchesDojang;
-});
+    return matchesSearch && matchesStatus && matchesCategory && matchesKelasBerat && matchesKelasUsia && matchesLevel && matchesDojang;
+  });
 
+  // Pagination logic
+  const totalPages = Math.ceil(displayedPesertas.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentPesertas = displayedPesertas.slice(startIndex, endIndex);
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filterStatus, filterCategory, filterKelasUsia, filterLevel, filterDojang]);
+
+  const statusOptions = [
+    { value: "ALL", label: "Semua Status" },
+    { value: "PENDING", label: "Pending" },
+    { value: "APPROVED", label: "Approved" },
+    { value: "REJECTED", label: "Rejected" },
+  ];
+
+  const categoryOptions = [
+    { value: "ALL", label: "Semua Kategori" },
+    { value: "KYORUGI", label: "KYORUGI" },
+    { value: "POOMSAE", label: "POOMSAE" },
+  ];
+
+  const levelOptions = [
+    { value: null, label: "Semua Level" },
+    { value: "pemula", label: "Pemula" },
+    { value: "prestasi", label: "Prestasi" },
+  ];
+
+  const ageOptions = [
+    { value: "ALL", label: "Semua Usia" },
+    { value: "Cadet", label: "Cadet" },
+    { value: "Junior", label: "Junior" },
+    { value: "Senior", label: "Senior" },
+  ];
+
+  const getStatusBadge = (status: string) => {
+    const statusMap = {
+      PENDING: { bg: 'rgba(245, 183, 0, 0.2)', text: '#050505' },
+      APPROVED: { bg: 'rgba(34, 197, 94, 0.2)', text: '#059669' },
+      REJECTED: { bg: 'rgba(153, 13, 53, 0.1)', text: '#990D35' },
+    };
+    const colors = statusMap[status as keyof typeof statusMap] || statusMap.PENDING;
+    
+    return (
+      <span
+        className="px-2 py-1 rounded-full text-xs font-medium"
+        style={{ backgroundColor: colors.bg, color: colors.text }}
+      >
+        {status}
+      </span>
+    );
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const getPageNumbers = () => {
+    const pageNumbers = [];
+    const maxVisiblePages = 5;
+    
+    if (totalPages <= maxVisiblePages) {
+      for (let i = 1; i <= totalPages; i++) {
+        pageNumbers.push(i);
+      }
+    } else {
+      if (currentPage <= 3) {
+        for (let i = 1; i <= 4; i++) {
+          pageNumbers.push(i);
+        }
+        pageNumbers.push('...');
+        pageNumbers.push(totalPages);
+      } else if (currentPage >= totalPages - 2) {
+        pageNumbers.push(1);
+        pageNumbers.push('...');
+        for (let i = totalPages - 3; i <= totalPages; i++) {
+          pageNumbers.push(i);
+        }
+      } else {
+        pageNumbers.push(1);
+        pageNumbers.push('...');
+        for (let i = currentPage - 1; i <= currentPage + 1; i++) {
+          pageNumbers.push(i);
+        }
+        pageNumbers.push('...');
+        pageNumbers.push(totalPages);
+      }
+    }
+    
+    return pageNumbers;
+  };
+
+  if (loadingAtlet) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#F5FBEF' }}>
+        <div className="flex flex-col items-center gap-3">
+          <Loader className="animate-spin" style={{ color: '#990D35' }} size={32} />
+          <p style={{ color: '#050505', opacity: 0.6 }}>Memuat data peserta...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-  <div className="p-8 max-w-full mx-auto space-y-10">
-    {/* Header */}
-    <div className="flex items-center gap-4 mb-8">
-      <Users className="text-red-500" size={60} />
-      <div>
-        <h1 className="text-5xl font-bold text-black/90">Daftar Peserta Sriwijaya Cup</h1>
-        <p className="text-black/60 text-lg mt-1">Kelola semua peserta kompetisi Sriwijaya kompetisi</p>
+    <div className="min-h-screen" style={{ backgroundColor: '#F5FBEF' }}>
+      {/* CONTAINER UTAMA - Padding responsif yang sama dengan AllAtlets */}
+      <div className="px-4 py-6 sm:px-6 lg:px-8 xl:px-12 2xl:px-24 max-w-7xl mx-auto">
+        
+        {/* HEADER - Konsisten dengan AllAtlets */}
+        <div className="mb-6 sm:mb-8">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
+            <Users 
+              size={32} 
+              className="sm:w-10 sm:h-10 lg:w-12 lg:h-12 flex-shrink-0" 
+              style={{ color: '#990D35' }}
+            />
+            <div className="flex-1 min-w-0">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bebas leading-tight" style={{ color: '#050505' }}>
+                Daftar Peserta Sriwijaya Cup
+              </h1>
+              <p className="text-sm sm:text-base lg:text-lg mt-1 sm:mt-2" style={{ color: '#050505', opacity: 0.6 }}>
+                Kelola semua peserta kompetisi Sriwijaya kompetisi
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* FILTER + SEARCH - Layout yang sama dengan AllAtlets */}
+        <div className="rounded-xl shadow-sm border p-4 sm:p-6 mb-6" style={{ backgroundColor: '#F5FBEF', borderColor: '#990D35' }}>
+          <div className="space-y-4">
+            {/* Search - Full width di mobile */}
+            <div className="w-full">
+              <div className="relative">
+                <Search
+                  className="absolute left-3 top-1/2 -translate-y-1/2"
+                  style={{ color: '#050505', opacity: 0.4 }}
+                  size={18}
+                />
+                <input
+                  type="text"
+                  placeholder="Cari peserta..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 rounded-2xl border shadow-sm focus:ring-2 focus:border-transparent text-sm placeholder-gray-400 transition-colors"
+                  style={{ 
+                    borderColor: '#990D35', 
+                    backgroundColor: '#F5FBEF',
+                    color: '#050505'
+                  }}
+                  onFocus={(e) => {
+                    e.target.style.outline = 'none';
+                    e.target.style.boxShadow = '0 0 0 2px rgba(153, 13, 53, 0.2)';
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.boxShadow = '';
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Filter dalam grid 3 kolom di mobile, 6 kolom di desktop */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+              {/* Filter Status */}
+              <div>
+                <label className="block text-xs mb-2 font-medium" style={{ color: '#050505', opacity: 0.6 }}>Status</label>
+                <select
+                  value={filterStatus}
+                  onChange={(e) => setFilterStatus(e.target.value as any)}
+                  className="w-full px-3 py-3 rounded-2xl border shadow-sm focus:ring-2 focus:border-transparent text-sm transition-colors"
+                  style={{ 
+                    borderColor: '#990D35', 
+                    backgroundColor: '#F5FBEF',
+                    color: '#050505'
+                  }}
+                  onFocus={(e) => {
+                    e.target.style.outline = 'none';
+                    e.target.style.boxShadow = '0 0 0 2px rgba(153, 13, 53, 0.2)';
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.boxShadow = '';
+                  }}
+                >
+                  {statusOptions.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Filter Kategori */}
+              <div>
+                <label className="block text-xs mb-2 font-medium" style={{ color: '#050505', opacity: 0.6 }}>Kategori</label>
+                <select
+                  value={filterCategory}
+                  onChange={(e) => setFilterCategory(e.target.value as any)}
+                  className="w-full px-3 py-3 rounded-2xl border shadow-sm focus:ring-2 focus:border-transparent text-sm transition-colors"
+                  style={{ 
+                    borderColor: '#990D35', 
+                    backgroundColor: '#F5FBEF',
+                    color: '#050505'
+                  }}
+                  onFocus={(e) => {
+                    e.target.style.outline = 'none';
+                    e.target.style.boxShadow = '0 0 0 2px rgba(153, 13, 53, 0.2)';
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.boxShadow = '';
+                  }}
+                >
+                  {categoryOptions.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Filter Level */}
+              <div>
+                <label className="block text-xs mb-2 font-medium" style={{ color: '#050505', opacity: 0.6 }}>Level</label>
+                <select
+                  value={filterLevel || ""}
+                  onChange={(e) => setFilterLevel(e.target.value as "pemula" | "prestasi" | null || null)}
+                  className="w-full px-3 py-3 rounded-2xl border shadow-sm focus:ring-2 focus:border-transparent text-sm transition-colors"
+                  style={{ 
+                    borderColor: '#990D35', 
+                    backgroundColor: '#F5FBEF',
+                    color: '#050505'
+                  }}
+                  onFocus={(e) => {
+                    e.target.style.outline = 'none';
+                    e.target.style.boxShadow = '0 0 0 2px rgba(153, 13, 53, 0.2)';
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.boxShadow = '';
+                  }}
+                >
+                  {levelOptions.map((opt) => (
+                    <option key={opt.value || "null"} value={opt.value || ""}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Filter Kelompok Usia */}
+              <div>
+                <label className="block text-xs mb-2 font-medium" style={{ color: '#050505', opacity: 0.6 }}>Usia</label>
+                <select
+                  value={filterKelasUsia}
+                  onChange={(e) => setFilterKelasUsia(e.target.value as any)}
+                  className="w-full px-3 py-3 rounded-2xl border shadow-sm focus:ring-2 focus:border-transparent text-sm transition-colors"
+                  style={{ 
+                    borderColor: '#990D35', 
+                    backgroundColor: '#F5FBEF',
+                    color: '#050505'
+                  }}
+                  onFocus={(e) => {
+                    e.target.style.outline = 'none';
+                    e.target.style.boxShadow = '0 0 0 2px rgba(153, 13, 53, 0.2)';
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.boxShadow = '';
+                  }}
+                >
+                  {ageOptions.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Filter Dojang */}
+              <div className="sm:col-span-2 lg:col-span-2 xl:col-span-2">
+                <label className="block text-xs mb-2 font-medium" style={{ color: '#050505', opacity: 0.6 }}>Dojang</label>
+                <select
+                  value={filterDojang}
+                  onChange={(e) => setFilterDojang(e.target.value)}
+                  className="w-full px-3 py-3 rounded-2xl border shadow-sm focus:ring-2 focus:border-transparent text-sm transition-colors"
+                  style={{ 
+                    borderColor: '#990D35', 
+                    backgroundColor: '#F5FBEF',
+                    color: '#050505'
+                  }}
+                  onFocus={(e) => {
+                    e.target.style.outline = 'none';
+                    e.target.style.boxShadow = '0 0 0 2px rgba(153, 13, 53, 0.2)';
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.boxShadow = '';
+                  }}
+                >
+                  <option value="ALL">Semua Dojang</option>
+                  {dojangOptions.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Info hasil */}
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 pt-2 border-t" style={{ borderColor: 'rgba(153, 13, 53, 0.2)' }}>
+              <p className="text-sm sm:text-base" style={{ color: '#050505', opacity: 0.6 }}>
+                Menampilkan <span className="font-semibold">{startIndex + 1}-{Math.min(endIndex, displayedPesertas.length)}</span> dari <span className="font-semibold">{displayedPesertas.length}</span> peserta
+              </p>
+              <p className="text-xs sm:text-sm" style={{ color: '#050505', opacity: 0.5 }}>
+                Halaman {currentPage} dari {totalPages}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* CONTENT */}
+        {loadingAtlet ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="flex flex-col items-center gap-3">
+              <Loader className="w-8 h-8 animate-spin" style={{ color: '#990D35' }} />
+              <p className="text-sm sm:text-base" style={{ color: '#050505', opacity: 0.5 }}>Loading data peserta...</p>
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* Mobile Cards View */}
+            <div className="block lg:hidden space-y-4">
+              {currentPesertas.map((peserta: any) => {
+                const isTeam = peserta.is_team;
+                const namaPeserta = isTeam
+                  ? peserta.anggota_tim?.map((m: any) => m.atlet.nama_atlet).join(", ")
+                  : peserta.atlet?.nama_atlet || "-";
+
+                const cabang = peserta.kelas_kejuaraan?.cabang || "-";
+                const levelEvent = peserta.kelas_kejuaraan?.kategori_event?.nama_kategori || "-";
+                const kelasUsia = peserta.kelas_kejuaraan?.kelompok?.nama_kelompok || "-";
+                const jenisKelamin = !isTeam ? peserta.atlet?.jenis_kelamin || "-" : "-";
+                const dojang = isTeam && peserta.anggota_tim?.length
+                  ? peserta.anggota_tim[0]?.atlet?.dojang?.nama_dojang || "-"
+                  : peserta.atlet?.dojang?.nama_dojang || "-";
+
+                return (
+                  <div
+                    key={peserta.id_peserta_kompetisi}
+                    className="rounded-xl shadow-sm border overflow-hidden hover:shadow-md transition-shadow"
+                    style={{ backgroundColor: '#F5FBEF', borderColor: '#990D35' }}
+                  >
+                    {/* Header Card */}
+                    <div 
+                      className="p-4 cursor-pointer"
+                      onClick={() => handleRowClick(peserta)}
+                    >
+                      <div className="flex justify-between items-start mb-3">
+                        <div className="flex-1 min-w-0 pr-3">
+                          <h3 className="font-semibold text-base leading-tight truncate" style={{ color: '#050505' }}>
+                            {namaPeserta}
+                          </h3>
+                          <p className="text-sm mt-1" style={{ color: '#050505', opacity: 0.6 }}>
+                            {cabang} - {levelEvent}
+                          </p>
+                        </div>
+                        <div className="flex-shrink-0">
+                          {getStatusBadge(peserta.status)}
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-3 text-xs">
+                        <div>
+                          <span style={{ color: '#050505', opacity: 0.5 }}>Kelas:</span>
+                          <p className="font-medium" style={{ color: '#050505' }}>{kelasUsia}</p>
+                        </div>
+                        <div>
+                          <span style={{ color: '#050505', opacity: 0.5 }}>Dojang:</span>
+                          <p className="font-medium" style={{ color: '#050505' }}>{dojang}</p>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Action Buttons */}
+                    <div className="flex gap-2 p-4 pt-0">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleApproval(peserta.id_peserta_kompetisi); }}
+                        disabled={processing === peserta.id_peserta_kompetisi}
+                        className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50 transition-all text-sm font-medium"
+                      >
+                        {processing === peserta.id_peserta_kompetisi ? <Loader size={16} className="animate-spin" /> : <CheckCircle size={16} />}
+                        Setujui
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleRejection(peserta.id_peserta_kompetisi); }}
+                        disabled={processing === peserta.id_peserta_kompetisi}
+                        className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 text-white rounded-lg hover:shadow-md disabled:opacity-50 transition-all text-sm font-medium"
+                        style={{ backgroundColor: '#990D35' }}
+                        onMouseEnter={(e) => {
+                          if (!e.currentTarget.disabled) {
+                            e.currentTarget.style.backgroundColor = 'rgba(153, 13, 53, 0.9)';
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!e.currentTarget.disabled) {
+                            e.currentTarget.style.backgroundColor = '#990D35';
+                          }
+                        }}
+                      >
+                        {processing === peserta.id_peserta_kompetisi ? <Loader size={16} className="animate-spin" /> : <XCircle size={16} />}
+                        Tolak
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Desktop Table View */}
+            <div className="hidden lg:block">
+              <div className="rounded-xl shadow-sm border overflow-hidden" style={{ backgroundColor: '#F5FBEF', borderColor: '#990D35' }}>
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[1200px]">
+                    <thead style={{ backgroundColor: '#F5B700' }}>
+                      <tr>
+                        {[
+                          "Nama Peserta",
+                          "Kategori",
+                          "Level",
+                          "Kelas",
+                          "Usia/Kelompok",
+                          "Jenis Kelamin",
+                          "Dojang",
+                          "Status",
+                          "Aksi",
+                        ].map((header) => (
+                          <th
+                            key={header}
+                            className={`py-3 px-4 font-semibold text-sm ${
+                              ["Usia/Kelompok", "Jenis Kelamin", "Status", "Aksi"].includes(header) ? "text-center" : "text-left"
+                            }`}
+                            style={{ color: '#050505' }}
+                          >
+                            {header}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y" style={{ borderColor: '#990D35' }}>
+                      {currentPesertas.map((peserta: any) => {
+                        const isTeam = peserta.is_team;
+
+                        const namaPeserta = isTeam
+                          ? peserta.anggota_tim?.map((m: any) => m.atlet.nama_atlet).join(", ")
+                          : peserta.atlet?.nama_atlet || "-";
+
+                        const cabang = peserta.kelas_kejuaraan?.cabang || "-";
+                        const levelEvent = peserta.kelas_kejuaraan?.kategori_event?.nama_kategori || "-";
+
+                        const kelasBerat =
+                          cabang === "KYORUGI"
+                            ? peserta.kelas_kejuaraan?.kelas_berat?.nama_kelas || (peserta.atlet?.berat_badan ? `${peserta.atlet.berat_badan} kg` : "-")
+                            : "-";
+
+                        const kelasPoomsae =
+                          cabang === "POOMSAE"
+                            ? peserta.kelas_kejuaraan?.poomsae?.nama_kelas || peserta.atlet?.belt || "-"
+                            : "-";
+
+                        const kelasUsia = peserta.kelas_kejuaraan?.kelompok?.nama_kelompok || "-";
+                        const jenisKelamin = !isTeam ? peserta.atlet?.jenis_kelamin || "-" : "-";
+                        const dojang = isTeam && peserta.anggota_tim?.length
+                          ? peserta.anggota_tim[0]?.atlet?.dojang?.nama_dojang || "-"
+                          : peserta.atlet?.dojang?.nama_dojang || "-";
+
+                        return (
+                          <tr
+                            key={peserta.id_peserta_kompetisi}
+                            className="transition-colors cursor-pointer"
+                            onClick={() => handleRowClick(peserta)}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor = 'rgba(245, 183, 0, 0.1)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = 'transparent';
+                            }}
+                          >
+                            <td className="py-4 px-4 font-medium text-sm" style={{ color: '#050505' }}>{namaPeserta}</td>
+                            <td className="py-4 px-4 text-sm" style={{ color: '#050505', opacity: 0.7 }}>{cabang}</td>
+                            <td className="py-4 px-4 text-sm" style={{ color: '#050505', opacity: 0.7 }}>{levelEvent}</td>
+                            <td className="py-4 px-4 text-sm" style={{ color: '#050505', opacity: 0.7 }}>{kelasBerat || kelasPoomsae}</td>
+                            <td className="py-4 px-4 text-center text-sm" style={{ color: '#050505', opacity: 0.7 }}>{kelasUsia}</td>
+                            <td className="py-4 px-4 text-center text-sm" style={{ color: '#050505', opacity: 0.7 }}>{jenisKelamin}</td>
+                            <td className="py-4 px-4 text-sm" style={{ color: '#050505', opacity: 0.7 }}>{dojang}</td>
+                            <td className="py-4 px-4 text-center">{getStatusBadge(peserta.status)}</td>
+                            <td className="py-4 px-4 text-center">
+                              <div className="flex gap-2 justify-center">
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); handleApproval(peserta.id_peserta_kompetisi); }}
+                                  disabled={processing === peserta.id_peserta_kompetisi}
+                                  className="inline-flex items-center gap-1 px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50 transition-all text-sm font-medium"
+                                >
+                                  {processing === peserta.id_peserta_kompetisi ? <Loader size={16} className="animate-spin" /> : <CheckCircle size={16} />}
+                                  <span className="hidden xl:inline">Setujui</span>
+                                </button>
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); handleRejection(peserta.id_peserta_kompetisi); }}
+                                  disabled={processing === peserta.id_peserta_kompetisi}
+                                  className="inline-flex items-center gap-1 px-3 py-2 text-white rounded-lg hover:shadow-md disabled:opacity-50 transition-all text-sm font-medium"
+                                  style={{ backgroundColor: '#990D35' }}
+                                  onMouseEnter={(e) => {
+                                    if (!e.currentTarget.disabled) {
+                                      e.currentTarget.style.backgroundColor = 'rgba(153, 13, 53, 0.9)';
+                                    }
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    if (!e.currentTarget.disabled) {
+                                      e.currentTarget.style.backgroundColor = '#990D35';
+                                    }
+                                  }}
+                                >
+                                  {processing === peserta.id_peserta_kompetisi ? <Loader size={16} className="animate-spin" /> : <XCircle size={16} />}
+                                  <span className="hidden xl:inline">Tolak</span>
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            {/* Empty State - Konsisten untuk mobile dan desktop */}
+            {displayedPesertas.length === 0 && (
+              <div className="py-16 text-center" style={{ color: '#050505', opacity: 0.4 }}>
+                <Users size={52} className="mx-auto mb-4" />
+                <p className="text-lg">Tidak ada peserta yang ditemukan</p>
+                {(searchTerm || filterStatus !== "ALL" || filterCategory !== "ALL" || filterKelasUsia !== "ALL" || filterLevel || filterDojang !== "ALL") && (
+                  <p className="text-sm mt-2">Coba ubah filter pencarian Anda</p>
+                )}
+              </div>
+            )}
+          </>
+        )}
+
+        {/* Pagination - Konsisten dengan design AllAtlets */}
+        {totalPages > 1 && (
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 rounded-xl shadow-sm border p-4 sm:p-6 mt-6" style={{ backgroundColor: '#F5FBEF', borderColor: '#990D35' }}>
+            {/* Pagination Info */}
+            <div className="text-sm order-2 sm:order-1" style={{ color: '#050505', opacity: 0.6 }}>
+              Menampilkan {startIndex + 1} - {Math.min(endIndex, displayedPesertas.length)} dari {displayedPesertas.length} hasil
+            </div>
+
+            {/* Pagination Controls */}
+            <div className="flex items-center gap-1 sm:gap-2 order-1 sm:order-2">
+              {/* Previous Button */}
+              <button
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="flex items-center gap-1 px-2 sm:px-3 py-2 rounded-lg border hover:shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm sm:text-base"
+                style={{ 
+                  borderColor: '#990D35', 
+                  backgroundColor: '#F5FBEF', 
+                  color: '#050505' 
+                }}
+                onMouseEnter={(e) => {
+                  if (!e.currentTarget.disabled) {
+                    e.currentTarget.style.backgroundColor = 'rgba(153, 13, 53, 0.05)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!e.currentTarget.disabled) {
+                    e.currentTarget.style.backgroundColor = '#F5FBEF';
+                  }
+                }}
+              >
+                <ChevronLeft size={16} />
+                <span className="hidden sm:inline">Prev</span>
+              </button>
+
+              {/* Page Numbers */}
+              <div className="flex items-center gap-1">
+                {getPageNumbers().map((pageNum, index) => (
+                  pageNum === '...' ? (
+                    <span key={`ellipsis-${index}`} className="px-2 py-2 text-sm sm:text-base" style={{ color: '#050505', opacity: 0.4 }}>...</span>
+                  ) : (
+                    <button
+                      key={pageNum}
+                      onClick={() => handlePageChange(pageNum as number)}
+                      className={`px-2 sm:px-3 py-2 rounded-lg transition-colors text-sm sm:text-base min-w-[32px] sm:min-w-[40px]`}
+                      style={{
+                        backgroundColor: currentPage === pageNum ? '#990D35' : '#F5FBEF',
+                        color: currentPage === pageNum ? '#F5FBEF' : '#050505',
+                        border: currentPage === pageNum ? 'none' : `1px solid #990D35`
+                      }}
+                      onMouseEnter={(e) => {
+                        if (currentPage !== pageNum) {
+                          e.currentTarget.style.backgroundColor = 'rgba(153, 13, 53, 0.05)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (currentPage !== pageNum) {
+                          e.currentTarget.style.backgroundColor = '#F5FBEF';
+                        }
+                      }}
+                    >
+                      {pageNum}
+                    </button>
+                  )
+                ))}
+              </div>
+
+              {/* Next Button */}
+              <button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className="flex items-center gap-1 px-2 sm:px-3 py-2 rounded-lg border hover:shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm sm:text-base"
+                style={{ 
+                  borderColor: '#990D35', 
+                  backgroundColor: '#F5FBEF', 
+                  color: '#050505' 
+                }}
+                onMouseEnter={(e) => {
+                  if (!e.currentTarget.disabled) {
+                    e.currentTarget.style.backgroundColor = 'rgba(153, 13, 53, 0.05)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!e.currentTarget.disabled) {
+                    e.currentTarget.style.backgroundColor = '#F5FBEF';
+                  }
+                }}
+              >
+                <span className="hidden sm:inline">Next</span>
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Team Modal */}
+        <SelectTeamMemberModal
+          isOpen={teamModalOpen}
+          anggotaTim={selectedTeam}
+          onClose={() => setTeamModalOpen(false)}
+          onSelect={(atlet) => {
+            navigate(`/dashboard/atlit/${atlet.id_atlet}`);
+            setTeamModalOpen(false);
+          }}
+        />
       </div>
     </div>
-
-    {/* FILTER & SEARCH */}
-<div className="bg-white/90 backdrop-blur-md border border-white/40 rounded-2xl p-4 md:p-6 shadow-lg mb-6 z-50">
-
-  {/* Search Bar */}
-  <div className="relative mb-4 md:mb-6">
-    <Search className="absolute left-3 md:left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-    <input
-      type="text"
-      placeholder="Cari peserta..."
-      value={searchTerm}
-      onChange={(e) => setSearchTerm(e.target.value)}
-      className="w-full pl-10 md:pl-14 pr-3 md:pr-4 py-2.5 md:py-4 rounded-2xl md:rounded-3xl 
-                 border border-gray-200 shadow 
-                 focus:ring-2 focus:ring-red-400 focus:border-transparent 
-                 text-sm md:text-lg transition placeholder-gray-400"
-    />
-  </div>
-
-  {/* Filter Options */}
-  <div className="grid grid-cols-1 md:grid-cols-4 gap-3 md:gap-4">
-    {/* Filter Status */}
-    <Select
-      unstyled
-      value={{
-        value: filterStatus,
-        label:
-          filterStatus === "ALL"
-            ? "Semua Status"
-            : filterStatus.charAt(0) + filterStatus.slice(1).toLowerCase(),
-      }}
-      onChange={(selected) => setFilterStatus(selected?.value as any)}
-      options={[
-        { value: "ALL", label: "Semua Status" },
-        { value: "PENDING", label: "Pending" },
-        { value: "APPROVED", label: "Approved" },
-        { value: "REJECTED", label: "Rejected" },
-      ]}
-      placeholder="Pilih status"
-      classNames={{
-        control: () =>
-          `w-full flex items-center border-2 border-gray-300 
-           rounded-2xl md:rounded-3xl px-3 md:px-4 py-2 md:py-3 gap-2 md:gap-3 
-           backdrop-blur-sm text-sm md:text-base 
-           transition-all duration-300 hover:shadow`,
-        valueContainer: () => "px-1",
-        placeholder: () => "text-gray-400 font-plex text-xs md:text-sm",
-        menu: () =>
-          "border border-red/20 bg-white/95 backdrop-blur-sm rounded-xl shadow-xl mt-2 overflow-hidden z-50",
-        menuList: () => "max-h-32 overflow-y-auto",
-        option: ({ isFocused, isSelected }) =>
-          [
-            "px-3 md:px-4 py-2 md:py-3 cursor-pointer font-plex text-xs md:text-sm transition-colors duration-200 hover:text-red",
-            isFocused ? "bg-red/10 text-red" : "text-black/80",
-            isSelected ? "bg-red text-white" : "",
-          ].join(" "),
-      }}
-      menuPortalTarget={document.body}
-    />
-
-    {/* Filter Kategori */}
-    <Select
-      unstyled
-      value={{
-        value: filterCategory || "ALL",
-        label: filterCategory === "ALL" ? "Semua Kategori" : filterCategory,
-      }}
-      onChange={(selected) => setFilterCategory(selected?.value || "ALL")}
-      options={[
-        { value: "ALL", label: "Semua Kategori" },
-        { value: "KYORUGI", label: "KYORUGI" },
-        { value: "POOMSAE", label: "POOMSAE" },
-      ]}
-      placeholder="Pilih kategori"
-      classNames={{
-        control: () =>
-          `w-full flex items-center border-2 border-gray-300 
-           rounded-2xl md:rounded-3xl px-3 md:px-4 py-2 md:py-3 gap-2 md:gap-3 
-           backdrop-blur-sm text-sm md:text-base 
-           transition-all duration-300 hover:shadow`,
-        valueContainer: () => "px-1",
-        placeholder: () => "text-gray-400 font-plex text-xs md:text-sm",
-        menu: () =>
-          "border border-red/20 bg-white/95 backdrop-blur-sm rounded-xl shadow-xl mt-2 overflow-hidden z-50",
-        menuList: () => "max-h-32 overflow-y-auto",
-        option: ({ isFocused, isSelected }) =>
-          [
-            "px-3 md:px-4 py-2 md:py-3 cursor-pointer font-plex text-xs md:text-sm transition-colors duration-200 hover:text-red",
-            isFocused ? "bg-red/10 text-red" : "text-black/80",
-            isSelected ? "bg-red text-white" : "",
-          ].join(" "),
-      }}
-      menuPortalTarget={document.body}
-    />
-
-    {/* Filter Level */}
-    <Select
-      unstyled
-      value={{ value: filterLevel || null, label: filterLevel || "Semua" }}
-      onChange={(selected) =>
-        setFilterLevel(selected?.value as "pemula" | "prestasi" | null || null)
-      }
-      options={[
-        { value: null, label: "Semua" },
-        { value: "pemula", label: "Pemula" },
-        { value: "prestasi", label: "Prestasi" },
-      ]}
-      placeholder="Pilih level"
-      classNames={{
-        control: () =>
-          `w-full flex items-center border-2 border-gray-300 
-           rounded-2xl md:rounded-3xl px-3 md:px-4 py-2 md:py-3 gap-2 md:gap-3 
-           backdrop-blur-sm text-sm md:text-base 
-           transition-all duration-300 hover:shadow`,
-        valueContainer: () => "px-1",
-        placeholder: () => "text-gray-400 font-plex text-xs md:text-sm",
-        menu: () =>
-          "border border-red/20 bg-white/95 backdrop-blur-sm rounded-xl shadow-xl mt-2 overflow-hidden z-50",
-        menuList: () => "max-h-32 overflow-y-auto",
-        option: ({ isFocused, isSelected }) =>
-          [
-            "px-3 md:px-4 py-2 md:py-3 cursor-pointer font-plex text-xs md:text-sm transition-colors duration-200 hover:text-red",
-            isFocused ? "bg-red/10 text-red" : "text-black/80",
-            isSelected ? "bg-red text-white" : "",
-          ].join(" "),
-      }}
-      menuPortalTarget={document.body}
-    />
-
-    {/* Filter Kelompok Usia */}
-    <Select
-      unstyled
-      value={{
-        value: filterKelasUsia,
-        label:
-          filterKelasUsia === "ALL"
-            ? "Semua Usia"
-            : filterKelasUsia.charAt(0) + filterKelasUsia.slice(1).toLowerCase(),
-      }}
-      onChange={(selected) => setFilterKelasUsia(selected?.value as any)}
-      options={[
-        { value: "ALL", label: "Semua Usia" },
-        { value: "Cadet", label: "Cadet" },
-        { value: "Junior", label: "Junior" },
-        { value: "Senior", label: "Senior" },
-      ]}
-      placeholder="Pilih usia"
-      classNames={{
-        control: () =>
-          `w-full flex items-center border-2 border-gray-300 
-           rounded-2xl md:rounded-3xl px-3 md:px-4 py-2 md:py-3 gap-2 md:gap-3 
-           backdrop-blur-sm text-sm md:text-base 
-           transition-all duration-300 hover:shadow`,
-        valueContainer: () => "px-1",
-        placeholder: () => "text-gray-400 font-plex text-xs md:text-sm",
-        menu: () =>
-          "border border-red/20 bg-white/95 backdrop-blur-sm rounded-xl shadow-xl mt-2 overflow-hidden z-50",
-        menuList: () => "max-h-32 overflow-y-auto",
-        option: ({ isFocused, isSelected }) =>
-          [
-            "px-3 md:px-4 py-2 md:py-3 cursor-pointer font-plex text-xs md:text-sm transition-colors duration-200 hover:text-red",
-            isFocused ? "bg-red/10 text-red" : "text-black/80",
-            isSelected ? "bg-red text-white" : "",
-          ].join(" "),
-      }}
-      menuPortalTarget={document.body}
-    />
-
-    {/* Filter Dojang */}
-<Select
-  unstyled
-  value={{
-    value: filterDojang,
-    label:
-      filterDojang === "ALL"
-        ? "Semua Dojang"
-        : dojangOptions.find((opt) => opt.value === filterDojang)?.label || "Pilih Dojang",
-  }}
-  onChange={(selected) => setFilterDojang(selected?.value || "ALL")}
-  options={[{ value: "ALL", label: "Semua Dojang" }, ...dojangOptions]}
-  placeholder="Pilih dojang"
-  classNames={{
-    control: () =>
-      `w-full flex items-center border-2 border-gray-300 
-       rounded-2xl md:rounded-3xl px-3 md:px-4 py-2 md:py-3 gap-2 md:gap-3 
-       backdrop-blur-sm text-sm md:text-base 
-       transition-all duration-300 hover:shadow`,
-    valueContainer: () => "px-1",
-    placeholder: () => "text-gray-400 font-plex text-xs md:text-sm",
-    menu: () =>
-      "border border-red/20 bg-white/95 backdrop-blur-sm rounded-xl shadow-xl mt-2 overflow-hidden z-50",
-    menuList: () => "max-h-32 overflow-y-auto",
-    option: ({ isFocused, isSelected }) =>
-      [
-        "px-3 md:px-4 py-2 md:py-3 cursor-pointer font-plex text-xs md:text-sm transition-colors duration-200 hover:text-red",
-        isFocused ? "bg-red/10 text-red" : "text-black/80",
-        isSelected ? "bg-red text-white" : "",
-      ].join(" "),
-  }}
-  menuPortalTarget={document.body}
-/>
-
-  </div>
-</div>
-
-
-    {/* TABLE */}
-    <div className="bg-white/90 backdrop-blur-md border border-white/40 rounded-2xl shadow-lg overflow-hidden">
-      <div className="overflow-x-auto">
-        <table className="w-full text-left text-base border-collapse">
-          <thead className="bg-yellow">
-  <tr>
-    {[
-      "Nama Peserta",
-      "Kategori",
-      "Level",
-      "Kelas",
-      "Usia/Kelompok",
-      "Jenis Kelamin",
-      "Dojang",
-      "Status",
-      "Aksi",
-    ].map((h) => {
-      const isCenter = ["Usia/Kelompok", "Jenis Kelamin", "Status", "Aksi"].includes(h);
-      return (
-        <th
-          key={h}
-          className={`py-5 px-6 font-semibold text-black/80 ${isCenter ? "text-center" : "text-left"}`}
-        >
-          {h}
-        </th>
-      );
-    })}
-  </tr>
-</thead>
-
-<tbody>
-  {displayedPesertas.length === 0 && !loadingAtlet ? (
-    <tr>
-      <td colSpan={9} className="py-16 text-center text-gray-400">
-        <Users size={52} className="mx-auto mb-4" />
-        Tidak ada peserta yang ditemukan
-      </td>
-    </tr>
-  ) : (
-    displayedPesertas.map((peserta: any) => {
-      const isTeam = peserta.is_team;
-
-      const namaPeserta = isTeam
-        ? peserta.anggota_tim?.map((m: any) => m.atlet.nama_atlet).join(", ")
-        : peserta.atlet?.nama_atlet || "-";
-
-      const cabang = peserta.kelas_kejuaraan?.cabang || "-";
-      const levelEvent = peserta.kelas_kejuaraan?.kategori_event?.nama_kategori || "-";
-
-      const kelasBerat =
-        cabang === "KYORUGI"
-          ? peserta.kelas_kejuaraan?.kelas_berat?.nama_kelas || (peserta.atlet?.berat_badan ? `${peserta.atlet.berat_badan} kg` : "-")
-          : "-";
-
-      const kelasPoomsae =
-        cabang === "POOMSAE"
-          ? peserta.kelas_kejuaraan?.poomsae?.nama_kelas || peserta.atlet?.belt || "-"
-          : "-";
-
-      const kelasUsia = peserta.kelas_kejuaraan?.kelompok?.nama_kelompok || "-";
-
-      const jenisKelamin = !isTeam ? peserta.atlet?.jenis_kelamin || "-" : "-";
-
-      const dojang = isTeam && peserta.anggota_tim?.length
-        ? peserta.anggota_tim[0]?.atlet?.dojang?.nama_dojang || "-"
-        : peserta.atlet?.dojang?.nama_dojang || "-";
-
-      const statusBadge = (status: string) => {
-        const map = {
-          PENDING: "bg-yellow-100 text-yellow-800",
-          APPROVED: "bg-green-100 text-green-800",
-          REJECTED: "bg-red-100 text-red-800",
-        };
-        return (
-          <span className={`px-2 md:px-3 py-1 rounded-full text-xs md:text-sm font-semibold ${map[status as keyof typeof map]}`}>
-            {status}
-          </span>
-        );
-      };
-
-      return (
-        <tr
-          key={peserta.id_peserta_kompetisi}
-          className="border-b border-gray-200 hover:bg-yellow-50 transition-colors cursor-pointer"
-          onClick={() => handleRowClick(peserta)}
-        >
-          <td className="py-2 md:py-4 px-4 md:px-6 font-medium text-gray-800 text-sm md:text-base">{namaPeserta}</td>
-          <td className="py-2 md:py-4 px-4 md:px-6 text-gray-700 text-sm md:text-base">{`${cabang}`}</td>
-          <td className="py-2 md:py-4 px-4 md:px-6 text-gray-700 text-sm md:text-base">{levelEvent}</td>
-          <td className="py-2 md:py-4 px-4 md:px-6 text-gray-700 text-sm md:text-base">{kelasBerat || kelasPoomsae}</td>
-          <td className="py-2 md:py-4 px-4 md:px-6 text-center text-gray-700 text-sm md:text-base">{kelasUsia}</td>
-          <td className="py-2 md:py-4 px-4 md:px-6 text-center text-gray-700 text-sm md:text-base">{jenisKelamin}</td>
-          <td className="py-2 md:py-4 px-4 md:px-6 text-gray-700 text-sm md:text-base">{dojang}</td>
-          <td className="py-2 md:py-4 px-4 md:px-6 text-center">{statusBadge(peserta.status)}</td>
-          <td className="py-2 md:py-4 px-4 md:px-6 flex gap-2 justify-center">
-            <button
-              onClick={(e) => { e.stopPropagation(); handleApproval(peserta.id_peserta_kompetisi); }}
-              disabled={processing === peserta.id_peserta_kompetisi}
-              className="flex items-center gap-1 px-3 md:px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50 transition-all text-xs md:text-sm font-medium"
-            >
-              {processing === peserta.id_peserta_kompetisi ? <Loader size={16} className="animate-spin" /> : <CheckCircle size={16} />}
-              Setujui
-            </button>
-            <button
-              onClick={(e) => { e.stopPropagation(); handleRejection(peserta.id_peserta_kompetisi); }}
-              disabled={processing === peserta.id_peserta_kompetisi}
-              className="flex items-center gap-1 px-3 md:px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition-all text-xs md:text-sm font-medium"
-            >
-              {processing === peserta.id_peserta_kompetisi ? <Loader size={16} className="animate-spin" /> : <XCircle size={16} />}
-              Tolak
-            </button>
-          </td>
-        </tr>
-      );
-      
-    })
-  )}
-</tbody>
-
-        </table>
-      </div>
-    </div>
-    <SelectTeamMemberModal
-  isOpen={teamModalOpen}
-  anggotaTim={selectedTeam}
-  onClose={() => setTeamModalOpen(false)}
-  onSelect={(atlet) => {
-    navigate(`/dashboard/atlit/${atlet.id_atlet}`);
-    setTeamModalOpen(false);
-  }}
-/>
-  </div>
-);
-
+  );
 };
 
 export default AllPeserta;
