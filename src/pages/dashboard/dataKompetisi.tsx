@@ -204,13 +204,12 @@ if (showPeserta && selectedKompetisi) {
           </div>
 
           {/* Peserta Table */}
-          <div className="w-full bg-white/60 backdrop-blur-sm rounded-3xl p-6 shadow-xl border border-white/50">
+          <div className="w-full bg-white backdrop-blur-sm rounded-3xl p-6 shadow-xl border border-white/50">
             {/* Desktop Table View */}
             <div className="hidden lg:block">
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                <div className="overflow-x-auto">
 
-                  <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 mb-6">
+                                  <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 mb-6">
                     <div className="space-y-4">
                       {/* Search */}
                       <div className="relative">
@@ -334,6 +333,7 @@ if (showPeserta && selectedKompetisi) {
                     </div>
                   </div>
 
+                <div className="overflow-x-auto">
                   <table className="w-full min-w-[1000px]">
                     <thead className="bg-yellow-400">
                       <tr>
