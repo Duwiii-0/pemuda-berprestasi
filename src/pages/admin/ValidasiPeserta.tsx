@@ -611,7 +611,7 @@ const handleRejection = async (id: number) => {
                         <td className="py-4 px-4 text-gray-700 text-sm">{kelasBerat}</td>
                         <td className="py-4 px-4 text-center text-gray-700 text-sm">{kelasPoomsae}</td>
                         <td className="py-4 px-4 text-center text-gray-700 text-sm">
-                          {peserta.kelas_kejuaraan?.kelompok?.nama_kelompok || (peserta.atlet?.umur ? `${peserta.atlet.umur} th` : "-")}
+                          {peserta.kelas_kejuaraan?.kelompok?.nama_kelompok }
                         </td>
                         <td className="py-4 px-4 text-center">
                           {!isTeam 
