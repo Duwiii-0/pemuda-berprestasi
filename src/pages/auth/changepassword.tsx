@@ -4,6 +4,7 @@ import { Mail, Eye, EyeOff, KeyRound } from "lucide-react";
 import GeneralButton from "../../components/generalButton";
 import TextInput from "../../components/textInput";
 import toast from "react-hot-toast";
+import Logo from '../../assets/logo/logo.png';
 
 const ResetPassword = () => {
   const navigate = useNavigate();
@@ -112,7 +113,7 @@ const ResetPassword = () => {
             <div className="relative mb-4 md:mb-6">
               <div className="absolute -inset-1 bg-gradient-to-r from-red/10 to-red/5 rounded-full blur-md opacity-60"></div>
               <img 
-                src="src/assets/logo/logojv.png" 
+                src={Logo}
                 alt="Taekwondo Logo" 
                 className="relative h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20 mx-auto drop-shadow-md"
               />
