@@ -586,8 +586,6 @@ const handleRejection = async (id: number) => {
           </div>
           <div>
             <label className="block text-black/60 text-xs mb-2 font-medium font-inter">Kategori</label>
-    import Select from "react-select";
-
 <Select
   unstyled
   value={
