@@ -179,51 +179,20 @@ const LandingPage = () => {
                     Sambutan
                   </span>
                   <span className="block bg-gradient-to-r from-red/90 via-red to-red/90 bg-clip-text text-transparent">
-                    Ketua
-                  </span>
-                  <span className="block bg-gradient-to-r from-red/80 via-red/90 to-red bg-clip-text text-transparent">
-                    Pelaksana
+                    Ketua Pelaksana
                   </span>
                 </h2>
                 <div className="absolute -bottom-2 left-1/2 lg:left-0 transform -translate-x-1/2 lg:transform-none w-16 md:w-20 h-1 bg-gradient-to-r from-red to-red/60 rounded-full"></div>
               </div>
               
               {/* Enhanced Description */}
-              <div className="space-y-4 md:space-y-6 max-w-2xl mx-auto lg:mx-0">
+              <div className="space-y-4 md:space-y-6 max-w-6xl mx-auto lg:mx-0">
                 <p className="text-sm md:text-base lg:text-lg xl:text-xl font-plex text-black/85 leading-relaxed font-light px-2 lg:px-0">
                   Salam hormat Sabum, Sabumnim dan orang tua Atlet Taekwondo Indonesia. Tahun ini Pengurus Pengprov TISS mengadakan event Sriwijaya Internasional Championship 2025 Dimana semua itu dapat terwujud dengan adanya kerjasama dan dukungan dari seluruh pihak, para insan Taekwondoin Sumatera Selatan, KONI Sumatera Selatan dan
                   Pemerintah Provinsi Sumatera Selatan. Pelaksanaan event kejuaraan ini bertempat di GOR RANAU JSC PALEMBANG
                   Untuk itu kami mengundang semua untuk bergabung pada kegiatan tersebut.
                   Semoga dengan diadakannya event ini, dapat menjadi tolak ukur para atlet-atlet muda, serta dapat memenuhi harapan Insan Taekwondo, agar Atlet dapat dipandang di kancah Nasional dan Internasional nantinya. Aamiin.
                 </p>
-
-              </div>
-
-              {/* Enhanced Features Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4 pt-6 md:pt-8 px-2 lg:px-0">
-                <div className="group space-y-2 md:space-y-3 p-3 md:p-4 lg:p-5 rounded-xl hover:bg-red/[0.02] transition-all duration-500 hover:shadow-lg hover:shadow-red/10">
-                  <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-red/10 to-red/5 rounded-xl flex items-center justify-center group-hover:from-red/15 group-hover:to-red/8 transition-all duration-300 group-hover:scale-110">
-                    <Trophy className="w-4 h-4 md:w-5 md:h-5 text-red" strokeWidth={1.5} />
-                  </div>
-                  <h3 className="text-sm md:text-base font-plex font-semibold text-red group-hover:text-red/90 transition-colors">
-                    Standar PBTI
-                  </h3>
-                  <p className="text-xs md:text-sm text-black/70 font-plex leading-relaxed">
-                    Kejuaraan resmi di bawah naungan Pengurus Besar Taekwondo Indonesia
-                  </p>
-                </div>
-                
-                <div className="group space-y-2 md:space-y-3 p-3 md:p-4 lg:p-5 rounded-xl hover:bg-red/[0.02] transition-all duration-500 hover:shadow-lg hover:shadow-red/10">
-                  <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-red/10 to-red/5 rounded-xl flex items-center justify-center group-hover:from-red/15 group-hover:to-red/8 transition-all duration-300 group-hover:scale-110">
-                    <Award className="w-4 h-4 md:w-5 md:h-5 text-red" strokeWidth={1.5} />
-                  </div>
-                  <h3 className="text-sm md:text-base font-plex font-semibold text-red group-hover:text-red/90 transition-colors">
-                    Multi Kategori
-                  </h3>
-                  <p className="text-xs md:text-sm text-black/70 font-plex leading-relaxed">
-                    Kyorugi, Poomsae, dari pemula hingga prestasi, untuk semua kelompok usia
-                  </p>
-                </div>
               </div>
             </div>
 
