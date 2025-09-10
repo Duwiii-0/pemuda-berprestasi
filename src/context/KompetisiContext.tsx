@@ -200,7 +200,7 @@ export const KompetisiProvider = ({ children }: { children: ReactNode }) => {
   const [pesertaList, setPesertaList] = useState<PesertaKompetisi[]>([]);
   const [atletPagination, setAtletPagination] = useState<PaginationMeta>({
     page: 1,
-    limit: 20,
+    limit: 100,
     total: 0,
     totalPages: 0,
   });
