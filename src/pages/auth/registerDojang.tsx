@@ -298,7 +298,7 @@ const RegisterDojang = () => {
             {/* Email */}
             <div className="space-y-1.5">
               <label className="text-xs sm:text-sm md:text-base font-plex font-medium text-black/80 block">
-                Email <span className="text-xs text-black/50">(Opsional)</span>
+                Email <span className="text-xs text-black/50"></span>
               </label>
               <div className="relative group">
                 <TextInput
@@ -316,7 +316,7 @@ const RegisterDojang = () => {
             {/* No HP */}
             <div className="space-y-1.5">
               <label className="text-xs sm:text-sm md:text-base font-plex font-medium text-black/80 block">
-                No HP <span className="text-xs text-black/50">(Opsional)</span>
+                No HP <span className="text-xs text-black/50"></span>
               </label>
               <div className="relative group">
                 <TextInput
@@ -335,7 +335,7 @@ const RegisterDojang = () => {
               {/* Provinsi */}
               <div className="space-y-1.5">
                 <label className="text-xs sm:text-sm md:text-base font-plex font-medium text-black/80 block">
-                  Provinsi <span className="text-xs text-black/50">(Opsional)</span>
+                  Provinsi <span className="text-xs text-black/50"></span>
                 </label>
                 <Select<SelectOption>
                   unstyled
@@ -373,7 +373,7 @@ const RegisterDojang = () => {
               {/* Kota */}
               <div className="space-y-1.5">
                 <label className="text-xs sm:text-sm md:text-base font-plex font-medium text-black/80 block">
-                  Kota <span className="text-xs text-black/50">(Opsional)</span>
+                  Kota <span className="text-xs text-black/50"></span>
                 </label>
                 <Select<SelectOption>
                   unstyled
@@ -412,7 +412,7 @@ const RegisterDojang = () => {
             {/* Negara */}
             <div className="space-y-1.5">
               <label className="text-xs sm:text-sm md:text-base font-plex font-medium text-black/80 block">
-                Negara <span className="text-xs text-black/50">(Opsional)</span>
+                Negara <span className="text-xs text-black/50"></span>
               </label>
               <div className="relative group">
                 <TextInput
@@ -428,7 +428,7 @@ const RegisterDojang = () => {
             {/* Logo Upload - Moved to bottom as requested */}
             <div className="space-y-1.5 pt-2 sm:pt-3 md:pt-4">
               <label className="text-xs sm:text-sm md:text-base font-plex font-medium text-black/80 block">
-                Logo Dojang <span className="text-xs text-black/50">(Opsional)</span>
+                Logo Dojang <span className="text-xs text-black/50"></span>
               </label>
               
               {logoPreview ? (
