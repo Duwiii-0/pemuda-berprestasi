@@ -195,7 +195,7 @@ const Profile = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { user } = useAuth();
 
-  const { fetchAtletById } = useAtletContext();
+const { fetchAtletById, updateAtlet } = useAtletContext();
 
   useEffect(() => {
     if (id) {
@@ -303,8 +303,6 @@ const Profile = () => {
     setIsSubmitting(false);
   }
 };
-
-const { fetchAtletById, updateAtlet } = useAtletContext();
 
 const handleInputChange = (field: keyof AtletWithFiles, value: any) => {
   if (!formData) return;
