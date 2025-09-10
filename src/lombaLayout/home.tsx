@@ -418,7 +418,7 @@ const LandingPage = () => {
                           
                 {/* Enhanced Map - More Prominent */}
                 <div className="w-full">
-                    <div className="group flex items-center justify-center gap-3 md:gap-4 p-4 md:p-5 rounded-xl ">
+                    <div className="group flex w-full items-center justify-center gap-3 md:gap-4 p-4 md:p-5 rounded-xl ">
                       <div className="flex-1 min-w-0">
                         <h4 className="font-bebas text-red text-lg md:text-xl lg:text-3xl mb-2">Lokasi Pertandingan</h4>
                         <p className="text-sm md:text-base font-plex text-black/80 font-medium">GOR Jakabaring (Gor Ranau JSC), Palembang</p>
