@@ -200,7 +200,7 @@ const LandingPage = () => {
                 <div className="group/card flex flex-col w-full gap-4 md:gap-6 justify-center items-center hover:scale-[1.02] transition-all duration-500">
                   
                   {/* Enhanced Image Container */}
-                  <div className="relative overflow-hidden rounded-xl mx-auto group-hover/card:scale-105 transition-transform duration-700">
+                  <div className="relative overflow-hidden rounded-xl mx-auto group-hover/card:scale-115 transition-transform duration-700">
                     {/* Subtle overlay patterns */}                    
                     <img 
                       src={ketua}
