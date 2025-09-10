@@ -80,6 +80,38 @@ useEffect(() => {
 }, [isOpen, fetchAgeOptions, getRegistrationsByKompetisi, kompetisiId]);
 
 
+const getAgeOptions = () => {
+  if (formData.styleType === "KYORUGI" && formData.categoryType === "prestasi") {
+    return [
+      { value: "1", label: "Super Pra-Cadet" },
+      { value: "2", label: "Pra-Cadet" },
+      { value: "4", label: "Junior" },
+      { value: "5", label: "Senior" },
+    ];
+  }
+
+  if (formData.styleType === "KYORUGI" && formData.categoryType === "pemula") {
+    return [
+      { value: "2", label: "Pra-Cadet" },
+      { value: "3", label: "Cadet" },
+      { value: "4", label: "Junior" },
+      { value: "5", label: "Senior" },
+    ];
+  }
+
+  if (formData.styleType === "POOMSAE" && formData.categoryType === "prestasi") {
+    return [
+      { value: "2", label: "Pra-Cadet" },
+      { value: "3", label: "Cadet" },
+      { value: "4", label: "Junior" },
+      { value: "5", label: "Senior" },
+    ];
+  }
+
+  // default: tidak ada opsi
+  return [];
+};
+
   // Fetch kelas usia waktu modal dibuka
   useEffect(() => {
     if (isOpen) {
@@ -637,13 +669,7 @@ const handleSubmit = async () => {
                   </label>
                   <LockedSelect
                     unstyled
-                    options={[
-                      { value: "1", label: "Super Pra-Cadet" },
-                      { value: "2", label: "Pra-Cadet" },
-                      { value: "3", label: "Cadet" },
-                      { value: "4", label: "Junior" },
-                      { value: "5", label: "Senior" },
-                    ]}
+                    options={getAgeOptions()}
                     value={formData.selectedAge}
                     onChange={(value: OptionType | null) => setFormData({
                       ...formData, 
