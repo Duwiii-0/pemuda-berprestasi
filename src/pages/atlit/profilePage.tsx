@@ -95,9 +95,7 @@ const FilePreview = ({
         const url = URL.createObjectURL(file);
         setPreviewUrl(url);
         setPreviewError(false);
-        return () => {
-          URL.revokeObjectURL(url);
-        };
+        return () => URL.revokeObjectURL(url);
       } catch (error) {
         console.error('Error creating preview URL:', error);
         setPreviewError(true);
@@ -111,91 +109,100 @@ const FilePreview = ({
   const hasFile = file || existingPath;
   
   const getDisplayFileName = () => {
-    if (file) {
-      return file.name;
-    }
+    if (file) return file.name;
     if (existingPath) {
-      const pathParts = existingPath.split('/');
-      const fileName = pathParts[pathParts.length - 1];
-      
-      if (fileName.length > 50 || fileName.includes('_') && fileName.length > 30) {
-        return `${label} (File tersimpan)`;
-      }
-      
-      return fileName;
+      const fileName = existingPath.split('/').pop() || label;
+      return fileName.length > 50 ? `${label} (File tersimpan)` : fileName;
     }
     return label;
   };
 
-  // FUNCTION UNTUK DOWNLOAD FILE
-const handleDownload = async () => {
-  if (!existingPath) {
-    console.log('❌ No existing path for download');
-    return;
-  }
-  
-  try {
-    const baseUrl = 'https://pemudaberprestasi.com';
+  // PERBAIKAN: Fungsi download yang lebih robust
+  const handleDownload = async () => {
+    if (!existingPath) {
+      toast.error('Tidak ada file untuk didownload');
+      return;
+    }
     
-    // Tentukan folder berdasarkan label
-    let folder = '';
-    if (label.toLowerCase().includes('akte')) folder = 'akte_kelahiran';
-    else if (label.toLowerCase().includes('foto')) folder = 'pas_foto';  
-    else if (label.toLowerCase().includes('sertifikat') || label.toLowerCase().includes('belt')) folder = 'sertifikat_belt';
-    else if (label.toLowerCase().includes('ktp')) folder = 'ktp';
-    
-    // GUNAKAN STATIC FILE SERVING LANGSUNG
-    const downloadUrl = `${baseUrl}/uploads/atlet/${folder}/${existingPath}`;
-    
-    console.log(`📥 Downloading from: ${downloadUrl}`);
-    
-    // Buat link download
-    const link = document.createElement('a');
-    link.href = downloadUrl;
-    link.download = getDisplayFileName();
-    link.target = '_blank';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    toast.success(`Download ${label} dimulai!`);
-    
-  } catch (error) {
-    console.error('❌ Download error:', error);
-    toast.error('Gagal mendownload file');
-  }
-};
-  // FUNCTION UNTUK PREVIEW/VIEW FILE  
-const getPreviewUrl = () => {
-  if (file && previewUrl) {
-    return previewUrl;
-  }
-  
-  if (existingPath) {
-    const baseUrl = 'https://pemudaberprestasi.com';
-    
-    // Tentukan folder berdasarkan label
-    let folder = '';
-    if (label.toLowerCase().includes('akte')) folder = 'akte_kelahiran';
-    else if (label.toLowerCase().includes('foto')) folder = 'pas_foto';  
-    else if (label.toLowerCase().includes('sertifikat') || label.toLowerCase().includes('belt')) folder = 'sertifikat_belt';
-    else if (label.toLowerCase().includes('ktp')) folder = 'ktp';
-    
-    // GUNAKAN STATIC FILE SERVING YANG SUDAH ADA DI APP.TS
-    const staticUrl = `${baseUrl}/uploads/atlet/${folder}/${existingPath}`;
-    
-    console.log("🌐 Static URL:", staticUrl);
-    return staticUrl;
-  }
-  
-  return null;
-};
+    try {
+      const baseUrl = 'https://pemudaberprestasi.com';
+      
+      // Tentukan folder berdasarkan label
+      const folderMap: Record<string, string> = {
+        'akte': 'akte_kelahiran',
+        'foto': 'pas_foto',
+        'sertifikat': 'sertifikat_belt', 
+        'belt': 'sertifikat_belt',
+        'ktp': 'ktp'
+      };
+      
+      const folder = Object.keys(folderMap).find(key => 
+        label.toLowerCase().includes(key)
+      );
+      
+      if (!folder) {
+        toast.error('Tidak dapat menentukan jenis file');
+        return;
+      }
+      
+      const downloadUrl = `${baseUrl}/uploads/atlet/${folderMap[folder]}/${existingPath}`;
+      console.log(`📥 Downloading from: ${downloadUrl}`);
+      
+      // Test apakah file accessible terlebih dahulu
+      const testResponse = await fetch(downloadUrl, { method: 'HEAD' });
+      if (!testResponse.ok) {
+        toast.error('File tidak ditemukan di server');
+        return;
+      }
+      
+      // Buat link download
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = getDisplayFileName();
+      link.target = '_blank';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast.success(`Download ${label} berhasil!`);
+      
+    } catch (error) {
+      console.error('❌ Download error:', error);
+      toast.error('Gagal mendownload file');
+    }
+  };
 
+  // PERBAIKAN: Fungsi preview yang lebih robust
+  const getPreviewUrl = () => {
+    if (file && previewUrl) return previewUrl;
+    
+    if (existingPath) {
+      const baseUrl = 'https://pemudaberprestasi.com';
+      
+      const folderMap: Record<string, string> = {
+        'akte': 'akte_kelahiran',
+        'foto': 'pas_foto',
+        'sertifikat': 'sertifikat_belt',
+        'belt': 'sertifikat_belt',
+        'ktp': 'ktp'
+      };
+      
+      const folder = Object.keys(folderMap).find(key => 
+        label.toLowerCase().includes(key)
+      );
+      
+      if (folder) {
+        const staticUrl = `${baseUrl}/uploads/atlet/${folderMap[folder]}/${existingPath}`;
+        console.log("🌐 Preview URL:", staticUrl);
+        return staticUrl;
+      }
+    }
+    
+    return null;
+  };
 
   const isImageFile = () => {
-    if (file) {
-      return file.type.startsWith('image/');
-    }
+    if (file) return file.type.startsWith('image/');
     if (existingPath) {
       const ext = existingPath.toLowerCase().split('.').pop();
       return ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext || '');
@@ -226,16 +233,18 @@ const getPreviewUrl = () => {
       </div>
       
       <div className="flex gap-2">
-        {/* Preview Image - Only for images and if preview works */}
+        {/* Preview Image */}
         {displayUrl && !previewError && isImageFile() && (
           <div className="relative w-20 h-20 flex-shrink-0">
             <img 
               src={displayUrl} 
               alt={`Preview ${label}`}
               className="w-full h-full object-cover rounded-lg border border-gray-200"
-              onError={() => {
+              onError={(e) => {
                 console.log(`❌ Preview failed for: ${displayUrl}`);
                 setPreviewError(true);
+                // Fallback ke icon jika gambar gagal load
+                (e.target as HTMLImageElement).style.display = 'none';
               }}
             />
           </div>
@@ -243,7 +252,7 @@ const getPreviewUrl = () => {
         
         {/* File icon untuk non-image atau jika preview error */}
         {(!displayUrl || previewError || !isImageFile()) && (
-          <div className="flex items-center gap-2 text-sm text-gray-600 w-20 h-20 border rounded-lg justify-center">
+          <div className="flex items-center gap-2 text-sm text-gray-600 w-20 h-20 border rounded-lg justify-center bg-gray-50">
             <IdCard size={24} className="text-gray-400" />
           </div>
         )}
@@ -255,7 +264,7 @@ const getPreviewUrl = () => {
             <button
               onClick={() => {
                 console.log(`🔍 Opening preview: ${displayUrl}`);
-                window.open(displayUrl, '_blank');
+                window.open(displayUrl, '_blank', 'noopener,noreferrer');
               }}
               className="flex items-center gap-1 px-2 py-1 text-xs bg-blue-100 hover:bg-blue-200 text-blue-600 rounded transition-colors"
               type="button"
@@ -265,7 +274,7 @@ const getPreviewUrl = () => {
             </button>
           )}
           
-          {/* Download button - ALWAYS show for existing files */}
+          {/* Download button */}
           {existingPath && (
             <button
               onClick={handleDownload}
@@ -273,17 +282,14 @@ const getPreviewUrl = () => {
               type="button"
             >
               <Download size={12} />
-              Download {label}
+              Download
             </button>
           )}
           
-          {/* Debug info */}
-          {process.env.NODE_ENV === 'development' && (
-            <div className="text-xs text-gray-500 mt-1">
-              Path: {existingPath || 'No path'}<br/>
-              Preview Error: {previewError ? 'Yes' : 'No'}
-            </div>
-          )}
+          {/* Status indicator */}
+          <div className="text-xs text-gray-500">
+            {file ? '📎 File baru' : existingPath ? '💾 File tersimpan' : 'Tidak ada file'}
+          </div>
         </div>
       </div>
     </div>
@@ -314,11 +320,11 @@ useEffect(() => {
         
         const dataWithFiles: AtletWithFiles = {
           ...data,
-          // Map existing file paths dari field API yang sebenarnya
-          akte_kelahiran_path: data.akte_kelahiran, // Bukan data.akte_kelahiran_path
-          pas_foto_path: data.pas_foto,             // Bukan data.pas_foto_path  
-          sertifikat_belt_path: data.sertifikat_belt, // dst
-          ktp_path: data.ktp,
+          // PERBAIKAN: Map existing file paths dengan benar
+          akte_kelahiran_path: data.akte_kelahiran || undefined,
+          pas_foto_path: data.pas_foto || undefined,             
+          sertifikat_belt_path: data.sertifikat_belt || undefined,
+          ktp_path: data.ktp || undefined,
           // Initialize File objects as null
           akte_kelahiran: null,
           pas_foto: null,
@@ -344,8 +350,7 @@ useEffect(() => {
     }
     setIsEditing(false);
   };
-
-  const handleUpdate = async () => {
+const handleUpdate = async () => {
   if (!formData || isSubmitting) return;
   
   setIsSubmitting(true);
@@ -387,17 +392,22 @@ useEffect(() => {
     if (formData.sertifikat_belt) formDataSend.append('sertifikat_belt', formData.sertifikat_belt);
     if (formData.ktp) formDataSend.append('ktp', formData.ktp);
 
-    // Use context function dengan ID
-    const result = await updateAtlet(Number(id), formDataSend);
-
-    if (result) {
-      const updatedData = {
+if (result) {
+      // PERBAIKAN: Refresh data dengan file paths yang baru
+      const updatedData: AtletWithFiles = {
         ...result,
+        // Map file paths yang baru dari response
+        akte_kelahiran_path: result.akte_kelahiran || undefined,
+        pas_foto_path: result.pas_foto || undefined,
+        sertifikat_belt_path: result.sertifikat_belt || undefined,
+        ktp_path: result.ktp || undefined,
+        // Reset file objects
         akte_kelahiran: null,
         pas_foto: null,
         sertifikat_belt: null,
         ktp: null,
       };
+      
       setFormData(updatedData);
       setOriginalData(updatedData);
       setIsEditing(false);
