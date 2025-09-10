@@ -251,23 +251,32 @@ const Profile = () => {
 const { fetchAtletById, updateAtlet } = useAtletContext();
 
   useEffect(() => {
-    if (id) {
-      const atletId = Number(id);
-      fetchAtletById(atletId).then((data) => {
-        if (data) {
-          const dataWithFiles: AtletWithFiles = {
-            ...data,
-            akte_kelahiran: null,
-            pas_foto: null,
-            sertifikat_belt: null,
-            ktp: null,
-          };
-          setFormData(dataWithFiles);
-          setOriginalData(dataWithFiles);
-        }
-      });
-    }
-  }, [id, fetchAtletById]);
+  if (id) {
+    const atletId = Number(id);
+    fetchAtletById(atletId).then((data) => {
+      if (data) {
+        // DEBUG: Tampilkan semua data yang diterima dari API
+        console.log("📋 RAW ATLET DATA:", data);
+        console.log("🖼️ FILE PATHS:", {
+          akte_kelahiran_path: data.akte_kelahiran_path,
+          pas_foto_path: data.pas_foto_path,
+          sertifikat_belt_path: data.sertifikat_belt_path,
+          ktp_path: data.ktp_path
+        });
+        
+        const dataWithFiles: AtletWithFiles = {
+          ...data,
+          akte_kelahiran: null,
+          pas_foto: null,
+          sertifikat_belt: null,
+          ktp: null,
+        };
+        setFormData(dataWithFiles);
+        setOriginalData(dataWithFiles);
+      }
+    });
+  }
+}, [id, fetchAtletById]);
 
   const handleCancel = () => {
     if (originalData) {
