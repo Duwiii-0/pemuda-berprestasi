@@ -584,28 +584,33 @@ const DataKompetisi = () => {
                 </div>
               </div>
             </div>
-
+            
             {/* Registration Button */}
             <div className="mb-6">
-              <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between bg-gradient-to-r from-red/10 to-yellow/10 rounded-2xl p-4 sm:p-6 border border-red/20">
-                <div className="flex-1">
-                  <h3 className="font-bebas text-xl sm:text-2xl text-black/80 mb-1">
-                    Daftarkan Atlet Baru
-                  </h3>
-                  <p className="font-plex text-sm sm:text-base text-black/60">
-                    Tambahkan atlet ke kompetisi {selectedKompetisi.nama_event}
-                  </p>
-                </div>
-                <div className="w-full sm:w-auto">
-                  <button
-                    onClick={() => navigate('/dashboard/register-atlet', { 
-                      state: { kompetisiId: selectedKompetisi.id_kompetisi } 
-                    })}
-                    className="w-full sm:w-auto bg-gradient-to-r from-red to-red/90 hover:from-red/90 hover:to-red text-white font-plex font-semibold px-6 py-3 rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-105 flex items-center justify-center gap-2"
-                  >
-                    <Users size={20} />
-                    <span className="whitespace-nowrap">Daftar Atlet</span>
-                  </button>
+              <div className="bg-gradient-to-r from-red/5 via-yellow/5 to-red/5 rounded-2xl p-4 lg:p-6 border border-red/20 shadow-sm">
+                <div className="flex flex-col gap-4">
+                  {/* Header */}
+                  <div className="text-center lg:text-left">
+                    <h3 className="font-bebas text-xl lg:text-2xl text-black/80 mb-1">
+                      Daftarkan Atlet Baru
+                    </h3>
+                    <p className="font-plex text-sm lg:text-base text-black/60">
+                      Tambahkan atlet ke kompetisi {selectedKompetisi.nama_event}
+                    </p>
+                  </div>
+                  
+                  {/* Button */}
+                  <div className="flex justify-center lg:justify-start">
+                    <button
+                      onClick={() => navigate('/lomba', { 
+                        state: { kompetisiId: selectedKompetisi.id_kompetisi } 
+                      })}
+                      className="bg-gradient-to-r from-red to-red/90 hover:from-red/90 hover:to-red text-white font-plex font-semibold px-8 py-3 rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-105 flex items-center gap-2 min-w-[200px] justify-center"
+                    >
+                      <Users size={20} />
+                      <span>Daftar Atlet</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
