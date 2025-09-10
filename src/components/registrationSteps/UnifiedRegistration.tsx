@@ -666,7 +666,9 @@ const handleSubmit = async () => {
                   </label>
                   <LockedSelect
                     unstyled
-                    options={poomsaeOptions}
+                    options={[
+                      { value: "Individu", label: "Individu" }
+                    ]}
                     value={formData.selectedPoomsae}
                     onChange={(value: OptionType | null) => setFormData({
                       ...formData, 

@@ -259,7 +259,7 @@ const LandingPage = () => {
                         Muhammad Rafif Dwiarka
                       </h3>
                       <p className="font-plex text-xs md:text-sm text-black/70 font-medium tracking-wide">
-                        Direktur Sriwijaya Championship
+                        Ketua Panitia Kejuaraan Sriwijaya
                       </p>
                     </div>
                     <div className="w-12 md:w-16 h-0.5 bg-gradient-to-r from-red/60 to-transparent mx-auto"></div>
