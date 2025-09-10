@@ -961,6 +961,7 @@ const DataKompetisi = () => {
                   <tr>
                     <th className="px-6 py-4 text-left font-bebas">Nama Kompetisi</th>
                     <th className="px-6 py-4 text-center font-bebas">Tanggal Mulai</th>
+                    <th className="px-6 py-4 text-center font-bebas">Tanggal Selesai</th>
                     <th className="px-6 py-4 text-center font-bebas">Lokasi</th>
                     <th className="px-6 py-4 text-center font-bebas">Status</th>
                   </tr>
@@ -974,6 +975,7 @@ const DataKompetisi = () => {
                     >
                       <td className="px-6 py-4 font-plex">{k.nama_event}</td>
                       <td className="px-6 py-4 text-center font-plex">{formatTanggal(k.tanggal_mulai)}</td>
+                      <td className="px-6 py-4 text-center font-plex">{formatTanggal(k.tanggal_selesai)}</td>
                       <td className="px-6 py-4 text-center font-plex">{k.lokasi || "-"}</td>
                       <td className="px-6 py-4 text-center">
                         <span className={`px-3 py-1 rounded-full text-md font-plex ${getStatusColor(k.status)}`}>
