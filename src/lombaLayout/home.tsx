@@ -102,7 +102,7 @@ const LandingPage = () => {
               {/* Main Title */}
               <div className="relative">
                 <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl 2xl:text-7xl font-bebas text-yellow leading-[0.9] tracking-wide drop-shadow-2xl">
-                  <span className="block bg-gradient-to-r from-yellow via-yellow/95 to-yellow/90 bg-clip-text text-transparent">
+                  <span className="block bg-gradient-to-r from-white via-white/95 to-white/90 bg-clip-text text-transparent">
                     Sriwijaya International
                   </span>
                   <span className="block bg-gradient-to-r from-white via-white/95 to-white/90 bg-clip-text text-transparent">
@@ -114,14 +114,14 @@ const LandingPage = () => {
               
               {/* Year Badge */}
               <div className="inline-block bg-red/10 backdrop-blur-sm border border-red/30 rounded-xl px-6 py-3">
-                <span className="text-2xl md:text-3xl lg:text-4xl font-bebas bg-gradient-to-r from-red to-red/90 bg-clip-text text-transparent">
+                <span className="text-2xl md:text-3xl lg:text-4xl font-bebas bg-gradient-to-r from-yellow to-yellow/90 bg-clip-text text-transparent">
                   2025
                 </span>
               </div>
               
               {/* Description */}
               <div className="max-w-4xl mx-auto">
-                <p className="text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl font-plex font-light text-black/95 leading-relaxed drop-shadow-lg">
+                <p className="text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl font-plex font-light text-white/95 leading-relaxed drop-shadow-lg">
                   Kompetisi taekwondo internasional bergengsi yang menggabungkan tradisi dan inovasi, 
                   menghadirkan standar kompetisi kelas dunia untuk para atlet berprestasi.
                 </p>
