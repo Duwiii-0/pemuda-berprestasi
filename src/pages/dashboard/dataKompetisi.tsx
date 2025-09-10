@@ -52,7 +52,7 @@ const DataKompetisi = () => {
   
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(10);
+  const [itemsPerPage] = useState(100);
   const [processing, setProcessing] = useState<number | null>(null);
 
   const kelasBeratOptions = [
@@ -221,7 +221,7 @@ const DataKompetisi = () => {
 
   const getPageNumbers = () => {
     const pageNumbers = [];
-    const maxVisiblePages = 5;
+    const maxVisiblePages = 100;
     
     if (totalPages <= maxVisiblePages) {
       for (let i = 1; i <= totalPages; i++) {
@@ -708,31 +708,6 @@ const DataKompetisi = () => {
                             }
                           </p>
                         </div>
-                      </div>
-                      
-                      <div className="flex gap-2">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleApproval(peserta.id_peserta_kompetisi);
-                          }}
-                          disabled={processing === peserta.id_peserta_kompetisi}
-                          className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50 text-xs font-medium transition-all"
-                        >
-                          {processing === peserta.id_peserta_kompetisi ? <Loader size={16} className="animate-spin" /> : <CheckCircle size={16} />}
-                          Setujui
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleRejection(peserta.id_peserta_kompetisi);
-                          }}
-                          disabled={processing === peserta.id_peserta_kompetisi}
-                          className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-50 text-xs font-medium transition-all"
-                        >
-                          {processing === peserta.id_peserta_kompetisi ? <Loader size={16} className="animate-spin" /> : <XCircle size={16} />}
-                          Tolak
-                        </button>
                       </div>
                     </div>
                   );
