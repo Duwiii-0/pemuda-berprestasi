@@ -110,17 +110,14 @@ const FilePreview = ({
 
   const hasFile = file || existingPath;
   
-  // PERBAIKAN: Tentukan nama file yang akan ditampilkan
   const getDisplayFileName = () => {
     if (file) {
-      return file.name; // Nama file yang baru diupload
+      return file.name;
     }
     if (existingPath) {
-      // Jika path adalah URL atau path panjang, ambil bagian terakhir
       const pathParts = existingPath.split('/');
       const fileName = pathParts[pathParts.length - 1];
       
-      // Jika nama file terlalu panjang (seperti hash), tampilkan label saja
       if (fileName.length > 50 || fileName.includes('_') && fileName.length > 30) {
         return `${label} (File tersimpan)`;
       }
@@ -130,32 +127,70 @@ const FilePreview = ({
     return label;
   };
 
-const getPreviewUrl = () => {
-  if (file && previewUrl) {
-    return previewUrl;
-  }
-  
-  if (existingPath) {
-    const baseUrl = 'https://pemudaberprestasi.com';
+  // FUNCTION UNTUK DOWNLOAD FILE
+  const handleDownload = async () => {
+    if (!existingPath) {
+      console.log('❌ No existing path for download');
+      return;
+    }
     
-    // Tentukan folder berdasarkan label
-    let folder = '';
-    if (label.toLowerCase().includes('akte')) folder = 'akte_kelahiran';
-    else if (label.toLowerCase().includes('foto')) folder = 'pas_foto';  
-    else if (label.toLowerCase().includes('sertifikat') || label.toLowerCase().includes('belt')) folder = 'sertifikat_belt';
-    else if (label.toLowerCase().includes('ktp')) folder = 'ktp';
-    
-    // Menggunakan endpoint file serving
-    const fileUrl = `${baseUrl}/api/atlet/files/${folder}/${existingPath}`;
-    
-    console.log("🌐 File URL:", fileUrl);
-    return fileUrl;
-  }
-  
-  return null;
-};
+    try {
+      const baseUrl = 'https://pemudaberprestasi.com';
+      
+      // Tentukan folder berdasarkan label
+      let folder = '';
+      if (label.toLowerCase().includes('akte')) folder = 'akte_kelahiran';
+      else if (label.toLowerCase().includes('foto')) folder = 'pas_foto';  
+      else if (label.toLowerCase().includes('sertifikat') || label.toLowerCase().includes('belt')) folder = 'sertifikat_belt';
+      else if (label.toLowerCase().includes('ktp')) folder = 'ktp';
+      
+      // URL download dengan endpoint khusus
+      const downloadUrl = `${baseUrl}/api/atlet/download/${folder}/${existingPath}`;
+      
+      console.log(`📥 Downloading from: ${downloadUrl}`);
+      
+      // Method 1: Window.open untuk trigger download
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = getDisplayFileName();
+      link.target = '_blank';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // Show feedback
+      toast.success(`Download ${label} dimulai!`);
+      
+    } catch (error) {
+      console.error('❌ Download error:', error);
+      toast.error('Gagal mendownload file');
+    }
+  };
 
-  // PERBAIKAN: Check apakah file adalah gambar berdasarkan ekstensi atau tipe
+  // FUNCTION UNTUK PREVIEW/VIEW FILE  
+  const getPreviewUrl = () => {
+    if (file && previewUrl) {
+      return previewUrl;
+    }
+    
+    if (existingPath) {
+      const baseUrl = 'https://pemudaberprestasi.com';
+      
+      let folder = '';
+      if (label.toLowerCase().includes('akte')) folder = 'akte_kelahiran';
+      else if (label.toLowerCase().includes('foto')) folder = 'pas_foto';  
+      else if (label.toLowerCase().includes('sertifikat') || label.toLowerCase().includes('belt')) folder = 'sertifikat_belt';
+      else if (label.toLowerCase().includes('ktp')) folder = 'ktp';
+      
+      // Untuk preview, coba endpoint files dulu
+      const previewUrl = `${baseUrl}/api/atlet/files/${folder}/${existingPath}`;
+      console.log("🔍 Preview URL:", previewUrl);
+      return previewUrl;
+    }
+    
+    return null;
+  };
+
   const isImageFile = () => {
     if (file) {
       return file.type.startsWith('image/');
@@ -189,53 +224,67 @@ const getPreviewUrl = () => {
         )}
       </div>
       
-      {displayUrl && !previewError ? (
-        <div className="flex gap-2">
-          {/* Preview Image - Hanya tampilkan jika file adalah gambar */}
-          {isImageFile() && (
-            <div className="relative w-20 h-20 flex-shrink-0">
-              <img 
-                src={displayUrl} 
-                alt={`Preview ${label}`}
-                className="w-full h-full object-cover rounded-lg border border-gray-200"
-                onError={() => setPreviewError(true)}
-              />
-            </div>
-          )}
-          
-          {/* Action Buttons */}
-          <div className="flex flex-col gap-1">
+      <div className="flex gap-2">
+        {/* Preview Image - Only for images and if preview works */}
+        {displayUrl && !previewError && isImageFile() && (
+          <div className="relative w-20 h-20 flex-shrink-0">
+            <img 
+              src={displayUrl} 
+              alt={`Preview ${label}`}
+              className="w-full h-full object-cover rounded-lg border border-gray-200"
+              onError={() => {
+                console.log(`❌ Preview failed for: ${displayUrl}`);
+                setPreviewError(true);
+              }}
+            />
+          </div>
+        )}
+        
+        {/* File icon untuk non-image atau jika preview error */}
+        {(!displayUrl || previewError || !isImageFile()) && (
+          <div className="flex items-center gap-2 text-sm text-gray-600 w-20 h-20 border rounded-lg justify-center">
+            <IdCard size={24} className="text-gray-400" />
+          </div>
+        )}
+        
+        {/* Action Buttons */}
+        <div className="flex flex-col gap-1 flex-1">
+          {/* View/Preview Button */}
+          {displayUrl && (
             <button
-              onClick={() => window.open(displayUrl, '_blank')}
+              onClick={() => {
+                console.log(`🔍 Opening preview: ${displayUrl}`);
+                window.open(displayUrl, '_blank');
+              }}
               className="flex items-center gap-1 px-2 py-1 text-xs bg-blue-100 hover:bg-blue-200 text-blue-600 rounded transition-colors"
               type="button"
             >
               <Eye size={12} />
               {isImageFile() ? 'Lihat Gambar' : 'Buka File'}
             </button>
-            
-            {/* Download button hanya untuk existing files */}
-            {existingPath && (
-              <a
-                href={displayUrl}
-                download={fileName}
-                className="flex items-center gap-1 px-2 py-1 text-xs bg-green-100 hover:bg-green-200 text-green-600 rounded transition-colors text-center"
-              >
-                <Download size={12} />
-                Download
-              </a>
-            )}
-          </div>
-        </div>
-      ) : (
-        <div className="flex items-center gap-2 text-sm text-gray-600">
-          <IdCard size={16} />
-          <span>{fileName}</span>
-          {previewError && (
-            <span className="text-red-500 text-xs">(Preview tidak tersedia)</span>
+          )}
+          
+          {/* Download button - ALWAYS show for existing files */}
+          {existingPath && (
+            <button
+              onClick={handleDownload}
+              className="flex items-center gap-1 px-2 py-1 text-xs bg-green-100 hover:bg-green-200 text-green-600 rounded transition-colors"
+              type="button"
+            >
+              <Download size={12} />
+              Download {label}
+            </button>
+          )}
+          
+          {/* Debug info */}
+          {process.env.NODE_ENV === 'development' && (
+            <div className="text-xs text-gray-500 mt-1">
+              Path: {existingPath || 'No path'}<br/>
+              Preview Error: {previewError ? 'Yes' : 'No'}
+            </div>
           )}
         </div>
-      )}
+      </div>
     </div>
   );
 };
