@@ -1,13 +1,13 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Trophy, Users, Search, Clock, CheckCircle, Menu, ChevronLeft, ChevronRight, Loader, XCircle } from 'lucide-react';
+import { Trophy, Users, Search, Clock, CheckCircle, Menu, ChevronLeft, ChevronRight } from 'lucide-react';
 import toast from "react-hot-toast";
 import NavbarDashboard from "../../components/navbar/navbarDashboard";
 import { useAuth } from "../../context/authContext";
 import { useKompetisi } from "../../context/KompetisiContext";
 import { useDojang } from "../../context/dojangContext";
+import UnifiedRegistration from "../../components/registrationSteps/UnifiedRegistration";
 import type { Kompetisi } from "../../context/KompetisiContext";
-import Select from "react-select";
 
 interface StatsCardProps {
   icon: React.ComponentType<{ size?: number; className?: string }>;
@@ -33,13 +33,16 @@ const StatsCard: React.FC<StatsCardProps> = ({ icon: Icon, title, value, color }
 const DataKompetisi = () => {
   const navigate = useNavigate();
   const { user, token } = useAuth();
-  const { kompetisiList, loadingKompetisi, fetchKompetisiList, fetchAtletByKompetisi, pesertaList, updatePesertaStatus } = useKompetisi();
+  const { kompetisiList, loadingKompetisi, fetchKompetisiList, fetchAtletByKompetisi, pesertaList } = useKompetisi();
   const { dojangOptions, refreshDojang } = useDojang();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "PENDAFTARAN" | "SEDANG_DIMULAI" | "SELESAI">("all");
   const [selectedKompetisi, setSelectedKompetisi] = useState<Kompetisi | null>(null);
   const [showPeserta, setShowPeserta] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  
+  // State untuk modal registrasi
+  const [showRegistrationModal, setShowRegistrationModal] = useState(false);
   
   // Filtering states untuk halaman peserta
   const [searchPeserta, setSearchPeserta] = useState("");
@@ -53,7 +56,6 @@ const DataKompetisi = () => {
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(100);
-  const [processing, setProcessing] = useState<number | null>(null);
 
   const kelasBeratOptions = [
   { value: "ALL", label: "Semua Kelas" },
@@ -287,6 +289,16 @@ const DataKompetisi = () => {
     }
     
     return pageNumbers;
+  };
+
+  // Handler untuk menutup modal registrasi dan refresh data
+  const handleRegistrationClose = () => {
+    setShowRegistrationModal(false);
+    // Refresh data peserta setelah registrasi berhasil
+    if (selectedKompetisi) {
+      const idDojang = user?.pelatih?.id_dojang;
+      fetchAtletByKompetisi(selectedKompetisi.id_kompetisi, undefined, idDojang);
+    }
   };
 
   // Loading state with proper layout
@@ -585,31 +597,31 @@ const DataKompetisi = () => {
               </div>
             </div>
             
-            {/* Registration Button */}
+             {/* Registration Button */}
             <div className="mb-6">
-              <div className="bg-gradient-to-r from-red/5 via-yellow/5 to-red/5 rounded-2xl p-4 lg:p-6 border border-red/20 shadow-sm">
-                <div className="flex flex-col gap-4">
-                  {/* Header */}
-                  <div className="text-center lg:text-left">
-                    <h3 className="font-bebas text-xl lg:text-2xl text-black/80 mb-1">
-                      Daftarkan Atlet Baru
-                    </h3>
-                    <p className="font-plex text-sm lg:text-base text-black/60">
-                      Tambahkan atlet ke kompetisi {selectedKompetisi.nama_event}
-                    </p>
-                  </div>
-                  
-                  {/* Button */}
-                  <div className="flex justify-center lg:justify-start">
-                    <button
-                      onClick={() => navigate('/lomba', { 
-                        state: { kompetisiId: selectedKompetisi.id_kompetisi } 
-                      })}
-                      className="bg-gradient-to-r from-red to-red/90 hover:from-red/90 hover:to-red text-white font-plex font-semibold px-8 py-3 rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-105 flex items-center gap-2 min-w-[200px] justify-center"
-                    >
-                      <Users size={20} />
-                      <span>Daftar Atlet</span>
-                    </button>
+              <div className="bg-gradient-to-r from-red/5 via-yellow/5 to-red/5 rounded-2xl border border-red/20 shadow-sm overflow-hidden">
+                <div className="p-4 lg:p-6">
+                  <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                    {/* Content */}
+                    <div className="text-center lg:text-left">
+                      <h3 className="font-bebas text-xl lg:text-2xl text-black/80 mb-1">
+                        Daftarkan Atlet Baru
+                      </h3>
+                      <p className="font-plex text-sm lg:text-base text-black/60">
+                        Tambahkan atlet ke kompetisi {selectedKompetisi.nama_event}
+                      </p>
+                    </div>
+                    
+                    {/* Button */}
+                    <div className="flex justify-center lg:justify-end">
+                      <button
+                        onClick={() => setShowRegistrationModal(true)}
+                        className="bg-gradient-to-r from-red to-red/90 hover:from-red/90 hover:to-red text-white font-plex font-semibold px-6 lg:px-8 py-3 rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-105 flex items-center gap-2 min-w-[180px] lg:min-w-[200px] justify-center"
+                      >
+                        <Users size={20} />
+                        <span>Daftar Atlet</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -845,6 +857,15 @@ const DataKompetisi = () => {
             </div>
           </div>
         </div>
+        
+        {/* Modal Registrasi */}
+        <UnifiedRegistration
+          isOpen={showRegistrationModal}
+          onClose={handleRegistrationClose}
+          kompetisiId={selectedKompetisi.id_kompetisi}
+          kompetisiName={selectedKompetisi.nama_event}
+          biayaPendaftaran={(selectedKompetisi as any).biaya_pendaftaran}
+        />
         
         {/* Mobile Sidebar */}
         {sidebarOpen && (
