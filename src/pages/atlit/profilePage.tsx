@@ -128,68 +128,69 @@ const FilePreview = ({
   };
 
   // FUNCTION UNTUK DOWNLOAD FILE
-  const handleDownload = async () => {
-    if (!existingPath) {
-      console.log('❌ No existing path for download');
-      return;
-    }
+const handleDownload = async () => {
+  if (!existingPath) {
+    console.log('❌ No existing path for download');
+    return;
+  }
+  
+  try {
+    const baseUrl = 'https://pemudaberprestasi.com';
     
-    try {
-      const baseUrl = 'https://pemudaberprestasi.com';
-      
-      // Tentukan folder berdasarkan label
-      let folder = '';
-      if (label.toLowerCase().includes('akte')) folder = 'akte_kelahiran';
-      else if (label.toLowerCase().includes('foto')) folder = 'pas_foto';  
-      else if (label.toLowerCase().includes('sertifikat') || label.toLowerCase().includes('belt')) folder = 'sertifikat_belt';
-      else if (label.toLowerCase().includes('ktp')) folder = 'ktp';
-      
-      // URL download dengan endpoint khusus
-      const downloadUrl = `${baseUrl}/api/atlet/download/${folder}/${existingPath}`;
-      
-      console.log(`📥 Downloading from: ${downloadUrl}`);
-      
-      // Method 1: Window.open untuk trigger download
-      const link = document.createElement('a');
-      link.href = downloadUrl;
-      link.download = getDisplayFileName();
-      link.target = '_blank';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
-      // Show feedback
-      toast.success(`Download ${label} dimulai!`);
-      
-    } catch (error) {
-      console.error('❌ Download error:', error);
-      toast.error('Gagal mendownload file');
-    }
-  };
-
+    // Tentukan folder berdasarkan label
+    let folder = '';
+    if (label.toLowerCase().includes('akte')) folder = 'akte_kelahiran';
+    else if (label.toLowerCase().includes('foto')) folder = 'pas_foto';  
+    else if (label.toLowerCase().includes('sertifikat') || label.toLowerCase().includes('belt')) folder = 'sertifikat_belt';
+    else if (label.toLowerCase().includes('ktp')) folder = 'ktp';
+    
+    // GUNAKAN STATIC FILE SERVING LANGSUNG
+    const downloadUrl = `${baseUrl}/uploads/atlet/${folder}/${existingPath}`;
+    
+    console.log(`📥 Downloading from: ${downloadUrl}`);
+    
+    // Buat link download
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.download = getDisplayFileName();
+    link.target = '_blank';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    toast.success(`Download ${label} dimulai!`);
+    
+  } catch (error) {
+    console.error('❌ Download error:', error);
+    toast.error('Gagal mendownload file');
+  }
+};
   // FUNCTION UNTUK PREVIEW/VIEW FILE  
-  const getPreviewUrl = () => {
-    if (file && previewUrl) {
-      return previewUrl;
-    }
+const getPreviewUrl = () => {
+  if (file && previewUrl) {
+    return previewUrl;
+  }
+  
+  if (existingPath) {
+    const baseUrl = 'https://pemudaberprestasi.com';
     
-    if (existingPath) {
-      const baseUrl = 'https://pemudaberprestasi.com';
-      
-      let folder = '';
-      if (label.toLowerCase().includes('akte')) folder = 'akte_kelahiran';
-      else if (label.toLowerCase().includes('foto')) folder = 'pas_foto';  
-      else if (label.toLowerCase().includes('sertifikat') || label.toLowerCase().includes('belt')) folder = 'sertifikat_belt';
-      else if (label.toLowerCase().includes('ktp')) folder = 'ktp';
-      
-      // Untuk preview, coba endpoint files dulu
-      const previewUrl = `${baseUrl}/api/atlet/files/${folder}/${existingPath}`;
-      console.log("🔍 Preview URL:", previewUrl);
-      return previewUrl;
-    }
+    // Tentukan folder berdasarkan label
+    let folder = '';
+    if (label.toLowerCase().includes('akte')) folder = 'akte_kelahiran';
+    else if (label.toLowerCase().includes('foto')) folder = 'pas_foto';  
+    else if (label.toLowerCase().includes('sertifikat') || label.toLowerCase().includes('belt')) folder = 'sertifikat_belt';
+    else if (label.toLowerCase().includes('ktp')) folder = 'ktp';
     
-    return null;
-  };
+    // GUNAKAN STATIC FILE SERVING YANG SUDAH ADA DI APP.TS
+    const staticUrl = `${baseUrl}/uploads/atlet/${folder}/${existingPath}`;
+    
+    console.log("🌐 Static URL:", staticUrl);
+    return staticUrl;
+  }
+  
+  return null;
+};
+
 
   const isImageFile = () => {
     if (file) {
