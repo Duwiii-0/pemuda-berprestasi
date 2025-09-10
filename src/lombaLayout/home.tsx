@@ -198,8 +198,7 @@ const LandingPage = () => {
 
             {/* Enhanced Director Section */}
             <div className="relative order-1 lg:order-2 flex justify-center items-center py-8 lg:py-0">
-              <div className="relative w-full max-w-sm group flex justify-center items-center">
-                
+              <div className="relative w-full max-w-md group flex justify-center items-center">
                 <div className="group/card flex flex-col w-full gap-4 md:gap-6 justify-center items-center hover:scale-[1.02] transition-all duration-500">
                   
                   {/* Enhanced Image Container */}
@@ -222,15 +221,15 @@ const LandingPage = () => {
                   {/* Enhanced Text Section */}
                   <div className="text-center space-y-2 md:space-y-3 group-hover/card:scale-105 transition-transform duration-500 px-2">
                     <div className="space-y-1">
-                      <h3 className="font-bebas text-lg sm:text-xl md:text-2xl lg:text-3xl bg-gradient-to-r from-red to-red/80 bg-clip-text text-transparent">
+                      <h3 className="font-bebas text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl bg-gradient-to-r from-red to-red/80 bg-clip-text text-transparent">
                         Muhammad Rafif Dwiarka
                       </h3>
-                      <p className="font-plex text-xs md:text-sm text-black/70 font-medium tracking-wide">
+                      <p className="font-plex text-xs md:text-sm lg:text-md 2xl:text-xl text-black/70 font-medium tracking-wide">
                         Ketua Panitia Kejuaraan Sriwijaya
                       </p>
                     </div>
                     <div className="w-12 md:w-16 h-0.5 bg-gradient-to-r from-red/60 to-transparent mx-auto"></div>
-                    <p className="text-xs md:text-sm text-black/60 font-plex leading-relaxed max-w-xs">
+                    <p className="text-xs md:text-sm xl:text-md text-black/60 font-plex leading-relaxed max-w-sm">
                       “SALAM TAEKWONDO INDONESIA PROVINSI SUMATERA SELATAN”
                     </p>
                   </div>
