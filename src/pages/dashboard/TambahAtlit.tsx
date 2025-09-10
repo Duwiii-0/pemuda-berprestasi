@@ -201,74 +201,114 @@ const TambahAtlit: React.FC = () => {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    if (!validateForm()) {
-      toast.error("Mohon periksa kembali data yang diisi");
-      return;
-    }
+  if (!validateForm()) {
+    toast.error("Mohon periksa kembali data yang diisi");
+    return;
+  }
 
-    if (!user?.pelatih?.id_pelatih || !user?.pelatih?.id_dojang) {
-      toast.error("Data pelatih tidak ditemukan, silakan login ulang");
-      return;
-    }
+  if (!user?.pelatih?.id_pelatih || !user?.pelatih?.id_dojang) {
+    toast.error("Data pelatih tidak ditemukan, silakan login ulang");
+    return;
+  }
 
-    setIsSubmitting(true);
+  setIsSubmitting(true);
 
-    try {
-      const formDataSend = new FormData();
-      formDataSend.append("nama_atlet", formData.name.trim());
-      formDataSend.append("jenis_kelamin", formData.gender);
-      formDataSend.append("tanggal_lahir", formData.tanggal_lahir);
-      formDataSend.append("id_dojang", String(user.pelatih.id_dojang));
-      formDataSend.append("id_pelatih_pembuat", String(user?.pelatih?.id_pelatih));
+  try {
+    const formDataSend = new FormData();
+    
+    // REQUIRED FIELDS - Pastikan semuanya ada
+    formDataSend.append("nama_atlet", formData.name.trim());
+    formDataSend.append("jenis_kelamin", formData.gender);
+    formDataSend.append("tanggal_lahir", formData.tanggal_lahir);
+    formDataSend.append("id_dojang", String(user.pelatih.id_dojang));
+    formDataSend.append("id_pelatih_pembuat", String(user?.pelatih?.id_pelatih));
 
-      if (formData.belt) formDataSend.append("belt", formData.belt);
-      if (formData.alamat?.trim()) formDataSend.append("alamat", formData.alamat.trim());
-      if (formData.provinsi) formDataSend.append("provinsi", formData.provinsi);
-      if (formData.kota) formDataSend.append("kota", formData.kota); // Send city data
-      if (formData.phone?.trim()) formDataSend.append("no_telp", formData.phone.trim());
-      if (formData.nik?.trim()) formDataSend.append("nik", formData.nik.trim());
-      if (formData.bb) formDataSend.append("berat_badan", String(formData.bb));
-      if (formData.tb) formDataSend.append("tinggi_badan", String(formData.tb));
-
-      // FILES (wajib sesuai backend field name)
-      if (formData.akte_kelahiran) formDataSend.append("akte_kelahiran", formData.akte_kelahiran);
-      if (formData.pas_foto) formDataSend.append("pas_foto", formData.pas_foto);
-      if (formData.sertifikat_belt) formDataSend.append("sertifikat_belt", formData.sertifikat_belt);
-      if (formData.ktp) formDataSend.append("ktp", formData.ktp);
-
-      const result = await createAtlet(formDataSend);
-
-      if (result) {
-        setSubmitSuccess(true);
-        toast.success("Berhasil menambahkan Atlet!");
-        setFormData({
-          name: "",
-          phone: "",
-          nik: "",
-          tanggal_lahir: "",
-          alamat: "",
-          provinsi: "",
-          kota: "",
-          bb: "",
-          tb: "",
-          gender: "",
-          belt: "",
-          akte_kelahiran: null,
-          pas_foto: null,
-          sertifikat_belt: null,
-          ktp: null,
-        });
-        setTimeout(() => navigate("/dashboard/atlit", { state: { refresh: true } }), 1000);
+    // ADDITIONAL FIELDS
+    if (formData.belt) formDataSend.append("belt", formData.belt);
+    if (formData.alamat?.trim()) formDataSend.append("alamat", formData.alamat.trim());
+    if (formData.provinsi) formDataSend.append("provinsi", formData.provinsi);
+    if (formData.kota) formDataSend.append("kota", formData.kota);
+    if (formData.phone?.trim()) formDataSend.append("no_telp", formData.phone.trim());
+    if (formData.nik?.trim()) formDataSend.append("nik", formData.nik.trim());
+    
+    // NUMERIC FIELDS - PENTING: Convert ke string dengan validation
+    if (formData.bb) {
+      const weight = parseFloat(formData.bb);
+      if (!isNaN(weight) && weight > 0) {
+        formDataSend.append("berat_badan", String(weight));
       }
-    } catch (error: any) {
-      console.error("Error creating athlete:");
-      toast.error(error.message || "Gagal menambahkan Atlet");
-    } finally {
-      setIsSubmitting(false);
     }
-  };
+    
+    if (formData.tb) {
+      const height = parseFloat(formData.tb);
+      if (!isNaN(height) && height > 0) {
+        formDataSend.append("tinggi_badan", String(height));
+      }
+    }
+
+    // FILES - Field names harus exact match dengan backend
+    if (formData.akte_kelahiran) formDataSend.append("akte_kelahiran", formData.akte_kelahiran);
+    if (formData.pas_foto) formDataSend.append("pas_foto", formData.pas_foto);
+    if (formData.sertifikat_belt) formDataSend.append("sertifikat_belt", formData.sertifikat_belt);
+    if (formData.ktp) formDataSend.append("ktp", formData.ktp);
+
+    // DEBUG: Log FormData sebelum kirim
+    console.log("📤 DEBUG: Sending FormData contents:");
+    for (let [key, value] of formDataSend.entries()) {
+      if (value instanceof File) {
+        console.log(`${key}: File - ${value.name} (${value.size} bytes)`);
+      } else {
+        console.log(`${key}: ${value}`);
+      }
+    }
+
+    // PENTING: Pastikan createAtlet function menggunakan apiClient.postFormData
+    const result = await createAtlet(formDataSend);
+
+    if (result) {
+      setSubmitSuccess(true);
+      toast.success("Berhasil menambahkan Atlet!");
+      
+      // Reset form
+      setFormData({
+        name: "",
+        phone: "",
+        nik: "",
+        tanggal_lahir: "",
+        alamat: "",
+        provinsi: "",
+        kota: "",
+        bb: "",
+        tb: "",
+        gender: "",
+        belt: "",
+        akte_kelahiran: null,
+        pas_foto: null,
+        sertifikat_belt: null,
+        ktp: null,
+      });
+      
+      setTimeout(() => navigate("/dashboard/atlit", { state: { refresh: true } }), 1000);
+    }
+  } catch (error: any) {
+    console.error("❌ Error creating athlete:", error);
+    
+    // Better error handling
+    if (error.message.includes('File size')) {
+      toast.error("File terlalu besar. Maksimal 5MB per file.");
+    } else if (error.message.includes('Invalid file')) {
+      toast.error("Format file tidak didukung. Gunakan JPG, PNG, atau PDF.");
+    } else if (error.message.includes('wajib diisi')) {
+      toast.error("Ada field wajib yang belum diisi: " + error.message);
+    } else {
+      toast.error(error.message || "Gagal menambahkan Atlet");
+    }
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
   // Helper function to get select value for react-select
   const getSelectValue = (options: any[], value: string) => {

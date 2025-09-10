@@ -17,98 +17,84 @@ interface MulterFile {
 }
 
 export class AtletController {
-  static async create(req: Request, res: Response) {
-    try {
-      console.log("🔍 DEBUG: Request body:", req.body);
-      console.log("🔍 DEBUG: Request files:", req.files);
-      
-      const files = req.files as { [fieldname: string]: MulterFile[] };
-      
-      // DEBUG: Log setiap file yang diterima
-      if (files) {
-        Object.keys(files).forEach(key => {
-          console.log(`📎 File ${key}:`, {
-            fieldname: files[key][0]?.fieldname,
-            originalname: files[key][0]?.originalname,
-            filename: files[key][0]?.filename,
-            size: files[key][0]?.size,
-            destination: files[key][0]?.destination,
-            path: files[key][0]?.path
-          });
-        });
-      } else {
-        console.log("⚠️  No files received in request");
-      }
-
-      const atletData: any = {
-        ...req.body,
-        akte_kelahiran: files?.akte_kelahiran?.[0]?.filename || null,
-        pas_foto: files?.pas_foto?.[0]?.filename || null,
-        sertifikat_belt: files?.sertifikat_belt?.[0]?.filename || null,
-        ktp: files?.ktp?.[0]?.filename || null,
-      };
-
-      console.log("📋 DEBUG: Final atlet data:", atletData);
-
-      // Convert string date to Date object
-      if (atletData.tanggal_lahir) {
-        atletData.tanggal_lahir = new Date(atletData.tanggal_lahir);
-      }
-
-      // Convert weight and height to numbers
-      if (atletData.berat_badan) {
-        atletData.berat_badan = parseFloat(atletData.berat_badan);
-      }
-
-      if (atletData.tinggi_badan) {
-        atletData.tinggi_badan = parseFloat(atletData.tinggi_badan);
-      }
-
-      // Validasi required fields
-      if (!atletData.nama_atlet) {
-        return sendError(res, 'Nama atlet wajib diisi', 400);
-      }
-
-      if (!atletData.tanggal_lahir) {
-        return sendError(res, 'Tanggal lahir wajib diisi', 400);
-      }
-
-      if (!atletData.jenis_kelamin) {
-        return sendError(res, 'Jenis kelamin wajib diisi', 400);
-      }
-
-      if (!atletData.id_dojang) {
-        return sendError(res, 'ID dojang tidak ditemukan', 400);
-      }
-
-      if (!atletData.id_pelatih_pembuat) {
-        return sendError(res, 'ID pelatih tidak ditemukan', 400);
-      }
-
-      console.log("🚀 DEBUG: Calling AtletService.createAtlet with:", {
-        nama_atlet: atletData.nama_atlet,
-        tanggal_lahir: atletData.tanggal_lahir,
-        jenis_kelamin: atletData.jenis_kelamin,
-        id_dojang: atletData.id_dojang,
-        id_pelatih_pembuat: atletData.id_pelatih_pembuat,
-        files: {
-          akte_kelahiran: atletData.akte_kelahiran,
-          pas_foto: atletData.pas_foto,
-          sertifikat_belt: atletData.sertifikat_belt,
-          ktp: atletData.ktp
-        }
-      });
-
-      const atlet = await AtletService.createAtlet(atletData);
-
-      console.log("✅ DEBUG: Atlet created successfully:", atlet?.id_atlet);
-
-      return sendSuccess(res, atlet, 'Atlet berhasil dibuat', 201);
-    } catch (error: any) {
-      console.error("❌ DEBUG: Error in create controller:", error);
-      return sendError(res, error.message, 400);
+static async create(req: Request, res: Response) {
+  try {
+    console.log("🔍 DEBUG: Request received")
+    console.log("📋 Body:", JSON.stringify(req.body, null, 2))
+    console.log("📎 Files:", req.files ? Object.keys(req.files) : 'No files')
+    
+    const files = req.files as { [fieldname: string]: MulterFile[] }
+    
+    // Validasi files received
+    if (files) {
+      Object.keys(files).forEach(key => {
+        const file = files[key][0]
+        console.log(`✅ File ${key}:`, {
+          originalname: file.originalname,
+          filename: file.filename,
+          size: file.size,
+          destination: file.destination,
+          mimetype: file.mimetype
+        })
+      })
+    } else {
+      console.log("⚠️ WARNING: No files received")
     }
+
+    // Prepare data dengan null fallback yang aman
+    const atletData = {
+      ...req.body,
+      akte_kelahiran: files?.akte_kelahiran?.[0]?.filename || null,
+      pas_foto: files?.pas_foto?.[0]?.filename || null, 
+      sertifikat_belt: files?.sertifikat_belt?.[0]?.filename || null,
+      ktp: files?.ktp?.[0]?.filename || null,
+    }
+
+    // Data type conversion
+    if (atletData.tanggal_lahir) {
+      atletData.tanggal_lahir = new Date(atletData.tanggal_lahir)
+    }
+
+    if (atletData.berat_badan) {
+      atletData.berat_badan = parseFloat(atletData.berat_badan)
+    }
+
+    if (atletData.tinggi_badan) {
+      atletData.tinggi_badan = parseFloat(atletData.tinggi_badan) 
+    }
+
+    // Convert string ke number untuk foreign keys
+    if (atletData.id_dojang) {
+      atletData.id_dojang = parseInt(atletData.id_dojang)
+    }
+
+    if (atletData.id_pelatih_pembuat) {
+      atletData.id_pelatih_pembuat = parseInt(atletData.id_pelatih_pembuat)
+    }
+
+    console.log("🚀 Final data to create:", {
+      nama_atlet: atletData.nama_atlet,
+      jenis_kelamin: atletData.jenis_kelamin,
+      id_dojang: atletData.id_dojang,
+      id_pelatih_pembuat: atletData.id_pelatih_pembuat,
+      files: {
+        akte_kelahiran: atletData.akte_kelahiran,
+        pas_foto: atletData.pas_foto,
+        sertifikat_belt: atletData.sertifikat_belt,
+        ktp: atletData.ktp
+      }
+    })
+
+    const atlet = await AtletService.createAtlet(atletData)
+    console.log("✅ Atlet created with ID:", atlet?.id_atlet)
+
+    return sendSuccess(res, atlet, 'Atlet berhasil dibuat', 201)
+  } catch (error: any) {
+    console.error("❌ Controller Error:", error.message)
+    console.error("📝 Stack:", error.stack)
+    return sendError(res, error.message, 400)
   }
+}
 
   // Update atlet
   static async update(req: Request, res: Response) {

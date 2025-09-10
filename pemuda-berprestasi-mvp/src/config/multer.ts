@@ -1,15 +1,14 @@
-// src/config/multer.ts - FIXED VERSION
+// src/config/multer.ts
 import multer from 'multer'
 import path from 'path'
 import fs from 'fs'
 
-// Ensure upload directories exist
 const createUploadDirs = () => {
   const dirs = [
     'uploads/pelatih/ktp',
     'uploads/pelatih/sertifikat',
     'uploads/atlet/akte_kelahiran',
-    'uploads/atlet/pas_foto',
+    'uploads/atlet/pas_foto', 
     'uploads/atlet/sertifikat_belt',
     'uploads/atlet/ktp'
   ]
@@ -21,8 +20,20 @@ const createUploadDirs = () => {
   })
 }
 
-// Create directories on startup
 createUploadDirs()
+
+// FIXED: Konsisten folder mapping
+const ATLET_FOLDER_MAP: Record<string, string> = {
+  'akte_kelahiran': 'akte_kelahiran',
+  'pas_foto': 'pas_foto',
+  'sertifikat_belt': 'sertifikat_belt', 
+  'ktp': 'ktp'
+}
+
+const PELATIH_FOLDER_MAP: Record<string, string> = {
+  'foto_ktp': 'ktp',
+  'sertifikat_sabuk': 'sertifikat'
+}
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -30,29 +41,19 @@ const storage = multer.diskStorage({
     let folder = ''
     
     // PELATIH FILES
-    if (type === 'foto_ktp') {
-      folder = 'uploads/pelatih/ktp'
-    } else if (type === 'sertifikat_sabuk') {
-      folder = 'uploads/pelatih/sertifikat'
+    if (PELATIH_FOLDER_MAP[type]) {
+      folder = `uploads/pelatih/${PELATIH_FOLDER_MAP[type]}`
     } 
-    // ATLET FILES - INI YANG DIPERBAIKI
-    else if (type === 'akte_kelahiran') {
-      folder = 'uploads/atlet/akte_kelahiran'
-    } else if (type === 'pas_foto') {
-      folder = 'uploads/atlet/pas_foto'
-    } else if (type === 'sertifikat_belt') {
-      folder = 'uploads/atlet/sertifikat_belt'
-    } else if (type === 'ktp') {
-      folder = 'uploads/atlet/ktp'
+    // ATLET FILES - FIXED
+    else if (ATLET_FOLDER_MAP[type]) {
+      folder = `uploads/atlet/${ATLET_FOLDER_MAP[type]}`
     } else {
-      return cb(new Error('Invalid file field'), '')
+      return cb(new Error(`Invalid file field: ${type}`), '')
     }
     
     cb(null, folder)
   },
   filename: (req, file, cb) => {
-    // MASALAH: Logika filename hanya untuk pelatih
-    // PERBAIKAN: Handle both pelatih dan atlet
     const user = req.user as any
     const type = file.fieldname
     const timestamp = Date.now()
@@ -60,7 +61,7 @@ const storage = multer.diskStorage({
     let filename = ''
 
     // UNTUK PELATIH
-    if (type === 'foto_ktp' || type === 'sertifikat_sabuk') {
+    if (PELATIH_FOLDER_MAP[type]) {
       const pelatihId = user?.pelatihId || user?.pelatih?.id_pelatih
       if (!pelatihId) {
         return cb(new Error('Pelatih ID not found'), '')
@@ -68,11 +69,9 @@ const storage = multer.diskStorage({
       const fileType = type === 'foto_ktp' ? 'ktp' : 'sertifikat'
       filename = `${pelatihId}_${fileType}_${timestamp}${ext}`
     } 
-    // UNTUK ATLET - INI YANG DITAMBAHKAN
-    else if (['akte_kelahiran', 'pas_foto', 'sertifikat_belt', 'ktp'].includes(type)) {
-      // Untuk atlet, bisa pakai timestamp atau ID unik lainnya
-      // Karena belum ada ID atlet saat create, pakai timestamp
-      const pelatihId = user?.pelatihId || user?.pelatih?.id_pelatih
+    // UNTUK ATLET - FIXED
+    else if (ATLET_FOLDER_MAP[type]) {
+      const pelatihId = user?.pelatihId || user?.pelatih?.id_pelatih || 'temp'
       filename = `atlet_${pelatihId}_${type}_${timestamp}${ext}`
     } else {
       return cb(new Error('Invalid file type'), '')
@@ -83,7 +82,6 @@ const storage = multer.diskStorage({
 })
 
 const fileFilter = (req: any, file: any, cb: any) => {
-  // Allowed file types
   const allowedTypes = /jpeg|jpg|png|pdf/
   const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase())
   const mimetype = allowedTypes.test(file.mimetype)
@@ -102,21 +100,3 @@ export const upload = multer({
     fileSize: 5 * 1024 * 1024 // 5MB limit
   }
 })
-
-// File serving path helper - DIPERLUAS UNTUK ATLET
-export const getFilePath = (id: number, type: 'ktp' | 'sertifikat' | 'akte_kelahiran' | 'pas_foto' | 'sertifikat_belt', extension: string, entity: 'pelatih' | 'atlet' = 'pelatih') => {
-  if (entity === 'pelatih') {
-    const folder = type === 'ktp' ? 'ktp' : 'sertifikat'
-    return `uploads/pelatih/${folder}/${id}_${type}.${extension}`
-  } else {
-    // untuk atlet
-    const folderMap: Record<string, string> = {
-      akte_kelahiran: 'akte_kelahiran',
-      pas_foto: 'pas_foto', 
-      sertifikat_belt: 'sertifikat_belt',
-      ktp: 'ktp'
-    }
-    const folder = folderMap[type]
-    return `uploads/atlet/${folder}/${id}_${type}.${extension}`
-  }
-}

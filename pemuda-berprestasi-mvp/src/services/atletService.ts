@@ -626,39 +626,40 @@ static async getEligible(
 
   // Ambil info file yang sudah di-upload
   static async getUploadedFiles(id_atlet: number): Promise<AtletFileInfo> {
-    const atlet = await prisma.tb_atlet.findUnique({
-      where: { id_atlet },
-      select: {
-        akte_kelahiran: true,
-        pas_foto: true,
-        sertifikat_belt: true,
-        ktp: true
-      }
-    })
-
-    if (!atlet) {
-      throw new Error('Atlet tidak ditemukan')
+  const atlet = await prisma.tb_atlet.findUnique({
+    where: { id_atlet },
+    select: {
+      akte_kelahiran: true,
+      pas_foto: true,
+      sertifikat_belt: true,
+      ktp: true
     }
+  })
 
-    const checkFile = (filename: string | null, type: 'akte' | 'pas_foto' | 'sertifikat' | 'ktp'): FileInfo | null => {
-      if (!filename) return null
-      const filePath = path.join(process.cwd(), 'uploads', 'atlet', type, filename)
-      const exists = fs.existsSync(filePath)
-      return {
-        filename,
-        path: `uploads/atlet/${type}/${filename}`,
-        exists,
-        uploadedAt: exists ? fs.statSync(filePath).mtime : undefined
-      }
-    }
+  if (!atlet) {
+    throw new Error('Atlet tidak ditemukan')
+  }
 
+      const checkFile = (filename: string | null, type: keyof typeof ATLET_FOLDER_MAP): FileInfo | null => {
+    if (!filename) return null
+    const folder = ATLET_FOLDER_MAP[type]
+    const filePath = path.join(process.cwd(), 'uploads', 'atlet', folder, filename)
+    const exists = fs.existsSync(filePath)
     return {
-      akte_kelahiran: checkFile(atlet.akte_kelahiran, 'akte'),
-      pas_foto: checkFile(atlet.pas_foto, 'pas_foto'),
-      sertifikat_belt: checkFile(atlet.sertifikat_belt, 'sertifikat'),
-      ktp: checkFile(atlet.ktp, 'ktp')
+      filename,
+      path: `uploads/atlet/${folder}/${filename}`,
+      exists,
+      uploadedAt: exists ? fs.statSync(filePath).mtime : undefined
     }
   }
+
+  return {
+    akte_kelahiran: checkFile(atlet.akte_kelahiran, 'akte_kelahiran'),
+    pas_foto: checkFile(atlet.pas_foto, 'pas_foto'),
+    sertifikat_belt: checkFile(atlet.sertifikat_belt, 'sertifikat_belt'),
+    ktp: checkFile(atlet.ktp, 'ktp')
+  }
+}
 
   // Hapus file atlet
   static async deleteFile(id_atlet: number, fileType: keyof AtletFileInfo) {

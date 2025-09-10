@@ -93,56 +93,108 @@ export const AtletProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [atlits, setAtlits] = useState<Atlet[]>([]);
 
   // Fetch semua atlet
-  const fetchAllAtlits = async () => {
-    try {
-      const res = await apiClient.get("/atlet"); // endpoint fetch semua atlet
-      if (res.data && Array.isArray(res.data)) setAtlits(res.data);
-    } catch (err) {
-      console.error("Gagal fetch semua atlet:");
+const fetchAllAtlits = async () => {
+  try {
+    console.log("📋 Fetching all atlits");
+    
+    const response = await apiClient.get("/atlet");
+    console.log("✅ Fetch all response:", response);
+    
+    // FIXED: Extract data properly
+    const atletData = response.data || response;
+    
+    if (atletData && Array.isArray(atletData)) {
+      setAtlits(atletData);
+    } else {
+      console.warn("⚠️ Expected array but got:", typeof atletData);
     }
-  };
+  } catch (err: any) {
+    console.error("❌ Gagal fetch semua atlet:", err.message);
+  }
+};
 
   // Fetch atlet berdasarkan ID
-  const fetchAtletById = useCallback (async (id: number) => {
-    let atlet = atlits.find(a => a.id_atlet === id);
-    if (!atlet) {
-      try {
-        const res = await apiClient.get(`/atlet/${id}`);
-        if (res.data) {
-          atlet = res.data;
-          setAtlits(prev => [...prev.filter(a => a.id_atlet !== id), atlet!]);
-        }
-      } catch (err) {
-        console.error(`Gagal fetch atlet dengan ID`);
+const fetchAtletById = useCallback(async (id: number) => {
+  let atlet = atlits.find(a => a.id_atlet === id);
+  if (!atlet) {
+    try {
+      console.log(`🔍 Fetching atlet with ID: ${id}`);
+      
+      const response = await apiClient.get(`/atlet/${id}`);
+      console.log("📋 Fetch response:", response);
+      
+      // FIXED: Extract data properly
+      atlet = response.data || response;
+      
+      if (atlet) {
+        setAtlits(prev => [...prev.filter(a => a.id_atlet !== id), atlet!]);
       }
+    } catch (err: any) {
+      console.error(`❌ Gagal fetch atlet dengan ID ${id}:`, err.message);
     }
-    return atlet;
-  }, []);
+  }
+  return atlet;
+}, [atlits]);
 
 const createAtlet = async (formData: FormData) => {
   try {
-    const data = await apiClient.postFormData("/atlet", formData); // ✅ pakai postFormData
-    setAtlits(prev => [...prev, data]);
-    return data;
-  } catch (err) {
-    console.error("Error creating athlete:");
-    throw err;
+    console.log("🚀 AtletContext: Calling API with FormData");
+    
+    // Debug: Log FormData contents
+    console.log("📤 FormData contents:");
+    for (let [key, value] of formData.entries()) {
+      if (value instanceof File) {
+        console.log(`${key}: File - ${value.name} (${value.size} bytes, ${value.type})`);
+      } else {
+        console.log(`${key}: ${value}`);
+      }
+    }
+    
+    const response = await apiClient.postFormData("/atlet", formData);
+    
+    console.log("✅ API Response:", response);
+    
+    // FIXED: Extract data from response object
+    const newAtlet = response.data || response;
+    
+    console.log("👤 New Atlet Data:", newAtlet);
+    
+    // Update context dengan data yang benar
+    if (newAtlet && newAtlet.id_atlet) {
+      setAtlits(prev => [...prev, newAtlet]);
+    }
+    
+    return newAtlet;
+  } catch (err: any) {
+    console.error("❌ AtletContext Error:", err);
+    console.error("❌ Error Message:", err.message);
+    console.error("❌ Error Stack:", err.stack);
+    
+    // Re-throw dengan pesan yang lebih jelas
+    throw new Error(err.message || "Gagal membuat atlet");
   }
 };
 
 // Update atlet di context
 const updateAtlet = async (updated: Atlet) => {
   try {
-    const res = await apiClient.put(`/atlet/${updated.id_atlet}`, updated);
-    if (res.data) {
+    console.log(`🔄 Updating atlet ID: ${updated.id_atlet}`);
+    
+    const response = await apiClient.put(`/atlet/${updated.id_atlet}`, updated);
+    console.log("✅ Update response:", response);
+    
+    // FIXED: Extract data properly
+    const updatedAtlet = response.data || response;
+    
+    if (updatedAtlet) {
       setAtlits(prev =>
-        prev.map(a => (a.id_atlet === updated.id_atlet ? res.data : a))
+        prev.map(a => (a.id_atlet === updated.id_atlet ? updatedAtlet : a))
       );
-      return res.data; // return biar caller bisa pakai data terbaru
+      return updatedAtlet;
     }
-  } catch (err) {
-    console.error(`Gagal update atlet dengan ID`);
-    throw err; // biar bisa ditangkap di UI
+  } catch (err: any) {
+    console.error(`❌ Gagal update atlet dengan ID ${updated.id_atlet}:`, err.message);
+    throw new Error(err.message || "Gagal update atlet");
   }
 };
 

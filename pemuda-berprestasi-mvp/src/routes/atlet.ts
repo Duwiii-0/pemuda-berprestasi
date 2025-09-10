@@ -16,16 +16,17 @@ router.use(authenticate);
 // CRUD operations
 router.post(
   '/',
-  authenticate,
-  uploadMiddleware.fields([
+  authenticate, // 1. Auth dulu
+  uploadMiddleware.fields([ // 2. Upload middleware
     { name: 'akte_kelahiran', maxCount: 1 },
     { name: 'pas_foto', maxCount: 1 },
     { name: 'sertifikat_belt', maxCount: 1 },
     { name: 'ktp', maxCount: 1 }
   ]),
-  validateRequest(atletValidation.create),
-  AtletController.create
-);
+  // 3. JANGAN pakai validateRequest untuk form dengan file upload!
+  // validateRequest akan expect JSON body, padahal ini FormData
+  AtletController.create // 4. Controller terakhir
+)
 
 router.get('/', AtletController.getAll);
 router.get('/dojang/:id_dojang', AtletController.getByDojang);
