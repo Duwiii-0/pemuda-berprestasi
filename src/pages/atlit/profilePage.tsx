@@ -130,33 +130,29 @@ const FilePreview = ({
     return label;
   };
 
-  // PERBAIKAN: Tentukan URL untuk preview dan download
 const getPreviewUrl = () => {
   if (file && previewUrl) {
     return previewUrl;
   }
   
   if (existingPath) {
-    console.log("🔗 Existing path:", existingPath);
-    
-    // If already full URL, use it
-    if (existingPath.startsWith('http')) {
-      return existingPath;
-    }
-    
-    // Build URL dari filename - coba beberapa kemungkinan path
     const baseUrl = 'https://pemudaberprestasi.com';
     
-    // Try different path combinations
-    const possiblePaths = [
-      `${baseUrl}/storage/${existingPath}`,
-      `${baseUrl}/uploads/${existingPath}`, 
-      `${baseUrl}/${existingPath}`,
-      `${baseUrl}/storage/uploads/${existingPath}`
-    ];
+    // Tentukan folder berdasarkan label
+    let folder = '';
+    if (label.toLowerCase().includes('akte')) folder = 'akte_kelahiran';
+    else if (label.toLowerCase().includes('foto')) folder = 'pas_foto';  
+    else if (label.toLowerCase().includes('sertifikat') || label.toLowerCase().includes('belt')) folder = 'sertifikat_belt';
+    else if (label.toLowerCase().includes('ktp')) folder = 'ktp';
     
-    console.log("🧪 Testing first URL:", possiblePaths[0]);
-    return possiblePaths[0]; // Start with most common Laravel storage path
+    // Jika backend sudah ada static serving
+    const staticUrl = `${baseUrl}/uploads/atlet/${folder}/${existingPath}`;
+    
+    // Atau jika pakai endpoint khusus
+    const apiUrl = `${baseUrl}/api/atlet/files/${folder}/${existingPath}`;
+    
+    console.log("🌐 Trying URL:", staticUrl);
+    return staticUrl; // Coba static dulu
   }
   
   return null;
