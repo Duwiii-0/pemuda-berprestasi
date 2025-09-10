@@ -202,14 +202,14 @@ const LandingPage = () => {
                   {/* Enhanced Image Container */}
                   <div className="relative overflow-hidden rounded-xl md:rounded-2xl border-2 border-yellow shadow-lg md:shadow-xl bg-gradient-to-br from-blue-50 to-blue-100 mx-auto group-hover:shadow-xl md:group-hover:shadow-2xl group-hover:shadow-yellow/20 transition-all duration-700">
                     {/* Subtle overlay patterns */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white/5 to-transparent"></div>
+                    <div className="absolute inset-0 bg-gradient-to-br from-transparent via-red/5 to-transparent"></div>
                     
                     <img 
                       src={ketua}
                       alt="Hj. Meilinda, S.Sos.,M.M" 
                       className="h-48 w-36 sm:h-56 sm:w-42 md:h-64 md:w-48 lg:h-72 lg:w-54 xl:h-80 xl:w-60 object-cover group-hover/card:scale-105 transition-transform duration-700"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent"></div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-black/5 to-transparent"></div>
                     
                     {/* Corner decorative elements */}
                     <div className="absolute top-2 right-2 md:top-3 md:right-3 w-1.5 h-1.5 md:w-2 md:h-2 bg-yellow/60 rounded-full"></div>
