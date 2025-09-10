@@ -1,7 +1,7 @@
 import TextInput from "../components/textInput";
 import TextArea from "../components/textArea";
 import Steps from "../components/steps";  
-import { Mail, User, PenLine, Phone, Award, Trophy } from 'lucide-react';
+import { Mail, User, PenLine, Phone, Award, Trophy, Instagram } from 'lucide-react';
 import sriwijaya from "../assets/logo/sriwijaya.png";
 import heroLomba from "../assets/photos/heroLomba.jpg";
 import UnifiedRegistration from "../components/registrationSteps/UnifiedRegistration";
@@ -373,62 +373,8 @@ const LandingPage = () => {
               
               <div className="absolute inset-0 bg-gradient-to-br from-yellow/[0.03] via-transparent to-yellow/[0.02]"></div>
               
-              <div className="relative z-10 grid grid-cols-1 xl:grid-cols-2 gap-8 xl:gap-12 p-6 sm:p-8 md:p-10">
-                
-                {/* Contact Form Side */}
-                <div className="w-full h-full flex flex-col items-center space-y-6 md:space-y-8">
-                  <div className="text-center w-full">
-                    <h3 className="font-bebas text-red text-xl sm:text-2xl md:text-3xl lg:text-4xl mb-2">Kirim Pesan</h3>
-                    <div className="w-12 md:w-16 h-0.5 bg-gradient-to-r from-red to-red/60 mx-auto mb-3"></div>
-                    <p className="text-xs md:text-sm font-plex text-black/70 max-w-md mx-auto">
-                      Sampaikan pertanyaan atau saran Anda melalui formulir di bawah ini
-                    </p>
-                  </div>
-                  
-                  {/* Enhanced Form - Fixed Mobile Layout */}
-                  <div className="w-full space-y-4 md:space-y-6 max-w-md mx-auto">
-                    {/* Name and Email - Stack on Mobile */}
-                    <div className="flex flex-col gap-3 md:gap-4 w-full">
-                      <div className="w-full">
-                        <TextInput
-                          className="h-10 md:h-12 w-full placeholder-red/60 border-red/20 hover:border-red/40 focus:border-red transition-all duration-300 rounded-xl text-xs md:text-sm bg-white/80"
-                          placeholder="Nama Lengkap"
-                          icon={<User className="text-red/60" size={16} />}
-                        />
-                      </div>
-                      <div className="w-full">
-                        <TextInput
-                          className="h-10 md:h-12 w-full placeholder-red/60 border-red/20 hover:border-red/40 focus:border-red transition-all duration-300 rounded-xl text-xs md:text-sm bg-white/80"
-                          placeholder="Email Anda"
-                          icon={<Mail className="text-red/60" size={16} />}
-                        />
-                      </div>
-                    </div>
-                    
-                    {/* Message TextArea */}
-                    <div className="w-full">
-                      <TextArea 
-                        placeholder="Tulis pesan atau pertanyaan Anda di sini..."
-                        icon={<PenLine className="text-red/60" size={16} />}
-                        rows={4}
-                        className="w-full min-h-[100px] md:min-h-[120px] border-red/20 hover:border-red/40 focus:border-red transition-all duration-300 rounded-xl resize-none text-xs md:text-sm bg-white/80"
-                      />
-                    </div>
-                    
-                    {/* Enhanced Submit Button */}
-                    <div className="w-full pt-2">
-                      <button className="group relative w-full px-4 md:px-6 py-3 md:py-4 bg-gradient-to-r from-red to-red/90 hover:from-red/90 hover:to-red text-white font-plex font-semibold rounded-xl transition-all duration-300 hover:shadow-lg hover:shadow-red/30 hover:-translate-y-1 text-xs md:text-sm">
-                        <span className="relative z-10 flex items-center justify-center gap-2">
-                          <span>Kirim Pesan</span>
-                          <svg className="w-3 h-3 md:w-4 md:h-4 group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                          </svg>
-                        </span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-                
+              <div className="relative z-10 grid grid-cols-1 p-6 sm:p-8 md:p-10">
+
                 {/* Contact Info Side */}
                 <div className="w-full h-full flex flex-col space-y-6 md:space-y-8 xl:border-l xl:border-red/10 xl:pl-8">
                   <div className="text-center w-full">
@@ -449,17 +395,17 @@ const LandingPage = () => {
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-xs text-black/60 font-plex mb-1">Telepon</p>
-                          <p className="text-xs md:text-sm font-plex text-black/80 font-medium break-all">0812-1302-0861</p>
+                          <p className="text-xs md:text-sm font-plex text-black/80 font-medium break-all"><a href="https://wa.me/6281377592090">0813-7759-2090</a>(Rora)</p>
                         </div>
                       </div>
                       
                       <div className="group flex items-start gap-3 md:gap-4 p-4 md:p-6 rounded-xl hover:bg-red/[0.02] transition-all duration-300 border border-transparent hover:border-red/10">
                         <div className="flex-shrink-0 w-8 h-8 md:w-10 md:h-10 bg-gradient-to-br from-red/10 to-red/5 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300 mt-1">
-                          <Mail className="w-3 h-3 md:w-4 md:h-4 text-red" strokeWidth={1.5} />
+                          <Instagram className="w-3 h-3 md:w-4 md:h-4 text-red" strokeWidth={1.5} />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs text-black/60 font-plex mb-1">Email</p>
-                          <p className="text-xs md:text-sm font-plex text-black/80 font-medium break-all">Sriwijaya@gmail.com</p>
+                          <p className="text-xs text-black/60 font-plex mb-1">Instagram</p>
+                          <a href="https://www.instagram.com/sumsel_taekwondo" className="text-xs md:text-sm font-plex text-black/80 font-medium break-all">sumsel_taekwondo</a>
                         </div>
                       </div>
                     </div>
