@@ -73,16 +73,6 @@ const provinsiOptions = Object.keys(provinsiKotaData).map(provinsi => ({
   label: provinsi
 }));
 
-const handleProvinsiChange = (selectedOption: { value: string; label: string } | null) => {
-  const newProvinsi = selectedOption?.value || "";
-  handleInputChange('provinsi', newProvinsi);
-  // Reset kota ketika provinsi berubah
-  if (formData && newProvinsi !== formData.provinsi) {
-    handleInputChange('kota', '');
-  }
-};
-
-// Component untuk preview file
 const FilePreview = ({ 
   file, 
   existingPath, 
@@ -119,16 +109,69 @@ const FilePreview = ({
   }, [file]);
 
   const hasFile = file || existingPath;
-  const displayUrl = file ? previewUrl : existingPath;
-  const fileName = file?.name || existingPath?.split('/').pop() || label;
+  
+  // PERBAIKAN: Tentukan nama file yang akan ditampilkan
+  const getDisplayFileName = () => {
+    if (file) {
+      return file.name; // Nama file yang baru diupload
+    }
+    if (existingPath) {
+      // Jika path adalah URL atau path panjang, ambil bagian terakhir
+      const pathParts = existingPath.split('/');
+      const fileName = pathParts[pathParts.length - 1];
+      
+      // Jika nama file terlalu panjang (seperti hash), tampilkan label saja
+      if (fileName.length > 50 || fileName.includes('_') && fileName.length > 30) {
+        return `${label} (File tersimpan)`;
+      }
+      
+      return fileName;
+    }
+    return label;
+  };
+
+  // PERBAIKAN: Tentukan URL untuk preview dan download
+  const getPreviewUrl = () => {
+    if (file && previewUrl) {
+      return previewUrl;
+    }
+    if (existingPath) {
+      // Jika existingPath sudah full URL, gunakan langsung
+      if (existingPath.startsWith('http://') || existingPath.startsWith('https://')) {
+        return existingPath;
+      }
+      // Jika existingPath adalah relative path, tambahkan base URL
+      if (existingPath.startsWith('uploads/') || existingPath.startsWith('./uploads/') || existingPath.startsWith('/uploads/')) {
+        return `https://pemudaberprestasi.com/${existingPath.replace('./', '').replace(/^\//, '')}`;
+      }
+      // Fallback: assume it's a relative path dari root
+      return `https://pemudaberprestasi.com/${existingPath.replace(/^\//, '')}`;
+    }
+    return null;
+  };
+
+  // PERBAIKAN: Check apakah file adalah gambar berdasarkan ekstensi atau tipe
+  const isImageFile = () => {
+    if (file) {
+      return file.type.startsWith('image/');
+    }
+    if (existingPath) {
+      const ext = existingPath.toLowerCase().split('.').pop();
+      return ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext || '');
+    }
+    return false;
+  };
 
   if (!hasFile) return null;
+
+  const displayUrl = getPreviewUrl();
+  const fileName = getDisplayFileName();
 
   return (
     <div className="mt-2 p-3 bg-white/70 rounded-xl border border-red/20">
       <div className="flex items-center justify-between mb-2">
         <span className="text-sm font-medium text-black/70">
-          {file ? `File baru: ${fileName}` : `File tersimpan: ${label}`}
+          {file ? `File baru: ${fileName}` : fileName}
         </span>
         {!disabled && (
           <button
@@ -143,14 +186,19 @@ const FilePreview = ({
       
       {displayUrl && !previewError ? (
         <div className="flex gap-2">
-          <div className="relative w-20 h-20">
-            <img 
-              src={displayUrl} 
-              alt={`Preview ${label}`}
-              className="w-full h-full object-cover rounded-lg border border-gray-200"
-              onError={() => setPreviewError(true)}
-            />
-          </div>
+          {/* Preview Image - Hanya tampilkan jika file adalah gambar */}
+          {isImageFile() && (
+            <div className="relative w-20 h-20 flex-shrink-0">
+              <img 
+                src={displayUrl} 
+                alt={`Preview ${label}`}
+                className="w-full h-full object-cover rounded-lg border border-gray-200"
+                onError={() => setPreviewError(true)}
+              />
+            </div>
+          )}
+          
+          {/* Action Buttons */}
           <div className="flex flex-col gap-1">
             <button
               onClick={() => window.open(displayUrl, '_blank')}
@@ -158,13 +206,15 @@ const FilePreview = ({
               type="button"
             >
               <Eye size={12} />
-              Lihat
+              {isImageFile() ? 'Lihat Gambar' : 'Buka File'}
             </button>
+            
+            {/* Download button hanya untuk existing files */}
             {existingPath && (
               <a
-                href={existingPath}
+                href={displayUrl}
                 download={fileName}
-                className="flex items-center gap-1 px-2 py-1 text-xs bg-green-100 hover:bg-green-200 text-green-600 rounded transition-colors"
+                className="flex items-center gap-1 px-2 py-1 text-xs bg-green-100 hover:bg-green-200 text-green-600 rounded transition-colors text-center"
               >
                 <Download size={12} />
                 Download
@@ -176,6 +226,9 @@ const FilePreview = ({
         <div className="flex items-center gap-2 text-sm text-gray-600">
           <IdCard size={16} />
           <span>{fileName}</span>
+          {previewError && (
+            <span className="text-red-500 text-xs">(Preview tidak tersedia)</span>
+          )}
         </div>
       )}
     </div>
@@ -314,6 +367,15 @@ const handleInputChange = (field: keyof AtletWithFiles, value: any) => {
   }
 
   setFormData(updatedData);
+};
+
+const handleProvinsiChange = (selectedOption: { value: string; label: string } | null) => {
+  const newProvinsi = selectedOption?.value || "";
+  handleInputChange('provinsi', newProvinsi);
+  // Reset kota ketika provinsi berubah
+  if (formData && newProvinsi !== formData.provinsi) {
+    handleInputChange('kota', '');
+  }
 };
 
   // Handler untuk file upload
