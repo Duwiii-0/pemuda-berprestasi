@@ -343,18 +343,17 @@ const LandingPage = () => {
             <div className="relative">
               <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-5xl xl:text-6xl 2xl:text-7xl font-bebas leading-[0.85] tracking-wide">
                 <span className="bg-gradient-to-r from-red via-red/90 to-red/80 bg-clip-text text-transparent">
-                  Butuh
+                  Pusat
                 </span>
                 <span className="block bg-gradient-to-r from-red/80 via-red/90 to-red bg-clip-text text-transparent">
-                  Bantuan?
+                  Informasi
                 </span>
               </h2>
               <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-16 md:w-20 h-1 bg-gradient-to-r from-red to-red/60 rounded-full"></div>
             </div>
             
             <p className="text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl font-plex text-black/80 max-w-4xl mx-auto leading-relaxed font-light px-4">
-              Tim kami siap membantu menjawab pertanyaan dan memberikan informasi detail 
-              mengenai Sriwijaya Competition 2025.
+              Berikut adalah detail informasi mengenai kontak dan lokasi pertandingan. Jangan takut untuk menghubungi tim kami kapan saja. Kami siap memberikan informasi detail Sriwijaya Competition 2025 serta panduan menuju ke lokasi pertandingan
             </p>
           </div>
 
@@ -369,10 +368,10 @@ const LandingPage = () => {
                 {/* Contact Info Side */}
               <div className="w-full h-full flex flex-col space-y-6 md:space-y-8 xl:pl-8">
                 <div className="text-center w-full">
-                  <h3 className="font-bebas text-red text-xl sm:text-2xl md:text-3xl lg:text-4xl mb-2">Info Kontak</h3>
+                  <h3 className="font-bebas text-red text-xl sm:text-2xl md:text-3xl lg:text-4xl mb-2">Pusat Informasi</h3>
                   <div className="w-12 md:w-16 h-0.5 bg-gradient-to-r from-red to-red/60 mx-auto mb-3"></div>
-                  <p className="text-xs md:text-sm font-plex text-black/70 max-w-md mx-auto">
-                    Hubungi kami melalui kontak di bawah ini
+                  <p className="text-xs md:text-sm lg:text-md font-plex text-black/70 max-w-md mx-auto">
+                    Berikut adalah Kontak tim kami dan lokasi venue Sriwijaya Championship
                   </p>
                 </div>
                           
@@ -381,7 +380,7 @@ const LandingPage = () => {
                   {/* Phone & Instagram - Stack on Mobile, Side by Side on Desktop */}
                   <div className="flex flex-col lg:grid lg:grid-cols-2 gap-4 md:gap-6">
                     {/* Phone Contact */}
-                    <div className="group flex items-center gap-4 md:gap-5 p-5 md:p-6 lg:p-7 rounded-2xl bg-gradient-to-br from-red/5 to-red/10 hover:from-red/10 hover:to-red/15 transition-all duration-300 border border-red/20 hover:border-red/30 shadow-sm hover:shadow-lg hover:shadow-red/10 transform hover:-translate-y-1">
+                    <a href="https://wa.me/6281377592090" className="group flex items-center gap-4 md:gap-5 p-5 md:p-6 lg:p-7 rounded-2xl bg-gradient-to-br from-red/5 to-red/10 hover:from-red/10 hover:to-red/15 transition-all duration-300 border border-red/20 hover:border-red/30 shadow-sm hover:shadow-lg hover:shadow-red/10 transform hover:-translate-y-1">
                       <div className="flex-shrink-0 w-12 h-12 md:w-14 md:h-14 bg-gradient-to-br from-red to-red/80 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-lg">
                         <Phone className="w-5 h-5 md:w-6 md:h-6 text-white" strokeWidth={2} />
                       </div>
@@ -395,10 +394,10 @@ const LandingPage = () => {
                         </a>
                         <p className="text-xs md:text-sm text-black/60 font-plex mt-1">(Rora)</p>
                       </div>
-                    </div>
+                    </a>
                           
                     {/* Instagram Contact */}
-                    <div className="group flex items-center gap-4 md:gap-5 p-5 md:p-6 lg:p-7 rounded-2xl bg-gradient-to-br from-red/5 to-red/10 hover:from-red/10 hover:to-red/15 transition-all duration-300 border border-red/20 hover:border-red/30 shadow-sm hover:shadow-lg hover:shadow-red/10 transform hover:-translate-y-1">
+                    <a href="https://www.instagram.com/sumsel_taekwondo"  className="group flex items-center gap-4 md:gap-5 p-5 md:p-6 lg:p-7 rounded-2xl bg-gradient-to-br from-red/5 to-red/10 hover:from-red/10 hover:to-red/15 transition-all duration-300 border border-red/20 hover:border-red/30 shadow-sm hover:shadow-lg hover:shadow-red/10 transform hover:-translate-y-1">
                       <div className="flex-shrink-0 w-12 h-12 md:w-14 md:h-14 bg-gradient-to-br from-red to-red/80 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-lg">
                         <Instagram className="w-5 h-5 md:w-6 md:h-6 text-white" strokeWidth={2} />
                       </div>
@@ -413,7 +412,7 @@ const LandingPage = () => {
                           @sumsel_taekwondo
                         </a>
                       </div>
-                    </div>
+                    </a>
                   </div>
                           
                   {/* Additional Contact Methods - Optional */}
@@ -444,10 +443,15 @@ const LandingPage = () => {
                           
                 {/* Enhanced Map - More Prominent */}
                 <div className="w-full">
-                  <div className="mb-4">
-                    <h4 className="font-bebas text-red text-lg md:text-xl lg:text-2xl mb-2">Lokasi Sekretariat</h4>
-                    <p className="text-xs md:text-sm font-plex text-black/70">GOR Jakabaring, Palembang</p>
-                  </div>
+                    <div className="group flex items-center gap-3 md:gap-4 p-4 md:p-5 rounded-xl bg-gradient-to-br from-gray-50 to-gray-100 hover:from-red/5 hover:to-red/10 transition-all duration-300 border border-gray-200 hover:border-red/20">
+                      <div className="flex-shrink-0 w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-red/20 to-red/10 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                        <MapPin className="w-4 h-4 md:w-5 md:h-5 text-red" strokeWidth={2} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-bebas text-red text-lg md:text-xl lg:text-3xl mb-2">Lokasi Pertandingan</h4>
+                        <p className="text-sm md:text-base font-plex text-black/80 font-medium">GOR Jakabaring (Gor Ranau JSC), Palembang</p>
+                      </div>
+                    </div>
                   <div className="w-full h-56 md:h-64 lg:h-80 xl:h-96 border-2 border-red/20 rounded-2xl overflow-hidden shadow-xl hover:shadow-2xl hover:shadow-red/20 transition-all duration-500 group/map">
                     <iframe
                       src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3984.2808245295255!2d104.7919914!3d-3.0190341000000003!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e3b9da396d2b289%3A0xcc3623bbbb92bd93!2sGOR%20Jakabaring!5e0!3m2!1sen!2sid!4v1757524240866!5m2!1sen!2sid"                           
