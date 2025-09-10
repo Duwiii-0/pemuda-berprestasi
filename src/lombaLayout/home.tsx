@@ -1,6 +1,6 @@
-import { Mail, User, PenLine, Phone, Award, Trophy, Instagram, MapPin } from 'lucide-react';
+import {  Phone,  Instagram } from 'lucide-react';
 import sriwijaya from "../assets/logo/sriwijaya.png";
-import heroLomba from "../assets/photos/heroLomba.jpg";
+import heroLomba from "../assets/photos/heroLomba.png";
 import UnifiedRegistration from "../components/registrationSteps/UnifiedRegistration";
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/authContext";
@@ -102,10 +102,10 @@ const LandingPage = () => {
               {/* Main Title */}
               <div className="relative">
                 <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl 2xl:text-7xl font-bebas text-yellow leading-[0.9] tracking-wide drop-shadow-2xl">
-                  <span className="block bg-gradient-to-r from-yellow via-yellow/95 to-yellow/90 bg-clip-text text-transparent">
+                  <span className="block bg-gradient-to-r from-black via-black/95 to-black/90 bg-clip-text text-transparent">
                     Sriwijaya International
                   </span>
-                  <span className="block bg-gradient-to-r from-yellow/95 via-yellow to-yellow/95 bg-clip-text text-transparent">
+                  <span className="block bg-gradient-to-r from-black via-black/95 to-black/90 bg-clip-text text-transparent">
                     Taekwondo Championship
                   </span>
                 </h1>
@@ -113,15 +113,15 @@ const LandingPage = () => {
               </div>
               
               {/* Year Badge */}
-              <div className="inline-block bg-yellow/10 backdrop-blur-sm border border-yellow/30 rounded-xl px-6 py-3">
-                <span className="text-2xl md:text-3xl lg:text-4xl font-bebas bg-gradient-to-r from-yellow to-yellow/90 bg-clip-text text-transparent">
+              <div className="inline-block bg-red/10 backdrop-blur-sm border border-red/30 rounded-xl px-6 py-3">
+                <span className="text-2xl md:text-3xl lg:text-4xl font-bebas bg-gradient-to-r from-red to-red/90 bg-clip-text text-transparent">
                   2025
                 </span>
               </div>
               
               {/* Description */}
               <div className="max-w-4xl mx-auto">
-                <p className="text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl font-plex font-light text-white/95 leading-relaxed drop-shadow-lg">
+                <p className="text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl font-plex font-light text-black/95 leading-relaxed drop-shadow-lg">
                   Kompetisi taekwondo internasional bergengsi yang menggabungkan tradisi dan inovasi, 
                   menghadirkan standar kompetisi kelas dunia untuk para atlet berprestasi.
                 </p>
