@@ -631,41 +631,54 @@ const handleSubmit = async () => {
             <div className="space-y-6">
               {/* ✅ UPDATED: Kelas Umur - Show first for POOMSAE prestasi */}
               {(
-                (formData.styleType === "KYORUGI" && (formData.categoryType === "pemula" || formData.categoryType === "prestasi")) ||
-                (formData.styleType === "POOMSAE" && formData.categoryType === "pemula")
-              ) &&  (
-                <div>
-                  <label className="block text-black mb-3 text-lg font-plex font-semibold pl-2">
-                    Kelas Umur <span className="text-red">*</span>
-                  </label>
-                  <LockedSelect
-                    unstyled
-                    options={[
-                      { value: "Super pracadet", label: "Super Pra-Cadet" },
-                      { value: "Pracadet", label: "Pra-Cadet" },
-                      { value: "Cadet", label: "Cadet" },
-                      { value: "Junior", label: "Junior" },
-                      { value: "Senior", label: "Senior" },
-                    ]}
-                    value={formData.selectedAge}
-                    onChange={(value: OptionType | null) => setFormData({
-                      ...formData, 
-                      selectedAge: value,
-                      // Reset subsequent fields when age changes
-                      selectedWeight: null,
-                      selectedPoomsae: null,
-                      selectedGender: null,
-                      selectedAtlit: null,
-                      selectedAtlit2: null // ✅ ADDED
-                    })}
-                    placeholder="Pilih kelas umur..."
-                    isSearchable
-                    classNames={selectClassNames}
-                    disabled={false}
-                    message=""
-                  />
-                </div>
-              )}
+  (formData.styleType === "KYORUGI" && (formData.categoryType === "pemula" || formData.categoryType === "prestasi")) ||
+  (formData.styleType === "POOMSAE" && formData.categoryType === "pemula")
+) && (
+  <div>
+    <label className="block text-black mb-3 text-lg font-plex font-semibold pl-2">
+      Kelas Umur <span className="text-red">*</span>
+    </label>
+
+    <LockedSelect
+      unstyled
+      options={[
+        // kalau KYORUGI pemula, exclude Super Pra-Cadet
+        ...(formData.styleType === "KYORUGI" && formData.categoryType === "pemula"
+          ? [
+              { value: "Pracadet", label: "Pra-Cadet" },
+              { value: "Cadet", label: "Cadet" },
+              { value: "Junior", label: "Junior" },
+              { value: "Senior", label: "Senior" },
+            ]
+          : [
+              { value: "Super pracadet", label: "Super Pra-Cadet" },
+              { value: "Pracadet", label: "Pra-Cadet" },
+              { value: "Cadet", label: "Cadet" },
+              { value: "Junior", label: "Junior" },
+              { value: "Senior", label: "Senior" },
+            ])
+      ]}
+      value={formData.selectedAge}
+      onChange={(value: OptionType | null) =>
+        setFormData({
+          ...formData,
+          selectedAge: value,
+          // Reset subsequent fields when age changes
+          selectedWeight: null,
+          selectedPoomsae: null,
+          selectedGender: null,
+          selectedAtlit: null,
+          selectedAtlit2: null, // ✅ ADDED
+        })
+      }
+      placeholder="Pilih kelas umur..."
+      isSearchable
+      classNames={selectClassNames}
+      disabled={false}
+      message=""
+    />
+  </div>
+)}
 
               {/* ✅ UPDATED: Kelas Poomsae - Show after age for POOMSAE */}
               {formData.styleType === "POOMSAE" && (formData.categoryType === "prestasi" || formData.categoryType === "pemula") && (
