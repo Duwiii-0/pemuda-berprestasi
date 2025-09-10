@@ -310,6 +310,64 @@ export class AtletController {
     }
   }
 
+  // Get all atlet
+  static async getAll(req: Request, res: Response) {
+    try {
+      console.log("🔍 DEBUG: Getting all atlet with query:", req.query);
+      
+      const filters = {
+        page: parseInt(req.query.page as string) || 1,
+        limit: parseInt(req.query.limit as string) || 10,
+        search: req.query.search as string,
+        id_dojang: req.query.id_dojang ? parseInt(req.query.id_dojang as string) : undefined,
+        jenis_kelamin: req.query.jenis_kelamin as JenisKelamin,
+        min_age: req.query.min_age ? parseInt(req.query.min_age as string) : undefined,
+        max_age: req.query.max_age ? parseInt(req.query.max_age as string) : undefined,
+        min_weight: req.query.min_weight ? parseFloat(req.query.min_weight as string) : undefined,
+        max_weight: req.query.max_weight ? parseFloat(req.query.max_weight as string) : undefined
+      };
+
+      console.log("🎯 DEBUG: Parsed filters:", filters);
+
+      const result = await AtletService.getAllAtlet(filters);
+      
+      console.log(`✅ DEBUG: Found ${result.data.length} atlet`);
+      
+      return sendSuccess(res, result.data, 'Data atlet berhasil diambil', 200, result.pagination);
+    } catch (error: any) {
+      console.error("❌ DEBUG: Error in getAll:", error);
+      return sendError(res, error.message, 500);
+    }
+  }
+
+  // Get atlet by ID
+  static async getById(req: Request, res: Response) {
+    try {
+      const id = parseInt(req.params.id);
+      
+      console.log("🔍 DEBUG: Getting atlet with ID:", id);
+
+      if (isNaN(id)) {
+        console.log("⚠️ DEBUG: Invalid ID provided");
+        return sendError(res, 'ID atlet tidak valid', 400);
+      }
+
+      const atlet = await AtletService.getAtletById(id);
+      
+      if (!atlet) {
+        console.log("⚠️ DEBUG: Atlet not found");
+        return sendError(res, 'Atlet tidak ditemukan', 404);
+      }
+
+      console.log("✅ DEBUG: Atlet found:", atlet.id_atlet);
+      
+      return sendSuccess(res, atlet, 'Data atlet berhasil diambil');
+    } catch (error: any) {
+      console.error("❌ DEBUG: Error in getById:", error);
+      return sendError(res, error.message, 500);
+    }
+  }
+
   // Get all athletes in a competition
 static async getByKompetisi(req: Request, res: Response) {
   try {
