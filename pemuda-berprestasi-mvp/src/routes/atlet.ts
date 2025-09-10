@@ -1,4 +1,6 @@
 import { Router } from 'express';
+import path from 'path';
+import fs from 'fs';
 import { AtletController } from '../controllers/atletController';
 import { authenticate } from '../middleware/auth';
 import { uploadMiddleware } from '../middleware/upload';
@@ -9,6 +11,28 @@ const router = Router();
 
 // Public routes
 router.get('/stats', AtletController.getStats);
+
+// File serving route (tambahkan sebelum protected routes)
+router.get('/files/:folder/:filename', async (req, res) => {
+  try {
+    const { folder, filename } = req.params;
+    const allowedFolders = ['akte_kelahiran', 'pas_foto', 'sertifikat_belt', 'ktp'];
+    
+    if (!allowedFolders.includes(folder)) {
+      return res.status(400).json({ error: 'Invalid folder' });
+    }
+    
+    const filePath = path.join(__dirname, `../../uploads/atlet/${folder}/${filename}`);
+    
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ error: 'File not found' });
+    }
+    
+    res.sendFile(filePath);
+  } catch (error) {
+    res.status(500).json({ error: 'Error serving file' });
+  }
+});
 
 // Protected routes (require authentication)
 router.use(authenticate);
@@ -24,7 +48,7 @@ router.post(
     { name: 'ktp', maxCount: 1 }
   ]),
   AtletController.create // 4. Controller terakhir
-)
+);
 
 router.get('/', AtletController.getAll);
 router.get('/dojang/:id_dojang', AtletController.getByDojang);
@@ -49,27 +73,5 @@ router.get(
   '/kompetisi/:id_kompetisi/atlet', authenticate,
   AtletController.getByKompetisi
 );
-
-router.get('/files/:folder/:filename', async (req, res) => {
-  try {
-    const { folder, filename } = req.params;
-    const allowedFolders = ['akte_kelahiran', 'pas_foto', 'sertifikat_belt', 'ktp'];
-    
-    if (!allowedFolders.includes(folder)) {
-      return res.status(400).json({ error: 'Invalid folder' });
-    }
-    
-    const filePath = path.join(__dirname, `../../uploads/atlet/${folder}/${filename}`);
-    
-    if (!fs.existsSync(filePath)) {
-      return res.status(404).json({ error: 'File not found' });
-    }
-    
-    res.sendFile(filePath);
-  } catch (error) {
-    res.status(500).json({ error: 'Error serving file' });
-  }
-});
-
 
 export default router;
