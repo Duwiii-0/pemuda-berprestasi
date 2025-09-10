@@ -71,4 +71,14 @@ export const apiClient = {
       },
       body: formData,
     }).then(handleResponse),
+
+  // ✅ TAMBAHAN: putFormData method
+  putFormData: (url: string, formData: FormData) =>
+    fetch(`${API_BASE_URL}${url}`, {
+      method: "PUT",
+      headers: {
+        ...(authToken && { Authorization: `Bearer ${authToken}` }),
+      },
+      body: formData,
+    }).then(handleResponse),
 };

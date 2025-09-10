@@ -79,6 +79,29 @@ class APIClient {
 
     return response.json();
   }
+
+  // ✅ TAMBAHAN: putFormData method
+  async putFormData<T>(endpoint: string, formData: FormData): Promise<T> {
+    const token = localStorage.getItem("auth_token");
+    
+    const config: RequestInit = {
+      method: 'PUT',
+      headers: {
+        ...(token && { Authorization: `Bearer ${token}` }),
+        // Don't set Content-Type for FormData, let browser set it automatically
+      },
+      body: formData,
+    };
+
+    const response = await fetch(`${this.baseURL}${endpoint}`, config);
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+    }
+
+    return response.json();
+  }
 }
 
 export const apiClient = new APIClient(API_BASE_URL);
