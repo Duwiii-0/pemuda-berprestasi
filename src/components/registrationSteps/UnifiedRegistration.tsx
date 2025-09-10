@@ -759,7 +759,7 @@ const handleSubmit = async () => {
               )}
             
                 {/* Kelas Berat untuk KYORUGI */}
-                {(formData.styleType === "KYORUGI" && (formData.categoryType === "pemula" || formData.categoryType === "prestasi") && formData.selectedAge) && (
+                {(formData.styleType === "KYORUGI") && (
                   <div>
                     <label className="block text-black mb-3 text-lg font-plex font-semibold pl-2">
                       Kelas Berat <span className="text-red">*</span>
