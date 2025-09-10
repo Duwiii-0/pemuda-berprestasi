@@ -78,12 +78,10 @@ export default function Timeline() {
               
               {/* Enhanced Month Header */}
               <div className="relative mb-8 md:mb-12 lg:mb-16 flex justify-center">
-                <div className="text-center space-y-4 bg-white px-6 py-2 rounded-xl border border-yellow/20 shadow-sm relative z-10">
-                  <div className="inline-block bg-gradient-to-r from-yellow/10 to-yellow/5 rounded-lg px-4 py-2">
+                <div className="text-center space-y-4 bg-gradient-to-r from-yellow/10 to-yellow/5 px-6 py-2 rounded-xl border border-yellow/20 shadow-sm relative z-10">
                     <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bebas bg-gradient-to-r from-yellow to-yellow/90 bg-clip-text text-transparent capitalize">
                       {month}
                     </h2>
-                  </div>
                 </div>
               </div>
               
