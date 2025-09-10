@@ -414,8 +414,7 @@ const LandingPage = () => {
                   {/* Enhanced Map - Fixed Mobile Layout */}
                   <div className="w-full h-48 md:h-64 lg:h-72 border-2 border-red/15 rounded-xl overflow-hidden shadow-lg hover:shadow-xl hover:shadow-red/10 transition-all duration-500 group/map">
                     <iframe
-                      src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3965.1798162429486!2d106.82109567593805!3d-6.370770862321453!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e69ec1cabb59bdf%3A0x28b4f84e4677f329!2sJakarta%20State%20Polytechnic!5e0!3m2!1sen!2sid!4v1755283210158!5m2!1sen!2sid"
-                      style={{ border: 0 }}
+                      src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3984.2808245295255!2d104.7919914!3d-3.0190341000000003!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e3b9da396d2b289%3A0xcc3623bbbb92bd93!2sGOR%20Jakabaring!5e0!3m2!1sen!2sid!4v1757524240866!5m2!1sen!2sid"                           style={{ border: 0 }}
                       allowFullScreen
                       loading="lazy"
                       referrerPolicy="no-referrer-when-downgrade"
