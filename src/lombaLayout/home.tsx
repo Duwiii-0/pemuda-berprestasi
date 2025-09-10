@@ -324,7 +324,7 @@ const LandingPage = () => {
             {/* Mobile CTA Button */}
             <div className="text-center mt-6 sm:mt-8 md:mt-10">
               <button
-                onClick={handleJoinClick}
+                onClick={() => {window.scrollTo(0, 0)}}
                 className="inline-flex items-center gap-2 px-6 sm:px-8 py-3 sm:py-4 text-sm sm:text-base font-plex font-semibold bg-red text-white hover:bg-red/90 transition-all duration-300 rounded-lg sm:rounded-xl hover:scale-105 hover:shadow-lg hover:shadow-red/30"
               >
                 <span>Mulai Daftar Sekarang</span>

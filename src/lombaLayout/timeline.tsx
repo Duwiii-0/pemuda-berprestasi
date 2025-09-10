@@ -67,7 +67,7 @@ export default function Timeline() {
         <div className="w-full max-w-7xl mx-auto relative">
           
           {/* Main Continuous Timeline Line - Desktop */}
-          <div className="hidden md:block absolute left-1/2 transform -translate-x-1/2 top-0 bottom-0 w-1 bg-gradient-to-b from-red/60 via-red/40 to-red/20"></div>
+          <div className="hidden md:block absolute left-1/2 transform -translate-x-1/2 top-10 bottom-10 w-1 bg-gradient-to-b from-red/60 via-red/40 to-red/20"></div>
           
           {/* Main Continuous Timeline Line - Mobile & Tablet */}
           <div className="md:hidden absolute left-8 top-0 bottom-0 w-0.5 bg-gradient-to-b from-red/60 via-red/40 to-red/20"></div>
