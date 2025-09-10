@@ -83,7 +83,7 @@ interface AtletContextType {
   atlits: Atlet[];
   fetchAllAtlits: () => Promise<void>;
   fetchAtletById: (id: number) => Promise<Atlet | undefined>;
-  updateAtlet: (updated: Atlet) => Promise<Atlet | undefined>;
+updateAtlet: (id: number, formData: FormData) => Promise<Atlet | undefined>;
   createAtlet: (formData: FormData) => Promise<Atlet | undefined>; // ⬅️ tambah
 }
 
@@ -176,11 +176,21 @@ const createAtlet = async (formData: FormData) => {
 };
 
 // Update atlet di context
-const updateAtlet = async (updated: Atlet) => {
+const updateAtlet = async (id: number, formData: FormData) => {
   try {
-    console.log(`🔄 Updating atlet ID: ${updated.id_atlet}`);
+    console.log(`🔄 Updating atlet ID: ${id}`);
     
-    const response = await apiClient.put(`/atlet/${updated.id_atlet}`, updated);
+    // Debug: Log FormData contents
+    console.log("📤 FormData contents:");
+    for (let [key, value] of formData.entries()) {
+      if (value instanceof File) {
+        console.log(`${key}: File - ${value.name} (${value.size} bytes, ${value.type})`);
+      } else {
+        console.log(`${key}: ${value}`);
+      }
+    }
+    
+    const response = await apiClient.putFormData(`/atlet/${id}`, formData);
     console.log("✅ Update response:", response);
     
     // FIXED: Extract data properly
@@ -188,17 +198,15 @@ const updateAtlet = async (updated: Atlet) => {
     
     if (updatedAtlet) {
       setAtlits(prev =>
-        prev.map(a => (a.id_atlet === updated.id_atlet ? updatedAtlet : a))
+        prev.map(a => (a.id_atlet === id ? updatedAtlet : a))
       );
       return updatedAtlet;
     }
   } catch (err: any) {
-    console.error(`❌ Gagal update atlet dengan ID ${updated.id_atlet}:`, err.message);
+    console.error(`❌ Gagal update atlet dengan ID ${id}:`, err.message);
     throw new Error(err.message || "Gagal update atlet");
   }
 };
-
-
 
   return (
     <AtletContext.Provider value={{ atlits, fetchAllAtlits, fetchAtletById, updateAtlet, createAtlet }}>

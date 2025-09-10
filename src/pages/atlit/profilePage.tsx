@@ -235,71 +235,48 @@ const Profile = () => {
   setIsSubmitting(true);
   
   try {
-    const calculatedAge = calculateAge(formData.tanggal_lahir);
-
-    // Create FormData untuk mengirim file dan data - SAMA SEPERTI TAMBAHATLIT
-    const formDataToSend = new FormData();
+    const formDataSend = new FormData();
     
-    // Append regular fields - SESUAIKAN DENGAN BACKEND REQUIREMENTS
-    formDataToSend.append('nama_atlet', formData.nama_atlet);
-    formDataToSend.append('jenis_kelamin', formData.jenis_kelamin);
-    formDataToSend.append('tanggal_lahir', formData.tanggal_lahir);
+    // Required fields
+    formDataSend.append("nama_atlet", formData.nama_atlet);
+    formDataSend.append("jenis_kelamin", formData.jenis_kelamin);
+    formDataSend.append("tanggal_lahir", formData.tanggal_lahir);
     
-    // Optional fields - hanya append jika ada value
-    if (formData.nik?.trim()) formDataToSend.append('nik', formData.nik.trim());
-    if (formData.no_telp?.trim()) formDataToSend.append('no_telp', formData.no_telp.trim());
-    if (formData.alamat?.trim()) formDataToSend.append('alamat', formData.alamat.trim());
-    if (formData.provinsi?.trim()) formDataToSend.append('provinsi', formData.provinsi.trim());
-    if (formData.kota?.trim()) formDataToSend.append('kota', formData.kota.trim()); // TAMBAHKAN KOTA
-    if (formData.belt?.trim()) formDataToSend.append('belt', formData.belt.trim());
+    // Optional fields
+    if (formData.nik?.trim()) formDataSend.append('nik', formData.nik.trim());
+    if (formData.no_telp?.trim()) formDataSend.append('no_telp', formData.no_telp.trim());
+    if (formData.alamat?.trim()) formDataSend.append('alamat', formData.alamat.trim());
+    if (formData.provinsi?.trim()) formDataSend.append('provinsi', formData.provinsi.trim());
+    if (formData.kota?.trim()) formDataSend.append('kota', formData.kota.trim());
+    if (formData.belt?.trim()) formDataSend.append('belt', formData.belt.trim());
     
-    // Numeric fields dengan validation
+    // Numeric fields
     if (formData.tinggi_badan) {
       const height = parseFloat(String(formData.tinggi_badan));
       if (!isNaN(height) && height > 0) {
-        formDataToSend.append('tinggi_badan', String(height));
+        formDataSend.append('tinggi_badan', String(height));
       }
     }
     
     if (formData.berat_badan) {
       const weight = parseFloat(String(formData.berat_badan));
       if (!isNaN(weight) && weight > 0) {
-        formDataToSend.append('berat_badan', String(weight));
+        formDataSend.append('berat_badan', String(weight));
       }
     }
 
-    // Append files jika ada (hanya file baru)
-    if (formData.akte_kelahiran) {
-      formDataToSend.append('akte_kelahiran', formData.akte_kelahiran);
-    }
-    if (formData.pas_foto) {
-      formDataToSend.append('pas_foto', formData.pas_foto);
-    }
-    if (formData.sertifikat_belt) {
-      formDataToSend.append('sertifikat_belt', formData.sertifikat_belt);
-    }
-    if (formData.ktp) {
-      formDataToSend.append('ktp', formData.ktp);
-    }
+    // Files
+    if (formData.akte_kelahiran) formDataSend.append('akte_kelahiran', formData.akte_kelahiran);
+    if (formData.pas_foto) formDataSend.append('pas_foto', formData.pas_foto);
+    if (formData.sertifikat_belt) formDataSend.append('sertifikat_belt', formData.sertifikat_belt);
+    if (formData.ktp) formDataSend.append('ktp', formData.ktp);
 
-    // Debug: Log FormData contents
-    console.log('🚀 Profile: Calling UPDATE API with FormData');
-    console.log('📤 FormData contents:');
-    for (const [key, value] of formDataToSend.entries()) {
-      if (value instanceof File) {
-        console.log(`${key}: File - ${value.name} (${value.size} bytes, ${value.type})`);
-      } else {
-        console.log(`${key}: ${value}`);
-      }
-    }
+    // Use context function dengan ID
+    const result = await updateAtlet(Number(id), formDataSend);
 
-    // GUNAKAN DIRECT FETCH API SEPERTI TAMBAHATLIT
-    const saved = await updateAtletWithFiles(formDataToSend);
-
-    if (saved) {
+    if (result) {
       const updatedData = {
-        ...saved,
-        // Reset file fields setelah berhasil
+        ...result,
         akte_kelahiran: null,
         pas_foto: null,
         sertifikat_belt: null,
@@ -313,7 +290,6 @@ const Profile = () => {
   } catch (err: any) {
     console.error("❌ Gagal update atlet:", err);
     
-    // Better error handling seperti TambahAtlit
     if (err.message.includes('File size')) {
       toast.error("File terlalu besar. Maksimal 5MB per file.");
     } else if (err.message.includes('Invalid file')) {
@@ -328,60 +304,7 @@ const Profile = () => {
   }
 };
 
-  // Enhanced function to handle file uploads with better error handling
-  const updateAtletWithFiles = async (formData: FormData): Promise<AtletWithFiles | null> => {
-  try {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      throw new Error('Token tidak ditemukan. Silakan login kembali.');
-    }
-
-    console.log(`🌐 Calling PUT ${import.meta.env.VITE_API_URL}/atlet/${id}`);
-
-    const response = await fetch(`${import.meta.env.VITE_API_URL}/atlet/${id}`, {
-      method: 'PUT',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        // JANGAN set Content-Type header untuk FormData
-      },
-      body: formData,
-    });
-
-    console.log('📡 Response status:', response.status);
-    console.log('📡 Response headers:', Object.fromEntries(response.headers.entries()));
-
-    // Parse response text first
-    const responseText = await response.text();
-    console.log('📄 Response text:', responseText);
-
-    if (!response.ok) {
-      let errorMessage = 'Failed to update atlet';
-      try {
-        const errorData = JSON.parse(responseText);
-        errorMessage = errorData.message || errorData.error || `HTTP ${response.status}: ${response.statusText}`;
-      } catch {
-        errorMessage = `HTTP ${response.status}: ${response.statusText}`;
-      }
-      throw new Error(errorMessage);
-    }
-
-    // Parse successful response
-    let parsedResponse;
-    try {
-      parsedResponse = JSON.parse(responseText);
-      console.log('✅ API Response:', parsedResponse);
-      console.log('👤 Updated Atlet Data:', parsedResponse);
-      return parsedResponse;
-    } catch (parseError) {
-      console.error('❌ Failed to parse response JSON:', parseError);
-      throw new Error('Invalid response format from server');
-    }
-
-  } catch (error: any) {
-    console.error('❌ Error updating atlet:', error);
-    throw error;
-  }
-};
+const { fetchAtletById, updateAtlet } = useAtletContext();
 
 const handleInputChange = (field: keyof AtletWithFiles, value: any) => {
   if (!formData) return;
