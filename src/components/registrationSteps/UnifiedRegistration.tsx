@@ -296,7 +296,7 @@ useEffect(() => {
     kompetisiId,
   ]);
 
-  const totalSteps = 3;
+  const totalSteps = 4;
 
   // Get existing registrations for this competition
 
@@ -796,15 +796,6 @@ const handleSubmit = async () => {
     </h2>
     <p className="text-black/70 font-plex">Langkah 3 dari {totalSteps}</p>
 
-    {/* Biaya Pendaftaran */}
-    <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-      <p className="font-plex text-blue-700 text-lg">
-        <strong>
-          Biaya Pendaftaran: {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(biayaPendaftaran)}
-        </strong>
-      </p>
-    </div>
-
     {/* Info Tim Poomsae */}
     {isPoomsaeTeam() && (
       <div className="mt-2 p-3 bg-purple-50 rounded-lg">
@@ -926,6 +917,40 @@ const handleSubmit = async () => {
 
         );
 
+      case 4:
+    return (
+      <div className="space-y-4">
+        <h2 className="text-xl font-bold text-center">Informasi Pendaftaran</h2>
+
+        <div className="bg-gray-100 p-4 rounded-lg space-y-2">
+          <p><span className="font-semibold">Biaya Pendaftaran:</span></p>
+          <ul className="list-disc list-inside ml-4">
+            <li>WNI: Rp 500.000</li>
+            <li>WNA: Rp 1.000.000</li>
+          </ul>
+
+          <p><span className="font-semibold">Pembayaran melalui:</span></p>
+          <p>Bank Sumsel Babel</p>
+          <p>No. Rekening: <span className="font-mono">19309010367</span></p>
+          <p>a.n. Panitia UKT Pengprov TISS</p>
+
+          <p>
+            <span className="font-semibold">Keterangan transfer:</span><br />
+            <span className="italic">nama_dojang_total peserta</span>
+          </p>
+
+          <p>
+            <span className="font-semibold">Konfirmasi pembayaran:</span> <br />
+            Kirim bukti transfer & data ke nomor <span className="font-mono">0853 7844 1489 (Jeje)</span>
+          </p>
+        </div>
+
+        <div className="flex justify-between">
+        </div>
+      </div>
+    );
+
+
       default:
         return null;
     }
@@ -947,7 +972,7 @@ const handleSubmit = async () => {
             
             {/* Progress indicator */}
             <div className="hidden md:flex items-center space-x-4">
-              {[1, 2, 3].map((step) => (
+              {[1, 2, 3, 4].map((step) => (
                 <div key={step} className="flex items-center">
                   <div
                     className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-colors duration-300 ${
@@ -960,7 +985,7 @@ const handleSubmit = async () => {
                   >
                     {step}
                   </div>
-                  {step < 3 && (
+                  {step < 4 && (
                     <div 
                       className={`w-12 h-1 mx-2 transition-colors duration-300 ${
                         step < currentStep ? 'bg-green-500' : 'bg-gray-300'
