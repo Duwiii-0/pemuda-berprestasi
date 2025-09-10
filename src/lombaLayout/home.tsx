@@ -200,10 +200,8 @@ const LandingPage = () => {
                 <div className="group/card flex flex-col w-full gap-4 md:gap-6 justify-center items-center hover:scale-[1.02] transition-all duration-500">
                   
                   {/* Enhanced Image Container */}
-                  <div className="relative overflow-hidden rounded-xl md:rounded-2xl border-2 border-yellow shadow-lg md:shadow-xl bg-gradient-to-br from-blue-50 to-blue-100 mx-auto group-hover:shadow-xl md:group-hover:shadow-2xl group-hover:shadow-yellow/20 transition-all duration-700">
-                    {/* Subtle overlay patterns */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-transparent via-red/5 to-transparent"></div>
-                    
+                  <div className="relative overflow-hidden rounded-xl mx-auto group-hover:shadow-xl">
+                    {/* Subtle overlay patterns */}                    
                     <img 
                       src={ketua}
                       alt="Hj. Meilinda, S.Sos.,M.M" 
