@@ -1,13 +1,13 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Trophy, Users, Search, Clock, CheckCircle, Menu, ChevronLeft, ChevronRight, Loader, XCircle } from 'lucide-react';
+import { Trophy, Users, Search, Clock, CheckCircle, Menu, ChevronLeft, ChevronRight } from 'lucide-react';
 import toast from "react-hot-toast";
 import NavbarDashboard from "../../components/navbar/navbarDashboard";
 import { useAuth } from "../../context/authContext";
 import { useKompetisi } from "../../context/KompetisiContext";
 import { useDojang } from "../../context/dojangContext";
+import UnifiedRegistration from "../../components/registrationSteps/UnifiedRegistration";
 import type { Kompetisi } from "../../context/KompetisiContext";
-import Select from "react-select";
 
 interface StatsCardProps {
   icon: React.ComponentType<{ size?: number; className?: string }>;
@@ -33,13 +33,16 @@ const StatsCard: React.FC<StatsCardProps> = ({ icon: Icon, title, value, color }
 const DataKompetisi = () => {
   const navigate = useNavigate();
   const { user, token } = useAuth();
-  const { kompetisiList, loadingKompetisi, fetchKompetisiList, fetchAtletByKompetisi, pesertaList, updatePesertaStatus } = useKompetisi();
+  const { kompetisiList, loadingKompetisi, fetchKompetisiList, fetchAtletByKompetisi, pesertaList } = useKompetisi();
   const { dojangOptions, refreshDojang } = useDojang();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "PENDAFTARAN" | "SEDANG_DIMULAI" | "SELESAI">("all");
   const [selectedKompetisi, setSelectedKompetisi] = useState<Kompetisi | null>(null);
   const [showPeserta, setShowPeserta] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  
+  // State untuk modal registrasi
+  const [showRegistrationModal, setShowRegistrationModal] = useState(false);
   
   // Filtering states untuk halaman peserta
   const [searchPeserta, setSearchPeserta] = useState("");
@@ -53,7 +56,6 @@ const DataKompetisi = () => {
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(100);
-  const [processing, setProcessing] = useState<number | null>(null);
 
   const kelasBeratOptions = [
   { value: "ALL", label: "Semua Kelas" },
@@ -287,6 +289,16 @@ const DataKompetisi = () => {
     }
     
     return pageNumbers;
+  };
+
+  // Handler untuk menutup modal registrasi dan refresh data
+  const handleRegistrationClose = () => {
+    setShowRegistrationModal(false);
+    // Refresh data peserta setelah registrasi berhasil
+    if (selectedKompetisi) {
+      const idDojang = user?.pelatih?.id_dojang;
+      fetchAtletByKompetisi(selectedKompetisi.id_kompetisi, undefined, idDojang);
+    }
   };
 
   // Loading state with proper layout
@@ -585,31 +597,31 @@ const DataKompetisi = () => {
               </div>
             </div>
             
-            {/* Registration Button */}
+             {/* Registration Button */}
             <div className="mb-6">
-              <div className="bg-gradient-to-r from-red/5 via-yellow/5 to-red/5 rounded-2xl p-4 lg:p-6 border border-red/20 shadow-sm">
-                <div className="flex flex-col gap-4">
-                  {/* Header */}
-                  <div className="text-center lg:text-left">
-                    <h3 className="font-bebas text-xl lg:text-2xl text-black/80 mb-1">
-                      Daftarkan Atlet Baru
-                    </h3>
-                    <p className="font-plex text-sm lg:text-base text-black/60">
-                      Tambahkan atlet ke kompetisi {selectedKompetisi.nama_event}
-                    </p>
-                  </div>
-                  
-                  {/* Button */}
-                  <div className="flex justify-center lg:justify-start">
-                    <button
-                      onClick={() => navigate('/lomba', { 
-                        state: { kompetisiId: selectedKompetisi.id_kompetisi } 
-                      })}
-                      className="bg-gradient-to-r from-red to-red/90 hover:from-red/90 hover:to-red text-white font-plex font-semibold px-8 py-3 rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-105 flex items-center gap-2 min-w-[200px] justify-center"
-                    >
-                      <Users size={20} />
-                      <span>Daftar Atlet</span>
-                    </button>
+              <div className="bg-gradient-to-r from-red/5 via-yellow/5 to-red/5 rounded-2xl border border-red/20 shadow-sm overflow-hidden">
+                <div className="p-4 lg:p-6">
+                  <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                    {/* Content */}
+                    <div className="text-center lg:text-left">
+                      <h3 className="font-bebas text-xl lg:text-2xl text-black/80 mb-1">
+                        Daftarkan Atlet Baru
+                      </h3>
+                      <p className="font-plex text-sm lg:text-base text-black/60">
+                        Tambahkan atlet ke kompetisi {selectedKompetisi.nama_event}
+                      </p>
+                    </div>
+                    
+                    {/* Button */}
+                    <div className="flex justify-center lg:justify-end">
+                      <button
+                        onClick={() => setShowRegistrationModal(true)}
+                        className="bg-gradient-to-r from-red to-red/90 hover:from-red/90 hover:to-red text-white font-plex font-semibold px-6 lg:px-8 py-3 rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-105 flex items-center gap-2 min-w-[180px] lg:min-w-[200px] justify-center"
+                      >
+                        <Users size={20} />
+                        <span>Daftar Atlet</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -846,6 +858,15 @@ const DataKompetisi = () => {
           </div>
         </div>
         
+        {/* Modal Registrasi */}
+        <UnifiedRegistration
+          isOpen={showRegistrationModal}
+          onClose={handleRegistrationClose}
+          kompetisiId={selectedKompetisi.id_kompetisi}
+          kompetisiName={selectedKompetisi.nama_event}
+          biayaPendaftaran={(selectedKompetisi as any).biaya_pendaftaran}
+        />
+        
         {/* Mobile Sidebar */}
         {sidebarOpen && (
           <>
@@ -984,48 +1005,109 @@ const DataKompetisi = () => {
           </div>
 
           {/* Tabel Kompetisi */}
-          <div className="overflow-x-hidden w-full bg-white/60 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-white/50">
-            <div className="rounded-2xl overflow-hidden border border-white/50">
-              <table className="w-full rounded-3xl">
-                <thead className="bg-gradient-to-r from-red to-red/80 text-white rounded-2xl text-2xl tracking-wide">
-                  <tr>
-                    <th className="px-6 py-4 text-left font-bebas">Nama Kompetisi</th>
-                    <th className="px-6 py-4 text-center font-bebas">Tanggal Mulai</th>
-                    <th className="px-6 py-4 text-center font-bebas">Tanggal Selesai</th>
-                    <th className="px-6 py-4 text-center font-bebas">Lokasi</th>
-                    <th className="px-6 py-4 text-center font-bebas">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/30">
-                  {filteredKompetisi.map((k) => (
-                    <tr
-                      key={k.id_kompetisi}
-                      className="transition-all duration-200 hover:bg-red/10 cursor-pointer"
-                      onClick={() => handleKompetisiClick(k)}
-                    >
-                      <td className="px-6 py-4 font-plex">{k.nama_event}</td>
-                      <td className="px-6 py-4 text-center font-plex">{formatTanggal(k.tanggal_mulai)}</td>
-                      <td className="px-6 py-4 text-center font-plex">{formatTanggal(k.tanggal_selesai)}</td>
-                      <td className="px-6 py-4 text-center font-plex">{k.lokasi || "-"}</td>
-                      <td className="px-6 py-4 text-center">
-                        <span className={`px-3 py-1 rounded-full text-md font-plex ${getStatusColor(k.status)}`}>
-                          {k.status === "PENDAFTARAN"
-                            ? "Pendaftaran"
-                            : k.status === "SEDANG_DIMULAI"
-                            ? "Sedang Dimulai"
-                            : "Selesai"}
-                        </span>
-                      </td>
+          <div className="overflow-x-hidden w-full bg-white/60 backdrop-blur-sm rounded-2xl p-4 lg:p-6 shadow-xl border border-white/50">
+            {/* Desktop Table View */}
+            <div className="hidden lg:block">
+              <div className="rounded-2xl overflow-hidden border border-white/50">
+                <table className="w-full rounded-3xl">
+                  <thead className="bg-gradient-to-r from-red to-red/80 text-white rounded-2xl text-2xl tracking-wide">
+                    <tr>
+                      <th className="px-6 py-4 text-left font-bebas">Nama Kompetisi</th>
+                      <th className="px-6 py-4 text-center font-bebas">Tanggal Mulai</th>
+                      <th className="px-6 py-4 text-center font-bebas">Tanggal Selesai</th>
+                      <th className="px-6 py-4 text-center font-bebas">Lokasi</th>
+                      <th className="px-6 py-4 text-center font-bebas">Status</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-white/30">
+                    {filteredKompetisi.map((k) => (
+                      <tr
+                        key={k.id_kompetisi}
+                        className="transition-all duration-200 hover:bg-red/10 cursor-pointer"
+                        onClick={() => handleKompetisiClick(k)}
+                      >
+                        <td className="px-6 py-4 font-plex">{k.nama_event}</td>
+                        <td className="px-6 py-4 text-center font-plex">{formatTanggal(k.tanggal_mulai)}</td>
+                        <td className="px-6 py-4 text-center font-plex">{formatTanggal(k.tanggal_selesai)}</td>
+                        <td className="px-6 py-4 text-center font-plex">{k.lokasi || "-"}</td>
+                        <td className="px-6 py-4 text-center">
+                          <span className={`px-3 py-1 rounded-full text-md font-plex ${getStatusColor(k.status)}`}>
+                            {k.status === "PENDAFTARAN"
+                              ? "Pendaftaran"
+                              : k.status === "SEDANG_DIMULAI"
+                              ? "Sedang Dimulai"
+                              : "Selesai"}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
 
+                {filteredKompetisi.length === 0 && (
+                  <div className="text-center py-12">
+                    <Trophy className="mx-auto text-gray-400 mb-4" size={48} />
+                    <p className="font-plex text-gray-500">Tidak ada kompetisi yang ditemukan</p>
+                    <p className="font-plex text-sm text-gray-400 mt-2">Coba ubah kriteria pencarian atau filter</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Mobile Card View */}
+            <div className="lg:hidden space-y-4">
+              {filteredKompetisi.map((k) => (
+                <div
+                  key={k.id_kompetisi}
+                  className="bg-white/80 rounded-xl p-4 shadow-sm border border-white/50 hover:bg-red/5 transition-colors cursor-pointer"
+                  onClick={() => handleKompetisiClick(k)}
+                >
+                  {/* Competition Name */}
+                  <h3 className="font-bebas text-xl text-black/80 mb-2">
+                    {k.nama_event}
+                  </h3>
+
+                  {/* Status Badge */}
+                  <div className="mb-3">
+                    <span className={`inline-block px-3 py-1 rounded-full text-sm font-plex ${getStatusColor(k.status)}`}>
+                      {k.status === "PENDAFTARAN"
+                        ? "Pendaftaran"
+                        : k.status === "SEDANG_DIMULAI"
+                        ? "Sedang Dimulai"
+                        : "Selesai"}
+                    </span>
+                  </div>
+
+                  {/* Competition Details */}
+                  <div className="space-y-2 text-sm font-plex">
+                    <div className="flex items-start gap-2">
+                      <span className="text-black/60 min-w-[100px]">Tanggal Mulai</span>
+                      <span className="text-black/80">: {formatTanggal(k.tanggal_mulai)}</span>
+                    </div>
+                    
+                    <div className="flex items-start gap-2">
+                      <span className="text-black/60 min-w-[100px]">Tanggal Selesai</span>
+                      <span className="text-black/80">: {formatTanggal(k.tanggal_selesai)}</span>
+                    </div>
+                    
+                    <div className="flex items-start gap-2">
+                      <span className="text-black/60 min-w-[100px]">Lokasi</span>
+                      <span className="text-black/80">: {k.lokasi || "-"}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              {/* Empty State for Mobile */}
               {filteredKompetisi.length === 0 && (
-                <div className="text-center py-12">
-                  <Trophy className="mx-auto text-gray-400 mb-4" size={48} />
-                  <p className="font-plex text-gray-500">Tidak ada kompetisi yang ditemukan</p>
-                  <p className="font-plex text-sm text-gray-400 mt-2">Coba ubah kriteria pencarian atau filter</p>
+                <div className="text-center py-8">
+                  <Trophy className="mx-auto text-gray-400 mb-3" size={40} />
+                  <p className="font-plex text-gray-500 text-sm">
+                    Tidak ada kompetisi yang ditemukan
+                  </p>
+                  <p className="font-plex text-xs text-gray-400 mt-1">
+                    Coba ubah kriteria pencarian atau filter
+                  </p>
                 </div>
               )}
             </div>
