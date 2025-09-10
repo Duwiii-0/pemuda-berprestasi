@@ -1,6 +1,7 @@
 import { PrismaClient, JenisKelamin } from '@prisma/client';
 import fs from 'fs'
 import path from 'path'
+import { ATLET_FOLDER_MAP, AtletFileType } from '../constants/fileMapping'
 
 
 export interface FileInfo {
@@ -640,7 +641,7 @@ static async getEligible(
     throw new Error('Atlet tidak ditemukan')
   }
 
-      const checkFile = (filename: string | null, type: keyof typeof ATLET_FOLDER_MAP): FileInfo | null => {
+    const checkFile = (filename: string | null, type: AtletFileType): FileInfo | null => {
     if (!filename) return null
     const folder = ATLET_FOLDER_MAP[type]
     const filePath = path.join(process.cwd(), 'uploads', 'atlet', folder, filename)
@@ -661,36 +662,31 @@ static async getEligible(
   }
 }
 
+
   // Hapus file atlet
   static async deleteFile(id_atlet: number, fileType: keyof AtletFileInfo) {
-    const atlet = await prisma.tb_atlet.findUnique({
-      where: { id_atlet }
-    })
+  const atlet = await prisma.tb_atlet.findUnique({
+    where: { id_atlet }
+  })
 
-    if (!atlet) throw new Error('Atlet tidak ditemukan')
+  if (!atlet) throw new Error('Atlet tidak ditemukan')
 
-    const filename = atlet[fileType]
-    if (!filename) throw new Error('File tidak ditemukan')
+  const filename = atlet[fileType]
+  if (!filename) throw new Error('File tidak ditemukan')
 
-    const folderMap: Record<string, string> = {
-      akte_kelahiran: 'akte',
-      pas_foto: 'pas_foto',
-      sertifikat_belt: 'sertifikat',
-      ktp: 'ktp'
-    }
+  // FIXED: Use imported ATLET_FOLDER_MAP
+  const folder = ATLET_FOLDER_MAP[fileType as AtletFileType]
+  const filePath = path.join(process.cwd(), 'uploads', 'atlet', folder, filename)
 
-    const folder = folderMap[fileType]
-    const filePath = path.join(process.cwd(), 'uploads', 'atlet', folder, filename)
+  if (fs.existsSync(filePath)) fs.unlinkSync(filePath)
 
-    if (fs.existsSync(filePath)) fs.unlinkSync(filePath)
+  await prisma.tb_atlet.update({
+    where: { id_atlet },
+    data: { [fileType]: null }
+  })
 
-    await prisma.tb_atlet.update({
-      where: { id_atlet },
-      data: { [fileType]: null }
-    })
-
-    return { message: `${fileType} deleted successfully` }
-  }
+  return { message: `${fileType} deleted successfully` }
+}
 
   static async getAtletByKompetisi(id_kompetisi: number, cabang?: "KYORUGI" | "POOMSAE") {
     const kelasKejuaraan = await prisma.tb_kelas_kejuaraan.findMany({

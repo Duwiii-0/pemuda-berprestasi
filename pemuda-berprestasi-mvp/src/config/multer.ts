@@ -1,7 +1,7 @@
-// src/config/multer.ts
 import multer from 'multer'
 import path from 'path'
 import fs from 'fs'
+import { ATLET_FOLDER_MAP, PELATIH_FOLDER_MAP } from '../constants/fileMapping'
 
 const createUploadDirs = () => {
   const dirs = [
@@ -22,19 +22,6 @@ const createUploadDirs = () => {
 
 createUploadDirs()
 
-// FIXED: Konsisten folder mapping
-const ATLET_FOLDER_MAP: Record<string, string> = {
-  'akte_kelahiran': 'akte_kelahiran',
-  'pas_foto': 'pas_foto',
-  'sertifikat_belt': 'sertifikat_belt', 
-  'ktp': 'ktp'
-}
-
-const PELATIH_FOLDER_MAP: Record<string, string> = {
-  'foto_ktp': 'ktp',
-  'sertifikat_sabuk': 'sertifikat'
-}
-
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const type = file.fieldname
@@ -44,7 +31,7 @@ const storage = multer.diskStorage({
     if (PELATIH_FOLDER_MAP[type]) {
       folder = `uploads/pelatih/${PELATIH_FOLDER_MAP[type]}`
     } 
-    // ATLET FILES - FIXED
+    // ATLET FILES
     else if (ATLET_FOLDER_MAP[type]) {
       folder = `uploads/atlet/${ATLET_FOLDER_MAP[type]}`
     } else {
@@ -69,7 +56,7 @@ const storage = multer.diskStorage({
       const fileType = type === 'foto_ktp' ? 'ktp' : 'sertifikat'
       filename = `${pelatihId}_${fileType}_${timestamp}${ext}`
     } 
-    // UNTUK ATLET - FIXED
+    // UNTUK ATLET
     else if (ATLET_FOLDER_MAP[type]) {
       const pelatihId = user?.pelatihId || user?.pelatih?.id_pelatih || 'temp'
       filename = `atlet_${pelatihId}_${type}_${timestamp}${ext}`
