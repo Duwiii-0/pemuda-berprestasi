@@ -3,12 +3,13 @@ import { DojangController } from '../controllers/dojangController';
 import { authenticate } from '../middleware/auth';
 import { validateRequest } from '../middleware/validation';
 import { dojangValidation } from '../validations/dojangValidation';
+import { uploadDojangLogo } from '../middleware/upload'; // Import the new dojang logo upload middleware
 
 const router = Router();
 
 // ===== PUBLIC ROUTES =====
 // Check nama dojang availability
-router.get('/check-name', validateRequest(dojangValidation.checkName), DojangController.checkNameAvailability);
+router.get('/check-name', validateRequest(dojangValidation.checkName, 'query'), DojangController.checkNameAvailability);
 
 // Get public dojang statistics
 router.get('/stats', DojangController.getStats);
@@ -16,7 +17,8 @@ router.get('/stats', DojangController.getStats);
 router.get('/listdojang', DojangController.getAll);
 
 // Registrasi dojang baru (PUBLIC - tanpa login)
-router.post('/', validateRequest(dojangValidation.create), DojangController.create);
+// Use the specific dojang logo upload middleware
+router.post('/', uploadDojangLogo, DojangController.create);
 
 // ===== AUTHENTICATED ROUTES =====
 router.use(authenticate); // Semua route setelah ini memerlukan autentikasi
@@ -26,7 +28,7 @@ router.get('/my-dojang', DojangController.getMyDojang);
 router.get('/pelatih/:id_pelatih', DojangController.getByPelatih);
 
 // Update dan delete dojang (perlu permission check)
-router.put('/:id', validateRequest(dojangValidation.update), DojangController.update);
+router.put('/:id', uploadDojangLogo, DojangController.update);
 router.delete('/:id', DojangController.delete);
 
 // Get dojang by ID (authenticated view - lebih detail)
