@@ -39,7 +39,6 @@ const UnifiedRegistration = ({
   const getAgeOptions = () => {
   if (formData.styleType === "KYORUGI" && formData.categoryType === "prestasi") {
     return [
-      { value: "1", label: "Super Pra-Cadet" },
       { value: "2", label: "Pra-Cadet" },
       { value: "3", label: "Cadet" },
       { value: "4", label: "Junior" },
@@ -49,6 +48,7 @@ const UnifiedRegistration = ({
 
   if (formData.styleType === "KYORUGI" && formData.categoryType === "pemula") {
     return [
+      { value: "1", label: "Super Pra-Cadet" },
       { value: "2", label: "Pra-Cadet" },
       { value: "3", label: "Cadet" },
       { value: "4", label: "Junior" },
