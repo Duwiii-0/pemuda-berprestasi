@@ -637,7 +637,13 @@ const handleSubmit = async () => {
                   </label>
                   <LockedSelect
                     unstyled
-                    options={ageOptions}
+                    options={[
+                      { value: "Super pracadet", label: "Super Pra-Cadet" },
+                      { value: "Pracadet", label: "Pra-Cadet" },
+                      { value: "Cadet", label: "Cadet" },
+                      { value: "Junior", label: "Junior" },
+                      { value: "Senior", label: "Senior" },
+                    ]}
                     value={formData.selectedAge}
                     onChange={(value: OptionType | null) => setFormData({
                       ...formData, 
