@@ -102,10 +102,10 @@ const LandingPage = () => {
               {/* Main Title */}
               <div className="relative">
                 <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl 2xl:text-7xl font-bebas text-yellow leading-[0.9] tracking-wide drop-shadow-2xl">
-                  <span className="block bg-gradient-to-r from-red via-red/95 to-red/90 bg-clip-text text-transparent">
+                  <span className="block bg-gradient-to-r from-red via-red/95 to-red/90 bg-clip-text text-transparent shadow-xl">
                     Sriwijaya International
                   </span>
-                  <span className="block bg-gradient-to-r from-red via-red/95 to-red/90 bg-clip-text text-transparent">
+                  <span className="block bg-gradient-to-r from-red via-red/95 to-red/90 bg-clip-text text-transparent shadow-xl">
                     Taekwondo Championship
                   </span>
                 </h1>
