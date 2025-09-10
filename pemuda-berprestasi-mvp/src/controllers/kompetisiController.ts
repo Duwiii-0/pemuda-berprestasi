@@ -141,7 +141,7 @@ export class KompetisiController {
   static async getAtletsByKompetisi(req: Request, res: Response) {
     try {
       const { id } = req.params;
-      const { page = "1", limit = "20", id_dojang: idDojangQuery } = req.query; // ⬅️ ambil query
+      const { page = "1", limit = "1000", id_dojang: idDojangQuery } = req.query; // ⬅️ ambil query
       let idDojang: number | undefined = undefined;
 
       const kompetisiId = parseInt(id, 10);
