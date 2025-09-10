@@ -23,8 +23,6 @@ router.post(
     { name: 'sertifikat_belt', maxCount: 1 },
     { name: 'ktp', maxCount: 1 }
   ]),
-  // 3. JANGAN pakai validateRequest untuk form dengan file upload!
-  // validateRequest akan expect JSON body, padahal ini FormData
   AtletController.create // 4. Controller terakhir
 )
 
@@ -51,6 +49,27 @@ router.get(
   '/kompetisi/:id_kompetisi/atlet', authenticate,
   AtletController.getByKompetisi
 );
+
+router.get('/files/:folder/:filename', async (req, res) => {
+  try {
+    const { folder, filename } = req.params;
+    const allowedFolders = ['akte_kelahiran', 'pas_foto', 'sertifikat_belt', 'ktp'];
+    
+    if (!allowedFolders.includes(folder)) {
+      return res.status(400).json({ error: 'Invalid folder' });
+    }
+    
+    const filePath = path.join(__dirname, `../../uploads/atlet/${folder}/${filename}`);
+    
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ error: 'File not found' });
+    }
+    
+    res.sendFile(filePath);
+  } catch (error) {
+    res.status(500).json({ error: 'Error serving file' });
+  }
+});
 
 
 export default router;
