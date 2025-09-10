@@ -85,7 +85,7 @@ const getAgeOptions = () => {
     return [
       { value: "1", label: "Super Pra-Cadet" },
       { value: "2", label: "Pra-Cadet" },
-      { value: "3", label: "Cadet" }
+      { value: "3", label: "Cadet" },
       { value: "4", label: "Junior" },
       { value: "5", label: "Senior" },
     ];
