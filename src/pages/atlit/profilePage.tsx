@@ -1,7 +1,7 @@
 // src/pages/Profile.tsx
 import { useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { Phone, User, CalendarFold, IdCard, MapPinned, Map, Scale, Ruler, X, Eye, Download } from "lucide-react";
+import { Phone, User, CalendarFold, IdCard, MapPinned, Map, Scale, Ruler, X, Eye, Download, AlertCircle, CheckCircle } from "lucide-react";
 import TextInput from "../../components/textInput";
 import FileInput from "../../components/fileInput";
 import Select from "react-select";
@@ -27,7 +27,44 @@ interface AtletWithFiles extends Atlet {
   ktp_path?: string;
 }
 
-// Component untuk preview file
+// 1. Token Handling yang Lebih Robust
+const getAuthToken = (): string => {
+  // Coba dari multiple sources
+  const token = localStorage.getItem('token') || 
+                localStorage.getItem('authToken') || 
+                sessionStorage.getItem('token');
+  
+  if (!token) {
+    console.error('No token found in storage');
+    throw new Error('Token tidak ditemukan. Silakan login kembali.');
+  }
+  
+  return token;
+};
+
+// 2. File Validation Helper
+const validateFile = (file: File): { isValid: boolean; error?: string } => {
+  // Validasi ukuran file (5MB)
+  const maxSize = 5 * 1024 * 1024;
+  if (file.size > maxSize) {
+    return { isValid: false, error: 'File terlalu besar! Maksimal 5MB per file.' };
+  }
+  
+  // Validasi tipe file
+  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
+  if (!allowedTypes.includes(file.type)) {
+    return { isValid: false, error: 'Format file tidak didukung! Gunakan JPG, PNG, atau PDF.' };
+  }
+
+  // Validasi file tidak kosong
+  if (file.size === 0) {
+    return { isValid: false, error: 'File kosong atau rusak.' };
+  }
+  
+  return { isValid: true };
+};
+
+// Component untuk preview file dengan error handling yang diperbaiki
 const FilePreview = ({ 
   file, 
   existingPath, 
@@ -43,23 +80,46 @@ const FilePreview = ({
 }) => {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewError, setPreviewError] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
+  // 3. Preview Error Handling yang Diperbaiki
   useEffect(() => {
-    if (file) {
+    if (file && file instanceof File) {
+      setIsLoading(true);
       try {
-        const url = URL.createObjectURL(file);
-        setPreviewUrl(url);
-        setPreviewError(false);
-        return () => {
-          URL.revokeObjectURL(url);
-        };
+        // Validasi file sebelum membuat URL
+        if (file.size > 0 && file.type) {
+          const validation = validateFile(file);
+          if (!validation.isValid) {
+            setPreviewError(true);
+            setIsLoading(false);
+            return;
+          }
+
+          const url = URL.createObjectURL(file);
+          setPreviewUrl(url);
+          setPreviewError(false);
+          
+          return () => {
+            try {
+              URL.revokeObjectURL(url);
+            } catch (e) {
+              console.warn('Failed to revoke URL:', e);
+            }
+          };
+        } else {
+          setPreviewError(true);
+        }
       } catch (error) {
         console.error('Error creating preview URL:', error);
         setPreviewError(true);
+      } finally {
+        setIsLoading(false);
       }
     } else {
       setPreviewUrl(null);
       setPreviewError(false);
+      setIsLoading(false);
     }
   }, [file]);
 
@@ -86,7 +146,12 @@ const FilePreview = ({
         )}
       </div>
       
-      {displayUrl && !previewError ? (
+      {isLoading ? (
+        <div className="flex items-center gap-2 text-sm text-gray-500">
+          <div className="animate-spin w-4 h-4 border-2 border-gray-300 border-t-red rounded-full" />
+          <span>Memproses file...</span>
+        </div>
+      ) : displayUrl && !previewError ? (
         <div className="flex gap-2">
           <div className="relative w-20 h-20">
             <img 
@@ -121,6 +186,12 @@ const FilePreview = ({
         <div className="flex items-center gap-2 text-sm text-gray-600">
           <IdCard size={16} />
           <span>{fileName}</span>
+          {previewError && (
+            <span className="text-red-500 text-xs ml-2">
+              <AlertCircle size={12} className="inline mr-1" />
+              Error preview
+            </span>
+          )}
         </div>
       )}
     </div>
@@ -199,17 +270,33 @@ const Profile = () => {
       formDataToSend.append('belt', formData.belt || '');
       formDataToSend.append('umur', String(calculatedAge));
 
-      // Append files if they exist (only new files)
+      // Validate and append files if they exist (only new files)
       if (formData.akte_kelahiran) {
+        const validation = validateFile(formData.akte_kelahiran);
+        if (!validation.isValid) {
+          throw new Error(`Akte Kelahiran: ${validation.error}`);
+        }
         formDataToSend.append('akte_kelahiran', formData.akte_kelahiran);
       }
       if (formData.pas_foto) {
+        const validation = validateFile(formData.pas_foto);
+        if (!validation.isValid) {
+          throw new Error(`Pas Foto: ${validation.error}`);
+        }
         formDataToSend.append('pas_foto', formData.pas_foto);
       }
       if (formData.sertifikat_belt) {
+        const validation = validateFile(formData.sertifikat_belt);
+        if (!validation.isValid) {
+          throw new Error(`Sertifikat Belt: ${validation.error}`);
+        }
         formDataToSend.append('sertifikat_belt', formData.sertifikat_belt);
       }
       if (formData.ktp) {
+        const validation = validateFile(formData.ktp);
+        if (!validation.isValid) {
+          throw new Error(`KTP: ${validation.error}`);
+        }
         formDataToSend.append('ktp', formData.ktp);
       }
 
@@ -242,13 +329,10 @@ const Profile = () => {
     }
   };
 
-  // Enhanced function to handle file uploads with better error handling
+  // 4. Enhanced Error Messages
   const updateAtletWithFiles = async (formData: FormData): Promise<AtletWithFiles | null> => {
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('Token tidak ditemukan. Silakan login kembali.');
-      }
+      const token = getAuthToken(); // Gunakan helper function
 
       const response = await fetch(`${import.meta.env.VITE_API_URL}/atlet/${id}`, {
         method: 'PUT',
@@ -265,12 +349,34 @@ const Profile = () => {
 
       if (!response.ok) {
         let errorMessage = 'Failed to update atlet';
-        try {
-          const errorData = JSON.parse(responseText);
-          errorMessage = errorData.message || errorData.error || errorMessage;
-        } catch {
-          errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        
+        // Enhanced error messages berdasarkan status code
+        if (response.status === 401) {
+          errorMessage = 'Sesi login telah berakhir. Silakan login kembali.';
+          // Redirect to login or clear token
+          localStorage.removeItem('token');
+        } else if (response.status === 413) {
+          errorMessage = 'File terlalu besar. Maksimal 5MB per file.';
+        } else if (response.status === 422) {
+          errorMessage = 'Format file tidak valid. Gunakan JPG, PNG, atau PDF.';
+        } else if (response.status === 400) {
+          try {
+            const errorData = JSON.parse(responseText);
+            errorMessage = errorData.message || 'Data tidak valid. Periksa kembali input Anda.';
+          } catch {
+            errorMessage = 'Data tidak valid. Periksa kembali input Anda.';
+          }
+        } else if (response.status >= 500) {
+          errorMessage = 'Terjadi kesalahan server. Silakan coba lagi nanti.';
+        } else {
+          try {
+            const errorData = JSON.parse(responseText);
+            errorMessage = errorData.message || errorData.error || errorMessage;
+          } catch {
+            errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+          }
         }
+        
         throw new Error(errorMessage);
       }
 
@@ -297,9 +403,18 @@ const Profile = () => {
     setFormData(updatedData);
   };
 
-  // Handler untuk file upload
+  // 2. Handler untuk file upload dengan validasi yang ketat
   const handleFileChange = (field: keyof AtletWithFiles, file: File | null) => {
     if (!formData) return;
+    
+    if (file) {
+      const validation = validateFile(file);
+      if (!validation.isValid) {
+        toast.error(validation.error);
+        return;
+      }
+    }
+    
     setFormData({ ...formData, [field]: file });
   };
 
@@ -610,6 +725,126 @@ const Profile = () => {
           </div>
         </div>
 
+        {/* 5. Visual Status Indicator untuk Upload */}
+        {isEditing && (
+          <div className="bg-white/60 backdrop-blur-sm rounded-2xl lg:rounded-3xl p-4 sm:p-6 border-2 border-gray-200">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-blue-100 rounded-xl">
+                <CheckCircle className="text-blue-600" size={18} />
+              </div>
+              <h4 className="font-bebas text-xl text-black/80 tracking-wide">STATUS UPLOAD</h4>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+              <div className={`p-3 rounded-xl border ${
+                formData.akte_kelahiran 
+                  ? 'bg-green-50 text-green-700 border-green-200' 
+                  : 'bg-gray-50 text-gray-500 border-gray-200'
+              }`}>
+                <div className="flex items-center gap-2">
+                  {formData.akte_kelahiran ? (
+                    <CheckCircle size={16} className="text-green-600" />
+                  ) : (
+                    <AlertCircle size={16} className="text-gray-400" />
+                  )}
+                  <span className="font-medium">
+                    Akte Kelahiran: {formData.akte_kelahiran ? '✓ Siap upload' : 'Belum dipilih'}
+                  </span>
+                </div>
+                {formData.akte_kelahiran && (
+                  <p className="text-xs mt-1 opacity-75">
+                    {formData.akte_kelahiran.name} ({(formData.akte_kelahiran.size / 1024 / 1024).toFixed(2)} MB)
+                  </p>
+                )}
+              </div>
+
+              <div className={`p-3 rounded-xl border ${
+                formData.pas_foto 
+                  ? 'bg-green-50 text-green-700 border-green-200' 
+                  : 'bg-gray-50 text-gray-500 border-gray-200'
+              }`}>
+                <div className="flex items-center gap-2">
+                  {formData.pas_foto ? (
+                    <CheckCircle size={16} className="text-green-600" />
+                  ) : (
+                    <AlertCircle size={16} className="text-gray-400" />
+                  )}
+                  <span className="font-medium">
+                    Pas Foto: {formData.pas_foto ? '✓ Siap upload' : 'Belum dipilih'}
+                  </span>
+                </div>
+                {formData.pas_foto && (
+                  <p className="text-xs mt-1 opacity-75">
+                    {formData.pas_foto.name} ({(formData.pas_foto.size / 1024 / 1024).toFixed(2)} MB)
+                  </p>
+                )}
+              </div>
+
+              <div className={`p-3 rounded-xl border ${
+                formData.sertifikat_belt 
+                  ? 'bg-green-50 text-green-700 border-green-200' 
+                  : 'bg-gray-50 text-gray-500 border-gray-200'
+              }`}>
+                <div className="flex items-center gap-2">
+                  {formData.sertifikat_belt ? (
+                    <CheckCircle size={16} className="text-green-600" />
+                  ) : (
+                    <AlertCircle size={16} className="text-gray-400" />
+                  )}
+                  <span className="font-medium">
+                    Sertifikat Belt: {formData.sertifikat_belt ? '✓ Siap upload' : 'Belum dipilih'}
+                  </span>
+                </div>
+                {formData.sertifikat_belt && (
+                  <p className="text-xs mt-1 opacity-75">
+                    {formData.sertifikat_belt.name} ({(formData.sertifikat_belt.size / 1024 / 1024).toFixed(2)} MB)
+                  </p>
+                )}
+              </div>
+
+              <div className={`p-3 rounded-xl border ${
+                formData.ktp 
+                  ? 'bg-green-50 text-green-700 border-green-200' 
+                  : 'bg-gray-50 text-gray-500 border-gray-200'
+              }`}>
+                <div className="flex items-center gap-2">
+                  {formData.ktp ? (
+                    <CheckCircle size={16} className="text-green-600" />
+                  ) : (
+                    <AlertCircle size={16} className="text-gray-400" />
+                  )}
+                  <span className="font-medium">
+                    KTP: {formData.ktp ? '✓ Siap upload' : 'Belum dipilih'}
+                  </span>
+                </div>
+                {formData.ktp && (
+                  <p className="text-xs mt-1 opacity-75">
+                    {formData.ktp.name} ({(formData.ktp.size / 1024 / 1024).toFixed(2)} MB)
+                  </p>
+                )}
+              </div>
+            </div>
+            
+            {/* Summary */}
+            <div className="mt-4 p-3 bg-blue-50 rounded-xl border border-blue-200">
+              <div className="flex items-center gap-2">
+                <IdCard size={16} className="text-blue-600" />
+                <span className="font-medium text-blue-800">
+                  Total file dipilih: {[formData.akte_kelahiran, formData.pas_foto, formData.sertifikat_belt, formData.ktp].filter(Boolean).length}/4
+                </span>
+              </div>
+              {[formData.akte_kelahiran, formData.pas_foto, formData.sertifikat_belt, formData.ktp].some(Boolean) && (
+                <p className="text-xs text-blue-600 mt-1">
+                  Total ukuran: {(
+                    [formData.akte_kelahiran, formData.pas_foto, formData.sertifikat_belt, formData.ktp]
+                      .filter(Boolean)
+                      .reduce((total, file) => total + (file?.size || 0), 0) / 1024 / 1024
+                  ).toFixed(2)} MB
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Document Upload Section with Enhanced Preview */}
         <div className="bg-white/60 backdrop-blur-sm rounded-2xl lg:rounded-3xl p-4 sm:p-6 lg:p-8 shadow-xl border-2 border-gray-200">
           <div className="flex items-center gap-3 mb-4 lg:mb-6">
@@ -710,12 +945,16 @@ const Profile = () => {
           {/* Upload Tips */}
           {isEditing && (
             <div className="mt-6 p-4 bg-blue-50 rounded-xl border border-blue-200">
-              <h4 className="font-plex font-semibold text-blue-800 mb-2">Tips Upload Dokumen:</h4>
+              <h4 className="font-plex font-semibold text-blue-800 mb-2 flex items-center gap-2">
+                <AlertCircle size={16} />
+                Tips Upload Dokumen:
+              </h4>
               <ul className="text-sm text-blue-700 space-y-1">
                 <li>• Format yang didukung: JPG, PNG, PDF</li>
                 <li>• Ukuran maksimal per file: 5MB</li>
                 <li>• Pastikan dokumen terlihat jelas dan tidak buram</li>
                 <li>• File baru akan menggantikan file yang sudah ada</li>
+                <li>• Anda dapat mengupload beberapa dokumen sekaligus</li>
               </ul>
             </div>
           )}
@@ -730,11 +969,18 @@ const Profile = () => {
                 id,
                 isEditing,
                 isSubmitting,
+                userRole: user?.role,
                 hasFiles: {
                   akte_kelahiran: !!formData.akte_kelahiran,
                   pas_foto: !!formData.pas_foto,
                   sertifikat_belt: !!formData.sertifikat_belt,
                   ktp: !!formData.ktp,
+                },
+                fileSizes: {
+                  akte_kelahiran: formData.akte_kelahiran?.size,
+                  pas_foto: formData.pas_foto?.size,
+                  sertifikat_belt: formData.sertifikat_belt?.size,
+                  ktp: formData.ktp?.size,
                 },
                 existingPaths: {
                   akte_kelahiran_path: formData.akte_kelahiran_path,
