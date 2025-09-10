@@ -102,13 +102,12 @@ export default function Timeline() {
                         <div className="relative flex flex-col items-center justify-start w-16 pt-8 md:pt-10">
                           {/* Enhanced Dot */}
                           <div className="relative z-10">
-                            <div className="w-8 h-8 md:w-10 md:h-10 bg-gradient-to-br from-red to-red/80 rounded-full shadow-lg border-4 border-white transition-all duration-500 group-hover:scale-125 group-hover:shadow-xl group-hover:shadow-red/30" />
-                            <div className="absolute inset-0 w-8 h-8 md:w-10 md:h-10 bg-red/20 rounded-full animate-ping group-hover:animate-pulse opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                            <div className="w-8 h-8 md:w-10 md:h-10 bg-gradient-to-br from-red to-red/80 rounded-full shadow-lg border-4 border-white transition-all duration-500 group-hover:scale-125 group-hover:shadow-xl group-hover:shadow-red/30 animate-ping group-hover:animate-pulse" />
                           </div>
 
                           {/* Enhanced Connecting Line */}
                           {index !== monthEvents.length - 1 && (
-                            <div className="w-0.5 md:w-1 full bg-gradient-to-b from-red/60 via-red/40 to-red/20 mt-2 transition-all duration-500 group-hover:from-red group-hover:via-red/80 group-hover:to-red/40" />
+                            <div className="w-0.5 md:w-1 h-full bg-gradient-to-b from-red/60 via-red/40 to-red/20 mt-2 transition-all duration-500 group-hover:from-red group-hover:via-red/80 group-hover:to-red/40" />
                           )}
                           
                           {/* Month connector line */}
@@ -132,6 +131,7 @@ export default function Timeline() {
                         <div className="relative flex flex-col items-center justify-start pt-6 md:pt-8">
                           <div className="relative">
                             <div className="w-6 h-6 md:w-8 md:h-8 bg-gradient-to-br from-red to-red/80 rounded-full shadow-md border-2 md:border-3 border-white transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-red/30" />
+                            <div className="absolute inset-0 w-6 h-6 md:w-8 md:h-8 bg-red/20 rounded-full animate-ping group-hover:animate-pulse opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                           </div>
 
                           {/* Line */}
