@@ -58,7 +58,6 @@ const UnifiedRegistration = ({
 
   if (formData.styleType === "POOMSAE" && formData.categoryType === "prestasi") {
     return [
-      { value: "2", label: "Pra-Cadet" },
       { value: "3", label: "Cadet" },
       { value: "4", label: "Junior" },
       { value: "5", label: "Senior" },
@@ -660,8 +659,10 @@ const handleSubmit = async () => {
             </div>
 
             <div className="space-y-6">
-              {/* ✅ UPDATED: Kelas Umur - Show first for POOMSAE prestasi */}
-              {formData.categoryType === "prestasi" && (
+
+              {/* Kelas Umur */}
+              {( (formData.styleType === "KYORUGI" && (formData.categoryType === "pemula" || formData.categoryType === "prestasi")) ||
+                 (formData.styleType === "POOMSAE" && formData.categoryType === "prestasi") ) && (
                 <div>
                   <label className="block text-black mb-3 text-lg font-plex font-semibold pl-2">
                     Kelas Umur <span className="text-red">*</span>
@@ -690,7 +691,7 @@ const handleSubmit = async () => {
               )}
 
               {/* ✅ UPDATED: Kelas Poomsae - Show after age for POOMSAE */}
-              {formData.styleType === "POOMSAE" && (formData.categoryType === "prestasi" || formData.categoryType === "pemula") && (
+              {formData.styleType === "POOMSAE" && (
                 <div>
                   <label className="block text-black mb-3 text-lg font-plex font-semibold pl-2">
                     Kelas Poomsae <span className="text-red">*</span>
@@ -756,34 +757,31 @@ const handleSubmit = async () => {
                   />
                 </div>
               )}
-
-              {/* Kelas Berat - Only for kyorugi prestasi, requires age and gender first */}
-              {formData.styleType === "KYORUGI" && formData.categoryType === "prestasi" && (
-                <div>
-                  <label className="block text-black mb-3 text-lg font-plex font-semibold pl-2">
-                    Kelas Berat <span className="text-red">*</span>
-                  </label>
-                  <LockedSelect
-                    unstyled
-                    options={weightOptions}
-                    value={formData.selectedWeight}
-                    onChange={(value: OptionType | null) => setFormData({
-                      ...formData, 
-                      selectedWeight: value,
-                      selectedAtlit: null,
-                      selectedAtlit2: null // ✅ ADDED
-                    })}
-                    placeholder="Pilih kelas berat..."
-                    isSearchable={false}
-                    classNames={selectClassNames}
-                    disabled={!formData.selectedAge || !formData.selectedGender}
-                    message="Harap pilih kelas umur dan jenis kelamin terlebih dahulu"
-                  />
-                  <p className="text-xs text-gray-500 mt-2 pl-2">
-                    * Kelas berat akan divalidasi dengan berat badan atlet
-                  </p>
-                </div>
-              )}
+            
+                {/* Kelas Berat untuk KYORUGI */}
+                {(formData.styleType === "KYORUGI" && (formData.categoryType === "pemula" || formData.categoryType === "prestasi") && formData.selectedAge) && (
+                  <div>
+                    <label className="block text-black mb-3 text-lg font-plex font-semibold pl-2">
+                      Kelas Berat <span className="text-red">*</span>
+                    </label>
+                    <LockedSelect
+                      unstyled
+                      options={weightOptions}
+                      value={formData.selectedWeight}
+                      onChange={(value: OptionType | null) => setFormData({
+                        ...formData, 
+                        selectedWeight: value,
+                        selectedAtlit: null,
+                        selectedAtlit2: null // ✅ ADDED
+                      })}
+                      placeholder="Pilih kelas berat..."
+                      isSearchable={false}
+                      classNames={selectClassNames}
+                      disabled={!formData.selectedAge || !formData.selectedGender}
+                      message="Harap pilih kelas umur dan jenis kelamin terlebih dahulu"
+                    />
+                  </div>
+                )}
             </div>
           </div>
         );

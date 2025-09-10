@@ -512,36 +512,41 @@ async function seedKelasKejuaraan(idKompetisi: number) {
 
   for (const kategori of kategoriEvents) {
     if (kategori.nama_kategori.toLowerCase() === "pemula") {
-  // KYORUGI pemula → tetap null
-  data.push({
-    id_kompetisi: idKompetisi,
-    cabang: "KYORUGI",
-    id_kategori_event: kategori.id_kategori_event,
-    id_kelompok: null,
-    id_kelas_berat: null,
-    id_poomsae: null
-  });
+      // KYORUGI pemula → buat semua kombinasi kelompok usia dan kelas berat
+      for (const kelompok of kelompokUsia) {
+        const kelasBeratByKelompok = kelasBerat.filter(k => k.id_kelompok === kelompok.id_kelompok);
+        for (const kb of kelasBeratByKelompok) {
+          data.push({
+            id_kompetisi: idKompetisi,
+            cabang: "KYORUGI",
+            id_kategori_event: kategori.id_kategori_event,
+            id_kelompok: kelompok.id_kelompok,
+            id_kelas_berat: kb.id_kelas_berat,
+            id_poomsae: null
+          });
+        }
+      }
 
-  // POOMSAE pemula → semua kelas POOMSAE pemula
-  const poomsaePemula = kelasPoomsae.filter(kp => {
-    const kelompok = kelompokUsia.find(k => k.id_kelompok === kp.id_kelompok);
-    return kelompok?.nama_kelompok.toLowerCase() === "pemula";
-  });
+      // POOMSAE pemula → semua kelas POOMSAE pemula
+      const poomsaePemula = kelasPoomsae.filter(kp => {
+        const kelompok = kelompokUsia.find(k => k.id_kelompok === kp.id_kelompok);
+        return kelompok?.nama_kelompok.toLowerCase() === "pemula";
+      });
 
-  for (const kp of poomsaePemula) {
-    data.push({
-      id_kompetisi: idKompetisi,
-      cabang: "POOMSAE",
-      id_kategori_event: kategori.id_kategori_event,
-      id_kelompok: kp.id_kelompok,
-      id_kelas_berat: null,
-      id_poomsae: kp.id_poomsae
-    });
-  }
+      for (const kp of poomsaePemula) {
+        data.push({
+          id_kompetisi: idKompetisi,
+          cabang: "POOMSAE",
+          id_kategori_event: kategori.id_kategori_event,
+          id_kelompok: kp.id_kelompok,
+          id_kelas_berat: null,
+          id_poomsae: kp.id_poomsae
+        });
+      }
 
-  // Skip loop kelompok & kelas untuk kategori pemula
-  continue;
-}
+      // Skip loop kelompok & kelas untuk kategori pemula di bawah
+      continue;
+    }
 
     // kategori prestasi → lakukan loop seperti biasa
     for (const kelompok of kelompokUsia) {
@@ -568,7 +573,7 @@ async function seedKelasKejuaraan(idKompetisi: number) {
           id_poomsae: kp.id_poomsae
         });
       }
-    }
+    } 
   }
 
   await prisma.tb_kelas_kejuaraan.createMany({
