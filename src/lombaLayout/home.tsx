@@ -186,8 +186,8 @@ const LandingPage = () => {
               </div>
               
               {/* Enhanced Description */}
-              <div className="space-y-4 md:space-y-6 max-w-6xl mx-auto lg:mx-0">
-                <p className="text-sm md:text-base lg:text-lg xl:text-xl font-plex text-black/85 leading-relaxed font-light px-2 lg:px-0">
+              <div className="space-y-4 md:space-y-6 max-w-7xl mx-auto lg:mx-0">
+                <p className="text-xs sm:text-sm md:text-base lg:text-lg font-plex text-black/85 leading-relaxed font-light px-2 lg:px-0">
                   Salam hormat Sabum, Sabumnim dan orang tua Atlet Taekwondo Indonesia. Tahun ini Pengurus Pengprov TISS mengadakan event Sriwijaya Internasional Championship 2025 Dimana semua itu dapat terwujud dengan adanya kerjasama dan dukungan dari seluruh pihak, para insan Taekwondoin Sumatera Selatan, KONI Sumatera Selatan dan
                   Pemerintah Provinsi Sumatera Selatan. Pelaksanaan event kejuaraan ini bertempat di GOR RANAU JSC PALEMBANG
                   Untuk itu kami mengundang semua untuk bergabung pada kegiatan tersebut.
