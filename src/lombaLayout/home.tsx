@@ -113,7 +113,7 @@ const LandingPage = () => {
               </div>
               
               {/* Year Badge */}
-              <div className="inline-block bg-red/10 backdrop-blur-sm border border-yellow/30 rounded-xl px-6 py-3">
+              <div className="inline-block bg-yellow/10 backdrop-blur-sm border border-yellow/30 rounded-xl px-6 py-3">
                 <span className="text-2xl md:text-3xl lg:text-4xl font-bebas bg-gradient-to-r from-yellow to-yellow/90 bg-clip-text text-transparent">
                   2025
                 </span>
