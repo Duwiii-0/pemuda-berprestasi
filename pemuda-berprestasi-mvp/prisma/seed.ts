@@ -296,8 +296,10 @@ async function seedAtlet() {
 async function seedKelompokUsia() {
   await prisma.tb_kelompok_usia.createMany({
     data: [
-      { nama_kelompok: "Cadet", usia_min: 11, usia_max: 13 },
-      { nama_kelompok: "Junior", usia_min: 14, usia_max: 17 },
+      { nama_kelompok: "Super pracadet", usia_min: 5, usia_max: 8 },
+      { nama_kelompok: "Pracadet", usia_min: 9, usia_max: 11 },
+      { nama_kelompok: "Cadet", usia_min: 12, usia_max: 14 },
+      { nama_kelompok: "Junior", usia_min: 15, usia_max: 17 },
       { nama_kelompok: "Senior", usia_min: 18, usia_max: 40 },
       { nama_kelompok: 'pemula', usia_min: 1, usia_max: 999}
     ],
