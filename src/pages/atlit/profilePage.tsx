@@ -392,7 +392,10 @@ const handleUpdate = async () => {
     if (formData.sertifikat_belt) formDataSend.append('sertifikat_belt', formData.sertifikat_belt);
     if (formData.ktp) formDataSend.append('ktp', formData.ktp);
 
-if (result) {
+    // FIX: Use updateAtlet and assign to result variable
+    const result = await updateAtlet(Number(id), formDataSend);
+
+    if (result) {
       // PERBAIKAN: Refresh data dengan file paths yang baru
       const updatedData: AtletWithFiles = {
         ...result,

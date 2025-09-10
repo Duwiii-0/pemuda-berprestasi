@@ -17,6 +17,10 @@ export interface Atlet {
   no_telp?: string;
   nik?: string;
   umur?: number;
+  akte_kelahiran?: string;  // ADD THIS
+  pas_foto?: string;        // ADD THIS  
+  sertifikat_belt?: string; // ADD THIS
+  ktp?: string;    
   // tambahkan field lain sesuai API
 }
 
