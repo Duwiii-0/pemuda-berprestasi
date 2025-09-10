@@ -2,15 +2,10 @@ import { TimelineCardKiri, TimelineCardKanan } from "../components/TimelineCard"
 import { useNavigate } from "react-router-dom";
 
 const events = [
-  { event: "registrasi gelombang 1", time: "1 - 7 agustus 2025", side: "left", month: "August" },
-  { event: "registrasi gelombang 2", time: "8 - 20 agustus 2025", side: "right", month: "August" },
-  { event: "technical meeting", time: "22 agustus 2025", side: "left", month: "August" },
-  { event: "submission open", time: "10 september 2025", side: "right", month: "September" },
-  { event: "submission closed", time: "14 september 2025", side: "left", month: "September" },
-  { event: "opening ceremony", time: "15 september 2025", side: "right", month: "September" },
-  { event: "Pengumuman finalis", time: "19 september 2025", side: "left", month: "September" },
-  { event: "Babak Final", time: "1 Oktober 2025", side: "right", month: "Oktober" },
-  { event: "Closing Ceremony", time: "2 Oktober 2025", side: "left", month: "Oktober" },
+  { event: "registrasi", time: "1 - 8 November 2025", side: "left", month: "November" },
+  { event: "Penimbangan", time: "21 November 2025 10.00 - 15.00", side: "right", month: "November" },
+  { event: "technical meeting", time: "21 November 2025 15.30 - selesai", side: "left", month: "November" },
+  { event: "Pertandingan", time: "22 -26 November 2025", side: "right", month: "November" },
 ];
 
 // Group events by month
