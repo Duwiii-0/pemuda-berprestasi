@@ -42,17 +42,30 @@ const FilePreview = ({
   label: string;
 }) => {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewError, setPreviewError] = useState(false);
 
   useEffect(() => {
     if (file) {
-      const url = URL.createObjectURL(file);
-      setPreviewUrl(url);
-      return () => URL.revokeObjectURL(url);
+      try {
+        const url = URL.createObjectURL(file);
+        setPreviewUrl(url);
+        setPreviewError(false);
+        return () => {
+          URL.revokeObjectURL(url);
+        };
+      } catch (error) {
+        console.error('Error creating preview URL:', error);
+        setPreviewError(true);
+      }
+    } else {
+      setPreviewUrl(null);
+      setPreviewError(false);
     }
   }, [file]);
 
   const hasFile = file || existingPath;
   const displayUrl = file ? previewUrl : existingPath;
+  const fileName = file?.name || existingPath?.split('/').pop() || label;
 
   if (!hasFile) return null;
 
@@ -60,7 +73,7 @@ const FilePreview = ({
     <div className="mt-2 p-3 bg-white/70 rounded-xl border border-red/20">
       <div className="flex items-center justify-between mb-2">
         <span className="text-sm font-medium text-black/70">
-          {file ? `File baru: ${file.name}` : `File tersimpan: ${label}`}
+          {file ? `File baru: ${fileName}` : `File tersimpan: ${label}`}
         </span>
         {!disabled && (
           <button
@@ -73,13 +86,16 @@ const FilePreview = ({
         )}
       </div>
       
-      {displayUrl && (
+      {displayUrl && !previewError ? (
         <div className="flex gap-2">
-          <img 
-            src={displayUrl} 
-            alt={`Preview ${label}`}
-            className="w-20 h-20 object-cover rounded-lg border border-gray-200"
-          />
+          <div className="relative w-20 h-20">
+            <img 
+              src={displayUrl} 
+              alt={`Preview ${label}`}
+              className="w-full h-full object-cover rounded-lg border border-gray-200"
+              onError={() => setPreviewError(true)}
+            />
+          </div>
           <div className="flex flex-col gap-1">
             <button
               onClick={() => window.open(displayUrl, '_blank')}
@@ -92,7 +108,7 @@ const FilePreview = ({
             {existingPath && (
               <a
                 href={existingPath}
-                download
+                download={fileName}
                 className="flex items-center gap-1 px-2 py-1 text-xs bg-green-100 hover:bg-green-200 text-green-600 rounded transition-colors"
               >
                 <Download size={12} />
@@ -100,6 +116,11 @@ const FilePreview = ({
               </a>
             )}
           </div>
+        </div>
+      ) : (
+        <div className="flex items-center gap-2 text-sm text-gray-600">
+          <IdCard size={16} />
+          <span>{fileName}</span>
         </div>
       )}
     </div>
