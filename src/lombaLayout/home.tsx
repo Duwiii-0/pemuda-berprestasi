@@ -167,7 +167,7 @@ const LandingPage = () => {
               {/* Section Label */}
               <div className="inline-block group">
                 <span className="text-red font-plex font-semibold text-xs sm:text-sm uppercase tracking-[0.2em] border-l-4 border-red pl-4 md:pl-6 relative">
-                  Tentang Kejuaraan
+                  Pengantar
                   <div className="absolute -left-1 top-0 bottom-0 w-1 bg-red/20 group-hover:bg-red/40 transition-colors duration-300"></div>
                 </span>
               </div>
@@ -176,13 +176,13 @@ const LandingPage = () => {
               <div className="relative">
                 <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-5xl xl:text-6xl 2xl:text-7xl font-bebas leading-[0.85] tracking-wide">
                   <span className="bg-gradient-to-r from-red via-red/90 to-red/80 bg-clip-text text-transparent">
-                    Kompetisi
+                    Sambutan
                   </span>
                   <span className="block bg-gradient-to-r from-red/90 via-red to-red/90 bg-clip-text text-transparent">
-                    Berstandar
+                    Ketua
                   </span>
                   <span className="block bg-gradient-to-r from-red/80 via-red/90 to-red bg-clip-text text-transparent">
-                    Internasional
+                    Pelaksana
                   </span>
                 </h2>
                 <div className="absolute -bottom-2 left-1/2 lg:left-0 transform -translate-x-1/2 lg:transform-none w-16 md:w-20 h-1 bg-gradient-to-r from-red to-red/60 rounded-full"></div>
@@ -191,14 +191,12 @@ const LandingPage = () => {
               {/* Enhanced Description */}
               <div className="space-y-4 md:space-y-6 max-w-2xl mx-auto lg:mx-0">
                 <p className="text-sm md:text-base lg:text-lg xl:text-xl font-plex text-black/85 leading-relaxed font-light px-2 lg:px-0">
-                  Sriwijaya Competition 2025, di bawah naungan Pengurus Besar Taekwondo Indonesia (PBTI), 
-                  merupakan edisi ke-7 sejak 2015 yang menghadirkan kategori Kyorugi, Poomsae, dan Freestyle Poomsae 
-                  untuk berbagai kelompok usia.
+                  Salam hormat Sabum, Sabumnim dan orang tua Atlet Taekwondo Indonesia. Tahun ini Pengurus Pengprov TISS mengadakan event Sriwijaya Internasional Championship 2025 Dimana semua itu dapat terwujud dengan adanya kerjasama dan dukungan dari seluruh pihak, para insan Taekwondoin Sumatera Selatan, KONI Sumatera Selatan dan
+                  Pemerintah Provinsi Sumatera Selatan. Pelaksanaan event kejuaraan ini bertempat di GOR RANAU JSC PALEMBANG
+                  Untuk itu kami mengundang semua untuk bergabung pada kegiatan tersebut.
+                  Semoga dengan diadakannya event ini, dapat menjadi tolak ukur para atlet-atlet muda, serta dapat memenuhi harapan Insan Taekwondo, agar Atlet dapat dipandang di kancah Nasional dan Internasional nantinya. Aamiin.
                 </p>
-                <p className="text-xs md:text-sm lg:text-base font-plex text-black/70 leading-relaxed px-2 lg:px-0">
-                  Kejuaraan ini digelar untuk mengasah prestasi, menjunjung sportivitas, 
-                  serta menjaring atlet potensial menuju tingkat internasional.
-                </p>
+
               </div>
 
               {/* Enhanced Features Grid */}
@@ -223,7 +221,7 @@ const LandingPage = () => {
                     Multi Kategori
                   </h3>
                   <p className="text-xs md:text-sm text-black/70 font-plex leading-relaxed">
-                    Kyorugi, Poomsae, dan Freestyle Poomsae untuk semua kelompok usia
+                    Kyorugi, Poomsae, dari pemula hingga prestasi, untuk semua kelompok usia
                   </p>
                 </div>
               </div>
@@ -264,7 +262,7 @@ const LandingPage = () => {
                     </div>
                     <div className="w-12 md:w-16 h-0.5 bg-gradient-to-r from-red/60 to-transparent mx-auto"></div>
                     <p className="text-xs md:text-sm text-black/60 font-plex leading-relaxed max-w-xs">
-                      Memimpin penyelenggaraan kejuaraan dengan dedikasi tinggi untuk kemajuan taekwondo Indonesia
+                      “SALAM TAEKWONDO INDONESIA PROVINSI SUMATERA SELATAN”
                     </p>
                   </div>
                 </div>
