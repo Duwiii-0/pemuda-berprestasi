@@ -73,21 +73,28 @@ const provinsiOptions = Object.keys(provinsiKotaData).map(provinsi => ({
   label: provinsi
 }));
 
+const handleProvinsiChange = (selectedOption: { value: string; label: string } | null) => {
+  const newProvinsi = selectedOption?.value || "";
+  handleInputChange('provinsi', newProvinsi);
+  // Reset kota ketika provinsi berubah
+  if (formData && newProvinsi !== formData.provinsi) {
+    handleInputChange('kota', '');
+  }
+};
+
 // Component untuk preview file
 const FilePreview = ({ 
   file, 
   existingPath, 
   onRemove, 
   disabled,
-  label,
-  justUploaded = false
+  label 
 }: { 
   file: File | null;
   existingPath?: string;
   onRemove: () => void;
   disabled: boolean;
   label: string;
-  justUploaded?: boolean;
 }) => {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewError, setPreviewError] = useState(false);
@@ -118,28 +125,11 @@ const FilePreview = ({
   if (!hasFile) return null;
 
   return (
-    <div className={`mt-2 p-3 rounded-xl border transition-all duration-500 ${
-      justUploaded 
-        ? 'bg-green-50 border-green-300 shadow-md ring-2 ring-green-200' 
-        : 'bg-white/70 border-red/20'
-    }`}>
+    <div className="mt-2 p-3 bg-white/70 rounded-xl border border-red/20">
       <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2">
-          <span className={`text-sm font-medium ${
-            justUploaded ? 'text-green-700' : 'text-black/70'
-          }`}>
-            {file ? `File baru: ${fileName}` : 
-             justUploaded ? `✅ Berhasil diupload: ${label}` : 
-             `File tersimpan: ${label}`}
-          </span>
-          {justUploaded && (
-            <div className="flex items-center gap-1">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              <span className="text-xs text-green-600 font-medium">Baru diupload</span>
-            </div>
-          )}
-        </div>
-        
+        <span className="text-sm font-medium text-black/70">
+          {file ? `File baru: ${fileName}` : `File tersimpan: ${label}`}
+        </span>
         {!disabled && (
           <button
             onClick={onRemove}
@@ -157,16 +147,9 @@ const FilePreview = ({
             <img 
               src={displayUrl} 
               alt={`Preview ${label}`}
-              className={`w-full h-full object-cover rounded-lg border transition-all duration-300 ${
-                justUploaded ? 'border-green-300 ring-2 ring-green-100' : 'border-gray-200'
-              }`}
+              className="w-full h-full object-cover rounded-lg border border-gray-200"
               onError={() => setPreviewError(true)}
             />
-            {justUploaded && (
-              <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
-                <span className="text-white text-xs">✓</span>
-              </div>
-            )}
           </div>
           <div className="flex flex-col gap-1">
             <button
@@ -193,11 +176,6 @@ const FilePreview = ({
         <div className="flex items-center gap-2 text-sm text-gray-600">
           <IdCard size={16} />
           <span>{fileName}</span>
-          {justUploaded && (
-            <span className="ml-2 px-2 py-1 bg-green-100 text-green-600 text-xs rounded-full">
-              ✓ Uploaded
-            </span>
-          )}
         </div>
       )}
     </div>
@@ -208,8 +186,6 @@ function toInputDateFormat(dateStr: string): string {
   if (!dateStr) return "";
   return dateStr.slice(0, 10);
 }
-
-const [justUploadedFiles, setJustUploadedFiles] = useState<Set<string>>(new Set());
 
 const Profile = () => {
   const { id } = useParams<{ id: string }>();
@@ -289,56 +265,26 @@ const { fetchAtletById, updateAtlet } = useAtletContext();
       }
     }
 
-    // Track which files are being uploaded
-    const uploadingFiles = new Set<string>();
-    if (formData.akte_kelahiran) {
-      formDataSend.append('akte_kelahiran', formData.akte_kelahiran);
-      uploadingFiles.add('akte_kelahiran');
-    }
-    if (formData.pas_foto) {
-      formDataSend.append('pas_foto', formData.pas_foto);
-      uploadingFiles.add('pas_foto');
-    }
-    if (formData.sertifikat_belt) {
-      formDataSend.append('sertifikat_belt', formData.sertifikat_belt);
-      uploadingFiles.add('sertifikat_belt');
-    }
-    if (formData.ktp) {
-      formDataSend.append('ktp', formData.ktp);
-      uploadingFiles.add('ktp');
-    }
+    // Files
+    if (formData.akte_kelahiran) formDataSend.append('akte_kelahiran', formData.akte_kelahiran);
+    if (formData.pas_foto) formDataSend.append('pas_foto', formData.pas_foto);
+    if (formData.sertifikat_belt) formDataSend.append('sertifikat_belt', formData.sertifikat_belt);
+    if (formData.ktp) formDataSend.append('ktp', formData.ktp);
 
     // Use context function dengan ID
     const result = await updateAtlet(Number(id), formDataSend);
 
     if (result) {
-      // Update data dengan response dari backend
-      const updatedData: AtletWithFiles = {
+      const updatedData = {
         ...result,
-        // Clear file objects setelah upload
         akte_kelahiran: null,
         pas_foto: null,
         sertifikat_belt: null,
         ktp: null,
-        // Set file paths dari response (pastikan backend mengirim ini)
-        akte_kelahiran_path: result.akte_kelahiran_path || formData.akte_kelahiran_path,
-        pas_foto_path: result.pas_foto_path || formData.pas_foto_path,
-        sertifikat_belt_path: result.sertifikat_belt_path || formData.sertifikat_belt_path,
-        ktp_path: result.ktp_path || formData.ktp_path,
       };
-      
       setFormData(updatedData);
       setOriginalData(updatedData);
       setIsEditing(false);
-      
-      // Set indicator untuk file yang baru diupload
-      setJustUploadedFiles(uploadingFiles);
-      
-      // Clear indicator setelah 3 detik
-      setTimeout(() => {
-        setJustUploadedFiles(new Set());
-      }, 3000);
-      
       toast.success("Data atlet berhasil diperbarui ✅");
     }
   } catch (err: any) {
@@ -368,15 +314,6 @@ const handleInputChange = (field: keyof AtletWithFiles, value: any) => {
   }
 
   setFormData(updatedData);
-};
-
-const handleProvinsiChange = (selectedOption: { value: string; label: string } | null) => {
-  const newProvinsi = selectedOption?.value || "";
-  handleInputChange('provinsi', newProvinsi);
-  // Reset kota ketika provinsi berubah
-  if (formData && newProvinsi !== formData.provinsi) {
-    handleInputChange('kota', '');
-  }
 };
 
   // Handler untuk file upload
@@ -791,13 +728,12 @@ const handleProvinsiChange = (selectedOption: { value: string; label: string } |
 />
                 {!isEditing && <div className="absolute inset-0 bg-gray-100/50 rounded-xl" />}
               </div>
-<FilePreview
+              <FilePreview
   file={formData.akte_kelahiran || null}
   existingPath={formData.akte_kelahiran_path}
   onRemove={() => handleFileRemove('akte_kelahiran')}
   disabled={!isEditing}
   label="Akte Kelahiran"
-  justUploaded={justUploadedFiles.has('akte_kelahiran')}
 />
             </div>
             
@@ -813,13 +749,12 @@ const handleProvinsiChange = (selectedOption: { value: string; label: string } |
 />
                 {!isEditing && <div className="absolute inset-0 bg-gray-100/50 rounded-xl" />}
               </div>
-<FilePreview
+              <FilePreview
   file={formData.pas_foto || null}
   existingPath={formData.pas_foto_path}
   onRemove={() => handleFileRemove('pas_foto')}
   disabled={!isEditing}
   label="Pas Foto"
-  justUploaded={justUploadedFiles.has('pas_foto')}
 />
             </div>
             
@@ -835,15 +770,13 @@ const handleProvinsiChange = (selectedOption: { value: string; label: string } |
 />
                 {!isEditing && <div className="absolute inset-0 bg-gray-100/50 rounded-xl" />}
               </div>
-<FilePreview
+              <FilePreview
   file={formData.sertifikat_belt || null}
   existingPath={formData.sertifikat_belt_path}
   onRemove={() => handleFileRemove('sertifikat_belt')}
   disabled={!isEditing}
   label="Sertifikat Belt"
-  justUploaded={justUploadedFiles.has('sertifikat_belt')}
 />
-
             </div>
             
             {/* KTP */}
@@ -858,13 +791,12 @@ const handleProvinsiChange = (selectedOption: { value: string; label: string } |
 />
                 {!isEditing && <div className="absolute inset-0 bg-gray-100/50 rounded-xl" />}
               </div>
-<FilePreview
+              <FilePreview
   file={formData.ktp || null}
   existingPath={formData.ktp_path}
   onRemove={() => handleFileRemove('ktp')}
   disabled={!isEditing}
   label="KTP"
-  justUploaded={justUploadedFiles.has('ktp')}
 />
             </div>
           </div>
