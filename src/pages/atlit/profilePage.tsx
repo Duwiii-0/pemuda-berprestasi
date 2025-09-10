@@ -131,24 +131,36 @@ const FilePreview = ({
   };
 
   // PERBAIKAN: Tentukan URL untuk preview dan download
-  const getPreviewUrl = () => {
-    if (file && previewUrl) {
-      return previewUrl;
+const getPreviewUrl = () => {
+  if (file && previewUrl) {
+    return previewUrl;
+  }
+  
+  if (existingPath) {
+    console.log("🔗 Existing path:", existingPath);
+    
+    // If already full URL, use it
+    if (existingPath.startsWith('http')) {
+      return existingPath;
     }
-    if (existingPath) {
-      // Jika existingPath sudah full URL, gunakan langsung
-      if (existingPath.startsWith('http://') || existingPath.startsWith('https://')) {
-        return existingPath;
-      }
-      // Jika existingPath adalah relative path, tambahkan base URL
-      if (existingPath.startsWith('uploads/') || existingPath.startsWith('./uploads/') || existingPath.startsWith('/uploads/')) {
-        return `https://pemudaberprestasi.com/${existingPath.replace('./', '').replace(/^\//, '')}`;
-      }
-      // Fallback: assume it's a relative path dari root
-      return `https://pemudaberprestasi.com/${existingPath.replace(/^\//, '')}`;
-    }
-    return null;
-  };
+    
+    // Build URL dari filename - coba beberapa kemungkinan path
+    const baseUrl = 'https://pemudaberprestasi.com';
+    
+    // Try different path combinations
+    const possiblePaths = [
+      `${baseUrl}/storage/${existingPath}`,
+      `${baseUrl}/uploads/${existingPath}`, 
+      `${baseUrl}/${existingPath}`,
+      `${baseUrl}/storage/uploads/${existingPath}`
+    ];
+    
+    console.log("🧪 Testing first URL:", possiblePaths[0]);
+    return possiblePaths[0]; // Start with most common Laravel storage path
+  }
+  
+  return null;
+};
 
   // PERBAIKAN: Check apakah file adalah gambar berdasarkan ekstensi atau tipe
   const isImageFile = () => {
@@ -250,22 +262,21 @@ const Profile = () => {
 
 const { fetchAtletById, updateAtlet } = useAtletContext();
 
-  useEffect(() => {
+useEffect(() => {
   if (id) {
     const atletId = Number(id);
     fetchAtletById(atletId).then((data) => {
       if (data) {
-        // DEBUG: Tampilkan semua data yang diterima dari API
         console.log("📋 RAW ATLET DATA:", data);
-        console.log("🖼️ FILE PATHS:", {
-          akte_kelahiran_path: data.akte_kelahiran_path,
-          pas_foto_path: data.pas_foto_path,
-          sertifikat_belt_path: data.sertifikat_belt_path,
-          ktp_path: data.ktp_path
-        });
         
         const dataWithFiles: AtletWithFiles = {
           ...data,
+          // Map existing file paths dari field API yang sebenarnya
+          akte_kelahiran_path: data.akte_kelahiran, // Bukan data.akte_kelahiran_path
+          pas_foto_path: data.pas_foto,             // Bukan data.pas_foto_path  
+          sertifikat_belt_path: data.sertifikat_belt, // dst
+          ktp_path: data.ktp,
+          // Initialize File objects as null
           akte_kelahiran: null,
           pas_foto: null,
           sertifikat_belt: null,
@@ -394,14 +405,14 @@ const handleProvinsiChange = (selectedOption: { value: string; label: string } |
   };
 
   // Handler untuk menghapus file
-  const handleFileRemove = (field: keyof AtletWithFiles) => {
-    if (!formData) return;
-    setFormData({ 
-      ...formData, 
-      [field]: null,
-      [`${field}_path`]: undefined // Also clear existing path if removing
-    });
-  };
+const handleFileRemove = (field: keyof AtletWithFiles) => {
+  if (!formData) return;
+  setFormData({ 
+    ...formData, 
+    [field]: null,
+    [`${field}_path`]: undefined // Clear the corresponding path field
+  });
+};
 
   if (!formData) {
     return (
