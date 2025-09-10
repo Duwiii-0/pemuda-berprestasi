@@ -200,7 +200,7 @@ const LandingPage = () => {
                 <div className="group/card flex flex-col w-full gap-4 md:gap-6 justify-center items-center hover:scale-[1.02] transition-all duration-500">
                   
                   {/* Enhanced Image Container */}
-                  <div className="relative overflow-hidden rounded-xl mx-auto group-hover/card:scale-105">
+                  <div className="relative overflow-hidden rounded-xl mx-auto group-hover/card:scale-105 transition-transform duration-700">
                     {/* Subtle overlay patterns */}                    
                     <img 
                       src={ketua}
@@ -414,39 +414,11 @@ const LandingPage = () => {
                       </div>
                     </a>
                   </div>
-                          
-                  {/* Additional Contact Methods - Optional */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
-                    {/* Location Info */}
-                    <div className="group flex items-center gap-3 md:gap-4 p-4 md:p-5 rounded-xl bg-gradient-to-br from-gray-50 to-gray-100 hover:from-red/5 hover:to-red/10 transition-all duration-300 border border-gray-200 hover:border-red/20">
-                      <div className="flex-shrink-0 w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-red/20 to-red/10 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                        <MapPin className="w-4 h-4 md:w-5 md:h-5 text-red" strokeWidth={2} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs md:text-sm text-black/70 font-plex mb-1 font-medium">Lokasi</p>
-                        <p className="text-sm md:text-base font-plex text-black/80 font-medium">GOR Jakabaring</p>
-                      </div>
-                    </div>
-                          
-                    {/* Email - if needed */}
-                    <div className="group flex items-center gap-3 md:gap-4 p-4 md:p-5 rounded-xl bg-gradient-to-br from-gray-50 to-gray-100 hover:from-red/5 hover:to-red/10 transition-all duration-300 border border-gray-200 hover:border-red/20">
-                      <div className="flex-shrink-0 w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-red/20 to-red/10 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                        <Mail className="w-4 h-4 md:w-5 md:h-5 text-red" strokeWidth={2} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs md:text-sm text-black/70 font-plex mb-1 font-medium">Email</p>
-                        <p className="text-sm md:text-base font-plex text-black/80 font-medium">info@sriwijayachamp.com</p>
-                      </div>
-                    </div>
-                  </div>
                 </div>
                           
                 {/* Enhanced Map - More Prominent */}
                 <div className="w-full">
-                    <div className="group flex items-center gap-3 md:gap-4 p-4 md:p-5 rounded-xl bg-gradient-to-br from-gray-50 to-gray-100 hover:from-red/5 hover:to-red/10 transition-all duration-300 border border-gray-200 hover:border-red/20">
-                      <div className="flex-shrink-0 w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-red/20 to-red/10 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                        <MapPin className="w-4 h-4 md:w-5 md:h-5 text-red" strokeWidth={2} />
-                      </div>
+                    <div className="group flex items-center justify-center gap-3 md:gap-4 p-4 md:p-5 rounded-xl ">
                       <div className="flex-1 min-w-0">
                         <h4 className="font-bebas text-red text-lg md:text-xl lg:text-3xl mb-2">Lokasi Pertandingan</h4>
                         <p className="text-sm md:text-base font-plex text-black/80 font-medium">GOR Jakabaring (Gor Ranau JSC), Palembang</p>
