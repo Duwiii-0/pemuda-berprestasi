@@ -200,7 +200,7 @@ const LandingPage = () => {
                 <div className="group/card flex flex-col w-full gap-4 md:gap-6 justify-center items-center hover:scale-[1.02] transition-all duration-500">
                   
                   {/* Enhanced Image Container */}
-                  <div className="relative overflow-hidden rounded-xl mx-auto group-hover/card:scale-115 transition-transform duration-700">
+                  <div className="relative overflow-hidden rounded-xl mx-auto group-hover/card:scale-105 transition-transform duration-700">
                     {/* Subtle overlay patterns */}                    
                     <img 
                       src={ketua}
@@ -419,9 +419,9 @@ const LandingPage = () => {
                 {/* Enhanced Map - More Prominent */}
                 <div className="w-full">
                     <div className="group flex w-full items-center justify-center gap-3 md:gap-4 p-4 md:p-5 rounded-xl ">
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-bebas text-red text-lg md:text-xl lg:text-3xl mb-2">Lokasi Pertandingan</h4>
-                        <p className="text-sm md:text-base font-plex text-black/80 font-medium">GOR Jakabaring (Gor Ranau JSC), Palembang</p>
+                      <div className="flex-1 min-w-0 w-full justify-center items-center">
+                        <h4 className="text-center font-bebas text-red text-lg md:text-xl lg:text-3xl mb-2">Lokasi Pertandingan</h4>
+                        <p className="text-center text-sm md:text-base font-plex text-black/80 font-medium">GOR Jakabaring (Gor Ranau JSC), Palembang</p>
                       </div>
                     </div>
                   <div className="w-full h-56 md:h-64 lg:h-80 xl:h-96 border-2 border-red/20 rounded-2xl overflow-hidden shadow-xl hover:shadow-2xl hover:shadow-red/20 transition-all duration-500 group/map">
