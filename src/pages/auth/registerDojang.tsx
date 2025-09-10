@@ -1,14 +1,20 @@
-import { useState } from "react";
+import { useState, ChangeEvent, FormEvent } from "react";
 import Select from "react-select";
 import TextInput from "../../components/textInput";
-import { Home, Phone, Mail, Upload, X, Image } from "lucide-react";
+import { Home, Phone, Mail, Upload, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import { apiClient } from "../../config/api";
 import Logo from '../../assets/logo/logo.png';
 
-// Data provinsi dan kota
-const provinsiKotaData = {
+// Interface untuk option Select
+interface SelectOption {
+  value: string;
+  label: string;
+}
+
+// Data provinsi dan kota dengan proper typing
+const provinsiKotaData: Record<string, string[]> = {
   "Aceh": ["Banda Aceh", "Langsa", "Lhokseumawe", "Meulaboh", "Sabang", "Subulussalam"],
   "Sumatera Utara": ["Medan", "Binjai", "Gunungsitoli", "Padang Sidempuan", "Pematangsiantar", "Sibolga", "Tanjungbalai", "Tebing Tinggi"],
   "Sumatera Barat": ["Padang", "Bukittinggi", "Padang Panjang", "Pariaman", "Payakumbuh", "Sawahlunto", "Solok"],
@@ -49,54 +55,54 @@ const provinsiKotaData = {
   "Papua Barat Daya": ["Sorong"]
 };
 
-const provinsiOptions = Object.keys(provinsiKotaData).map(provinsi => ({
+const provinsiOptions: SelectOption[] = Object.keys(provinsiKotaData).map(provinsi => ({
   value: provinsi,
   label: provinsi
 }));
 
 const RegisterDojang = () => {
-  const [namaDojang, setNamaDojang] = useState("");
-  const [email, setEmail] = useState("");
-  const [no_telp, setno_telp] = useState("");
-  const [kabupaten, setKabupaten] = useState("");
-  const [provinsi, setProvinsi] = useState("");
-  const [negara, setNegara] = useState("");
-  const [logoFile, setLogoFile] = useState(null);
-  const [logoPreview, setLogoPreview] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [namaDojang, setNamaDojang] = useState<string>("");
+  const [email, setEmail] = useState<string>("");
+  const [no_telp, setno_telp] = useState<string>("");
+  const [kabupaten, setKabupaten] = useState<string>("");
+  const [provinsi, setProvinsi] = useState<string>("");
+  const [negara, setNegara] = useState<string>("");
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   // Get city options based on selected province
-  const kotaOptions = provinsi ? provinsiKotaData[provinsi]?.map(kota => ({
+  const kotaOptions: SelectOption[] = provinsi ? (provinsiKotaData[provinsi]?.map((kota: string) => ({
     value: kota,
     label: kota
-  })) || [] : [];
+  })) || []) : [];
 
-  const handleProvinsiChange = (selectedOption) => {
+  const handleProvinsiChange = (selectedOption: SelectOption | null) => {
     setProvinsi(selectedOption?.value || "");
     setKabupaten(""); 
   };
 
-  const handleKotaChange = (selectedOption) => {
+  const handleKotaChange = (selectedOption: SelectOption | null) => {
     setKabupaten(selectedOption?.value || "");
   };
 
-  const getSelectValue = (options, value) => {
-    return options.find(option => option.value === value) || null;
+  const getSelectValue = (options: SelectOption[], value: string): SelectOption | null => {
+    return options.find((option: SelectOption) => option.value === value) || null;
   };
 
-  const handleLogoChange = (e) => {
-    const file = e.target.files[0];
+  const handleLogoChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target?.files?.[0];
     if (file) {
-      // Validasi ukuran file (max 5MB)
+      // Validasi ukuran file (max 5MB) - same as TambahAtlit
       if (file.size > 5 * 1024 * 1024) {
         toast.error("Ukuran file maksimal 5MB");
         return;
       }
 
-      // Validasi tipe file
+      // Validasi tipe file - improved validation like TambahAtlit
       const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'];
       if (!allowedTypes.includes(file.type)) {
-        toast.error("Format file harus JPG, PNG, atau WebP");
+        toast.error("Format file harus JPG, PNG, JPEG, atau WebP");
         return;
       }
 
@@ -104,10 +110,13 @@ const RegisterDojang = () => {
       
       // Create preview
       const reader = new FileReader();
-      reader.onload = (e) => {
-        setLogoPreview(e.target.result);
+      reader.onload = (e: ProgressEvent<FileReader>) => {
+        setLogoPreview(e.target?.result as string);
       };
       reader.readAsDataURL(file);
+      
+      // Success message when file is successfully uploaded
+      toast.success(`Logo ${file.name} berhasil dipilih`);
     }
   };
 
@@ -115,35 +124,54 @@ const RegisterDojang = () => {
     setLogoFile(null);
     setLogoPreview(null);
     // Reset input file
-    const fileInput = document.getElementById('logo-upload');
+    const fileInput = document.getElementById('logo-upload') as HTMLInputElement;
     if (fileInput) {
       fileInput.value = '';
     }
+    toast.success("Logo berhasil dihapus");
   };
 
   const handleRegister = async () => {
     setIsLoading(true);
     try {
+      // Improved FormData handling like TambahAtlit
       const formData = new FormData();
-      formData.append('nama_dojang', namaDojang.trim());
-      formData.append('email', email.trim() || "");
-      formData.append('no_telp', no_telp.trim() || "");
-      formData.append('negara', negara.trim() || "");
-      formData.append('provinsi', provinsi.trim() || "");
-      formData.append('kota', kabupaten.trim() || "");
       
+      // Required fields
+      formData.append('nama_dojang', namaDojang.trim());
+      
+      // Optional fields - only append if they have values
+      if (email.trim()) formData.append('email', email.trim());
+      if (no_telp.trim()) formData.append('no_telp', no_telp.trim());
+      if (negara.trim()) formData.append('negara', negara.trim());
+      if (provinsi.trim()) formData.append('provinsi', provinsi.trim());
+      if (kabupaten.trim()) formData.append('kota', kabupaten.trim());
+      
+      // File upload - consistent with TambahAtlit
       if (logoFile) {
         formData.append('logo', logoFile);
       }
 
+      // Debug log FormData contents (like in TambahAtlit)
+      console.log("📤 DEBUG: Sending FormData contents:");
+      for (let [key, value] of formData.entries()) {
+        if (value instanceof File) {
+          console.log(`${key}: File - ${value.name} (${value.size} bytes)`);
+        } else {
+          console.log(`${key}: ${value}`);
+        }
+      }
+
+      // Use multipart/form-data headers
       await apiClient.post("/dojang", formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
 
-      toast.success("Registrasi dojang berhasil! Silahkan registrasi.");
+      toast.success("Registrasi dojang berhasil! Silahkan login.");
 
+      // Reset form completely
       setNamaDojang("");
       setEmail("");
       setno_telp("");
@@ -152,9 +180,22 @@ const RegisterDojang = () => {
       setNegara("");
       removeLogo();
 
-    } catch (err) {
-      if (err.data?.errors) {
-        toast.error("Ada field yang tidak valid.");
+    } catch (err: unknown) {
+      console.error("❌ Error registering dojang:", err);
+      
+      // Improved error handling with proper typing
+      if (err && typeof err === 'object' && 'response' in err) {
+        const error = err as any; // Type assertion for axios error
+        if (error.response?.data?.errors) {
+          const errorMessages = Object.values(error.response.data.errors).flat();
+          toast.error(errorMessages.join(", ") || "Ada field yang tidak valid.");
+        } else if (error.message?.includes('File size')) {
+          toast.error("File logo terlalu besar. Maksimal 5MB.");
+        } else if (error.message?.includes('Invalid file')) {
+          toast.error("Format logo tidak didukung. Gunakan JPG, PNG, JPEG, atau WebP.");
+        } else {
+          toast.error(error.response?.data?.message || "Terjadi kesalahan saat mendaftar");
+        }
       } else {
         toast.error("Terjadi kesalahan saat mendaftar");
       }
@@ -163,9 +204,10 @@ const RegisterDojang = () => {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
+    // Enhanced validation
     if (!namaDojang.trim()) {
       toast.error("Nama dojang harus diisi");
       return;
@@ -176,13 +218,18 @@ const RegisterDojang = () => {
       return;
     }
 
+    if (namaDojang.trim().length > 100) {
+      toast.error("Nama dojang maksimal 100 karakter");
+      return;
+    }
+
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       toast.error("Format email tidak valid");
       return;
     }
 
-    if (no_telp && !/^[\d\s\-\+\(\)]+$/.test(no_telp)) {
-      toast.error("Format nomor HP tidak valid");
+    if (no_telp && !/^(\+62|62|0)[0-9]{9,13}$/.test(no_telp.replace(/[\s\-\(\)]/g, ''))) {
+      toast.error("Format nomor HP tidak valid (contoh: 08123456789)");
       return;
     }
 
@@ -224,60 +271,6 @@ const RegisterDojang = () => {
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-3.5 sm:space-y-4 md:space-y-5">
             
-            {/* Logo Upload */}
-            <div className="space-y-1.5">
-              <label className="text-xs sm:text-sm md:text-base font-plex font-medium text-black/80 block">
-                Logo Dojang <span className="text-xs text-black/50">(Opsional)</span>
-              </label>
-              
-              {logoPreview ? (
-                // Preview dengan tombol hapus
-                <div className="relative">
-                  <div className="flex items-center justify-center w-full h-24 sm:h-28 md:h-32 border-2 border-red/25 rounded-xl bg-white/80 backdrop-blur-sm overflow-hidden">
-                    <img 
-                      src={logoPreview} 
-                      alt="Logo Preview" 
-                      className="max-h-full max-w-full object-contain"
-                    />
-                  </div>
-                  <button
-                    type="button"
-                    onClick={removeLogo}
-                    className="absolute -top-2 -right-2 w-6 h-6 sm:w-7 sm:h-7 bg-red text-white rounded-full flex items-center justify-center hover:bg-red/80 transition-colors shadow-md"
-                  >
-                    <X size={12} className="sm:w-4 sm:h-4" />
-                  </button>
-                </div>
-              ) : (
-                // Upload area
-                <div className="relative group">
-                  <input
-                    id="logo-upload"
-                    type="file"
-                    accept="image/*"
-                    onChange={handleLogoChange}
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                    disabled={isLoading}
-                  />
-                  <div className="flex flex-col items-center justify-center w-full h-24 sm:h-28 md:h-32 border-2 border-dashed border-red/25 rounded-xl bg-white/80 backdrop-blur-sm hover:border-red/40 hover:bg-red/5 transition-all duration-300 cursor-pointer">
-                    <div className="flex flex-col items-center space-y-1 sm:space-y-2">
-                      <div className="w-8 h-8 sm:w-10 sm:h-10 bg-red/10 rounded-full flex items-center justify-center">
-                        <Image className="w-4 h-4 sm:w-5 sm:h-5 text-red/70" />
-                      </div>
-                      <div className="text-center">
-                        <p className="text-xs sm:text-sm font-plex font-medium text-black/70">
-                          Klik untuk upload logo
-                        </p>
-                        <p className="text-xs font-plex text-black/50 mt-0.5">
-                          JPG, PNG, WebP (Max 5MB)
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
             {/* Nama Dojang */}
             <div className="space-y-1.5">
               <label className="text-xs sm:text-sm md:text-base font-plex font-medium text-black/80 block">
@@ -286,14 +279,20 @@ const RegisterDojang = () => {
               <div className="relative group">
                 <TextInput
                   value={namaDojang}
-                  onChange={(e) => setNamaDojang(e.target.value)}
+                  onChange={(e: ChangeEvent<HTMLInputElement>) => setNamaDojang(e.target.value)}
                   className="h-10 sm:h-11 md:h-12 border-2 border-red/25 focus:border-red rounded-lg sm:rounded-xl bg-white/80 backdrop-blur-sm text-sm md:text-base font-plex pl-9 sm:pl-10 md:pl-12 pr-3 sm:pr-4 transition-all duration-300 group-hover:border-red/40 focus:bg-white focus:shadow-md focus:shadow-red/10"
                   placeholder="Contoh: Dojang Garuda Sakti"
                   type="text"
                   disabled={isLoading}
+                  maxLength={100}
                 />
                 <Home className="absolute left-2.5 sm:left-3 md:left-4 top-1/2 transform -translate-y-1/2 text-red/60 group-hover:text-red transition-colors" size={14} />
               </div>
+              {namaDojang && (
+                <p className="text-xs text-black/50 font-plex">
+                  {namaDojang.length}/100 karakter
+                </p>
+              )}
             </div>
 
             {/* Email */}
@@ -304,7 +303,7 @@ const RegisterDojang = () => {
               <div className="relative group">
                 <TextInput
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e: ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
                   className="h-10 sm:h-11 md:h-12 border-2 border-red/25 focus:border-red rounded-lg sm:rounded-xl bg-white/80 backdrop-blur-sm text-sm md:text-base font-plex pl-9 sm:pl-10 md:pl-12 pr-3 sm:pr-4 transition-all duration-300 group-hover:border-red/40 focus:bg-white focus:shadow-md focus:shadow-red/10"
                   placeholder="email@example.com"
                   type="email"
@@ -322,7 +321,7 @@ const RegisterDojang = () => {
               <div className="relative group">
                 <TextInput
                   value={no_telp}
-                  onChange={(e) => setno_telp(e.target.value)}
+                  onChange={(e: ChangeEvent<HTMLInputElement>) => setno_telp(e.target.value)}
                   className="h-10 sm:h-11 md:h-12 border-2 border-red/25 focus:border-red rounded-lg sm:rounded-xl bg-white/80 backdrop-blur-sm text-sm md:text-base font-plex pl-9 sm:pl-10 md:pl-12 pr-3 sm:pr-4 transition-all duration-300 group-hover:border-red/40 focus:bg-white focus:shadow-md focus:shadow-red/10"
                   placeholder="08123456789"
                   disabled={isLoading}
@@ -338,7 +337,7 @@ const RegisterDojang = () => {
                 <label className="text-xs sm:text-sm md:text-base font-plex font-medium text-black/80 block">
                   Provinsi <span className="text-xs text-black/50">(Opsional)</span>
                 </label>
-                <Select
+                <Select<SelectOption>
                   unstyled
                   menuPortalTarget={document.body}
                   styles={{
@@ -376,7 +375,7 @@ const RegisterDojang = () => {
                 <label className="text-xs sm:text-sm md:text-base font-plex font-medium text-black/80 block">
                   Kota <span className="text-xs text-black/50">(Opsional)</span>
                 </label>
-                <Select
+                <Select<SelectOption>
                   unstyled
                   menuPortalTarget={document.body}
                   styles={{
@@ -418,7 +417,7 @@ const RegisterDojang = () => {
               <div className="relative group">
                 <TextInput
                   value={negara}
-                  onChange={(e) => setNegara(e.target.value)}
+                  onChange={(e: ChangeEvent<HTMLInputElement>) => setNegara(e.target.value)}
                   className="h-10 sm:h-11 md:h-12 border-2 border-red/25 focus:border-red rounded-lg sm:rounded-xl bg-white/80 backdrop-blur-sm text-sm md:text-base font-plex pl-3 sm:pl-4 pr-3 sm:pr-4 transition-all duration-300 group-hover:border-red/40 focus:bg-white focus:shadow-md focus:shadow-red/10"
                   placeholder="Indonesia"
                   disabled={isLoading}
@@ -426,18 +425,83 @@ const RegisterDojang = () => {
               </div>
             </div>
 
+            {/* Logo Upload - Moved to bottom as requested */}
+            <div className="space-y-1.5 pt-2 sm:pt-3 md:pt-4">
+              <label className="text-xs sm:text-sm md:text-base font-plex font-medium text-black/80 block">
+                Logo Dojang <span className="text-xs text-black/50">(Opsional)</span>
+              </label>
+              
+              {logoPreview ? (
+                // Preview dengan tombol hapus - enhanced styling
+                <div className="relative group">
+                  <div className="flex items-center justify-center w-full h-28 sm:h-32 md:h-36 border-2 border-red/25 rounded-xl bg-white/80 backdrop-blur-sm overflow-hidden hover:border-red/40 transition-all duration-300">
+                    <img 
+                      src={logoPreview} 
+                      alt="Logo Preview" 
+                      className="max-h-full max-w-full object-contain rounded-lg shadow-sm"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={removeLogo}
+                    className="absolute -top-2 -right-2 w-7 h-7 sm:w-8 sm:h-8 bg-red text-white rounded-full flex items-center justify-center hover:bg-red/80 transition-all duration-300 shadow-lg group-hover:scale-110"
+                    disabled={isLoading}
+                  >
+                    <X size={14} className="sm:w-4 sm:h-4" />
+                  </button>
+                  <div className="absolute bottom-2 left-2 bg-black/60 text-white text-xs px-2 py-1 rounded-md backdrop-blur-sm">
+                    {logoFile?.name || 'Logo'}
+                  </div>
+                </div>
+              ) : (
+                // Upload area - enhanced styling
+                <div className="relative group">
+                  <input
+                    id="logo-upload"
+                    type="file"
+                    accept="image/jpeg,image/png,image/jpg,image/webp"
+                    onChange={handleLogoChange}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                    disabled={isLoading}
+                  />
+                  <div className="flex flex-col items-center justify-center w-full h-28 sm:h-32 md:h-36 border-2 border-dashed border-red/25 rounded-xl bg-white/80 backdrop-blur-sm hover:border-red/40 hover:bg-red/5 transition-all duration-300 cursor-pointer group-hover:scale-[1.02]">
+                    <div className="flex flex-col items-center space-y-2 sm:space-y-3">
+                      <div className="w-10 h-10 sm:w-12 sm:h-12 bg-red/10 rounded-full flex items-center justify-center group-hover:bg-red/20 transition-colors duration-300">
+                        <Upload className="w-5 h-5 sm:w-6 sm:h-6 text-red/70 group-hover:text-red transition-colors duration-300" />
+                      </div>
+                      <div className="text-center">
+                        <p className="text-sm sm:text-base font-plex font-medium text-black/70 group-hover:text-red transition-colors duration-300">
+                          Klik untuk upload logo
+                        </p>
+                        <p className="text-xs font-plex text-black/50 mt-1">
+                          JPG, PNG, JPEG, WebP (Max 5MB)
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* Register Button */}
-            <div className="pt-3 sm:pt-4 md:pt-6">
+            <div className="pt-4 sm:pt-5 md:pt-6">
               <button
                 type="submit"
                 disabled={isLoading}
-                className={`w-full h-10 sm:h-11 md:h-12 rounded-lg sm:rounded-xl text-white text-sm md:text-base font-plex font-semibold transition-all duration-300 ${
+                className={`w-full h-11 sm:h-12 md:h-13 rounded-lg sm:rounded-xl text-white text-sm md:text-base font-plex font-semibold transition-all duration-300 ${
                   isLoading
                     ? "bg-gray-400 border-gray-400 cursor-not-allowed opacity-50"
                     : "bg-gradient-to-r from-red to-red/90 hover:from-red/90 hover:to-red border-2 border-red hover:shadow-lg hover:shadow-red/25 hover:-translate-y-0.5 active:scale-[0.98]"
                 }`}
               >
-                {isLoading ? "Mendaftarkan..." : "Daftar Dojang"}
+                {isLoading ? (
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    Mendaftarkan...
+                  </div>
+                ) : (
+                  "Daftar Dojang"
+                )}
               </button>
             </div>
 
