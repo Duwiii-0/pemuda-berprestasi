@@ -1,7 +1,7 @@
 // src/pages/Profile.tsx
 import { useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { Phone, User, CalendarFold, IdCard, MapPinned, Map, Scale, Ruler } from "lucide-react";
+import { Phone, User, CalendarFold, IdCard, MapPinned, Map, Scale, Ruler, X, Eye, Download } from "lucide-react";
 import TextInput from "../../components/textInput";
 import FileInput from "../../components/fileInput";
 import Select from "react-select";
@@ -27,6 +27,85 @@ interface AtletWithFiles extends Atlet {
   ktp_path?: string;
 }
 
+// Component untuk preview file
+const FilePreview = ({ 
+  file, 
+  existingPath, 
+  onRemove, 
+  disabled,
+  label 
+}: { 
+  file: File | null;
+  existingPath?: string;
+  onRemove: () => void;
+  disabled: boolean;
+  label: string;
+}) => {
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (file) {
+      const url = URL.createObjectURL(file);
+      setPreviewUrl(url);
+      return () => URL.revokeObjectURL(url);
+    }
+  }, [file]);
+
+  const hasFile = file || existingPath;
+  const displayUrl = file ? previewUrl : existingPath;
+
+  if (!hasFile) return null;
+
+  return (
+    <div className="mt-2 p-3 bg-white/70 rounded-xl border border-red/20">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-sm font-medium text-black/70">
+          {file ? `File baru: ${file.name}` : `File tersimpan: ${label}`}
+        </span>
+        {!disabled && (
+          <button
+            onClick={onRemove}
+            className="p-1 hover:bg-red/10 rounded-full transition-colors"
+            type="button"
+          >
+            <X size={16} className="text-red" />
+          </button>
+        )}
+      </div>
+      
+      {displayUrl && (
+        <div className="flex gap-2">
+          <img 
+            src={displayUrl} 
+            alt={`Preview ${label}`}
+            className="w-20 h-20 object-cover rounded-lg border border-gray-200"
+          />
+          <div className="flex flex-col gap-1">
+            <button
+              onClick={() => window.open(displayUrl, '_blank')}
+              className="flex items-center gap-1 px-2 py-1 text-xs bg-blue-100 hover:bg-blue-200 text-blue-600 rounded transition-colors"
+              type="button"
+            >
+              <Eye size={12} />
+              Lihat
+            </button>
+            {existingPath && (
+              <a
+                href={existingPath}
+                download
+                className="flex items-center gap-1 px-2 py-1 text-xs bg-green-100 hover:bg-green-200 text-green-600 rounded transition-colors"
+              >
+                <Download size={12} />
+                Download
+              </a>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 function toInputDateFormat(dateStr: string): string {
   if (!dateStr) return "";
   return dateStr.slice(0, 10);
@@ -37,9 +116,10 @@ const Profile = () => {
   const [originalData, setOriginalData] = useState<AtletWithFiles | null>(null);
   const [formData, setFormData] = useState<AtletWithFiles | null>();
   const [isEditing, setIsEditing] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { user } = useAuth();
 
-  const { fetchAtletById, updateAtlet } = useAtletContext();
+  const { fetchAtletById } = useAtletContext();
 
   useEffect(() => {
     if (id) {
@@ -62,81 +142,123 @@ const Profile = () => {
 
   const handleCancel = () => {
     if (originalData) {
-      setFormData(originalData);
+      setFormData({
+        ...originalData,
+        akte_kelahiran: null,
+        pas_foto: null,
+        sertifikat_belt: null,
+        ktp: null,
+      });
     }
     setIsEditing(false);
   };
 
   const handleUpdate = async () => {
-    if (formData) {
-      try {
-        const calculatedAge = calculateAge(formData.tanggal_lahir);
+    if (!formData || isSubmitting) return;
+    
+    setIsSubmitting(true);
+    
+    try {
+      const calculatedAge = calculateAge(formData.tanggal_lahir);
 
-        // Create FormData untuk mengirim file dan data
-        const formDataToSend = new FormData();
-        
-        // Append regular fields
-        formDataToSend.append('id_atlet', String(id));
-        formDataToSend.append('nama_atlet', formData.nama_atlet);
-        formDataToSend.append('nik', formData.nik || '');
-        formDataToSend.append('tanggal_lahir', formData.tanggal_lahir);
-        formDataToSend.append('jenis_kelamin', formData.jenis_kelamin);
-        formDataToSend.append('tinggi_badan', String(formData.tinggi_badan));
-        formDataToSend.append('berat_badan', String(formData.berat_badan));
-        formDataToSend.append('no_telp', formData.no_telp || '');
-        formDataToSend.append('alamat', formData.alamat || '');
-        formDataToSend.append('provinsi', formData.provinsi || '');
-        formDataToSend.append('belt', formData.belt || '');
-        formDataToSend.append('umur', String(calculatedAge));
+      // Create FormData untuk mengirim file dan data
+      const formDataToSend = new FormData();
+      
+      // Append regular fields
+      formDataToSend.append('id_atlet', String(id));
+      formDataToSend.append('nama_atlet', formData.nama_atlet);
+      formDataToSend.append('nik', formData.nik || '');
+      formDataToSend.append('tanggal_lahir', formData.tanggal_lahir);
+      formDataToSend.append('jenis_kelamin', formData.jenis_kelamin);
+      formDataToSend.append('tinggi_badan', String(formData.tinggi_badan));
+      formDataToSend.append('berat_badan', String(formData.berat_badan));
+      formDataToSend.append('no_telp', formData.no_telp || '');
+      formDataToSend.append('alamat', formData.alamat || '');
+      formDataToSend.append('provinsi', formData.provinsi || '');
+      formDataToSend.append('belt', formData.belt || '');
+      formDataToSend.append('umur', String(calculatedAge));
 
-        // Append files if they exist
-        if (formData.akte_kelahiran) {
-          formDataToSend.append('akte_kelahiran', formData.akte_kelahiran);
-        }
-        if (formData.pas_foto) {
-          formDataToSend.append('pas_foto', formData.pas_foto);
-        }
-        if (formData.sertifikat_belt) {
-          formDataToSend.append('sertifikat_belt', formData.sertifikat_belt);
-        }
-        if (formData.ktp) {
-          formDataToSend.append('ktp', formData.ktp);
-        }
-
-        // Call updateAtlet with FormData instead of regular object
-        const saved = await updateAtletWithFiles(formDataToSend);
-
-        if (saved) {
-          setFormData(saved);
-          setOriginalData(saved);
-          setIsEditing(false);
-          toast.success("Data atlet berhasil diperbarui ✅");
-        }
-      } catch (err) {
-        console.error("Gagal update atlet:", err);
-        toast.error("Gagal memperbarui data atlet"); 
+      // Append files if they exist (only new files)
+      if (formData.akte_kelahiran) {
+        formDataToSend.append('akte_kelahiran', formData.akte_kelahiran);
       }
+      if (formData.pas_foto) {
+        formDataToSend.append('pas_foto', formData.pas_foto);
+      }
+      if (formData.sertifikat_belt) {
+        formDataToSend.append('sertifikat_belt', formData.sertifikat_belt);
+      }
+      if (formData.ktp) {
+        formDataToSend.append('ktp', formData.ktp);
+      }
+
+      // Debug: Log FormData contents
+      console.log('Sending FormData:');
+      for (const [key, value] of formDataToSend.entries()) {
+        console.log(key, value);
+      }
+
+      const saved = await updateAtletWithFiles(formDataToSend);
+
+      if (saved) {
+        const updatedData = {
+          ...saved,
+          akte_kelahiran: null,
+          pas_foto: null,
+          sertifikat_belt: null,
+          ktp: null,
+        };
+        setFormData(updatedData);
+        setOriginalData(updatedData);
+        setIsEditing(false);
+        toast.success("Data atlet berhasil diperbarui ✅");
+      }
+    } catch (err: any) {
+      console.error("Gagal update atlet:", err);
+      toast.error(err.message || "Gagal memperbarui data atlet");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  // New function to handle file uploads
+  // Enhanced function to handle file uploads with better error handling
   const updateAtletWithFiles = async (formData: FormData): Promise<AtletWithFiles | null> => {
     try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Token tidak ditemukan. Silakan login kembali.');
+      }
+
       const response = await fetch(`${import.meta.env.VITE_API_URL}/atlet/${id}`, {
         method: 'PUT',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Authorization': `Bearer ${token}`,
           // Don't set Content-Type header, let browser set it for FormData
         },
         body: formData,
       });
 
+      const responseText = await response.text();
+      console.log('Response status:', response.status);
+      console.log('Response text:', responseText);
+
       if (!response.ok) {
-        throw new Error('Failed to update atlet');
+        let errorMessage = 'Failed to update atlet';
+        try {
+          const errorData = JSON.parse(responseText);
+          errorMessage = errorData.message || errorData.error || errorMessage;
+        } catch {
+          errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        }
+        throw new Error(errorMessage);
       }
 
-      return await response.json();
-    } catch (error) {
+      try {
+        return JSON.parse(responseText);
+      } catch {
+        throw new Error('Invalid response format from server');
+      }
+    } catch (error: any) {
       console.error('Error updating atlet:', error);
       throw error;
     }
@@ -158,6 +280,16 @@ const Profile = () => {
   const handleFileChange = (field: keyof AtletWithFiles, file: File | null) => {
     if (!formData) return;
     setFormData({ ...formData, [field]: file });
+  };
+
+  // Handler untuk menghapus file
+  const handleFileRemove = (field: keyof AtletWithFiles) => {
+    if (!formData) return;
+    setFormData({ 
+      ...formData, 
+      [field]: null,
+      [`${field}_path`]: undefined // Also clear existing path if removing
+    });
   };
 
   if (!formData) {
@@ -233,11 +365,13 @@ const Profile = () => {
                       label="Batal"
                       className="text-red bg-white hover:bg-red/5 border-2 border-red/30 hover:border-red/50 flex-1 sm:flex-none text-sm lg:text-base px-4 lg:px-6 py-2.5 lg:py-3"
                       onClick={handleCancel}
+                      disabled={isSubmitting}
                     />
                     <GeneralButton
-                      label="Simpan"
-                      className="text-white bg-gradient-to-r from-red to-red/80 hover:from-red/90 hover:to-red/70 border-0 shadow-lg flex items-center gap-2 flex-1 sm:flex-none text-sm lg:text-base px-4 lg:px-6 py-2.5 lg:py-3"
+                      label={isSubmitting ? "Menyimpan..." : "Simpan"}
+                      className="text-white bg-gradient-to-r from-red to-red/80 hover:from-red/90 hover:to-red/70 border-0 shadow-lg flex items-center gap-2 flex-1 sm:flex-none text-sm lg:text-base px-4 lg:px-6 py-2.5 lg:py-3 disabled:opacity-50 disabled:cursor-not-allowed"
                       onClick={handleUpdate}
+                      disabled={isSubmitting}
                     />
                   </div>
                 )
@@ -455,7 +589,7 @@ const Profile = () => {
           </div>
         </div>
 
-        {/* Document Upload Section */}
+        {/* Document Upload Section with Enhanced Preview */}
         <div className="bg-white/60 backdrop-blur-sm rounded-2xl lg:rounded-3xl p-4 sm:p-6 lg:p-8 shadow-xl border-2 border-gray-200">
           <div className="flex items-center gap-3 mb-4 lg:mb-6">
             <div className="p-2 bg-red/10 rounded-xl">
@@ -467,71 +601,130 @@ const Profile = () => {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
+            {/* Akte Kelahiran */}
             <div className="space-y-2">
               <label className="block font-plex font-medium text-black/70 text-sm lg:text-base">Akte Kelahiran</label>
               <div className="relative">
-              <FileInput 
-                accept="image/*" 
-                disabled={!isEditing}
-                onChange={(file) => handleFileChange('akte_kelahiran', file)}
-                className="border-red/20 bg-white/50 backdrop-blur-sm rounded-xl hover:border-red transition-all duration-300 text-sm lg:text-base"
-              />
-              {!isEditing && <div className="absolute inset-0 bg-gray-100/50 rounded-xl" />}
+                <FileInput 
+                  accept="image/*,application/pdf" 
+                  disabled={!isEditing}
+                  onChange={(file) => handleFileChange('akte_kelahiran', file)}
+                  className="border-red/20 bg-white/50 backdrop-blur-sm rounded-xl hover:border-red transition-all duration-300 text-sm lg:text-base"
+                />
+                {!isEditing && <div className="absolute inset-0 bg-gray-100/50 rounded-xl" />}
               </div>
-              {formData.akte_kelahiran && (
-                <p className="text-green-600 text-xs">File dipilih: {formData.akte_kelahiran.name}</p>
-              )}
+              <FilePreview
+                file={formData.akte_kelahiran}
+                existingPath={formData.akte_kelahiran_path}
+                onRemove={() => handleFileRemove('akte_kelahiran')}
+                disabled={!isEditing}
+                label="Akte Kelahiran"
+              />
             </div>
             
+            {/* Pas Foto */}
             <div className="space-y-2">
               <label className="block font-plex font-medium text-black/70 text-sm lg:text-base">Pas Foto 3x4</label>
               <div className="relative">
-              <FileInput 
-                accept="image/*" 
-                disabled={!isEditing}
-                onChange={(file) => handleFileChange('pas_foto', file)}
-                className="border-red/20 bg-white/50 backdrop-blur-sm rounded-xl hover:border-red transition-all duration-300 text-sm lg:text-base"
-              />
-              {!isEditing && <div className="absolute inset-0 bg-gray-100/50 rounded-xl" />}
+                <FileInput 
+                  accept="image/*" 
+                  disabled={!isEditing}
+                  onChange={(file) => handleFileChange('pas_foto', file)}
+                  className="border-red/20 bg-white/50 backdrop-blur-sm rounded-xl hover:border-red transition-all duration-300 text-sm lg:text-base"
+                />
+                {!isEditing && <div className="absolute inset-0 bg-gray-100/50 rounded-xl" />}
               </div>
-              {formData.pas_foto && (
-                <p className="text-green-600 text-xs">File dipilih: {formData.pas_foto.name}</p>
-              )}
+              <FilePreview
+                file={formData.pas_foto}
+                existingPath={formData.pas_foto_path}
+                onRemove={() => handleFileRemove('pas_foto')}
+                disabled={!isEditing}
+                label="Pas Foto"
+              />
             </div>
             
+            {/* Sertifikat Belt */}
             <div className="space-y-2">
               <label className="block font-plex font-medium text-black/70 text-sm lg:text-base">Sertifikasi Belt</label>
               <div className="relative">
-              <FileInput 
-                accept="image/*" 
-                disabled={!isEditing}
-                onChange={(file) => handleFileChange('sertifikat_belt', file)}
-                className="border-red/20 bg-white/50 backdrop-blur-sm rounded-xl hover:border-red transition-all duration-300 text-sm lg:text-base"
-              />
-              {!isEditing && <div className="absolute inset-0 bg-gray-100/50 rounded-xl" />}
+                <FileInput 
+                  accept="image/*,application/pdf" 
+                  disabled={!isEditing}
+                  onChange={(file) => handleFileChange('sertifikat_belt', file)}
+                  className="border-red/20 bg-white/50 backdrop-blur-sm rounded-xl hover:border-red transition-all duration-300 text-sm lg:text-base"
+                />
+                {!isEditing && <div className="absolute inset-0 bg-gray-100/50 rounded-xl" />}
               </div>
-              {formData.sertifikat_belt && (
-                <p className="text-green-600 text-xs">File dipilih: {formData.sertifikat_belt.name}</p>
-              )}
+              <FilePreview
+                file={formData.sertifikat_belt}
+                existingPath={formData.sertifikat_belt_path}
+                onRemove={() => handleFileRemove('sertifikat_belt')}
+                disabled={!isEditing}
+                label="Sertifikat Belt"
+              />
             </div>
             
+            {/* KTP */}
             <div className="space-y-2">
               <label className="block font-plex font-medium text-black/70 text-sm lg:text-base">KTP (Wajib untuk 17+)</label>
               <div className="relative">
-              <FileInput 
-                accept="image/*" 
-                disabled={!isEditing}
-                onChange={(file) => handleFileChange('ktp', file)}
-                className="border-red/20 bg-white/50 backdrop-blur-sm rounded-xl hover:border-red transition-all duration-300 text-sm lg:text-base"
-              />
-              {!isEditing && <div className="absolute inset-0 bg-gray-100/50 rounded-xl" />}
+                <FileInput 
+                  accept="image/*,application/pdf" 
+                  disabled={!isEditing}
+                  onChange={(file) => handleFileChange('ktp', file)}
+                  className="border-red/20 bg-white/50 backdrop-blur-sm rounded-xl hover:border-red transition-all duration-300 text-sm lg:text-base"
+                />
+                {!isEditing && <div className="absolute inset-0 bg-gray-100/50 rounded-xl" />}
               </div>
-              {formData.ktp && (
-                <p className="text-green-600 text-xs">File dipilih: {formData.ktp.name}</p>
-              )}
+              <FilePreview
+                file={formData.ktp}
+                existingPath={formData.ktp_path}
+                onRemove={() => handleFileRemove('ktp')}
+                disabled={!isEditing}
+                label="KTP"
+              />
             </div>
           </div>
+
+          {/* Upload Tips */}
+          {isEditing && (
+            <div className="mt-6 p-4 bg-blue-50 rounded-xl border border-blue-200">
+              <h4 className="font-plex font-semibold text-blue-800 mb-2">Tips Upload Dokumen:</h4>
+              <ul className="text-sm text-blue-700 space-y-1">
+                <li>• Format yang didukung: JPG, PNG, PDF</li>
+                <li>• Ukuran maksimal per file: 5MB</li>
+                <li>• Pastikan dokumen terlihat jelas dan tidak buram</li>
+                <li>• File baru akan menggantikan file yang sudah ada</li>
+              </ul>
+            </div>
+          )}
         </div>
+
+        {/* Debug Section (remove in production) */}
+        {process.env.NODE_ENV === 'development' && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
+            <h3 className="font-semibold text-yellow-800 mb-2">Debug Info:</h3>
+            <pre className="text-xs text-yellow-700 overflow-auto">
+              {JSON.stringify({
+                id,
+                isEditing,
+                isSubmitting,
+                hasFiles: {
+                  akte_kelahiran: !!formData.akte_kelahiran,
+                  pas_foto: !!formData.pas_foto,
+                  sertifikat_belt: !!formData.sertifikat_belt,
+                  ktp: !!formData.ktp,
+                },
+                existingPaths: {
+                  akte_kelahiran_path: formData.akte_kelahiran_path,
+                  pas_foto_path: formData.pas_foto_path,
+                  sertifikat_belt_path: formData.sertifikat_belt_path,
+                  ktp_path: formData.ktp_path,
+                }
+              }, null, 2)}
+            </pre>
+          </div>
+        )}
       </div>
     </div>
   );
