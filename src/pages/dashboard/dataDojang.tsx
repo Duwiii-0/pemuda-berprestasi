@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Phone, Mail, MapPin, Map, Building, Flag, Menu, Award, Users, Calendar, Edit3, Save, X } from 'lucide-react';
+import { Phone, Mail, MapPin, Map, Building, Flag, Menu, Award } from 'lucide-react';
 import NavbarDashboard from "../../components/navbar/navbarDashboard"; // Import NavbarDashboard
 import { useAuth } from "../../context/authContext";
 import { useNavigate } from "react-router-dom";
@@ -24,11 +24,32 @@ interface GeneralButtonProps {
   disabled?: boolean;
 }
 
-interface StatsCardProps {
-  icon: React.ComponentType<{ size?: number; className?: string }>;
-  title: string;
-  value: string;
-  color: string;
+// Add logo interface
+interface DojangData {
+  id_dojang: number;
+  nama_dojang: string;
+  email: string;
+  no_telp: string;
+  negara: string;
+  provinsi: string;
+  kota: string;
+  kecamatan: string;
+  kelurahan: string;
+  alamat: string;
+  logo_url?: string;
+  tanggal_didirikan?: string;
+}
+
+interface FormDataType {
+  name: string;
+  email: string;
+  phone: string;
+  negara: string;
+  provinsi: string;
+  kota: string;
+  kecamatan: string;
+  kelurahan: string;
+  alamat: string;
 }
 
 export const TextInput: React.FC<TextInputProps> = ({ placeholder, className, icon, value, disabled,type , onChange }) => {
@@ -60,30 +81,15 @@ export const GeneralButton: React.FC<GeneralButtonProps> = ({ label, className,d
   </button>
 );
 
-const StatsCard: React.FC<StatsCardProps> = ({ icon: Icon, title, value, color }) => (
-  <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-4 lg:p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-white/50">
-    <div className="flex items-center justify-between">
-      <div className="flex items-center gap-3 lg:gap-4">
-        <div className={`p-2 lg:p-3 rounded-xl ${color}`}>
-          <Icon size={20} className="text-white lg:w-6 lg:h-6" />
-        </div>
-        <div>
-          <h3 className="font-plex font-medium text-black/60 text-xs lg:text-sm">{title}</h3>
-          <p className="font-bebas text-xl lg:text-2xl text-black/80">{value}</p>
-        </div>
-      </div>
-    </div>
-  </div>
-);
-
 const Dojang = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const { user, token } = useAuth();
   const navigate = useNavigate();
 
-  const [userDojang, setUserDojang] = useState<any>(null);
-  const [formData, setFormData] = useState<any>(null);
+  const [userDojang, setUserDojang] = useState<DojangData | null>(null);
+  const [formData, setFormData] = useState<FormDataType | null>(null);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
 
   // Set token global sekali aja
@@ -111,20 +117,22 @@ const Dojang = () => {
     const fetchDojang = async () => {
       try {
         setLoading(true);
-        const { data } = await apiClient.get("/dojang/my-dojang");
+        const response = await apiClient.get("/dojang/my-dojang");
+        const dojangData = response.data as DojangData;
 
-        setUserDojang(data);
+        setUserDojang(dojangData);
         setFormData({
-          name: data.nama_dojang || "",
-          email: data.email || "",
-          phone: data.no_telp || "",
-          negara: data.negara || "",
-          provinsi: data.provinsi || "",
-          kota: data.kota || "",
-          kecamatan: data.kecamatan || "",
-          kelurahan: data.kelurahan || "",
-          alamat: data.alamat || "",
+          name: dojangData.nama_dojang || "",
+          email: dojangData.email || "",
+          phone: dojangData.no_telp || "",
+          negara: dojangData.negara || "",
+          provinsi: dojangData.provinsi || "",
+          kota: dojangData.kota || "",
+          kecamatan: dojangData.kecamatan || "",
+          kelurahan: dojangData.kelurahan || "",
+          alamat: dojangData.alamat || "",
         });
+        
       } catch (err: any) {
         console.error(err);
         toast.error("Gagal mengambil data dojang");
@@ -155,37 +163,46 @@ const Dojang = () => {
 
   // 🔹 Update dojang
   const handleUpdate = async () => {
+    if (!userDojang || !formData) {
+      toast.error("Data tidak lengkap");
+      return;
+    }
+
     try {
       setLoading(true);
-      const updateData = {
-        nama_dojang: formData.name,
-        email: formData.email,
-        no_telp: formData.phone,
-        negara: formData.negara,
-        provinsi: formData.provinsi,
-        kota: formData.kota,
-        kecamatan: formData.kecamatan,
-        kelurahan: formData.kelurahan,
-        alamat: formData.alamat,
-      };
+      const updateFormData = new FormData();
       
-      const { data } = await apiClient.put(`/dojang/${userDojang.id_dojang}`, updateData);
+      updateFormData.append('nama_dojang', formData.name);
+      updateFormData.append('email', formData.email);
+      updateFormData.append('no_telp', formData.phone);
+      updateFormData.append('negara', formData.negara);
+      updateFormData.append('provinsi', formData.provinsi);
+      updateFormData.append('kota', formData.kota);
+      updateFormData.append('kecamatan', formData.kecamatan);
+      updateFormData.append('kelurahan', formData.kelurahan);
+      updateFormData.append('alamat', formData.alamat);
+      
+      if (logoFile) {
+        updateFormData.append('logo', logoFile);
+      }
 
-      setUserDojang(data); // pake hasil dari server, bukan formData
+      const response = await apiClient.put(
+        `/dojang/${userDojang.id_dojang}`, 
+        updateFormData
+      );
+
+      const updatedData = response.data as DojangData;
+      setUserDojang(updatedData);
       setIsEditing(false);
       toast.success("Data dojang berhasil diperbarui");
 
     } catch (err: any) {
       console.error(err);
-      toast.error("update dojang gagal");
+      toast.error("Update dojang gagal");
     } finally {
       setLoading(false);
     }
   };
-
-  // Stats calculation
-  const establishedYear = userDojang?.tanggal_didirikan ? new Date(userDojang.tanggal_didirikan).getFullYear() : null;
-  const yearsActive = establishedYear ? new Date().getFullYear() - establishedYear : 0;
 
   if (!formData) {
     return (
