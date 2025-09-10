@@ -63,8 +63,8 @@ const LandingPage = () => {
         style={{ backgroundImage: `url(${heroLomba})` }}
       >
         {/* Enhanced Gradient Overlays - More Professional */}
-        <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-black/60" />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/50" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-black/30 to-black/40" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/30" />
         
         {/* Subtle Grid Pattern Overlay */}
         <div className="absolute inset-0 opacity-5">
