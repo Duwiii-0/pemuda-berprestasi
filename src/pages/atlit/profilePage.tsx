@@ -145,14 +145,11 @@ const getPreviewUrl = () => {
     else if (label.toLowerCase().includes('sertifikat') || label.toLowerCase().includes('belt')) folder = 'sertifikat_belt';
     else if (label.toLowerCase().includes('ktp')) folder = 'ktp';
     
-    // Jika backend sudah ada static serving
-    const staticUrl = `${baseUrl}/uploads/atlet/${folder}/${existingPath}`;
+    // Menggunakan endpoint file serving
+    const fileUrl = `${baseUrl}/api/atlet/files/${folder}/${existingPath}`;
     
-    // Atau jika pakai endpoint khusus
-    const apiUrl = `${baseUrl}/api/atlet/files/${folder}/${existingPath}`;
-    
-    console.log("🌐 Trying URL:", staticUrl);
-    return staticUrl; // Coba static dulu
+    console.log("🌐 File URL:", fileUrl);
+    return fileUrl;
   }
   
   return null;
