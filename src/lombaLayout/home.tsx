@@ -1,13 +1,11 @@
-import TextInput from "../components/textInput";
-import TextArea from "../components/textArea";
-import Steps from "../components/steps";  
-import { Mail, User, PenLine, Phone, Award, Trophy, Instagram } from 'lucide-react';
+import { Mail, User, PenLine, Phone, Award, Trophy, Instagram, MapPin } from 'lucide-react';
 import sriwijaya from "../assets/logo/sriwijaya.png";
 import heroLomba from "../assets/photos/heroLomba.jpg";
 import UnifiedRegistration from "../components/registrationSteps/UnifiedRegistration";
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/authContext";
 import toast from 'react-hot-toast';
+import ketua from "../assets/photos/ketua.png"
 
 const LandingPage = () => {
   const [isRegistrationOpen, setIsRegistrationOpen] = useState(false);
@@ -207,8 +205,8 @@ const LandingPage = () => {
                     <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white/5 to-transparent"></div>
                     
                     <img 
-                      src="src/assets/logo/taekwondo.png" 
-                      alt="Muhammad Rafif Dwiarka - Direktur Sriwijaya Championship" 
+                      src={ketua}
+                      alt="Hj. Meilinda, S.Sos.,M.M" 
                       className="h-48 w-36 sm:h-56 sm:w-42 md:h-64 md:w-48 lg:h-72 lg:w-54 xl:h-80 xl:w-60 object-cover group-hover/card:scale-105 transition-transform duration-700"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent"></div>
@@ -222,7 +220,7 @@ const LandingPage = () => {
                   <div className="text-center space-y-2 md:space-y-3 group-hover/card:scale-105 transition-transform duration-500 px-2">
                     <div className="space-y-1">
                       <h3 className="font-bebas text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl bg-gradient-to-r from-red to-red/80 bg-clip-text text-transparent">
-                        Muhammad Rafif Dwiarka
+                        Hj. Meilinda, S.Sos.,M.M
                       </h3>
                       <p className="font-plex text-xs md:text-sm lg:text-md 2xl:text-xl text-black/70 font-medium tracking-wide">
                         Ketua Panitia Kejuaraan Sriwijaya
