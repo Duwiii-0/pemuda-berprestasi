@@ -102,7 +102,7 @@ export default function Timeline() {
                         <div className="relative flex flex-col items-center justify-start w-16 pt-8 md:pt-10">
                           {/* Enhanced Dot */}
                           <div className="relative z-10">
-                            <div className="w-8 h-8 md:w-10 md:h-10 bg-gradient-to-br from-red to-red/80 rounded-full shadow-lg border-4 border-white transition-all duration-500 group-hover:scale-125 group-hover:shadow-xl group-hover:shadow-red/30 animate-ping group-hover:animate-pulse" />
+                            <div className="w-8 h-8 md:w-10 md:h-10 bg-gradient-to-br from-red to-red/80 rounded-full shadow-lg border-4 border-white transition-all duration-500 group-hover:scale-125 group-hover:shadow-xl group-hover:shadow-red/30 group-hover:animate-pulse" />
                           </div>
 
                           {/* Enhanced Connecting Line */}
