@@ -630,7 +630,10 @@ const handleSubmit = async () => {
 
             <div className="space-y-6">
               {/* ✅ UPDATED: Kelas Umur - Show first for POOMSAE prestasi */}
-              {formData.categoryType === "prestasi" && (
+              {(
+                (formData.styleType === "KYORUGI" && (formData.categoryType === "pemula" || formData.categoryType === "prestasi")) ||
+                (formData.styleType === "POOMSAE" && formData.categoryType === "pemula")
+              ) &&  (
                 <div>
                   <label className="block text-black mb-3 text-lg font-plex font-semibold pl-2">
                     Kelas Umur <span className="text-red">*</span>
