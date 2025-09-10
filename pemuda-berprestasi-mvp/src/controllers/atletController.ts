@@ -1,10 +1,9 @@
+// src/controllers/atletController.ts - DENGAN DEBUG LOGGING
 import { Request, Response } from 'express';
 import { AtletService } from '../services/atletService';
 import { sendSuccess, sendError } from '../utils/response';
 import { JenisKelamin } from '@prisma/client';
-import prisma from '../config/database'
 
-// Define Multer file interface locally
 interface MulterFile {
   fieldname: string;
   originalname: string;
@@ -18,79 +17,96 @@ interface MulterFile {
 }
 
 export class AtletController {
-  // Create new atlet
   static async create(req: Request, res: Response) {
-  try {
-    const files = req.files as { [fieldname: string]: MulterFile[] };
-    
-    const atletData: any = {
-      ...req.body,
-      akte_kelahiran: files?.akte_kelahiran?.[0]?.filename,
-      pas_foto: files?.pas_foto?.[0]?.filename,
-      sertifikat_belt: files?.sertifikat_belt?.[0]?.filename,
-      ktp: files?.ktp?.[0]?.filename,
-    };
-    
-    // Convert string date to Date object
-    if (atletData.tanggal_lahir) {
-      atletData.tanggal_lahir = new Date(atletData.tanggal_lahir);
-    }
-
-    // Convert weight and height to numbers
-    if (atletData.berat_badan) {
-      atletData.berat_badan = parseFloat(atletData.berat_badan);
-    }
-
-    if (atletData.tinggi_badan) { 
-      atletData.tinggi_badan = parseFloat(atletData.tinggi_badan);
-    }
-
-    const atlet = await AtletService.createAtlet(atletData);
-
-    return sendSuccess(res, atlet, 'Atlet berhasil dibuat', 201);
-  } catch (error: any) {
-    return sendError(res, error.message, 400);
-  }
-}
-
-
-  // Get all atlet with filters and pagination
-  static async getAll(req: Request, res: Response) {
     try {
-      const filters = {
-        page: parseInt(req.query.page as string) || 1,
-        limit: parseInt(req.query.limit as string) || 100,
-        search: req.query.search as string,
-        id_dojang: req.query.id_dojang ? parseInt(req.query.id_dojang as string) : undefined,
-        jenis_kelamin: req.query.jenis_kelamin as JenisKelamin,
-        min_age: req.query.min_age ? parseInt(req.query.min_age as string) : undefined,
-        max_age: req.query.max_age ? parseInt(req.query.max_age as string) : undefined,
-        min_weight: req.query.min_weight ? parseFloat(req.query.min_weight as string) : undefined,
-        max_weight: req.query.max_weight ? parseFloat(req.query.max_weight as string) : undefined
-      };
-
-      const result = await AtletService.getAllAtlet(filters);
+      console.log("🔍 DEBUG: Request body:", req.body);
+      console.log("🔍 DEBUG: Request files:", req.files);
       
-      return sendSuccess(res, result.data, 'Data atlet berhasil diambil', 200, result.pagination);
-    } catch (error: any) {
-      return sendError(res, error.message, 500);
-    }
-  }
-
-  // Get atlet by ID
-  static async getById(req: Request, res: Response) {
-    try {
-      const id = parseInt(req.params.id);
+      const files = req.files as { [fieldname: string]: MulterFile[] };
       
-      if (isNaN(id)) {
-        return sendError(res, 'ID atlet tidak valid', 400);
+      // DEBUG: Log setiap file yang diterima
+      if (files) {
+        Object.keys(files).forEach(key => {
+          console.log(`📎 File ${key}:`, {
+            fieldname: files[key][0]?.fieldname,
+            originalname: files[key][0]?.originalname,
+            filename: files[key][0]?.filename,
+            size: files[key][0]?.size,
+            destination: files[key][0]?.destination,
+            path: files[key][0]?.path
+          });
+        });
+      } else {
+        console.log("⚠️  No files received in request");
       }
 
-      const atlet = await AtletService.getAtletById(id);
-      
-      return sendSuccess(res, atlet, 'Detail atlet berhasil diambil');
+      const atletData: any = {
+        ...req.body,
+        akte_kelahiran: files?.akte_kelahiran?.[0]?.filename || null,
+        pas_foto: files?.pas_foto?.[0]?.filename || null,
+        sertifikat_belt: files?.sertifikat_belt?.[0]?.filename || null,
+        ktp: files?.ktp?.[0]?.filename || null,
+      };
+
+      console.log("📋 DEBUG: Final atlet data:", atletData);
+
+      // Convert string date to Date object
+      if (atletData.tanggal_lahir) {
+        atletData.tanggal_lahir = new Date(atletData.tanggal_lahir);
+      }
+
+      // Convert weight and height to numbers
+      if (atletData.berat_badan) {
+        atletData.berat_badan = parseFloat(atletData.berat_badan);
+      }
+
+      if (atletData.tinggi_badan) {
+        atletData.tinggi_badan = parseFloat(atletData.tinggi_badan);
+      }
+
+      // Validasi required fields
+      if (!atletData.nama_atlet) {
+        return sendError(res, 'Nama atlet wajib diisi', 400);
+      }
+
+      if (!atletData.tanggal_lahir) {
+        return sendError(res, 'Tanggal lahir wajib diisi', 400);
+      }
+
+      if (!atletData.jenis_kelamin) {
+        return sendError(res, 'Jenis kelamin wajib diisi', 400);
+      }
+
+      if (!atletData.id_dojang) {
+        return sendError(res, 'ID dojang tidak ditemukan', 400);
+      }
+
+      if (!atletData.id_pelatih_pembuat) {
+        return sendError(res, 'ID pelatih tidak ditemukan', 400);
+      }
+
+      console.log("🚀 DEBUG: Calling AtletService.createAtlet with:", {
+        nama_atlet: atletData.nama_atlet,
+        tanggal_lahir: atletData.tanggal_lahir,
+        jenis_kelamin: atletData.jenis_kelamin,
+        id_dojang: atletData.id_dojang,
+        id_pelatih_pembuat: atletData.id_pelatih_pembuat,
+        files: {
+          akte_kelahiran: atletData.akte_kelahiran,
+          pas_foto: atletData.pas_foto,
+          sertifikat_belt: atletData.sertifikat_belt,
+          ktp: atletData.ktp
+        }
+      });
+
+      const atlet = await AtletService.createAtlet(atletData);
+
+      console.log("✅ DEBUG: Atlet created successfully:", atlet?.id_atlet);
+
+      return sendSuccess(res, atlet, 'Atlet berhasil dibuat', 201);
     } catch (error: any) {
-      return sendError(res, error.message, 404);
+      console.error("❌ DEBUG: Error in create controller:", error);
+      return sendError(res, error.message, 400);
     }
   }
 
