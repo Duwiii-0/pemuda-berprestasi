@@ -86,6 +86,10 @@ model tb_dojang {
   negara      String?     @db.VarChar(100)
   provinsi    String?     @db.VarChar(100)
   kota        String?     @db.VarChar(100)
+  kecamatan   String?     @db.VarChar(100)
+  kelurahan   String?     @db.VarChar(100)
+  alamat      String?     @db.VarChar(200)
+  logo        String?     @db.VarChar(255)
 
   created_at  DateTime    @default(now())
   updated_at  DateTime    @updatedAt
