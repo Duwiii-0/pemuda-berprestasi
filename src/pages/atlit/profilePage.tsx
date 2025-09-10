@@ -14,31 +14,47 @@ import { calculateAge } from "../../context/AtlitContext";
 import toast from "react-hot-toast";
 import { useAuth } from "../../context/authContext";
 
-
+// Extend Atlet type untuk include file fields
+interface AtletWithFiles extends Atlet {
+  akte_kelahiran?: File | null;
+  pas_foto?: File | null;
+  sertifikat_belt?: File | null;
+  ktp?: File | null;
+  // Untuk menampilkan existing files dari server
+  akte_kelahiran_path?: string;
+  pas_foto_path?: string;
+  sertifikat_belt_path?: string;
+  ktp_path?: string;
+}
 
 function toInputDateFormat(dateStr: string): string {
   if (!dateStr) return "";
-  // Jika format ISO, ambil yyyy-mm-dd
   return dateStr.slice(0, 10);
 }
 
 const Profile = () => {
   const { id } = useParams<{ id: string }>();
-  const [originalData, setOriginalData] = useState<Atlet | null>(null); // 🆕 simpan data asli dari DB
-  const [formData, setFormData] = useState<Atlet | null>();
+  const [originalData, setOriginalData] = useState<AtletWithFiles | null>(null);
+  const [formData, setFormData] = useState<AtletWithFiles | null>();
   const [isEditing, setIsEditing] = useState(false);
-  const { user } = useAuth(); // misal user punya { role: 'ADMIN' | 'ATLET' }
+  const { user } = useAuth();
 
   const { fetchAtletById, updateAtlet } = useAtletContext();
 
-  // Fetch data atlet sekali saat masuk halaman
   useEffect(() => {
     if (id) {
       const atletId = Number(id);
       fetchAtletById(atletId).then((data) => {
         if (data) {
-          setFormData(data);
-          setOriginalData(data); // simpan versi asli
+          const dataWithFiles: AtletWithFiles = {
+            ...data,
+            akte_kelahiran: null,
+            pas_foto: null,
+            sertifikat_belt: null,
+            ktp: null,
+          };
+          setFormData(dataWithFiles);
+          setOriginalData(dataWithFiles);
         }
       });
     }
@@ -46,47 +62,87 @@ const Profile = () => {
 
   const handleCancel = () => {
     if (originalData) {
-      setFormData(originalData); // 🆕 balikin ke data awal dari DB
+      setFormData(originalData);
     }
     setIsEditing(false);
   };
 
   const handleUpdate = async () => {
-  if (formData) {
-    try {
-      const calculatedAge = calculateAge(formData.tanggal_lahir);
+    if (formData) {
+      try {
+        const calculatedAge = calculateAge(formData.tanggal_lahir);
 
-      // Hanya ambil field yang valid untuk update
-      const payload = {
-        id_atlet: Number(id),
-        nama_atlet: formData.nama_atlet,
-        nik: formData.nik,
-        tanggal_lahir: formData.tanggal_lahir,
-        jenis_kelamin: formData.jenis_kelamin,
-        tinggi_badan: formData.tinggi_badan,
-        berat_badan: formData.berat_badan,
-        no_telp: formData.no_telp,
-        alamat: formData.alamat,
-        umur: calculatedAge, // kalau schema Joi terima
-      };
+        // Create FormData untuk mengirim file dan data
+        const formDataToSend = new FormData();
+        
+        // Append regular fields
+        formDataToSend.append('id_atlet', String(id));
+        formDataToSend.append('nama_atlet', formData.nama_atlet);
+        formDataToSend.append('nik', formData.nik || '');
+        formDataToSend.append('tanggal_lahir', formData.tanggal_lahir);
+        formDataToSend.append('jenis_kelamin', formData.jenis_kelamin);
+        formDataToSend.append('tinggi_badan', String(formData.tinggi_badan));
+        formDataToSend.append('berat_badan', String(formData.berat_badan));
+        formDataToSend.append('no_telp', formData.no_telp || '');
+        formDataToSend.append('alamat', formData.alamat || '');
+        formDataToSend.append('provinsi', formData.provinsi || '');
+        formDataToSend.append('belt', formData.belt || '');
+        formDataToSend.append('umur', String(calculatedAge));
 
-      const saved = await updateAtlet(payload);
+        // Append files if they exist
+        if (formData.akte_kelahiran) {
+          formDataToSend.append('akte_kelahiran', formData.akte_kelahiran);
+        }
+        if (formData.pas_foto) {
+          formDataToSend.append('pas_foto', formData.pas_foto);
+        }
+        if (formData.sertifikat_belt) {
+          formDataToSend.append('sertifikat_belt', formData.sertifikat_belt);
+        }
+        if (formData.ktp) {
+          formDataToSend.append('ktp', formData.ktp);
+        }
 
-      if (saved) {
-        setFormData(saved);
-        setOriginalData(saved);
-        setIsEditing(false);
-        toast.success("Data atlet berhasil diperbarui ✅")
+        // Call updateAtlet with FormData instead of regular object
+        const saved = await updateAtletWithFiles(formDataToSend);
+
+        if (saved) {
+          setFormData(saved);
+          setOriginalData(saved);
+          setIsEditing(false);
+          toast.success("Data atlet berhasil diperbarui ✅");
+        }
+      } catch (err) {
+        console.error("Gagal update atlet:", err);
+        toast.error("Gagal memperbarui data atlet"); 
       }
-    } catch (err) {
-      console.error("Gagal update atlet:");
-      toast.error("Semua field harus diisi dengan benar"); 
     }
-  }
-};
+  };
 
+  // New function to handle file uploads
+  const updateAtletWithFiles = async (formData: FormData): Promise<AtletWithFiles | null> => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/atlet/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          // Don't set Content-Type header, let browser set it for FormData
+        },
+        body: formData,
+      });
 
-  const handleInputChange = (field: keyof Atlet, value: any) => {
+      if (!response.ok) {
+        throw new Error('Failed to update atlet');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error updating atlet:', error);
+      throw error;
+    }
+  };
+
+  const handleInputChange = (field: keyof AtletWithFiles, value: any) => {
     if (!formData) return;
     let updatedData = { ...formData, [field]: value };
 
@@ -96,6 +152,12 @@ const Profile = () => {
     }
 
     setFormData(updatedData);
+  };
+
+  // Handler untuk file upload
+  const handleFileChange = (field: keyof AtletWithFiles, file: File | null) => {
+    if (!formData) return;
+    setFormData({ ...formData, [field]: file });
   };
 
   if (!formData) {
@@ -147,7 +209,6 @@ const Profile = () => {
                   <span className="px-2 lg:px-3 py-1 rounded-full text-xs font-plex font-medium bg-yellow/20 text-yellow/80">
                     Sabuk {formData.belt || 'Tidak Ada'}
                   </span>
-                  {/* Display calculated age */}
                   <span className="px-2 lg:px-3 py-1 rounded-full text-xs font-plex font-medium bg-green-100 text-green-600">
                     {calculateAge(formData.tanggal_lahir)} tahun
                   </span>
@@ -184,7 +245,7 @@ const Profile = () => {
             </div>
           </div>
 
-          {/* Form Grid */}
+          {/* Form Grid - sama seperti sebelumnya */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
             {/* Nama */}
             <div className="space-y-2">
@@ -210,7 +271,7 @@ const Profile = () => {
                   className="h-10 lg:h-12 border-red/20 bg-white/50 backdrop-blur-sm rounded-xl focus:border-red transition-all duration-300 text-sm lg:text-base"
                   onChange={(e) => handleInputChange('no_telp', e.target.value)}
                   disabled={!isEditing}
-                  value={formData.no_telp || ''} //blm ada ni field di db
+                  value={formData.no_telp || ''}
                   placeholder="No HP"
                   icon={<Phone className="text-red" size={18} />}
                 />
@@ -226,7 +287,7 @@ const Profile = () => {
                 className="h-10 lg:h-12 border-red/20 bg-white/50 backdrop-blur-sm rounded-xl focus:border-red transition-all duration-300 text-sm lg:text-base"
                 onChange={(e) => handleInputChange('alamat', e.target.value)}
                 disabled={!isEditing}
-                value={formData.alamat || ''} // blm ada jg
+                value={formData.alamat || ''}
                 placeholder="Alamat"
                 icon={<MapPinned className="text-red" size={18} />}
               />
@@ -296,7 +357,7 @@ const Profile = () => {
                   menuPortal: base => ({ ...base, zIndex: 10 })
                 }}
                 isDisabled={!isEditing}
-                value={beltOptions.find(opt => opt.value === formData.belt) || null} // ni jugaaa
+                value={beltOptions.find(opt => opt.value === formData.belt) || null}
                 onChange={(selected) =>
                   handleInputChange('belt', selected?.value || '')
                 }
@@ -335,7 +396,6 @@ const Profile = () => {
               />
               {!isEditing && <div className="absolute inset-0 bg-gray-100/50 rounded-xl" />}
               </div>
-              {/* Display calculated age */}
               {formData.tanggal_lahir && (
                 <p className="text-green-600 text-xs lg:text-sm font-plex">
                   Umur: {calculateAge(formData.tanggal_lahir)} tahun
@@ -385,7 +445,7 @@ const Profile = () => {
                 className="h-10 lg:h-12 border-red/20 bg-white/50 backdrop-blur-sm rounded-xl focus:border-red transition-all duration-300 text-sm lg:text-base"
                 onChange={(e) => handleInputChange('nik', e.target.value)}
                 disabled={!isEditing}
-                value={formData.nik || ''} // nik jg blm 
+                value={formData.nik || ''}
                 placeholder="NIK"
                 icon={<IdCard className="text-red" size={18} />}
               />
@@ -413,10 +473,14 @@ const Profile = () => {
               <FileInput 
                 accept="image/*" 
                 disabled={!isEditing}
+                onChange={(file) => handleFileChange('akte_kelahiran', file)}
                 className="border-red/20 bg-white/50 backdrop-blur-sm rounded-xl hover:border-red transition-all duration-300 text-sm lg:text-base"
               />
               {!isEditing && <div className="absolute inset-0 bg-gray-100/50 rounded-xl" />}
               </div>
+              {formData.akte_kelahiran && (
+                <p className="text-green-600 text-xs">File dipilih: {formData.akte_kelahiran.name}</p>
+              )}
             </div>
             
             <div className="space-y-2">
@@ -425,10 +489,14 @@ const Profile = () => {
               <FileInput 
                 accept="image/*" 
                 disabled={!isEditing}
+                onChange={(file) => handleFileChange('pas_foto', file)}
                 className="border-red/20 bg-white/50 backdrop-blur-sm rounded-xl hover:border-red transition-all duration-300 text-sm lg:text-base"
               />
               {!isEditing && <div className="absolute inset-0 bg-gray-100/50 rounded-xl" />}
               </div>
+              {formData.pas_foto && (
+                <p className="text-green-600 text-xs">File dipilih: {formData.pas_foto.name}</p>
+              )}
             </div>
             
             <div className="space-y-2">
@@ -437,10 +505,14 @@ const Profile = () => {
               <FileInput 
                 accept="image/*" 
                 disabled={!isEditing}
+                onChange={(file) => handleFileChange('sertifikat_belt', file)}
                 className="border-red/20 bg-white/50 backdrop-blur-sm rounded-xl hover:border-red transition-all duration-300 text-sm lg:text-base"
               />
               {!isEditing && <div className="absolute inset-0 bg-gray-100/50 rounded-xl" />}
               </div>
+              {formData.sertifikat_belt && (
+                <p className="text-green-600 text-xs">File dipilih: {formData.sertifikat_belt.name}</p>
+              )}
             </div>
             
             <div className="space-y-2">
@@ -449,10 +521,14 @@ const Profile = () => {
               <FileInput 
                 accept="image/*" 
                 disabled={!isEditing}
+                onChange={(file) => handleFileChange('ktp', file)}
                 className="border-red/20 bg-white/50 backdrop-blur-sm rounded-xl hover:border-red transition-all duration-300 text-sm lg:text-base"
               />
               {!isEditing && <div className="absolute inset-0 bg-gray-100/50 rounded-xl" />}
               </div>
+              {formData.ktp && (
+                <p className="text-green-600 text-xs">File dipilih: {formData.ktp.name}</p>
+              )}
             </div>
           </div>
         </div>

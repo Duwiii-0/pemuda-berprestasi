@@ -1,68 +1,141 @@
-import React, { useState, useRef, useEffect } from "react";
+// src/components/fileInput.tsx
+import React, { useRef } from 'react';
+import { Upload, FileIcon, X } from 'lucide-react';
 
-type FileInputProps = {
+interface FileInputProps {
   accept?: string;
-  file?: File | null; // file baru dari parent
-  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  className?: string;
+  multiple?: boolean;
+  onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
   disabled?: boolean;
-  previewUrl?: string; // URL file lama dari server
-};
+  className?: string;
+  file?: File | null;
+  placeholder?: string;
+}
 
-const FileInput: React.FC<FileInputProps> = ({ accept, file, onChange, className, disabled, previewUrl }) => {
-  const inputRef = useRef<HTMLInputElement | null>(null);
-  const [localPreview, setLocalPreview] = useState<string | null>(null);
+const FileInput: React.FC<FileInputProps> = ({
+  accept = "*/*",
+  multiple = false,
+  onChange,
+  disabled = false,
+  className = "",
+  file,
+  placeholder = "Pilih file..."
+}) => {
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleClick = () => {
-    if (!disabled) inputRef.current?.click();
+    if (!disabled && fileInputRef.current) {
+      fileInputRef.current.click();
+    }
   };
 
-  // Buat preview ketika user pilih file baru
-  useEffect(() => {
-    // hanya buat object URL kalau file benar-benar File/Blob
-    if (file instanceof File && accept?.startsWith("image/")) {
-      const objectUrl = URL.createObjectURL(file);
-      setLocalPreview(objectUrl);
-
-      return () => URL.revokeObjectURL(objectUrl); // bersihkan memory
-    } else {
-      setLocalPreview(null);
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (onChange) {
+      onChange(event);
     }
-  }, [file, accept]);
+  };
 
+  const clearFile = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+      // Create synthetic event for clearing
+      const syntheticEvent = {
+        target: { files: null },
+        currentTarget: fileInputRef.current
+      } as React.ChangeEvent<HTMLInputElement>;
+      
+      if (onChange) {
+        onChange(syntheticEvent);
+      }
+    }
+  };
+
+  const getFileIcon = (fileName?: string) => {
+    if (!fileName) return <Upload size={20} />;
+    
+    const extension = fileName.split('.').pop()?.toLowerCase();
+    
+    switch (extension) {
+      case 'pdf':
+        return <FileIcon size={20} className="text-red-500" />;
+      case 'jpg':
+      case 'jpeg':
+      case 'png':
+      case 'gif':
+        return <Upload size={20} className="text-blue-500" />;
+      default:
+        return <FileIcon size={20} />;
+    }
+  };
 
   return (
-    <>
+    <div className={`relative ${className}`}>
       <input
-        ref={inputRef}
+        ref={fileInputRef}
         type="file"
         accept={accept}
-        onChange={onChange}
-        className="hidden"
+        multiple={multiple}
+        onChange={handleFileChange}
         disabled={disabled}
+        className="hidden"
       />
-
+      
       <div
         onClick={handleClick}
-        className={`border-2 border-red/20 bg-white/80 rounded-lg cursor-pointer flex items-center justify-center overflow-hidden relative ${className} w-full h-60 py-4`}
+        className={`
+          flex items-center justify-between w-full px-4 py-3 
+          border-2 border-dashed rounded-xl cursor-pointer
+          transition-all duration-300 min-h-[48px]
+          ${disabled 
+            ? 'bg-gray-100 border-gray-300 cursor-not-allowed' 
+            : 'border-red/30 hover:border-red/50 bg-white/50 hover:bg-white/70'
+          }
+          ${className}
+        `}
       >
-        {localPreview ? (
-          <img
-            src={localPreview}
-            alt="teskuu"
-            className="w-full h-full object-contain"
-          />
-        ) : previewUrl ? (
-          <img
-            src={previewUrl}
-            alt="tesss"
-            className="w-full h-full object-contain"
-          />
-        ) : (
-          <p className="text-gray-400">Klik untuk pilih file</p>
+        <div className="flex items-center gap-3 flex-1 min-w-0">
+          <div className="flex-shrink-0">
+            {getFileIcon(file?.name)}
+          </div>
+          
+          <div className="flex-1 min-w-0">
+            {file ? (
+              <div className="flex flex-col gap-1">
+                <p className="text-sm font-medium text-gray-900 truncate">
+                  {file.name}
+                </p>
+                <p className="text-xs text-gray-500">
+                  {(file.size / 1024).toFixed(1)} KB
+                </p>
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500 font-plex">
+                {placeholder}
+              </p>
+            )}
+          </div>
+        </div>
+        
+        {file && !disabled && (
+          <button
+            type="button"
+            onClick={clearFile}
+            className="flex-shrink-0 p-1 text-gray-400 hover:text-red-500 transition-colors duration-200 ml-2"
+            aria-label="Remove file"
+          >
+            <X size={16} />
+          </button>
         )}
       </div>
-    </>
+      
+      {/* File type hint */}
+      <div className="mt-1 text-xs text-gray-500 font-plex">
+        {accept === "image/*" && "Format yang didukung: JPG, PNG, GIF"}
+        {accept === "image/*,application/pdf" && "Format yang didukung: JPG, PNG, GIF, PDF"}
+        {accept === "*/*" && "Semua format file"}
+      </div>
+    </div>
   );
 };
 
