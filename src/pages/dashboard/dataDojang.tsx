@@ -315,7 +315,7 @@ const fetchDojang = async () => {
     // PERBAIKAN: Validate dojang data
     if (!dojangData || !dojangData.id_dojang || !dojangData.nama_dojang) {
       console.log('⚠️ Invalid dojang data:', dojangData);
-      toast.info("Data dojang tidak valid atau belum ada");
+      toast.error("Data dojang tidak valid atau belum ada");
       setUserDojang(null);
       setFormData(null);
       return;
@@ -346,7 +346,7 @@ const fetchDojang = async () => {
     
     // Handle error responses
     if (err.response?.status === 404) {
-      toast.info("Pelatih belum memiliki dojang");
+      toast.error("Pelatih belum memiliki dojang");
     } else if (err.response?.status === 401) {
       toast.error("Sesi login telah berakhir");
     } else {
@@ -451,33 +451,38 @@ const handleUpdate = async () => {
 
     console.log('📤 Updating dojang ID:', userDojang.id_dojang);
     
-    const response = await apiClient.put(
+    // ✅ PERBAIKAN: Gunakan putFormData instead of put
+    const response = await apiClient.putFormData(
       `/dojang/${userDojang.id_dojang}`, 
       updateFormData
-    );
+    ) as any;
 
-    console.log('📋 Update response:', response);
+    console.log('📋 Full Response:', response);
     
-    // PERBAIKAN: Handle response format dari backend
+    // ✅ PERBAIKAN: Handle response format dari backend
+    // Backend mengembalikan: { success: true, data: {...} }
     let updatedData;
-    
-    if ((response as any)?.data?.data) {
-      // Format: { success: true, data: {...} }
-      updatedData = (response as any).data.data;
-    } else if ((response as any)?.data) {
-      // Format: { data: {...} }
-      updatedData = (response as any).data;
+    if (response.success && response.data) {
+      updatedData = response.data;
+      console.log('📊 Using success/data structure');
+    } else if (response.data) {
+      updatedData = response.data;
+      console.log('📊 Using data structure');
     } else {
-      // Direct response
-      updatedData = response as any;
+      updatedData = response;
+      console.log('📊 Using direct response');
     }
     
-    console.log('📊 Processed update data:', updatedData);
+    console.log('📊 Final processed data:', updatedData);
     
     if (!updatedData || !updatedData.nama_dojang) {
+      console.error('❌ Invalid response data structure');
       throw new Error("Response data tidak valid");
     }
     
+    console.log('✅ Setting new state with:', updatedData.nama_dojang);
+    
+    // Update state
     setUserDojang(updatedData);
     setFormData({
       name: updatedData.nama_dojang || "",
@@ -491,8 +496,10 @@ const handleUpdate = async () => {
       alamat: updatedData.alamat || "",
     });
 
+    // Update logo preview
     if (updatedData.logo_url) {
       setLogoPreview(updatedData.logo_url);
+      console.log('📷 Updated logo URL:', updatedData.logo_url);
     }
     
     setLogoFile(null);
@@ -501,6 +508,7 @@ const handleUpdate = async () => {
 
   } catch (err: any) {
     console.error("❌ Error updating dojang:", err);
+    console.error("❌ Error response:", err.response);
     toast.error(err.response?.data?.message || err.message || "Update dojang gagal");
   } finally {
     setLoading(false);
