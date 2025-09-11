@@ -238,8 +238,8 @@ export default function AppRoutes() {
         </Route>
 
         {/* Lomba pages */}
-        <Route path="/lomba" element={<LombaLayout />}>
-          <Route index element={<Navigate to="/lomba/home" replace />} />
+        <Route path="/event" element={<LombaLayout />}>
+          <Route index element={<Navigate to="/event/home" replace />} />
           <Route path="home" element={<LandingPage />} />
           <Route path="faq" element={<FAQ />} />
           <Route path="timeline" element={<Timeline />} />
