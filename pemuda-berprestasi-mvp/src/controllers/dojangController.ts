@@ -70,7 +70,7 @@ export class DojangController {
       const { page, limit, search } = req.query;
       const result = await DojangService.getAllDojang(
         Number(page) || 1,
-        Number(limit) || 10,
+        Number(limit) || 1000,
         search as string
       );
       res.json(result);

@@ -37,7 +37,7 @@ export class DojangService {
   }
 
   // ===== GET ALL DOJANG =====
-  static async getAllDojang(page = 1, limit = 10, search?: string) {
+  static async getAllDojang(page = 1, limit = 100, search?: string) {
     const skip = (page - 1) * limit;
     const where = search
       ? { nama_dojang: { contains: search, mode: 'insensitive' } }

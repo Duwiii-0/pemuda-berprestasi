@@ -30,7 +30,7 @@ export class KompetisiController {
     try {
       const filters = {
         page: parseInt(req.query.page as string) || 1,
-        limit: parseInt(req.query.limit as string) || 10,
+        limit: parseInt(req.query.limit as string) || 100,
         search: req.query.search as string,
         status: req.query.status as StatusKompetisi,
         start_date: req.query.start_date ? new Date(req.query.start_date as string) : undefined,
