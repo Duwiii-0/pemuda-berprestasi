@@ -242,7 +242,8 @@ class PelatihService {
     }
   }
 
-  async handleFileUpload(id_pelatih: number, files: any) {
+  
+async handleFileUpload(id_pelatih: number, files: any) {
   const pelatih = await prisma.tb_pelatih.findUnique({
     where: { id_pelatih }
   })
@@ -293,10 +294,10 @@ async getUploadedFiles(id_pelatih: number): Promise<{
     throw new Error('Pelatih not found')
   }
 
-  // PERBAIKAN: Return full URL path dengan subfolder
+  // PERBAIKAN: Return path relatif dengan subfolder (tanpa /uploads/pelatih/)
   const buildFileUrl = (filename: string | null, subfolder: string) => {
     if (!filename) return null
-    return `/uploads/pelatih/${subfolder}/${filename}`
+    return `${subfolder}/${filename}`
   }
 
   return {
