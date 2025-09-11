@@ -485,14 +485,6 @@ const ValidasiDojang: React.FC = () => {
                           </div>
                         </div>
                       </div>
-                      
-                      {/* Raw Data */}
-                      <div>
-                        <h3 className="font-semibold mb-2" style={{ color: '#050505', opacity: 0.7 }}>Data Lengkap</h3>
-                        <pre className="p-4 rounded-lg overflow-auto text-xs sm:text-sm max-h-64" style={{ backgroundColor: 'rgba(153, 13, 53, 0.05)', color: '#050505', opacity: 0.7 }}>
-                          {JSON.stringify(dojang, null, 2)}
-                        </pre>
-                      </div>
                     </div>
                   );
                 })()}
