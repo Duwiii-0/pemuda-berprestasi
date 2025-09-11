@@ -85,10 +85,10 @@ const AllAtlets: React.FC = () => {
 
   const ageCategories = [
     { value: "ALL", label: "Semua Kelompok Umur" },
-    { value: "Super Pra-cadet", label: "Cadet (2011-2013)" },
-    { value: "Pracadet", label: "Junior (2008-2010)" },
-    { value: "Cadet", label: "Senior (2007 ke atas)" },
-    { value: "Junior", label: "Senior (2007 ke atas)" },
+    { value: "Super Pra-cadet", label: "Super Pra-Cadet (2017-2020)" },
+    { value: "Pracadet", label: "Pracadet (2014-2016)" },
+    { value: "Cadet", label: "Cadet (2011-2013)" },
+    { value: "Junior", label: "Junior (2008-2010)" },
     { value: "Senior", label: "Senior (2007 ke atas)" },
   ];
 
