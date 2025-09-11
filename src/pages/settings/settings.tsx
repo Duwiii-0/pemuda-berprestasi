@@ -80,54 +80,58 @@ const getDisplayFileName = () => {
   if (file) return file.name;
   if (existingPath) {
     try {
-      // Pastikan existingPath adalah string
-      const pathString = String(existingPath);
-      const fileName = pathString.split('/').pop() || label;
+      // Cek jika existingPath adalah object atau bukan string valid
+      if (typeof existingPath !== 'string' || existingPath.includes('[object Object]')) {
+        console.warn('Invalid file path from backend:', existingPath);
+        return `${label} (File tersimpan)`;
+      }
+      
+      const fileName = existingPath.split('/').pop() || label;
       return fileName.length > 50 ? `${label} (File tersimpan)` : fileName;
     } catch (error) {
       console.error('Error processing file path:', error);
-      return label;
+      return `${label} (File tersimpan)`;
     }
   }
   return label;
 };
 
   const handleDownload = async () => {
-    if (!existingPath) {
-      toast.error('Tidak ada file untuk didownload');
+  if (!existingPath || typeof existingPath !== 'string' || existingPath.includes('[object Object]')) {
+    toast.error('Path file tidak valid');
+    return;
+  }
+  
+  try {
+    const baseUrl = 'https://pemudaberprestasi.com';
+    const downloadUrl = `${baseUrl}/uploads/pelatih/${existingPath}`;
+    
+    const testResponse = await fetch(downloadUrl, { method: 'HEAD' });
+    if (!testResponse.ok) {
+      toast.error('File tidak ditemukan di server');
       return;
     }
     
-    try {
-      const baseUrl = 'https://pemudaberprestasi.com';
-      const downloadUrl = `${baseUrl}/uploads/pelatih/${existingPath}`;
-      
-      const testResponse = await fetch(downloadUrl, { method: 'HEAD' });
-      if (!testResponse.ok) {
-        toast.error('File tidak ditemukan di server');
-        return;
-      }
-      
-      const link = document.createElement('a');
-      link.href = downloadUrl;
-      link.download = getDisplayFileName();
-      link.target = '_blank';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
-      toast.success(`Download ${label} berhasil!`);
-      
-    } catch (error) {
-      console.error('Download error:', error);
-      toast.error('Gagal mendownload file');
-    }
-  };
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.download = getDisplayFileName();
+    link.target = '_blank';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    toast.success(`Download ${label} berhasil!`);
+    
+  } catch (error) {
+    console.error('Download error:', error);
+    toast.error('Gagal mendownload file');
+  }
+};
 
 const getPreviewUrl = () => {
   if (file && previewUrl) return previewUrl;
   
-  if (existingPath && typeof existingPath === 'string') {
+  if (existingPath && typeof existingPath === 'string' && !existingPath.includes('[object Object]')) {
     const baseUrl = 'https://pemudaberprestasi.com';
     const staticUrl = `${baseUrl}/uploads/pelatih/${existingPath}`;
     return staticUrl;
@@ -138,7 +142,7 @@ const getPreviewUrl = () => {
 
 const isImageFile = () => {
   if (file) return file.type.startsWith('image/');
-  if (existingPath && typeof existingPath === 'string') {
+  if (existingPath && typeof existingPath === 'string' && !existingPath.includes('[object Object]')) {
     const ext = existingPath.toLowerCase().split('.').pop();
     return ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext || '');
   }
@@ -520,15 +524,19 @@ useEffect(() => {
     try {
       const res = await apiClient.get('/pelatih/files') as ApiResponse;
       if (res.success) {
+        // Pastikan path yang diterima adalah string valid
+        const fotoKtpPath = res.data?.foto_ktp;
+        const sertifikatSabukPath = res.data?.sertifikat_sabuk;
+        
         setFiles({
           fotoKtp: null,
           sertifikatSabuk: null,
-          fotoKtpPath: res.data?.foto_ktp || undefined,
-          sertifikatSabukPath: res.data?.sertifikat_sabuk || undefined
+          fotoKtpPath: (typeof fotoKtpPath === 'string' && !fotoKtpPath.includes('[object Object]')) ? fotoKtpPath : undefined,
+          sertifikatSabukPath: (typeof sertifikatSabukPath === 'string' && !sertifikatSabukPath.includes('[object Object]')) ? sertifikatSabukPath : undefined
         });
       }
     } catch (err) {
-      console.error(err);
+      console.error('Error fetching files:', err);
       toast.error('Gagal mengambil file');
     }
   };
@@ -600,33 +608,40 @@ const response = await apiClient.put("/pelatih/profile", filteredData) as ApiRes
     }
 
     // Upload files jika ada
-    if (files.fotoKtp instanceof File || files.sertifikatSabuk instanceof File) {
-      const formDataToSend = new FormData();
-      
-      if (files.fotoKtp instanceof File) {
-        formDataToSend.append("foto_ktp", files.fotoKtp);
-      }
-      if (files.sertifikatSabuk instanceof File) {
-        formDataToSend.append("sertifikat_sabuk", files.sertifikatSabuk);
-      }
+if (files.fotoKtp instanceof File || files.sertifikatSabuk instanceof File) {
+  const formDataToSend = new FormData();
+  
+  if (files.fotoKtp instanceof File) {
+    formDataToSend.append("foto_ktp", files.fotoKtp);
+  }
+  if (files.sertifikatSabuk instanceof File) {
+    formDataToSend.append("sertifikat_sabuk", files.sertifikatSabuk);
+  }
 
-const uploadRes = await apiClient.postFormData("/pelatih/upload", formDataToSend) as ApiResponse;
-      
-      if (uploadRes.success) {
-        // Update file paths dari response
-        setFiles(prev => ({
-          ...prev,
-          fotoKtp: null,
-          sertifikatSabuk: null,
-          fotoKtpPath: uploadRes.data?.foto_ktp || prev.fotoKtpPath,
-          sertifikatSabukPath: uploadRes.data?.sertifikat_sabuk || prev.sertifikatSabukPath
-        }));
-        toast.success("File berhasil diupload");
-      } else {
-        toast.error(uploadRes.message || "Upload file gagal");
-        return;
-      }
-    }
+  const uploadRes = await apiClient.postFormData("/pelatih/upload", formDataToSend) as ApiResponse;
+  
+  console.log('Upload response:', uploadRes); // Debug log
+  
+  if (uploadRes.success) {
+    // Validasi response data
+    const newFotoKtpPath = uploadRes.data?.foto_ktp;
+    const newSertifikatPath = uploadRes.data?.sertifikat_sabuk;
+    
+    setFiles(prev => ({
+      ...prev,
+      fotoKtp: null,
+      sertifikatSabuk: null,
+      fotoKtpPath: (typeof newFotoKtpPath === 'string' && !newFotoKtpPath.includes('[object Object]')) 
+        ? newFotoKtpPath : prev.fotoKtpPath,
+      sertifikatSabukPath: (typeof newSertifikatPath === 'string' && !newSertifikatPath.includes('[object Object]'))
+        ? newSertifikatPath : prev.sertifikatSabukPath
+    }));
+    toast.success("File berhasil diupload");
+  } else {
+    toast.error(uploadRes.message || "Upload file gagal");
+    return;
+  }
+}
 
     setIsEditing(false);
     toast.success("Profil berhasil diperbarui");
@@ -1171,7 +1186,6 @@ const uploadRes = await apiClient.postFormData("/pelatih/upload", formDataToSend
   />
 </div>
 
-                    // Ganti bagian Upload Sertifikat Sabuk dengan:
 <div className="space-y-2 sm:space-y-3">
   <label className="block font-plex font-semibold text-black/80 text-sm">
     Upload Sertifikat Sabuk
