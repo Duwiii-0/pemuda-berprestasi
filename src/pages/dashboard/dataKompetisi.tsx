@@ -620,14 +620,11 @@ const DataKompetisi = () => {
                         
                           const kelasBerat =
                             cabang === "KYORUGI"
-                              ? peserta.kelas_kejuaraan?.kelas_berat?.nama_kelas ||
-                                (peserta.atlet?.berat_badan ? `${peserta.atlet.berat_badan} kg` : "-")
-                              : "-";
+                               peserta.kelas_kejuaraan?.kelas_berat?.nama_kelas || "-";
                         
                           const kelasPoomsae =
                             cabang === "POOMSAE"
-                              ? peserta.kelas_kejuaraan?.poomsae?.nama_kelas || peserta.atlet?.belt || "-"
-                              : "-";
+                              peserta.kelas_kejuaraan?.poomsae?.nama_kelas || "-";
                         
                           const namaPeserta = isTeam
                             ? peserta.anggota_tim?.map((m: any) => m.atlet.nama_atlet).join(", ")
@@ -636,7 +633,8 @@ const DataKompetisi = () => {
                           const dojang = isTeam && peserta.anggota_tim?.length
                             ? peserta.anggota_tim[0]?.atlet?.dojang?.nama_dojang || "-"
                             : peserta.atlet?.dojang?.nama_dojang || "-";
-                        
+                          
+                          const kelompokUsia = peserta.kelas_kejuaraan?.kelompok?.nama_kelompok || "-";
                           return (
                             <tr
                               key={peserta.id_peserta_kompetisi}
@@ -655,7 +653,7 @@ const DataKompetisi = () => {
                               <td className="py-4 px-4 text-gray-700 text-sm">{kelasBerat}</td>
                               <td className="py-4 px-4 text-center text-gray-700 text-sm">{kelasPoomsae}</td>
                               <td className="py-4 px-4 text-center text-gray-700 text-sm">
-                                {peserta.kelas_kejuaraan?.kelompok?.nama_kelompok || "-"}
+                                {kelompokUsia || "-"}
                               </td>
                               <td className="py-4 px-4 text-center text-sm">
                                 {!isTeam ? (
