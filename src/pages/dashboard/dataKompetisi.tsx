@@ -618,13 +618,15 @@ const DataKompetisi = () => {
                           const cabang = peserta.kelas_kejuaraan?.cabang || "-";
                           const level = peserta.kelas_kejuaraan?.kategori_event?.nama_kategori || "-";
                         
-                          const kelasBerat =
-                            cabang === "KYORUGI"
-                               peserta.kelas_kejuaraan?.kelas_berat?.nama_kelas || "-";
-                        
-                          const kelasPoomsae =
-                            cabang === "POOMSAE"
-                              peserta.kelas_kejuaraan?.poomsae?.nama_kelas || "-";
+                         const kelasBerat =
+  cabang === "KYORUGI"
+    ? peserta.kelas_kejuaraan?.kelas_berat?.nama_kelas || "-"
+    : "-";
+
+const kelasPoomsae =
+  cabang === "POOMSAE"
+    ? peserta.kelas_kejuaraan?.poomsae?.nama_kelas || "-"
+    : "-";
                         
                           const namaPeserta = isTeam
                             ? peserta.anggota_tim?.map((m: any) => m.atlet.nama_atlet).join(", ")
@@ -702,12 +704,14 @@ const DataKompetisi = () => {
                     ? peserta.anggota_tim[0]?.atlet?.dojang?.nama_dojang || "-"
                     : peserta.atlet?.dojang?.nama_dojang || "-";
                   const kelasBerat =
-                            cabang === "KYORUGI"
-                               peserta.kelas_kejuaraan?.kelas_berat?.nama_kelas || "-";
+  cabang === "KYORUGI"
+    ? peserta.kelas_kejuaraan?.kelas_berat?.nama_kelas || "-"
+    : "-";
 
-                  const kelasPoomsae =
-                            cabang === "POOMSAE"
-                              peserta.kelas_kejuaraan?.poomsae?.nama_kelas || "-";
+const kelasPoomsae =
+  cabang === "POOMSAE"
+    ? peserta.kelas_kejuaraan?.poomsae?.nama_kelas || "-"
+    : "-";
 
                   return (
                     <div
