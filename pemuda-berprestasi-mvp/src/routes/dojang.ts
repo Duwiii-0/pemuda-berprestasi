@@ -3,6 +3,7 @@ import { DojangController } from '../controllers/dojangController';
 import { authenticate } from '../middleware/auth';
 import { validateRequest } from '../middleware/validation';
 import { dojangValidation } from '../validations/dojangValidation';
+import { upload } from '../config/multer'; // TAMBAHAN: Import multer config
 
 const router = Router();
 
@@ -26,7 +27,13 @@ router.get('/my-dojang', DojangController.getMyDojang);
 router.get('/pelatih/:id_pelatih', DojangController.getByPelatih);
 
 // Update dan delete dojang (perlu permission check)
-router.put('/:id', validateRequest(dojangValidation.update), DojangController.update);
+// PERBAIKAN: Tambahkan upload.single('logo') middleware untuk handle file upload
+router.put('/:id', 
+  upload.single('logo'), // TAMBAHAN: Handle logo upload
+  validateRequest(dojangValidation.update), 
+  DojangController.update
+);
+
 router.delete('/:id', DojangController.delete);
 
 // Get dojang by ID (authenticated view - lebih detail)

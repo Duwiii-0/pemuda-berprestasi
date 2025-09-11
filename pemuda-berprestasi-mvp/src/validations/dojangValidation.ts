@@ -1,58 +1,64 @@
 import Joi from 'joi';
 
 export const dojangValidation = {
-create: Joi.object({
-  nama_dojang: Joi.string()
-    .trim()
-    .min(3)
-    .max(100)
-    .required()
-    .messages({
-      'string.empty': 'Nama dojang tidak boleh kosong',
-      'string.min': 'Nama dojang minimal 3 karakter',
-      'string.max': 'Nama dojang maksimal 100 karakter',
-      'any.required': 'Nama dojang wajib diisi'
+  create: Joi.object({
+    nama_dojang: Joi.string()
+      .trim()
+      .min(3)
+      .max(100)
+      .required()
+      .messages({
+        'string.empty': 'Nama dojang tidak boleh kosong',
+        'string.min': 'Nama dojang minimal 3 karakter',
+        'string.max': 'Nama dojang maksimal 100 karakter',
+        'any.required': 'Nama dojang wajib diisi'
+      }),
+
+    email: Joi.string().email().trim().max(100).optional().allow('').messages({
+      'string.email': 'Format email tidak valid',
+      'string.max': 'Email maksimal 100 karakter'
     }),
 
-  email: Joi.string().email().trim().max(100).optional().allow('').messages({
-    'string.email': 'Format email tidak valid',
-    'string.max': 'Email maksimal 100 karakter'
-  }),
+    no_telp: Joi.string().trim().pattern(/^[\d\-\+\(\)\s]{8,20}$/).optional().allow('').messages({
+      'string.pattern.base': 'Format nomor telepon tidak valid'
+    }),
 
-  no_telp: Joi.string().trim().pattern(/^[\d\-\+\(\)\s]{8,20}$/).optional().allow('').messages({
-    'string.pattern.base': 'Format nomor telepon tidak valid'
-  }),
+    negara: Joi.string().trim().max(50).optional().allow('').messages({
+      'string.max': 'Nama negara maksimal 50 karakter'
+    }),
 
-  negara: Joi.string().trim().max(50).optional().allow('').messages({
-    'string.max': 'Nama negara maksimal 50 karakter'
-  }),
+    provinsi: Joi.string().trim().max(50).optional().allow('').messages({
+      'string.max': 'Nama provinsi maksimal 50 karakter'
+    }),
 
-  provinsi: Joi.string().trim().max(50).optional().allow('').messages({
-    'string.max': 'Nama provinsi maksimal 50 karakter'
-  }),
+    kota: Joi.string().trim().max(50).optional().allow('').messages({
+      'string.max': 'Nama kota maksimal 50 karakter'
+    }),
 
-  kota: Joi.string().trim().max(50).optional().allow('').messages({
-    'string.max': 'Nama kota maksimal 50 karakter'
-  }),
+    kecamatan: Joi.string().trim().max(50).optional().allow('').messages({
+      'string.max': 'Nama kecamatan maksimal 50 karakter'
+    }),
 
-  kecamatan: Joi.string().trim().max(50).optional().allow('').messages({
-    'string.max': 'Nama kota maksimal 50 karakter'
-  }),
-  kelurahan: Joi.string().trim().max(50).optional().allow('').messages({
-    'string.max': 'Nama kota maksimal 50 karakter'
-  }),
-  alamat: Joi.string().trim().max(50).optional().allow('').messages({
-    'string.max': 'Nama kota maksimal 50 karakter'
-  }),
+    kelurahan: Joi.string().trim().max(50).optional().allow('').messages({
+      'string.max': 'Nama kelurahan maksimal 50 karakter'
+    }),
 
-}),
+    alamat: Joi.string().trim().max(200).optional().allow('').messages({
+      'string.max': 'Alamat maksimal 200 karakter'
+    }),
+
+    // TAMBAHAN: Logo field untuk create (optional)
+    logo: Joi.string().trim().max(255).optional().allow('').messages({
+      'string.max': 'Nama file logo maksimal 255 karakter'
+    })
+  }),
 
   update: Joi.object({
     id_pelatih: Joi.number().integer().min(1).optional().allow(null).messages({
-    'number.base': 'ID pelatih harus berupa angka',
-    'number.integer': 'ID pelatih harus bilangan bulat',
-    'number.min': 'ID pelatih minimal 1'
-  }),
+      'number.base': 'ID pelatih harus berupa angka',
+      'number.integer': 'ID pelatih harus bilangan bulat',
+      'number.min': 'ID pelatih minimal 1'
+    }),
 
     nama_dojang: Joi.string()
       .trim()
@@ -111,15 +117,23 @@ create: Joi.object({
       .messages({
         'string.max': 'Nama kota maksimal 50 karakter'
       }),
+
     kecamatan: Joi.string().trim().max(50).optional().allow('').messages({
-    'string.max': 'Nama kota maksimal 50 karakter'
+      'string.max': 'Nama kecamatan maksimal 50 karakter'
     }),
+
     kelurahan: Joi.string().trim().max(50).optional().allow('').messages({
-      'string.max': 'Nama kota maksimal 50 karakter'
+      'string.max': 'Nama kelurahan maksimal 50 karakter'
     }),
-    alamat: Joi.string().trim().max(50).optional().allow('').messages({
-      'string.max': 'Nama kota maksimal 50 karakter'
+
+    alamat: Joi.string().trim().max(200).optional().allow('').messages({
+      'string.max': 'Alamat maksimal 200 karakter'
     }),
+
+    // TAMBAHAN: Logo field untuk update (optional)
+    logo: Joi.string().trim().max(255).optional().allow('').messages({
+      'string.max': 'Nama file logo maksimal 255 karakter'
+    })
   }),
 
   checkName: Joi.object({
