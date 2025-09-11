@@ -634,7 +634,11 @@ const DataKompetisi = () => {
                             ? peserta.anggota_tim[0]?.atlet?.dojang?.nama_dojang || "-"
                             : peserta.atlet?.dojang?.nama_dojang || "-";
                           
-                          const kelompokUsia = peserta.kelas_kejuaraan?.kelompok?.nama_kelompok || "-";
+                          const kelompokUsia = 
+                            !peserta.kelas_kejuaraan?.kelompok?.nama_kelompok || 
+                            peserta.kelas_kejuaraan.kelompok.nama_kelompok.toLowerCase() === "pemula"
+                              ? "-"
+                              : peserta.kelas_kejuaraan.kelompok.nama_kelompok;
                           return (
                             <tr
                               key={peserta.id_peserta_kompetisi}
