@@ -296,79 +296,76 @@ const handleRegister = async () => {
       }
     }
 
-    // ✅ SOLUSI: Gunakan fetch langsung, bypass API client yang bermasalah
-    const API_BASE_URL = process.env.REACT_APP_API_URL;
-    const authToken = localStorage.getItem("auth_token"); // atau gunakan getAuthToken() jika ada
+    console.log('🚀 Sending request to /dojang...');
     
-    console.log('🚀 Sending request to:', `${API_BASE_URL}/dojang`);
+    // Panggil API
+    const response = await apiClient.postFormData("/dojang", formData);
     
-    const response = await fetch(`${API_BASE_URL}/dojang`, {
-      method: 'POST',
-      headers: {
-        ...(authToken && { Authorization: `Bearer ${authToken}` }),
-        // Don't set Content-Type for FormData
-      },
-      body: formData,
-    });
-
-    console.log('📡 Response status:', response.status);
-    console.log('📡 Response ok:', response.ok);
-
-    // Parse response
-    let responseData = null;
-    const contentType = response.headers.get('content-type');
-    
-    try {
-      if (contentType && contentType.includes('application/json')) {
-        responseData = await response.json();
-      } else {
-        responseData = await response.text();
-      }
-    } catch (parseError) {
-      console.error('Error parsing response:', parseError);
-      responseData = null;
-    }
-
-    console.log('📡 Response data:', responseData);
-
-    if (!response.ok) {
-      // Handle error response
-      let errorMessage = `HTTP error! status: ${response.status}`;
-      
-      if (responseData && typeof responseData === 'object') {
-        if (responseData.message) {
-          errorMessage = responseData.message;
-        } else if (responseData.errors) {
-          // Laravel validation errors
-          const errors = responseData.errors;
-          const firstErrorKey = Object.keys(errors)[0];
-          const firstError = errors[firstErrorKey];
-          errorMessage = Array.isArray(firstError) ? firstError[0] : firstError;
-        }
-      }
-
-      throw new Error(errorMessage);
-    }
-
-    // Success
-    console.log('✅ Registration successful:', responseData);
+    console.log('✅ Registration response:', response);
     toast.success("Registrasi dojang berhasil! Silahkan login.");
     resetForm();
 
   } catch (error: any) {
     console.error('❌ Registration error:', error);
     
-    if (error instanceof Error) {
-      if (error.message.includes('Failed to fetch') || error.message.includes('Network')) {
-        toast.error("Koneksi bermasalah. Periksa internet Anda.");
-      } else if (error.message.includes('400')) {
-        toast.error("Data tidak valid. Periksa kembali input Anda.");
-      } else if (error.message.includes('422')) {
-        toast.error("Data tidak sesuai format yang diperlukan.");
-      } else if (error.message.includes('413')) {
+    // Error handling yang sesuai dengan API client yang diperbaiki
+    if (error && typeof error === 'object') {
+      const status = error.status;
+      const errorData = error.data;
+      const errorMessage = error.message;
+      
+      console.log('📡 Error status:', status);
+      console.log('📡 Error data:', errorData);
+      console.log('📡 Error message:', errorMessage);
+      
+      // Handle berdasarkan status code
+      if (status === 400) {
+        if (errorData && typeof errorData === 'object') {
+          if (errorData.message) {
+            toast.error(errorData.message);
+          } else if (errorData.errors) {
+            // Laravel validation errors
+            const errors = errorData.errors;
+            const firstErrorKey = Object.keys(errors)[0];
+            const firstError = errors[firstErrorKey];
+            const errorMsg = Array.isArray(firstError) ? firstError[0] : firstError;
+            toast.error(errorMsg || "Data tidak valid");
+          } else {
+            toast.error("Data tidak valid. Periksa kembali input Anda.");
+          }
+        } else {
+          toast.error("Data tidak valid. Periksa kembali input Anda.");
+        }
+      } else if (status === 422) {
+        if (errorData && errorData.errors) {
+          const errors = errorData.errors;
+          const firstErrorKey = Object.keys(errors)[0];
+          const firstError = errors[firstErrorKey];
+          const errorMsg = Array.isArray(firstError) ? firstError[0] : firstError;
+          toast.error(errorMsg || "Data tidak sesuai format yang diperlukan.");
+        } else if (errorData && errorData.message) {
+          toast.error(errorData.message);
+        } else {
+          toast.error("Data tidak sesuai format yang diperlukan.");
+        }
+      } else if (status === 413) {
         toast.error("File terlalu besar. Maksimal 5MB.");
-      } else if (error.message.includes('500')) {
+      } else if (status === 500) {
         toast.error("Terjadi kesalahan server. Coba lagi nanti.");
+      } else if (status && status >= 400) {
+        toast.error(errorMessage || `Error ${status}`);
+      } else {
+        // Kemungkinan network error atau error tanpa status
+        if (errorMessage && (errorMessage.includes('Network') || errorMessage.includes('Failed to fetch'))) {
+          toast.error("Koneksi bermasalah. Periksa internet Anda.");
+        } else {
+          toast.error(errorMessage || "Terjadi kesalahan tidak terduga.");
+        }
+      }
+    } else if (error instanceof Error) {
+      // Standard JavaScript Error
+      if (error.message.includes('Network') || error.message.includes('Failed to fetch')) {
+        toast.error("Koneksi bermasalah. Periksa internet Anda.");
       } else {
         toast.error(error.message || "Registrasi gagal. Coba lagi.");
       }
