@@ -303,10 +303,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         success: response.success,
         message: response.message
       };
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Registration failed';
-      console.error('❌ Registration error:', error);
-      toast.error(errorMessage);
+    } catch (error: any) {
+    let errorMessage = 'Registration failed';
+
+    if (error instanceof Error) {
+      // cek jika error dari unique constraint dojang
+      if (error.message.includes('Unique constraint failed') && error.message.includes('id_dojang')) {
+        errorMessage = 'Dojang ini sudah memiliki pelatih';
+      } else {
+        errorMessage = error.message;
+      }
+    }
+
+    console.error('❌ Registration error:', errorMessage);
+
       return {
         success: false,
         message: errorMessage
