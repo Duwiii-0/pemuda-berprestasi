@@ -8,6 +8,7 @@ import { useKompetisi } from "../../context/KompetisiContext";
 import { useDojang } from "../../context/dojangContext";
 import UnifiedRegistration from "../../components/registrationSteps/UnifiedRegistration";
 import type { Kompetisi } from "../../context/KompetisiContext";
+import Select from "react-select";
 
 interface StatsCardProps {
   icon: React.ComponentType<{ size?: number; className?: string }>;
@@ -48,9 +49,9 @@ const DataKompetisi = () => {
   const [searchPeserta, setSearchPeserta] = useState("");
   const [filterStatus, setFilterStatus] = useState<"ALL" | "PENDING" | "APPROVED" | "REJECTED">("ALL");
   const [filterCategory, setFilterCategory] = useState<"ALL" | "KYORUGI" | "POOMSAE">("ALL");
-  const [filterKelompokUsia, setFilterKelompokUsia] = useState<"ALL" | "Cadet" | "Junior" | "Senior">("ALL");
+  const [filterKelompokUsia, setFilterKelompokUsia] = useState<"ALL" | "Super Pra-cadet" | "Pracadet" | "Cadet" | "Junior" | "Senior" >("ALL");
   const [filterKelasBerat, setFilterKelasBerat] = useState<string>("ALL");
-  const [filterLevel, setFilterLevel] = useState<"pemula" | "prestasi" | null>(null);
+  const [filterLevel, setFilterLevel] = useState<"ALL" | "pemula" | "prestasi" | null>(null);
   const [filterDojang, setFilterDojang] = useState<string>("ALL");
   
   // Pagination states
@@ -416,142 +417,175 @@ const DataKompetisi = () => {
                   {/* Filter Status */}
                   <div className="col-span-2 sm:col-span-1">
                     <label className="block text-xs mb-2 font-medium" style={{ color: '#050505', opacity: 0.6 }}>Status</label>
-                    <select
-                      value={filterStatus}
-                      onChange={(e) => setFilterStatus(e.target.value as any)}
-                      className="w-full px-3 py-2.5 rounded-xl border shadow-sm focus:ring-2 focus:border-transparent text-sm transition-colors"
-                      style={{ 
-                        borderColor: '#990D35', 
-                        backgroundColor: '#F5FBEF',
-                        color: '#050505'
+                    <Select
+                      unstyled
+                      value={{
+                        value: filterStatus,
+                        label:
+                          filterStatus === "ALL"
+                            ? "Semua Status"
+                            : filterStatus.charAt(0) + filterStatus.slice(1).toLowerCase(),
                       }}
-                      onFocus={(e) => {
-                        e.target.style.outline = 'none';
-                        e.target.style.boxShadow = '0 0 0 2px rgba(153, 13, 53, 0.2)';
+                      onChange={(selected) => setFilterStatus(selected?.value as any)}
+                      options={[
+                        { value: "ALL", label: "Semua Status" },
+                        { value: "PENDING", label: "Pending" },
+                        { value: "APPROVED", label: "Approved" },
+                        { value: "REJECTED", label: "Rejected" },
+                      ]}
+                      placeholder="Pilih status"
+                      classNames={{
+                        control: () =>
+                          `w-full flex items-center border border-black/20 rounded-2xl px-3 py-3 gap-2 transition-all duration-300 hover:shadow-sm focus-within:border-yellow-500 focus-within:ring-2 focus-within:ring-yellow-500/20`,
+                        valueContainer: () => "px-1",
+                        placeholder: () => "text-black/40 text-sm font-inter",
+                        menu: () =>
+                          "border border-black/10 bg-white rounded-xl shadow-lg mt-2 overflow-hidden z-50",
+                        menuList: () => "max-h-40 overflow-y-auto",
+                        option: ({ isFocused, isSelected }) =>
+                          [
+                            "px-3 py-3 cursor-pointer text-sm transition-colors duration-200 font-inter",
+                            isFocused ? "bg-yellow-50 text-black" : "text-black/70",
+                            isSelected ? "bg-yellow-500 text-black" : "",
+                          ].join(" "),
                       }}
-                      onBlur={(e) => {
-                        e.target.style.boxShadow = '';
-                      }}
-                    >
-                      {statusOptions.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </option>
-                      ))}
-                    </select>
+                    />
                   </div>
 
                   {/* Filter Kategori */}
                   <div className="col-span-2 sm:col-span-1">
                     <label className="block text-xs mb-2 font-medium" style={{ color: '#050505', opacity: 0.6 }}>Kategori</label>
-                    <select
-                      value={filterCategory}
-                      onChange={(e) => setFilterCategory(e.target.value as any)}
-                      className="w-full px-3 py-2.5 rounded-xl border shadow-sm focus:ring-2 focus:border-transparent text-sm transition-colors"
-                      style={{ 
-                        borderColor: '#990D35', 
-                        backgroundColor: '#F5FBEF',
-                        color: '#050505'
+                    <Select
+                      unstyled
+                      value={{ value: filterCategory, label: filterCategory === "ALL" ? "Semua Kategori" : filterCategory }}
+                      onChange={(selected) => setFilterCategory(selected?.value as any)}
+                      options={[
+                        { value: "ALL", label: "Semua Kategori" },
+                        { value: "POOMSAE", label: "POOMSAE" },
+                        { value: "KYORUGI", label: "KYORUGI" },
+                      ]}
+                      placeholder="Kyorugi/Poomsae"
+                      classNames={{
+                        control: () =>
+                          `w-full flex items-center border border-black/20 rounded-2xl px-3 py-3 gap-2 transition-all duration-300 hover:shadow-sm focus-within:border-yellow-500 focus-within:ring-2 focus-within:ring-yellow-500/20`,
+                        valueContainer: () => "px-1",
+                        placeholder: () => "text-black/40 text-sm font-inter",
+                        menu: () => "border border-black/10 bg-white rounded-xl shadow-lg mt-2 overflow-hidden z-50",
+                        menuList: () => "max-h-40 overflow-y-auto",
+                        option: ({ isFocused, isSelected }) =>
+                          [
+                            "px-3 py-3 cursor-pointer text-sm transition-colors duration-200 font-inter",
+                            isFocused ? "bg-yellow-50 text-black" : "text-black/70",
+                            isSelected ? "bg-yellow-500 text-black" : ""
+                          ].join(" "),
                       }}
-                      onFocus={(e) => {
-                        e.target.style.outline = 'none';
-                        e.target.style.boxShadow = '0 0 0 2px rgba(153, 13, 53, 0.2)';
-                      }}
-                      onBlur={(e) => {
-                        e.target.style.boxShadow = '';
-                      }}
-                    >
-                      {categoryOptions.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </option>
-                      ))}
-                    </select>
+                    />
                   </div>
 
                   {/* Filter Level */}
                   <div className="col-span-2 sm:col-span-1">
                     <label className="block text-xs mb-2 font-medium" style={{ color: '#050505', opacity: 0.6 }}>Level</label>
-                    <select
-                      value={filterLevel || ""}
-                      onChange={(e) => setFilterLevel(e.target.value as "pemula" | "prestasi" | null || null)}
-                      className="w-full px-3 py-2.5 rounded-xl border shadow-sm focus:ring-2 focus:border-transparent text-sm transition-colors"
-                      style={{ 
-                        borderColor: '#990D35', 
-                        backgroundColor: '#F5FBEF',
-                        color: '#050505'
+                    <Select
+                      unstyled
+                      value={{
+                        value: filterLevel,
+                        label:
+                          !filterLevel || filterLevel === "ALL"
+                            ? "Semua Level"
+                            : filterLevel.charAt(0).toUpperCase() + filterLevel.slice(1),
                       }}
-                      onFocus={(e) => {
-                        e.target.style.outline = 'none';
-                        e.target.style.boxShadow = '0 0 0 2px rgba(153, 13, 53, 0.2)';
+                      onChange={(selected) => setFilterLevel(selected?.value as any)}
+                      options={[
+                        { value: "ALL", label: "Semua Level" },
+                        { value: "pemula", label: "Pemula" },
+                        { value: "prestasi", label: "Prestasi" },
+                      ]}
+                      placeholder="Pilih level"
+                      classNames={{
+                        control: () =>
+                          `w-full flex items-center border border-black/20 rounded-2xl px-3 py-3 gap-2 transition-all duration-300 hover:shadow-sm focus-within:border-yellow-500 focus-within:ring-2 focus-within:ring-yellow-500/20`,
+                        valueContainer: () => "px-1",
+                        placeholder: () => "text-black/40 text-sm font-inter",
+                        menu: () =>
+                          "border border-black/10 bg-white rounded-xl shadow-lg mt-2 overflow-hidden z-50",
+                        menuList: () => "max-h-40 overflow-y-auto",
+                        option: ({ isFocused, isSelected }) =>
+                          [
+                            "px-3 py-3 cursor-pointer text-sm transition-colors duration-200 font-inter",
+                            isFocused ? "bg-yellow-50 text-black" : "text-black/70",
+                            isSelected ? "bg-yellow-500 text-black" : "",
+                          ].join(" "),
                       }}
-                      onBlur={(e) => {
-                        e.target.style.boxShadow = '';
-                      }}
-                    >
-                      {levelOptions.map((opt) => (
-                        <option key={opt.value || "null"} value={opt.value || ""}>
-                          {opt.label}
-                        </option>
-                      ))}
-                    </select>
+                    />
                   </div>
 
                   {/* Filter Kelompok Usia */}
                   <div className="col-span-2 sm:col-span-1">
                     <label className="block text-xs mb-2 font-medium" style={{ color: '#050505', opacity: 0.6 }}>Usia</label>
-                    <select
-                      value={filterKelompokUsia}
-                      onChange={(e) => setFilterKelompokUsia(e.target.value as any)}
-                      className="w-full px-3 py-2.5 rounded-xl border shadow-sm focus:ring-2 focus:border-transparent text-sm transition-colors"
-                      style={{ 
-                        borderColor: '#990D35', 
-                        backgroundColor: '#F5FBEF',
-                        color: '#050505'
+                    <Select
+                      unstyled
+                      value={{
+                        value: filterKelompokUsia,
+                        label:
+                          filterKelompokUsia === "ALL" ? "Semua Usia" : filterKelompokUsia,
                       }}
-                      onFocus={(e) => {
-                        e.target.style.outline = 'none';
-                        e.target.style.boxShadow = '0 0 0 2px rgba(153, 13, 53, 0.2)';
+                      onChange={(selected) => setFilterKelompokUsia(selected?.value as any)}
+                      options={[
+                        { value: "ALL", label: "Semua Kelompok Umur" },
+                        { value: "Super Pra-cadet", label: "Super Pra-Cadet (2017-2020)" },
+                        { value: "Pracadet", label: "Pracadet (2014-2016)" },
+                        { value: "Cadet", label: "Cadet (2011-2013)" },
+                        { value: "Junior", label: "Junior (2008-2010)" },
+                        { value: "Senior", label: "Senior (2007 ke atas)" },
+                      ]}
+                      placeholder="Pilih kelompok usia"
+                      classNames={{
+                        control: () =>
+                          `w-full flex items-center border border-black/20 rounded-2xl px-3 py-3 gap-2 transition-all duration-300 hover:shadow-sm focus-within:border-yellow-500 focus-within:ring-2 focus-within:ring-yellow-500/20`,
+                        valueContainer: () => "px-1",
+                        placeholder: () => "text-black/40 text-sm font-inter",
+                        menu: () =>
+                          "border border-black/10 bg-white rounded-xl shadow-lg mt-2 overflow-hidden z-50",
+                        menuList: () => "max-h-40 overflow-y-auto",
+                        option: ({ isFocused, isSelected }) =>
+                          [
+                            "px-3 py-3 cursor-pointer text-sm transition-colors duration-200 font-inter",
+                            isFocused ? "bg-yellow-50 text-black" : "text-black/70",
+                            isSelected ? "bg-yellow-500 text-black" : "",
+                          ].join(" "),
                       }}
-                      onBlur={(e) => {
-                        e.target.style.boxShadow = '';
-                      }}
-                    >
-                      {ageOptions.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </option>
-                      ))}
-                    </select>
+                    />
                   </div>
 
                   {/* Filter Dojang */}
                   <div className="col-span-4 sm:col-span-3 lg:col-span-1">
                     <label className="block text-xs mb-2 font-medium" style={{ color: '#050505', opacity: 0.6 }}>Dojang</label>
-                    <select
-                      value={filterDojang}
-                      onChange={(e) => setFilterDojang(e.target.value)}
-                      className="w-full px-3 py-2.5 rounded-xl border shadow-sm focus:ring-2 focus:border-transparent text-sm transition-colors"
-                      style={{ 
-                        borderColor: '#990D35', 
-                        backgroundColor: '#F5FBEF',
-                        color: '#050505'
+                    <Select
+                      unstyled
+                      value={
+                        filterDojang === "ALL"
+                          ? { value: "ALL", label: "Semua Dojang" }
+                          : dojangOptions.find((opt) => opt.value === filterDojang)
+                      }
+                      onChange={(selected) => setFilterDojang(selected?.value || "ALL")}
+                      options={[{ value: "ALL", label: "Semua Dojang" }, ...dojangOptions]}
+                      placeholder="Pilih Dojang"
+                      classNames={{
+                        control: () =>
+                          `w-full flex items-center border border-black/20 rounded-2xl px-3 py-3 gap-2 transition-all duration-300 hover:shadow-sm focus-within:border-yellow-500 focus-within:ring-2 focus-within:ring-yellow-500/20`,
+                        valueContainer: () => "px-1",
+                        placeholder: () => "text-black/40 text-sm font-inter",
+                        menu: () =>
+                          "border border-black/10 bg-white rounded-xl shadow-lg mt-2 overflow-hidden z-50",
+                        menuList: () => "max-h-40 overflow-y-auto",
+                        option: ({ isFocused, isSelected }) =>
+                          [
+                            "px-3 py-3 cursor-pointer text-sm transition-colors duration-200 font-inter",
+                            isFocused ? "bg-yellow-50 text-black" : "text-black/70",
+                            isSelected ? "bg-yellow-500 text-black" : "",
+                          ].join(" "),
                       }}
-                      onFocus={(e) => {
-                        e.target.style.outline = 'none';
-                        e.target.style.boxShadow = '0 0 0 2px rgba(153, 13, 53, 0.2)';
-                      }}
-                      onBlur={(e) => {
-                        e.target.style.boxShadow = '';
-                      }}
-                    >
-                      <option value="ALL">Semua Dojang</option>
-                      {dojangOptions.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </option>
-                      ))}
-                    </select>
+                    />
                   </div>
 
                   {/* Filter Kelas Berat */}
@@ -559,29 +593,31 @@ const DataKompetisi = () => {
                     <label className="block text-xs mb-2 font-medium" style={{ color: '#050505', opacity: 0.6 }}>
                       Kelas Berat
                     </label>
-                    <select
-                      value={filterKelasBerat}
-                      onChange={(e) => setFilterKelasBerat(e.target.value)}
-                      className="w-full px-3 py-2.5 rounded-xl border shadow-sm focus:ring-2 focus:border-transparent text-sm transition-colors"
-                      style={{
-                        borderColor: '#990D35',
-                        backgroundColor: '#F5FBEF',
-                        color: '#050505'
+                    <Select
+                      unstyled
+                      value={{
+                        value: filterKelasBerat,
+                        label: filterKelasBerat === "ALL" ? "Semua Kelas Berat" : filterKelasBerat,
                       }}
-                      onFocus={(e) => {
-                        e.target.style.outline = 'none';
-                        e.target.style.boxShadow = '0 0 0 2px rgba(153, 13, 53, 0.2)';
+                      onChange={(selected) => setFilterKelasBerat(selected?.value as any)}
+                      options={kelasBeratOptions}
+                      placeholder="Pilih kelas berat"
+                      classNames={{
+                        control: () =>
+                          `w-full flex items-center border border-black/20 rounded-2xl px-3 py-3 gap-2 transition-all duration-300 hover:shadow-sm focus-within:border-yellow-500 focus-within:ring-2 focus-within:ring-yellow-500/20`,
+                        valueContainer: () => "px-1",
+                        placeholder: () => "text-black/40 text-sm font-inter",
+                        menu: () =>
+                          "border border-black/10 bg-white rounded-xl shadow-lg mt-2 overflow-hidden z-50",
+                        menuList: () => "max-h-40 overflow-y-auto",
+                        option: ({ isFocused, isSelected }) =>
+                          [
+                            "px-3 py-3 cursor-pointer text-sm transition-colors duration-200 font-inter",
+                            isFocused ? "bg-yellow-50 text-black" : "text-black/70",
+                            isSelected ? "bg-yellow-500 text-black" : "",
+                          ].join(" "),
                       }}
-                      onBlur={(e) => {
-                        e.target.style.boxShadow = '';
-                      }}
-                    >
-                      {kelasBeratOptions.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </option>
-                      ))}
-                    </select>
+                    />
                   </div>
                 </div>
 

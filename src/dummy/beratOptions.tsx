@@ -4,7 +4,6 @@ export const kelasBeratOptionsMap: Record<
 > = {
   "ALL": [
     { value: "ALL", label: "Semua Kelas" },
-    // gabungan semua kelas
     { value: "Under 18 kg", label: "Under 18 kg" },
     { value: "Under 19 kg", label: "Under 19 kg" },
     { value: "Under 20 kg", label: "Under 20 kg" },
@@ -62,6 +61,7 @@ export const kelasBeratOptionsMap: Record<
     { value: "Over 78 kg", label: "Over 78 kg" },
     { value: "Over 87 kg", label: "Over 87 kg" },
   ],
+
   "Super Pra-cadet": [
     { value: "ALL", label: "Semua Kelas" },
     { value: "Under 18 kg", label: "Under 18 kg" },
@@ -79,6 +79,7 @@ export const kelasBeratOptionsMap: Record<
     { value: "Over 32 kg", label: "Over 32 kg" },
     { value: "Over 33 kg", label: "Over 33 kg" },
   ],
+
   "Pracadet": [
     { value: "ALL", label: "Semua Kelas" },
     { value: "Under 19 kg", label: "Under 19 kg" },
@@ -102,6 +103,7 @@ export const kelasBeratOptionsMap: Record<
     { value: "Over 38 kg", label: "Over 38 kg" },
     { value: "Over 39 kg", label: "Over 39 kg" },
   ],
+
   "Cadet": [
     { value: "ALL", label: "Semua Kelas" },
     { value: "Under 29 kg", label: "Under 29 kg" },
@@ -122,6 +124,7 @@ export const kelasBeratOptionsMap: Record<
     { value: "Over 59 kg", label: "Over 59 kg" },
     { value: "Over 65 kg", label: "Over 65 kg" },
   ],
+
   "Junior": [
     { value: "ALL", label: "Semua Kelas" },
     { value: "Under 42 kg", label: "Under 42 kg" },
@@ -139,9 +142,9 @@ export const kelasBeratOptionsMap: Record<
     { value: "Under 73 kg", label: "Under 73 kg" },
     { value: "Under 78 kg", label: "Under 78 kg" },
     { value: "Over 68 kg", label: "Over 68 kg" },
-    { value: "Over 73 kg", label: "Over 73 kg" },
     { value: "Over 78 kg", label: "Over 78 kg" },
   ],
+
   "Senior": [
     { value: "ALL", label: "Semua Kelas" },
     { value: "Under 46 kg", label: "Under 46 kg" },
@@ -150,16 +153,17 @@ export const kelasBeratOptionsMap: Record<
     { value: "Under 54 kg", label: "Under 54 kg" },
     { value: "Under 57 kg", label: "Under 57 kg" },
     { value: "Under 58 kg", label: "Under 58 kg" },
+    { value: "Under 59 kg", label: "Under 59 kg" },
     { value: "Under 62 kg", label: "Under 62 kg" },
     { value: "Under 63 kg", label: "Under 63 kg" },
+    { value: "Under 65 kg", label: "Under 65 kg" },
     { value: "Under 67 kg", label: "Under 67 kg" },
     { value: "Under 68 kg", label: "Under 68 kg" },
+    { value: "Under 73 kg", label: "Under 73 kg" },
     { value: "Under 74 kg", label: "Under 74 kg" },
     { value: "Under 80 kg", label: "Under 80 kg" },
     { value: "Under 87 kg", label: "Under 87 kg" },
     { value: "Over 73 kg", label: "Over 73 kg" },
-    { value: "Over 80 kg", label: "Over 80 kg" },
     { value: "Over 87 kg", label: "Over 87 kg" },
   ],
 };
-
