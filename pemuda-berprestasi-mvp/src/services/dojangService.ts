@@ -1,7 +1,4 @@
 import { PrismaClient } from '@prisma/client';
-import { fileManager } from '../utils/fileManager';
-import path from 'path';
-
 const prisma = new PrismaClient();
 
 interface CreateDojangData {
@@ -11,14 +8,11 @@ interface CreateDojangData {
   negara?: string;
   provinsi?: string;
   kota?: string;
-  kecamatan?: string;
-  kelurahan?: string;
-  alamat?: string;
-  logo?: any; // File from multer
 }
 
 interface UpdateDojangData extends Partial<CreateDojangData> {
   id_dojang: number;
+  alamat?: string;
 }
 
 export class DojangService {
@@ -29,30 +23,6 @@ export class DojangService {
     });
     if (existing) throw new Error('Nama dojang sudah terdaftar');
 
-    let logoPath: string | null = null;
-
-    // Handle file upload if logo is provided
-    if (data.logo) {
-      try {
-        // Create uploads/dojang directory if it doesn't exist
-        const uploadDir = path.join(process.cwd(), 'uploads', 'dojang');
-        
-        // Generate unique filename
-        const fileExtension = path.extname(data.logo.originalname);
-        const uniqueFilename = `dojang_${Date.now()}_${Math.random().toString(36).substring(2)}${fileExtension}`;
-        
-        // Save file using fileManager utility
-        logoPath = await fileManager.saveFile(
-          data.logo.buffer, 
-          'dojang', 
-          uniqueFilename
-        );
-      } catch (error) {
-        console.error('Error saving logo file:', error);
-        throw new Error('Gagal menyimpan file logo');
-      }
-    }
-
     return prisma.tb_dojang.create({
       data: {
         nama_dojang: data.nama_dojang.trim(),
@@ -61,10 +31,6 @@ export class DojangService {
         negara: data.negara?.trim() || null,
         provinsi: data.provinsi?.trim() || null,
         kota: data.kota?.trim() || null,
-        kecamatan: data.kecamatan?.trim() || null,
-        kelurahan: data.kelurahan?.trim() || null,
-        alamat: data.alamat?.trim() || null,
-        logo: logoPath, // Save file path to database
       },
       include: { pelatih: true, atlet: true },
     });
@@ -94,9 +60,7 @@ export class DojangService {
     // format data supaya jumlah_atlet lebih mudah diakses di frontend
     const formattedData = data.map(item => ({
       ...item,
-      jumlah_atlet: item._count.atlet,
-      // Convert logo path to full URL if needed
-      logo_url: item.logo ? `/uploads/dojang/${path.basename(item.logo)}` : null
+      jumlah_atlet: item._count.atlet
     }));
 
     return {
@@ -117,60 +81,18 @@ export class DojangService {
       include: { pelatih: true, atlet: true },
     });
     if (!dojang) throw new Error('Dojang tidak ditemukan');
-    
-    return {
-      ...dojang,
-      logo_url: dojang.logo ? `/uploads/dojang/${path.basename(dojang.logo)}` : null
-    };
+    return dojang;
   }
 
   // ===== UPDATE DOJANG =====
   static async updateDojang(data: UpdateDojangData) {
-    const { id_dojang, logo, ...update } = data;
+    const { id_dojang, ...update } = data;
     const existing = await prisma.tb_dojang.findUnique({ where: { id_dojang } });
     if (!existing) throw new Error('Dojang tidak ditemukan');
 
-    let logoPath: string | null = existing.logo; // Keep existing logo by default
-
-    // Handle logo update if new logo is provided
-    if (logo) {
-      try {
-        // Delete old logo file if exists
-        if (existing.logo) {
-          await fileManager.deleteFile(existing.logo);
-        }
-
-        // Generate unique filename for new logo
-        const fileExtension = path.extname(logo.originalname);
-        const uniqueFilename = `dojang_${Date.now()}_${Math.random().toString(36).substring(2)}${fileExtension}`;
-        
-        // Save new logo file
-        logoPath = await fileManager.saveFile(
-          logo.buffer, 
-          'dojang', 
-          uniqueFilename
-        );
-      } catch (error) {
-        console.error('Error updating logo file:', error);
-        throw new Error('Gagal memperbarui file logo');
-      }
-    }
-
-    const updatedData = {
-      ...update,
-      logo: logoPath
-    };
-
-    // Remove undefined values
-    Object.keys(updatedData).forEach(key => {
-      if (updatedData[key as keyof typeof updatedData] === undefined) {
-        delete updatedData[key as keyof typeof updatedData];
-      }
-    });
-
     return prisma.tb_dojang.update({
       where: { id_dojang },
-      data: updatedData,
+      data: update,
       include: { pelatih: true, atlet: true },
     });
   }
@@ -184,16 +106,6 @@ export class DojangService {
     if (!existing) throw new Error('Dojang tidak ditemukan');
     if (existing.atlet.length > 0) throw new Error('Tidak bisa menghapus dojang yang masih memiliki atlet');
 
-    // Delete logo file if exists
-    if (existing.logo) {
-      try {
-        await fileManager.deleteFile(existing.logo);
-      } catch (error) {
-        console.error('Error deleting logo file:', error);
-        // Continue with deletion even if file deletion fails
-      }
-    }
-
     await prisma.tb_dojang.delete({ where: { id_dojang: id } });
     return { message: 'Dojang berhasil dihapus' };
   }
@@ -205,14 +117,6 @@ export class DojangService {
       include: { dojang: true },
     });
     if (!pelatih) throw new Error('Pelatih tidak ditemukan');
-    
-    if (pelatih.dojang) {
-      return {
-        ...pelatih.dojang,
-        logo_url: pelatih.dojang.logo ? `/uploads/dojang/${path.basename(pelatih.dojang.logo)}` : null
-      };
-    }
-    
     return pelatih.dojang;
   }
 
@@ -223,14 +127,6 @@ export class DojangService {
       include: { dojang: true },
     });
     if (!atlet) throw new Error('Atlet tidak ditemukan');
-    
-    if (atlet.dojang) {
-      return {
-        ...atlet.dojang,
-        logo_url: atlet.dojang.logo ? `/uploads/dojang/${path.basename(atlet.dojang.logo)}` : null
-      };
-    }
-    
     return atlet.dojang;
   }
 
