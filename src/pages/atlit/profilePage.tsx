@@ -528,7 +528,7 @@ const handleFileRemove = (field: keyof AtletWithFiles) => {
 
             {/* Action Buttons */}
             <div className="flex gap-2 lg:gap-3 w-full sm:w-auto">
-              {user?.role === 'ADMIN' && "ADMIN_KOMPETISI" ? (
+             {(user?.role === 'ADMIN' || user?.role === 'ADMIN_KOMPETISI') ? (
                 <></> // kosongkan tombol untuk admin
               ) : (
                 !isEditing ? (
