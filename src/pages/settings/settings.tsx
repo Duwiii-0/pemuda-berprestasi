@@ -76,14 +76,21 @@ const FilePreview = ({
 
   const hasFile = file || existingPath;
   
-  const getDisplayFileName = () => {
-    if (file) return file.name;
-    if (existingPath) {
-      const fileName = existingPath.split('/').pop() || label;
+const getDisplayFileName = () => {
+  if (file) return file.name;
+  if (existingPath) {
+    try {
+      // Pastikan existingPath adalah string
+      const pathString = String(existingPath);
+      const fileName = pathString.split('/').pop() || label;
       return fileName.length > 50 ? `${label} (File tersimpan)` : fileName;
+    } catch (error) {
+      console.error('Error processing file path:', error);
+      return label;
     }
-    return label;
-  };
+  }
+  return label;
+};
 
   const handleDownload = async () => {
     if (!existingPath) {
@@ -117,26 +124,26 @@ const FilePreview = ({
     }
   };
 
-  const getPreviewUrl = () => {
-    if (file && previewUrl) return previewUrl;
-    
-    if (existingPath) {
-      const baseUrl = 'https://pemudaberprestasi.com';
-      const staticUrl = `${baseUrl}/uploads/pelatih/${existingPath}`;
-      return staticUrl;
-    }
-    
-    return null;
-  };
+const getPreviewUrl = () => {
+  if (file && previewUrl) return previewUrl;
+  
+  if (existingPath && typeof existingPath === 'string') {
+    const baseUrl = 'https://pemudaberprestasi.com';
+    const staticUrl = `${baseUrl}/uploads/pelatih/${existingPath}`;
+    return staticUrl;
+  }
+  
+  return null;
+};
 
-  const isImageFile = () => {
-    if (file) return file.type.startsWith('image/');
-    if (existingPath) {
-      const ext = existingPath.toLowerCase().split('.').pop();
-      return ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext || '');
-    }
-    return false;
-  };
+const isImageFile = () => {
+  if (file) return file.type.startsWith('image/');
+  if (existingPath && typeof existingPath === 'string') {
+    const ext = existingPath.toLowerCase().split('.').pop();
+    return ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext || '');
+  }
+  return false;
+};
 
   if (!hasFile) return null;
 
