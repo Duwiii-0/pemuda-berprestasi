@@ -109,3 +109,5 @@ export class DojangController {
     }
   }
 }
+
+export default DojangController;
