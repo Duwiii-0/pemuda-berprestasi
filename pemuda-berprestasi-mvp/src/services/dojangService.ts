@@ -1,173 +1,138 @@
-import Joi from 'joi';
+import { PrismaClient } from '@prisma/client';
+const prisma = new PrismaClient();
 
-export const dojangValidation = {
-create: Joi.object({
-  nama_dojang: Joi.string()
-    .trim()
-    .min(3)
-    .max(100)
-    .required()
-    .messages({
-      'string.empty': 'Nama dojang tidak boleh kosong',
-      'string.min': 'Nama dojang minimal 3 karakter',
-      'string.max': 'Nama dojang maksimal 100 karakter',
-      'any.required': 'Nama dojang wajib diisi'
-    }),
+interface CreateDojangData {
+  nama_dojang: string;
+  email?: string;
+  no_telp?: string | null;
+  negara?: string;
+  provinsi?: string;
+  kota?: string;
+}
 
-  email: Joi.string().email().trim().max(100).optional().allow('').messages({
-    'string.email': 'Format email tidak valid',
-    'string.max': 'Email maksimal 100 karakter'
-  }),
+interface UpdateDojangData extends Partial<CreateDojangData> {
+  id_dojang: number;
+  alamat?: string;
+}
 
-  no_telp: Joi.string().trim().pattern(/^[\d\-\+\(\)\s]{8,20}$/).optional().allow('').messages({
-    'string.pattern.base': 'Format nomor telepon tidak valid'
-  }),
+export class DojangService {
+  // ===== CREATE DOJANG =====
+  static async createDojang(data: CreateDojangData) {
+    const existing = await prisma.tb_dojang.findFirst({
+      where: { nama_dojang: data.nama_dojang.trim() },
+    });
+    if (existing) throw new Error('Nama dojang sudah terdaftar');
 
-  negara: Joi.string().trim().max(50).optional().allow('').messages({
-    'string.max': 'Nama negara maksimal 50 karakter'
-  }),
+    return prisma.tb_dojang.create({
+      data: {
+        nama_dojang: data.nama_dojang.trim(),
+        email: data.email?.trim() || null,
+        no_telp: data.no_telp?.trim() || null,
+        negara: data.negara?.trim() || null,
+        provinsi: data.provinsi?.trim() || null,
+        kota: data.kota?.trim() || null,
+      },
+      include: { pelatih: true, atlet: true },
+    });
+  }
 
-  provinsi: Joi.string().trim().max(50).optional().allow('').messages({
-    'string.max': 'Nama provinsi maksimal 50 karakter'
-  }),
+  // ===== GET ALL DOJANG =====
+  static async getAllDojang(page = 1, limit = 10, search?: string) {
+    const skip = (page - 1) * limit;
+    const where = search
+      ? { nama_dojang: { contains: search, mode: 'insensitive' } }
+      : {};
 
-  kota: Joi.string().trim().max(50).optional().allow('').messages({
-    'string.max': 'Nama kota maksimal 50 karakter'
-  }),
-
-  kecamatan: Joi.string().trim().max(50).optional().allow('').messages({
-    'string.max': 'Nama kota maksimal 50 karakter'
-  }),
-  kelurahan: Joi.string().trim().max(50).optional().allow('').messages({
-    'string.max': 'Nama kota maksimal 50 karakter'
-  }),
-  alamat: Joi.string().trim().max(50).optional().allow('').messages({
-    'string.max': 'Nama kota maksimal 50 karakter'
-  }),
-
-}),
-
-  update: Joi.object({
-    id_pelatih: Joi.number().integer().min(1).optional().allow(null).messages({
-    'number.base': 'ID pelatih harus berupa angka',
-    'number.integer': 'ID pelatih harus bilangan bulat',
-    'number.min': 'ID pelatih minimal 1'
-  }),
-
-    nama_dojang: Joi.string()
-      .trim()
-      .min(3)
-      .max(100)
-      .optional()
-      .messages({
-        'string.empty': 'Nama dojang tidak boleh kosong',
-        'string.min': 'Nama dojang minimal 3 karakter',
-        'string.max': 'Nama dojang maksimal 100 karakter'
+    const [data, total] = await Promise.all([
+      prisma.tb_dojang.findMany({
+        where,
+        skip,
+        take: limit,
+        include: { 
+          pelatih: true,
+          _count: { select: { atlet: true } } // hitung jumlah atlet
+        },
+        orderBy: { id_dojang: 'desc' },
       }),
+      prisma.tb_dojang.count({ where }),
+    ]);
 
-    email: Joi.string()
-      .email()
-      .trim()
-      .max(100)
-      .optional()
-      .allow('')
-      .messages({
-        'string.email': 'Format email tidak valid',
-        'string.max': 'Email maksimal 100 karakter'
-      }),
+    // format data supaya jumlah_atlet lebih mudah diakses di frontend
+    const formattedData = data.map(item => ({
+      ...item,
+      jumlah_atlet: item._count.atlet
+    }));
 
-    no_telp: Joi.string()
-      .trim()
-      .pattern(/^[\d\-\+\(\)\s]{8,20}$/)
-      .optional()
-      .allow('')
-      .messages({
-        'string.pattern.base': 'Format nomor telepon tidak valid'
-      }),
+    return {
+      data: formattedData,
+      pagination: {
+        currentPage: page,
+        totalItems: total,
+        totalPages: Math.ceil(total / limit),
+        itemsPerPage: limit,
+      },
+    };
+  }
 
-    negara: Joi.string()
-      .trim()
-      .max(50)
-      .optional()
-      .allow('')
-      .messages({
-        'string.max': 'Nama negara maksimal 50 karakter'
-      }),
+  // ===== GET DOJANG BY ID =====
+  static async getDojangById(id: number) {
+    const dojang = await prisma.tb_dojang.findUnique({
+      where: { id_dojang: id },
+      include: { pelatih: true, atlet: true },
+    });
+    if (!dojang) throw new Error('Dojang tidak ditemukan');
+    return dojang;
+  }
 
-    provinsi: Joi.string()
-      .trim()
-      .max(50)
-      .optional()
-      .allow('')
-      .messages({
-        'string.max': 'Nama provinsi maksimal 50 karakter'
-      }),
+  // ===== UPDATE DOJANG =====
+  static async updateDojang(data: UpdateDojangData) {
+    const { id_dojang, ...update } = data;
+    const existing = await prisma.tb_dojang.findUnique({ where: { id_dojang } });
+    if (!existing) throw new Error('Dojang tidak ditemukan');
 
-    kota: Joi.string()
-      .trim()
-      .max(50)
-      .optional()
-      .allow('')
-      .messages({
-        'string.max': 'Nama kota maksimal 50 karakter'
-      }),
-    kecamatan: Joi.string().trim().max(50).optional().allow('').messages({
-    'string.max': 'Nama kota maksimal 50 karakter'
-    }),
-    kelurahan: Joi.string().trim().max(50).optional().allow('').messages({
-      'string.max': 'Nama kota maksimal 50 karakter'
-    }),
-    alamat: Joi.string().trim().max(50).optional().allow('').messages({
-      'string.max': 'Nama kota maksimal 50 karakter'
-    }),
-  }),
+    return prisma.tb_dojang.update({
+      where: { id_dojang },
+      data: update,
+      include: { pelatih: true, atlet: true },
+    });
+  }
 
-  checkName: Joi.object({
-    nama: Joi.string()
-      .trim()
-      .min(3)
-      .max(100)
-      .required()
-      .messages({
-        'string.empty': 'Nama dojang tidak boleh kosong',
-        'string.min': 'Nama dojang minimal 3 karakter',
-        'string.max': 'Nama dojang maksimal 100 karakter',
-        'any.required': 'Nama dojang wajib diisi'
-      })
-  }),
+  // ===== DELETE DOJANG =====
+  static async deleteDojang(id: number) {
+    const existing = await prisma.tb_dojang.findUnique({
+      where: { id_dojang: id },
+      include: { atlet: true },
+    });
+    if (!existing) throw new Error('Dojang tidak ditemukan');
+    if (existing.atlet.length > 0) throw new Error('Tidak bisa menghapus dojang yang masih memiliki atlet');
 
-  query: Joi.object({
-    page: Joi.number()
-      .integer()
-      .min(1)
-      .default(1)
-      .optional()
-      .messages({
-        'number.base': 'Page harus berupa angka',
-        'number.integer': 'Page harus berupa bilangan bulat',
-        'number.min': 'Page minimal 1'
-      }),
+    await prisma.tb_dojang.delete({ where: { id_dojang: id } });
+    return { message: 'Dojang berhasil dihapus' };
+  }
 
-    limit: Joi.number()
-      .integer()
-      .min(1)
-      .max(100)
-      .default(10)
-      .optional()
-      .messages({
-        'number.base': 'Limit harus berupa angka',
-        'number.integer': 'Limit harus berupa bilangan bulat',
-        'number.min': 'Limit minimal 1',
-        'number.max': 'Limit maksimal 100'
-      }),
+  // ===== GET DOJANG BY PELATIH =====
+  static async getByPelatih(id_pelatih: number) {
+    const pelatih = await prisma.tb_pelatih.findUnique({
+      where: { id_pelatih },
+      include: { dojang: true },
+    });
+    if (!pelatih) throw new Error('Pelatih tidak ditemukan');
+    return pelatih.dojang;
+  }
 
-    search: Joi.string()
-      .trim()
-      .max(100)
-      .optional()
-      .allow('')
-      .messages({
-        'string.max': 'Search maksimal 100 karakter'
-      })
-  })
-};
+  // ===== GET DOJANG BY ATLET =====
+  static async getByAtlet(id_atlet: number) {
+    const atlet = await prisma.tb_atlet.findUnique({
+      where: { id_atlet },
+      include: { dojang: true },
+    });
+    if (!atlet) throw new Error('Atlet tidak ditemukan');
+    return atlet.dojang;
+  }
+
+  // ===== CHECK NAME AVAILABILITY =====
+  static async checkNameAvailability(nama: string) {
+    const existing = await prisma.tb_dojang.findFirst({ where: { nama_dojang: nama.trim() } });
+    return !existing;
+  }
+}
