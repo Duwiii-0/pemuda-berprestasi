@@ -1,240 +1,173 @@
-import { PrismaClient } from '@prisma/client';
-import { FileManager } from '../utils/fileManager';
-import path from 'path';
+import Joi from 'joi';
 
-const prisma = new PrismaClient();
+export const dojangValidation = {
+create: Joi.object({
+  nama_dojang: Joi.string()
+    .trim()
+    .min(3)
+    .max(100)
+    .required()
+    .messages({
+      'string.empty': 'Nama dojang tidak boleh kosong',
+      'string.min': 'Nama dojang minimal 3 karakter',
+      'string.max': 'Nama dojang maksimal 100 karakter',
+      'any.required': 'Nama dojang wajib diisi'
+    }),
 
-interface CreateDojangData {
-  nama_dojang: string;
-  email?: string;
-  no_telp?: string | null;
-  founder?: string;
-  negara?: string;
-  provinsi?: string;
-  kota?: string;
-  kecamatan?: string;
-  kelurahan?: string;
-  alamat?: string;
-  logo?: any; // File from multer
-}
+  email: Joi.string().email().trim().max(100).optional().allow('').messages({
+    'string.email': 'Format email tidak valid',
+    'string.max': 'Email maksimal 100 karakter'
+  }),
 
-interface UpdateDojangData extends Partial<CreateDojangData> {
-  id_dojang: number;
-}
+  no_telp: Joi.string().trim().pattern(/^[\d\-\+\(\)\s]{8,20}$/).optional().allow('').messages({
+    'string.pattern.base': 'Format nomor telepon tidak valid'
+  }),
 
-export class DojangService {
-  // ===== CREATE DOJANG =====
-  static async createDojang(data: CreateDojangData) {
-    const existing = await prisma.tb_dojang.findFirst({
-      where: { nama_dojang: data.nama_dojang.trim() },
-    });
-    if (existing) throw new Error('Nama dojang sudah terdaftar');
+  negara: Joi.string().trim().max(50).optional().allow('').messages({
+    'string.max': 'Nama negara maksimal 50 karakter'
+  }),
 
-    let logoPath: string | null = null;
+  provinsi: Joi.string().trim().max(50).optional().allow('').messages({
+    'string.max': 'Nama provinsi maksimal 50 karakter'
+  }),
 
-    // Handle file upload if logo is provided
-    if (data.logo) {
-      try {
-        // Generate unique filename
-        const fileExtension = path.extname(data.logo.originalname);
-        const uniqueFilename = `dojang_${Date.now()}_${Math.random().toString(36).substring(2)}${fileExtension}`;
-        
-        // Save file using FileManager utility
-        logoPath = await FileManager.saveFile(
-          data.logo.buffer, 
-          uniqueFilename,
-          'photos'
-        );
-      } catch (error) {
-        console.error('Error saving logo file:', error);
-        throw new Error('Gagal menyimpan file logo');
-      }
-    }
+  kota: Joi.string().trim().max(50).optional().allow('').messages({
+    'string.max': 'Nama kota maksimal 50 karakter'
+  }),
 
-    return prisma.tb_dojang.create({
-      data: {
-        nama_dojang: data.nama_dojang.trim(),
-        email: data.email?.trim() || null,
-        no_telp: data.no_telp?.trim() || null,
-        founder: data.founder?.trim() || null,
-        negara: data.negara?.trim() || null,
-        provinsi: data.provinsi?.trim() || null,
-        kota: data.kota?.trim() || null,
-        kecamatan: data.kecamatan?.trim() || null,
-        kelurahan: data.kelurahan?.trim() || null,
-        alamat: data.alamat?.trim() || null,
-        logo: logoPath,
-      },
-      include: { pelatih: true, atlet: true },
-    });
-  }
+  kecamatan: Joi.string().trim().max(50).optional().allow('').messages({
+    'string.max': 'Nama kota maksimal 50 karakter'
+  }),
+  kelurahan: Joi.string().trim().max(50).optional().allow('').messages({
+    'string.max': 'Nama kota maksimal 50 karakter'
+  }),
+  alamat: Joi.string().trim().max(50).optional().allow('').messages({
+    'string.max': 'Nama kota maksimal 50 karakter'
+  }),
 
-  // ===== GET ALL DOJANG =====
-  static async getAllDojang(page = 1, limit = 10, search?: string) {
-    const skip = (page - 1) * limit;
-    const where = search
-      ? { nama_dojang: { contains: search, mode: 'insensitive' as const } }
-      : {};
+}),
 
-    const [data, total] = await Promise.all([
-      prisma.tb_dojang.findMany({
-        where,
-        skip,
-        take: limit,
-        include: { 
-          pelatih: true,
-          _count: { select: { atlet: true } }
-        },
-        orderBy: { id_dojang: 'desc' },
+  update: Joi.object({
+    id_pelatih: Joi.number().integer().min(1).optional().allow(null).messages({
+    'number.base': 'ID pelatih harus berupa angka',
+    'number.integer': 'ID pelatih harus bilangan bulat',
+    'number.min': 'ID pelatih minimal 1'
+  }),
+
+    nama_dojang: Joi.string()
+      .trim()
+      .min(3)
+      .max(100)
+      .optional()
+      .messages({
+        'string.empty': 'Nama dojang tidak boleh kosong',
+        'string.min': 'Nama dojang minimal 3 karakter',
+        'string.max': 'Nama dojang maksimal 100 karakter'
       }),
-      prisma.tb_dojang.count({ where }),
-    ]);
 
-    // format data supaya jumlah_atlet lebih mudah diakses di frontend
-    const formattedData = data.map(item => ({
-      ...item,
-      jumlah_atlet: item._count.atlet,
-      logo_url: item.logo ? `/uploads/photos/${path.basename(item.logo)}` : null
-    }));
+    email: Joi.string()
+      .email()
+      .trim()
+      .max(100)
+      .optional()
+      .allow('')
+      .messages({
+        'string.email': 'Format email tidak valid',
+        'string.max': 'Email maksimal 100 karakter'
+      }),
 
-    return {
-      data: formattedData,
-      pagination: {
-        currentPage: page,
-        totalItems: total,
-        totalPages: Math.ceil(total / limit),
-        itemsPerPage: limit,
-      },
-    };
-  }
+    no_telp: Joi.string()
+      .trim()
+      .pattern(/^[\d\-\+\(\)\s]{8,20}$/)
+      .optional()
+      .allow('')
+      .messages({
+        'string.pattern.base': 'Format nomor telepon tidak valid'
+      }),
 
-  // ===== GET DOJANG BY ID =====
-  static async getDojangById(id: number) {
-    const dojang = await prisma.tb_dojang.findUnique({
-      where: { id_dojang: id },
-      include: { pelatih: true, atlet: true },
-    });
-    if (!dojang) throw new Error('Dojang tidak ditemukan');
-    
-    return {
-      ...dojang,
-      logo_url: dojang.logo ? `/uploads/photos/${path.basename(dojang.logo)}` : null
-    };
-  }
+    negara: Joi.string()
+      .trim()
+      .max(50)
+      .optional()
+      .allow('')
+      .messages({
+        'string.max': 'Nama negara maksimal 50 karakter'
+      }),
 
-  // ===== UPDATE DOJANG =====
-  static async updateDojang(data: UpdateDojangData) {
-    const { id_dojang, logo, ...update } = data;
-    const existing = await prisma.tb_dojang.findUnique({ where: { id_dojang } });
-    if (!existing) throw new Error('Dojang tidak ditemukan');
+    provinsi: Joi.string()
+      .trim()
+      .max(50)
+      .optional()
+      .allow('')
+      .messages({
+        'string.max': 'Nama provinsi maksimal 50 karakter'
+      }),
 
-    let logoPath: string | null = existing.logo;
+    kota: Joi.string()
+      .trim()
+      .max(50)
+      .optional()
+      .allow('')
+      .messages({
+        'string.max': 'Nama kota maksimal 50 karakter'
+      }),
+    kecamatan: Joi.string().trim().max(50).optional().allow('').messages({
+    'string.max': 'Nama kota maksimal 50 karakter'
+    }),
+    kelurahan: Joi.string().trim().max(50).optional().allow('').messages({
+      'string.max': 'Nama kota maksimal 50 karakter'
+    }),
+    alamat: Joi.string().trim().max(50).optional().allow('').messages({
+      'string.max': 'Nama kota maksimal 50 karakter'
+    }),
+  }),
 
-    // Handle logo update if new logo is provided
-    if (logo) {
-      try {
-        // Delete old logo file if exists
-        if (existing.logo) {
-          await FileManager.deleteFile(existing.logo);
-        }
+  checkName: Joi.object({
+    nama: Joi.string()
+      .trim()
+      .min(3)
+      .max(100)
+      .required()
+      .messages({
+        'string.empty': 'Nama dojang tidak boleh kosong',
+        'string.min': 'Nama dojang minimal 3 karakter',
+        'string.max': 'Nama dojang maksimal 100 karakter',
+        'any.required': 'Nama dojang wajib diisi'
+      })
+  }),
 
-        // Generate unique filename for new logo
-        const fileExtension = path.extname(logo.originalname);
-        const uniqueFilename = `dojang_${Date.now()}_${Math.random().toString(36).substring(2)}${fileExtension}`;
-        
-        // Save new logo file
-        logoPath = await FileManager.saveFile(
-          logo.buffer, 
-          uniqueFilename,
-          'photos'
-        );
-      } catch (error) {
-        console.error('Error updating logo file:', error);
-        throw new Error('Gagal memperbarui file logo');
-      }
-    }
+  query: Joi.object({
+    page: Joi.number()
+      .integer()
+      .min(1)
+      .default(1)
+      .optional()
+      .messages({
+        'number.base': 'Page harus berupa angka',
+        'number.integer': 'Page harus berupa bilangan bulat',
+        'number.min': 'Page minimal 1'
+      }),
 
-    const updatedData = {
-      ...update,
-      logo: logoPath
-    };
+    limit: Joi.number()
+      .integer()
+      .min(1)
+      .max(100)
+      .default(10)
+      .optional()
+      .messages({
+        'number.base': 'Limit harus berupa angka',
+        'number.integer': 'Limit harus berupa bilangan bulat',
+        'number.min': 'Limit minimal 1',
+        'number.max': 'Limit maksimal 100'
+      }),
 
-    // Remove undefined values
-    Object.keys(updatedData).forEach(key => {
-      if (updatedData[key as keyof typeof updatedData] === undefined) {
-        delete updatedData[key as keyof typeof updatedData];
-      }
-    });
-
-    return prisma.tb_dojang.update({
-      where: { id_dojang },
-      data: updatedData,
-      include: { pelatih: true, atlet: true },
-    });
-  }
-
-  // ===== DELETE DOJANG =====
-  static async deleteDojang(id: number) {
-    const existing = await prisma.tb_dojang.findUnique({
-      where: { id_dojang: id },
-      include: { atlet: true },
-    });
-    if (!existing) throw new Error('Dojang tidak ditemukan');
-    if (existing.atlet.length > 0) throw new Error('Tidak bisa menghapus dojang yang masih memiliki atlet');
-
-    // Delete logo file if exists
-    if (existing.logo) {
-      try {
-        await FileManager.deleteFile(existing.logo);
-      } catch (error) {
-        console.error('Error deleting logo file:', error);
-        // Continue with deletion even if file deletion fails
-      }
-    }
-
-    await prisma.tb_dojang.delete({ where: { id_dojang: id } });
-    return { message: 'Dojang berhasil dihapus' };
-  }
-
-  // ===== GET DOJANG BY PELATIH =====
-  static async getByPelatih(id_pelatih: number) {
-    const pelatih = await prisma.tb_pelatih.findUnique({
-      where: { id_pelatih },
-      include: { dojang: true },
-    });
-    if (!pelatih) throw new Error('Pelatih tidak ditemukan');
-    
-    if (pelatih.dojang) {
-      return {
-        ...pelatih.dojang,
-        logo_url: pelatih.dojang.logo ? `/uploads/photos/${path.basename(pelatih.dojang.logo)}` : null
-      };
-    }
-    
-    return pelatih.dojang;
-  }
-
-  // ===== GET DOJANG BY ATLET =====
-  static async getByAtlet(id_atlet: number) {
-    const atlet = await prisma.tb_atlet.findUnique({
-      where: { id_atlet },
-      include: { dojang: true },
-    });
-    if (!atlet) throw new Error('Atlet tidak ditemukan');
-    
-    if (atlet.dojang) {
-      return {
-        ...atlet.dojang,
-        logo_url: atlet.dojang.logo ? `/uploads/photos/${path.basename(atlet.dojang.logo)}` : null
-      };
-    }
-    
-    return atlet.dojang;
-  }
-
-  // ===== CHECK NAME AVAILABILITY =====
-  static async checkNameAvailability(nama: string) {
-    const existing = await prisma.tb_dojang.findFirst({ where: { nama_dojang: nama.trim() } });
-    return !existing;
-  }
-}
+    search: Joi.string()
+      .trim()
+      .max(100)
+      .optional()
+      .allow('')
+      .messages({
+        'string.max': 'Search maksimal 100 karakter'
+      })
+  })
+};
