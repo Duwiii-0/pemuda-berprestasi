@@ -676,6 +676,7 @@ static async handleFileUpload(id_atlet: number, files: any): Promise<AtletFileIn
 }
 
   // PERBAIKAN: AtletService.deleteFile method
+// PERBAIKAN: AtletService.deleteFile method
 static async deleteFile(id_atlet: number, fileType: keyof AtletFileInfo) {
   const atlet = await prisma.tb_atlet.findUnique({
     where: { id_atlet }
@@ -690,7 +691,7 @@ static async deleteFile(id_atlet: number, fileType: keyof AtletFileInfo) {
   const folder = ATLET_FOLDER_MAP[fileType as AtletFileType]
   
   // PERBAIKAN: Jika filename sudah include subfolder, extract filename saja
-  const actualFilename = filename.includes('/') ? filename.split('/').pop() : filename
+  const actualFilename = filename.includes('/') ? filename.split('/').pop() || filename : filename
   
   const filePath = path.join(process.cwd(), 'uploads', 'atlet', folder, actualFilename)
 
