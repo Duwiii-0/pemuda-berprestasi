@@ -185,37 +185,6 @@ async function seedKelasPoomsae() {
   console.log("✅ Kelas Poomsae seeded");
 }
 
-async function seedPenyelenggara() {
-  const penyelenggara = await prisma.tb_penyelenggara.create({
-    data: {
-      nama_penyelenggara: "Pengurus Besar Taekwondo Indonesia",
-      email: "info@pbti.or.id",
-      no_telp: "08123456789",
-    },
-  });
-
-
-
-  console.log("✅ Penyelenggara seeded");
-  return penyelenggara;
-}
-
-async function seedKompetisi(penyelenggaraId: number) {
-  const kompetisi = await prisma.tb_kompetisi.create({
-    data: {
-      nama_event: "Sriwijaya Competition",
-      tanggal_mulai: new Date("2025-09-01"),
-      tanggal_selesai: new Date("2025-09-05"),
-      lokasi: 'Jakarta',
-      id_penyelenggara: penyelenggaraId,
-      status: "PENDAFTARAN"
-    },
-  });
-
-  console.log("✅ Kompetisi created:", kompetisi.nama_event);
-  return kompetisi;
-}
-
 async function seedKelasKejuaraan(idKompetisi: number) {
   const kategoriEvents = await prisma.tb_kategori_event.findMany();
   const kelompokUsia = await prisma.tb_kelompok_usia.findMany();
