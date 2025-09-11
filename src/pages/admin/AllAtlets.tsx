@@ -5,6 +5,7 @@ import { useAtletContext, genderOptions } from "../../context/AtlitContext";
 import { apiClient } from "../../config/api";
 import { useAuth } from "../../context/authContext";
 import { useNavigate } from "react-router-dom";
+import Select from "react-select";
 
 const AllAtlets: React.FC = () => {
   const { atlits, fetchAllAtlits } = useAtletContext();
@@ -235,58 +236,73 @@ const AllAtlets: React.FC = () => {
               {/* Filter Gender */}
               <div>
                 <label className="block text-xs mb-2 font-medium" style={{ color: '#050505', opacity: 0.6 }}>Jenis Kelamin</label>
-                <select
-                  value={filterGender}
-                  onChange={(e) => setFilterGender(e.target.value as any)}
-                  className="w-full px-3 py-3 rounded-2xl border shadow-sm focus:ring-2 focus:border-transparent text-sm transition-colors"
-                  style={{ 
-                    borderColor: '#990D35', 
-                    backgroundColor: '#F5FBEF',
-                    color: '#050505'
-                  }}
-                  onFocus={(e) => {
-                    e.target.style.outline = 'none';
-                    e.target.style.boxShadow = '0 0 0 2px rgba(153, 13, 53, 0.2)';
-                  }}
-                  onBlur={(e) => {
-                    e.target.style.boxShadow = '';
-                  }}
-                >
-                  <option value="ALL">Semua Jenis Kelamin</option>
-                  {genderOptions.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
+                <Select
+              unstyled
+              value={{
+                value: filterGender,
+                label:
+                  filterGender === "ALL" ? "Semua Gender" : filterGender,
+              }}
+              onChange={(selected) => setFilterGender(selected?.value as any)}
+              options={[
+                { value: "LAKI_LAKI", label: "Laki-Laki" },
+                { value: "PEREMPUAN", label: "Perempuan" },
+              ]}
+              placeholder="Pilih kelompok usia"
+              classNames={{
+                control: () =>
+                  `w-full flex items-center border border-black/20 rounded-2xl px-3 py-3 gap-2 transition-all duration-300 hover:shadow-sm focus-within:border-yellow-500 focus-within:ring-2 focus-within:ring-yellow-500/20`,
+                valueContainer: () => "px-1",
+                placeholder: () => "text-black/40 text-sm font-inter",
+                menu: () =>
+                  "border border-black/10 bg-white rounded-xl shadow-lg mt-2 overflow-hidden z-50",
+                menuList: () => "max-h-40 overflow-y-auto",
+                option: ({ isFocused, isSelected }) =>
+                  [
+                    "px-3 py-3 cursor-pointer text-sm transition-colors duration-200 font-inter",
+                    isFocused ? "bg-yellow-50 text-black" : "text-black/70",
+                    isSelected ? "bg-yellow-500 text-black" : "",
+                  ].join(" "),
+              }}
+            />
               </div>
 
               {/* Filter Age Category */}
               <div>
                 <label className="block text-xs mb-2 font-medium" style={{ color: '#050505', opacity: 0.6 }}>Kategori Umur</label>
-                <select
-                  value={filterAgeCategory}
-                  onChange={(e) => setFilterAgeCategory(e.target.value as any)}
-                  className="w-full px-3 py-3 rounded-2xl border shadow-sm focus:ring-2 focus:border-transparent text-sm transition-colors"
-                  style={{ 
-                    borderColor: '#990D35', 
-                    backgroundColor: '#F5FBEF',
-                    color: '#050505'
-                  }}
-                  onFocus={(e) => {
-                    e.target.style.outline = 'none';
-                    e.target.style.boxShadow = '0 0 0 2px rgba(153, 13, 53, 0.2)';
-                  }}
-                  onBlur={(e) => {
-                    e.target.style.boxShadow = '';
-                  }}
-                >
-                  {ageCategories.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
+                <Select
+              unstyled
+              value={{
+                value: filterAgeCategory,
+                label:
+                  filterAgeCategory === "ALL" ? "Semua Usia" : filterAgeCategory,
+              }}
+              onChange={(selected) => setFilterAgeCategory(selected?.value as any)}
+              options={[
+                { value: "ALL", label: "Semua Kelompok Umur" },
+                { value: "Super Pra-cadet", label: "Super Pra-Cadet (2017-2020)" },
+                { value: "Pracadet", label: "Pracadet (2014-2016)" },
+                { value: "Cadet", label: "Cadet (2011-2013)" },
+                { value: "Junior", label: "Junior (2008-2010)" },
+                { value: "Senior", label: "Senior (2007 ke atas)" },
+              ]}
+              placeholder="Pilih kelompok usia"
+              classNames={{
+                control: () =>
+                  `w-full flex items-center border border-black/20 rounded-2xl px-3 py-3 gap-2 transition-all duration-300 hover:shadow-sm focus-within:border-yellow-500 focus-within:ring-2 focus-within:ring-yellow-500/20`,
+                valueContainer: () => "px-1",
+                placeholder: () => "text-black/40 text-sm font-inter",
+                menu: () =>
+                  "border border-black/10 bg-white rounded-xl shadow-lg mt-2 overflow-hidden z-50",
+                menuList: () => "max-h-40 overflow-y-auto",
+                option: ({ isFocused, isSelected }) =>
+                  [
+                    "px-3 py-3 cursor-pointer text-sm transition-colors duration-200 font-inter",
+                    isFocused ? "bg-yellow-50 text-black" : "text-black/70",
+                    isSelected ? "bg-yellow-500 text-black" : "",
+                  ].join(" "),
+              }}
+            />
               </div>
             </div>
 
