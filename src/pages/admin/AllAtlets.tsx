@@ -85,9 +85,11 @@ const AllAtlets: React.FC = () => {
 
   const ageCategories = [
     { value: "ALL", label: "Semua Kelompok Umur" },
-    { value: "CADET", label: "Cadet (2011-2013)" },
-    { value: "JUNIOR", label: "Junior (2008-2010)" },
-    { value: "SENIOR", label: "Senior (2007 ke atas)" },
+    { value: "Super Pra-cadet", label: "Cadet (2011-2013)" },
+    { value: "Pracadet", label: "Junior (2008-2010)" },
+    { value: "Cadet", label: "Senior (2007 ke atas)" },
+    { value: "Junior", label: "Senior (2007 ke atas)" },
+    { value: "Senior", label: "Senior (2007 ke atas)" },
   ];
 
   const getGenderBadge = (gender: string) => {
