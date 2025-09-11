@@ -641,14 +641,17 @@ static async getEligible(
     throw new Error('Atlet tidak ditemukan')
   }
 
-    const checkFile = (filename: string | null, type: AtletFileType): FileInfo | null => {
+  const checkFile = (filename: string | null, type: AtletFileType): FileInfo | null => {
     if (!filename) return null
+    
     const folder = ATLET_FOLDER_MAP[type]
     const filePath = path.join(process.cwd(), 'uploads', 'atlet', folder, filename)
     const exists = fs.existsSync(filePath)
+    
     return {
       filename,
-      path: `uploads/atlet/${folder}/${filename}`,
+      // PERBAIKAN: Path untuk frontend harus include subfolder
+      path: `${folder}/${filename}`, // Ini yang akan digunakan di frontend
       exists,
       uploadedAt: exists ? fs.statSync(filePath).mtime : undefined
     }
@@ -662,7 +665,6 @@ static async getEligible(
   }
 }
 
-
   // Hapus file atlet
   static async deleteFile(id_atlet: number, fileType: keyof AtletFileInfo) {
   const atlet = await prisma.tb_atlet.findUnique({
@@ -674,7 +676,7 @@ static async getEligible(
   const filename = atlet[fileType]
   if (!filename) throw new Error('File tidak ditemukan')
 
-  // FIXED: Use imported ATLET_FOLDER_MAP
+  // PERBAIKAN: Gunakan struktur folder yang benar
   const folder = ATLET_FOLDER_MAP[fileType as AtletFileType]
   const filePath = path.join(process.cwd(), 'uploads', 'atlet', folder, filename)
 
