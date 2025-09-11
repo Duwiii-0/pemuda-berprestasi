@@ -51,7 +51,7 @@ const DataKompetisi = () => {
   const [filterCategory, setFilterCategory] = useState<"ALL" | "KYORUGI" | "POOMSAE">("ALL");
   const [filterKelompokUsia, setFilterKelompokUsia] = useState<"ALL" | "Super Pra-cadet" | "Pracadet" | "Cadet" | "Junior" | "Senior" >("ALL");
   const [filterKelasBerat, setFilterKelasBerat] = useState<string>("ALL");
-  const [filterLevel, setFilterLevel] = useState<"ALL" | "pemula" | "prestasi" | null>(null);
+  const [filterLevel, setFilterLevel] = useState<"ALL" | "pemula" | "prestasi">("ALL");
   const [filterDojang, setFilterDojang] = useState<string>("ALL");
   
   // Pagination states
@@ -235,7 +235,7 @@ const DataKompetisi = () => {
 
     // Level / kategori event
     const level = peserta.kelas_kejuaraan?.kategori_event?.nama_kategori?.toUpperCase() || "";
-    const matchesLevel = !filterLevel || level === filterLevel.toUpperCase();
+    const matchesLevel = filterLevel === "ALL" || level === filterLevel.toUpperCase();
 
     // Dojang
     const pesertaDojang = peserta.is_team
