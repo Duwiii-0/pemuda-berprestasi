@@ -7,7 +7,6 @@ import { apiClient } from "../../config/api";
 import { useNavigate } from "react-router-dom";
 import SelectTeamMemberModal from "../../components/selectTeamModal";
 import { useDojang } from "../../context/dojangContext";
-import { kelasBeratOptionsMap } from "../../dummy/beratOptions";
 
 const AllPeserta: React.FC = () => {
   const { token, user } = useAuth();
@@ -30,6 +29,70 @@ const AllPeserta: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(20);
 
+  const kelasBeratOptions = [
+  { value: "ALL", label: "Semua Kelas" },
+
+  // Under
+  { value: "Under 18 kg", label: "Under 18 kg" },
+  { value: "Under 19 kg", label: "Under 19 kg" },
+  { value: "Under 20 kg", label: "Under 20 kg" },
+  { value: "Under 21 kg", label: "Under 21 kg" },
+  { value: "Under 22 kg", label: "Under 22 kg" },
+  { value: "Under 23 kg", label: "Under 23 kg" },
+  { value: "Under 24 kg", label: "Under 24 kg" },
+  { value: "Under 25 kg", label: "Under 25 kg" },
+  { value: "Under 26 kg", label: "Under 26 kg" },
+  { value: "Under 27 kg", label: "Under 27 kg" },
+  { value: "Under 28 kg", label: "Under 28 kg" },
+  { value: "Under 29 kg", label: "Under 29 kg" },
+  { value: "Under 30 kg", label: "Under 30 kg" },
+  { value: "Under 32 kg", label: "Under 32 kg" },
+  { value: "Under 33 kg", label: "Under 33 kg" },
+  { value: "Under 35 kg", label: "Under 35 kg" },
+  { value: "Under 36 kg", label: "Under 36 kg" },
+  { value: "Under 37 kg", label: "Under 37 kg" },
+  { value: "Under 38 kg", label: "Under 38 kg" },
+  { value: "Under 39 kg", label: "Under 39 kg" },
+  { value: "Under 41 kg", label: "Under 41 kg" },
+  { value: "Under 42 kg", label: "Under 42 kg" },
+  { value: "Under 44 kg", label: "Under 44 kg" },
+  { value: "Under 45 kg", label: "Under 45 kg" },
+  { value: "Under 46 kg", label: "Under 46 kg" },
+  { value: "Under 47 kg", label: "Under 47 kg" },
+  { value: "Under 48 kg", label: "Under 48 kg" },
+  { value: "Under 49 kg", label: "Under 49 kg" },
+  { value: "Under 51 kg", label: "Under 51 kg" },
+  { value: "Under 52 kg", label: "Under 52 kg" },
+  { value: "Under 53 kg", label: "Under 53 kg" },
+  { value: "Under 54 kg", label: "Under 54 kg" },
+  { value: "Under 55 kg", label: "Under 55 kg" },
+  { value: "Under 57 kg", label: "Under 57 kg" },
+  { value: "Under 59 kg", label: "Under 59 kg" },
+  { value: "Under 61 kg", label: "Under 61 kg" },
+  { value: "Under 62 kg", label: "Under 62 kg" },
+  { value: "Under 63 kg", label: "Under 63 kg" },
+  { value: "Under 65 kg", label: "Under 65 kg" },
+  { value: "Under 67 kg", label: "Under 67 kg" },
+  { value: "Under 68 kg", label: "Under 68 kg" },
+  { value: "Under 73 kg", label: "Under 73 kg" },
+  { value: "Under 74 kg", label: "Under 74 kg" },
+  { value: "Under 78 kg", label: "Under 78 kg" },
+  { value: "Under 80 kg", label: "Under 80 kg" },
+  { value: "Under 87 kg", label: "Under 87 kg" },
+
+  // Over
+  { value: "Over 32 kg", label: "Over 32 kg" },
+  { value: "Over 33 kg", label: "Over 33 kg" },
+  { value: "Over 38 kg", label: "Over 38 kg" },
+  { value: "Over 39 kg", label: "Over 39 kg" },
+  { value: "Over 59 kg", label: "Over 59 kg" },
+  { value: "Over 65 kg", label: "Over 65 kg" },
+  { value: "Over 68 kg", label: "Over 68 kg" },
+  { value: "Over 73 kg", label: "Over 73 kg" },
+  { value: "Over 78 kg", label: "Over 78 kg" },
+  { value: "Over 87 kg", label: "Over 87 kg" },
+  { value: "Over 200 kg", label: "Over 200 kg" }, // fallback kalau mau tandai batas akhir
+];
 
   useEffect(() => {
     refreshDojang();
@@ -468,7 +531,7 @@ const AllPeserta: React.FC = () => {
                     e.target.style.boxShadow = '';
                   }}
                 >
-                  {kelasBeratOptionsMap[filterKelasUsia || "ALL"].map((opt) => (
+                  {kelasBeratOptions.map((opt) => (
                     <option key={opt.value} value={opt.value}>
                       {opt.label}
                     </option>
