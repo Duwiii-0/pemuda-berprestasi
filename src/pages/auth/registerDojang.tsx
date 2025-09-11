@@ -298,7 +298,7 @@ const handleRegister = async () => {
 
     console.log('🚀 Sending request to /dojang...');
     
-    // ✅ PERBAIKAN: Panggil API dan handle response dengan benar
+    // ✅ PERBAIKAN: Panggil API dengan benar
     const response = await apiClient.postFormData("/dojang", formData);
     
     console.log('✅ Registration response:', response);
@@ -308,24 +308,58 @@ const handleRegister = async () => {
   } catch (error: any) {
     console.error('❌ Registration error:', error);
     
-    // ✅ PERBAIKAN: Error handling yang sesuai dengan API Client
-    if (error instanceof Error) {
-      const errorMessage = error.message;
+    // ✅ PERBAIKAN: Error handling yang sesuai dengan API client baru
+    // API client baru throw object dengan struktur { status, data }
+    if (error && typeof error === 'object') {
+      const status = error.status;
+      const errorData = error.data;
       
-      // Cek jika error message mengandung status HTTP
-      if (errorMessage.includes('400')) {
-        toast.error("Data tidak valid. Periksa kembali input Anda.");
-      } else if (errorMessage.includes('422')) {
-        toast.error("Data tidak sesuai format yang diperlukan.");
-      } else if (errorMessage.includes('413')) {
+      console.log('📡 Error status:', status);
+      console.log('📡 Error data:', errorData);
+      
+      // Handle berdasarkan status code
+      if (status === 400) {
+        // Bad Request - biasanya validation error
+        if (errorData && typeof errorData === 'object') {
+          if (errorData.message) {
+            toast.error(errorData.message);
+          } else if (errorData.errors) {
+            // Laravel validation errors
+            const firstError = Object.values(errorData.errors)[0];
+            const errorMessage = Array.isArray(firstError) ? firstError[0] : firstError;
+            toast.error(errorMessage || "Data tidak valid");
+          } else {
+            toast.error("Data tidak valid. Periksa kembali input Anda.");
+          }
+        } else {
+          toast.error("Data tidak valid. Periksa kembali input Anda.");
+        }
+      } else if (status === 422) {
+        // Unprocessable Entity - validation error
+        if (errorData && errorData.errors) {
+          const firstError = Object.values(errorData.errors)[0];
+          const errorMessage = Array.isArray(firstError) ? firstError[0] : firstError;
+          toast.error(errorMessage || "Data tidak sesuai format yang diperlukan.");
+        } else {
+          toast.error("Data tidak sesuai format yang diperlukan.");
+        }
+      } else if (status === 413) {
         toast.error("File terlalu besar. Maksimal 5MB.");
-      } else if (errorMessage.includes('500')) {
+      } else if (status === 500) {
         toast.error("Terjadi kesalahan server. Coba lagi nanti.");
-      } else if (errorMessage.includes('Network') || errorMessage.includes('Failed to fetch')) {
+      } else if (status >= 400) {
+        // Generic client/server error
+        const message = (errorData && errorData.message) || `Error ${status}`;
+        toast.error(message);
+      } else {
+        toast.error("Terjadi kesalahan tidak terduga.");
+      }
+    } else if (error instanceof Error) {
+      // Network errors atau error lainnya
+      if (error.message.includes('Network') || error.message.includes('Failed to fetch')) {
         toast.error("Koneksi bermasalah. Periksa internet Anda.");
       } else {
-        // Tampilkan pesan error dari server jika ada
-        toast.error(errorMessage || "Registrasi gagal. Coba lagi.");
+        toast.error(error.message || "Registrasi gagal. Coba lagi.");
       }
     } else {
       toast.error("Terjadi kesalahan tidak terduga.");
