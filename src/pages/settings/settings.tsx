@@ -1,4 +1,4 @@
-import { ArrowLeft, Mail, IdCard, Phone, CalendarFold, Map, MapPinned, User, Settings as SettingsIcon, Shield, X, LogOut, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Mail, IdCard, Phone, CalendarFold, MapPinned, User, Settings as SettingsIcon, Shield, X, LogOut, AlertTriangle, Eye, Download } from 'lucide-react';
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
@@ -9,8 +9,222 @@ import Select from "react-select";
 import toast from 'react-hot-toast';
 import FileInput from "../../components/fileInput";
 
-// Password Reset Modal Component
-const PasswordResetModal = ({ isOpen, onClose, onConfirm }) => {
+interface FileState {
+  fotoKtp?: File | null;
+  sertifikatSabuk?: File | null;
+  fotoKtpPath?: string;
+  sertifikatSabukPath?: string;
+}
+
+interface FormDataState {
+  email: string;
+  name: string;
+  no_telp: string;
+  nik: string;
+  tanggal_lahir: string;
+  kota: string;
+  Alamat: string;
+  Provinsi: string;
+  jenis_kelamin: "LAKI_LAKI" | "PEREMPUAN" | '';
+}
+
+interface ApiResponse {
+  success: boolean;
+  message?: string;
+  data?: any;
+}
+
+interface SelectOption {
+  value: string;
+  label: string;
+}
+
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewError, setPreviewError] = useState(false);
+
+// Tambahkan setelah import statements
+const FilePreview = ({ 
+  file, 
+  existingPath, 
+  onRemove, 
+  disabled,
+  label 
+}: { 
+  file: File | null;
+  existingPath?: string;
+  onRemove: () => void;
+  disabled: boolean;
+  label: string;
+}) => {
+
+  useEffect(() => {
+    if (file) {
+      try {
+        const url = URL.createObjectURL(file);
+        setPreviewUrl(url);
+        setPreviewError(false);
+        return () => URL.revokeObjectURL(url);
+      } catch (error) {
+        console.error('Error creating preview URL:', error);
+        setPreviewError(true);
+      }
+    } else {
+      setPreviewUrl(null);
+      setPreviewError(false);
+    }
+  }, [file]);
+
+  const hasFile = file || existingPath;
+  
+  const getDisplayFileName = () => {
+    if (file) return file.name;
+    if (existingPath) {
+      const fileName = existingPath.split('/').pop() || label;
+      return fileName.length > 50 ? `${label} (File tersimpan)` : fileName;
+    }
+    return label;
+  };
+
+  const handleDownload = async () => {
+    if (!existingPath) {
+      toast.error('Tidak ada file untuk didownload');
+      return;
+    }
+    
+    try {
+      const baseUrl = 'https://pemudaberprestasi.com';
+      const downloadUrl = `${baseUrl}/uploads/pelatih/${existingPath}`;
+      
+      const testResponse = await fetch(downloadUrl, { method: 'HEAD' });
+      if (!testResponse.ok) {
+        toast.error('File tidak ditemukan di server');
+        return;
+      }
+      
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = getDisplayFileName();
+      link.target = '_blank';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast.success(`Download ${label} berhasil!`);
+      
+    } catch (error) {
+      console.error('Download error:', error);
+      toast.error('Gagal mendownload file');
+    }
+  };
+
+  const getPreviewUrl = () => {
+    if (file && previewUrl) return previewUrl;
+    
+    if (existingPath) {
+      const baseUrl = 'https://pemudaberprestasi.com';
+      const staticUrl = `${baseUrl}/uploads/pelatih/${existingPath}`;
+      return staticUrl;
+    }
+    
+    return null;
+  };
+
+  const isImageFile = () => {
+    if (file) return file.type.startsWith('image/');
+    if (existingPath) {
+      const ext = existingPath.toLowerCase().split('.').pop();
+      return ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext || '');
+    }
+    return false;
+  };
+
+  if (!hasFile) return null;
+
+  const displayUrl = getPreviewUrl();
+  const fileName = getDisplayFileName();
+
+  return (
+    <div className="mt-2 p-3 bg-white/70 rounded-xl border border-red/20">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-sm font-medium text-black/70">
+          {file ? `File baru: ${fileName}` : fileName}
+        </span>
+        {!disabled && (
+          <button
+            onClick={onRemove}
+            className="p-1 hover:bg-red/10 rounded-full transition-colors"
+            type="button"
+          >
+            <X size={16} className="text-red" />
+          </button>
+        )}
+      </div>
+      
+      <div className="flex gap-2">
+        {displayUrl && !previewError && isImageFile() && (
+          <div className="relative w-20 h-20 flex-shrink-0">
+            <img 
+              src={displayUrl} 
+              alt={`Preview ${label}`}
+              className="w-full h-full object-cover rounded-lg border border-gray-200"
+              onError={(e) => {
+                setPreviewError(true);
+                (e.target as HTMLImageElement).style.display = 'none';
+              }}
+            />
+          </div>
+        )}
+        
+        {(!displayUrl || previewError || !isImageFile()) && (
+          <div className="flex items-center gap-2 text-sm text-gray-600 w-20 h-20 border rounded-lg justify-center bg-gray-50">
+            <IdCard size={24} className="text-gray-400" />
+          </div>
+        )}
+        
+        <div className="flex flex-col gap-1 flex-1">
+          {displayUrl && (
+            <button
+              onClick={() => {
+                window.open(displayUrl, '_blank', 'noopener,noreferrer');
+              }}
+              className="flex items-center gap-1 px-2 py-1 text-xs bg-blue-100 hover:bg-blue-200 text-blue-600 rounded transition-colors"
+              type="button"
+            >
+              <Eye size={12} />
+              {isImageFile() ? 'Lihat Gambar' : 'Buka File'}
+            </button>
+          )}
+          
+          {existingPath && (
+            <button
+              onClick={handleDownload}
+              className="flex items-center gap-1 px-2 py-1 text-xs bg-green-100 hover:bg-green-200 text-green-600 rounded transition-colors"
+              type="button"
+            >
+              <Download size={12} />
+              Download
+            </button>
+          )}
+          
+          <div className="text-xs text-gray-500">
+            {file ? 'File baru' : existingPath ? 'File tersimpan' : 'Tidak ada file'}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Ganti baris 199
+const PasswordResetModal = ({ 
+  isOpen, 
+  onClose, 
+  onConfirm 
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => Promise<void>;
+}) => {
   const [isLoading, setIsLoading] = useState(false);
 
   if (!isOpen) return null;
@@ -197,9 +411,27 @@ const Settings = () => {
   const [loading, setLoading] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [files, setFiles] = useState<{
-    fotoKtp?: File | string | null;
-    sertifikatSabuk?: File | string | null;
-  }>({});
+  fotoKtp?: File | null;
+  sertifikatSabuk?: File | null;
+  fotoKtpPath?: string;
+  sertifikatSabukPath?: string;
+}>({
+  fotoKtp: null,
+  sertifikatSabuk: null,
+  fotoKtpPath: undefined,
+  sertifikatSabukPath: undefined,
+});
+
+  // Update handleCancel function:
+const handleCancel = () => {
+  setIsEditing(false);
+  setFormData(initialData);
+  setFiles((prev: FileState) => ({
+    ...prev,
+    fotoKtp: null,
+    sertifikatSabuk: null
+  }));
+};
 
   const [formData, setFormData] = useState<{
     email: string;
@@ -231,26 +463,27 @@ const Settings = () => {
   ];
 
   // Get city options based on selected province
-  const kotaOptions = formData.Provinsi ? provinsiKotaData[formData.Provinsi]?.map(kota => ({
+const kotaOptions: SelectOption[] = formData.Provinsi ? 
+  (provinsiKotaData[formData.Provinsi as keyof typeof provinsiKotaData]?.map((kota: string) => ({
     value: kota,
     label: kota
-  })) || [] : [];
+  })) || []) : [];
 
-  const handleProvinsiChange = (selectedOption) => {
-    setFormData({ 
-      ...formData, 
-      Provinsi: selectedOption?.value || "",
-      kota: "" // Reset city when province changes
-    });
-  };
+const handleProvinsiChange = (selectedOption: SelectOption | null) => {
+  setFormData({ 
+    ...formData, 
+    Provinsi: selectedOption?.value || "",
+    kota: ""
+  });
+};
 
-  const handleKotaChange = (selectedOption) => {
-    setFormData({ ...formData, kota: selectedOption?.value || "" });
-  };
+const handleKotaChange = (selectedOption: SelectOption | null) => {
+  setFormData({ ...formData, kota: selectedOption?.value || "" });
+};
 
-  const getSelectValue = (options, value) => {
-    return options.find(option => option.value === value) || null;
-  };
+const getSelectValue = (options: SelectOption[], value: string) => {
+  return options.find((option: SelectOption) => option.value === value) || null;
+};
 
   // Handle password reset with modal
   const handlePasswordReset = async () => {
@@ -273,26 +506,27 @@ const Settings = () => {
     }
   }, [token]);
 
-  useEffect(() => {
-    const fetchFiles = async () => {
-      if (!user) return;
-
-      try {
-        const res = await apiClient.get('/pelatih/files');
-        if (res.success) {
-          setFiles({
-            fotoKtp: res.data.foto_ktp?.path || null,
-            sertifikatSabuk: res.data.sertifikat_sabuk?.path || null
-          });
-        }
-      } catch (err) {
-        console.error(err);
-        toast.error('Gagal mengambil file');
+// Update fetchFiles function
+useEffect(() => {
+  const fetchFiles = async () => {
+    if (!user) return;
+    try {
+      const res = await apiClient.get('/pelatih/files') as ApiResponse;
+      if (res.success) {
+        setFiles({
+          fotoKtp: null,
+          sertifikatSabuk: null,
+          fotoKtpPath: res.data?.foto_ktp || undefined,
+          sertifikatSabukPath: res.data?.sertifikat_sabuk || undefined
+        });
       }
-    };
-
-    fetchFiles();
-  }, [user]);
+    } catch (err) {
+      console.error(err);
+      toast.error('Gagal mengambil file');
+    }
+  };
+  fetchFiles();
+}, [user]);
 
   // Fetch profile data dari API pelatih saat component mount
   useEffect(() => {
@@ -301,7 +535,7 @@ const Settings = () => {
 
       try {
         setLoading(true);
-        const response = await apiClient.get('/pelatih/profile');
+const response = await apiClient.get('/pelatih/profile') as ApiResponse;
         
         if (response.success) {
           const profileData = response.data;
@@ -330,67 +564,73 @@ const Settings = () => {
     fetchPelatihProfile();
   }, [user]);
 
-  const handleCancel = () => {
-    setIsEditing(false);
-    setFormData(initialData);
-  };
+  // Ganti handleUpdate function dengan:
+const handleUpdate = async () => {
+  try {
+    setLoading(true);
+    
+    // Update data text
+    const updateData = {
+      nama_pelatih: formData.name?.trim() || null,
+      no_telp: formData.no_telp?.trim() || null,
+      nik: formData.nik?.trim() || null,
+      tanggal_lahir: formData.tanggal_lahir ? new Date(formData.tanggal_lahir) : null,
+      kota: formData.kota?.trim() || null,
+      provinsi: formData.Provinsi?.trim() || null,
+      alamat: formData.Alamat?.trim() || null,
+      jenis_kelamin: formData.jenis_kelamin || null,
+    };
 
-  const handleUpdate = async () => {
-    try {
-      setLoading(true);
+    const filteredData = Object.fromEntries(
+      Object.entries(updateData).filter(([_, value]) => value !== null && value !== '')
+    );
 
-      // Update data text - handle empty strings properly
-      const updateData = {
-        nama_pelatih: formData.name?.trim() || null,
-        no_telp: formData.no_telp?.trim() || null,
-        nik: formData.nik?.trim() || null,
-        tanggal_lahir: formData.tanggal_lahir ? new Date(formData.tanggal_lahir) : null,
-        kota: formData.kota?.trim() || null,
-        provinsi: formData.Provinsi?.trim() || null,
-        alamat: formData.Alamat?.trim() || null,
-        jenis_kelamin: formData.jenis_kelamin || null,
-      };
+const response = await apiClient.put("/pelatih/profile", filteredData) as ApiResponse;
+    
+    if (!response.success) {
+      toast.error(response.message || "Gagal memperbarui profil");
+      return;
+    }
 
-      // Remove null values to avoid sending unnecessary data
-      const filteredData = Object.fromEntries(
-        Object.entries(updateData).filter(([_, value]) => value !== null && value !== '')
-      );
-
-      const response = await apiClient.put("/pelatih/profile", filteredData);
+    // Upload files jika ada
+    if (files.fotoKtp instanceof File || files.sertifikatSabuk instanceof File) {
+      const formDataToSend = new FormData();
       
-      if (!response.success) {
-        toast.error(response.message || "Gagal memperbarui profil");
+      if (files.fotoKtp instanceof File) {
+        formDataToSend.append("foto_ktp", files.fotoKtp);
+      }
+      if (files.sertifikatSabuk instanceof File) {
+        formDataToSend.append("sertifikat_sabuk", files.sertifikatSabuk);
+      }
+
+const uploadRes = await apiClient.postFormData("/pelatih/upload", formDataToSend) as ApiResponse;
+      
+      if (uploadRes.success) {
+        // Update file paths dari response
+        setFiles(prev => ({
+          ...prev,
+          fotoKtp: null,
+          sertifikatSabuk: null,
+          fotoKtpPath: uploadRes.data?.foto_ktp || prev.fotoKtpPath,
+          sertifikatSabukPath: uploadRes.data?.sertifikat_sabuk || prev.sertifikatSabukPath
+        }));
+        toast.success("File berhasil diupload");
+      } else {
+        toast.error(uploadRes.message || "Upload file gagal");
         return;
       }
-
-      // Upload file (jika ada)
-      if (files.fotoKtp instanceof File || files.sertifikatSabuk instanceof File) {
-        const formDataToSend = new FormData();
-
-        if (files.fotoKtp instanceof File) {
-          formDataToSend.append("foto_ktp", files.fotoKtp);
-        }
-        if (files.sertifikatSabuk instanceof File) {
-          formDataToSend.append("sertifikat_sabuk", files.sertifikatSabuk);
-        }
-
-        const uploadRes = await apiClient.postFormData("/pelatih/upload", formDataToSend);
-
-        if (!uploadRes.success) {
-          toast.error(uploadRes.message || "Upload file gagal");
-          return;
-        } 
-      }
-
-      setIsEditing(false);
-      toast.success("Profil berhasil diperbarui");
-    } catch (error) {
-      console.error("Error updating profile:");
-      toast.error("Pastikan semua data sudah sesuai");
-    } finally {
-      setLoading(false);
     }
-  };
+
+    setIsEditing(false);
+    toast.success("Profil berhasil diperbarui");
+    
+  } catch (error) {
+    console.error("Error updating profile:", error);
+    toast.error("Pastikan semua data sudah sesuai");
+  } finally {
+    setLoading(false);
+  }
+};
 
   // Redirect jika tidak login
   useEffect(() => {
@@ -893,47 +1133,68 @@ const Settings = () => {
                       </div>
                     </div>
 
-                    {/* Upload Foto KTP */}
                     <div className="space-y-2 sm:space-y-3">
-                      <label className="block font-plex font-semibold text-black/80 text-sm">
-                        Upload Foto KTP
-                      </label>
-                      <div className="relative">
-                        <FileInput
-                          accept="image/*"
-                          disabled={!isEditing}
-                          file={files?.fotoKtp instanceof File ? files.fotoKtp : null}
-                          previewUrl={typeof files?.fotoKtp === "string" ? files.fotoKtp : undefined}
-                          onChange={(e) =>
-                            setFiles({ ...files, fotoKtp: e.target.files?.[0] || files?.fotoKtp })
-                          }
-                        />
-                        {!isEditing && (
-                          <div className="absolute inset-0 bg-gray-100/50 rounded-xl" />
-                        )}
-                      </div>
-                    </div>
+  <label className="block font-plex font-semibold text-black/80 text-sm">
+    Upload Foto KTP
+  </label>
+  <div className="relative">
+    <FileInput
+      accept="image/*"
+      disabled={!isEditing}
+      onChange={(e) => setFiles(prev => ({
+        ...prev, 
+        fotoKtp: e.target.files?.[0] || null
+      }))}
+      className="border-red/20 bg-white/50 backdrop-blur-sm rounded-xl hover:border-red transition-all duration-300"
+    />
+    {!isEditing && (
+      <div className="absolute inset-0 bg-gray-100/50 rounded-xl" />
+    )}
+  </div>
+  <FilePreview
+    file={files.fotoKtp || null}
+    existingPath={files.fotoKtpPath}
+    onRemove={() => setFiles(prev => ({
+      ...prev, 
+      fotoKtp: null,
+      fotoKtpPath: undefined
+    }))}
+    disabled={!isEditing}
+    label="Foto KTP"
+  />
+</div>
 
-                    {/* Upload Sertifikat Sabuk */}
-                    <div className="space-y-2 sm:space-y-3">
-                      <label className="block font-plex font-semibold text-black/80 text-sm">
-                        Upload Sertifikat Sabuk
-                      </label>
-                      <div className="relative">
-                        <FileInput
-                          accept="image/*"
-                          disabled={!isEditing}
-                          file={files?.sertifikatSabuk instanceof File ? files.sertifikatSabuk : null}
-                          previewUrl={typeof files?.sertifikatSabuk === "string" ? files.sertifikatSabuk : undefined}
-                          onChange={(e) =>
-                            setFiles({ ...files, sertifikatSabuk: e.target.files?.[0] || files?.sertifikatSabuk })
-                          }
-                        />
-                        {!isEditing && (
-                          <div className="absolute inset-0 bg-gray-100/50 rounded-xl" />
-                        )}
-                      </div>
-                    </div>
+                    // Ganti bagian Upload Sertifikat Sabuk dengan:
+<div className="space-y-2 sm:space-y-3">
+  <label className="block font-plex font-semibold text-black/80 text-sm">
+    Upload Sertifikat Sabuk
+  </label>
+  <div className="relative">
+    <FileInput
+      accept="image/*,application/pdf"
+      disabled={!isEditing}
+      onChange={(e) => setFiles(prev => ({
+        ...prev, 
+        sertifikatSabuk: e.target.files?.[0] || null
+      }))}
+      className="border-red/20 bg-white/50 backdrop-blur-sm rounded-xl hover:border-red transition-all duration-300"
+    />
+    {!isEditing && (
+      <div className="absolute inset-0 bg-gray-100/50 rounded-xl" />
+    )}
+  </div>
+  <FilePreview
+    file={files.sertifikatSabuk || null}
+    existingPath={files.sertifikatSabukPath}
+    onRemove={() => setFiles(prev => ({
+      ...prev, 
+      sertifikatSabuk: null,
+      sertifikatSabukPath: undefined
+    }))}
+    disabled={!isEditing}
+    label="Sertifikat Sabuk"
+  />
+</div>
                   </div>
                 </div>
               </div>
