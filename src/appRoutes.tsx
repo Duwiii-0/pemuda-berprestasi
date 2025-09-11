@@ -18,6 +18,7 @@ import ResetPassword from "./pages/auth/changepassword";
 import Home from "./pages/landingPage/home";
 import Event from "./pages/landingPage/event";
 import NotFound from "./pages/notFound";
+import TutorialPage from "./pages/landingPage/tutorial";
 
 // Dashboard
 import DataAtlit from "./pages/dashboard/dataAtlit";
@@ -190,6 +191,7 @@ export default function AppRoutes() {
         <Route element={<LandingLayout />}>
           <Route index element={<Home />} />
           <Route path="events" element={<Event />} />
+          <Route path="tutorial" element={<TutorialPage/>}/>
         </Route>
 
         {/* Settings - protected route */}
