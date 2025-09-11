@@ -369,9 +369,9 @@ const response = await apiClient.put(
                 ) : (
                   !isEditing ? (
                     <GeneralButton
-                      label="Ubah Data Atlit"
+                      label="Ubah Data Dojang"
                       className="text-white bg-gradient-to-r from-red to-red/80 hover:from-red/90 hover:to-red/70 border-0 shadow-lg flex items-center gap-2 w-full sm:w-auto text-sm lg:text-base px-4 lg:px-6 py-2.5 lg:py-3"
-                      onClick={() => setIsEditing(true)}
+                      onClick={() => toast.error("Fitur ini akan segera tersedia!!")}
                     />
                   ) : (
                     <div className="flex gap-2 lg:gap-3 w-full sm:w-auto">
