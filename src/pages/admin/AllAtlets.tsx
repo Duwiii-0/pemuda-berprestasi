@@ -245,6 +245,7 @@ const AllAtlets: React.FC = () => {
               }}
               onChange={(selected) => setFilterGender(selected?.value as any)}
               options={[
+                { value: "ALL", label: "Semua Gender" },
                 { value: "LAKI_LAKI", label: "Laki-Laki" },
                 { value: "PEREMPUAN", label: "Perempuan" },
               ]}
