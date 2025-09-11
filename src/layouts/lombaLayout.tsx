@@ -15,7 +15,7 @@ export default function LombaLayout() {
   const handleConfirmLogout = () => {
     setIsOpen(false);
     logout(); // ⬅️ pakai context logout
-    navigate("/lomba/home"); // ⬅️ redirect ke halaman utama
+    navigate("/event/home"); // ⬅️ redirect ke halaman utama
   };
 
   useEffect(() => {

@@ -51,9 +51,9 @@ const NavbarLomba = ({ onLogoutRequest }: { onLogoutRequest: () => void }) => {
 
   // Navigation items
   const navItems = [
-    { to: "/lomba/home", label: "Beranda" },
-    { to: "/lomba/timeline", label: "Timeline" },
-    { to: "/lomba/faq", label: "FAQ" }
+    { to: "/event/home", label: "Beranda" },
+    { to: "/event/timeline", label: "Timeline" },
+    { to: "/event/faq", label: "FAQ" }
   ];
 
   const getDashboardLink = () => {
