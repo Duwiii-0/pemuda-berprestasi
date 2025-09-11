@@ -243,66 +243,57 @@ class PelatihService {
   }
 
   async handleFileUpload(id_pelatih: number, files: any) {
-    const pelatih = await prisma.tb_pelatih.findUnique({
-      where: { id_pelatih }
-    })
+  const pelatih = await prisma.tb_pelatih.findUnique({
+    where: { id_pelatih }
+  })
 
-    if (!pelatih) {
-      throw new Error('Pelatih not found')
-    }
-
-    const updateData: any = {}
-
-    if (files.foto_ktp && files.foto_ktp[0]) {
-      updateData.foto_ktp = files.foto_ktp[0].filename
-    }
-
-    if (files.sertifikat_sabuk && files.sertifikat_sabuk[0]) {
-      updateData.sertifikat_sabuk = files.sertifikat_sabuk[0].filename
-    }
-
-    if (Object.keys(updateData).length > 0) {
-      await prisma.tb_pelatih.update({
-        where: { id_pelatih },
-        data: updateData
-      })
-    }
-
-    return await this.getUploadedFiles(id_pelatih)
+  if (!pelatih) {
+    throw new Error('Pelatih not found')
   }
 
-  async getUploadedFiles(id_pelatih: number): Promise<{
-    foto_ktp: FileInfo | null
-    sertifikat_sabuk: FileInfo | null
-  }> {
-    const pelatih = await prisma.tb_pelatih.findUnique({
+  const updateData: any = {}
+
+  if (files.foto_ktp && files.foto_ktp[0]) {
+    updateData.foto_ktp = files.foto_ktp[0].filename
+  }
+
+  if (files.sertifikat_sabuk && files.sertifikat_sabuk[0]) {
+    updateData.sertifikat_sabuk = files.sertifikat_sabuk[0].filename
+  }
+
+  if (Object.keys(updateData).length > 0) {
+    await prisma.tb_pelatih.update({
       where: { id_pelatih },
-      select: { foto_ktp: true, sertifikat_sabuk: true }
+      data: updateData
     })
-
-    if (!pelatih) {
-      throw new Error('Pelatih not found')
-    }
-
-    const checkFile = (filename: string | null, type: 'ktp' | 'sertifikat'): FileInfo | null => {
-      if (!filename) return null
-
-      const filePath = path.join(process.cwd(), 'uploads', 'pelatih', type, filename)
-      const exists = fs.existsSync(filePath)
-
-      return {
-        filename,
-        path: `uploads/pelatih/${type}/${filename}`,
-        exists,
-        uploadedAt: exists ? fs.statSync(filePath).mtime : undefined
-      }
-    }
-
-    return {
-      foto_ktp: checkFile(pelatih.foto_ktp, 'ktp'),
-      sertifikat_sabuk: checkFile(pelatih.sertifikat_sabuk, 'sertifikat')
-    }
   }
+
+  // Return simple object dengan filename
+  return {
+    foto_ktp: updateData.foto_ktp || pelatih.foto_ktp,
+    sertifikat_sabuk: updateData.sertifikat_sabuk || pelatih.sertifikat_sabuk
+  }
+}
+
+async getUploadedFiles(id_pelatih: number): Promise<{
+  foto_ktp: string | null
+  sertifikat_sabuk: string | null
+}> {
+  const pelatih = await prisma.tb_pelatih.findUnique({
+    where: { id_pelatih },
+    select: { foto_ktp: true, sertifikat_sabuk: true }
+  })
+
+  if (!pelatih) {
+    throw new Error('Pelatih not found')
+  }
+
+  // Return simple filename string, bukan object kompleks
+  return {
+    foto_ktp: pelatih.foto_ktp,
+    sertifikat_sabuk: pelatih.sertifikat_sabuk
+  }
+}
 
   async deleteFile(id_pelatih: number, fileType: 'foto_ktp' | 'sertifikat_sabuk') {
     const pelatih = await prisma.tb_pelatih.findUnique({
