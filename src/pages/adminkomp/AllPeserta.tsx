@@ -20,7 +20,7 @@ const AllPeserta: React.FC = () => {
   const [filterStatus, setFilterStatus] = useState<"ALL" | "PENDING" | "APPROVED" | "REJECTED">("ALL");
   const [filterCategory, setFilterCategory] = useState<"ALL" | "KYORUGI" | "POOMSAE">("ALL");
   const [filterKelasBerat, setFilterKelasBerat] = useState<string>("ALL");
-  const [filterKelasUsia, setFilterKelasUsia] = useState<"ALL" | "Cadet" | "Junior" | "Senior">("ALL");
+  const [filterKelasUsia, setFilterKelasUsia] = useState<"ALL" | "Super Pra-cadet" | "Pracadet" | "Cadet" | "Junior" | "Senior" >("ALL");
   const [filterLevel, setFilterLevel] = useState<"pemula" | "prestasi" | null>(null);
   const [filterDojang, setFilterDojang] = useState<string>("ALL");
   const { dojangOptions, refreshDojang, isLoading } = useDojang();
@@ -234,10 +234,12 @@ const AllPeserta: React.FC = () => {
   ];
 
   const ageOptions = [
-    { value: "ALL", label: "Semua Usia" },
-    { value: "Cadet", label: "Cadet" },
-    { value: "Junior", label: "Junior" },
-    { value: "Senior", label: "Senior" },
+    { value: "ALL", label: "Semua Kelompok Umur" },
+    { value: "Super Pra-cadet", label: "Super Pra-Cadet (2017-2020)" },
+    { value: "Pracadet", label: "Pracadet (2014-2016)" },
+    { value: "Cadet", label: "Cadet (2011-2013)" },
+    { value: "Junior", label: "Junior (2008-2010)" },
+    { value: "Senior", label: "Senior (2007 ke atas)" },
   ];
 
   const getStatusBadge = (status: string) => {
@@ -720,7 +722,7 @@ const AllPeserta: React.FC = () => {
                               : "-"}
                           </td>
                           <td className="py-3 px-4 text-center text-sm" style={{ color: '#050505', opacity: 0.7 }}>{kelasUsia}</td>
-                          <td className="py-3 px-4 text-center text-sm" style={{ color: '#050505', opacity: 0.7 }}>{jenisKelamin}</td>
+                          <td className="py-3 px-4 text-center text-sm" style={{ color: '#050505', opacity: 0.7 }}>{jenisKelamin === "LAKI_LAKI" ? "Laki-Laki" : "Perempuan"}</td>
                           <td className="py-3 px-4 text-sm text-center" style={{ color: '#050505', opacity: 0.7 }}>
                             <div className="max-w-[150px] truncate" title={dojang}>
                               {dojang}
