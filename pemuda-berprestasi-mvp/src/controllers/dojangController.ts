@@ -1,4 +1,4 @@
-mport { Request, Response } from 'express';
+import { Request, Response } from 'express';
 import { DojangService } from '../services/dojangService';
 import { PrismaClient } from '@prisma/client';
 
