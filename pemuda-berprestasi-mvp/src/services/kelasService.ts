@@ -69,15 +69,17 @@ getKelasKejuaraan: async (kompetisiId: number, filter: {
       whereCondition.id_poomsae = filter.poomsaeId;
     }
     // Jangan tambahkan OR array atau field lain
-  } else {
-    // Untuk KYORUGI pemula tetap OR array atau aturan lain
-    const orConditions: any[] = [
-      { id_kelompok: null, id_kelas_berat: null, id_poomsae: null } // fallback
-    ];
-    if (filter.kelompokId) orConditions.push({ id_kelompok: filter.kelompokId });
-    if (filter.styleType === "KYORUGI" && filter.kelasBeratId) orConditions.push({ id_kelas_berat: filter.kelasBeratId });
-    whereCondition.OR = orConditions;
+  } else if (filter.styleType === "KYORUGI") {
+    if (!filter.kelompokId || !filter.kelasBeratId || !filter.gender) {
+      throw new Error("KYORUGI pemula requires kelompokId, kelasBeratId, and gender");
+    }
+    whereCondition.id_kelompok = filter.kelompokId;
+    whereCondition.id_kelas_berat = filter.kelasBeratId;
+    whereCondition.kelas_berat = {
+      jenis_kelamin: filter.gender
+    };
   }
+
 }
 
 
