@@ -300,14 +300,11 @@ async function seedKelasKejuaraan(idKompetisi: number) {
 
 async function main() {
   
-  const penyelenggara = await seedPenyelenggara();
-  const kompetisi = await seedKompetisi(penyelenggara.id_penyelenggara);
-
   await seedKelompokUsia();
   await seedKelasBerat();
   await seedKategoriEvent();
   await seedKelasPoomsae();
-  await seedKelasKejuaraan(kompetisi.id_kompetisi);
+  await seedKelasKejuaraan(1);
 }
 
 
