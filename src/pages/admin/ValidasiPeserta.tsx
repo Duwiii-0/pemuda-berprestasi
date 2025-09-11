@@ -39,7 +39,7 @@ const ValidasiPeserta: React.FC = () => {
   const [teamModalOpen, setTeamModalOpen] = useState(false);
   const [selectedTeam, setSelectedTeam] = useState<any>(null);
   const navigate = useNavigate();
-  const [filterKelompokUsia, setFilterKelompokUsia] = useState<"ALL" | "Cadet" | "Junior" | "Senior">("ALL");
+  const [filterKelompokUsia, setFilterKelompokUsia] = useState<"ALL" | "Super Pra-cadet" | "Pracadet" | "Cadet" | "Junior" | "Senior" >("ALL");
   const [filterLevel, setFilterLevel] = useState<"ALL" | "pemula" | "prestasi" | null>(null);
   const [filterDojang, setFilterDojang] = useState<string>("ALL");
   const [filterKelasBerat, setFilterKelasBerat] = useState<"ALL" | string>("ALL");
@@ -503,7 +503,7 @@ const handleRejection = async (id: number) => {
                 { value: "POOMSAE", label: "POOMSAE" },
                 { value: "KYORUGI", label: "KYORUGI" },
               ]}
-              placeholder="Pilih kategori"
+              placeholder="Kyorugi/Poomsae"
               classNames={{
                 control: () =>
                   `w-full flex items-center border border-black/20 rounded-2xl px-3 py-3 gap-2 transition-all duration-300 hover:shadow-sm focus-within:border-yellow-500 focus-within:ring-2 focus-within:ring-yellow-500/20`,
@@ -532,10 +532,12 @@ const handleRejection = async (id: number) => {
               }}
               onChange={(selected) => setFilterKelompokUsia(selected?.value as any)}
               options={[
-                { value: "ALL", label: "Semua Usia" },
-                { value: "Cadet", label: "Cadet" },
-                { value: "Junior", label: "Junior" },
-                { value: "Senior", label: "Senior" },
+                { value: "ALL", label: "Semua Kelompok Umur" },
+                { value: "Super Pra-cadet", label: "Super Pra-Cadet (2017-2020)" },
+                { value: "Pracadet", label: "Pracadet (2014-2016)" },
+                { value: "Cadet", label: "Cadet (2011-2013)" },
+                { value: "Junior", label: "Junior (2008-2010)" },
+                { value: "Senior", label: "Senior (2007 ke atas)" },
               ]}
               placeholder="Pilih kelompok usia"
               classNames={{
@@ -557,7 +559,7 @@ const handleRejection = async (id: number) => {
           </div>
 
           <div>
-            <label className="block text-black/60 text-xs mb-2 font-medium font-inter">Kategori</label>
+            <label className="block text-black/60 text-xs mb-2 font-medium font-inter">Level</label>
             <Select
   unstyled
   value={{
@@ -593,7 +595,7 @@ const handleRejection = async (id: number) => {
           </div>
 
           <div>
-            <label className="block text-black/60 text-xs mb-2 font-medium font-inter">Kategori</label>
+            <label className="block text-black/60 text-xs mb-2 font-medium font-inter">Kelas Berat</label>
             <Select
               unstyled
               value={{
@@ -621,7 +623,7 @@ const handleRejection = async (id: number) => {
             />
           </div>
           <div>
-            <label className="block text-black/60 text-xs mb-2 font-medium font-inter">Kategori</label>
+            <label className="block text-black/60 text-xs mb-2 font-medium font-inter">Dojang</label>
 <Select
   unstyled
   value={
@@ -632,33 +634,22 @@ const handleRejection = async (id: number) => {
   onChange={(selected) => setFilterDojang(selected?.value || "ALL")}
   options={[{ value: "ALL", label: "Semua Dojang" }, ...dojangOptions]}
   placeholder="Pilih Dojang"
-  classNames={{
-    control: () =>
-      `w-full px-3 py-2.5 rounded-xl border shadow-sm text-sm transition-colors 
-       focus:ring-2 focus:border-transparent`,
-    valueContainer: () => "px-1",
-    placeholder: () => "text-black/40 text-sm",
-    menu: () =>
-      "border border-black/10 bg-white rounded-xl shadow-lg mt-2 overflow-hidden z-50",
-    menuList: () => "max-h-40 overflow-y-auto",
-    option: ({ isFocused, isSelected }) =>
-      [
-        "px-3 py-2.5 cursor-pointer text-sm transition-colors",
-        isFocused ? "bg-yellow-50 text-black" : "text-black/70",
-        isSelected ? "bg-yellow-500 text-black" : "",
-      ].join(" "),
-  }}
-  styles={{
-    control: (base) => ({
-      ...base,
-      borderColor: "#990D35",
-      backgroundColor: "#F5FBEF",
-      color: "#050505",
-      boxShadow: "none",
-    }),
-  }}
-/>
-
+              classNames={{
+                control: () =>
+                  `w-full flex items-center border border-black/20 rounded-2xl px-3 py-3 gap-2 transition-all duration-300 hover:shadow-sm focus-within:border-yellow-500 focus-within:ring-2 focus-within:ring-yellow-500/20`,
+                valueContainer: () => "px-1",
+                placeholder: () => "text-black/40 text-sm font-inter",
+                menu: () =>
+                  "border border-black/10 bg-white rounded-xl shadow-lg mt-2 overflow-hidden z-50",
+                menuList: () => "max-h-40 overflow-y-auto",
+                option: ({ isFocused, isSelected }) =>
+                  [
+                    "px-3 py-3 cursor-pointer text-sm transition-colors duration-200 font-inter",
+                    isFocused ? "bg-yellow-50 text-black" : "text-black/70",
+                    isSelected ? "bg-yellow-500 text-black" : "",
+                  ].join(" "),
+              }}
+            />
           </div>
         </div>
       </div>
