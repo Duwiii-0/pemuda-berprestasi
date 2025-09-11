@@ -406,7 +406,7 @@ const response = await apiClient.put(
 {/* Desktop Form */}
 {userDojang && !loading && (
   <div className="hidden lg:block space-y-6">
-    {/* Logo Section - Desktop - TAMBAHKAN INI SEBAGAI SECTION PERTAMA */}
+    {/* Logo Section - Desktop - TAMBAHKAN INI SEBAGAI SECTION PERTAMA
     <div className="bg-white/80 rounded-xl p-6 shadow-md border border-white/50">
       <h3 className="font-bebas text-lg lg:text-xl text-black/80 mb-4 flex items-center gap-2">
         <Upload size={20} className="text-red" />
@@ -460,7 +460,7 @@ const response = await apiClient.put(
           </div>
         </div>
       )}
-    </div>
+    </div> */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                   <div className="space-y-2">
                     <label className="block font-plex font-medium text-black/70 text-sm">
@@ -594,7 +594,7 @@ const response = await apiClient.put(
 {/* Mobile Form */}
 {userDojang && !loading && (
   <div className="lg:hidden space-y-4">
-    {/* Logo Section - Mobile - TAMBAHKAN INI SEBAGAI SECTION PERTAMA */}
+    {/* Logo Section - Mobile - TAMBAHKAN INI SEBAGAI SECTION PERTAMA
     <div className="bg-white/80 rounded-xl p-4 shadow-md border border-white/50">
       <h3 className="font-bebas text-lg text-black/80 mb-3 flex items-center gap-2">
         <Upload size={18} className="text-red" />
@@ -643,7 +643,7 @@ const response = await apiClient.put(
           </div>
         </div>
       )}
-    </div>
+    </div> */}
 
     {/* Basic Info Card - EXISTING CODE TETAP SAMA */}
     <div className="bg-white/80 rounded-xl p-4 shadow-md border border-white/50">
