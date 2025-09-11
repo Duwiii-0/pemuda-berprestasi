@@ -3,73 +3,92 @@ import FaqCard from "../components/faqCard";
 const FAQ = () => {
     // FAQ Data Structure
     const faqSections = [
-        {
-            title: "Pendaftaran & Persyaratan",
-            description: "Informasi lengkap mengenai proses pendaftaran, syarat peserta, dan dokumen yang diperlukan",
-            questions: [
-                {
-                    question: "Bagaimana cara mendaftar untuk Sriwijaya Championship 2025?",
-                    answer: "Anda dapat mendaftar melalui website resmi dengan membuat akun terlebih dahulu, kemudian memilih kategori lomba, mengupload dokumen yang diperlukan, dan melakukan konfirmasi pendaftaran."
-                },
-                {
-                    question: "Apa saja persyaratan untuk mengikuti kompetisi?",
-                    answer: "Peserta harus memiliki sertifikat sabuk minimal, kartu identitas yang masih berlaku, surat kesehatan dari dokter, dan melakukan pembayaran biaya pendaftaran sesuai kategori."
-                },
-                {
-                    question: "Apakah ada batas usia untuk setiap kategori?",
-                    answer: "Ya, setiap kategori memiliki batasan usia yang berbeda. Kategori Children (6-11 tahun), Cadet (12-14 tahun), Junior (15-17 tahun), dan Senior (18+ tahun)."
-                },
-                {
-                    question: "Berapa biaya pendaftaran untuk setiap kategori?",
-                    answer: "Biaya pendaftaran bervariasi tergantung kategori dan jenis kompetisi. Silakan hubungi panitia atau download buku panduan untuk informasi detail mengenai biaya."
-                }
-            ]
-        },
-        {
-            title: "Kategori & Kompetisi",
-            description: "Detail mengenai berbagai kategori kompetisi yang tersedia dan aturan pertandingan",
-            questions: [
-                {
-                    question: "Apa saja kategori kompetisi yang tersedia?",
-                    answer: "Tersedia 3 kategori utama: Kyorugi (sparring), Poomsae (bentuk), dan Freestyle Poomsae. Masing-masing kategori dibagi berdasarkan kelompok usia dan tingkat sabuk."
-                },
-                {
-                    question: "Apakah ada kategori tim atau hanya individual?",
-                    answer: "Kompetisi menyediakan kategori individual dan tim. Untuk kategori tim, setiap tim terdiri dari 3-5 orang sesuai dengan aturan yang berlaku."
-                },
-                {
-                    question: "Bagaimana sistem penilaian dalam kompetisi?",
-                    answer: "Sistem penilaian mengikuti standar World Taekwondo (WT) dan dilakukan oleh juri bersertifikat internasional untuk memastikan objektifitas dan profesionalitas."
-                },
-                {
-                    question: "Apakah peserta internasional bisa mengikuti kompetisi?",
-                    answer: "Ya, kompetisi ini terbuka untuk peserta internasional. Peserta dari luar negeri harus melengkapi dokumen visa dan mengikuti prosedur pendaftaran yang sama."
-                }
-            ]
-        },
-        {
-            title: "Teknis & Fasilitas",
-            description: "Informasi mengenai fasilitas venue, jadwal pertandingan, dan hal-hal teknis lainnya",
-            questions: [
-                {
-                    question: "Di mana lokasi penyelenggaraan kompetisi?",
-                    answer: "Kompetisi akan diselenggarakan di Jakarta dengan venue yang akan diumumkan lebih lanjut. Sekretariat berada di Jl. Puri Depok Mas Blok L No.15, Pancoran Mas, Depok."
-                },
-                {
-                    question: "Kapan jadwal pelaksanaan kompetisi?",
-                    answer: "Jadwal detail kompetisi akan diumumkan setelah periode pendaftaran berakhir. Informasi terbaru dapat dilihat di website resmi atau media sosial kami."
-                },
-                {
-                    question: "Apa saja fasilitas yang disediakan untuk peserta?",
-                    answer: "Kami menyediakan area pemanasan, medical support, tempat istirahat, konsumsi untuk peserta, dan area parkir yang memadai."
-                },
-                {
-                    question: "Bagaimana jika ada perubahan jadwal mendadak?",
-                    answer: "Setiap perubahan jadwal akan diinformasikan melalui website resmi, email peserta yang terdaftar, dan pengumuman di venue kompetisi."
-                }
-            ]
-        }
-    ];
+  {
+    title: "Pendaftaran & Persyaratan",
+    description: "Informasi lengkap mengenai proses pendaftaran, syarat peserta, dan dokumen yang diperlukan",
+    questions: [
+      {
+        question: "Kapan periode pendaftaran dibuka dan ditutup?",
+        answer: "Pendaftaran dibuka mulai 1 Agustus 2025 dan ditutup pada 8 November 2025, atau lebih cepat jika kuota sudah terpenuhi."
+      },
+      {
+        question: "Apa saja persyaratan umum untuk peserta?",
+        answer: "Peserta harus sehat jasmani & rohani, merupakan taekwondoin di bawah naungan PBTI, tidak sedang menjalani sanksi, melampirkan rekomendasi Pengprov/MNA (untuk WNA), BPJS (WNI) atau asuransi (WNA), fotokopi akta kelahiran, sertifikat taekwondo, pas foto 3x4 (2 lembar), dan surat keterangan sehat (khusus prestasi)."
+      },
+      {
+        question: "Berapa biaya pendaftaran untuk kejuaraan ini?",
+        answer: "Biaya pendaftaran adalah Rp 500.000/atlet untuk WNI dan Rp 1.000.000/atlet untuk WNA."
+      },
+      {
+        question: "Bagaimana cara melakukan pembayaran pendaftaran?",
+        answer: "Pembayaran dilakukan ke rekening a.n Panitia UKT Pengprov TISS No. 19309010367. Konfirmasi pembayaran dikirim melalui nomor panitia (Jeje: 0853-7844-1489)."
+      }
+    ]
+  },
+  {
+    title: "Kategori & Kompetisi",
+    description: "Detail mengenai kategori pertandingan yang tersedia dan aturan penilaian",
+    questions: [
+      {
+        question: "Apa saja kategori usia yang dipertandingkan?",
+        answer: "Kategori usia meliputi: Super Pra-Cadet (5–8 tahun, kelahiran 2017–2020), Pra-Cadet (9–11 tahun, kelahiran 2014–2016), Cadet (12–14 tahun, kelahiran 2011–2013), Junior (15–17 tahun, kelahiran 2008–2010), dan Senior (18 tahun ke atas, kelahiran 2007 atau sebelumnya)."
+      },
+      {
+        question: "Apa saja jenis kompetisi yang tersedia?",
+        answer: "Kompetisi terdiri dari Kyorugi (pemula & prestasi), Poomsae (recognized dan freestyle, individu putra/putri), serta kategori beregu sesuai ketentuan."
+      },
+      {
+        question: "Bagaimana sistem penilaian yang digunakan?",
+        answer: "Kyorugi pemula menggunakan DSS (Digital Scoring System), kyorugi prestasi menggunakan aturan WT Competition Rules, sedangkan Poomsae (pemula & prestasi) menggunakan sistem gugur (battle)."
+      },
+      {
+        question: "Apakah atlet bisa mengikuti lebih dari satu kategori?",
+        answer: "Ya, atlet dapat bertanding di Kyorugi dan Poomsae sekaligus, dengan mendapatkan 2 ID card."
+      }
+    ]
+  },
+  {
+    title: "Teknis & Fasilitas",
+    description: "Informasi mengenai lokasi, jadwal, fasilitas, dan akomodasi",
+    questions: [
+      {
+        question: "Di mana lokasi penyelenggaraan kejuaraan?",
+        answer: "Kejuaraan akan dilaksanakan di GOR Ranau Jakabaring Sport City (JSC) Palembang, Sumatera Selatan."
+      },
+      {
+        question: "Kapan jadwal pertandingan berlangsung?",
+        answer: "Pertandingan berlangsung pada 22–26 November 2025. Penimbangan atlet dilakukan 21 November 2025 (10.00–15.00 WIB), dilanjutkan dengan Technical Meeting pada pukul 15.30 WIB."
+      },
+      {
+        question: "Apa saja fasilitas untuk peserta di venue?",
+        answer: "Tersedia area pemanasan, dukungan medis, shuttle bus di kawasan JSC, serta akses transportasi umum seperti Transmusi, LRT, Grab, dan Gojek."
+      },
+      {
+        question: "Apakah ada rekomendasi penginapan untuk peserta?",
+        answer: "Ya, panitia merekomendasikan beberapa hotel dekat venue seperti Wyndham Opi Hotel (1,8 km), Opi Indah Hotel (1,7 km), Ayola Sentosa Palembang (5,1 km), dan Ibis Palembang Sanggar (5,2 km)."
+      }
+    ]
+  },
+  {
+    title: "Penghargaan & Hadiah",
+    description: "Detail mengenai penghargaan, medali, dan hadiah pembinaan",
+    questions: [
+      {
+        question: "Apa penghargaan untuk juara umum kategori prestasi?",
+        answer: "Juara Umum 1: Rp 30.000.000 + piala, piagam, dan hadiah sponsor. Juara Umum 2: Rp 15.000.000. Juara Umum 3: Rp 7.500.000."
+      },
+      {
+        question: "Apa penghargaan untuk juara umum kategori pemula?",
+        answer: "Juara Umum 1: Rp 15.000.000, Juara Umum 2: Rp 10.000.000, Juara Umum 3: Rp 5.000.000, beserta piala, piagam, dan hadiah sponsor."
+      },
+      {
+        question: "Apakah ada penghargaan individu?",
+        answer: "Ya, atlet terbaik di setiap kategori (Pracadet, Cadet, Junior, Senior, dan Poomsae) akan mendapatkan uang pembinaan Rp 1.000.000 serta piagam penghargaan."
+      }
+    ]
+  }
+];
+
 
     return(
         <div className="min-h-screen w-full bg-gradient-to-br from-white via-yellow/[0.01] to-white pt-10 lg:pt-0">
