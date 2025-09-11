@@ -196,7 +196,7 @@ const RegisterDojang = () => {
             {/* Email */}
             <div className="space-y-1.5">
               <label className="text-xs md:text-sm font-plex font-medium text-black/80 block">
-                Email <span className="text-xs text-black/50">(Opsional)</span>
+                Email <span className="text-xs text-black/50"></span>
               </label>
               <div className="relative group">
                 <TextInput
@@ -214,7 +214,7 @@ const RegisterDojang = () => {
             {/* No HP */}
             <div className="space-y-1.5">
               <label className="text-xs md:text-sm font-plex font-medium text-black/80 block">
-                No HP <span className="text-xs text-black/50">(Opsional)</span>
+                No HP <span className="text-xs text-black/50"></span>
               </label>
               <div className="relative group">
                 <TextInput
@@ -233,7 +233,7 @@ const RegisterDojang = () => {
               {/* Provinsi */}
               <div className="space-y-1.5">
                 <label className="text-xs md:text-sm font-plex font-medium text-black/80 block">
-                  Provinsi <span className="text-xs text-black/50">(Opsional)</span>
+                  Provinsi <span className="text-xs text-black/50"></span>
                 </label>
                 <Select
                   unstyled
@@ -271,7 +271,7 @@ const RegisterDojang = () => {
               {/* Kota */}
               <div className="space-y-1.5">
                 <label className="text-xs md:text-sm font-plex font-medium text-black/80 block">
-                  Kota <span className="text-xs text-black/50">(Opsional)</span>
+                  Kota <span className="text-xs text-black/50"></span>
                 </label>
                 <Select
                   unstyled
@@ -310,7 +310,7 @@ const RegisterDojang = () => {
             {/* Negara */}
             <div className="space-y-1.5">
               <label className="text-xs md:text-sm font-plex font-medium text-black/80 block">
-                Negara <span className="text-xs text-black/50">(Opsional)</span>
+                Negara <span className="text-xs text-black/50"></span>
               </label>
               <div className="relative group">
                 <TextInput
