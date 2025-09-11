@@ -197,25 +197,36 @@ const RegisterDojang = () => {
   };
 
   const handleLogoChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target?.files?.[0];
-    if (file) {
-      // Validasi ukuran file (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error("Ukuran file maksimal 5MB");
-        return;
-      }
+  const file = e.target?.files?.[0];
+  if (!file) return;
 
-      // Validasi tipe file
-      const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'];
-      if (!allowedTypes.includes(file.type)) {
-        toast.error("Format file harus JPG, PNG, JPEG, atau WebP");
-        return;
-      }
+  console.log('📸 Selected file:', file.name, 'Size:', file.size, 'Type:', file.type);
 
-      setLogoFile(file);
-      toast.success(`Logo ${file.name} berhasil dipilih`);
-    }
-  };
+  // Validasi ukuran file (max 5MB)
+  if (file.size > 5 * 1024 * 1024) {
+    toast.error("Ukuran file maksimal 5MB");
+    e.target.value = ''; // Reset input
+    return;
+  }
+
+  // Validasi tipe file
+  const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'];
+  if (!allowedTypes.includes(file.type)) {
+    toast.error("Format file harus JPG, PNG, JPEG, atau WebP");
+    e.target.value = ''; // Reset input
+    return;
+  }
+
+  // Validasi nama file
+  if (file.name.length > 255) {
+    toast.error("Nama file terlalu panjang");
+    e.target.value = ''; // Reset input
+    return;
+  }
+
+  setLogoFile(file);
+  toast.success(`Logo ${file.name} berhasil dipilih`);
+};
 
   const removeLogo = () => {
     setLogoFile(null);
@@ -229,82 +240,176 @@ const RegisterDojang = () => {
     toast.success("Logo berhasil dihapus");
   };
 
-  const handleRegister = async () => {
-    setIsLoading(true);
-    try {
-      // Menggunakan FormData untuk upload file
-      const formData = new FormData();
-      
-      formData.append('nama_dojang', namaDojang.trim());
-      formData.append('email', email.trim() || "");
-      formData.append('no_telp', no_telp.trim() || "");
-      formData.append('negara', negara.trim() || "");
-      formData.append('provinsi', provinsi.trim() || "");
-      formData.append('kota', kabupaten.trim() || "");
-      
-      // Tambahkan file logo jika ada
-      if (logoFile) {
-        formData.append('logo', logoFile);
-        console.log('Uploading logo:', logoFile.name);
-      }
+  const resetForm = () => {
+  setNamaDojang("");
+  setEmail("");
+  setno_telp("");
+  setKabupaten("");
+  setProvinsi("");
+  setNegara("");
+  setLogoFile(null);
+  
+  // Reset file inputs
+  const fileInputDesktop = document.getElementById('logo-upload') as HTMLInputElement;
+  const fileInputMobile = document.getElementById('logo-upload-mobile') as HTMLInputElement;
+  if (fileInputDesktop) fileInputDesktop.value = '';
+  if (fileInputMobile) fileInputMobile.value = '';
+};
 
-      // Gunakan postFormData untuk upload file
-      await apiClient.postFormData("/dojang", formData);
+  // Perbaiki fungsi handleRegister
+const handleRegister = async () => {
+  setIsLoading(true);
+  try {
+    // Debugging: Log semua data sebelum dikirim
+    console.log('📝 Data yang akan dikirim:', {
+      nama_dojang: namaDojang.trim(),
+      email: email.trim(),
+      no_telp: no_telp.trim(),
+      negara: negara.trim(),
+      provinsi: provinsi.trim(),
+      kota: kabupaten.trim(),
+      logo: logoFile?.name || 'tidak ada'
+    });
 
-      toast.success("Registrasi dojang berhasil! Silahkan registrasi.");
-
-      // Reset form
-      setNamaDojang("");
-      setEmail("");
-      setno_telp("");
-      setKabupaten("");
-      setProvinsi("");
-      setNegara("");
-      setLogoFile(null);
-      
-      // Reset file inputs
-      const fileInputDesktop = document.getElementById('logo-upload') as HTMLInputElement;
-      const fileInputMobile = document.getElementById('logo-upload-mobile') as HTMLInputElement;
-      if (fileInputDesktop) fileInputDesktop.value = '';
-      if (fileInputMobile) fileInputMobile.value = '';
-
-    } catch (err: any) {
-      console.error('Registration error:', err);
-      if (err.data?.errors) {
-        toast.error("Ada field yang tidak valid.");
-      } else {
-        toast.error(err.response?.data?.message || "Registrasi gagal");
-      }
-    } finally {
-      setIsLoading(false);
+    // Validasi data sebelum dikirim
+    if (!namaDojang.trim()) {
+      toast.error("Nama dojang tidak boleh kosong");
+      return;
     }
-  };
+
+    // Menggunakan FormData untuk upload file
+    const formData = new FormData();
+    
+    // Pastikan semua field tidak undefined/null
+    formData.append('nama_dojang', namaDojang.trim() || '');
+    formData.append('email', email.trim() || '');
+    formData.append('no_telp', no_telp.trim() || '');
+    formData.append('negara', negara.trim() || 'Indonesia');
+    formData.append('provinsi', provinsi.trim() || '');
+    formData.append('kota', kabupaten.trim() || '');
+    
+    // Tambahkan file logo jika ada
+    if (logoFile) {
+      formData.append('logo', logoFile);
+      console.log('📎 Uploading logo:', logoFile.name, 'Size:', logoFile.size);
+    }
+
+    // Debug FormData contents
+    console.log('📤 FormData contents:');
+    for (let [key, value] of formData.entries()) {
+      if (value instanceof File) {
+        console.log(`${key}:`, value.name, `(${value.size} bytes)`);
+      } else {
+        console.log(`${key}:`, value);
+      }
+    }
+
+    // Kirim request dengan error handling yang lebih baik
+    const response = await apiClient.postFormData("/dojang", formData);
+    
+    console.log('✅ Registration response:', response);
+    toast.success("Registrasi dojang berhasil! Silahkan login.");
+
+    // Reset form setelah berhasil
+    resetForm();
+
+  } catch (err: any) {
+    console.error('❌ Registration error:', err);
+    
+    // Handle berbagai jenis error
+    if (err?.response?.status === 400) {
+      // Bad Request - biasanya validation error
+      const errorData = err.response?.data;
+      console.error('📋 Error data:', errorData);
+      
+      if (errorData?.message) {
+        toast.error(errorData.message);
+      } else if (errorData?.errors) {
+        // Handle validation errors
+        const firstError = Object.values(errorData.errors)[0];
+        if (Array.isArray(firstError)) {
+          toast.error(firstError[0] as string);
+        } else {
+          toast.error("Ada kesalahan pada data yang diinput");
+        }
+      } else {
+        toast.error("Data tidak valid. Periksa kembali input Anda.");
+      }
+    } else if (err?.response?.status === 422) {
+      // Unprocessable Entity - validation failed
+      toast.error("Data tidak sesuai format. Periksa kembali semua field.");
+    } else if (err?.response?.status === 413) {
+      // Payload Too Large
+      toast.error("File terlalu besar. Maksimal 5MB.");
+    } else if (err?.response?.status === 500) {
+      // Server Error
+      toast.error("Terjadi kesalahan server. Coba lagi nanti.");
+    } else if (err?.code === 'NETWORK_ERROR') {
+      toast.error("Koneksi bermasalah. Periksa internet Anda.");
+    } else {
+      // Generic error
+      const errorMessage = err?.response?.data?.message || 
+                          err?.message || 
+                          "Registrasi gagal. Coba lagi.";
+      toast.error(errorMessage);
+    }
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    if (!namaDojang.trim()) {
-      toast.error("Nama dojang harus diisi");
+  // Validasi yang lebih ketat
+  const trimmedNama = namaDojang.trim();
+  const trimmedEmail = email.trim();
+  const trimmedPhone = no_telp.trim();
+
+  if (!trimmedNama) {
+    toast.error("Nama dojang harus diisi");
+    return;
+  }
+
+  if (trimmedNama.length < 3) {
+    toast.error("Nama dojang minimal 3 karakter");
+    return;
+  }
+
+  if (trimmedNama.length > 100) {
+    toast.error("Nama dojang maksimal 100 karakter");
+    return;
+  }
+
+  // Validasi email jika diisi
+  if (trimmedEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+    toast.error("Format email tidak valid");
+    return;
+  }
+
+  // Validasi phone jika diisi
+  if (trimmedPhone && !/^[\d\s\-\+\(\)]{8,20}$/.test(trimmedPhone)) {
+    toast.error("Format nomor HP tidak valid (8-20 digit)");
+    return;
+  }
+
+  // Validasi file logo jika ada
+  if (logoFile) {
+    if (logoFile.size > 5 * 1024 * 1024) {
+      toast.error("Ukuran logo maksimal 5MB");
       return;
     }
-
-    if (namaDojang.trim().length < 3) {
-      toast.error("Nama dojang minimal 3 karakter");
+    
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'];
+    if (!allowedTypes.includes(logoFile.type)) {
+      toast.error("Format logo harus JPG, PNG, JPEG, atau WebP");
       return;
     }
+  }
 
-    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      toast.error("Format email tidak valid");
-      return;
-    }
-
-    if (no_telp && !/^[\d\s\-\+\(\)]+$/.test(no_telp)) {
-      toast.error("Format nomor HP tidak valid");
-      return;
-    }
-
-    handleRegister();
-  };
+  console.log('🚀 Form submitted with valid data');
+  handleRegister();
+};
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-red/15 via-white to-red/10 py-8">
