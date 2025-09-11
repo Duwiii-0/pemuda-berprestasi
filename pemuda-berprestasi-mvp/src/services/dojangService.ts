@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import { fileManager } from '../utils/fileManager';
+import { FileManager } from '../utils/fileManager';
 import path from 'path';
 
 const prisma = new PrismaClient();
@@ -8,6 +8,7 @@ interface CreateDojangData {
   nama_dojang: string;
   email?: string;
   no_telp?: string | null;
+  founder?: string;
   negara?: string;
   provinsi?: string;
   kota?: string;
@@ -34,18 +35,15 @@ export class DojangService {
     // Handle file upload if logo is provided
     if (data.logo) {
       try {
-        // Create uploads/dojang directory if it doesn't exist
-        const uploadDir = path.join(process.cwd(), 'uploads', 'dojang');
-        
         // Generate unique filename
         const fileExtension = path.extname(data.logo.originalname);
         const uniqueFilename = `dojang_${Date.now()}_${Math.random().toString(36).substring(2)}${fileExtension}`;
         
-        // Save file using fileManager utility
-        logoPath = await fileManager.saveFile(
+        // Save file using FileManager utility
+        logoPath = await FileManager.saveFile(
           data.logo.buffer, 
-          'dojang', 
-          uniqueFilename
+          uniqueFilename,
+          'photos'
         );
       } catch (error) {
         console.error('Error saving logo file:', error);
@@ -58,13 +56,14 @@ export class DojangService {
         nama_dojang: data.nama_dojang.trim(),
         email: data.email?.trim() || null,
         no_telp: data.no_telp?.trim() || null,
+        founder: data.founder?.trim() || null,
         negara: data.negara?.trim() || null,
         provinsi: data.provinsi?.trim() || null,
         kota: data.kota?.trim() || null,
         kecamatan: data.kecamatan?.trim() || null,
         kelurahan: data.kelurahan?.trim() || null,
         alamat: data.alamat?.trim() || null,
-        logo: logoPath, // Save file path to database
+        logo: logoPath,
       },
       include: { pelatih: true, atlet: true },
     });
@@ -74,7 +73,7 @@ export class DojangService {
   static async getAllDojang(page = 1, limit = 10, search?: string) {
     const skip = (page - 1) * limit;
     const where = search
-      ? { nama_dojang: { contains: search, mode: 'insensitive' } }
+      ? { nama_dojang: { contains: search, mode: 'insensitive' as const } }
       : {};
 
     const [data, total] = await Promise.all([
@@ -84,7 +83,7 @@ export class DojangService {
         take: limit,
         include: { 
           pelatih: true,
-          _count: { select: { atlet: true } } // hitung jumlah atlet
+          _count: { select: { atlet: true } }
         },
         orderBy: { id_dojang: 'desc' },
       }),
@@ -95,8 +94,7 @@ export class DojangService {
     const formattedData = data.map(item => ({
       ...item,
       jumlah_atlet: item._count.atlet,
-      // Convert logo path to full URL if needed
-      logo_url: item.logo ? `/uploads/dojang/${path.basename(item.logo)}` : null
+      logo_url: item.logo ? `/uploads/photos/${path.basename(item.logo)}` : null
     }));
 
     return {
@@ -120,7 +118,7 @@ export class DojangService {
     
     return {
       ...dojang,
-      logo_url: dojang.logo ? `/uploads/dojang/${path.basename(dojang.logo)}` : null
+      logo_url: dojang.logo ? `/uploads/photos/${path.basename(dojang.logo)}` : null
     };
   }
 
@@ -130,14 +128,14 @@ export class DojangService {
     const existing = await prisma.tb_dojang.findUnique({ where: { id_dojang } });
     if (!existing) throw new Error('Dojang tidak ditemukan');
 
-    let logoPath: string | null = existing.logo; // Keep existing logo by default
+    let logoPath: string | null = existing.logo;
 
     // Handle logo update if new logo is provided
     if (logo) {
       try {
         // Delete old logo file if exists
         if (existing.logo) {
-          await fileManager.deleteFile(existing.logo);
+          await FileManager.deleteFile(existing.logo);
         }
 
         // Generate unique filename for new logo
@@ -145,10 +143,10 @@ export class DojangService {
         const uniqueFilename = `dojang_${Date.now()}_${Math.random().toString(36).substring(2)}${fileExtension}`;
         
         // Save new logo file
-        logoPath = await fileManager.saveFile(
+        logoPath = await FileManager.saveFile(
           logo.buffer, 
-          'dojang', 
-          uniqueFilename
+          uniqueFilename,
+          'photos'
         );
       } catch (error) {
         console.error('Error updating logo file:', error);
@@ -187,7 +185,7 @@ export class DojangService {
     // Delete logo file if exists
     if (existing.logo) {
       try {
-        await fileManager.deleteFile(existing.logo);
+        await FileManager.deleteFile(existing.logo);
       } catch (error) {
         console.error('Error deleting logo file:', error);
         // Continue with deletion even if file deletion fails
@@ -209,7 +207,7 @@ export class DojangService {
     if (pelatih.dojang) {
       return {
         ...pelatih.dojang,
-        logo_url: pelatih.dojang.logo ? `/uploads/dojang/${path.basename(pelatih.dojang.logo)}` : null
+        logo_url: pelatih.dojang.logo ? `/uploads/photos/${path.basename(pelatih.dojang.logo)}` : null
       };
     }
     
@@ -227,7 +225,7 @@ export class DojangService {
     if (atlet.dojang) {
       return {
         ...atlet.dojang,
-        logo_url: atlet.dojang.logo ? `/uploads/dojang/${path.basename(atlet.dojang.logo)}` : null
+        logo_url: atlet.dojang.logo ? `/uploads/photos/${path.basename(atlet.dojang.logo)}` : null
       };
     }
     

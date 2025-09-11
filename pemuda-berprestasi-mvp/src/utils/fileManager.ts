@@ -123,16 +123,31 @@ export class FileManager {
   }
 
   /**
-   * Save file to appropriate directory
-   * @param file - File buffer or path
-   * @param fileName - Target filename
+   * Save file to appropriate directory (UPDATED METHOD)
+   * @param file - File buffer
+   * @param fileName - Target filename  
    * @param fileType - Type of file
    * @returns Saved file path
    */
   static async saveFile(
-    file: Buffer | string,
+    file: Buffer,
     fileName: string,
     fileType: 'photos' | 'documents' | 'certificates'
+  ): Promise<string> {
+    const uploadDir = this.getUploadDir(fileType);
+    const filePath = path.join(uploadDir, fileName);
+
+    await fs.promises.writeFile(filePath, file);
+    return filePath;
+  }
+
+  /**
+   * Save file with original method signature (DEPRECATED - for backward compatibility)
+   */
+  static async saveFileOld(
+    file: Buffer | string,
+    fileType: 'photos' | 'documents' | 'certificates',
+    fileName: string
   ): Promise<string> {
     const uploadDir = this.getUploadDir(fileType);
     const filePath = path.join(uploadDir, fileName);
