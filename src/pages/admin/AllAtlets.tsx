@@ -19,7 +19,7 @@ const AllAtlets: React.FC = () => {
   
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(10);
+  const [itemsPerPage] = useState(100);
 
   // Set token global sekali aja
   useEffect(() => {
