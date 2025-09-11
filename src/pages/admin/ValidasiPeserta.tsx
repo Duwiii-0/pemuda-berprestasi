@@ -673,11 +673,11 @@ const handleRejection = async (id: number) => {
             const level = peserta.kelas_kejuaraan?.kategori_event?.nama_kategori || "-";
             const kelasBerat =
               cabang === "KYORUGI"
-                ? peserta.kelas_kejuaraan?.kelas_berat?.nama_kelas || (peserta.atlet?.berat_badan ? `${peserta.atlet.berat_badan} kg` : "-")
+                ? peserta.kelas_kejuaraan?.kelas_berat?.nama_kelas 
                 : "-";
             const kelasPoomsae =
               cabang === "POOMSAE"
-                ? peserta.kelas_kejuaraan?.poomsae?.nama_kelas || peserta.atlet?.belt || "-"
+                ? peserta.kelas_kejuaraan?.poomsae?.nama_kelas
                 : "-";
             const namaPeserta = isTeam
               ? peserta.anggota_tim?.map((m: any) => m.atlet.nama_atlet).join(", ")

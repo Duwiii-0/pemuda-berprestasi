@@ -701,6 +701,13 @@ const DataKompetisi = () => {
                   const dojang = isTeam && peserta.anggota_tim?.length
                     ? peserta.anggota_tim[0]?.atlet?.dojang?.nama_dojang || "-"
                     : peserta.atlet?.dojang?.nama_dojang || "-";
+                  const kelasBerat =
+                            cabang === "KYORUGI"
+                               peserta.kelas_kejuaraan?.kelas_berat?.nama_kelas || "-";
+
+                  const kelasPoomsae =
+                            cabang === "POOMSAE"
+                              peserta.kelas_kejuaraan?.poomsae?.nama_kelas || "-";
 
                   return (
                     <div
@@ -735,19 +742,13 @@ const DataKompetisi = () => {
                         </div>
                         <div>
                           <span className="text-gray-500">Kelas Berat:</span>
-                          <p className="font-medium text-gray-800">
-                            {cabang === "KYORUGI" 
-                              ? peserta.kelas_kejuaraan?.kelas_berat?.nama_kelas || "-"
-                              : "-"
-                            }
-                          </p>
+                          <p className="font-medium text-gray-800">{kelasBerat}</p>
                         </div>
                         <div>
                           <span className="text-gray-500">Kelas Poomsae:</span>
                           <p className="font-medium text-gray-800">
                             {cabang === "POOMSAE" 
-                              ? peserta.kelas_kejuaraan?.poomsae?.nama_kelas || "-"
-                              : "-"
+                              {kelasPoomsae}
                             }
                           </p>
                         </div>
