@@ -25,14 +25,41 @@ export class DojangController {
     }
   }
 
-  static async create(req: Request, res: Response) {
-    try {
-      const dojang = await DojangService.createDojang(req.body);
-      res.status(201).json(dojang);
-    } catch (err: any) {
-      res.status(400).json({ message: err.message });
+static async create(req: Request, res: Response) {
+  try {
+    console.log('📝 Create dojang request body:', req.body);
+    console.log('📎 Create dojang file:', req.file);
+    
+    // Prepare data dengan logo jika ada file upload
+    const createData = { ...req.body };
+    
+    // Handle logo upload
+    if (req.file && req.file.fieldname === 'logo') {
+      createData.logo = req.file.filename;
+      console.log('✅ Logo uploaded:', req.file.filename);
     }
+    
+    const dojang = await DojangService.createDojang(createData);
+    
+    // Return dengan logo_url untuk frontend
+    const responseData = {
+      ...dojang,
+      logo_url: dojang.logo ? `/uploads/dojang/logos/${dojang.logo}` : null
+    };
+    
+    res.status(201).json({
+      success: true,
+      message: 'Dojang berhasil didaftarkan',
+      data: responseData
+    });
+  } catch (err: any) {
+    console.error('❌ Create dojang error:', err.message);
+    res.status(400).json({ 
+      success: false,
+      message: err.message 
+    });
   }
+}
 
   // AUTHENTICATED
 static async getMyDojang(req: Request, res: Response) {

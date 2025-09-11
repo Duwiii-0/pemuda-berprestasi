@@ -8,6 +8,7 @@ interface CreateDojangData {
   negara?: string;
   provinsi?: string;
   kota?: string;
+  logo?: string; 
 }
 
 interface UpdateDojangData extends Partial<CreateDojangData> {
@@ -17,24 +18,31 @@ interface UpdateDojangData extends Partial<CreateDojangData> {
 
 export class DojangService {
   // ===== CREATE DOJANG =====
-  static async createDojang(data: CreateDojangData) {
-    const existing = await prisma.tb_dojang.findFirst({
-      where: { nama_dojang: data.nama_dojang.trim() },
-    });
-    if (existing) throw new Error('Nama dojang sudah terdaftar');
+static async createDojang(data: CreateDojangData) {
+  console.log('📝 DojangService.createDojang data:', data);
+  
+  const existing = await prisma.tb_dojang.findFirst({
+    where: { nama_dojang: data.nama_dojang.trim() },
+  });
+  if (existing) throw new Error('Nama dojang sudah terdaftar');
 
-    return prisma.tb_dojang.create({
-      data: {
-        nama_dojang: data.nama_dojang.trim(),
-        email: data.email?.trim() || null,
-        no_telp: data.no_telp?.trim() || null,
-        negara: data.negara?.trim() || null,
-        provinsi: data.provinsi?.trim() || null,
-        kota: data.kota?.trim() || null,
-      },
-      include: { pelatih: true, atlet: true },
-    });
-  }
+  const createPayload = {
+    nama_dojang: data.nama_dojang.trim(),
+    email: data.email?.trim() || null,
+    no_telp: data.no_telp?.trim() || null,
+    negara: data.negara?.trim() || null,
+    provinsi: data.provinsi?.trim() || null,
+    kota: data.kota?.trim() || null,
+    logo: data.logo || null, // ✅ TAMBAHAN: Include logo
+  };
+
+  console.log('💾 Creating dojang with payload:', createPayload);
+
+  return prisma.tb_dojang.create({
+    data: createPayload,
+    include: { pelatih: true, atlet: true },
+  });
+}
 
   // ===== GET ALL DOJANG =====
   static async getAllDojang(page = 1, limit = 100, search?: string) {
