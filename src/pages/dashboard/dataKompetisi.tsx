@@ -9,6 +9,8 @@ import { useDojang } from "../../context/dojangContext";
 import UnifiedRegistration from "../../components/registrationSteps/UnifiedRegistration";
 import type { Kompetisi } from "../../context/KompetisiContext";
 import Select from "react-select";
+import { kelasBeratOptionsByAgeGender } from "../../dummy/beratOptionsGender";
+
 
 interface StatsCardProps {
   icon: React.ComponentType<{ size?: number; className?: string }>;
@@ -52,76 +54,10 @@ const DataKompetisi = () => {
   const [filterKelompokUsia, setFilterKelompokUsia] = useState<"ALL" | "Super Pra-cadet" | "Pracadet" | "Cadet" | "Junior" | "Senior" >("ALL");
   const [filterKelasBerat, setFilterKelasBerat] = useState<string>("ALL");
   const [filterLevel, setFilterLevel] = useState<"ALL" | "pemula" | "prestasi">("ALL");
-  const [filterDojang, setFilterDojang] = useState<string>("ALL");
-  
+  const [filterGender, setFilterGender] = useState<"ALL" | "LAKI_LAKI" | "PEREMPUAN">("ALL");
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(100);
-
-  const kelasBeratOptions = [
-  { value: "ALL", label: "Semua Kelas" },
-
-  // Under
-  { value: "Under 18 kg", label: "Under 18 kg" },
-  { value: "Under 19 kg", label: "Under 19 kg" },
-  { value: "Under 20 kg", label: "Under 20 kg" },
-  { value: "Under 21 kg", label: "Under 21 kg" },
-  { value: "Under 22 kg", label: "Under 22 kg" },
-  { value: "Under 23 kg", label: "Under 23 kg" },
-  { value: "Under 24 kg", label: "Under 24 kg" },
-  { value: "Under 25 kg", label: "Under 25 kg" },
-  { value: "Under 26 kg", label: "Under 26 kg" },
-  { value: "Under 27 kg", label: "Under 27 kg" },
-  { value: "Under 28 kg", label: "Under 28 kg" },
-  { value: "Under 29 kg", label: "Under 29 kg" },
-  { value: "Under 30 kg", label: "Under 30 kg" },
-  { value: "Under 32 kg", label: "Under 32 kg" },
-  { value: "Under 33 kg", label: "Under 33 kg" },
-  { value: "Under 35 kg", label: "Under 35 kg" },
-  { value: "Under 36 kg", label: "Under 36 kg" },
-  { value: "Under 37 kg", label: "Under 37 kg" },
-  { value: "Under 38 kg", label: "Under 38 kg" },
-  { value: "Under 39 kg", label: "Under 39 kg" },
-  { value: "Under 41 kg", label: "Under 41 kg" },
-  { value: "Under 42 kg", label: "Under 42 kg" },
-  { value: "Under 44 kg", label: "Under 44 kg" },
-  { value: "Under 45 kg", label: "Under 45 kg" },
-  { value: "Under 46 kg", label: "Under 46 kg" },
-  { value: "Under 47 kg", label: "Under 47 kg" },
-  { value: "Under 48 kg", label: "Under 48 kg" },
-  { value: "Under 49 kg", label: "Under 49 kg" },
-  { value: "Under 51 kg", label: "Under 51 kg" },
-  { value: "Under 52 kg", label: "Under 52 kg" },
-  { value: "Under 53 kg", label: "Under 53 kg" },
-  { value: "Under 54 kg", label: "Under 54 kg" },
-  { value: "Under 55 kg", label: "Under 55 kg" },
-  { value: "Under 57 kg", label: "Under 57 kg" },
-  { value: "Under 59 kg", label: "Under 59 kg" },
-  { value: "Under 61 kg", label: "Under 61 kg" },
-  { value: "Under 62 kg", label: "Under 62 kg" },
-  { value: "Under 63 kg", label: "Under 63 kg" },
-  { value: "Under 65 kg", label: "Under 65 kg" },
-  { value: "Under 67 kg", label: "Under 67 kg" },
-  { value: "Under 68 kg", label: "Under 68 kg" },
-  { value: "Under 73 kg", label: "Under 73 kg" },
-  { value: "Under 74 kg", label: "Under 74 kg" },
-  { value: "Under 78 kg", label: "Under 78 kg" },
-  { value: "Under 80 kg", label: "Under 80 kg" },
-  { value: "Under 87 kg", label: "Under 87 kg" },
-
-  // Over
-  { value: "Over 32 kg", label: "Over 32 kg" },
-  { value: "Over 33 kg", label: "Over 33 kg" },
-  { value: "Over 38 kg", label: "Over 38 kg" },
-  { value: "Over 39 kg", label: "Over 39 kg" },
-  { value: "Over 59 kg", label: "Over 59 kg" },
-  { value: "Over 65 kg", label: "Over 65 kg" },
-  { value: "Over 68 kg", label: "Over 68 kg" },
-  { value: "Over 73 kg", label: "Over 73 kg" },
-  { value: "Over 78 kg", label: "Over 78 kg" },
-  { value: "Over 87 kg", label: "Over 87 kg" },
-  { value: "Over 200 kg", label: "Over 200 kg" }, // fallback kalau mau tandai batas akhir
-];
 
   useEffect(() => {
     refreshDojang();
@@ -147,7 +83,7 @@ const DataKompetisi = () => {
   // Reset pagination when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchPeserta, filterStatus, filterCategory, filterKelasBerat, filterKelompokUsia, filterLevel, filterDojang]);
+  }, [searchPeserta, filterStatus, filterCategory, filterKelasBerat, filterKelompokUsia, filterLevel, filterGender]);
 
   const handleKompetisiClick = async (kompetisi: Kompetisi) => {
     setSelectedKompetisi(kompetisi);
@@ -174,6 +110,19 @@ const DataKompetisi = () => {
       default: return "bg-gray-100 text-gray-600";
     }
   };
+
+
+  const kelasBeratOptions = [
+  { value: "ALL", label: "Semua Kelas" },
+
+  // Under
+  { value: "Under 18 kg", label: "Under 18 kg" },
+  { value: "Under 19 kg", label: "Under 19 kg" },
+  { value: "Under 20 kg", label: "Under 20 kg" },
+  { value: "Under 21 kg", label: "Under 21 kg" },
+  { value: "Under 22 kg", label: "Under 22 kg" },
+  ]
+
 
   const getStatusBadge = (status: string) => {
     const statusMap = {
@@ -237,14 +186,11 @@ const DataKompetisi = () => {
     const level = peserta.kelas_kejuaraan?.kategori_event?.nama_kategori?.toUpperCase() || "";
     const matchesLevel = filterLevel === "ALL" || level === filterLevel.toUpperCase();
 
-    // Dojang
-    const pesertaDojang = peserta.is_team
-      ? peserta.anggota_tim?.[0]?.atlet?.dojang?.id_dojang?.toString() || ""
-      : peserta.atlet?.dojang?.id_dojang?.toString() || "";
+    // gender
+    const genderPeserta = peserta.atlet?.jenis_kelamin || "-";
+    const matchesGender = filterGender === "ALL" || genderPeserta === filterGender.toUpperCase();
 
-    const matchesDojang = filterDojang === "ALL" || pesertaDojang === filterDojang;
-
-    return matchesSearch && matchesStatus && matchesCategory && matchesKelasBerat && matchesKelasUsia && matchesLevel && matchesDojang;
+    return matchesSearch && matchesStatus && matchesCategory && matchesKelasBerat && matchesKelasUsia && matchesLevel && matchesGender;
   });
 
   // Pagination logic
@@ -316,32 +262,6 @@ const DataKompetisi = () => {
 
   // Halaman detail peserta dengan filtering terintegrasi
   if (showPeserta && selectedKompetisi) {
-    const statusOptions = [
-      { value: "ALL", label: "Semua Status" },
-      { value: "PENDING", label: "Pending" },
-      { value: "APPROVED", label: "Approved" },
-      { value: "REJECTED", label: "Rejected" },
-    ];
-
-    const categoryOptions = [
-      { value: "ALL", label: "Semua Kategori" },
-      { value: "KYORUGI", label: "KYORUGI" },
-      { value: "POOMSAE", label: "POOMSAE" },
-    ];
-
-    const levelOptions = [
-      { value: null, label: "Semua Level" },
-      { value: "pemula", label: "Pemula" },
-      { value: "prestasi", label: "Prestasi" },
-    ];
-
-    const ageOptions = [
-      { value: "ALL", label: "Semua Usia" },
-      { value: "Cadet", label: "Cadet" },
-      { value: "Junior", label: "Junior" },
-      { value: "Senior", label: "Senior" },
-    ];
-
     return (
       <div className="min-h-screen w-full bg-gradient-to-br from-white via-red/5 to-yellow/10">
         <NavbarDashboard />
@@ -557,19 +477,23 @@ const DataKompetisi = () => {
                     />
                   </div>
 
-                  {/* Filter Dojang */}
+                  {/* Filter gender */}
                   <div className="col-span-4 sm:col-span-3 lg:col-span-1">
                     <label className="block text-xs mb-2 font-medium" style={{ color: '#050505', opacity: 0.6 }}>Dojang</label>
                     <Select
                       unstyled
-                      value={
-                        filterDojang === "ALL"
-                          ? { value: "ALL", label: "Semua Dojang" }
-                          : dojangOptions.find((opt) => opt.value === filterDojang)
-                      }
-                      onChange={(selected) => setFilterDojang(selected?.value || "ALL")}
-                      options={[{ value: "ALL", label: "Semua Dojang" }, ...dojangOptions]}
-                      placeholder="Pilih Dojang"
+                      value={{
+                        value: filterGender,
+                        label:
+                          filterGender === "ALL" ? "Semua jenis kelamin" : filterGender,
+                      }}
+                      onChange={(selected) => setFilterGender(selected?.value as any)}
+                      options={[
+                        { value: "ALL", label: "Semua Jenis Kelamin" },
+                        { value: "LAKI_LAKI", label: "Laki-Laki" },
+                        { value: "PEREMPUAN", label: "Perempuan" },
+                      ]}
+                      placeholder="Pilih jenis kelamin"
                       classNames={{
                         control: () =>
                           `w-full flex items-center border border-black/20 rounded-2xl px-3 py-3 gap-2 transition-all duration-300 hover:shadow-sm focus-within:border-yellow-500 focus-within:ring-2 focus-within:ring-yellow-500/20`,
@@ -750,7 +674,7 @@ const DataKompetisi = () => {
                   <div className="text-center py-12 text-gray-500">
                     <Users size={52} className="mx-auto mb-4" />
                     <p className="text-lg">Tidak ada peserta ditemukan</p>
-                    {(searchPeserta || filterStatus !== "ALL" || filterCategory !== "ALL" || filterKelompokUsia !== "ALL" || filterLevel || filterDojang !== "ALL" || filterKelasBerat !== "ALL") && (
+                    {(searchPeserta || filterStatus !== "ALL" || filterCategory !== "ALL" || filterKelompokUsia !== "ALL" || filterLevel || filterGender !== "ALL" || filterKelasBerat !== "ALL") && (
                       <p className="text-sm mt-2">Coba ubah filter pencarian Anda</p>
                     )}
                   </div>
@@ -830,7 +754,7 @@ const DataKompetisi = () => {
                   <div className="text-center py-12 text-gray-500">
                     <Users size={52} className="mx-auto mb-4" />
                     <p className="text-lg">Tidak ada peserta ditemukan</p>
-                    {(searchPeserta || filterStatus !== "ALL" || filterCategory !== "ALL" || filterKelompokUsia !== "ALL" || filterLevel || filterDojang !== "ALL" || filterKelasBerat !== "ALL") && (
+                    {(searchPeserta || filterStatus !== "ALL" || filterCategory !== "ALL" || filterKelompokUsia !== "ALL" || filterLevel || filterGender !== "ALL" || filterKelasBerat !== "ALL") && (
                       <p className="text-sm mt-2">Coba ubah filter pencarian Anda</p>
                     )}
                   </div>
