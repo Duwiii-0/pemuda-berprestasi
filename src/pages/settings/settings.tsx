@@ -39,9 +39,6 @@ interface SelectOption {
   label: string;
 }
 
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [previewError, setPreviewError] = useState(false);
-
 // Tambahkan setelah import statements
 const FilePreview = ({ 
   file, 
@@ -57,6 +54,9 @@ const FilePreview = ({
   label: string;
 }) => {
 
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewError, setPreviewError] = useState(false);
+  
   useEffect(() => {
     if (file) {
       try {
