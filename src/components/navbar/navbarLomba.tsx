@@ -56,10 +56,17 @@ const NavbarLomba = ({ onLogoutRequest }: { onLogoutRequest: () => void }) => {
     { to: "/lomba/faq", label: "FAQ" }
   ];
 
-  const userMenuItems = [
-    { to: "/dashboard/dojang", label: "Dashboard", icon: Home },
-    { to: "/settings", label: "Settings", icon: Settings }
-  ];
+  const getDashboardLink = () => {
+    if (user?.role === "PELATIH") return { to: "/dashboard/dojang", label: "Dashboard", icon: Home };
+    if (user?.role === "ADMIN") return { to: "/admin/validasi-peserta", label: "Dashboard", icon: Home };
+    if (user?.role === "ADMIN_KOMPETISI") return { to: "/admin-kompetisi", label: "Dashboard", icon: Home };
+    return { to: "/", label: "Dashboard", icon: Home }; // fallback
+  };
+
+    const userMenuItems = [
+      getDashboardLink(),
+      { to: "/settings", label: "Settings", icon: Settings }
+    ];
 
   // Styling yang konsisten dengan warna merah
   const getNavbarStyles = () => {
