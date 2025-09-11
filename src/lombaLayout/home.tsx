@@ -395,7 +395,7 @@ const LandingPage = () => {
                         <p className="text-xs md:text-sm text-black/60 font-plex mt-1">(Rora)</p>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm md:text-base text-black/70 font-plex mb-1 font-medium"> </p>
+                        <p className="text-sm md:text-base font-plex mb-1 font-medium text-transparent">Telepon</p>
                         <a 
                           href="https://wa.me/6285922124908" 
                           className="text-base md:text-lg lg:text-xl font-plex text-red font-bold hover:text-red/80 transition-colors duration-200 block"
