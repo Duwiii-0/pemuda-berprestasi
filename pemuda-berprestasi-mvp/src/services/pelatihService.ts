@@ -268,10 +268,15 @@ class PelatihService {
     })
   }
 
-  // Return simple object dengan filename
+  // PERBAIKAN: Return full URL path dengan subfolder
+  const buildFileUrl = (filename: string | null, subfolder: string) => {
+    if (!filename) return null
+    return `/uploads/pelatih/${subfolder}/${filename}`
+  }
+
   return {
-    foto_ktp: updateData.foto_ktp || pelatih.foto_ktp,
-    sertifikat_sabuk: updateData.sertifikat_sabuk || pelatih.sertifikat_sabuk
+    foto_ktp: buildFileUrl(updateData.foto_ktp || pelatih.foto_ktp, 'ktp'),
+    sertifikat_sabuk: buildFileUrl(updateData.sertifikat_sabuk || pelatih.sertifikat_sabuk, 'sertifikat')
   }
 }
 
@@ -288,10 +293,15 @@ async getUploadedFiles(id_pelatih: number): Promise<{
     throw new Error('Pelatih not found')
   }
 
-  // Return simple filename string, bukan object kompleks
+  // PERBAIKAN: Return full URL path dengan subfolder
+  const buildFileUrl = (filename: string | null, subfolder: string) => {
+    if (!filename) return null
+    return `/uploads/pelatih/${subfolder}/${filename}`
+  }
+
   return {
-    foto_ktp: pelatih.foto_ktp,
-    sertifikat_sabuk: pelatih.sertifikat_sabuk
+    foto_ktp: buildFileUrl(pelatih.foto_ktp, 'ktp'),
+    sertifikat_sabuk: buildFileUrl(pelatih.sertifikat_sabuk, 'sertifikat')
   }
 }
 
