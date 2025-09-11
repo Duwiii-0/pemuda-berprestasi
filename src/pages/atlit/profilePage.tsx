@@ -154,14 +154,31 @@ const FilePreview = ({
   }
 };
 
+// PERBAIKAN: Di Frontend - FilePreview component
 const getPreviewUrl = () => {
   if (file && previewUrl) return previewUrl;
   
   if (existingPath) {
     const baseUrl = 'https://pemudaberprestasi.com';
     
-    // PERBAIKAN: Gunakan path yang sudah include subfolder dari service
-    const staticUrl = `${baseUrl}/uploads/atlet/${existingPath}`;
+    // PERBAIKAN: Handle both old format (with subfolder) and new format (filename only)
+    let staticUrl;
+    
+    if (existingPath.includes('/')) {
+      // Old format: "akte_kelahiran/filename.jpg" - use as is
+      staticUrl = `${baseUrl}/uploads/atlet/${existingPath}`;
+    } else {
+      // New format: "filename.jpg" - need to add subfolder based on label
+      const folderMap: Record<string, string> = {
+        'Akte Kelahiran': 'akte_kelahiran',
+        'Pas Foto': 'pas_foto',
+        'Sertifikat Belt': 'sertifikat_belt',
+        'KTP': 'ktp'
+      };
+      const subfolder = folderMap[label] || 'akte_kelahiran';
+      staticUrl = `${baseUrl}/uploads/atlet/${subfolder}/${existingPath}`;
+    }
+    
     console.log("🌐 Preview URL:", staticUrl);
     return staticUrl;
   }

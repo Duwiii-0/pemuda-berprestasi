@@ -588,7 +588,8 @@ static async getEligible(
     }
   }
 
-  static async handleFileUpload(id_atlet: number, files: any): Promise<AtletFileInfo> {
+  // PERBAIKAN: AtletService.handleFileUpload method
+static async handleFileUpload(id_atlet: number, files: any): Promise<AtletFileInfo> {
   const atlet = await prisma.tb_atlet.findUnique({
     where: { id_atlet }
   })
@@ -599,22 +600,22 @@ static async getEligible(
 
   const updateData: any = {}
 
-  // MASALAH: Hanya menyimpan filename, tidak include subfolder path
+  // PERBAIKAN: Hanya simpan filename saja, JANGAN include subfolder path
+  // Karena subfolder sudah dihandle di multer dan getUploadedFiles
   if (files.akte_kelahiran && files.akte_kelahiran[0]) {
-    // PERBAIKAN: Include subfolder path
-    updateData.akte_kelahiran = `akte_kelahiran/${files.akte_kelahiran[0].filename}`
+    updateData.akte_kelahiran = files.akte_kelahiran[0].filename // filename saja
   }
 
   if (files.pas_foto && files.pas_foto[0]) {
-    updateData.pas_foto = `pas_foto/${files.pas_foto[0].filename}`
+    updateData.pas_foto = files.pas_foto[0].filename // filename saja
   }
 
   if (files.sertifikat_belt && files.sertifikat_belt[0]) {
-    updateData.sertifikat_belt = `sertifikat_belt/${files.sertifikat_belt[0].filename}`
+    updateData.sertifikat_belt = files.sertifikat_belt[0].filename // filename saja
   }
 
   if (files.ktp && files.ktp[0]) {
-    updateData.ktp = `ktp/${files.ktp[0].filename}`
+    updateData.ktp = files.ktp[0].filename // filename saja
   }
 
   if (Object.keys(updateData).length > 0) {
@@ -674,8 +675,8 @@ static async getEligible(
   }
 }
 
-  // Hapus file atlet
-  static async deleteFile(id_atlet: number, fileType: keyof AtletFileInfo) {
+  // PERBAIKAN: AtletService.deleteFile method
+static async deleteFile(id_atlet: number, fileType: keyof AtletFileInfo) {
   const atlet = await prisma.tb_atlet.findUnique({
     where: { id_atlet }
   })
@@ -685,9 +686,13 @@ static async getEligible(
   const filename = atlet[fileType]
   if (!filename) throw new Error('File tidak ditemukan')
 
-  // PERBAIKAN: Gunakan struktur folder yang benar
+  // PERBAIKAN: Construct file path properly
   const folder = ATLET_FOLDER_MAP[fileType as AtletFileType]
-  const filePath = path.join(process.cwd(), 'uploads', 'atlet', folder, filename)
+  
+  // PERBAIKAN: Jika filename sudah include subfolder, extract filename saja
+  const actualFilename = filename.includes('/') ? filename.split('/').pop() : filename
+  
+  const filePath = path.join(process.cwd(), 'uploads', 'atlet', folder, actualFilename)
 
   if (fs.existsSync(filePath)) fs.unlinkSync(filePath)
 
