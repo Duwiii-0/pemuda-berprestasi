@@ -1,4 +1,4 @@
-import { useState, ChangeEvent, FormEvent } from "react";
+import { useState, type ChangeEvent, type FormEvent } from "react";
 import Select from "react-select";
 import TextInput from "../../components/textInput";
 import { Home, Phone, Mail, Upload, X } from "lucide-react";
