@@ -38,9 +38,14 @@ export class DojangController {
 static async getMyDojang(req: Request, res: Response) {
   try {
     const idAkun = (req.user as any)?.id_akun;
-    if (!idAkun) throw new Error("id_akun tidak ditemukan di token");
+    if (!idAkun) {
+      return res.status(401).json({ 
+        message: "id_akun tidak ditemukan di token",
+        data: null 
+      });
+    }
 
-    console.log('🔍 Debug - idAkun:', idAkun);
+    console.log('🔍 getMyDojang - idAkun:', idAkun);
 
     // cari pelatih berdasarkan id_akun
     const pelatih = await prisma.tb_pelatih.findUnique({
@@ -48,15 +53,20 @@ static async getMyDojang(req: Request, res: Response) {
       include: { dojang: true },
     });
 
-    console.log('👤 Debug - Pelatih found:', pelatih ? 'Yes' : 'No');
-    console.log('🏢 Debug - Dojang data:', pelatih?.dojang);
+    console.log('👤 Pelatih found:', !!pelatih);
+    console.log('🏢 Dojang exists:', !!pelatih?.dojang);
 
-    if (!pelatih) throw new Error("Pelatih tidak ditemukan");
+    if (!pelatih) {
+      return res.status(404).json({ 
+        message: "Pelatih tidak ditemukan",
+        data: null 
+      });
+    }
 
     // PERBAIKAN: Handle case dimana pelatih belum punya dojang
     if (!pelatih.dojang) {
       console.log('⚠️ Pelatih belum memiliki dojang');
-      return res.json({ 
+      return res.status(200).json({ 
         message: "Pelatih belum memiliki dojang",
         data: null 
       });
@@ -68,12 +78,17 @@ static async getMyDojang(req: Request, res: Response) {
       logo_url: pelatih.dojang.logo ? `/uploads/dojang/logos/${pelatih.dojang.logo}` : null
     };
 
-    console.log('✅ Returning dojang data:', dojangWithLogo);
-    res.json(dojangWithLogo);
+    console.log('✅ Returning dojang:', dojangWithLogo.nama_dojang);
+    
+    // PERBAIKAN: Return format yang konsisten
+    res.status(200).json(dojangWithLogo);
     
   } catch (err: any) {
-    console.error('❌ getMyDojang Error:', err);
-    res.status(400).json({ message: err.message });
+    console.error('❌ getMyDojang Error:', err.message);
+    res.status(500).json({ 
+      message: `Database error: ${err.message}`,
+      data: null 
+    });
   }
 }
 

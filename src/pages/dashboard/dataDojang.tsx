@@ -303,11 +303,45 @@ const Dojang = () => {
 const fetchDojang = async () => {
   try {
     setLoading(true);
-    const response = await apiClient.get("/dojang/my-dojang");
+    console.log('🔄 Fetching dojang data...');
     
-    // PERBAIKAN: Type assertion yang benar
-    const dojangData = (response as any).data as DojangData;
-
+    const response = await apiClient.get("/dojang/my-dojang");
+    console.log('📋 Raw API Response:', response);
+    
+    // PERBAIKAN: Handle different response formats
+    const responseData = (response as any).data;
+    console.log('📊 Response data:', responseData);
+    
+    // PERBAIKAN: Check if response contains actual dojang data
+    if (!responseData) {
+      console.log('⚠️ No data received from API');
+      setUserDojang(null);
+      setFormData(null);
+      return;
+    }
+    
+    // PERBAIKAN: Handle case where API returns { data: null } or { message: "..." }
+    if (responseData.data === null || responseData.message) {
+      console.log('⚠️ API returned empty dojang:', responseData.message || 'No dojang assigned');
+      toast.error(responseData.message || "Pelatih belum memiliki dojang");
+      setUserDojang(null);
+      setFormData(null);
+      return;
+    }
+    
+    // PERBAIKAN: Handle direct dojang data or nested data structure
+    const dojangData = responseData.id_dojang ? responseData : responseData.data;
+    
+    if (!dojangData || !dojangData.nama_dojang) {
+      console.log('⚠️ Invalid dojang data structure:', dojangData);
+      toast.error("Data dojang tidak valid");
+      setUserDojang(null);
+      setFormData(null);
+      return;
+    }
+    
+    console.log('✅ Valid dojang data:', dojangData.nama_dojang);
+    
     setUserDojang(dojangData);
     setFormData({
       name: dojangData.nama_dojang || "",
@@ -327,8 +361,20 @@ const fetchDojang = async () => {
     }
     
   } catch (err: any) {
-    console.error(err);
-    toast.error("Gagal mengambil data dojang");
+    console.error('❌ Error fetching dojang:', err);
+    
+    // PERBAIKAN: Handle different error types
+    if (err.response?.status === 404) {
+      toast.error("Pelatih belum memiliki dojang");
+    } else if (err.response?.status === 401) {
+      toast.error("Sesi login telah berakhir, silakan login ulang");
+      // Redirect to login or refresh auth
+    } else {
+      toast.error(err.response?.data?.message || "Gagal mengambil data dojang");
+    }
+    
+    setUserDojang(null);
+    setFormData(null);
   } finally {
     setLoading(false);
   }
@@ -421,25 +467,40 @@ const handleUpdate = async () => {
     // Only append logo if a new file was selected
     if (logoFile) {
       updateFormData.append('logo', logoFile);
+      console.log('📤 Uploading logo:', logoFile.name);
     }
 
-    console.log("📤 DEBUG: Sending FormData contents:");
-    for (let [key, value] of updateFormData.entries()) {
-      if (value instanceof File) {
-        console.log(`${key}: File - ${value.name} (${value.size} bytes)`);
-      } else {
-        console.log(`${key}: ${value}`);
-      }
-    }
-
+    console.log('📤 Updating dojang:', userDojang.id_dojang);
+    
     const response = await apiClient.put(
       `/dojang/${userDojang.id_dojang}`, 
       updateFormData
     );
 
-    // PERBAIKAN: Type assertion yang benar
-    const updatedData = (response as any).data as DojangData;
+    console.log('📋 Update response:', response);
+    
+    // PERBAIKAN: Handle response format
+    const responseData = (response as any).data;
+    const updatedData = responseData?.data || responseData;
+    
+    if (!updatedData || !updatedData.nama_dojang) {
+      throw new Error("Response data tidak valid");
+    }
+    
     setUserDojang(updatedData);
+
+    // Update form data dengan data terbaru
+    setFormData({
+      name: updatedData.nama_dojang || "",
+      email: updatedData.email || "",
+      phone: updatedData.no_telp || "",
+      negara: updatedData.negara || "",
+      provinsi: updatedData.provinsi || "",
+      kota: updatedData.kota || "",
+      kecamatan: updatedData.kecamatan || "",
+      kelurahan: updatedData.kelurahan || "",
+      alamat: updatedData.alamat || "",
+    });
 
     // Update logo preview with new URL if logo was updated
     if (updatedData.logo_url) {
@@ -463,10 +524,10 @@ const handleUpdate = async () => {
       } else if (error.message?.includes('Invalid file')) {
         toast.error("Format logo tidak didukung. Gunakan JPG, PNG, JPEG, atau WebP.");
       } else {
-        toast.error(error.response?.data?.message || "Update dojang gagal");
+        toast.error(error.response?.data?.message || error.message || "Update dojang gagal");
       }
     } else {
-      toast.error("Update dojang gagal");
+      toast.error(err.message || "Update dojang gagal");
     }
   } finally {
     setLoading(false);
@@ -543,7 +604,7 @@ const handleUpdate = async () => {
                     <GeneralButton
                       label="Ubah Data Dojang"
                       className="text-white bg-gradient-to-r from-red to-red/80 hover:from-red/90 hover:to-red/70 border-0 shadow-lg flex items-center gap-2 w-full sm:w-auto text-sm lg:text-base px-4 lg:px-6 py-2.5 lg:py-3"
-                      onClick={() => toast.error("Fitur ini akan segera tersedia!!")}
+                      onClick={() => setIsEditing(true)}
                     />
                   ) : (
                     <div className="flex gap-2 lg:gap-3 w-full sm:w-auto">
