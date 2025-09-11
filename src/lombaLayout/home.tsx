@@ -400,9 +400,9 @@ const LandingPage = () => {
                           href="https://wa.me/6285922124908" 
                           className="text-base md:text-lg lg:text-xl font-plex text-red font-bold hover:text-red/80 transition-colors duration-200 block"
                         >
-                          0813-7759-2090
+                          0859-2212-4908
                         </a>
-                        <p className="text-xs md:text-sm text-black/60 font-plex mt-1">(Rizkia)</p>
+                        <p className="text-xs md:text-sm text-black/60 font-plex mt-1">(Rizka)</p>
                       </div>
 
                     </div>
