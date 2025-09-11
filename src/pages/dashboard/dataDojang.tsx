@@ -308,33 +308,14 @@ const fetchDojang = async () => {
     const response = await apiClient.get("/dojang/my-dojang");
     console.log('📋 Raw API Response:', response);
     
-    // PERBAIKAN: Handle different response formats
-    const responseData = (response as any).data;
-    console.log('📊 Response data:', responseData);
+    // PERBAIKAN: Response langsung adalah data dojang, bukan nested
+    const dojangData = response as any; // Direct response is the dojang data
+    console.log('📊 Dojang data:', dojangData);
     
-    // PERBAIKAN: Check if response contains actual dojang data
-    if (!responseData) {
-      console.log('⚠️ No data received from API');
-      setUserDojang(null);
-      setFormData(null);
-      return;
-    }
-    
-    // PERBAIKAN: Handle case where API returns { data: null } or { message: "..." }
-    if (responseData.data === null || responseData.message) {
-      console.log('⚠️ API returned empty dojang:', responseData.message || 'No dojang assigned');
-      toast.error(responseData.message || "Pelatih belum memiliki dojang");
-      setUserDojang(null);
-      setFormData(null);
-      return;
-    }
-    
-    // PERBAIKAN: Handle direct dojang data or nested data structure
-    const dojangData = responseData.id_dojang ? responseData : responseData.data;
-    
-    if (!dojangData || !dojangData.nama_dojang) {
-      console.log('⚠️ Invalid dojang data structure:', dojangData);
-      toast.error("Data dojang tidak valid");
+    // PERBAIKAN: Validate dojang data
+    if (!dojangData || !dojangData.id_dojang || !dojangData.nama_dojang) {
+      console.log('⚠️ Invalid dojang data:', dojangData);
+      toast.info("Data dojang tidak valid atau belum ada");
       setUserDojang(null);
       setFormData(null);
       return;
@@ -363,12 +344,11 @@ const fetchDojang = async () => {
   } catch (err: any) {
     console.error('❌ Error fetching dojang:', err);
     
-    // PERBAIKAN: Handle different error types
+    // Handle error responses
     if (err.response?.status === 404) {
-      toast.error("Pelatih belum memiliki dojang");
+      toast.info("Pelatih belum memiliki dojang");
     } else if (err.response?.status === 401) {
-      toast.error("Sesi login telah berakhir, silakan login ulang");
-      // Redirect to login or refresh auth
+      toast.error("Sesi login telah berakhir");
     } else {
       toast.error(err.response?.data?.message || "Gagal mengambil data dojang");
     }
@@ -464,13 +444,12 @@ const handleUpdate = async () => {
     updateFormData.append('kelurahan', formData.kelurahan.trim());
     updateFormData.append('alamat', formData.alamat.trim());
     
-    // Only append logo if a new file was selected
     if (logoFile) {
       updateFormData.append('logo', logoFile);
       console.log('📤 Uploading logo:', logoFile.name);
     }
 
-    console.log('📤 Updating dojang:', userDojang.id_dojang);
+    console.log('📤 Updating dojang ID:', userDojang.id_dojang);
     
     const response = await apiClient.put(
       `/dojang/${userDojang.id_dojang}`, 
@@ -479,17 +458,27 @@ const handleUpdate = async () => {
 
     console.log('📋 Update response:', response);
     
-    // PERBAIKAN: Handle response format
-    const responseData = (response as any).data;
-    const updatedData = responseData?.data || responseData;
+    // PERBAIKAN: Handle response format dari backend
+    let updatedData;
+    
+    if ((response as any)?.data?.data) {
+      // Format: { success: true, data: {...} }
+      updatedData = (response as any).data.data;
+    } else if ((response as any)?.data) {
+      // Format: { data: {...} }
+      updatedData = (response as any).data;
+    } else {
+      // Direct response
+      updatedData = response as any;
+    }
+    
+    console.log('📊 Processed update data:', updatedData);
     
     if (!updatedData || !updatedData.nama_dojang) {
       throw new Error("Response data tidak valid");
     }
     
     setUserDojang(updatedData);
-
-    // Update form data dengan data terbaru
     setFormData({
       name: updatedData.nama_dojang || "",
       email: updatedData.email || "",
@@ -502,7 +491,6 @@ const handleUpdate = async () => {
       alamat: updatedData.alamat || "",
     });
 
-    // Update logo preview with new URL if logo was updated
     if (updatedData.logo_url) {
       setLogoPreview(updatedData.logo_url);
     }
@@ -513,22 +501,7 @@ const handleUpdate = async () => {
 
   } catch (err: any) {
     console.error("❌ Error updating dojang:", err);
-    
-    if (err && typeof err === 'object' && 'response' in err) {
-      const error = err as any;
-      if (error.response?.data?.errors) {
-        const errorMessages = Object.values(error.response.data.errors).flat();
-        toast.error(errorMessages.join(", ") || "Ada field yang tidak valid.");
-      } else if (error.message?.includes('File size')) {
-        toast.error("File logo terlalu besar. Maksimal 5MB.");
-      } else if (error.message?.includes('Invalid file')) {
-        toast.error("Format logo tidak didukung. Gunakan JPG, PNG, JPEG, atau WebP.");
-      } else {
-        toast.error(error.response?.data?.message || error.message || "Update dojang gagal");
-      }
-    } else {
-      toast.error(err.message || "Update dojang gagal");
-    }
+    toast.error(err.response?.data?.message || err.message || "Update dojang gagal");
   } finally {
     setLoading(false);
   }
