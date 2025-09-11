@@ -80,7 +80,7 @@ const NavbarLanding = ({ onLogoutRequest }: { onLogoutRequest: () => void }) => 
 
   const navItems = [
     { to: "/", label: "Beranda" },
-    { to: "/event", label: "Event" },
+    { to: "/events", label: "Event" },
     { to: "/tutorial", label: "Tutorial" }
   ];
 

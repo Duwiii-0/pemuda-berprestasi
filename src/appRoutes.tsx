@@ -189,7 +189,7 @@ export default function AppRoutes() {
         {/* Landing pages - accessible to everyone */}
         <Route element={<LandingLayout />}>
           <Route index element={<Home />} />
-          <Route path="event" element={<Event />} />
+          <Route path="events" element={<Event />} />
         </Route>
 
         {/* Settings - protected route */}

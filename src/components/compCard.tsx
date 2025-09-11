@@ -35,7 +35,7 @@ const CompCard = () => {
         {/* Button Container */}
         <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center md:justify-start lg:justify-end">
           <GeneralButton 
-            to="/lomba/home" 
+            to="/event/home" 
             label="Join the Competition" 
             type="link" 
             className="active:scale-95 hover:shadow-lg hover:bg-yellow hover:text-black 
