@@ -747,9 +747,7 @@ const DataKompetisi = () => {
                         <div>
                           <span className="text-gray-500">Kelas Poomsae:</span>
                           <p className="font-medium text-gray-800">
-                            {cabang === "POOMSAE" 
-                              {kelasPoomsae}
-                            }
+                              {kelasPoomsae}                            
                           </p>
                         </div>
                       </div>
