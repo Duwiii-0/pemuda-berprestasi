@@ -380,7 +380,7 @@ const LandingPage = () => {
                   {/* Phone & Instagram - Stack on Mobile, Side by Side on Desktop */}
                   <div className="flex flex-col lg:grid lg:grid-cols-2 gap-4 md:gap-6">
                     {/* Phone Contact */}
-                    <a href="https://wa.me/6281377592090" className="group flex items-center gap-4 md:gap-5 p-5 md:p-6 lg:p-7 rounded-2xl bg-gradient-to-br from-red/5 to-red/10 hover:from-red/10 hover:to-red/15 transition-all duration-300 border border-red/20 hover:border-red/30 shadow-sm hover:shadow-lg hover:shadow-red/10 transform hover:-translate-y-1">
+                    <div className="group flex items-center gap-4 md:gap-5 p-5 md:p-6 lg:p-7 rounded-2xl bg-gradient-to-br from-red/5 to-red/10 hover:from-red/10 hover:to-red/15 transition-all duration-300 border border-red/20 hover:border-red/30 shadow-sm hover:shadow-lg hover:shadow-red/10 transform hover:-translate-y-1">
                       <div className="flex-shrink-0 w-12 h-12 md:w-14 md:h-14 bg-gradient-to-br from-red to-red/80 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-lg">
                         <Phone className="w-5 h-5 md:w-6 md:h-6 text-white" strokeWidth={2} />
                       </div>
@@ -394,10 +394,21 @@ const LandingPage = () => {
                         </a>
                         <p className="text-xs md:text-sm text-black/60 font-plex mt-1">(Rora)</p>
                       </div>
-                    </a>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm md:text-base text-black/70 font-plex mb-1 font-medium"> </p>
+                        <a 
+                          href="https://wa.me/6285922124908" 
+                          className="text-base md:text-lg lg:text-xl font-plex text-red font-bold hover:text-red/80 transition-colors duration-200 block"
+                        >
+                          0813-7759-2090
+                        </a>
+                        <p className="text-xs md:text-sm text-black/60 font-plex mt-1">(Rizkia)</p>
+                      </div>
+
+                    </div>
                           
                     {/* Instagram Contact */}
-                    <a href="https://www.instagram.com/sumsel_taekwondo"  className="group flex items-center gap-4 md:gap-5 p-5 md:p-6 lg:p-7 rounded-2xl bg-gradient-to-br from-red/5 to-red/10 hover:from-red/10 hover:to-red/15 transition-all duration-300 border border-red/20 hover:border-red/30 shadow-sm hover:shadow-lg hover:shadow-red/10 transform hover:-translate-y-1">
+                    <div className="group flex items-center gap-4 md:gap-5 p-5 md:p-6 lg:p-7 rounded-2xl bg-gradient-to-br from-red/5 to-red/10 hover:from-red/10 hover:to-red/15 transition-all duration-300 border border-red/20 hover:border-red/30 shadow-sm hover:shadow-lg hover:shadow-red/10 transform hover:-translate-y-1">
                       <div className="flex-shrink-0 w-12 h-12 md:w-14 md:h-14 bg-gradient-to-br from-red to-red/80 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-lg">
                         <Instagram className="w-5 h-5 md:w-6 md:h-6 text-white" strokeWidth={2} />
                       </div>
@@ -412,7 +423,7 @@ const LandingPage = () => {
                           @sumsel_taekwondo
                         </a>
                       </div>
-                    </a>
+                    </div>
                   </div>
                 </div>
                           
