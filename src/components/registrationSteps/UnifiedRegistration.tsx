@@ -208,94 +208,93 @@ useEffect(() => {
 ]);
 
   // ✅ UPDATED: useEffect untuk fetch eligible atlits dengan poomsae team support
-  useEffect(() => {
-    // Reset ketika tidak memenuhi criteria minimum
-    if (!formData.styleType || !formData.categoryType || !user?.pelatih?.id_dojang) {
+useEffect(() => {
+  // Reset ketika tidak memenuhi criteria minimum
+  if (!formData.styleType || !formData.categoryType || !user?.pelatih?.id_dojang) {
+    return;
+  }
+
+  // ✅ UPDATED: Untuk KYORUGI (baik pemula maupun prestasi), perlu semua field
+  if (formData.styleType === "KYORUGI") {
+    // Perlu gender, umur, dan berat badan untuk semua kategori kyorugi
+    if (!formData.selectedGender || !formData.selectedAge || !formData.selectedWeight) {
       return;
     }
+  }
 
-    // Untuk kategori pemula, cukup gender saja (untuk kyorugi)
+  // ✅ Untuk POOMSAE, handling khusus berdasarkan kategori
+  if (formData.styleType === "POOMSAE") {
+    // Untuk kategori pemula, cukup gender saja
     if (formData.categoryType === "pemula") {
-      // Pemula tetap perlu gender untuk semua style
       if (!formData.selectedGender) return;
       
       fetchEligibleAtlits(kompetisiId, {
         styleType: formData.styleType,
         gender: formData.selectedGender.value as "LAKI_LAKI" | "PEREMPUAN",
-        umurId: 0, // dummy value untuk pemula
-        beratBadanId: 0, // dummy value untuk pemula
+        umurId: 0, // dummy value untuk poomsae pemula
+        beratBadanId: 0, // dummy value untuk poomsae pemula
         categoryType: formData.categoryType,
         dojangId: user.pelatih.id_dojang,
       });
       return;
     }
 
-    // Untuk kategori prestasi, perlu kelas umur
+    // Untuk POOMSAE prestasi, perlu kelas umur
     if (!formData.selectedAge) {
       return;
     }
 
-    // Untuk KYORUGI prestasi, perlu gender dan kelas berat
-    if (formData.styleType === "KYORUGI") {
-      if (!formData.selectedGender || !formData.selectedWeight) {
-        return;
-      }
+    if (!formData.selectedPoomsae) {
+      return;
     }
-
-    // ✅ UPDATED: Untuk POOMSAE prestasi
-    if (formData.styleType === "POOMSAE") {
-      if (!formData.selectedPoomsae) {
-        return;
-      }
-      
-      // Jika individu, perlu gender
-      if (!isPoomsaeTeam() && !formData.selectedGender) {
-        return;
-      }
+    
+    // Jika individu, perlu gender
+    if (!isPoomsaeTeam() && !formData.selectedGender) {
+      return;
     }
+  }
 
-    // Semua kriteria terpenuhi, fetch eligible atlits
-    const filter: any = {
-      styleType: formData.styleType,
-      umurId: Number(formData.selectedAge.value),
-      categoryType: formData.categoryType,
-      dojangId: user.pelatih.id_dojang,
-    };
+  // Semua kriteria terpenuhi, fetch eligible atlits
+  const filter: any = {
+    styleType: formData.styleType,
+    umurId: Number(formData.selectedAge?.value),
+    categoryType: formData.categoryType,
+    dojangId: user.pelatih.id_dojang,
+  };
 
-    // ✅ FIXED: ONLY add gender if it's required for the specific category
-    const shouldIncludeGender = (
-      formData.styleType === "KYORUGI" || 
-      (formData.styleType === "POOMSAE" && !isPoomsaeTeam())
-    );
+  // ✅ FIXED: Add gender for KYORUGI (semua kategori) dan POOMSAE individual
+  const shouldIncludeGender = (
+    formData.styleType === "KYORUGI" || 
+    (formData.styleType === "POOMSAE" && !isPoomsaeTeam())
+  );
 
-    if (shouldIncludeGender && formData.selectedGender) {
-      filter.gender = formData.selectedGender.value as "LAKI_LAKI" | "PEREMPUAN";
-    }
+  if (shouldIncludeGender && formData.selectedGender) {
+    filter.gender = formData.selectedGender.value as "LAKI_LAKI" | "PEREMPUAN";
+  }
 
-    // ✅ CONDITIONAL: Add weight for KYORUGI
-    if (formData.styleType === "KYORUGI" && formData.selectedWeight) {
-      filter.beratBadanId = Number(formData.selectedWeight.value);
-    }
+  // ✅ Add weight for KYORUGI (semua kategori)
+  if (formData.styleType === "KYORUGI" && formData.selectedWeight) {
+    filter.beratBadanId = Number(formData.selectedWeight.value);
+  }
 
-    // ✅ CONDITIONAL: Add poomsae for POOMSAE
-    if (formData.styleType === "POOMSAE" && formData.selectedPoomsae) {
-      filter.poomsaeId = Number(formData.selectedPoomsae.value);
-      filter.beratBadanId = 0; // Not needed for POOMSAE
-    }
+  // ✅ Add poomsae for POOMSAE prestasi
+  if (formData.styleType === "POOMSAE" && formData.categoryType === "prestasi" && formData.selectedPoomsae) {
+    filter.poomsaeId = Number(formData.selectedPoomsae.value);
+    filter.beratBadanId = 0; // Not needed for POOMSAE
+  }
 
-    console.log("🚀 Fetching atlits with filter:", filter);
-    fetchEligibleAtlits(kompetisiId, filter);
-  }, [
-    formData.styleType,
-    formData.selectedGender,
-    formData.selectedAge,
-    formData.selectedWeight,
-    formData.selectedPoomsae,
-    formData.categoryType,
-    user?.pelatih?.id_dojang,
-    kompetisiId,
-  ]);
-
+  console.log("🚀 Fetching atlits with filter:", filter);
+  fetchEligibleAtlits(kompetisiId, filter);
+}, [
+  formData.styleType,
+  formData.selectedGender,
+  formData.selectedAge,
+  formData.selectedWeight,
+  formData.selectedPoomsae,
+  formData.categoryType,
+  user?.pelatih?.id_dojang,
+  kompetisiId,
+]);
   const totalSteps = 4;
 
   // Get existing registrations for this competition
