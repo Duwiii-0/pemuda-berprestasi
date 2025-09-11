@@ -485,7 +485,11 @@ const DataKompetisi = () => {
                       value={{
                         value: filterGender,
                         label:
-                          filterGender === "ALL" ? "Semua jenis kelamin" : filterGender,
+                          filterGender === "ALL"
+                            ? "Semua Jenis Kelamin"
+                            : filterGender === "LAKI_LAKI"
+                            ? "Laki-Laki"
+                            : "Perempuan",
                       }}
                       onChange={(selected) => setFilterGender(selected?.value as any)}
                       options={[
