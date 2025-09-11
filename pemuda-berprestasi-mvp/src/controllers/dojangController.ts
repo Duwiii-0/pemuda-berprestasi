@@ -40,22 +40,39 @@ static async getMyDojang(req: Request, res: Response) {
     const idAkun = (req.user as any)?.id_akun;
     if (!idAkun) throw new Error("id_akun tidak ditemukan di token");
 
+    console.log('🔍 Debug - idAkun:', idAkun);
+
     // cari pelatih berdasarkan id_akun
     const pelatih = await prisma.tb_pelatih.findUnique({
       where: { id_akun: idAkun },
       include: { dojang: true },
     });
 
+    console.log('👤 Debug - Pelatih found:', pelatih ? 'Yes' : 'No');
+    console.log('🏢 Debug - Dojang data:', pelatih?.dojang);
+
     if (!pelatih) throw new Error("Pelatih tidak ditemukan");
+
+    // PERBAIKAN: Handle case dimana pelatih belum punya dojang
+    if (!pelatih.dojang) {
+      console.log('⚠️ Pelatih belum memiliki dojang');
+      return res.json({ 
+        message: "Pelatih belum memiliki dojang",
+        data: null 
+      });
+    }
 
     // TAMBAHAN: Add logo_url untuk frontend
     const dojangWithLogo = {
       ...pelatih.dojang,
-      logo_url: pelatih.dojang?.logo ? `/uploads/dojang/logos/${pelatih.dojang.logo}` : null
+      logo_url: pelatih.dojang.logo ? `/uploads/dojang/logos/${pelatih.dojang.logo}` : null
     };
 
+    console.log('✅ Returning dojang data:', dojangWithLogo);
     res.json(dojangWithLogo);
+    
   } catch (err: any) {
+    console.error('❌ getMyDojang Error:', err);
     res.status(400).json({ message: err.message });
   }
 }
