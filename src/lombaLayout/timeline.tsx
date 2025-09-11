@@ -2,7 +2,7 @@ import { TimelineCardKiri, TimelineCardKanan } from "../components/TimelineCard"
 import { useNavigate } from "react-router-dom";
 
 const events = [
-  { event: "registrasi", time: "1 - 8 November 2025", side: "left", month: "November" },
+  { event: "registrasi", time: "1 Agustus - 8 November 2025", side: "left", month: "November" },
   { event: "Penimbangan", time: "21 November 2025 10.00 - 15.00", side: "right", month: "November" },
   { event: "technical meeting", time: "21 November 2025 15.30 - selesai", side: "left", month: "November" },
   { event: "Pertandingan", time: "22 -26 November 2025", side: "right", month: "November" },

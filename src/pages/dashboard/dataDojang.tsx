@@ -119,8 +119,8 @@ const Dojang = () => {
     const fetchDojang = async () => {
       try {
         setLoading(true);
-        const response = await apiClient.get<{data: DojangData}>("/dojang/my-dojang");
-        const dojangData = response.data.data;
+        const response = await apiClient.get("/dojang/my-dojang");
+        const dojangData = response.data as DojangData;
 
         setUserDojang(dojangData);
         setFormData({
@@ -260,13 +260,13 @@ const handleUpdate = async () => {
       }
     }
 
-    const response = await apiClient.put<{data: DojangData}>(
-      `/dojang/${userDojang.id_dojang}`, 
-      updateFormData
-    );
+const response = await apiClient.put(
+        `/dojang/${userDojang.id_dojang}`, 
+        updateFormData
+      );
 
-    const updatedData = response.data.data;
-    setUserDojang(updatedData);
+      const updatedData = response.data as DojangData;
+          setUserDojang(updatedData);
     
     // Update logo preview with new URL if logo was updated - TAMBAHKAN INI
     if (updatedData.logo_url) {
@@ -379,13 +379,13 @@ const handleUpdate = async () => {
                         label="Batal"
                         className="text-red bg-white hover:bg-red/5 border-2 border-red/30 hover:border-red/50 flex-1 sm:flex-none text-sm lg:text-base px-4 lg:px-6 py-2.5 lg:py-3"
                         onClick={handleCancel}
-                        disabled={isLoading}
+                        disabled={loading}
                       />
                       <GeneralButton
-                        label={isLoading ? "Menyimpan..." : "Simpan"}
+                        label={loading ? "Menyimpan..." : "Simpan"}
                         className="text-white bg-gradient-to-r from-red to-red/80 hover:from-red/90 hover:to-red/70 border-0 shadow-lg flex items-center gap-2 flex-1 sm:flex-none text-sm lg:text-base px-4 lg:px-6 py-2.5 lg:py-3 disabled:opacity-50 disabled:cursor-not-allowed"
                         onClick={handleUpdate}
-                        disabled={isLoading}
+                        disabled={loading}
                       />
                     </div>
                   )
