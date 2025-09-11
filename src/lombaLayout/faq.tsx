@@ -21,7 +21,7 @@ const FAQ = () => {
       },
       {
         question: "Bagaimana cara melakukan pembayaran pendaftaran?",
-        answer: "Pembayaran dilakukan ke rekening a.n Panitia UKT Pengprov TISS No. 19309010367. Konfirmasi pembayaran dikirim melalui nomor panitia (Jeje: 0853-7844-1489)."
+        answer: "Pembayaran dilakukan ke Bank Sumsel Babel dengan rekening a.n Panitia UKT Pengprov TISS No. 19309010367. Konfirmasi pembayaran dikirim melalui nomor panitia (Jeje: 0853-7844-1489)."
       }
     ]
   },
