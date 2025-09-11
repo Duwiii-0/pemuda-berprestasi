@@ -73,6 +73,7 @@ const provinsiOptions = Object.keys(provinsiKotaData).map(provinsi => ({
   label: provinsi
 }));
 
+
 const FilePreview = ({ 
   file, 
   existingPath, 
@@ -117,7 +118,7 @@ const FilePreview = ({
     return label;
   };
 
-  // PERBAIKAN: Fungsi download yang lebih robust
+  // PERBAIKAN: Fungsi download yang disederhanakan
   const handleDownload = async () => {
     if (!existingPath) {
       toast.error('Tidak ada file untuk didownload');
@@ -127,25 +128,8 @@ const FilePreview = ({
     try {
       const baseUrl = 'https://pemudaberprestasi.com';
       
-      // Tentukan folder berdasarkan label
-      const folderMap: Record<string, string> = {
-        'akte': 'akte_kelahiran',
-        'foto': 'pas_foto',
-        'sertifikat': 'sertifikat_belt', 
-        'belt': 'sertifikat_belt',
-        'ktp': 'ktp'
-      };
-      
-      const folder = Object.keys(folderMap).find(key => 
-        label.toLowerCase().includes(key)
-      );
-      
-      if (!folder) {
-        toast.error('Tidak dapat menentukan jenis file');
-        return;
-      }
-      
-      const downloadUrl = `${baseUrl}/uploads/atlet/${folderMap[folder]}/${existingPath}`;
+      // PERBAIKAN: Langsung gunakan path dari database tanpa sub-folder
+      const downloadUrl = `${baseUrl}/uploads/atlet/${existingPath}`;
       console.log(`📥 Downloading from: ${downloadUrl}`);
       
       // Test apakah file accessible terlebih dahulu
@@ -172,30 +156,17 @@ const FilePreview = ({
     }
   };
 
-  // PERBAIKAN: Fungsi preview yang lebih robust
+  // PERBAIKAN: Fungsi preview yang disederhanakan
   const getPreviewUrl = () => {
     if (file && previewUrl) return previewUrl;
     
     if (existingPath) {
       const baseUrl = 'https://pemudaberprestasi.com';
       
-      const folderMap: Record<string, string> = {
-        'akte': 'akte_kelahiran',
-        'foto': 'pas_foto',
-        'sertifikat': 'sertifikat_belt',
-        'belt': 'sertifikat_belt',
-        'ktp': 'ktp'
-      };
-      
-      const folder = Object.keys(folderMap).find(key => 
-        label.toLowerCase().includes(key)
-      );
-      
-      if (folder) {
-        const staticUrl = `${baseUrl}/uploads/atlet/${folderMap[folder]}/${existingPath}`;
-        console.log("🌐 Preview URL:", staticUrl);
-        return staticUrl;
-      }
+      // PERBAIKAN: Langsung gunakan path dari database tanpa sub-folder
+      const staticUrl = `${baseUrl}/uploads/atlet/${existingPath}`;
+      console.log("🌐 Preview URL:", staticUrl);
+      return staticUrl;
     }
     
     return null;
