@@ -14,7 +14,7 @@ const AllAtlets: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const { token } = useAuth();
   const navigate = useNavigate();
-  const [filterAgeCategory, setFilterAgeCategory] = useState<"ALL" | "CADET" | "JUNIOR" | "SENIOR">("ALL");
+  const [filterAgeCategory, setFilterAgeCategory] = useState<"ALL" | "Super Pra-cadet" | "Pracadet" | "Cadet" | "Junior" | "Senior" >("ALL");
   
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -41,11 +41,13 @@ const AllAtlets: React.FC = () => {
     fetchData();
   }, []);
 
-  const getAgeCategory = (umur: number | undefined): "CADET" | "JUNIOR" | "SENIOR" | undefined => {
+  const getAgeCategory = (umur: number | undefined): "Super Pra-cadet" | "Pracadet" | "Cadet" | "Junior" | "Senior" | undefined => {
     if (!umur) return undefined;
-    if (umur >= 10 && umur <= 12) return "CADET";
-    if (umur >= 13 && umur <= 15) return "JUNIOR";
-    if (umur >= 16) return "SENIOR";
+    if (umur >= 5 && umur <= 8) return "Super Pra-cadet";
+    if (umur >= 9 && umur <= 11) return "Pracadet";
+    if (umur >= 12 && umur <= 14) return "Cadet";
+    if (umur >= 15 && umur <= 17) return "Junior";
+    if (umur >= 18) return "Senior";
   };
 
   const filteredAtlits = atlits.filter((atlet) => {
