@@ -256,11 +256,9 @@ const RegisterDojang = () => {
   if (fileInputMobile) fileInputMobile.value = '';
 };
 
-  // Perbaiki fungsi handleRegister
 const handleRegister = async () => {
   setIsLoading(true);
   try {
-    // Debugging: Log semua data sebelum dikirim
     console.log('📝 Data yang akan dikirim:', {
       nama_dojang: namaDojang.trim(),
       email: email.trim(),
@@ -271,30 +269,24 @@ const handleRegister = async () => {
       logo: logoFile?.name || 'tidak ada'
     });
 
-    // Validasi data sebelum dikirim
     if (!namaDojang.trim()) {
       toast.error("Nama dojang tidak boleh kosong");
       return;
     }
 
-    // Menggunakan FormData untuk upload file
     const formData = new FormData();
-    
-    // Pastikan semua field tidak undefined/null
-    formData.append('nama_dojang', namaDojang.trim() || '');
+    formData.append('nama_dojang', namaDojang.trim());
     formData.append('email', email.trim() || '');
     formData.append('no_telp', no_telp.trim() || '');
     formData.append('negara', negara.trim() || 'Indonesia');
     formData.append('provinsi', provinsi.trim() || '');
     formData.append('kota', kabupaten.trim() || '');
     
-    // Tambahkan file logo jika ada
     if (logoFile) {
       formData.append('logo', logoFile);
       console.log('📎 Uploading logo:', logoFile.name, 'Size:', logoFile.size);
     }
 
-    // Debug FormData contents
     console.log('📤 FormData contents:');
     for (let [key, value] of formData.entries()) {
       if (value instanceof File) {
@@ -304,54 +296,39 @@ const handleRegister = async () => {
       }
     }
 
-    // Kirim request dengan error handling yang lebih baik
+    console.log('🚀 Sending request to /dojang...');
+    
+    // ✅ PERBAIKAN: Panggil API dan handle response dengan benar
     const response = await apiClient.postFormData("/dojang", formData);
     
     console.log('✅ Registration response:', response);
     toast.success("Registrasi dojang berhasil! Silahkan login.");
-
-    // Reset form setelah berhasil
     resetForm();
 
-  } catch (err: any) {
-    console.error('❌ Registration error:', err);
+  } catch (error: any) {
+    console.error('❌ Registration error:', error);
     
-    // Handle berbagai jenis error
-    if (err?.response?.status === 400) {
-      // Bad Request - biasanya validation error
-      const errorData = err.response?.data;
-      console.error('📋 Error data:', errorData);
+    // ✅ PERBAIKAN: Error handling yang sesuai dengan API Client
+    if (error instanceof Error) {
+      const errorMessage = error.message;
       
-      if (errorData?.message) {
-        toast.error(errorData.message);
-      } else if (errorData?.errors) {
-        // Handle validation errors
-        const firstError = Object.values(errorData.errors)[0];
-        if (Array.isArray(firstError)) {
-          toast.error(firstError[0] as string);
-        } else {
-          toast.error("Ada kesalahan pada data yang diinput");
-        }
-      } else {
+      // Cek jika error message mengandung status HTTP
+      if (errorMessage.includes('400')) {
         toast.error("Data tidak valid. Periksa kembali input Anda.");
+      } else if (errorMessage.includes('422')) {
+        toast.error("Data tidak sesuai format yang diperlukan.");
+      } else if (errorMessage.includes('413')) {
+        toast.error("File terlalu besar. Maksimal 5MB.");
+      } else if (errorMessage.includes('500')) {
+        toast.error("Terjadi kesalahan server. Coba lagi nanti.");
+      } else if (errorMessage.includes('Network') || errorMessage.includes('Failed to fetch')) {
+        toast.error("Koneksi bermasalah. Periksa internet Anda.");
+      } else {
+        // Tampilkan pesan error dari server jika ada
+        toast.error(errorMessage || "Registrasi gagal. Coba lagi.");
       }
-    } else if (err?.response?.status === 422) {
-      // Unprocessable Entity - validation failed
-      toast.error("Data tidak sesuai format. Periksa kembali semua field.");
-    } else if (err?.response?.status === 413) {
-      // Payload Too Large
-      toast.error("File terlalu besar. Maksimal 5MB.");
-    } else if (err?.response?.status === 500) {
-      // Server Error
-      toast.error("Terjadi kesalahan server. Coba lagi nanti.");
-    } else if (err?.code === 'NETWORK_ERROR') {
-      toast.error("Koneksi bermasalah. Periksa internet Anda.");
     } else {
-      // Generic error
-      const errorMessage = err?.response?.data?.message || 
-                          err?.message || 
-                          "Registrasi gagal. Coba lagi.";
-      toast.error(errorMessage);
+      toast.error("Terjadi kesalahan tidak terduga.");
     }
   } finally {
     setIsLoading(false);
