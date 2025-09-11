@@ -119,8 +119,8 @@ const Dojang = () => {
     const fetchDojang = async () => {
       try {
         setLoading(true);
-        const response = await apiClient.get<{data: DojangData}>("/dojang/my-dojang");
-        const dojangData = response.data.data;
+        const response = await apiClient.get("/dojang/my-dojang");
+        const dojangData = response.data as DojangData;
 
         setUserDojang(dojangData);
         setFormData({
@@ -260,13 +260,13 @@ const handleUpdate = async () => {
       }
     }
 
-    const response = await apiClient.put<{data: DojangData}>(
-      `/dojang/${userDojang.id_dojang}`, 
-      updateFormData
-    );
+const response = await apiClient.put(
+        `/dojang/${userDojang.id_dojang}`, 
+        updateFormData
+      );
 
-    const updatedData = response.data.data;
-    setUserDojang(updatedData);
+      const updatedData = response.data as DojangData;
+          setUserDojang(updatedData);
     
     // Update logo preview with new URL if logo was updated - TAMBAHKAN INI
     if (updatedData.logo_url) {
