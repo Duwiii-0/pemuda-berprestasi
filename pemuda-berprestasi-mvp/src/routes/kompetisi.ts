@@ -36,6 +36,7 @@ router.post('/:id/register', authenticate, KompetisiController.registerAtlet);
    validateRequest(kompetisiValidation.updateStatus),
    KompetisiController.updateRegistrationStatus
  );
+router.delete("/:id/participants/:participantId", KompetisiController.deleteParticipant);
 // Tournament management
 // router.post('/:id/brackets', KompetisiController.generateBrackets);
 // router.get('/:id/brackets', KompetisiController.getBrackets);

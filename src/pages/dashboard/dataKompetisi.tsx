@@ -36,14 +36,14 @@ const StatsCard: React.FC<StatsCardProps> = ({ icon: Icon, title, value, color }
 const DataKompetisi = () => {
   const navigate = useNavigate();
   const { user, token } = useAuth();
-  const { kompetisiList, loadingKompetisi, fetchKompetisiList, fetchAtletByKompetisi, pesertaList } = useKompetisi();
+  const { kompetisiList, loadingKompetisi, fetchKompetisiList, fetchAtletByKompetisi, pesertaList, deleteParticipant } = useKompetisi();
   const { dojangOptions, refreshDojang } = useDojang();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "PENDAFTARAN" | "SEDANG_DIMULAI" | "SELESAI">("all");
   const [selectedKompetisi, setSelectedKompetisi] = useState<Kompetisi | null>(null);
   const [showPeserta, setShowPeserta] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  
+  const [deletingParticipants, setDeletingParticipants] = useState<Set<number>>(new Set());
   // State untuk modal registrasi
   const [showRegistrationModal, setShowRegistrationModal] = useState(false);
   
@@ -92,6 +92,32 @@ const DataKompetisi = () => {
     // kalau role pelatih, lemparkan id_dojang ke API
     const idDojang = user?.pelatih?.id_dojang;
     await fetchAtletByKompetisi(kompetisi.id_kompetisi, undefined, idDojang);
+  };
+
+   const handleDeleteParticipant = async (kompetisiId: number, participantId: number, participantName: string) => {
+    // Konfirmasi delete
+    const isConfirmed = window.confirm(
+      `Apakah Anda yakin ingin menghapus peserta "${participantName}" dari kompetisi ini?`
+    );
+    
+    if (!isConfirmed) return;
+
+    // Set loading state for this specific participant
+    setDeletingParticipants(prev => new Set(prev).add(participantId));
+
+    try {
+      await deleteParticipant(kompetisiId, participantId);
+      toast.success(`Peserta "${participantName}" berhasil dihapus dari kompetisi`);
+    } catch (error: any) {
+      toast.error(error.message || "Gagal menghapus peserta");
+    } finally {
+      // Remove loading state
+      setDeletingParticipants(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(participantId);
+        return newSet;
+      });
+    }
   };
 
   const formatTanggal = (date: string | Date) => {
@@ -659,7 +685,9 @@ const DataKompetisi = () => {
                               "pemula"
                               ? "-"
                               : peserta.kelas_kejuaraan.kelompok.nama_kelompok;
-                        
+                          
+                          const isDeleting = deletingParticipants.has(peserta.id_peserta_kompetisi);
+                          
                           return (
                             <tr
                               key={peserta.id_peserta_kompetisi}
@@ -705,12 +733,28 @@ const DataKompetisi = () => {
                               </td>
                               {/* 👇 Tambahan kolom Aksi */}
                               <td className="py-4 px-4 text-center flex justify-center gap-3">
-                                <button className="text-blue-600 hover:text-blue-800">
+                                <button className="text-blue-600 hover:text-blue-800 cursor-pointer" onClick={(e) => e.stopPropagation()}>
                                   <Edit size={18} />
                                 </button>
-                                <button className="text-red-600 hover:text-red-800">
-                                  <Trash size={18} />
-                                </button>
+                                <button 
+                                    className={`text-red-600 hover:text-red-800 transition-colors ${
+                                      isDeleting ? 'opacity-50 cursor-not-allowed' : ''
+                                    }`}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      if (!isDeleting) {
+                                        handleDeleteParticipant(
+                                          selectedKompetisi.id_kompetisi, 
+                                          peserta.id_peserta_kompetisi,
+                                          namaPeserta
+                                        );
+                                      }
+                                    }}
+                                    disabled={isDeleting}
+                                    title={isDeleting ? "Menghapus..." : "Hapus peserta"}
+                                  >
+                                    <Trash size={18} />
+                                  </button>
                               </td>
                             </tr>
                           );

@@ -29,6 +29,7 @@ export interface Kompetisi {
   nama_event: string;
   status: "PENDAFTARAN" | "SEDANG_DIMULAI" | "SELESAI";
   lokasi?: string;
+  jumlah_peserta?: number; // Added for participant count tracking
 }
 
 export interface KompetisiDetail extends Kompetisi {
@@ -186,6 +187,10 @@ export interface KompetisiContextType {
     status: "PENDING" | "APPROVED" | "REJECTED"
   ) => Promise<any>;
 
+  deleteParticipant: (
+    kompetisiId: number,
+    participantId: number
+  ) => Promise<any>;
 }
 
 const KompetisiContext = createContext<KompetisiContextType | undefined>(
@@ -259,7 +264,6 @@ export const KompetisiProvider = ({ children }: { children: ReactNode }) => {
       if (cabang) url += `&cabang=${cabang}`;
       if (id_dojang) url += `&id_dojang=${id_dojang}`; 
 
-
       const res = await apiClient.get(url);
 
       setPesertaList(Array.isArray(res.data) ? res.data as PesertaKompetisi[] : res.data.data as PesertaKompetisi[] ?? []);
@@ -290,26 +294,73 @@ export const KompetisiProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const updatePesertaStatus = async (
-  kompetisiId: number,
-  participantId: number,
-  status: "PENDING" | "APPROVED" | "REJECTED"
-) => {
-  try {
-    const res = await apiClient.put(
-      `/kompetisi/${kompetisiId}/participants/${participantId}/status`,
-      { status }
-    );
+    kompetisiId: number,
+    participantId: number,
+    status: "PENDING" | "APPROVED" | "REJECTED"
+  ) => {
+    try {
+      const res = await apiClient.put(
+        `/kompetisi/${kompetisiId}/participants/${participantId}/status`,
+        { status }
+      );
 
-    // setelah update, otomatis refresh daftar peserta
-    await fetchAtletByKompetisi(kompetisiId);
+      // setelah update, otomatis refresh daftar peserta
+      await fetchAtletByKompetisi(kompetisiId);
 
-    return res.data;
-  } catch (err: any) {
-    console.error("[updatePesertaStatus] error:");
-    throw err;
-  }
-};
+      return res.data;
+    } catch (err: any) {
+      console.error("[updatePesertaStatus] error:");
+      throw err;
+    }
+  };
 
+  const deleteParticipant = async (
+    kompetisiId: number,
+    participantId: number
+  ) => {
+    // Store original data for rollback
+    const originalPesertaList = [...pesertaList];
+    
+    try {
+      console.log(`🗑️ Deleting participant ${participantId} from kompetisi ${kompetisiId}`);
+      
+      // Optimistic update - hapus dari UI dulu
+      setPesertaList(prev => prev.filter(p => p.id_peserta_kompetisi !== participantId));
+      
+      const response = await apiClient.delete(`/kompetisi/${kompetisiId}/participants/${participantId}`);
+      
+      console.log("✅ Participant deleted successfully:", response.data);
+      
+      // Update kompetisi list jika ada perubahan jumlah peserta
+      setKompetisiList(prev => 
+        prev.map(k => 
+          k.id_kompetisi === kompetisiId 
+            ? { ...k, jumlah_peserta: Math.max((k.jumlah_peserta || 1) - 1, 0) }
+            : k
+        )
+      );
+      
+      // Update pagination total
+      setAtletPagination(prev => ({
+        ...prev,
+        total: Math.max(prev.total - 1, 0)
+      }));
+      
+      console.log("Peserta berhasil dihapus dari kompetisi");
+      return response.data;
+      
+    } catch (error: any) {
+      console.error("❌ Error deleting participant:", error);
+      
+      // Rollback optimistic update
+      setPesertaList(originalPesertaList);
+      
+      const errorMessage = error.response?.data?.message || error.message || "Gagal menghapus peserta";
+      console.error(errorMessage);
+      
+      throw new Error(errorMessage);
+    }
+  };
 
   return (
     <KompetisiContext.Provider
@@ -326,6 +377,7 @@ export const KompetisiProvider = ({ children }: { children: ReactNode }) => {
         fetchKompetisiById,
         fetchAtletByKompetisi,
         updatePesertaStatus,
+        deleteParticipant,
         setAtletPage,
         setAtletLimit,
       }}
