@@ -9,7 +9,15 @@ type OptionType = { value: string; label: string };
 type Dojang = {
   id_dojang: number;
   nama_dojang: string;
-  provinsi?: string;
+  email:      String
+  no_telp :    String
+  founder:     String
+  negara:      String
+  provinsi:    String
+  kota:        String
+  kecamatan:   String
+  kelurahan:   String
+  alamat:      String
   jumlah_atlet?: number;
   created_at: string;
   // tambahkan field lain sesuai kebutuhan
@@ -50,7 +58,12 @@ export const DojangProvider = ({ children }: Props) => {
     const listDojang: Dojang[] = data.data?.map((item: any) => ({
       id_dojang: item.id_dojang,
       nama_dojang: item.nama_dojang,
+      email: item.email,
+      no_telp: item.no_telp,
+      negara: item.negara,
       provinsi: item.provinsi,
+      kota: item.kota,
+      alamat: item.alamat,      
       jumlah_atlet: item.jumlah_atlet, // <- sudah dikirim dari backend
       created_at: item.created_at,
     })) || [];

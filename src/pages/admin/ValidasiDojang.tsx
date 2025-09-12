@@ -479,6 +479,8 @@ const ValidasiDojang: React.FC = () => {
                           <h3 className="font-semibold mb-2" style={{ color: '#050505', opacity: 0.7 }}>Informasi Dasar</h3>
                           <div className="space-y-2 text-sm">
                             <div><span className="font-medium">Nama:</span> {dojang.nama_dojang}</div>
+                            <div><span className="font-medium">Email:</span> {dojang.email}</div>
+                            <div><span className="font-medium">no telp:</span> {dojang.no_telp}</div>
                             <div><span className="font-medium">Jumlah Atlet:</span> {dojang.jumlah_atlet || 0}</div>
                             <div><span className="font-medium">Provinsi:</span> {dojang.provinsi || '-'}</div>
                             <div><span className="font-medium">Tanggal Daftar:</span> {formatDate(dojang.created_at)}</div>
