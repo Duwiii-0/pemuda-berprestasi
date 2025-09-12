@@ -21,7 +21,7 @@ const provinsiKotaData: { [key: string]: string[] } = {
   "Sumatera Barat": ["Padang", "Bukittinggi", "Padang Panjang", "Pariaman", "Payakumbuh", "Sawahlunto", "Solok"],
   "Riau": ["Pekanbaru", "Dumai"],
   "Kepulauan Riau": ["Tanjung Pinang", "Batam"],
-  "Jambi": ["Jambi", "Sungai Penuh"],
+  "Jambi": ["Jambi", "Sungai Penuh", "Merangin"],
   "Sumatera Selatan": ["Palembang", "Lubuklinggau", "Pagar Alam", "Prabumulih"],
   "Bangka Belitung": ["Pangkal Pinang"],
   "Bengkulu": ["Bengkulu"],
