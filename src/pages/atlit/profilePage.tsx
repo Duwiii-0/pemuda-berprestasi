@@ -379,29 +379,32 @@ const handleUpdate = async () => {
 
     // FIX: Use updateAtlet and assign to result variable
     const result = await updateAtlet(Number(id), formDataSend);
-
+    
     if (result) {
-      // PERBAIKAN: Refresh data dengan file paths yang baru
-      const updatedData: AtletWithFiles = {
-        ...result,
-        // Map file paths yang baru dari response
-        akte_kelahiran_path: result.akte_kelahiran || undefined,
-        pas_foto_path: result.pas_foto || undefined,
-        sertifikat_belt_path: result.sertifikat_belt || undefined,
-        ktp_path: result.ktp || undefined,
-        // Reset file objects
-        akte_kelahiran: null,
-        pas_foto: null,
-        sertifikat_belt: null,
-        ktp: null,
-      };
+      // PERBAIKAN: Fetch data terbaru dari server
+      const freshData = await fetchAtletById(Number(id));
       
-      setFormData(updatedData);
-      setOriginalData(updatedData);
-      setIsEditing(false);
-      toast.success("Data atlet berhasil diperbarui ✅");
+      if (freshData) {
+        const updatedData: AtletWithFiles = {
+          ...freshData,
+          akte_kelahiran_path: freshData.akte_kelahiran || undefined,
+          pas_foto_path: freshData.pas_foto || undefined,
+          sertifikat_belt_path: freshData.sertifikat_belt || undefined,
+          ktp_path: freshData.ktp || undefined,
+          akte_kelahiran: null,
+          pas_foto: null,
+          sertifikat_belt: null,
+          ktp: null,
+        };
+        
+        setFormData(updatedData);
+        setOriginalData(updatedData);
+        setIsEditing(false);
+        toast.success("Data atlet berhasil diperbarui ✅");
+      }
     }
   } catch (err: any) {
+
     console.error("❌ Gagal update atlet:", err);
     
     if (err.message.includes('File size')) {
