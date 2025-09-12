@@ -733,7 +733,7 @@ const DataKompetisi = () => {
                               </td>
                               {/* 👇 Tambahan kolom Aksi */}
                               <td className="py-4 px-4 text-center flex justify-center gap-3">
-                                <button className="text-blue-600 hover:text-blue-800 cursor-pointer hover:scale-102" onClick={(e) => e.stopPropagation()}>
+                                <button className="text-blue-600 hover:text-blue-800 cursor-pointer hover:scale-102" onClick={(e) => {e.stopPropagation(); toast.error("Fitur ini akan segera tersedia")}}>
                                   <Edit size={18} />
                                 </button>
                                 <button 
