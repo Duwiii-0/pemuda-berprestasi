@@ -184,21 +184,14 @@ const updateAtlet = async (id: number, formData: FormData) => {
   try {
     console.log(`🔄 Updating atlet ID: ${id}`);
     
-    // Debug: Log FormData contents
-    console.log("📤 FormData contents:");
-    for (let [key, value] of formData.entries()) {
-      if (value instanceof File) {
-        console.log(`${key}: File - ${value.name} (${value.size} bytes, ${value.type})`);
-      } else {
-        console.log(`${key}: ${value}`);
-      }
-    }
-    
     const response = await apiClient.putFormData(`/atlet/${id}`, formData);
     console.log("✅ Update response:", response);
+    console.log("📋 Response data structure:", JSON.stringify(response, null, 2));
     
-    // FIXED: Extract data properly
-    const updatedAtlet = response.data || response;
+    // Check if it's nested in response.data.data
+    const updatedAtlet = response.data?.data || response.data || response;
+    console.log("🎯 Extracted atlet data:", updatedAtlet);
+    console.log("🏷️ Updated nama_atlet:", updatedAtlet?.nama_atlet);
     
     if (updatedAtlet) {
       setAtlits(prev =>
@@ -211,6 +204,7 @@ const updateAtlet = async (id: number, formData: FormData) => {
     throw new Error(err.message || "Gagal update atlet");
   }
 };
+
 
   return (
     <AtletContext.Provider value={{ atlits, fetchAllAtlits, fetchAtletById, updateAtlet, createAtlet }}>
