@@ -336,9 +336,9 @@ static async updateRegistrationStatus(
   static async deleteParticipant(kompetisiId: number, participantId: number) {
     try {
       // Cek apakah peserta exist di kompetisi
-      const existingPeserta = await prisma.tb_peserta_kejuaraan.findFirst({
+      const existingPeserta = await prisma.tb_peserta_kompetisi.findFirst({
         where: {
-          id_peserta_kejuaraan: participantId,
+          id_peserta_kompetisi: participantId,
           kelas_kejuaraan: {
             kompetisi: {
               id_kompetisi: kompetisiId
