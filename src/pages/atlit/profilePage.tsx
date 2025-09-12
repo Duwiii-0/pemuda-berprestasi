@@ -338,6 +338,9 @@ useEffect(() => {
 const handleUpdate = async () => {
   if (!formData || isSubmitting) return;
   
+    console.log(`🔍 Current formData.nama_atlet before FormData:`, formData.nama_atlet);
+
+
   setIsSubmitting(true);
   
   try {
@@ -376,6 +379,12 @@ const handleUpdate = async () => {
     if (formData.pas_foto) formDataSend.append('pas_foto', formData.pas_foto);
     if (formData.sertifikat_belt) formDataSend.append('sertifikat_belt', formData.sertifikat_belt);
     if (formData.ktp) formDataSend.append('ktp', formData.ktp);
+
+    console.log("📋 All FormData contents:");
+    for (let [key, value] of formDataSend.entries()) {
+      console.log(`  ${key}: ${value}`);
+    }
+
 
     // FIX: Use updateAtlet and assign to result variable
     const result = await updateAtlet(Number(id), formDataSend);
