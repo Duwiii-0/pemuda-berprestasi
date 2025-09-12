@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Trophy, Users, Search, Clock, CheckCircle, Menu, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Trophy, Users, Search, Clock, CheckCircle, Menu, ChevronLeft, ChevronRight, Edit, Trash } from 'lucide-react';
 import toast from "react-hot-toast";
 import NavbarDashboard from "../../components/navbar/navbarDashboard";
 import { useAuth } from "../../context/authContext";
@@ -600,11 +600,24 @@ const DataKompetisi = () => {
                     <table className="w-full min-w-[1200px]">
                       <thead className="bg-yellow-400">
                         <tr>
-                          {["Nama", "Kategori", "Level", "Kelas Berat", "Kelas Poomsae", "Kelompok Usia", "Jenis Kelamin", "Nama Dojang", "Status"].map((header) => (
+                          {[
+                            "Nama",
+                            "Kategori",
+                            "Level",
+                            "Kelas Berat",
+                            "Kelas Poomsae",
+                            "Kelompok Usia",
+                            "Jenis Kelamin",
+                            "Nama Dojang",
+                            "Status",
+                            "Aksi", // 👈 Tambahan
+                          ].map((header) => (
                             <th
                               key={header}
                               className={`py-3 px-4 font-semibold text-gray-900 text-sm ${
-                                header === "Status" || header === "Aksi" ? "text-center" : "text-left"
+                                header === "Status" || header === "Aksi"
+                                  ? "text-center"
+                                  : "text-left"
                               }`}
                             >
                               {header}
@@ -616,31 +629,37 @@ const DataKompetisi = () => {
                         {currentPesertas.map((peserta: any) => {
                           const isTeam = peserta.is_team;
                           const cabang = peserta.kelas_kejuaraan?.cabang || "-";
-                          const level = peserta.kelas_kejuaraan?.kategori_event?.nama_kategori || "-";
+                          const level =
+                            peserta.kelas_kejuaraan?.kategori_event?.nama_kategori || "-";
                         
-                         const kelasBerat =
-  cabang === "KYORUGI"
-    ? peserta.kelas_kejuaraan?.kelas_berat?.nama_kelas || "-"
-    : "-";
-
-const kelasPoomsae =
-  cabang === "POOMSAE"
-    ? peserta.kelas_kejuaraan?.poomsae?.nama_kelas || "-"
-    : "-";
+                          const kelasBerat =
+                            cabang === "KYORUGI"
+                              ? peserta.kelas_kejuaraan?.kelas_berat?.nama_kelas || "-"
+                              : "-";
+                        
+                          const kelasPoomsae =
+                            cabang === "POOMSAE"
+                              ? peserta.kelas_kejuaraan?.poomsae?.nama_kelas || "-"
+                              : "-";
                         
                           const namaPeserta = isTeam
-                            ? peserta.anggota_tim?.map((m: any) => m.atlet.nama_atlet).join(", ")
+                            ? peserta.anggota_tim
+                                ?.map((m: any) => m.atlet.nama_atlet)
+                                .join(", ")
                             : peserta.atlet?.nama_atlet || "-";
                         
-                          const dojang = isTeam && peserta.anggota_tim?.length
-                            ? peserta.anggota_tim[0]?.atlet?.dojang?.nama_dojang || "-"
-                            : peserta.atlet?.dojang?.nama_dojang || "-";
-                          
-                          const kelompokUsia = 
-                            !peserta.kelas_kejuaraan?.kelompok?.nama_kelompok || 
-                            peserta.kelas_kejuaraan.kelompok.nama_kelompok.toLowerCase() === "pemula"
+                          const dojang =
+                            isTeam && peserta.anggota_tim?.length
+                              ? peserta.anggota_tim[0]?.atlet?.dojang?.nama_dojang || "-"
+                              : peserta.atlet?.dojang?.nama_dojang || "-";
+                        
+                          const kelompokUsia =
+                            !peserta.kelas_kejuaraan?.kelompok?.nama_kelompok ||
+                            peserta.kelas_kejuaraan.kelompok.nama_kelompok.toLowerCase() ===
+                              "pemula"
                               ? "-"
                               : peserta.kelas_kejuaraan.kelompok.nama_kelompok;
+                        
                           return (
                             <tr
                               key={peserta.id_peserta_kompetisi}
@@ -653,24 +672,45 @@ const kelasPoomsae =
                                 }
                               }}
                             >
-                              <td className="py-4 px-4 font-medium text-gray-800 text-sm">{namaPeserta}</td>
+                              <td className="py-4 px-4 font-medium text-gray-800 text-sm">
+                                {namaPeserta}
+                              </td>
                               <td className="py-4 px-4 text-gray-700 text-sm">{cabang}</td>
                               <td className="py-4 px-4 text-gray-700 text-sm">{level}</td>
                               <td className="py-4 px-4 text-gray-700 text-sm">{kelasBerat}</td>
-                              <td className="py-4 px-4 text-center text-gray-700 text-sm">{kelasPoomsae}</td>
+                              <td className="py-4 px-4 text-center text-gray-700 text-sm">
+                                {kelasPoomsae}
+                              </td>
                               <td className="py-4 px-4 text-center text-gray-700 text-sm">
                                 {kelompokUsia || "-"}
                               </td>
                               <td className="py-4 px-4 text-center text-sm">
                                 {!isTeam ? (
-                                  peserta.atlet?.jenis_kelamin === "LAKI_LAKI"
-                                    ? <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs">Laki-Laki</span>
-                                    : <span className="px-2 py-1 bg-pink-100 text-pink-700 rounded-full text-xs">Perempuan</span>
-                                ) : "-"}
+                                  peserta.atlet?.jenis_kelamin === "LAKI_LAKI" ? (
+                                    <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs">
+                                      Laki-Laki
+                                    </span>
+                                  ) : (
+                                    <span className="px-2 py-1 bg-pink-100 text-pink-700 rounded-full text-xs">
+                                      Perempuan
+                                    </span>
+                                  )
+                                ) : (
+                                  "-"
+                                )}
                               </td>
                               <td className="py-4 px-4 text-gray-700 text-sm">{dojang}</td>
                               <td className="py-4 px-4 text-center">
                                 {getStatusBadge(peserta.status)}
+                              </td>
+                              {/* 👇 Tambahan kolom Aksi */}
+                              <td className="py-4 px-4 text-center flex justify-center gap-3">
+                                <button className="text-blue-600 hover:text-blue-800">
+                                  <Edit size={18} />
+                                </button>
+                                <button className="text-red-600 hover:text-red-800">
+                                  <Trash size={18} />
+                                </button>
                               </td>
                             </tr>
                           );
