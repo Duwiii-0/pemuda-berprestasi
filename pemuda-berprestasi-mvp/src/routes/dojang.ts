@@ -3,6 +3,7 @@ import { DojangController } from '../controllers/dojangController';
 import { authenticate } from '../middleware/auth';
 import { validateRequest } from '../middleware/validation';
 import { dojangValidation } from '../validations/dojangValidation';
+import { upload } from '../config/multer'; // Import multer config
 
 const router = Router();
 
@@ -15,8 +16,12 @@ router.get('/stats', DojangController.getStats);
 // get dojang all
 router.get('/listdojang', DojangController.getAll);
 
-// Registrasi dojang baru (PUBLIC - tanpa login)
-router.post('/', validateRequest(dojangValidation.create), DojangController.create);
+// ✅ PERBAIKAN: Registrasi dojang baru dengan upload logo
+router.post('/', 
+  upload.single('logo'), // Handle logo upload terlebih dahulu
+  validateRequest(dojangValidation.create), // Validasi setelah upload
+  DojangController.create
+);
 
 // ===== AUTHENTICATED ROUTES =====
 router.use(authenticate); // Semua route setelah ini memerlukan autentikasi
@@ -26,7 +31,12 @@ router.get('/my-dojang', DojangController.getMyDojang);
 router.get('/pelatih/:id_pelatih', DojangController.getByPelatih);
 
 // Update dan delete dojang (perlu permission check)
-router.put('/:id', validateRequest(dojangValidation.update), DojangController.update);
+router.put('/:id', 
+  upload.single('logo'), // Handle logo upload
+  validateRequest(dojangValidation.update), 
+  DojangController.update
+);
+
 router.delete('/:id', DojangController.delete);
 
 // Get dojang by ID (authenticated view - lebih detail)

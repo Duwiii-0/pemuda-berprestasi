@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import type { ChangeEvent } from "react"; // Change to type-only import
-import { Phone, Mail, MapPin, Map, Building, Flag, Menu, Award, Upload, X } from 'lucide-react';
+import { Phone, Mail, MapPin, Map, Building, Flag, Menu, Award, Eye, Download, Upload, X} from 'lucide-react';
 import NavbarDashboard from "../../components/navbar/navbarDashboard"; // Import NavbarDashboard
 import { useAuth } from "../../context/authContext";
 import { useNavigate } from "react-router-dom";
@@ -82,6 +82,190 @@ export const GeneralButton: React.FC<GeneralButtonProps> = ({ label, className,d
   </button>
 );
 
+const FilePreview = ({ 
+  file, 
+  existingPath, 
+  onRemove, 
+  disabled,
+  label 
+}: { 
+  file: File | null;
+  existingPath?: string;
+  onRemove: () => void;
+  disabled: boolean;
+  label: string;
+}) => {
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewError, setPreviewError] = useState(false);
+
+  useEffect(() => {
+    if (file) {
+      try {
+        const url = URL.createObjectURL(file);
+        setPreviewUrl(url);
+        setPreviewError(false);
+        return () => URL.revokeObjectURL(url);
+      } catch (error) {
+        console.error('Error creating preview URL:', error);
+        setPreviewError(true);
+      }
+    } else {
+      setPreviewUrl(null);
+      setPreviewError(false);
+    }
+  }, [file]);
+
+  const hasFile = file || existingPath;
+  
+  const getDisplayFileName = () => {
+    if (file) return file.name;
+    if (existingPath) {
+      const fileName = existingPath.split('/').pop() || label;
+      return fileName.length > 50 ? `${label} (File tersimpan)` : fileName;
+    }
+    return label;
+  };
+
+  const handleDownload = async () => {
+    if (!existingPath) {
+      toast.error('Tidak ada file untuk didownload');
+      return;
+    }
+    
+    try {
+      const baseUrl = 'https://pemudaberprestasi.com';
+      const downloadUrl = `${baseUrl}${existingPath}`;
+      console.log(`📥 Downloading logo from: ${downloadUrl}`);
+      
+      const testResponse = await fetch(downloadUrl, { method: 'HEAD' });
+      if (!testResponse.ok) {
+        toast.error('Logo tidak ditemukan di server');
+        return;
+      }
+      
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = getDisplayFileName();
+      link.target = '_blank';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast.success(`Download ${label} berhasil!`);
+      
+    } catch (error) {
+      console.error('❌ Download error:', error);
+      toast.error('Gagal mendownload file');
+    }
+  };
+
+  const getPreviewUrl = () => {
+    if (file && previewUrl) return previewUrl;
+    
+    if (existingPath) {
+      const baseUrl = 'https://pemudaberprestasi.com';
+      const staticUrl = `${baseUrl}${existingPath}`;
+      console.log("🌐 Logo Preview URL:", staticUrl);
+      return staticUrl;
+    }
+    
+    return null;
+  };
+
+  const isImageFile = () => {
+    if (file) return file.type.startsWith('image/');
+    if (existingPath) {
+      const ext = existingPath.toLowerCase().split('.').pop();
+      return ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext || '');
+    }
+    return false;
+  };
+
+  if (!hasFile) return null;
+
+  const displayUrl = getPreviewUrl();
+  const fileName = getDisplayFileName();
+
+  return (
+    <div className="mt-2 p-3 bg-white/70 rounded-xl border border-red/20">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-sm font-medium text-black/70">
+          {file ? `File baru: ${fileName}` : fileName}
+        </span>
+        {!disabled && (
+          <button
+            onClick={onRemove}
+            className="p-1 hover:bg-red/10 rounded-full transition-colors"
+            type="button"
+          >
+            <X size={16} className="text-red" />
+          </button>
+        )}
+      </div>
+      
+      <div className="flex gap-2">
+        {/* Preview Image */}
+        {displayUrl && !previewError && isImageFile() && (
+          <div className="relative w-20 h-20 flex-shrink-0">
+            <img 
+              src={displayUrl} 
+              alt={`Preview ${label}`}
+              className="w-full h-full object-cover rounded-lg border border-gray-200"
+              onError={(e) => {
+                console.log(`❌ Preview failed for: ${displayUrl}`);
+                setPreviewError(true);
+                (e.target as HTMLImageElement).style.display = 'none';
+              }}
+            />
+          </div>
+        )}
+        
+        {/* File icon untuk non-image atau jika preview error */}
+        {(!displayUrl || previewError || !isImageFile()) && (
+          <div className="flex items-center gap-2 text-sm text-gray-600 w-20 h-20 border rounded-lg justify-center bg-gray-50">
+            <Upload size={24} className="text-gray-400" />
+          </div>
+        )}
+        
+        {/* Action Buttons */}
+        <div className="flex flex-col gap-1 flex-1">
+          {/* View/Preview Button */}
+          {displayUrl && (
+            <button
+              onClick={() => {
+                console.log(`🔍 Opening logo preview: ${displayUrl}`);
+                window.open(displayUrl, '_blank', 'noopener,noreferrer');
+              }}
+              className="flex items-center gap-1 px-2 py-1 text-xs bg-blue-100 hover:bg-blue-200 text-blue-600 rounded transition-colors"
+              type="button"
+            >
+              <Eye size={12} />
+              Lihat Logo
+            </button>
+          )}
+          
+          {/* Download button */}
+          {existingPath && (
+            <button
+              onClick={handleDownload}
+              className="flex items-center gap-1 px-2 py-1 text-xs bg-green-100 hover:bg-green-200 text-green-600 rounded transition-colors"
+              type="button"
+            >
+              <Download size={12} />
+              Download
+            </button>
+          )}
+          
+          {/* Status indicator */}
+          <div className="text-xs text-gray-500">
+            {file ? '📎 Logo baru' : existingPath ? '💾 Logo tersimpan' : 'Tidak ada logo'}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const Dojang = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -91,7 +275,7 @@ const Dojang = () => {
   const [userDojang, setUserDojang] = useState<DojangData | null>(null);
   const [formData, setFormData] = useState<FormDataType | null>(null);
   const [logoFile, setLogoFile] = useState<File | null>(null);
-  const [logoPreview, setLogoPreview] = useState<string | null>(null); 
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   // Set token global sekali aja
@@ -110,70 +294,100 @@ const Dojang = () => {
 
   // 🔹 Fetch data my-dojang
   useEffect(() => {
-    if (!user) {
-      toast.error("Anda harus login dulu");
-      navigate("/", { replace: true });
+  if (!user) {
+    toast.error("Anda harus login dulu");
+    navigate("/", { replace: true });
+    return;
+  }
+
+const fetchDojang = async () => {
+  try {
+    setLoading(true);
+    console.log('🔄 Fetching dojang data...');
+    
+    const response = await apiClient.get("/dojang/my-dojang");
+    console.log('📋 Raw API Response:', response);
+    
+    // PERBAIKAN: Response langsung adalah data dojang, bukan nested
+    const dojangData = response as any; // Direct response is the dojang data
+    console.log('📊 Dojang data:', dojangData);
+    
+    // PERBAIKAN: Validate dojang data
+    if (!dojangData || !dojangData.id_dojang || !dojangData.nama_dojang) {
+      console.log('⚠️ Invalid dojang data:', dojangData);
+      toast.error("Data dojang tidak valid atau belum ada");
+      setUserDojang(null);
+      setFormData(null);
       return;
     }
+    
+    console.log('✅ Valid dojang data:', dojangData.nama_dojang);
+    
+    setUserDojang(dojangData);
+    setFormData({
+      name: dojangData.nama_dojang || "",
+      email: dojangData.email || "",
+      phone: dojangData.no_telp || "",
+      negara: dojangData.negara || "",
+      provinsi: dojangData.provinsi || "",
+      kota: dojangData.kota || "",
+      kecamatan: dojangData.kecamatan || "",
+      kelurahan: dojangData.kelurahan || "",
+      alamat: dojangData.alamat || "",
+    });
+    
+    // Set logo preview dari existing data
+    if (dojangData.logo_url) {
+      setLogoPreview(dojangData.logo_url);
+    }
+    
+  } catch (err: any) {
+    console.error('❌ Error fetching dojang:', err);
+    
+    // Handle error responses
+    if (err.response?.status === 404) {
+      toast.error("Pelatih belum memiliki dojang");
+    } else if (err.response?.status === 401) {
+      toast.error("Sesi login telah berakhir");
+    } else {
+      toast.error(err.response?.data?.message || "Gagal mengambil data dojang");
+    }
+    
+    setUserDojang(null);
+    setFormData(null);
+  } finally {
+    setLoading(false);
+  }
+};
 
-    const fetchDojang = async () => {
-      try {
-        setLoading(true);
-        const response = await apiClient.get("/dojang/my-dojang");
-        const dojangData = response.data as DojangData;
+  fetchDojang();
+}, [user, navigate]);
 
-        setUserDojang(dojangData);
-        setFormData({
-          name: dojangData.nama_dojang || "",
-          email: dojangData.email || "",
-          phone: dojangData.no_telp || "",
-          negara: dojangData.negara || "",
-          provinsi: dojangData.provinsi || "",
-          kota: dojangData.kota || "",
-          kecamatan: dojangData.kecamatan || "",
-          kelurahan: dojangData.kelurahan || "",
-          alamat: dojangData.alamat || "",
-        });
-        
-        if (dojangData.logo_url) {
-          setLogoPreview(dojangData.logo_url);
-        }
-        
-      } catch (err: any) {
-        console.error(err);
-        toast.error("Gagal mengambil data dojang");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchDojang();
-  }, [user, navigate]);
   const handleCancel = () => {
-    setIsEditing(false);
-    setLogoFile(null); // TAMBAHKAN INI
-    setLogoPreview(userDojang?.logo_url || null); // TAMBAHKAN INI - Reset to original logo
-    
-    if (userDojang) {
-      setFormData({
-        name: userDojang.nama_dojang,
-        email: userDojang.email,
-        phone: userDojang.no_telp,
-        negara: userDojang.negara,
-        provinsi: userDojang.provinsi,
-        kota: userDojang.kota,
-        kecamatan: userDojang.kecamatan,
-        kelurahan: userDojang.kelurahan,
-        alamat: userDojang.alamat,
-      });
-    }
-    
-    // Reset file input - TAMBAHKAN INI
-    const fileInput = document.getElementById('logo-upload') as HTMLInputElement;
-    if (fileInput) {
-      fileInput.value = '';
-    }
-  };
+  setIsEditing(false);
+  setLogoFile(null);
+  setLogoPreview(userDojang?.logo_url || null);
+  
+  if (userDojang) {
+    setFormData({
+      name: userDojang.nama_dojang,
+      email: userDojang.email,
+      phone: userDojang.no_telp,
+      negara: userDojang.negara,
+      provinsi: userDojang.provinsi,
+      kota: userDojang.kota,
+      kecamatan: userDojang.kecamatan,
+      kelurahan: userDojang.kelurahan,
+      alamat: userDojang.alamat,
+    });
+  }
+  
+  // Reset file inputs
+  const fileInputDesktop = document.getElementById('logo-upload') as HTMLInputElement;
+  const fileInputMobile = document.getElementById('logo-upload-mobile') as HTMLInputElement;
+  if (fileInputDesktop) fileInputDesktop.value = '';
+  if (fileInputMobile) fileInputMobile.value = '';
+};
 
   const handleLogoChange = (e: ChangeEvent<HTMLInputElement>) => {
   const file = e.target?.files?.[0];
@@ -193,38 +407,23 @@ const Dojang = () => {
 
     setLogoFile(file);
     
-    // Create preview
-    const reader = new FileReader();
-    reader.onload = (e: ProgressEvent<FileReader>) => {
-      setLogoPreview(e.target?.result as string);
-    };
-    reader.readAsDataURL(file);
-    
     toast.success(`Logo ${file.name} berhasil dipilih`);
   }
 };
 
-// Remove logo
-// Remove logo - UPDATE FUNCTION INI
 const removeLogo = () => {
   setLogoFile(null);
   setLogoPreview(userDojang?.logo_url || null);
   
-  // Reset input file untuk desktop dan mobile
   const fileInputDesktop = document.getElementById('logo-upload') as HTMLInputElement;
   const fileInputMobile = document.getElementById('logo-upload-mobile') as HTMLInputElement;
   
-  if (fileInputDesktop) {
-    fileInputDesktop.value = '';
-  }
-  if (fileInputMobile) {
-    fileInputMobile.value = '';
-  }
+  if (fileInputDesktop) fileInputDesktop.value = '';
+  if (fileInputMobile) fileInputMobile.value = '';
   
   toast.success("Logo berhasil dihapus");
 };
-  // 🔹 Update dojang
-  // Update dojang
+
 const handleUpdate = async () => {
   if (!userDojang || !formData) {
     toast.error("Data tidak lengkap");
@@ -245,57 +444,72 @@ const handleUpdate = async () => {
     updateFormData.append('kelurahan', formData.kelurahan.trim());
     updateFormData.append('alamat', formData.alamat.trim());
     
-    // Only append logo if a new file was selected - TAMBAHKAN INI
     if (logoFile) {
       updateFormData.append('logo', logoFile);
+      console.log('📤 Uploading logo:', logoFile.name);
     }
 
-    // Debug log FormData contents - TAMBAHKAN INI
-    console.log("📤 DEBUG: Sending FormData contents:");
-    for (let [key, value] of updateFormData.entries()) {
-      if (value instanceof File) {
-        console.log(`${key}: File - ${value.name} (${value.size} bytes)`);
-      } else {
-        console.log(`${key}: ${value}`);
-      }
-    }
-
-const response = await apiClient.put(
-        `/dojang/${userDojang.id_dojang}`, 
-        updateFormData
-      );
-
-      const updatedData = response.data as DojangData;
-          setUserDojang(updatedData);
+    console.log('📤 Updating dojang ID:', userDojang.id_dojang);
     
-    // Update logo preview with new URL if logo was updated - TAMBAHKAN INI
+    // ✅ PERBAIKAN: Gunakan putFormData instead of put
+    const response = await apiClient.putFormData(
+      `/dojang/${userDojang.id_dojang}`, 
+      updateFormData
+    ) as any;
+
+    console.log('📋 Full Response:', response);
+    
+    // ✅ PERBAIKAN: Handle response format dari backend
+    // Backend mengembalikan: { success: true, data: {...} }
+    let updatedData;
+    if (response.success && response.data) {
+      updatedData = response.data;
+      console.log('📊 Using success/data structure');
+    } else if (response.data) {
+      updatedData = response.data;
+      console.log('📊 Using data structure');
+    } else {
+      updatedData = response;
+      console.log('📊 Using direct response');
+    }
+    
+    console.log('📊 Final processed data:', updatedData);
+    
+    if (!updatedData || !updatedData.nama_dojang) {
+      console.error('❌ Invalid response data structure');
+      throw new Error("Response data tidak valid");
+    }
+    
+    console.log('✅ Setting new state with:', updatedData.nama_dojang);
+    
+    // Update state
+    setUserDojang(updatedData);
+    setFormData({
+      name: updatedData.nama_dojang || "",
+      email: updatedData.email || "",
+      phone: updatedData.no_telp || "",
+      negara: updatedData.negara || "",
+      provinsi: updatedData.provinsi || "",
+      kota: updatedData.kota || "",
+      kecamatan: updatedData.kecamatan || "",
+      kelurahan: updatedData.kelurahan || "",
+      alamat: updatedData.alamat || "",
+    });
+
+    // Update logo preview
     if (updatedData.logo_url) {
       setLogoPreview(updatedData.logo_url);
+      console.log('📷 Updated logo URL:', updatedData.logo_url);
     }
     
-    setLogoFile(null); // Reset file state - TAMBAHKAN INI
+    setLogoFile(null);
     setIsEditing(false);
     toast.success("Data dojang berhasil diperbarui");
 
   } catch (err: any) {
     console.error("❌ Error updating dojang:", err);
-    
-    // Improved error handling - TAMBAHKAN INI
-    if (err && typeof err === 'object' && 'response' in err) {
-      const error = err as any;
-      if (error.response?.data?.errors) {
-        const errorMessages = Object.values(error.response.data.errors).flat();
-        toast.error(errorMessages.join(", ") || "Ada field yang tidak valid.");
-      } else if (error.message?.includes('File size')) {
-        toast.error("File logo terlalu besar. Maksimal 5MB.");
-      } else if (error.message?.includes('Invalid file')) {
-        toast.error("Format logo tidak didukung. Gunakan JPG, PNG, JPEG, atau WebP.");
-      } else {
-        toast.error(error.response?.data?.message || "Update dojang gagal");
-      }
-    } else {
-      toast.error("Update dojang gagal");
-    }
+    console.error("❌ Error response:", err.response);
+    toast.error(err.response?.data?.message || err.message || "Update dojang gagal");
   } finally {
     setLoading(false);
   }
@@ -371,7 +585,7 @@ const response = await apiClient.put(
                     <GeneralButton
                       label="Ubah Data Dojang"
                       className="text-white bg-gradient-to-r from-red to-red/80 hover:from-red/90 hover:to-red/70 border-0 shadow-lg flex items-center gap-2 w-full sm:w-auto text-sm lg:text-base px-4 lg:px-6 py-2.5 lg:py-3"
-                      onClick={() => toast.error("Fitur ini akan segera tersedia!!")}
+                      onClick={() => setIsEditing(true)}
                     />
                   ) : (
                     <div className="flex gap-2 lg:gap-3 w-full sm:w-auto">
@@ -406,61 +620,40 @@ const response = await apiClient.put(
 {/* Desktop Form */}
 {userDojang && !loading && (
   <div className="hidden lg:block space-y-6">
-    {/* Logo Section - Desktop - TAMBAHKAN INI SEBAGAI SECTION PERTAMA
-    <div className="bg-white/80 rounded-xl p-6 shadow-md border border-white/50">
-      <h3 className="font-bebas text-lg lg:text-xl text-black/80 mb-4 flex items-center gap-2">
-        <Upload size={20} className="text-red" />
-        LOGO DOJANG
-      </h3>
-      
-      {logoPreview ? (
-        <div className="relative group inline-block">
-          <div className="flex items-center justify-center w-32 h-32 lg:w-40 lg:h-40 border-2 border-red/25 rounded-xl bg-white/80 backdrop-blur-sm overflow-hidden hover:border-red/40 transition-all duration-300">
-            <img 
-              src={logoPreview} 
-              alt="Logo Dojang" 
-              className="max-h-full max-w-full object-contain rounded-lg shadow-sm"
-            />
-          </div>
-          {isEditing && (
-            <button
-              type="button"
-              onClick={removeLogo}
-              className="absolute -top-2 -right-2 w-8 h-8 bg-red text-white rounded-full flex items-center justify-center hover:bg-red/80 transition-all duration-300 shadow-lg group-hover:scale-110"
-              disabled={loading}
-            >
-              <X size={16} />
-            </button>
-          )}
-        </div>
-      ) : (
-        <div className="relative group inline-block">
-          <input
-            id="logo-upload"
-            type="file"
-            accept="image/jpeg,image/png,image/jpg,image/webp"
-            onChange={handleLogoChange}
-            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-            disabled={loading || !isEditing}
-          />
-          <div className="flex flex-col items-center justify-center w-32 h-32 lg:w-40 lg:h-40 border-2 border-dashed border-red/25 rounded-xl bg-white/80 backdrop-blur-sm hover:border-red/40 hover:bg-red/5 transition-all duration-300 cursor-pointer group-hover:scale-[1.02]">
-            <div className="flex flex-col items-center space-y-2">
-              <div className="w-10 h-10 bg-red/10 rounded-full flex items-center justify-center group-hover:bg-red/20 transition-colors duration-300">
-                <Upload className="w-5 h-5 text-red/70 group-hover:text-red transition-colors duration-300" />
-              </div>
-              <div className="text-center">
-                <p className="text-sm font-plex font-medium text-black/70 group-hover:text-red transition-colors duration-300">
-                  Upload Logo
-                </p>
-                <p className="text-xs font-plex text-black/50 mt-1">
-                  Max 5MB
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </div> */}
+    {/* Logo Section - Desktop */}
+<div className="bg-white/80 rounded-xl p-6 shadow-md border border-white/50 mb-6">
+  <h3 className="font-bebas text-lg lg:text-xl text-black/80 mb-4 flex items-center gap-2">
+    <Upload size={20} className="text-red" />
+    LOGO DOJANG
+  </h3>
+  
+  <div className="space-y-3">
+    {/* File Input untuk Upload Logo */}
+    <div className="space-y-2">
+      <label className="block font-plex font-medium text-black/70 text-sm">Upload Logo Dojang</label>
+      <div className="relative">
+        <input
+          id="logo-upload"
+          type="file"
+          accept="image/jpeg,image/png,image/jpg,image/webp"
+          onChange={handleLogoChange}
+          className="w-full p-3 border-2 border-red/20 hover:border-red/40 focus:border-red rounded-xl bg-white/80 backdrop-blur-sm transition-all duration-300 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-plex file:bg-red/10 file:text-red hover:file:bg-red/20"
+          disabled={loading || !isEditing}
+        />
+        {!isEditing && <div className="absolute inset-0 bg-gray-100/50 rounded-xl" />}
+      </div>
+    </div>
+    
+    {/* FilePreview Component */}
+    <FilePreview
+      file={logoFile}
+      existingPath={logoPreview || userDojang?.logo_url}
+      onRemove={removeLogo}
+      disabled={!isEditing}
+      label="Logo Dojang"
+    />
+  </div>
+</div>
                 <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                   <div className="space-y-2">
                     <label className="block font-plex font-medium text-black/70 text-sm">
@@ -594,56 +787,40 @@ const response = await apiClient.put(
 {/* Mobile Form */}
 {userDojang && !loading && (
   <div className="lg:hidden space-y-4">
-    {/* Logo Section - Mobile - TAMBAHKAN INI SEBAGAI SECTION PERTAMA
-    <div className="bg-white/80 rounded-xl p-4 shadow-md border border-white/50">
-      <h3 className="font-bebas text-lg text-black/80 mb-3 flex items-center gap-2">
-        <Upload size={18} className="text-red" />
-        LOGO DOJANG
-      </h3>
-      
-      {logoPreview ? (
-        <div className="relative group inline-block">
-          <div className="flex items-center justify-center w-24 h-24 border-2 border-red/25 rounded-xl bg-white/80 backdrop-blur-sm overflow-hidden hover:border-red/40 transition-all duration-300">
-            <img 
-              src={logoPreview} 
-              alt="Logo Dojang" 
-              className="max-h-full max-w-full object-contain rounded-lg shadow-sm"
-            />
-          </div>
-          {isEditing && (
-            <button
-              type="button"
-              onClick={removeLogo}
-              className="absolute -top-2 -right-2 w-6 h-6 bg-red text-white rounded-full flex items-center justify-center hover:bg-red/80 transition-all duration-300 shadow-lg"
-              disabled={loading}
-            >
-              <X size={12} />
-            </button>
-          )}
-        </div>
-      ) : (
-        <div className="relative group inline-block">
-          <input
-            id="logo-upload-mobile"
-            type="file"
-            accept="image/jpeg,image/png,image/jpg,image/webp"
-            onChange={handleLogoChange}
-            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-            disabled={loading || !isEditing}
-          />
-          <div className="flex flex-col items-center justify-center w-24 h-24 border-2 border-dashed border-red/25 rounded-xl bg-white/80 backdrop-blur-sm hover:border-red/40 hover:bg-red/5 transition-all duration-300 cursor-pointer">
-            <div className="flex flex-col items-center space-y-1">
-              <div className="w-6 h-6 bg-red/10 rounded-full flex items-center justify-center">
-                <Upload className="w-3 h-3 text-red/70" />
-              </div>
-              <p className="text-xs font-plex font-medium text-black/70">
-                Logo
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-    </div> */}
+    {/* Logo Section - Mobile */}
+<div className="bg-white/80 rounded-xl p-4 shadow-md border border-white/50">
+  <h3 className="font-bebas text-lg text-black/80 mb-3 flex items-center gap-2">
+    <Upload size={18} className="text-red" />
+    LOGO DOJANG
+  </h3>
+  
+  <div className="space-y-3">
+    {/* File Input untuk Upload Logo */}
+    <div className="space-y-2">
+      <label className="block font-plex font-medium text-black/70 text-xs">Upload Logo Dojang</label>
+      <div className="relative">
+        <input
+          id="logo-upload-mobile"
+          type="file"
+          accept="image/jpeg,image/png,image/jpg,image/webp"
+          onChange={handleLogoChange}
+          className="w-full p-2.5 text-sm border-2 border-red/20 hover:border-red/40 focus:border-red rounded-xl bg-white/80 backdrop-blur-sm transition-all duration-300 file:mr-3 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-plex file:bg-red/10 file:text-red hover:file:bg-red/20"
+          disabled={loading || !isEditing}
+        />
+        {!isEditing && <div className="absolute inset-0 bg-gray-100/50 rounded-xl" />}
+      </div>
+    </div>
+    
+    {/* FilePreview Component untuk Mobile */}
+    <FilePreview
+      file={logoFile}
+      existingPath={logoPreview || userDojang?.logo_url}
+      onRemove={removeLogo}
+      disabled={!isEditing}
+      label="Logo Dojang"
+    />
+  </div>
+</div>
 
     {/* Basic Info Card - EXISTING CODE TETAP SAMA */}
     <div className="bg-white/80 rounded-xl p-4 shadow-md border border-white/50">

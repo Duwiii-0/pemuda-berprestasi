@@ -25,20 +25,54 @@ export class DojangController {
     }
   }
 
-  static async create(req: Request, res: Response) {
-    try {
-      const dojang = await DojangService.createDojang(req.body);
-      res.status(201).json(dojang);
-    } catch (err: any) {
-      res.status(400).json({ message: err.message });
+static async create(req: Request, res: Response) {
+  try {
+    console.log('📝 Create dojang request body:', req.body);
+    console.log('📎 Create dojang file:', req.file);
+    
+    // Prepare data dengan logo jika ada file upload
+    const createData = { ...req.body };
+    
+    // Handle logo upload
+    if (req.file && req.file.fieldname === 'logo') {
+      createData.logo = req.file.filename;
+      console.log('✅ Logo uploaded:', req.file.filename);
     }
+    
+    const dojang = await DojangService.createDojang(createData);
+    
+    // Return dengan logo_url untuk frontend
+    const responseData = {
+      ...dojang,
+      logo_url: dojang.logo ? `/uploads/dojang/logos/${dojang.logo}` : null
+    };
+    
+    res.status(201).json({
+      success: true,
+      message: 'Dojang berhasil didaftarkan',
+      data: responseData
+    });
+  } catch (err: any) {
+    console.error('❌ Create dojang error:', err.message);
+    res.status(400).json({ 
+      success: false,
+      message: err.message 
+    });
   }
+}
 
   // AUTHENTICATED
-  static async getMyDojang(req: Request, res: Response) {
+static async getMyDojang(req: Request, res: Response) {
   try {
     const idAkun = (req.user as any)?.id_akun;
-    if (!idAkun) throw new Error("id_akun tidak ditemukan di token");
+    if (!idAkun) {
+      return res.status(401).json({ 
+        message: "id_akun tidak ditemukan di token",
+        data: null 
+      });
+    }
+
+    console.log('🔍 getMyDojang - idAkun:', idAkun);
 
     // cari pelatih berdasarkan id_akun
     const pelatih = await prisma.tb_pelatih.findUnique({
@@ -46,11 +80,42 @@ export class DojangController {
       include: { dojang: true },
     });
 
-    if (!pelatih) throw new Error("Pelatih tidak ditemukan");
+    console.log('👤 Pelatih found:', !!pelatih);
+    console.log('🏢 Dojang exists:', !!pelatih?.dojang);
 
-  res.json({ data: pelatih.dojang });
+    if (!pelatih) {
+      return res.status(404).json({ 
+        message: "Pelatih tidak ditemukan",
+        data: null 
+      });
+    }
+
+    // PERBAIKAN: Handle case dimana pelatih belum punya dojang
+    if (!pelatih.dojang) {
+      console.log('⚠️ Pelatih belum memiliki dojang');
+      return res.status(200).json({ 
+        message: "Pelatih belum memiliki dojang",
+        data: null 
+      });
+    }
+
+    // TAMBAHAN: Add logo_url untuk frontend
+    const dojangWithLogo = {
+      ...pelatih.dojang,
+      logo_url: pelatih.dojang.logo ? `/uploads/dojang/logos/${pelatih.dojang.logo}` : null
+    };
+
+    console.log('✅ Returning dojang:', dojangWithLogo.nama_dojang);
+    
+    // PERBAIKAN: Return format yang konsisten
+    res.status(200).json(dojangWithLogo);
+    
   } catch (err: any) {
-    res.status(400).json({ message: err.message });
+    console.error('❌ getMyDojang Error:', err.message);
+    res.status(500).json({ 
+      message: `Database error: ${err.message}`,
+      data: null 
+    });
   }
 }
 
@@ -89,15 +154,35 @@ export class DojangController {
     }
   }
 
-  static async update(req: Request, res: Response) {
-    try {
-      const id = parseInt(req.params.id);
-      const dojang = await DojangService.updateDojang({ id_dojang: id, ...req.body });
-      res.json({ success: true, data: dojang });
-    } catch (err: any) {
-      res.status(400).json({ message: err.message });
+static async update(req: Request, res: Response) {
+  try {
+    const id = parseInt(req.params.id);
+    
+    // TAMBAHAN: Prepare data dengan logo jika ada file upload
+    const updateData = { 
+      id_dojang: id, 
+      ...req.body 
+    };
+
+    // TAMBAHAN: Handle logo upload
+    if (req.file && req.file.fieldname === 'logo') {
+      updateData.logo = req.file.filename;
+      console.log('Logo uploaded:', req.file.filename);
     }
+
+    const dojang = await DojangService.updateDojang(updateData);
+    
+    // TAMBAHAN: Return dengan logo_url untuk frontend
+    const responseData = {
+      ...dojang,
+      logo_url: dojang.logo ? `/uploads/dojang/logos/${dojang.logo}` : null
+    };
+    
+    res.json({ success: true, data: responseData });
+  } catch (err: any) {
+    res.status(400).json({ message: err.message });
   }
+}
 
   static async delete(req: Request, res: Response) {
     try {

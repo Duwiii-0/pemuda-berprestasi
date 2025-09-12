@@ -120,57 +120,71 @@ const FilePreview = ({
 
   // PERBAIKAN: Fungsi download yang disederhanakan
   const handleDownload = async () => {
-    if (!existingPath) {
-      toast.error('Tidak ada file untuk didownload');
+  if (!existingPath) {
+    toast.error('Tidak ada file untuk didownload');
+    return;
+  }
+  
+  try {
+    const baseUrl = 'https://pemudaberprestasi.com';
+    
+    // PERBAIKAN: Path sudah include subfolder dari service
+    const downloadUrl = `${baseUrl}/uploads/atlet/${existingPath}`;
+    console.log(`📥 Downloading from: ${downloadUrl}`);
+    
+    const testResponse = await fetch(downloadUrl, { method: 'HEAD' });
+    if (!testResponse.ok) {
+      toast.error('File tidak ditemukan di server');
       return;
     }
     
-    try {
-      const baseUrl = 'https://pemudaberprestasi.com';
-      
-      // PERBAIKAN: Langsung gunakan path dari database tanpa sub-folder
-      const downloadUrl = `${baseUrl}/uploads/atlet/${existingPath}`;
-      console.log(`📥 Downloading from: ${downloadUrl}`);
-      
-      // Test apakah file accessible terlebih dahulu
-      const testResponse = await fetch(downloadUrl, { method: 'HEAD' });
-      if (!testResponse.ok) {
-        toast.error('File tidak ditemukan di server');
-        return;
-      }
-      
-      // Buat link download
-      const link = document.createElement('a');
-      link.href = downloadUrl;
-      link.download = getDisplayFileName();
-      link.target = '_blank';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
-      toast.success(`Download ${label} berhasil!`);
-      
-    } catch (error) {
-      console.error('❌ Download error:', error);
-      toast.error('Gagal mendownload file');
-    }
-  };
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.download = getDisplayFileName();
+    link.target = '_blank';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    toast.success(`Download ${label} berhasil!`);
+    
+  } catch (error) {
+    console.error('❌ Download error:', error);
+    toast.error('Gagal mendownload file');
+  }
+};
 
-  // PERBAIKAN: Fungsi preview yang disederhanakan
-  const getPreviewUrl = () => {
-    if (file && previewUrl) return previewUrl;
+// PERBAIKAN: Di Frontend - FilePreview component
+const getPreviewUrl = () => {
+  if (file && previewUrl) return previewUrl;
+  
+  if (existingPath) {
+    const baseUrl = 'https://pemudaberprestasi.com';
     
-    if (existingPath) {
-      const baseUrl = 'https://pemudaberprestasi.com';
-      
-      // PERBAIKAN: Langsung gunakan path dari database tanpa sub-folder
-      const staticUrl = `${baseUrl}/uploads/atlet/${existingPath}`;
-      console.log("🌐 Preview URL:", staticUrl);
-      return staticUrl;
+    // PERBAIKAN: Handle both old format (with subfolder) and new format (filename only)
+    let staticUrl;
+    
+    if (existingPath.includes('/')) {
+      // Old format: "akte_kelahiran/filename.jpg" - use as is
+      staticUrl = `${baseUrl}/uploads/atlet/${existingPath}`;
+    } else {
+      // New format: "filename.jpg" - need to add subfolder based on label
+      const folderMap: Record<string, string> = {
+        'Akte Kelahiran': 'akte_kelahiran',
+        'Pas Foto': 'pas_foto',
+        'Sertifikat Belt': 'sertifikat_belt',
+        'KTP': 'ktp'
+      };
+      const subfolder = folderMap[label] || 'akte_kelahiran';
+      staticUrl = `${baseUrl}/uploads/atlet/${subfolder}/${existingPath}`;
     }
     
-    return null;
-  };
+    console.log("🌐 Preview URL:", staticUrl);
+    return staticUrl;
+  }
+  
+  return null;
+};
 
   const isImageFile = () => {
     if (file) return file.type.startsWith('image/');

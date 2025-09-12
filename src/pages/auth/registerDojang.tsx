@@ -1,14 +1,21 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import type { ChangeEvent } from "react";
 import Select from "react-select";
 import TextInput from "../../components/textInput";
-import { Home, Phone, Mail } from "lucide-react";
+import { Home, Phone, Mail, Upload, X, Eye } from "lucide-react";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import { apiClient } from "../../config/api";
 import Logo from '../../assets/logo/logo.png';
 
+// Types
+interface OptionType {
+  value: string;
+  label: string;
+}
+
 // Data provinsi dan kota
-const provinsiKotaData = {
+const provinsiKotaData: { [key: string]: string[] } = {
   "Aceh": ["Banda Aceh", "Langsa", "Lhokseumawe", "Meulaboh", "Sabang", "Subulussalam"],
   "Sumatera Utara": ["Medan", "Binjai", "Gunungsitoli", "Padang Sidempuan", "Pematangsiantar", "Sibolga", "Tanjungbalai", "Tebing Tinggi"],
   "Sumatera Barat": ["Padang", "Bukittinggi", "Padang Panjang", "Pariaman", "Payakumbuh", "Sawahlunto", "Solok"],
@@ -49,10 +56,116 @@ const provinsiKotaData = {
   "Papua Barat Daya": ["Sorong"]
 };
 
-const provinsiOptions = Object.keys(provinsiKotaData).map(provinsi => ({
+const provinsiOptions: OptionType[] = Object.keys(provinsiKotaData).map(provinsi => ({
   value: provinsi,
   label: provinsi
 }));
+
+// File Preview Component
+interface FilePreviewProps {
+  file: File | null;
+  onRemove: () => void;
+  disabled: boolean;
+  label: string;
+}
+
+const FilePreview: React.FC<FilePreviewProps> = ({ 
+  file, 
+  onRemove, 
+  disabled,
+  label 
+}) => {
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewError, setPreviewError] = useState(false);
+
+  useEffect(() => {
+    if (file) {
+      try {
+        const url = URL.createObjectURL(file);
+        setPreviewUrl(url);
+        setPreviewError(false);
+        return () => URL.revokeObjectURL(url);
+      } catch (error) {
+        console.error('Error creating preview URL:', error);
+        setPreviewError(true);
+      }
+    } else {
+      setPreviewUrl(null);
+      setPreviewError(false);
+    }
+  }, [file]);
+
+  const isImageFile = (): boolean => {
+    if (file) return file.type.startsWith('image/');
+    return false;
+  };
+
+  if (!file) return null;
+
+  return (
+    <div className="mt-2 p-3 bg-white/70 rounded-xl border border-red/20">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-sm font-medium text-black/70">
+          File dipilih: {file.name}
+        </span>
+        {!disabled && (
+          <button
+            onClick={onRemove}
+            className="p-1 hover:bg-red/10 rounded-full transition-colors"
+            type="button"
+          >
+            <X size={16} className="text-red" />
+          </button>
+        )}
+      </div>
+      
+      <div className="flex gap-2">
+        {/* Preview Image */}
+        {previewUrl && !previewError && isImageFile() && (
+          <div className="relative w-20 h-20 flex-shrink-0">
+            <img 
+              src={previewUrl} 
+              alt={`Preview ${label}`}
+              className="w-full h-full object-cover rounded-lg border border-gray-200"
+              onError={() => {
+                setPreviewError(true);
+              }}
+            />
+          </div>
+        )}
+        
+        {/* File icon untuk non-image atau jika preview error */}
+        {(!previewUrl || previewError || !isImageFile()) && (
+          <div className="flex items-center gap-2 text-sm text-gray-600 w-20 h-20 border rounded-lg justify-center bg-gray-50">
+            <Upload size={24} className="text-gray-400" />
+          </div>
+        )}
+        
+        {/* Action Buttons */}
+        <div className="flex flex-col gap-1 flex-1">
+          {/* View/Preview Button */}
+          {previewUrl && (
+            <button
+              onClick={() => {
+                window.open(previewUrl, '_blank', 'noopener,noreferrer');
+              }}
+              className="flex items-center gap-1 px-2 py-1 text-xs bg-blue-100 hover:bg-blue-200 text-blue-600 rounded transition-colors"
+              type="button"
+            >
+              <Eye size={12} />
+              Preview Logo
+            </button>
+          )}
+          
+          {/* Status indicator */}
+          <div className="text-xs text-gray-500">
+            Logo siap diupload
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const RegisterDojang = () => {
   const [namaDojang, setNamaDojang] = useState("");
@@ -61,84 +174,261 @@ const RegisterDojang = () => {
   const [kabupaten, setKabupaten] = useState("");
   const [provinsi, setProvinsi] = useState("");
   const [negara, setNegara] = useState("");
+  const [logoFile, setLogoFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   // Get city options based on selected province
-  const kotaOptions = provinsi ? provinsiKotaData[provinsi]?.map(kota => ({
+  const kotaOptions: OptionType[] = provinsi ? provinsiKotaData[provinsi]?.map((kota: string) => ({
     value: kota,
     label: kota
   })) || [] : [];
 
-  const handleProvinsiChange = (selectedOption) => {
+  const handleProvinsiChange = (selectedOption: OptionType | null) => {
     setProvinsi(selectedOption?.value || "");
     setKabupaten(""); 
   };
 
-  const handleKotaChange = (selectedOption) => {
+  const handleKotaChange = (selectedOption: OptionType | null) => {
     setKabupaten(selectedOption?.value || "");
   };
 
-  const getSelectValue = (options, value) => {
-    return options.find(option => option.value === value) || null;
+  const getSelectValue = (options: OptionType[], value: string): OptionType | null => {
+    return options.find((option: OptionType) => option.value === value) || null;
   };
 
-  const handleRegister = async () => {
-    setIsLoading(true);
-    try {
-      const payload = {
-        nama_dojang: namaDojang.trim(),
-        email: email.trim() || "",
-        no_telp: no_telp.trim() || "",
-        negara: negara.trim() || "",
-        provinsi: provinsi.trim() || "",
-        kota: kabupaten.trim() || "",
-      };
-      await apiClient.post("/dojang", payload);
+  const handleLogoChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const file = e.target?.files?.[0];
+  if (!file) return;
 
-      toast.success("Registrasi dojang berhasil! Silahkan registrasi.");
+  console.log('📸 Selected file:', file.name, 'Size:', file.size, 'Type:', file.type);
 
-      setNamaDojang("");
-      setEmail("");
-      setno_telp("");
-      setKabupaten("");
-      setProvinsi("");
-      setNegara("");
+  // Validasi ukuran file (max 5MB)
+  if (file.size > 5 * 1024 * 1024) {
+    toast.error("Ukuran file maksimal 5MB");
+    e.target.value = ''; // Reset input
+    return;
+  }
 
-    } catch (err) {
-      if (err.data?.errors) {
-        toast.error("Ada field yang tidak valid.");
-      } else {
-      }
-    } finally {
-      setIsLoading(false);
-    }
+  // Validasi tipe file
+  const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'];
+  if (!allowedTypes.includes(file.type)) {
+    toast.error("Format file harus JPG, PNG, JPEG, atau WebP");
+    e.target.value = ''; // Reset input
+    return;
+  }
+
+  // Validasi nama file
+  if (file.name.length > 255) {
+    toast.error("Nama file terlalu panjang");
+    e.target.value = ''; // Reset input
+    return;
+  }
+
+  setLogoFile(file);
+  toast.success(`Logo ${file.name} berhasil dipilih`);
+};
+
+  const removeLogo = () => {
+    setLogoFile(null);
+    
+    const fileInputDesktop = document.getElementById('logo-upload') as HTMLInputElement;
+    const fileInputMobile = document.getElementById('logo-upload-mobile') as HTMLInputElement;
+    
+    if (fileInputDesktop) fileInputDesktop.value = '';
+    if (fileInputMobile) fileInputMobile.value = '';
+    
+    toast.success("Logo berhasil dihapus");
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  const resetForm = () => {
+  setNamaDojang("");
+  setEmail("");
+  setno_telp("");
+  setKabupaten("");
+  setProvinsi("");
+  setNegara("");
+  setLogoFile(null);
+  
+  // Reset file inputs
+  const fileInputDesktop = document.getElementById('logo-upload') as HTMLInputElement;
+  const fileInputMobile = document.getElementById('logo-upload-mobile') as HTMLInputElement;
+  if (fileInputDesktop) fileInputDesktop.value = '';
+  if (fileInputMobile) fileInputMobile.value = '';
+};
+
+const handleRegister = async () => {
+  setIsLoading(true);
+  try {
+    console.log('📝 Data yang akan dikirim:', {
+      nama_dojang: namaDojang.trim(),
+      email: email.trim(),
+      no_telp: no_telp.trim(),
+      negara: negara.trim(),
+      provinsi: provinsi.trim(),
+      kota: kabupaten.trim(),
+      logo: logoFile?.name || 'tidak ada'
+    });
 
     if (!namaDojang.trim()) {
-      toast.error("Nama dojang harus diisi");
+      toast.error("Nama dojang tidak boleh kosong");
       return;
     }
 
-    if (namaDojang.trim().length < 3) {
-      toast.error("Nama dojang minimal 3 karakter");
-      return;
+    const formData = new FormData();
+    formData.append('nama_dojang', namaDojang.trim());
+    formData.append('email', email.trim() || '');
+    formData.append('no_telp', no_telp.trim() || '');
+    formData.append('negara', negara.trim() || 'Indonesia');
+    formData.append('provinsi', provinsi.trim() || '');
+    formData.append('kota', kabupaten.trim() || '');
+    
+    if (logoFile) {
+      formData.append('logo', logoFile);
+      console.log('📎 Uploading logo:', logoFile.name, 'Size:', logoFile.size);
     }
 
-    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      toast.error("Format email tidak valid");
-      return;
+    console.log('📤 FormData contents:');
+    for (let [key, value] of formData.entries()) {
+      if (value instanceof File) {
+        console.log(`${key}:`, value.name, `(${value.size} bytes)`);
+      } else {
+        console.log(`${key}:`, value);
+      }
     }
 
-    if (no_telp && !/^[\d\s\-\+\(\)]+$/.test(no_telp)) {
-      toast.error("Format nomor HP tidak valid");
+    console.log('🚀 Sending request to /dojang...');
+    
+    // Panggil API
+    const response = await apiClient.postFormData("/dojang", formData);
+    
+    console.log('✅ Registration response:', response);
+    toast.success("Registrasi dojang berhasil! Silahkan login.");
+    resetForm();
+
+  } catch (error: any) {
+    console.error('❌ Registration error:', error);
+    
+    // Error handling yang sesuai dengan API client yang diperbaiki
+    if (error && typeof error === 'object') {
+      const status = error.status;
+      const errorData = error.data;
+      const errorMessage = error.message;
+      
+      console.log('📡 Error status:', status);
+      console.log('📡 Error data:', errorData);
+      console.log('📡 Error message:', errorMessage);
+      
+      // Handle berdasarkan status code
+      if (status === 400) {
+        if (errorData && typeof errorData === 'object') {
+          if (errorData.message) {
+            toast.error(errorData.message);
+          } else if (errorData.errors) {
+            // Laravel validation errors
+            const errors = errorData.errors;
+            const firstErrorKey = Object.keys(errors)[0];
+            const firstError = errors[firstErrorKey];
+            const errorMsg = Array.isArray(firstError) ? firstError[0] : firstError;
+            toast.error(errorMsg || "Data tidak valid");
+          } else {
+            toast.error("Data tidak valid. Periksa kembali input Anda.");
+          }
+        } else {
+          toast.error("Data tidak valid. Periksa kembali input Anda.");
+        }
+      } else if (status === 422) {
+        if (errorData && errorData.errors) {
+          const errors = errorData.errors;
+          const firstErrorKey = Object.keys(errors)[0];
+          const firstError = errors[firstErrorKey];
+          const errorMsg = Array.isArray(firstError) ? firstError[0] : firstError;
+          toast.error(errorMsg || "Data tidak sesuai format yang diperlukan.");
+        } else if (errorData && errorData.message) {
+          toast.error(errorData.message);
+        } else {
+          toast.error("Data tidak sesuai format yang diperlukan.");
+        }
+      } else if (status === 413) {
+        toast.error("File terlalu besar. Maksimal 5MB.");
+      } else if (status === 500) {
+        toast.error("Terjadi kesalahan server. Coba lagi nanti.");
+      } else if (status && status >= 400) {
+        toast.error(errorMessage || `Error ${status}`);
+      } else {
+        // Kemungkinan network error atau error tanpa status
+        if (errorMessage && (errorMessage.includes('Network') || errorMessage.includes('Failed to fetch'))) {
+          toast.error("Koneksi bermasalah. Periksa internet Anda.");
+        } else {
+          toast.error(errorMessage || "Terjadi kesalahan tidak terduga.");
+        }
+      }
+    } else if (error instanceof Error) {
+      // Standard JavaScript Error
+      if (error.message.includes('Network') || error.message.includes('Failed to fetch')) {
+        toast.error("Koneksi bermasalah. Periksa internet Anda.");
+      } else {
+        toast.error(error.message || "Registrasi gagal. Coba lagi.");
+      }
+    } else {
+      toast.error("Terjadi kesalahan tidak terduga.");
+    }
+  } finally {
+    setIsLoading(false);
+  }
+};
+
+  const handleSubmit = (e: React.FormEvent) => {
+  e.preventDefault();
+
+  // Validasi yang lebih ketat
+  const trimmedNama = namaDojang.trim();
+  const trimmedEmail = email.trim();
+  const trimmedPhone = no_telp.trim();
+
+  if (!trimmedNama) {
+    toast.error("Nama dojang harus diisi");
+    return;
+  }
+
+  if (trimmedNama.length < 3) {
+    toast.error("Nama dojang minimal 3 karakter");
+    return;
+  }
+
+  if (trimmedNama.length > 100) {
+    toast.error("Nama dojang maksimal 100 karakter");
+    return;
+  }
+
+  // Validasi email jika diisi
+  if (trimmedEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+    toast.error("Format email tidak valid");
+    return;
+  }
+
+  // Validasi phone jika diisi
+  if (trimmedPhone && !/^[\d\s\-\+\(\)]{8,20}$/.test(trimmedPhone)) {
+    toast.error("Format nomor HP tidak valid (8-20 digit)");
+    return;
+  }
+
+  // Validasi file logo jika ada
+  if (logoFile) {
+    if (logoFile.size > 5 * 1024 * 1024) {
+      toast.error("Ukuran logo maksimal 5MB");
       return;
     }
+    
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'];
+    if (!allowedTypes.includes(logoFile.type)) {
+      toast.error("Format logo harus JPG, PNG, JPEG, atau WebP");
+      return;
+    }
+  }
 
-    handleRegister();
-  };
+  console.log('🚀 Form submitted with valid data');
+  handleRegister();
+};
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-red/15 via-white to-red/10 py-8">
@@ -175,6 +465,54 @@ const RegisterDojang = () => {
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4 md:space-y-5">
             
+            {/* Logo Upload Section - Desktop */}
+            <div className="hidden sm:block space-y-1.5">
+              <label className="text-xs md:text-sm font-plex font-medium text-black/80 block">
+                Logo Dojang <span className="text-xs text-black/50">(opsional)</span>
+              </label>
+              <div className="relative group">
+                <input
+                  id="logo-upload"
+                  type="file"
+                  accept="image/jpeg,image/png,image/jpg,image/webp"
+                  onChange={handleLogoChange}
+                  className="w-full p-3 md:p-4 border-2 border-red/25 hover:border-red/40 focus:border-red rounded-xl bg-white/80 backdrop-blur-sm transition-all duration-300 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-plex file:bg-red/10 file:text-red hover:file:bg-red/20 text-sm md:text-base"
+                  disabled={isLoading}
+                />
+                <Upload className="absolute right-3 md:right-4 top-1/2 transform -translate-y-1/2 text-red/60 group-hover:text-red transition-colors pointer-events-none" size={16} />
+              </div>
+              <FilePreview
+                file={logoFile}
+                onRemove={removeLogo}
+                disabled={isLoading}
+                label="Logo Dojang"
+              />
+            </div>
+
+            {/* Logo Upload Section - Mobile */}
+            <div className="sm:hidden space-y-1.5">
+              <label className="text-xs font-plex font-medium text-black/80 block">
+                Logo Dojang <span className="text-xs text-black/50">(opsional)</span>
+              </label>
+              <div className="relative group">
+                <input
+                  id="logo-upload-mobile"
+                  type="file"
+                  accept="image/jpeg,image/png,image/jpg,image/webp"
+                  onChange={handleLogoChange}
+                  className="w-full p-2.5 text-sm border-2 border-red/25 hover:border-red/40 focus:border-red rounded-xl bg-white/80 backdrop-blur-sm transition-all duration-300 file:mr-3 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-plex file:bg-red/10 file:text-red hover:file:bg-red/20"
+                  disabled={isLoading}
+                />
+                <Upload className="absolute right-3 top-1/2 transform -translate-y-1/2 text-red/60 group-hover:text-red transition-colors pointer-events-none" size={14} />
+              </div>
+              <FilePreview
+                file={logoFile}
+                onRemove={removeLogo}
+                disabled={isLoading}
+                label="Logo Dojang"
+              />
+            </div>
+
             {/* Nama Dojang */}
             <div className="space-y-1.5">
               <label className="text-xs md:text-sm font-plex font-medium text-black/80 block">

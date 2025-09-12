@@ -8,17 +8,32 @@ export const setAuthToken = (token: string | null) => {
 
 export const getAuthToken = () => authToken;
 
+// ✅ PERBAIKAN: handleResponse dengan error handling yang lebih robust
 const handleResponse = async (response: Response) => {
   const contentType = response.headers.get("content-type");
   let data: any = null;
-  if (contentType?.includes("application/json")) {
-    data = await response.json();
-  } else {
-    data = await response.text();
+  
+  try {
+    if (contentType?.includes("application/json")) {
+      data = await response.json();
+    } else {
+      data = await response.text();
+    }
+  } catch (parseError) {
+    console.error('Error parsing response:', parseError);
+    data = null;
   }
 
   if (!response.ok) {
-    throw { status: response.status, data };
+    // ✅ PERBAIKAN: Throw object dengan struktur yang benar
+    const error = {
+      status: response.status,
+      data: data,
+      message: data?.message || `HTTP error! status: ${response.status}`
+    };
+    
+    console.log('🚨 API Error:', error);
+    throw error;
   }
 
   return data;
@@ -63,16 +78,33 @@ export const apiClient = {
       },
     }).then(handleResponse),
 
-  postFormData: (url: string, formData: FormData) =>
-    fetch(`${API_BASE_URL}${url}`, {
+  // ✅ PERBAIKAN: postFormData dengan error handling yang lebih baik
+  postFormData: (url: string, formData: FormData) => {
+    console.log('📡 Making FormData POST request to:', `${API_BASE_URL}${url}`);
+    
+    return fetch(`${API_BASE_URL}${url}`, {
       method: "POST",
       headers: {
         ...(authToken && { Authorization: `Bearer ${authToken}` }),
+        // Don't set Content-Type for FormData - browser will set it automatically with boundary
       },
       body: formData,
-    }).then(handleResponse),
+    }).then(async (response) => {
+      console.log('📡 Response status:', response.status);
+      console.log('📡 Response ok:', response.ok);
+      
+      try {
+        return await handleResponse(response);
+      } catch (error) {
+        console.error('📡 handleResponse error:', error);
+        throw error;
+      }
+    }).catch((error) => {
+      console.error('📡 Network or parsing error:', error);
+      throw error;
+    });
+  },
 
-  // ✅ TAMBAHAN: putFormData method
   putFormData: (url: string, formData: FormData) =>
     fetch(`${API_BASE_URL}${url}`, {
       method: "PUT",

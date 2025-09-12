@@ -73,47 +73,64 @@ class PelatihController {
   })
 
   // Upload files (for current pelatih)
-  uploadFiles = asyncHandler(async (req: Request, res: Response) => {
-    try {
-      const user = req.user!
-      
-      if (!user.pelatihId) {
-        return sendError(res, 'Pelatih ID not found', 400)
-      }
-
-      if (!req.files || Object.keys(req.files).length === 0) {
-        return sendError(res, 'No files uploaded', 400)
-      }
-
-      const files = await pelatihService.handleFileUpload(user.pelatihId, req.files)
-      
-      sendSuccess(res, files, 'Files uploaded successfully')
-    } catch (error: any) {
-      if (error.message === 'Pelatih not found') {
-        return sendNotFound(res, error.message)
-      }
-      return sendError(res, error.message || 'Failed to upload files', 400)
+uploadFiles = asyncHandler(async (req: Request, res: Response) => {
+  console.log('Files received:', req.files) // Debug log
+  console.log('User data:', req.user) // Debug log
+  
+  try {
+    const user = req.user!
+    
+    if (!user.pelatihId) {
+      return sendError(res, 'Pelatih ID not found', 400)
     }
-  })
+
+    if (!req.files || Object.keys(req.files).length === 0) {
+      return sendError(res, 'No files uploaded', 400)
+    }
+
+    const files = await pelatihService.handleFileUpload(user.pelatihId, req.files)
+    
+    // Return format yang diharapkan frontend
+    const responseData = {
+      foto_ktp: files.foto_ktp || null,
+      sertifikat_sabuk: files.sertifikat_sabuk || null
+    }
+    
+    sendSuccess(res, responseData, 'Files uploaded successfully')
+  } catch (error: any) {
+    console.error('Upload error:', error) // Debug log
+    if (error.message === 'Pelatih not found') {
+      return sendNotFound(res, error.message)
+    }
+    return sendError(res, error.message || 'Failed to upload files', 400)
+  }
+})
 
   // Get uploaded files info (for current pelatih)
-  getMyFiles = asyncHandler(async (req: Request, res: Response) => {
-    try {
-      const user = req.user!
-      
-      if (!user.pelatihId) {
-        return sendError(res, 'Pelatih ID not found', 400)
-      }
-
-      const files = await pelatihService.getUploadedFiles(user.pelatihId)
-      sendSuccess(res, files, 'Files info retrieved successfully')
-    } catch (error: any) {
-      if (error.message === 'Pelatih not found') {
-        return sendNotFound(res, error.message)
-      }
-      return sendError(res, error.message || 'Failed to get files info', 400)
+getMyFiles = asyncHandler(async (req: Request, res: Response) => {
+  try {
+    const user = req.user!
+    
+    if (!user.pelatihId) {
+      return sendError(res, 'Pelatih ID not found', 400)
     }
-  })
+
+    const files = await pelatihService.getUploadedFiles(user.pelatihId)
+    
+    // Return format sederhana yang diharapkan frontend
+    const responseData = {
+      foto_ktp: files.foto_ktp,
+      sertifikat_sabuk: files.sertifikat_sabuk
+    }
+    
+    sendSuccess(res, responseData, 'Files info retrieved successfully')
+  } catch (error: any) {
+    if (error.message === 'Pelatih not found') {
+      return sendNotFound(res, error.message)
+    }
+    return sendError(res, error.message || 'Failed to get files info', 400)
+  }
+})
 
   // Delete specific file (for current pelatih)
   deleteFile = asyncHandler(async (req: Request, res: Response) => {
