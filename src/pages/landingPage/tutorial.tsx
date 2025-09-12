@@ -51,7 +51,7 @@ const TutorialPage = () => {
 
   return (
     <div className="min-h-screen bg-white py-16 sm:py-20 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-7xl mx-auto pt-10">
         {/* Header */}
         <div className="text-center mb-20">
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-judul font-bebas text-red leading-none tracking-wide mb-8">
