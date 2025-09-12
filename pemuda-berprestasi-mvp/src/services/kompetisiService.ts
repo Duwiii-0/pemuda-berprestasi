@@ -376,7 +376,7 @@ static async updateRegistrationStatus(
             kompetisi: {
               select: {
                 id_kompetisi: true,
-                nama_kompetisi: true, // Fixed: changed from nama_event to nama_kompetisi
+                nama_event: true, 
                 status: true,
                 tanggal_mulai: true,
                 tanggal_selesai: true
@@ -461,7 +461,7 @@ static async updateRegistrationStatus(
         cancelledMatches: existingMatches.length,
         kompetisi: {
           id: kompetisi.id_kompetisi,
-          nama: kompetisi.nama_kompetisi, // Fixed: changed from nama_kompetisi
+          nama: kompetisi.nama_event, // Fixed: changed from nama_kompetisi
           status: kompetisi.status
         }
       };
