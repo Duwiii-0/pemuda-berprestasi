@@ -346,7 +346,7 @@ static async updateRegistrationStatus(
         }
       },
       include: {
-        atlit: {
+        atlet: {
           select: {
             id_atlet: true,
             nama_atlet: true,
@@ -357,13 +357,17 @@ static async updateRegistrationStatus(
             }
           }
         },
-        atlit2: {
-          select: {
-            id_atlet: true,
-            nama_atlet: true,
-            dojang: {
+        anggota_tim: {
+          include: {
+            atlet: {
               select: {
-                nama_dojang: true
+                id_atlet: true,
+                nama_atlet: true,
+                dojang: {
+                  select: {
+                    nama_dojang: true
+                  }
+                }
               }
             }
           }
@@ -371,15 +375,19 @@ static async updateRegistrationStatus(
         kelas_kejuaraan: {
           select: {
             id_kelas_kejuaraan: true,
-            nama_kelas: true,
             cabang: true,
             kompetisi: {
               select: {
                 id_kompetisi: true,
-                nama_event: true, 
+                nama_event: true,
                 status: true,
                 tanggal_mulai: true,
                 tanggal_selesai: true
+              }
+            },
+            kategori_event: {
+              select: {
+                nama_kategori: true
               }
             }
           }
@@ -393,66 +401,70 @@ static async updateRegistrationStatus(
 
     // Validasi status kompetisi
     const kompetisi = existingPeserta.kelas_kejuaraan!.kompetisi;
-    if (kompetisi.status === 'AKTIF' || kompetisi.status === 'SELESAI') {
-      throw new Error('Tidak dapat menghapus peserta dari kompetisi yang sudah aktif atau selesai');
+    if (kompetisi.status === 'SEDANG_DIMULAI' || kompetisi.status === 'SELESAI') {
+      throw new Error('Tidak dapat menghapus peserta dari kompetisi yang sudah dimulai atau selesai');
     }
 
     // Cek apakah ada pertandingan yang sudah terjadwal untuk peserta ini
-    const existingMatches = await prisma.tb_pertandingan.findMany({
+    const existingMatches = await prisma.tb_match.findMany({
       where: {
         OR: [
-          { id_peserta1: participantId },
-          { id_peserta2: participantId }
+          { id_peserta_a: participantId },
+          { id_peserta_b: participantId }
         ]
       },
       select: {
-        id_pertandingan: true,
-        status: true
+        id_match: true,
+        ronde: true,
+        skor_a: true,
+        skor_b: true
       }
     });
 
     if (existingMatches.length > 0) {
       const activeMatches = existingMatches.filter(match => 
-        match.status !== 'CANCELLED' && match.status !== 'PENDING'
+        match.skor_a > 0 || match.skor_b > 0
       );
       
       if (activeMatches.length > 0) {
-        throw new Error('Tidak dapat menghapus peserta yang sudah memiliki pertandingan aktif');
+        throw new Error('Tidak dapat menghapus peserta yang sudah memiliki pertandingan dengan skor');
       }
 
-      // Hapus atau batalkan pertandingan yang masih PENDING
-      await prisma.tb_pertandingan.updateMany({
+      // Hapus pertandingan yang belum dimulai
+      await prisma.tb_match.deleteMany({
         where: {
           OR: [
-            { id_peserta1: participantId },
-            { id_peserta2: participantId }
+            { id_peserta_a: participantId },
+            { id_peserta_b: participantId }
           ],
-          status: 'PENDING'
-        },
-        data: {
-          status: 'CANCELLED'
+          skor_a: 0,
+          skor_b: 0
         }
       });
     }
 
     // Mulai transaction untuk menghapus peserta
     const result = await prisma.$transaction(async (tx) => {
-      // Hapus peserta dari kompetisi
-      const deletedPeserta = await tx.tb_peserta_kompetisi.delete({ // Fixed: changed from tb_peserta_kejuaraan
-        where: {
-          id_peserta_kompetisi: participantId // Fixed: changed from id_peserta_kejuaraan
-        },
-        include: {
-          atlit: {
-            select: {
-              nama_atlet: true
-            }
-          },
-          atlit2: {
-            select: {
-              nama_atlet: true
-            }
+      // Jika ini adalah tim, hapus anggota tim terlebih dahulu
+      if (existingPeserta.is_team && existingPeserta.anggota_tim.length > 0) {
+        await tx.tb_peserta_tim.deleteMany({
+          where: {
+            id_peserta_kompetisi: participantId
           }
+        });
+      }
+
+      // Hapus drawing seed jika ada
+      await tx.tb_drawing_seed.deleteMany({
+        where: {
+          id_peserta_kompetisi: participantId
+        }
+      });
+
+      // Hapus peserta dari kompetisi
+      const deletedPeserta = await tx.tb_peserta_kompetisi.delete({
+        where: {
+          id_peserta_kompetisi: participantId
         }
       });
 
@@ -461,29 +473,35 @@ static async updateRegistrationStatus(
         cancelledMatches: existingMatches.length,
         kompetisi: {
           id: kompetisi.id_kompetisi,
-          nama: kompetisi.nama_event, // Fixed: changed from nama_kompetisi
+          nama: kompetisi.nama_event,
           status: kompetisi.status
         }
       };
     });
 
     // Format response data
-    const pesertaName = existingPeserta.atlit2 
-      ? `Tim ${existingPeserta.atlit!.nama_atlet} & ${existingPeserta.atlit2.nama_atlet}`
-      : existingPeserta.atlit!.nama_atlet;
+    let pesertaName: string;
+    if (existingPeserta.is_team && existingPeserta.anggota_tim.length > 0) {
+      const namaAnggota = existingPeserta.anggota_tim.map(anggota => anggota.atlet.nama_atlet);
+      pesertaName = `Tim ${namaAnggota.join(' & ')}`;
+    } else if (existingPeserta.atlet) {
+      pesertaName = existingPeserta.atlet.nama_atlet;
+    } else {
+      pesertaName = 'Peserta Tidak Diketahui';
+    }
 
     return {
       success: true,
       data: {
-        id_peserta_kompetisi: participantId, // Fixed: changed from id_peserta_kejuaraan
+        id_peserta_kompetisi: participantId,
         peserta_name: pesertaName,
-        kelas: existingPeserta.kelas_kejuaraan!.nama_kelas,
+        kelas: existingPeserta.kelas_kejuaraan!.kategori_event.nama_kategori,
         cabang: existingPeserta.kelas_kejuaraan!.cabang,
-        is_team: !!existingPeserta.atlit2,
+        is_team: existingPeserta.is_team,
         cancelled_matches: result.cancelledMatches,
         kompetisi: result.kompetisi
       },
-      message: `${pesertaName} berhasil dihapus dari kelas ${existingPeserta.kelas_kejuaraan!.nama_kelas}`
+      message: `${pesertaName} berhasil dihapus dari kelas ${existingPeserta.kelas_kejuaraan!.kategori_event.nama_kategori}`
     };
 
   } catch (error: any) {
