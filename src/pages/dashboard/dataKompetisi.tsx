@@ -51,7 +51,7 @@ const DataKompetisi = () => {
   const [searchPeserta, setSearchPeserta] = useState("");
   const [filterStatus, setFilterStatus] = useState<"ALL" | "PENDING" | "APPROVED" | "REJECTED">("ALL");
   const [filterCategory, setFilterCategory] = useState<"ALL" | "KYORUGI" | "POOMSAE">("ALL");
-  const [filterKelompokUsia, setFilterKelompokUsia] = useState<"ALL" | "Super Pra-cadet" | "Pracadet" | "Cadet" | "Junior" | "Senior" >("ALL");
+  const [filterKelompokUsia, setFilterKelompokUsia] = useState<"ALL" | "Super pracadet" | "Pracadet" | "Cadet" | "Junior" | "Senior" >("ALL");
   const [filterKelasBerat, setFilterKelasBerat] = useState<string>("ALL");
   const [filterLevel, setFilterLevel] = useState<"ALL" | "pemula" | "prestasi">("ALL");
   const [filterGender, setFilterGender] = useState<"ALL" | "LAKI_LAKI" | "PEREMPUAN">("ALL");
@@ -478,7 +478,7 @@ const DataKompetisi = () => {
                       onChange={(selected) => setFilterKelompokUsia(selected?.value as any)}
                       options={[
                         { value: "ALL", label: "Semua Kelompok Umur" },
-                        { value: "Super Pra-cadet", label: "Super Pra-Cadet (2017-2020)" },
+                        { value: "Super pracadet", label: "Super Pra-Cadet (2017-2020)" },
                         { value: "Pracadet", label: "Pracadet (2014-2016)" },
                         { value: "Cadet", label: "Cadet (2011-2013)" },
                         { value: "Junior", label: "Junior (2008-2010)" },
