@@ -687,7 +687,7 @@ const DataKompetisi = () => {
                               : peserta.kelas_kejuaraan.kelompok.nama_kelompok;
                           
                           const isDeleting = deletingParticipants.has(peserta.id_peserta_kompetisi);
-                          
+
                           return (
                             <tr
                               key={peserta.id_peserta_kompetisi}
@@ -733,11 +733,11 @@ const DataKompetisi = () => {
                               </td>
                               {/* 👇 Tambahan kolom Aksi */}
                               <td className="py-4 px-4 text-center flex justify-center gap-3">
-                                <button className="text-blue-600 hover:text-blue-800 cursor-pointer" onClick={(e) => e.stopPropagation()}>
+                                <button className="text-blue-600 hover:text-blue-800 cursor-pointer hover:scale-102" onClick={(e) => e.stopPropagation()}>
                                   <Edit size={18} />
                                 </button>
                                 <button 
-                                    className={`text-red-600 hover:text-red-800 transition-colors ${
+                                    className={`text-red-600 hover:text-red-800 cursor-pointer hover:scale-102 transition-colors ${
                                       isDeleting ? 'opacity-50 cursor-not-allowed' : ''
                                     }`}
                                     onClick={(e) => {

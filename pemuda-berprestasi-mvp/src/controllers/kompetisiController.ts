@@ -28,35 +28,30 @@ export class KompetisiController {
   static async deleteParticipant(req: Request, res: Response) {
     try {
       const { id, participantId } = req.params;
-      
+
       // Validasi parameter
       const kompetisiId = parseInt(id);
       const pesertaId = parseInt(participantId);
-      
+
       if (isNaN(kompetisiId)) {
         return sendError(res, 'ID kompetisi tidak valid', 400);
       }
-      
+
       if (isNaN(pesertaId)) {
         return sendError(res, 'ID peserta tidak valid', 400);
       }
-    
-      // Otorisasi - hanya ADMIN dan ADMIN_KOMPETISI yang bisa hapus peserta
-      if (req.user?.role !== 'ADMIN' && req.user?.role !== 'ADMIN_KOMPETISI') {
-        return sendError(res, 'Tidak memiliki akses untuk menghapus peserta', 403);
-      }
-    
+
       // Panggil service untuk handle delete logic
       const result = await KompetisiService.deleteParticipant(kompetisiId, pesertaId);
-    
+
       return sendSuccess(res, result.data, result.message);
-    
+
     } catch (error: any) {
       console.error('Controller - Error deleting participant:', error);
       return sendError(res, error.message || 'Gagal menghapus peserta', 400);
     }
   }
-  
+
   // Get all kompetisi with optional filters
   static async getAll(req: Request, res: Response) {
     try {
