@@ -520,4 +520,294 @@ static async updateRegistrationStatus(
   }
 }
 
+static async updateParticipantClass(
+  kompetisiId: number, 
+  participantId: number, 
+  newKelasKejuaraanId: number,
+  user: any
+) {
+  try {
+    // Start transaction
+    const result = await prisma.$transaction(async (tx) => {
+      
+      // 1. Verify competition exists
+      const kompetisi = await tx.tb_kompetisi.findUnique({
+        where: { id_kompetisi: kompetisiId },
+        include: {
+          admin: true
+        }
+      });
+
+      if (!kompetisi) {
+        throw new Error('Kompetisi tidak ditemukan');
+      }
+
+      // 2. Check competition status - only allow edit during registration phase
+      if (kompetisi.status !== 'PENDAFTARAN') {
+        throw new Error('Hanya dapat mengubah kelas peserta saat masa pendaftaran');
+      }
+
+      // 3. Verify participant exists in this competition
+      const existingParticipant = await tx.tb_peserta_kompetisi.findFirst({
+        where: {
+          id_peserta_kompetisi: participantId,
+          kelas_kejuaraan: {
+            kompetisi: {
+              id_kompetisi: kompetisiId
+            }
+          }
+        },
+        include: {
+          atlet: {
+            select: {
+              id_atlet: true,
+              nama_atlet: true,
+              id_dojang: true,
+              jenis_kelamin: true,
+              berat_badan: true,
+              tanggal_lahir: true,
+              dojang: {
+                select: {
+                  nama_dojang: true
+                }
+              }
+            }
+          },
+          anggota_tim: {
+            include: {
+              atlet: {
+                select: {
+                  id_atlet: true,
+                  nama_atlet: true,
+                  id_dojang: true,
+                  jenis_kelamin: true,
+                  berat_badan: true,
+                  tanggal_lahir: true,
+                  dojang: {
+                    select: {
+                      nama_dojang: true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          kelas_kejuaraan: {
+            include: {
+              kategori_event: true,
+              kelompok: true,
+              kelas_berat: true,
+              poomsae: true
+            }
+          }
+        }
+      });
+
+      if (!existingParticipant) {
+        throw new Error('Peserta tidak ditemukan dalam kompetisi ini');
+      }
+
+      // 4. Additional authorization checks
+      if (user.role === 'ADMIN_KOMPETISI') {
+        // Admin kompetisi can only edit participants in their assigned competition
+        const isAdminOfThisKompetisi = kompetisi.admin.some(
+          admin => admin.id_akun === user.id_akun
+        );
+        if (!isAdminOfThisKompetisi) {
+          throw new Error('Anda tidak memiliki akses untuk mengubah peserta di kompetisi ini');
+        }
+      } else if (user.role === 'PELATIH') {
+        // Pelatih can only edit participants from their dojang
+        let canEdit = false;
+        
+        if (!existingParticipant.is_team && existingParticipant.atlet) {
+          // Individual participant
+          canEdit = existingParticipant.atlet.id_dojang === user.pelatih?.id_dojang;
+        } else if (existingParticipant.is_team && existingParticipant.anggota_tim.length > 0) {
+          // Team participant - all members must be from pelatih's dojang
+          canEdit = existingParticipant.anggota_tim.every(
+            member => member.atlet.id_dojang === user.pelatih?.id_dojang
+          );
+        }
+
+        if (!canEdit) {
+          throw new Error('Anda hanya dapat mengubah kelas peserta dari dojang Anda sendiri');
+        }
+      }
+
+      // 5. Verify new kelas kejuaraan exists and belongs to this competition
+      const newKelasKejuaraan = await tx.tb_kelas_kejuaraan.findUnique({
+        where: { id_kelas_kejuaraan: newKelasKejuaraanId },
+        include: {
+          kategori_event: true,
+          kelompok: true,
+          kelas_berat: true,
+          poomsae: true
+        }
+      });
+
+      if (!newKelasKejuaraan) {
+        throw new Error('Kelas kejuaraan baru tidak ditemukan');
+      }
+
+      if (newKelasKejuaraan.id_kompetisi !== kompetisiId) {
+        throw new Error('Kelas kejuaraan tidak terdaftar dalam kompetisi ini');
+      }
+
+      // 6. Check if participant is already in the new class
+      if (existingParticipant.id_kelas_kejuaraan === newKelasKejuaraanId) {
+        throw new Error('Peserta sudah terdaftar di kelas kejuaraan ini');
+      }
+
+      // 7. Validate participant eligibility for new class
+      await KompetisiService.validateParticipantEligibility(existingParticipant, newKelasKejuaraan);
+
+      // 8. Check for duplicate registration in new class
+      if (!existingParticipant.is_team && existingParticipant.atlet) {
+        const duplicateCheck = await tx.tb_peserta_kompetisi.findFirst({
+          where: {
+            id_atlet: existingParticipant.atlet.id_atlet,
+            id_kelas_kejuaraan: newKelasKejuaraanId,
+            NOT: {
+              id_peserta_kompetisi: participantId
+            }
+          }
+        });
+
+        if (duplicateCheck) {
+          throw new Error('Atlet sudah terdaftar di kelas kejuaraan ini');
+        }
+      }
+
+      // 11. Update the participant's class
+      const updatedParticipant = await tx.tb_peserta_kompetisi.update({
+        where: {
+          id_peserta_kompetisi: participantId
+        },
+        data: {
+          id_kelas_kejuaraan: newKelasKejuaraanId,
+          // Reset status to PENDING if needed
+          status: 'PENDING'
+        },
+        include: {
+          atlet: {
+            select: {
+              id_atlet: true,
+              nama_atlet: true,
+              dojang: {
+                select: {
+                  nama_dojang: true
+                }
+              }
+            }
+          },
+          anggota_tim: {
+            include: {
+              atlet: {
+                select: {
+                  id_atlet: true,
+                  nama_atlet: true,
+                  dojang: {
+                    select: {
+                      nama_dojang: true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          kelas_kejuaraan: {
+            include: {
+              kategori_event: true,
+              kelompok: true,
+              kelas_berat: true,
+              poomsae: true
+            }
+          }
+        }
+      });
+
+      return {
+        updatedParticipant,
+        oldClass: existingParticipant.kelas_kejuaraan,
+        newClass: newKelasKejuaraan,
+        participantName: existingParticipant.is_team 
+          ? existingParticipant.anggota_tim.map(m => m.atlet.nama_atlet).join(' & ')
+          : existingParticipant.atlet?.nama_atlet || 'Unknown'
+      };
+    });
+
+    return {
+      success: true,
+      data: result.updatedParticipant,
+      message: `Kelas ${result.participantName} berhasil diubah dari "${result.oldClass.kategori_event.nama_kategori}" ke "${result.newClass.kategori_event.nama_kategori}"`
+    };
+
+  } catch (error: any) {
+    console.error('Service - Error updating participant class:', error);
+    
+    if (error.code === 'P2025') {
+      throw new Error('Peserta tidak ditemukan');
+    }
+    
+    if (error.code === 'P2002') {
+      throw new Error('Terjadi konflik data saat memperbarui kelas peserta');
+    }
+
+    throw new Error(error.message || 'Gagal mengubah kelas peserta');
+  }
+}
+
+// Helper function to validate participant eligibility
+static async validateParticipantEligibility(participant: any, newKelas: any) {
+  // If it's a team registration
+  if (participant.is_team) {
+    // Validate team composition for new class
+    if (newKelas.cabang === 'POOMSAE') {
+      // Poomsae teams are allowed
+      return;
+    } else if (newKelas.cabang === 'KYORUGI') {
+      // Individual kyorugi only
+      throw new Error('Kelas Kyorugi hanya untuk peserta individu');
+    }
+  } else {
+    // Individual participant validation
+    const atlet = participant.atlet;
+    if (!atlet) {
+      throw new Error('Data atlet tidak ditemukan');
+    }
+
+    // Age validation
+    if (newKelas.kelompok) {
+      const today = new Date();
+      const birthDate = new Date(atlet.tanggal_lahir);
+      const age = today.getFullYear() - birthDate.getFullYear();
+      const monthDiff = today.getMonth() - birthDate.getMonth();
+      const finalAge = monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate()) 
+        ? age - 1 : age;
+
+      if (finalAge < newKelas.kelompok.usia_min || finalAge > newKelas.kelompok.usia_max) {
+        throw new Error(
+          `Umur atlet (${finalAge} tahun) tidak sesuai dengan kelompok usia ${newKelas.kelompok.nama_kelompok} (${newKelas.kelompok.usia_min}-${newKelas.kelompok.usia_max} tahun)`
+        );
+      }
+    }
+
+    // Weight class validation for Kyorugi
+    if (newKelas.cabang === 'KYORUGI' && newKelas.kelas_berat) {
+      const weight = atlet.berat_badan;
+      if (weight < newKelas.kelas_berat.batas_min || weight > newKelas.kelas_berat.batas_max) {
+        throw new Error(
+          `Berat badan atlet (${weight} kg) tidak sesuai dengan kelas berat ${newKelas.kelas_berat.nama_kelas}`
+        );
+      }
+
+      // Gender validation for weight class
+      if (atlet.jenis_kelamin !== newKelas.kelas_berat.jenis_kelamin) {
+        throw new Error('Jenis kelamin atlet tidak sesuai dengan kelas berat yang dipilih');
+      }
+    }
+  }
+}
+
 }

@@ -238,4 +238,48 @@ export class KompetisiController {
     }
   }
 
+  static async updateParticipantClass(req: Request, res: Response) {
+  try {
+    const { id, participantId } = req.params;
+    const { kelasKejuaraanId } = req.body;
+
+    // Validasi parameter
+    const kompetisiId = parseInt(id);
+    const pesertaId = parseInt(participantId);
+    const newKelasId = parseInt(kelasKejuaraanId);
+
+    if (isNaN(kompetisiId)) {
+      return sendError(res, 'ID kompetisi tidak valid', 400);
+    }
+
+    if (isNaN(pesertaId)) {
+      return sendError(res, 'ID peserta tidak valid', 400);
+    }
+
+    if (isNaN(newKelasId)) {
+      return sendError(res, 'ID kelas kejuaraan tidak valid', 400);
+    }
+
+    // Check authorization
+    const user = req.user;
+    if (!user) {
+      return sendError(res, 'User tidak ditemukan', 401);
+    }
+
+    // Call service to handle the update logic
+    const result = await KompetisiService.updateParticipantClass(
+      kompetisiId, 
+      pesertaId, 
+      newKelasId, 
+      user
+    );
+
+    return sendSuccess(res, result.data, result.message);
+
+  } catch (error: any) {
+    console.error('Controller - Error updating participant class:', error);
+    return sendError(res, error.message || 'Gagal mengubah kelas peserta', 400);
+  }
+}
+
 }

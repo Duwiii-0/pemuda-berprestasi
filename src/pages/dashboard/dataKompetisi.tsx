@@ -11,6 +11,7 @@ import type { Kompetisi } from "../../context/KompetisiContext";
 import Select from "react-select";
 import { kelasBeratOptionsMap } from "../../dummy/beratOptions";
 import AlertModal from "../../components/alertModal";
+import EditParticipantModal from "../../components/EditParticipantModal";
 
 
 
@@ -49,13 +50,17 @@ const DataKompetisi = () => {
   // State untuk modal registrasi
   const [showRegistrationModal, setShowRegistrationModal] = useState(false);
   const [deleteModal, setDeleteModal] = useState({
-  isOpen: false,
-  participantId: 0,
-  participantName: "",
-  participantStatus: "",
-  kompetisiId: 0
-});
+    isOpen: false,
+    participantId: 0,
+    participantName: "",
+    participantStatus: "",
+    kompetisiId: 0
+  });
 
+  const [editModal, setEditModal] = useState({
+    isOpen: false,
+    participant: null as any,
+  });
 
   // Filtering states untuk halaman peserta
   const [searchPeserta, setSearchPeserta] = useState("");
@@ -165,6 +170,58 @@ const handleCloseDeleteModal = () => {
   });
 };
 
+const handleEditParticipant = (participant: any) => {
+  // Check permissions
+  if (!user) {
+    toast.error("Anda tidak memiliki akses");
+    return;
+  }
+
+  // Check if user has permission to edit
+  const hasPermission = ['ADMIN', 'ADMIN_KOMPETISI', 'PELATIH'].includes(user.role);
+  if (!hasPermission) {
+    toast.error("Anda tidak memiliki akses untuk mengubah kelas peserta");
+    return;
+  }
+
+  // Additional check for PELATIH - can only edit participants from their dojang
+  if (user.role === 'PELATIH') {
+    const participantDojangId = participant.is_team 
+      ? participant.anggota_tim?.[0]?.atlet?.dojang?.id_dojang
+      : participant.atlet?.dojang?.id_dojang;
+    
+    if (participantDojangId !== user.pelatih?.id_dojang) {
+      toast.error("Anda hanya dapat mengubah kelas peserta dari dojang Anda sendiri");
+      return;
+    }
+  }
+
+  // Check competition status
+  if (selectedKompetisi?.status !== 'PENDAFTARAN') {
+    toast.error("Hanya dapat mengubah kelas peserta saat masa pendaftaran");
+    return;
+  }
+
+  setEditModal({
+    isOpen: true,
+    participant
+  });
+};
+
+const handleCloseEditModal = () => {
+  setEditModal({
+    isOpen: false,
+    participant: null
+  });
+};
+
+const handleEditSuccess = () => {
+  // Refresh the participant list
+  if (selectedKompetisi) {
+    const idDojang = user?.pelatih?.id_dojang;
+    fetchAtletByKompetisi(selectedKompetisi.id_kompetisi, undefined, idDojang);
+  }
+};
 
   const formatTanggal = (date: string | Date) => {
     return new Date(date).toLocaleDateString('id-ID', {
@@ -776,7 +833,12 @@ const handleCloseDeleteModal = () => {
                               </td>
                               {/* 👇 Tambahan kolom Aksi */}
                               <td className="py-4 px-4 text-center flex justify-center gap-3">
-                                <button className="text-blue-600 hover:text-blue-800 cursor-pointer hover:scale-102" onClick={(e) => {e.stopPropagation(); toast.error("Fitur ini akan segera tersedia")}}>
+                                <button className="text-blue-600 hover:text-blue-800 cursor-pointer hover:scale-102" 
+                                  onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleEditParticipant(peserta);
+                                    }}
+                                    title="Edit kelas peserta">
                                   <Edit size={18} />
                                 </button>
                                 <button 
@@ -889,7 +951,8 @@ const handleCloseDeleteModal = () => {
         <div className="flex justify-end gap-3 pt-3 border-t border-gray-100">
           <button 
             className="text-blue-600 hover:text-blue-800 p-2 hover:bg-blue-50 rounded-lg transition-colors"
-            onClick={() => toast.error("Fitur ini akan segera tersedia")}
+              onClick={() => handleEditParticipant(peserta)}
+              title="Edit kelas peserta"
           >
             <Edit size={18} />
           </button>

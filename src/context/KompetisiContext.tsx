@@ -165,6 +165,11 @@ export interface KompetisiContextType {
   kompetisiDetail: KompetisiDetail | null;
   pesertaList: PesertaKompetisi[];
   atletPagination: PaginationMeta;
+  updateParticipantClass: (
+    kompetisiId: number,
+    participantId: number,
+    kelasKejuaraanId: number
+  ) => Promise<any>;
 
   loadingKompetisi: boolean;
   loadingAtlet: boolean;
@@ -362,6 +367,37 @@ export const KompetisiProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const updateParticipantClass = async (
+  kompetisiId: number,
+  participantId: number,
+  kelasKejuaraanId: number
+) => {
+  try {
+    console.log(`🔄 Updating participant ${participantId} to class ${kelasKejuaraanId} in kompetisi ${kompetisiId}`);
+    
+    const response = await apiClient.put(
+      `/kompetisi/${kompetisiId}/participants/${participantId}/class`,
+      { kelasKejuaraanId }
+    );
+    
+    console.log("✅ Participant class updated successfully:", response.data);
+    
+    // Refresh the participants list after successful update
+    await fetchAtletByKompetisi(kompetisiId);
+    
+    return response.data;
+    
+  } catch (error: any) {
+    console.error("❌ Error updating participant class:", error);
+    
+    const errorMessage = error.response?.data?.message || error.message || "Gagal mengubah kelas peserta";
+    console.error(errorMessage);
+    
+    throw new Error(errorMessage);
+  }
+};
+
+
   return (
     <KompetisiContext.Provider
       value={{
@@ -373,6 +409,7 @@ export const KompetisiProvider = ({ children }: { children: ReactNode }) => {
         loadingAtlet,
         errorKompetisi,
         errorAtlet,
+        updateParticipantClass, 
         fetchKompetisiList,
         fetchKompetisiById,
         fetchAtletByKompetisi,
