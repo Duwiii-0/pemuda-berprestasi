@@ -851,7 +851,7 @@ const handleEditSuccess = () => {
     onClick={(e) => {
       e.stopPropagation();
       if (peserta.status !== 'APPROVED') {
-        handleEditParticipant(peserta);
+        toast.error("Fitur ini akan segera hadir")
       }
     }}
     disabled={peserta.status === 'APPROVED'}
@@ -979,7 +979,7 @@ const handleEditSuccess = () => {
     onClick={(e) => {
       e.stopPropagation();
       if (peserta.status !== 'APPROVED') {
-        handleEditParticipant(peserta);
+        toast.error("Fitur ini akan segera hadir")
       }
     }}
     disabled={peserta.status === 'APPROVED'}
