@@ -750,7 +750,8 @@ const DataKompetisi = () => {
                                         handleDeleteParticipant(
                                           selectedKompetisi.id_kompetisi, 
                                           peserta.id_peserta_kompetisi,
-                                          namaPeserta
+                                          namaPeserta,
+                                          peserta.status
                                         );
                                       }
                                     }}
