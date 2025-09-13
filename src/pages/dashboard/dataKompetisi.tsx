@@ -1013,7 +1013,17 @@ const handleCloseDeleteModal = () => {
             </div>
           </>
         )}
+
+                <AlertModal
+            isOpen={deleteModal.isOpen}
+            onClose={handleCloseDeleteModal}
+            onConfirm={handleConfirmDelete}
+            message={`Apakah Anda yakin ingin menghapus peserta "${deleteModal.participantName}" dari kompetisi ini?`}
+          />
+                  
       </div>
+
+      
     );
   }
 
