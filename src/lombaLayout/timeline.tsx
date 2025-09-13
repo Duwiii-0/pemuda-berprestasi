@@ -64,14 +64,23 @@ export default function Timeline() {
         </div>
 
         {/* Enhanced Timeline Sections */}
-        <div className="w-full max-w-7xl mx-auto">
+        <div className="w-full max-w-7xl mx-auto relative">
+          {/* Main continuous timeline line - Desktop */}
+          <div className="hidden md:block absolute left-1/2 top-0 bottom-0 w-1 bg-gradient-to-b from-red/60 via-red/40 to-red/20 transform -translate-x-1/2 z-0"></div>
+          
+          {/* Main continuous timeline line - Tablet */}
+          <div className="hidden sm:block md:hidden absolute left-8 top-0 bottom-0 w-0.5 bg-gradient-to-b from-red/60 via-red/40 to-red/20 z-0"></div>
+          
+          {/* Main continuous timeline line - Mobile */}
+          <div className="sm:hidden absolute left-20 top-0 bottom-0 w-0.5 bg-gradient-to-b from-red/60 via-red/40 to-red/20 z-0"></div>
+
           {Object.entries(groupedEvents).map(([month, monthEvents], monthIndex) => (
             <div 
               key={month} 
               className="relative w-full flex flex-col items-center justify-center mb-16 md:mb-20 lg:mb-24"
             >
               {/* Enhanced Month Header */}
-              <div className="relative mb-12 md:mb-16 lg:mb-20">
+              <div className="relative mb-12 md:mb-16 lg:mb-20 z-10">
                 <div className="text-center space-y-4">
                   <div className="inline-block bg-gradient-to-r from-yellow/10 to-yellow/5 border border-yellow/20 rounded-xl px-6 py-3">
                     <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bebas bg-gradient-to-r from-yellow to-yellow/90 bg-clip-text text-transparent capitalize">
@@ -83,7 +92,7 @@ export default function Timeline() {
               </div>
               
               {/* Enhanced Timeline Events */}
-              <div className="relative w-full">
+              <div className="relative w-full z-10">
                 <div className="flex flex-col items-center justify-center">
                   {monthEvents.map((item, index) => (
                     <div key={index} className="w-full">
@@ -101,19 +110,9 @@ export default function Timeline() {
                         {/* Enhanced Central Timeline */}
                         <div className="relative flex flex-col items-center justify-start w-16 pt-8 md:pt-10">
                           {/* Enhanced Dot */}
-                          <div className="relative z-10">
+                          <div className="relative z-20">
                             <div className="w-8 h-8 md:w-10 md:h-10 bg-gradient-to-br from-red to-red/80 rounded-full shadow-lg border-4 border-white transition-all duration-500 group-hover:scale-125 group-hover:shadow-xl group-hover:shadow-red/30 group-hover:animate-pulse" />
                           </div>
-
-                          {/* Enhanced Connecting Line */}
-                          {index !== monthEvents.length - 1 && (
-                            <div className="w-0.5 md:w-1 h-full bg-gradient-to-b from-red/60 via-red/40 to-red/20 mt-2 transition-all duration-500 group-hover:from-red group-hover:via-red/80 group-hover:to-red/40" />
-                          )}
-                          
-                          {/* Month connector line */}
-                          {index === monthEvents.length - 1 && monthIndex !== Object.entries(groupedEvents).length - 1 && (
-                            <div className="w-0.5 md:w-1 h-32 md:h-40 bg-gradient-to-b from-red/40 via-red/20 to-transparent mt-2" />
-                          )}
                         </div>
 
                         {/* Right Card */}
@@ -129,20 +128,10 @@ export default function Timeline() {
                         
                         {/* Enhanced Timeline Dot */}
                         <div className="relative flex flex-col items-center justify-start pt-6 md:pt-8">
-                          <div className="relative">
+                          <div className="relative z-20">
                             <div className="w-6 h-6 md:w-8 md:h-8 bg-gradient-to-br from-red to-red/80 rounded-full shadow-md border-2 md:border-3 border-white transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-red/30" />
                             <div className="absolute inset-0 w-6 h-6 md:w-8 md:h-8 bg-red/20 rounded-full animate-ping group-hover:animate-pulse opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                           </div>
-
-                          {/* Line */}
-                          {index !== monthEvents.length - 1 && (
-                            <div className="w-0.5 h-16 md:h-20 bg-gradient-to-b from-red/50 to-red/20 mt-1 transition-all duration-300 group-hover:from-red group-hover:to-red/60" />
-                          )}
-                          
-                          {/* Month connector */}
-                          {index === monthEvents.length - 1 && monthIndex !== Object.entries(groupedEvents).length - 1 && (
-                            <div className="w-0.5 h-24 md:h-32 bg-gradient-to-b from-red/30 to-transparent mt-1" />
-                          )}
                         </div>
 
                         {/* Enhanced Card */}
@@ -156,20 +145,10 @@ export default function Timeline() {
                         
                         {/* Enhanced Mobile Timeline Dot */}
                         <div className="relative flex flex-col items-center justify-start pt-5">
-                          <div className="relative">
+                          <div className="relative z-20">
                             <div className="w-5 h-5 bg-gradient-to-br from-red to-red/80 rounded-full shadow-md border-2 border-white transition-all duration-300 group-hover:scale-110" />
                             <div className="absolute inset-0 w-5 h-5 bg-red/20 rounded-full animate-ping group-hover:animate-pulse opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                           </div>
-
-                          {/* Line */}
-                          {index !== monthEvents.length - 1 && (
-                            <div className="w-0.5 h-12 bg-gradient-to-b from-red/50 to-red/20 mt-1" />
-                          )}
-                          
-                          {/* Month connector */}
-                          {index === monthEvents.length - 1 && monthIndex !== Object.entries(groupedEvents).length - 1 && (
-                            <div className="w-0.5 h-12 bg-gradient-to-b from-red/30 to-transparent mt-1" />
-                          )}
                         </div>
 
                         {/* Enhanced Mobile Card */}
