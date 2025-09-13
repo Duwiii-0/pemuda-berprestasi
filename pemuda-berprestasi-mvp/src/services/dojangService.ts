@@ -105,18 +105,19 @@ static async createDojang(data: CreateDojangData) {
     });
   }
 
-  // ===== DELETE DOJANG =====
-  static async deleteDojang(id: number) {
-    const existing = await prisma.tb_dojang.findUnique({
-      where: { id_dojang: id },
-      include: { atlet: true },
-    });
-    if (!existing) throw new Error('Dojang tidak ditemukan');
-    if (existing.atlet.length > 0) throw new Error('Tidak bisa menghapus dojang yang masih memiliki atlet');
+// ===== DELETE DOJANG =====
+static async deleteDojang(id: number) {
+  const existing = await prisma.tb_dojang.findUnique({
+    where: { id_dojang: id }, // gunakan parameter id, bukan hardcode 1
+    include: { atlet: true }  // hanya where dan include
+  });
+  
+  if (!existing) throw new Error('Dojang tidak ditemukan');
+  if (existing.atlet.length > 0) throw new Error('Tidak bisa menghapus dojang yang masih memiliki atlet');
 
-    await prisma.tb_dojang.delete({ where: { id_dojang: id } });
-    return { message: 'Dojang berhasil dihapus' };
-  }
+  await prisma.tb_dojang.delete({ where: { id_dojang: id } });
+  return { message: 'Dojang berhasil dihapus' };
+}
 
   // ===== GET DOJANG BY PELATIH =====
   static async getByPelatih(id_pelatih: number) {
