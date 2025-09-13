@@ -141,7 +141,7 @@ export default function Timeline() {
                       </div>
 
                       {/* Mobile Layout */}
-                      <div className="sm:hidden flex justify-center items-center gap-4 px-4 mb-6 group pl-16 md:pl-0">
+                      <div className="sm:hidden flex justify-start items-start gap-4 px-4 mb-6 group">
                         
                         {/* Enhanced Mobile Timeline Dot */}
                         <div className="relative flex flex-col items-center justify-start pt-5">
