@@ -95,31 +95,37 @@ const DataKompetisi = () => {
     await fetchAtletByKompetisi(kompetisi.id_kompetisi, undefined, idDojang);
   };
 
-   const handleDeleteParticipant = async (kompetisiId: number, participantId: number, participantName: string) => {
-    // Konfirmasi delete
-    const isConfirmed = window.confirm(
-      `Apakah Anda yakin ingin menghapus peserta "${participantName}" dari kompetisi ini?`
-    );
-    
-    if (!isConfirmed) return;
+   const handleDeleteParticipant = async (kompetisiId: number, participantId: number, participantName: string, participantStatus: string) => {
+  // Check if participant is approved - prevent deletion
+  if (participantStatus === "APPROVED") {
+    toast.error("Hubungi admin untuk menghapus registrasi peserta yang sudah di approved");
+    return;
+  }
 
-    // Set loading state for this specific participant
-    setDeletingParticipants(prev => new Set(prev).add(participantId));
+  // Konfirmasi delete
+  const isConfirmed = window.confirm(
+    `Apakah Anda yakin ingin menghapus peserta "${participantName}" dari kompetisi ini?`
+  );
+  
+  if (!isConfirmed) return;
 
-    try {
-      await deleteParticipant(kompetisiId, participantId);
-      toast.success(`Peserta "${participantName}" berhasil dihapus dari kompetisi`);
-    } catch (error: any) {
-      toast.error(error.message || "Gagal menghapus peserta");
-    } finally {
-      // Remove loading state
-      setDeletingParticipants(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(participantId);
-        return newSet;
-      });
-    }
-  };
+  // Set loading state for this specific participant
+  setDeletingParticipants(prev => new Set(prev).add(participantId));
+
+  try {
+    await deleteParticipant(kompetisiId, participantId);
+    toast.success(`Peserta "${participantName}" berhasil dihapus dari kompetisi`);
+  } catch (error: any) {
+    toast.error(error.message || "Gagal menghapus peserta");
+  } finally {
+    // Remove loading state
+    setDeletingParticipants(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(participantId);
+      return newSet;
+    });
+  }
+};
 
   const formatTanggal = (date: string | Date) => {
     return new Date(date).toLocaleDateString('id-ID', {
