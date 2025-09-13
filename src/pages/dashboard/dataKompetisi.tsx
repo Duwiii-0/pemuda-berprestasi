@@ -913,6 +913,13 @@ const handleCloseDeleteModal = () => {
             <Trash size={18} />
           </button>
         </div>
+
+        <AlertModal
+          isOpen={deleteModal.isOpen}
+          onClose={handleCloseDeleteModal}
+          onConfirm={handleConfirmDelete}
+          message={`Apakah Anda yakin ingin menghapus peserta "${deleteModal.participantName}" dari kompetisi ini?`}
+        />
       </div>
     );
   })}
@@ -1006,6 +1013,14 @@ const handleCloseDeleteModal = () => {
             </div>
           </>
         )}
+
+                <AlertModal
+            isOpen={deleteModal.isOpen}
+            onClose={handleCloseDeleteModal}
+            onConfirm={handleConfirmDelete}
+            message={`Apakah Anda yakin ingin menghapus peserta "${deleteModal.participantName}" dari kompetisi ini?`}
+          />
+
       </div>
 
       
@@ -1259,6 +1274,12 @@ const handleCloseDeleteModal = () => {
               )}
             </div>
           </div>
+          <AlertModal
+            isOpen={deleteModal.isOpen}
+            onClose={handleCloseDeleteModal}
+            onConfirm={handleConfirmDelete}
+            message={`Apakah Anda yakin ingin menghapus peserta "${deleteModal.participantName}" dari kompetisi ini?`}
+          />
         </div>
       </div>
 
@@ -1275,12 +1296,12 @@ const handleCloseDeleteModal = () => {
         </>
       )}
 
-    <AlertModal
-      isOpen={deleteModal.isOpen}
-      onClose={handleCloseDeleteModal}
-      onConfirm={handleConfirmDelete}
-      message={`Apakah Anda yakin ingin menghapus peserta "${deleteModal.participantName}" dari kompetisi ini?`}
-    />
+                <AlertModal
+            isOpen={deleteModal.isOpen}
+            onClose={handleCloseDeleteModal}
+            onConfirm={handleConfirmDelete}
+            message={`Apakah Anda yakin ingin menghapus peserta "${deleteModal.participantName}" dari kompetisi ini?`}
+          />
     </div>
 
     
