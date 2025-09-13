@@ -550,12 +550,10 @@ const DataKompetisi = () => {
                     </label>
                     <Select
                       unstyled
-                      value={{
-                        value: filterKelasBerat,
-                        label: filterKelasBerat === "ALL" ? "Semua Kelas Berat" : filterKelasBerat,
-                      }}
-                      onChange={(selected) => setFilterKelasBerat(selected?.value as any)}
-                      options={kelasBeratOptionsMap}
+                      
+                      options={Object.values(kelasBeratOptionsMap).flat()}
+                      value={Object.values(kelasBeratOptionsMap).flat().find(opt => opt.value === filterKelasBerat)}
+
                       placeholder="Pilih kelas berat"
                       classNames={{
                         control: () =>
