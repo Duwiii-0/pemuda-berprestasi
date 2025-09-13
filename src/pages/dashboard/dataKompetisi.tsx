@@ -1077,6 +1077,13 @@ const handleEditSuccess = () => {
             message={`Apakah Anda yakin ingin menghapus peserta "${deleteModal.participantName}" dari kompetisi ini?`}
           />
 
+          <EditParticipantModal
+            isOpen={editModal.isOpen}
+            onClose={handleCloseEditModal}
+            participant={editModal.participant}
+            kompetisiId={selectedKompetisi?.id_kompetisi || 0}
+            onSuccess={handleEditSuccess}
+          />
       </div>
 
       
