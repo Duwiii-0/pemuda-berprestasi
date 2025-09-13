@@ -11,7 +11,7 @@ import type { Kompetisi } from "../../context/KompetisiContext";
 import Select from "react-select";
 import { kelasBeratOptionsMap } from "../../dummy/beratOptions";
 import AlertModal from "../../components/alertModal";
-import EditParticipantModal from "../../components/EditParticipantModal";
+import EditParticipantModal from "../../components/editRegistModal";
 
 
 
