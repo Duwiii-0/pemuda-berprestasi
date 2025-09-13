@@ -836,7 +836,8 @@ const handleEditSuccess = () => {
                                 <button className="text-blue-600 hover:text-blue-800 cursor-pointer hover:scale-102" 
                                   onClick={(e) => {
                                       e.stopPropagation();
-                                      handleEditParticipant(peserta);
+                                      toast.error("fitur ini akan segera tersedia!")
+                                      //handleEditParticipant(peserta);
                                     }}
                                     title="Edit kelas peserta">
                                   <Edit size={18} />
@@ -951,7 +952,10 @@ const handleEditSuccess = () => {
         <div className="flex justify-end gap-3 pt-3 border-t border-gray-100">
           <button 
             className="text-blue-600 hover:text-blue-800 p-2 hover:bg-blue-50 rounded-lg transition-colors"
-              onClick={() => handleEditParticipant(peserta)}
+              onClick={() => 
+                // handleEditParticipant(peserta)
+                toast.error("Fitur ini akan segera Tersedia!")
+              }
               title="Edit kelas peserta"
           >
             <Edit size={18} />
