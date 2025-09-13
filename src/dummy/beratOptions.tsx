@@ -1,5 +1,5 @@
 export const kelasBeratOptionsMap: Record<
-  "ALL" | "Super Pra-cadet" | "Pracadet" | "Cadet" | "Junior" | "Senior",
+  "ALL" | "Super pracadet" | "Pracadet" | "Cadet" | "Junior" | "Senior",
   { value: string; label: string }[]
 > = {
   "ALL": [
@@ -62,7 +62,7 @@ export const kelasBeratOptionsMap: Record<
     { value: "Over 87 kg", label: "Over 87 kg" },
   ],
 
-  "Super Pra-cadet": [
+  "Super pracadet": [
     { value: "ALL", label: "Semua Kelas" },
     { value: "Under 18 kg", label: "Under 18 kg" },
     { value: "Under 19 kg", label: "Under 19 kg" },

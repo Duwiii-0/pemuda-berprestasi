@@ -9,7 +9,8 @@ import { useDojang } from "../../context/dojangContext";
 import UnifiedRegistration from "../../components/registrationSteps/UnifiedRegistration";
 import type { Kompetisi } from "../../context/KompetisiContext";
 import Select from "react-select";
-import { kelasBeratOptionsByAgeGender } from "../../dummy/beratOptionsGender";
+import { kelasBeratOptionsMap } from "../../dummy/beratOptions";
+
 
 
 interface StatsCardProps {
@@ -554,7 +555,7 @@ const DataKompetisi = () => {
                         label: filterKelasBerat === "ALL" ? "Semua Kelas Berat" : filterKelasBerat,
                       }}
                       onChange={(selected) => setFilterKelasBerat(selected?.value as any)}
-                      options={kelasBeratOptions}
+                      options={kelasBeratOptionsMap}
                       placeholder="Pilih kelas berat"
                       classNames={{
                         control: () =>
