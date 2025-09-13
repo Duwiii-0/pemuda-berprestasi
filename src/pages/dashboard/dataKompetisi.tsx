@@ -10,6 +10,7 @@ import UnifiedRegistration from "../../components/registrationSteps/UnifiedRegis
 import type { Kompetisi } from "../../context/KompetisiContext";
 import Select from "react-select";
 import { kelasBeratOptionsMap } from "../../dummy/beratOptions";
+import AlertModal from "../../components/alertModal";
 
 
 
@@ -47,7 +48,15 @@ const DataKompetisi = () => {
   const [deletingParticipants, setDeletingParticipants] = useState<Set<number>>(new Set());
   // State untuk modal registrasi
   const [showRegistrationModal, setShowRegistrationModal] = useState(false);
-  
+  const [deleteModal, setDeleteModal] = useState({
+  isOpen: false,
+  participantId: 0,
+  participantName: "",
+  participantStatus: "",
+  kompetisiId: 0
+});
+
+
   // Filtering states untuk halaman peserta
   const [searchPeserta, setSearchPeserta] = useState("");
   const [filterStatus, setFilterStatus] = useState<"ALL" | "PENDING" | "APPROVED" | "REJECTED">("ALL");
@@ -102,15 +111,30 @@ const DataKompetisi = () => {
     return;
   }
 
-  // Konfirmasi delete
-  const isConfirmed = window.confirm(
-    `Apakah Anda yakin ingin menghapus peserta "${participantName}" dari kompetisi ini?`
-  );
-  
-  if (!isConfirmed) return;
+  setDeleteModal({
+    isOpen: true,
+    participantId,
+    participantName,
+    participantStatus,
+    kompetisiId
+  });
 
+};
+
+  const handleConfirmDelete = async () => {
+  const { kompetisiId, participantId, participantName } = deleteModal;
+  
   // Set loading state for this specific participant
   setDeletingParticipants(prev => new Set(prev).add(participantId));
+  
+  // Close modal
+  setDeleteModal({
+    isOpen: false,
+    participantId: 0,
+    participantName: "",
+    participantStatus: "",
+    kompetisiId: 0
+  });
 
   try {
     await deleteParticipant(kompetisiId, participantId);
@@ -126,6 +150,18 @@ const DataKompetisi = () => {
     });
   }
 };
+
+// 5. Function untuk close modal
+const handleCloseDeleteModal = () => {
+  setDeleteModal({
+    isOpen: false,
+    participantId: 0,
+    participantName: "",
+    participantStatus: "",
+    kompetisiId: 0
+  });
+};
+
 
   const formatTanggal = (date: string | Date) => {
     return new Date(date).toLocaleDateString('id-ID', {
@@ -1190,6 +1226,14 @@ const kelasPoomsae =
           </div>
         </div>
       </div>
+      
+      <AlertModal
+      isOpen={deleteModal.isOpen}
+      onClose={handleCloseDeleteModal}
+      onConfirm={handleConfirmDelete}
+      message={`Apakah Anda yakin ingin menghapus peserta "${deleteModal.participantName}" dari kompetisi ini?`}
+    />
+
 
       {/* Mobile Sidebar */}
       {sidebarOpen && (
