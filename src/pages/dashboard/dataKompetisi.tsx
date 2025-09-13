@@ -12,6 +12,7 @@ import Select from "react-select";
 import { kelasBeratOptionsMap } from "../../dummy/beratOptions";
 import AlertModal from "../../components/alertModal";
 import EditParticipantModal from "../../components/editRegistModal";
+import EditRegistrationModal from "../../components/EditRegistrationModal";
 
 
 
@@ -835,8 +836,7 @@ const handleEditSuccess = () => {
                               <td className="py-4 px-4 text-center flex justify-center gap-3">
                                 <button className="text-blue-600 hover:text-blue-800 cursor-pointer hover:scale-102" 
                                   onClick={(e) => {
-                                      e.stopPropagation();
-                                      toast.error("fitur ini akan segera tersedia!")
+                                      handleEditParticipant(peserta);
                                       //handleEditParticipant(peserta);
                                     }}
                                     title="Edit kelas peserta">
