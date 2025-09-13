@@ -270,40 +270,41 @@ const EditRegistrationModal = ({
     }
   }, [isOpen, participant]);
 
-  const handleSave = async () => {
-    if (!selectedClass || !participant) {
-      toast.error("Silakan pilih kelas kejuaraan");
-      return;
-    }
+const handleSave = async () => {
+  if (!selectedClass || !participant) {
+    toast.error("Silakan pilih kelas kejuaraan");
+    return;
+  }
 
-    // Check if there's actually a change
-    if (selectedClass.value === originalClass?.value) {
-      toast.error("Tidak ada perubahan yang dilakukan");
-      return;
-    }
+  // Check if there's actually a change
+  if (selectedClass.value === originalClass?.value) {
+    toast.error("Tidak ada perubahan yang dilakukan");
+    return;
+  }
 
-    try {
-      setLoading(true);
+  try {
+    setLoading(true);
 
-      await apiClient.put<ApiResponse<any>>(
-        `/kompetisi/${kompetisiId}/peserta/${participant.id_peserta_kompetisi}/kelas`, 
-        {
-          kelas_kejuaraan_id: parseInt(selectedClass.value)
-        }
-      );
+    // Perbaiki URL sesuai dengan yang di error log
+    await apiClient.put<ApiResponse<any>>(
+      `/kompetisi/${kompetisiId}/participants/${participant.id_peserta_kompetisi}/class`, 
+      {
+        kelas_kejuaraan_id: parseInt(selectedClass.value)
+      }
+    );
 
-      toast.success("Kelas peserta berhasil diubah");
-      onSuccess();
-      onClose();
+    toast.success("Kelas peserta berhasil diubah");
+    onSuccess();
+    onClose();
 
-    } catch (error: any) {
-      console.error('Error updating participant class:', error);
-      const message = error.message || "Gagal mengubah kelas peserta";
-      toast.error(message);
-    } finally {
-      setLoading(false);
-    }
-  };
+  } catch (error: any) {
+    console.error('Error updating participant class:', error);
+    const message = error.response?.data?.message || error.message || "Gagal mengubah kelas peserta";
+    toast.error(message);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleClose = () => {
     setSelectedClass(originalClass);
@@ -481,7 +482,21 @@ const EditRegistrationModal = ({
               </div>
             </div>
           )}
-
+            {/* Approved Status Check */}
+          {participant?.status === 'APPROVED' && (
+  <div className="bg-red-50 rounded-xl p-4 border-l-4 border-red-400">
+    <div className="flex items-start gap-2">
+      <AlertCircle size={20} className="text-red-600 mt-0.5 flex-shrink-0" />
+      <div>
+        <h4 className="font-plex font-semibold text-red-800 mb-1">Peserta Sudah Disetujui</h4>
+        <p className="font-plex text-red-700 text-sm">
+          Peserta ini sudah disetujui dan tidak dapat diubah kelasnya. 
+          Hubungi administrator jika diperlukan perubahan.
+        </p>
+      </div>
+    </div>
+  </div>
+)}
           {/* Validation Message */}
           <ValidationMessage />
 

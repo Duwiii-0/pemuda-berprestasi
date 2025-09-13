@@ -185,22 +185,30 @@ const handleEditParticipant = (participant: any) => {
     return;
   }
 
-  // Additional check for PELATIH - can only edit participants from their dojang
-  if (user.role === 'PELATIH') {
-    const participantDojangId = participant.is_team 
-      ? participant.anggota_tim?.[0]?.atlet?.dojang?.id_dojang
-      : participant.atlet?.dojang?.id_dojang;
-    
-    if (participantDojangId !== user.pelatih?.id_dojang) {
-      toast.error("Anda hanya dapat mengubah kelas peserta dari dojang Anda sendiri");
-      return;
-    }
+  // Check participant status - only allow editing for PENDING and REJECTED
+  if (participant.status === 'APPROVED') {
+    toast.error("Peserta yang sudah disetujui tidak dapat diubah kelasnya. Hubungi admin jika diperlukan perubahan.");
+    return;
   }
 
   // Check competition status
   if (selectedKompetisi?.status !== 'PENDAFTARAN') {
     toast.error("Hanya dapat mengubah kelas peserta saat masa pendaftaran");
     return;
+  }
+
+  // Additional check for PELATIH - can only edit participants from their dojang
+  if (user.role === 'PELATIH') {
+    const participantDojangId = participant.is_team 
+      ? participant.anggota_tim?.[0]?.atlet?.dojang?.id_dojang
+      : participant.atlet?.dojang?.id_dojang;
+    
+    const userDojangId = user.pelatih?.id_dojang;
+    
+    if (participantDojangId !== userDojangId) {
+      toast.error("Anda hanya dapat mengubah kelas peserta dari dojang Anda sendiri");
+      return;
+    }
   }
 
   setEditModal({
@@ -834,36 +842,48 @@ const handleEditSuccess = () => {
                               </td>
                               {/* 👇 Tambahan kolom Aksi */}
                               <td className="py-4 px-4 text-center flex justify-center gap-3">
-                                <button className="text-blue-600 hover:text-blue-800 cursor-pointer hover:scale-102" 
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                      handleEditParticipant(peserta);
-                                      //handleEditParticipant(peserta);
-                                    }}
-                                    title="Edit kelas peserta">
-                                  <Edit size={18} />
-                                </button>
-                                <button 
-                                    className={`text-red-600 hover:text-red-800 cursor-pointer hover:scale-102 transition-colors ${
-                                      isDeleting ? 'opacity-50 cursor-not-allowed' : ''
-                                    }`}
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      if (!isDeleting) {
-                                        handleDeleteParticipant(
-                                          selectedKompetisi.id_kompetisi, 
-                                          peserta.id_peserta_kompetisi,
-                                          namaPeserta,
-                                          peserta.status
-                                        );
-                                      }
-                                    }}
-                                    disabled={isDeleting}
-                                    title={isDeleting ? "Menghapus..." : "Hapus peserta"}
-                                  >
-                                    <Trash size={18} />
-                                  </button>
-                              </td>
+  <button 
+    className={`cursor-pointer hover:scale-102 transition-colors ${
+      peserta.status === 'APPROVED' 
+        ? 'text-gray-400 cursor-not-allowed' 
+        : 'text-blue-600 hover:text-blue-800'
+    }`}
+    onClick={(e) => {
+      e.stopPropagation();
+      if (peserta.status !== 'APPROVED') {
+        handleEditParticipant(peserta);
+      }
+    }}
+    disabled={peserta.status === 'APPROVED'}
+    title={
+      peserta.status === 'APPROVED' 
+        ? "Peserta sudah disetujui, tidak dapat diedit" 
+        : "Edit kelas peserta"
+    }
+  >
+    <Edit size={18} />
+  </button>
+  <button 
+    className={`cursor-pointer hover:scale-102 transition-colors ${
+      isDeleting ? 'opacity-50 cursor-not-allowed' : 'text-red-600 hover:text-red-800'
+    }`}
+    onClick={(e) => {
+      e.stopPropagation();
+      if (!isDeleting) {
+        handleDeleteParticipant(
+          selectedKompetisi.id_kompetisi, 
+          peserta.id_peserta_kompetisi,
+          namaPeserta,
+          peserta.status
+        );
+      }
+    }}
+    disabled={isDeleting}
+    title={isDeleting ? "Menghapus..." : "Hapus peserta"}
+  >
+    <Trash size={18} />
+  </button>
+</td>
                             </tr>
                           );
                         })}
@@ -950,36 +970,47 @@ const handleEditSuccess = () => {
 
         {/* Action buttons untuk mobile */}
         <div className="flex justify-end gap-3 pt-3 border-t border-gray-100">
-          <button 
-            className="text-blue-600 hover:text-blue-800 p-2 hover:bg-blue-50 rounded-lg transition-colors"
-              onClick={(e) => {
-                e.stopPropagation(); // 👈 TAMBAHKAN INI
-                handleEditParticipant(peserta);
-              }}
-              title="Edit kelas peserta"
-          >
-            <Edit size={18} />
-          </button>
-          <button 
-            className={`text-red-600 hover:text-red-800 p-2 hover:bg-red-50 rounded-lg transition-colors ${
-              isDeleting ? 'opacity-50 cursor-not-allowed' : ''
-            }`}
-            onClick={() => {
-              if (!isDeleting) {
-                handleDeleteParticipant(
-                  selectedKompetisi.id_kompetisi, 
-                  peserta.id_peserta_kompetisi,
-                  namaPeserta,
-                  peserta.status
-                );
-              }
-            }}
-            disabled={isDeleting}
-            title={isDeleting ? "Menghapus..." : "Hapus peserta"}
-          >
-            <Trash size={18} />
-          </button>
-        </div>
+  <button 
+    className={`p-2 rounded-lg transition-colors ${
+      peserta.status === 'APPROVED'
+        ? 'text-gray-400 cursor-not-allowed bg-gray-100'
+        : 'text-blue-600 hover:text-blue-800 hover:bg-blue-50'
+    }`}
+    onClick={(e) => {
+      e.stopPropagation();
+      if (peserta.status !== 'APPROVED') {
+        handleEditParticipant(peserta);
+      }
+    }}
+    disabled={peserta.status === 'APPROVED'}
+    title={
+      peserta.status === 'APPROVED' 
+        ? "Peserta sudah disetujui, tidak dapat diedit" 
+        : "Edit kelas peserta"
+    }
+  >
+    <Edit size={18} />
+  </button>
+  <button 
+    className={`p-2 rounded-lg transition-colors ${
+      isDeleting ? 'opacity-50 cursor-not-allowed' : 'text-red-600 hover:text-red-800 hover:bg-red-50'
+    }`}
+    onClick={() => {
+      if (!isDeleting) {
+        handleDeleteParticipant(
+          selectedKompetisi.id_kompetisi, 
+          peserta.id_peserta_kompetisi,
+          namaPeserta,
+          peserta.status
+        );
+      }
+    }}
+    disabled={isDeleting}
+    title={isDeleting ? "Menghapus..." : "Hapus peserta"}
+  >
+    <Trash size={18} />
+  </button>
+</div>
       </div>
     );
   })}
