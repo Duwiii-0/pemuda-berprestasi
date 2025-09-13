@@ -817,29 +817,29 @@ const handleCloseDeleteModal = () => {
                 )}
               </div>
 
-/* Mobile Card View */
-<div className="lg:hidden space-y-4">
-  {currentPesertas.map((peserta: any) => {
-    const isTeam = peserta.is_team;
-    const namaPeserta = isTeam
-      ? peserta.anggota_tim?.map((m: any) => m.atlet.nama_atlet).join(", ")
-      : peserta.atlet?.nama_atlet || "-";
-
-    const cabang = peserta.kelas_kejuaraan?.cabang || "-";
-    const levelEvent = peserta.kelas_kejuaraan?.kategori_event?.nama_kategori || "-";
-    const kelasUsia = peserta.kelas_kejuaraan?.kelompok?.nama_kelompok || "-";
-    const dojang = isTeam && peserta.anggota_tim?.length
-      ? peserta.anggota_tim[0]?.atlet?.dojang?.nama_dojang || "-"
-      : peserta.atlet?.dojang?.nama_dojang || "-";
-    const kelasBerat = cabang === "KYORUGI"
-      ? peserta.kelas_kejuaraan?.kelas_berat?.nama_kelas || "-"
-      : "-";
-    const kelasPoomsae = cabang === "POOMSAE"
-      ? peserta.kelas_kejuaraan?.poomsae?.nama_kelas || "-"
-      : "-";
-
-    const isDeleting = deletingParticipants.has(peserta.id_peserta_kompetisi);
-
+        /* Mobile Card View */
+        <div className="lg:hidden space-y-4">
+          {currentPesertas.map((peserta: any) => {
+            const isTeam = peserta.is_team;
+            const namaPeserta = isTeam
+              ? peserta.anggota_tim?.map((m: any) => m.atlet.nama_atlet).join(", ")
+              : peserta.atlet?.nama_atlet || "-";
+          
+            const cabang = peserta.kelas_kejuaraan?.cabang || "-";
+            const levelEvent = peserta.kelas_kejuaraan?.kategori_event?.nama_kategori || "-";
+            const kelasUsia = peserta.kelas_kejuaraan?.kelompok?.nama_kelompok || "-";
+            const dojang = isTeam && peserta.anggota_tim?.length
+              ? peserta.anggota_tim[0]?.atlet?.dojang?.nama_dojang || "-"
+              : peserta.atlet?.dojang?.nama_dojang || "-";
+            const kelasBerat = cabang === "KYORUGI"
+              ? peserta.kelas_kejuaraan?.kelas_berat?.nama_kelas || "-"
+              : "-";
+            const kelasPoomsae = cabang === "POOMSAE"
+              ? peserta.kelas_kejuaraan?.poomsae?.nama_kelas || "-"
+              : "-";
+          
+            const isDeleting = deletingParticipants.has(peserta.id_peserta_kompetisi);
+          
     return (
       <div
         key={peserta.id_peserta_kompetisi}
@@ -913,6 +913,13 @@ const handleCloseDeleteModal = () => {
             <Trash size={18} />
           </button>
         </div>
+
+        <AlertModal
+          isOpen={deleteModal.isOpen}
+          onClose={handleCloseDeleteModal}
+          onConfirm={handleConfirmDelete}
+          message={`Apakah Anda yakin ingin menghapus peserta "${deleteModal.participantName}" dari kompetisi ini?`}
+        />
       </div>
     );
   })}
