@@ -836,6 +836,7 @@ const handleEditSuccess = () => {
                               <td className="py-4 px-4 text-center flex justify-center gap-3">
                                 <button className="text-blue-600 hover:text-blue-800 cursor-pointer hover:scale-102" 
                                   onClick={(e) => {
+                                    e.stopPropagation();
                                       handleEditParticipant(peserta);
                                       //handleEditParticipant(peserta);
                                     }}
@@ -880,7 +881,6 @@ const handleEditSuccess = () => {
                 )}
               </div>
 
-        /* Mobile Card View */
         <div className="lg:hidden space-y-4">
           {currentPesertas.map((peserta: any) => {
             const isTeam = peserta.is_team;
@@ -952,10 +952,10 @@ const handleEditSuccess = () => {
         <div className="flex justify-end gap-3 pt-3 border-t border-gray-100">
           <button 
             className="text-blue-600 hover:text-blue-800 p-2 hover:bg-blue-50 rounded-lg transition-colors"
-              onClick={() => 
-                // handleEditParticipant(peserta)
-                toast.error("Fitur ini akan segera Tersedia!")
-              }
+              onClick={(e) => {
+                e.stopPropagation(); // 👈 TAMBAHKAN INI
+                handleEditParticipant(peserta);
+              }}
               title="Edit kelas peserta"
           >
             <Edit size={18} />
