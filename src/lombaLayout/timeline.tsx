@@ -144,7 +144,7 @@ export default function Timeline() {
                       <div className="sm:hidden flex justify-start items-start gap-4 px-4 mb-6 group">
                         
                         {/* Enhanced Mobile Timeline Dot */}
-                        <div className="relative flex flex-col items-center justify-start pt-5">
+                        <div className="relative flex flex-col items-center justify-start pt-5" style={{ marginLeft: '6px' }}>
                           <div className="relative z-20">
                             <div className="w-5 h-5 bg-gradient-to-br from-red to-red/80 rounded-full shadow-md border-2 border-white transition-all duration-300 group-hover:scale-110" />
                             <div className="absolute inset-0 w-5 h-5 bg-red/20 rounded-full animate-ping group-hover:animate-pulse opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
