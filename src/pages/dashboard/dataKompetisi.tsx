@@ -113,7 +113,7 @@ const DataKompetisi = () => {
 
     console.log("Opening delete modal for:", participantName); // Add this
 
-    
+
   setDeleteModal({
     isOpen: true,
     participantId,
@@ -1258,15 +1258,13 @@ const handleCloseDeleteModal = () => {
             </div>
           </div>
         </div>
+        <AlertModal
+            isOpen={deleteModal.isOpen}
+            onClose={handleCloseDeleteModal}
+            onConfirm={handleConfirmDelete}
+            message={`Apakah Anda yakin ingin menghapus peserta "${deleteModal.participantName}" dari kompetisi ini?`}
+        />
       </div>
-      
-      <AlertModal
-        isOpen={deleteModal.isOpen}
-        onClose={handleCloseDeleteModal}
-        onConfirm={handleConfirmDelete}
-        message={`Apakah Anda yakin ingin menghapus peserta "${deleteModal.participantName}" dari kompetisi ini?`}
-    />
-
 
       {/* Mobile Sidebar */}
       {sidebarOpen && (
