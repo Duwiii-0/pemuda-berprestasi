@@ -111,6 +111,9 @@ const DataKompetisi = () => {
     return;
   }
 
+    console.log("Opening delete modal for:", participantName); // Add this
+
+    
   setDeleteModal({
     isOpen: true,
     participantId,
@@ -814,86 +817,116 @@ const handleCloseDeleteModal = () => {
                 )}
               </div>
 
-              {/* Mobile Card View */}
-              <div className="lg:hidden space-y-4">
-                {currentPesertas.map((peserta: any) => {
-                  const isTeam = peserta.is_team;
-                  const namaPeserta = isTeam
-                    ? peserta.anggota_tim?.map((m: any) => m.atlet.nama_atlet).join(", ")
-                    : peserta.atlet?.nama_atlet || "-";
+/* Mobile Card View */
+<div className="lg:hidden space-y-4">
+  {currentPesertas.map((peserta: any) => {
+    const isTeam = peserta.is_team;
+    const namaPeserta = isTeam
+      ? peserta.anggota_tim?.map((m: any) => m.atlet.nama_atlet).join(", ")
+      : peserta.atlet?.nama_atlet || "-";
 
-                  const cabang = peserta.kelas_kejuaraan?.cabang || "-";
-                  const levelEvent = peserta.kelas_kejuaraan?.kategori_event?.nama_kategori || "-";
-                  const kelasUsia = peserta.kelas_kejuaraan?.kelompok?.nama_kelompok || "-";
-                  const dojang = isTeam && peserta.anggota_tim?.length
-                    ? peserta.anggota_tim[0]?.atlet?.dojang?.nama_dojang || "-"
-                    : peserta.atlet?.dojang?.nama_dojang || "-";
-                  const kelasBerat =
-  cabang === "KYORUGI"
-    ? peserta.kelas_kejuaraan?.kelas_berat?.nama_kelas || "-"
-    : "-";
+    const cabang = peserta.kelas_kejuaraan?.cabang || "-";
+    const levelEvent = peserta.kelas_kejuaraan?.kategori_event?.nama_kategori || "-";
+    const kelasUsia = peserta.kelas_kejuaraan?.kelompok?.nama_kelompok || "-";
+    const dojang = isTeam && peserta.anggota_tim?.length
+      ? peserta.anggota_tim[0]?.atlet?.dojang?.nama_dojang || "-"
+      : peserta.atlet?.dojang?.nama_dojang || "-";
+    const kelasBerat = cabang === "KYORUGI"
+      ? peserta.kelas_kejuaraan?.kelas_berat?.nama_kelas || "-"
+      : "-";
+    const kelasPoomsae = cabang === "POOMSAE"
+      ? peserta.kelas_kejuaraan?.poomsae?.nama_kelas || "-"
+      : "-";
 
-const kelasPoomsae =
-  cabang === "POOMSAE"
-    ? peserta.kelas_kejuaraan?.poomsae?.nama_kelas || "-"
-    : "-";
+    const isDeleting = deletingParticipants.has(peserta.id_peserta_kompetisi);
 
-                  return (
-                    <div
-                      key={peserta.id_peserta_kompetisi}
-                      className="bg-white rounded-xl shadow-md border border-gray-200 p-4"
-                      onClick={() => {
-                        if (!isTeam && peserta.atlet?.id_atlet) {
-                          navigate(`/dashboard/atlit/${peserta.atlet.id_atlet}`);
-                        } else {
-                          toast("Ini peserta tim, tidak ada detail personal");
-                        }
-                      }}
-                    >
-                      <div className="flex justify-between items-start mb-3">
-                        <div className="flex-1 min-w-0 pr-3">
-                          <h3 className="font-bebas text-lg leading-tight">{namaPeserta}</h3>
-                          <p className="text-sm text-gray-600 mt-1">{cabang} - {levelEvent}</p>
-                        </div>
-                        <div className="flex-shrink-0">
-                          {getStatusBadge(peserta.status)}
-                        </div>
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-3 text-xs mb-3">
-                        <div>
-                          <span className="text-gray-500">Kelas:</span>
-                          <p className="font-medium text-gray-800">{kelasUsia}</p>
-                        </div>
-                        <div>
-                          <span className="text-gray-500">Dojang:</span>
-                          <p className="font-medium text-gray-800 truncate">{dojang}</p>
-                        </div>
-                        <div>
-                          <span className="text-gray-500">Kelas Berat:</span>
-                          <p className="font-medium text-gray-800">{kelasBerat}</p>
-                        </div>
-                        <div>
-                          <span className="text-gray-500">Kelas Poomsae:</span>
-                          <p className="font-medium text-gray-800">
-                              {kelasPoomsae}                            
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
+    return (
+      <div
+        key={peserta.id_peserta_kompetisi}
+        className="bg-white rounded-xl shadow-md border border-gray-200 p-4"
+      >
+        {/* Header dengan nama dan status */}
+        <div className="flex justify-between items-start mb-3">
+          <div 
+            className="flex-1 min-w-0 pr-3 cursor-pointer"
+            onClick={() => {
+              if (!isTeam && peserta.atlet?.id_atlet) {
+                navigate(`/dashboard/atlit/${peserta.atlet.id_atlet}`);
+              } else {
+                toast("Ini peserta tim, tidak ada detail personal");
+              }
+            }}
+          >
+            <h3 className="font-bebas text-lg leading-tight">{namaPeserta}</h3>
+            <p className="text-sm text-gray-600 mt-1">{cabang} - {levelEvent}</p>
+          </div>
+          <div className="flex items-center gap-2">
+            {getStatusBadge(peserta.status)}
+          </div>
+        </div>
+        
+        {/* Detail informasi */}
+        <div className="grid grid-cols-2 gap-3 text-xs mb-3">
+          <div>
+            <span className="text-gray-500">Kelas:</span>
+            <p className="font-medium text-gray-800">{kelasUsia}</p>
+          </div>
+          <div>
+            <span className="text-gray-500">Dojang:</span>
+            <p className="font-medium text-gray-800 truncate">{dojang}</p>
+          </div>
+          <div>
+            <span className="text-gray-500">Kelas Berat:</span>
+            <p className="font-medium text-gray-800">{kelasBerat}</p>
+          </div>
+          <div>
+            <span className="text-gray-500">Kelas Poomsae:</span>
+            <p className="font-medium text-gray-800">{kelasPoomsae}</p>
+          </div>
+        </div>
 
-                {displayedPesertas.length === 0 && (
-                  <div className="text-center py-12 text-gray-500">
-                    <Users size={52} className="mx-auto mb-4" />
-                    <p className="text-lg">Tidak ada peserta ditemukan</p>
-                    {(searchPeserta || filterStatus !== "ALL" || filterCategory !== "ALL" || filterKelompokUsia !== "ALL" || filterLevel || filterGender !== "ALL" || filterKelasBerat !== "ALL") && (
-                      <p className="text-sm mt-2">Coba ubah filter pencarian Anda</p>
-                    )}
-                  </div>
-                )}
-              </div>
+        {/* Action buttons untuk mobile */}
+        <div className="flex justify-end gap-3 pt-3 border-t border-gray-100">
+          <button 
+            className="text-blue-600 hover:text-blue-800 p-2 hover:bg-blue-50 rounded-lg transition-colors"
+            onClick={() => toast.error("Fitur ini akan segera tersedia")}
+          >
+            <Edit size={18} />
+          </button>
+          <button 
+            className={`text-red-600 hover:text-red-800 p-2 hover:bg-red-50 rounded-lg transition-colors ${
+              isDeleting ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
+            onClick={() => {
+              if (!isDeleting) {
+                handleDeleteParticipant(
+                  selectedKompetisi.id_kompetisi, 
+                  peserta.id_peserta_kompetisi,
+                  namaPeserta,
+                  peserta.status
+                );
+              }
+            }}
+            disabled={isDeleting}
+            title={isDeleting ? "Menghapus..." : "Hapus peserta"}
+          >
+            <Trash size={18} />
+          </button>
+        </div>
+      </div>
+    );
+  })}
+
+  {displayedPesertas.length === 0 && (
+    <div className="text-center py-12 text-gray-500">
+      <Users size={52} className="mx-auto mb-4" />
+      <p className="text-lg">Tidak ada peserta ditemukan</p>
+      {(searchPeserta || filterStatus !== "ALL" || filterCategory !== "ALL" || filterKelompokUsia !== "ALL" || filterLevel || filterGender !== "ALL" || filterKelasBerat !== "ALL") && (
+        <p className="text-sm mt-2">Coba ubah filter pencarian Anda</p>
+      )}
+    </div>
+  )}
+</div>
 
               {/* Pagination */}
               {totalPages > 1 && (
@@ -1228,10 +1261,10 @@ const kelasPoomsae =
       </div>
       
       <AlertModal
-      isOpen={deleteModal.isOpen}
-      onClose={handleCloseDeleteModal}
-      onConfirm={handleConfirmDelete}
-      message={`Apakah Anda yakin ingin menghapus peserta "${deleteModal.participantName}" dari kompetisi ini?`}
+        isOpen={deleteModal.isOpen}
+        onClose={handleCloseDeleteModal}
+        onConfirm={handleConfirmDelete}
+        message={`Apakah Anda yakin ingin menghapus peserta "${deleteModal.participantName}" dari kompetisi ini?`}
     />
 
 

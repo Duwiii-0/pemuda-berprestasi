@@ -26,7 +26,7 @@ const AlertModal: React.FC<AlertModalProps> = ({
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70">
             <div className="bg-white rounded-xl p-6 w-[90%] max-w-sm text-center shadow-lg">
                 <div className="w-20 h-20 mx-auto mb-4 flex items-center justify-center rounded-full bg-black/10 text-red">
                     <AlertCircle className="w-10 h-10" />
