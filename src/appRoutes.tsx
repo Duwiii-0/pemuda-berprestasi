@@ -34,6 +34,7 @@ import AdminUsers from "./pages/admin/AdminUsers";
 import AdminStats from "./pages/admin/AdminStats";
 import Reports from "./pages/admin/Reports";
 import AdminSettings from "./pages/admin/Settings";
+import StatistikAdminKomp from "./pages/adminkomp/Statistik";
 
 // data atlit
 import Profile from "./pages/atlit/profilePage";
@@ -47,7 +48,7 @@ import FAQ from "./lombaLayout/faq";
 import Settings from "./pages/settings/settings";
 import AllAtlets from "./pages/admin/AllAtlets";
 import AllPeserta from "./pages/adminkomp/AllPeserta";
-import ValidasiDojangAdminKomp from "./pages/adminkomp/ValidasiDojang"; // Komponen baru
+import ValidasiDojangAdminKomp from "./pages/adminkomp/ValidasiDojang";
 
 // Protected Route Component
 interface ProtectedRouteProps {
@@ -135,15 +136,16 @@ export default function AppRoutes() {
       <Toaster position="top-right" reverseOrder={false} />
       <Routes>
         {/* Admin Kompetisi routes */}
-        <Route path="/admin-kompetisi" element={
-          <ProtectedRoute requiredRole="ADMIN_KOMPETISI">
-            <AdminKompetisiLayout />
-          </ProtectedRoute>
-        }>
-          <Route index element={<Navigate to="/admin-kompetisi/validasi-peserta" replace />} />
-          <Route path="validasi-peserta" element={<AllPeserta />} />
-          <Route path="validasi-dojang" element={<ValidasiDojangAdminKomp />} /> {/* Route baru */}
-        </Route>
+          <Route path="/admin-kompetisi" element={
+            <ProtectedRoute requiredRole="ADMIN_KOMPETISI">
+              <AdminKompetisiLayout />
+            </ProtectedRoute>
+          }>
+            <Route index element={<Navigate to="/admin-kompetisi/validasi-peserta" replace />} />
+            <Route path="validasi-peserta" element={<AllPeserta />} />
+            <Route path="validasi-dojang" element={<ValidasiDojangAdminKomp />} />
+            <Route path="statistik" element={<StatistikAdminKomp />} /> {/* Route baru */}
+          </Route>
 
         {/* Admin routes - protected for ADMIN role only */}
         <Route path="/admin" element={
