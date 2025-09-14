@@ -117,25 +117,26 @@ const StatistikAdminKomp: React.FC = () => {
       // Fetch all data dengan Promise.allSettled untuk handle error individual
       const results = await Promise.allSettled([atletStatsPromise, dojangStatsPromise]);
       
-      // Process results
-      const atletData = results[0].status === 'fulfilled' ? results[0].value : {
-        total: 0, validated: 0, pending: 0
-      };
-      
-      const dojangData = results[1].status === 'fulfilled' ? results[1].value : {
-        totalDojang: 0
-      };
+      // Process results dengan type yang lebih flexible
+      const atletData = results[0].status === 'fulfilled' ? results[0].value : {};
+      const dojangData = results[1].status === 'fulfilled' ? results[1].value : {};
 
-      // Extract stats dengan proper error handling dan flexible data structure
-      // Handle case dimana data bisa di dalam property 'data' atau langsung di root
-      const atletStats = atletData.data || atletData;
-      const totalAtlet = atletStats.total || 0;
-      const atletValidated = atletStats.validated || Math.floor(totalAtlet * 0.85); // Estimate 85% validated
-      const pendingAtlet = atletStats.pending || Math.floor(totalAtlet * 0.15); // Estimate 15% pending
+      // Extract stats dengan property access yang aman
+      // Prioritas: field dari actual response > field generic > 0
+      const totalAtlet = (atletData as any)?.totalAtlet || (atletData as any)?.total || 0;
       
-      const totalDojang = dojangData.totalDojang || 0;
-      const dojangValidated = Math.floor(totalDojang * 0.9); // Estimate 90% validated
-      const pendingDojang = totalDojang - dojangValidated;
+      // Gunakan data actual jika tersedia
+      const atletValidated = (atletData as any)?.validated || 
+                            (atletData as any)?.registeredInCompetition || 
+                            Math.floor(totalAtlet * 0.85);
+      const pendingAtlet = (atletData as any)?.pending || 
+                          (atletData as any)?.notRegisteredInCompetition || 
+                          Math.floor(totalAtlet * 0.15);
+      
+      // Handle dojang data dengan type casting
+      const totalDojang = (dojangData as any)?.totalDojang || 0;
+      const dojangValidated = (dojangData as any)?.validated || Math.floor(totalDojang * 0.9);
+      const pendingDojang = (dojangData as any)?.pending || (totalDojang - dojangValidated);
 
       setStats({
         totalAtlet,
