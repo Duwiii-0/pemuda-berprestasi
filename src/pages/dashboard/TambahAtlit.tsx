@@ -37,7 +37,7 @@ const provinsiKotaData = {
   "Riau": ["Pekanbaru", "Dumai"],
   "Kepulauan Riau": ["Tanjung Pinang", "Batam"],
   "Jambi": ["Jambi", "Sungai Penuh"],
-  "Sumatera Selatan": ["Palembang", "Lubuklinggau", "Pagar Alam", "Prabumulih"],
+  "Sumatera Selatan": ["Palembang", "Lubuklinggau", "Pagar Alam", "Prabumulih", "Muara Enim"],
   "Bangka Belitung": ["Pangkal Pinang"],
   "Bengkulu": ["Bengkulu"],
   "Lampung": ["Bandar Lampung", "Metro"],
