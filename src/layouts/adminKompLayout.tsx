@@ -38,20 +38,6 @@ const AdminKompetisiLayout: React.FC = () => {
   // Updated menu items with proper path matching and additional features
   const menuItems = [
     {
-      icon: Users,
-      label: 'Daftar Peserta',
-      path: '/admin-kompetisi/peserta',
-      active: location.pathname === '/admin-kompetisi/peserta',
-      description: 'Kelola semua peserta kompetisi'
-    },
-    {
-      icon: UserCheck,
-      label: 'Validasi Dojang',
-      path: '/admin-kompetisi/validasi-dojang',
-      active: location.pathname === '/admin-kompetisi/validasi-dojang',
-      description: 'Validasi pendaftaran dojang'
-    },
-    {
       icon: ClipboardList,
       label: 'Validasi Peserta',
       path: '/admin-kompetisi/validasi-peserta',
@@ -59,11 +45,11 @@ const AdminKompetisiLayout: React.FC = () => {
       description: 'Validasi data peserta kompetisi'
     },
     {
-      icon: Award,
-      label: 'Manajemen Kategori',
-      path: '/admin-kompetisi/kategori',
-      active: location.pathname === '/admin-kompetisi/kategori',
-      description: 'Kelola kategori dan kelas tanding'
+      icon: UserCheck,
+      label: 'Validasi Dojang',
+      path: '/admin-kompetisi/validasi-dojang',
+      active: location.pathname === '/admin-kompetisi/validasi-dojang',
+      description: 'Validasi pendaftaran dojang'
     },
     {
       icon: BarChart3,
@@ -452,7 +438,7 @@ const AdminKompetisiLayout: React.FC = () => {
       )}
 
       {/* Main Content */}
-      <main className="lg:ml-72">
+      <main className="lg:ml-80">
         {/* Page Header */}
         <div className="bg-white border-b px-6 py-4" style={{ borderColor: '#990D35' }}>
           <div className="flex items-center justify-between">
