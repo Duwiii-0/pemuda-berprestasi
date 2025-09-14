@@ -3,7 +3,11 @@ import {
   Users, 
   Trophy, 
   Building2, 
+  TrendingUp,
+  Download,
   Calendar,
+  MapPin,
+  Award,
   Clock,
   FileSpreadsheet,
   Printer
