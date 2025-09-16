@@ -90,111 +90,6 @@ const EditRegistrationModal = ({
     return currentClass?.kategori_event?.nama_kategori || '';
   };
 
-  // Age group validation
-  const isValidAgeGroup = (kelas: KelasKejuaraan, age: number): boolean => {
-    const kelompokNama = kelas.kelompok?.nama_kelompok?.toLowerCase() || '';
-    
-    // Age ranges based on typical Taekwondo competition rules
-    const ageRanges = {
-      'super pracadet': { min: 4, max: 8 },
-      'super pra-cadet': { min: 4, max: 8 },
-      'pracadet': { min: 8, max: 11 },
-      'pra-cadet': { min: 8, max: 11 },
-      'cadet': { min: 11, max: 14 },
-      'junior': { min: 15, max: 17 },
-      'senior': { min: 18, max: 99 },
-    };
-
-    for (const [groupName, range] of Object.entries(ageRanges)) {
-      if (kelompokNama.includes(groupName.replace(' ', '').replace('-', ''))) {
-        return age >= range.min && age <= range.max;
-      }
-    }
-
-    return true; // If no specific age group found, allow it
-  };
-
-  // Weight class validation
-  const isValidWeightClass = (kelas: KelasKejuaraan, weight: number): boolean => {
-    if (kelas.cabang !== 'KYORUGI' || !kelas.kelas_berat?.nama_kelas || weight === 0) {
-      return true;
-    }
-
-    const weightClassName = kelas.kelas_berat.nama_kelas.toLowerCase();
-    
-    // Extract weight limit from class name (e.g., "Under 54 kg" -> 54)
-    const weightMatch = weightClassName.match(/under\s+(\d+)\s*kg/);
-    if (weightMatch) {
-      const weightLimit = parseInt(weightMatch[1]);
-      return weight <= weightLimit;
-    }
-
-    // Handle weight ranges (e.g., "54-58 kg")
-    const rangeMatch = weightClassName.match(/(\d+)-(\d+)\s*kg/);
-    if (rangeMatch) {
-      const minWeight = parseInt(rangeMatch[1]);
-      const maxWeight = parseInt(rangeMatch[2]);
-      return weight > minWeight && weight <= maxWeight;
-    }
-
-    // Handle "Above" or "Over" classes
-    const aboveMatch = weightClassName.match(/(above|over)\s+(\d+)\s*kg/);
-    if (aboveMatch) {
-      const minWeight = parseInt(aboveMatch[2]);
-      return weight > minWeight;
-    }
-
-    return true; // If can't parse weight, allow it
-  };
-
-  // Level switch validation
-  const isValidLevelSwitch = (kelas: KelasKejuaraan, currentLevel?: string): boolean => {
-    const newLevel = kelas.kategori_event?.nama_kategori?.toLowerCase() || '';
-    const currentLevelLower = currentLevel?.toLowerCase() || '';
-    
-    // Prevent switching between pemula and prestasi
-    if (currentLevelLower === 'pemula' && newLevel === 'prestasi') {
-      return false;
-    }
-    
-    if (currentLevelLower === 'prestasi' && newLevel === 'pemula') {
-      return false;
-    }
-    
-    return true;
-  };
-
-  // Main filtering logic
-  const filterEligibleClasses = (classes: KelasKejuaraan[]): KelasKejuaraan[] => {
-    const participantAge = getParticipantAge();
-    const participantWeight = getParticipantWeight();
-    const currentLevel = currentClass?.kategori_event?.nama_kategori;
-
-    return classes.filter(kelas => {
-      // 1. Age group validation
-      if (!isValidAgeGroup(kelas, participantAge)) {
-        return false;
-      }
-
-      // 2. Weight class validation (for KYORUGI individual only)
-      if (kelas.cabang === 'KYORUGI' && !isTeam && !isValidWeightClass(kelas, participantWeight)) {
-        return false;
-      }
-
-      // 3. Level consistency (prevent switching between pemula and prestasi)
-      if (!isValidLevelSwitch(kelas, currentLevel)) {
-        return false;
-      }
-
-      // 4. Don't show the current class in options
-      if (kelas.id_kelas_kejuaraan === currentClass?.id_kelas_kejuaraan) {
-        return false;
-      }
-
-      return true;
-    });
-  };
-
   const buildClassLabel = (kelas: KelasKejuaraan) => {
     const parts = [
       kelas.cabang,
@@ -211,46 +106,27 @@ const EditRegistrationModal = ({
     return parts.filter(Boolean).join(" - ");
   };
 
-  const fetchAvailableClasses = async () => {
-    try {
-      setLoading(true);
-      
-      // Get participant details for filtering
-      const participantAge = getParticipantAge();
-      const participantWeight = getParticipantWeight();
-      const participantLevel = getParticipantLevel();
-      const currentClassCategory = currentClass?.cabang;
-      
-      const response = await apiClient.get<ApiResponse<KelasKejuaraan[]>>(
-        `/kompetisi/${kompetisiId}/kelas-kejuaraan/available`,
-        {
-          params: {
-            participant_type: isTeam ? 'team' : 'individual',
-            gender: participantGender,
-            current_class_id: currentClass?.id_kelas_kejuaraan || '',
-            age: participantAge,
-            weight: participantWeight,
-            level: participantLevel,
-            current_category: currentClassCategory
-          }
-        }
-      );
+const fetchAvailableClasses = async () => {
+  try {
+    setLoading(true);
+    
+    const response = await apiClient.get<ApiResponse<KelasKejuaraan[]>>(
+      `/kompetisi/${kompetisiId}/participants/${participant.id_peserta_kompetisi}/available-classes`
+    );
 
-      let classes = response.data.data || [];
-      
-      // Apply client-side filtering as additional validation
-      classes = filterEligibleClasses(classes);
-      
-      setAvailableClasses(classes);
+    const classes = response.data.data || [];
+    console.log('Available classes from backend:', classes);
+    
+    setAvailableClasses(classes);
 
-    } catch (error: any) {
-      console.error('Error fetching available classes:', error);
-      toast.error('Gagal memuat kelas yang tersedia');
-      setAvailableClasses([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+  } catch (error: any) {
+    console.error('Error fetching available classes:', error);
+    toast.error('Gagal memuat kelas yang tersedia');
+    setAvailableClasses([]);
+  } finally {
+    setLoading(false);
+  }
+};
 
   // Fetch available classes when modal opens
   useEffect(() => {
@@ -330,59 +206,46 @@ const handleSave = async () => {
       ].join(" "),
   };
 
-  // Validation message component
   const ValidationMessage = () => {
-    if (availableClasses.length === 0 && !loading) {
-      const participantAge = getParticipantAge();
-      const participantWeight = getParticipantWeight();
-      
-      return (
-        <div className="bg-amber-50 rounded-xl p-4 border-l-4 border-amber-400">
-          <div className="flex items-start gap-2">
-            <AlertCircle size={20} className="text-amber-600 mt-0.5 flex-shrink-0" />
-            <div>
-              <h4 className="font-plex font-semibold text-amber-800 mb-1">Tidak Ada Kelas Tersedia</h4>
-              <p className="font-plex text-amber-700 text-sm mb-2">
-                Tidak ada kelas lain yang sesuai dengan kriteria peserta ini.
-              </p>
-              <div className="font-plex text-amber-700 text-sm">
-                <p><strong>Informasi Peserta:</strong></p>
-                <ul className="ml-4 list-disc mt-1">
-                  <li>Umur: {participantAge} tahun</li>
-                  {!isTeam && participantWeight > 0 && (
-                    <li>Berat badan: {participantWeight} kg</li>
-                  )}
-                  <li>Level: {getParticipantLevel()}</li>
-                  <li>Kategori saat ini: {currentClass?.cabang}</li>
-                </ul>
-              </div>
-              <p className="font-plex text-amber-700 text-sm mt-2">
-                <strong>Kemungkinan penyebab:</strong>
-              </p>
-              <ul className="font-plex text-amber-700 text-sm mt-1 ml-4 list-disc">
-                <li>Umur tidak sesuai dengan kelompok usia lain</li>
-                <li>Berat badan tidak sesuai dengan kelas berat lain</li>
-                <li>Tidak dapat berpindah antara level pemula dan prestasi</li>
-                <li>Semua kelas lain sudah penuh</li>
-              </ul>
-            </div>
+  if (availableClasses.length === 0 && !loading) {
+    return (
+      <div className="bg-amber-50 rounded-xl p-4 border-l-4 border-amber-400">
+        <div className="flex items-start gap-2">
+          <AlertCircle size={20} className="text-amber-600 mt-0.5 flex-shrink-0" />
+          <div>
+            <h4 className="font-plex font-semibold text-amber-800 mb-1">Tidak Ada Kelas Tersedia</h4>
+            <p className="font-plex text-amber-700 text-sm mb-2">
+              Tidak ada kelas lain yang sesuai dengan kriteria peserta ini.
+            </p>
+            
+            <p className="font-plex text-amber-700 text-sm mt-2">
+              <strong>Kemungkinan penyebab:</strong>
+            </p>
+            <ul className="font-plex text-amber-700 text-sm mt-1 ml-4 list-disc">
+              <li>Umur tidak sesuai dengan kelompok usia yang tersedia</li>
+              <li>Berat badan tidak sesuai dengan kelas berat yang tersedia (untuk Kyorugi)</li>
+              <li>Tidak dapat berpindah antara kategori pemula dan prestasi</li>
+              <li>Tipe peserta (individu/tim) tidak cocok dengan kelas yang tersedia</li>
+              <li>Peserta sudah di kelas yang paling sesuai</li>
+            </ul>
           </div>
         </div>
-      );
-    }
+      </div>
+    );
+  }
 
-    if (availableClasses.length > 0) {
-      return (
-        <div className="bg-blue-50 rounded-xl p-3 border-l-4 border-blue-400">
-          <p className="font-plex text-blue-700 text-sm">
-            Menampilkan {availableClasses.length} kelas yang sesuai dengan kriteria peserta
-          </p>
-        </div>
-      );
-    }
+  if (availableClasses.length > 0) {
+    return (
+      <div className="bg-blue-50 rounded-xl p-3 border-l-4 border-blue-400">
+        <p className="font-plex text-blue-700 text-sm">
+          Menampilkan {availableClasses.length} kelas yang sesuai dengan kriteria peserta
+        </p>
+      </div>
+    );
+  }
 
-    return null;
-  };
+  return null;
+};
 
   if (!participant) return null;
 

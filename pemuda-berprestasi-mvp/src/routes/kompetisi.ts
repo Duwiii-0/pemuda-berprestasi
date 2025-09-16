@@ -31,6 +31,10 @@ router.delete('/:id', KompetisiController.delete);
 // Registration management
 router.get("/:id/atlet", authenticate, KompetisiController.getAtletsByKompetisi);
 router.post('/:id/register', authenticate, KompetisiController.registerAtlet);
+router.get(
+  '/:id/participants/:participantId/available-classes',
+  KompetisiController.getAvailableClassesForParticipant
+);
  router.put(
    '/:id/participants/:participantId/status',
    validateRequest(kompetisiValidation.updateStatus),

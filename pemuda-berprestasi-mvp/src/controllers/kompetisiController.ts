@@ -241,12 +241,13 @@ export class KompetisiController {
   static async updateParticipantClass(req: Request, res: Response) {
   try {
     const { id, participantId } = req.params;
-    const { kelasKejuaraanId } = req.body;
+    // ✅ FIXED: Sesuaikan dengan nama field yang dikirim frontend
+    const { kelas_kejuaraan_id } = req.body; // Frontend mengirim field ini
 
     // Validasi parameter
     const kompetisiId = parseInt(id);
     const pesertaId = parseInt(participantId);
-    const newKelasId = parseInt(kelasKejuaraanId);
+    const newKelasId = parseInt(kelas_kejuaraan_id); // ✅ FIXED: Gunakan field yang benar
 
     if (isNaN(kompetisiId)) {
       return sendError(res, 'ID kompetisi tidak valid', 400);
@@ -279,6 +280,34 @@ export class KompetisiController {
   } catch (error: any) {
     console.error('Controller - Error updating participant class:', error);
     return sendError(res, error.message || 'Gagal mengubah kelas peserta', 400);
+  }
+}
+
+static async getAvailableClassesForParticipant(req: Request, res: Response) {
+  try {
+    const { id, participantId } = req.params;
+    
+    const kompetisiId = parseInt(id);
+    const pesertaId = parseInt(participantId);
+
+    if (isNaN(kompetisiId)) {
+      return sendError(res, 'ID kompetisi tidak valid', 400);
+    }
+
+    if (isNaN(pesertaId)) {
+      return sendError(res, 'ID peserta tidak valid', 400);
+    }
+
+    const availableClasses = await KompetisiService.getAvailableClassesForParticipant(
+      kompetisiId, 
+      pesertaId
+    );
+
+    return sendSuccess(res, availableClasses, 'Kelas yang tersedia berhasil diambil');
+
+  } catch (error: any) {
+    console.error('Controller - Error getting available classes:', error);
+    return sendError(res, error.message || 'Gagal mendapatkan kelas yang tersedia', 400);
   }
 }
 

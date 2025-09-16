@@ -130,6 +130,168 @@ export class KompetisiService {
     };
   }
 
+  // Tambahkan method ini ke KompetisiService
+
+static async getAvailableClassesForParticipant(
+  kompetisiId: number, 
+  participantId: number
+): Promise<any[]> {
+  try {
+    // 1. Get participant details
+    const participant = await prisma.tb_peserta_kompetisi.findFirst({
+      where: {
+        id_peserta_kompetisi: participantId,
+        kelas_kejuaraan: {
+          id_kompetisi: kompetisiId
+        }
+      },
+      include: {
+        atlet: {
+          include: {
+            dojang: true
+          }
+        },
+        anggota_tim: {
+          include: {
+            atlet: {
+              include: {
+                dojang: true
+              }
+            }
+          }
+        },
+        kelas_kejuaraan: {
+          include: {
+            kategori_event: true,
+            kelompok: true,
+            kelas_berat: true,
+            poomsae: true
+          }
+        }
+      }
+    });
+
+    if (!participant) {
+      throw new Error('Peserta tidak ditemukan');
+    }
+
+    // 2. Get all available classes for this competition
+    const allClasses = await prisma.tb_kelas_kejuaraan.findMany({
+      where: {
+        id_kompetisi: kompetisiId,
+        NOT: {
+          id_kelas_kejuaraan: participant.kelas_kejuaraan.id_kelas_kejuaraan
+        }
+      },
+      include: {
+        kategori_event: true,
+        kelompok: true,
+        kelas_berat: true,
+        poomsae: true
+      }
+    });
+
+    // 3. Filter classes based on participant eligibility
+    const eligibleClasses = allClasses.filter(kelas => {
+      try {
+        // Helper function to calculate age
+        const calculateAge = (birthDate: Date): number => {
+          const today = new Date();
+          const birth = new Date(birthDate);
+          let age = today.getFullYear() - birth.getFullYear();
+          const monthDiff = today.getMonth() - birth.getMonth();
+          
+          if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+            age--;
+          }
+          return age;
+        };
+
+        // Get participant info
+        const isTeam = participant.is_team;
+        const currentCategory = participant.kelas_kejuaraan.kategori_event.nama_kategori.toLowerCase();
+        
+        let participantAge: number;
+        let participantGender: string;
+        let participantWeight: number;
+
+        if (isTeam && participant.anggota_tim.length > 0) {
+          // For team: use youngest member's age
+          const ages = participant.anggota_tim.map(member => 
+            calculateAge(member.atlet.tanggal_lahir)
+          );
+          participantAge = Math.min(...ages);
+          participantGender = 'CAMPURAN'; // Teams can be mixed gender
+          participantWeight = 0; // Weight not relevant for teams
+        } else if (participant.atlet) {
+          participantAge = calculateAge(participant.atlet.tanggal_lahir);
+          participantGender = participant.atlet.jenis_kelamin;
+          participantWeight = participant.atlet.berat_badan;
+        } else {
+          return false; // Invalid participant data
+        }
+
+        // 4. Apply filters
+
+        // A. Sport category must match (KYORUGI <-> KYORUGI, POOMSAE <-> POOMSAE)
+        if (kelas.cabang !== participant.kelas_kejuaraan.cabang) {
+          return false;
+        }
+
+        // B. Level consistency (pemula <-> pemula, prestasi <-> prestasi)
+        const newCategory = kelas.kategori_event.nama_kategori.toLowerCase();
+        if (
+          (currentCategory.includes('pemula') && !newCategory.includes('pemula')) ||
+          (!currentCategory.includes('pemula') && newCategory.includes('pemula'))
+        ) {
+          return false;
+        }
+
+        // C. Age group validation
+        if (kelas.kelompok) {
+          if (participantAge < kelas.kelompok.usia_min || participantAge > kelas.kelompok.usia_max) {
+            return false;
+          }
+        }
+
+        // D. Weight class validation (only for KYORUGI individual)
+        if (kelas.cabang === 'KYORUGI' && !isTeam && kelas.kelas_berat) {
+          if (participantGender !== kelas.kelas_berat.jenis_kelamin) {
+            return false;
+          }
+          if (participantWeight < kelas.kelas_berat.batas_min || participantWeight > kelas.kelas_berat.batas_max) {
+            return false;
+          }
+        }
+
+        // E. Team type validation for POOMSAE
+        if (kelas.cabang === 'POOMSAE') {
+          // Check if class supports team/individual based on poomsae class name
+          const poomsaeClassName = kelas.poomsae?.nama_kelas?.toLowerCase() || '';
+          const isClassForTeam = poomsaeClassName.includes('tim') || poomsaeClassName.includes('beregu') || poomsaeClassName.includes('berpasangan');
+          
+          // Team participants can only join team classes, individual can only join individual classes
+          if (isTeam !== isClassForTeam) {
+            return false;
+          }
+        }
+
+        return true;
+
+      } catch (error) {
+        console.error('Error filtering class:', error);
+        return false;
+      }
+    });
+
+    return eligibleClasses;
+
+  } catch (error: any) {
+    console.error('Error getting available classes:', error);
+    throw new Error('Gagal mendapatkan kelas yang tersedia');
+  }
+}
+
   // Get kompetisi by ID
   static async getKompetisiById(id: number) {
     const kompetisi = await prisma.tb_kompetisi.findUnique({
