@@ -184,27 +184,25 @@ const handleUpdate = async () => {
     const result = await updateAtlet(Number(id), formDataSend);
     
     if (result) {
-      // PERBAIKAN: Fetch data terbaru dari server
-      const freshData = await fetchAtletById(Number(id));
-      
-      if (freshData) {
-        const updatedData: AtletWithFiles = {
-          ...freshData,
-          akte_kelahiran_path: freshData.akte_kelahiran || undefined,
-          pas_foto_path: freshData.pas_foto || undefined,
-          sertifikat_belt_path: freshData.sertifikat_belt || undefined,
-          ktp_path: freshData.ktp || undefined,
-          akte_kelahiran: null,
-          pas_foto: null,
-          sertifikat_belt: null,
-          ktp: null,
-        };
+      // Use the response data directly instead of fetching again
+      const updatedAtlet = result; // This is the fresh data from the server
         
-        setFormData(updatedData);
-        setOriginalData(updatedData);
-        setIsEditing(false);
-        toast.success("Data atlet berhasil diperbarui ✅");
-      }
+      const updatedData: AtletWithFiles = {
+        ...updatedAtlet,
+        akte_kelahiran_path: updatedAtlet.akte_kelahiran || undefined,
+        pas_foto_path: updatedAtlet.pas_foto || undefined,
+        sertifikat_belt_path: updatedAtlet.sertifikat_belt || undefined,
+        ktp_path: updatedAtlet.ktp || undefined,
+        akte_kelahiran: null,
+        pas_foto: null,
+        sertifikat_belt: null,
+        ktp: null,
+      };
+      
+      setFormData(updatedData);
+      setOriginalData(updatedData);
+      setIsEditing(false);
+      toast.success("Data atlet berhasil diperbarui ✅");
     }
   } catch (err: any) {
 
