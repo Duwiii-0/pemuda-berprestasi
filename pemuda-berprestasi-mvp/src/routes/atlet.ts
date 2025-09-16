@@ -120,8 +120,19 @@ router.get('/', AtletController.getAll);
 router.get('/dojang/:id_dojang', AtletController.getByDojang);
 router.post("/eligible", authenticate, AtletController.getEligible);
 router.get('/:id', AtletController.getById);
-router.put('/:id', validateRequest(atletValidation.update), AtletController.update);
 router.delete('/:id', AtletController.delete);
+
+
+router.put('/:id', 
+  uploadMiddleware.fields([
+    { name: 'akte_kelahiran', maxCount: 1 },
+    { name: 'pas_foto', maxCount: 1 },
+    { name: 'sertifikat_belt', maxCount: 1 },
+    { name: 'ktp', maxCount: 1 }
+  ]),
+  validateRequest(atletValidation.update),
+  AtletController.update
+);
 
 // File upload routes
 router.post('/:id/upload-documents', 
