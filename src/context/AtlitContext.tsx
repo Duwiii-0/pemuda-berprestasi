@@ -118,11 +118,14 @@ const fetchAllAtlits = async () => {
 };
 
   // Fetch atlet berdasarkan ID
-const fetchAtletById = useCallback(async (id: number) => {
-  let atlet = atlits.find(a => a.id_atlet === id);
+// Fetch atlet berdasarkan ID - FIXED VERSION
+const fetchAtletById = useCallback(async (id: number, forceRefresh = false) => {
+  // If forceRefresh is true, skip cache and make API call
+  let atlet = forceRefresh ? undefined : atlits.find(a => a.id_atlet === id);
+  
   if (!atlet) {
     try {
-      console.log(`🔍 Fetching atlet with ID: ${id}`);
+      console.log(`🔍 Fetching atlet with ID: ${id} (forceRefresh: ${forceRefresh})`);
       
       const response = await apiClient.get(`/atlet/${id}`);
       console.log("📋 Fetch response:", response);
@@ -131,6 +134,7 @@ const fetchAtletById = useCallback(async (id: number) => {
       atlet = response.data || response;
       
       if (atlet) {
+        // Update the context with fresh data
         setAtlits(prev => [...prev.filter(a => a.id_atlet !== id), atlet!]);
       }
     } catch (err: any) {
