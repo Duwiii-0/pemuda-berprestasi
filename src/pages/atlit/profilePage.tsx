@@ -1,9 +1,8 @@
 // src/pages/Profile.tsx
 import { useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { Phone, User, CalendarFold, IdCard, MapPinned, Scale, Ruler, X, Eye, Download } from "lucide-react";
+import { Phone, User, CalendarFold, IdCard, MapPinned, Scale, Ruler } from "lucide-react";
 import TextInput from "../../components/textInput";
-import FileInput from "../../components/fileInput";
 import Select from "react-select";
 import { GeneralButton } from "../dashboard/dataDojang";
 import { useAtletContext } from "../../context/AtlitContext";
@@ -13,17 +12,23 @@ import  { genderOptions } from "../../context/AtlitContext";
 import { calculateAge } from "../../context/AtlitContext";
 import toast from "react-hot-toast";
 import { useAuth } from "../../context/authContext";
+import { AtletDocumentUploader } from "../../components/atletUploads";
 
 // Extend Atlet type untuk include file fields
-interface AtletWithFiles extends Atlet {
+interface AtletWithFiles extends Omit<Atlet, 'akte_kelahiran' | 'pas_foto' | 'sertifikat_belt' | 'ktp'> {
+  // File objects untuk upload (temporary)
   akte_kelahiran?: File | null;
   pas_foto?: File | null;
   sertifikat_belt?: File | null;
   ktp?: File | null;
+  
+  // Path fields untuk existing files (dari database)
   akte_kelahiran_path?: string;
   pas_foto_path?: string;
   sertifikat_belt_path?: string;
   ktp_path?: string;
+  
+  // Tambahan field kota
   kota?: string;
 }
 
@@ -68,218 +73,7 @@ const provinsiKotaData: Record<string, string[]> = {
   "Papua Barat Daya": ["Sorong"]
 };
 
-const provinsiOptions = Object.keys(provinsiKotaData).map(provinsi => ({
-  value: provinsi,
-  label: provinsi
-}));
 
-
-const FilePreview = ({ 
-  file, 
-  existingPath, 
-  onRemove, 
-  disabled,
-  label 
-}: { 
-  file: File | null;
-  existingPath?: string;
-  onRemove: () => void;
-  disabled: boolean;
-  label: string;
-}) => {
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [previewError, setPreviewError] = useState(false);
-
-  useEffect(() => {
-    if (file) {
-      try {
-        const url = URL.createObjectURL(file);
-        setPreviewUrl(url);
-        setPreviewError(false);
-        return () => URL.revokeObjectURL(url);
-      } catch (error) {
-        console.error('Error creating preview URL:', error);
-        setPreviewError(true);
-      }
-    } else {
-      setPreviewUrl(null);
-      setPreviewError(false);
-    }
-  }, [file]);
-
-  const hasFile = file || existingPath;
-  
-  const getDisplayFileName = () => {
-    if (file) return file.name;
-    if (existingPath) {
-      const fileName = existingPath.split('/').pop() || label;
-      return fileName.length > 50 ? `${label} (File tersimpan)` : fileName;
-    }
-    return label;
-  };
-
-  // PERBAIKAN: Fungsi download yang disederhanakan
-  const handleDownload = async () => {
-  if (!existingPath) {
-    toast.error('Tidak ada file untuk didownload');
-    return;
-  }
-  
-  try {
-    const baseUrl = 'https://pemudaberprestasi.com';
-    
-    // PERBAIKAN: Path sudah include subfolder dari service
-    const downloadUrl = `${baseUrl}/uploads/atlet/${existingPath}`;
-    console.log(`📥 Downloading from: ${downloadUrl}`);
-    
-    const testResponse = await fetch(downloadUrl, { method: 'HEAD' });
-    if (!testResponse.ok) {
-      toast.error('File tidak ditemukan di server');
-      return;
-    }
-    
-    const link = document.createElement('a');
-    link.href = downloadUrl;
-    link.download = getDisplayFileName();
-    link.target = '_blank';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    toast.success(`Download ${label} berhasil!`);
-    
-  } catch (error) {
-    console.error('❌ Download error:', error);
-    toast.error('Gagal mendownload file');
-  }
-};
-
-// PERBAIKAN: Di Frontend - FilePreview component
-const getPreviewUrl = () => {
-  if (file && previewUrl) return previewUrl;
-  
-  if (existingPath) {
-    const baseUrl = 'https://pemudaberprestasi.com';
-    
-    // PERBAIKAN: Handle both old format (with subfolder) and new format (filename only)
-    let staticUrl;
-    
-    if (existingPath.includes('/')) {
-      // Old format: "akte_kelahiran/filename.jpg" - use as is
-      staticUrl = `${baseUrl}/uploads/atlet/${existingPath}`;
-    } else {
-      // New format: "filename.jpg" - need to add subfolder based on label
-      const folderMap: Record<string, string> = {
-        'Akte Kelahiran': 'akte_kelahiran',
-        'Pas Foto': 'pas_foto',
-        'Sertifikat Belt': 'sertifikat_belt',
-        'KTP': 'ktp'
-      };
-      const subfolder = folderMap[label] || 'akte_kelahiran';
-      staticUrl = `${baseUrl}/uploads/atlet/${subfolder}/${existingPath}`;
-    }
-    
-    console.log("🌐 Preview URL:", staticUrl);
-    return staticUrl;
-  }
-  
-  return null;
-};
-
-  const isImageFile = () => {
-    if (file) return file.type.startsWith('image/');
-    if (existingPath) {
-      const ext = existingPath.toLowerCase().split('.').pop();
-      return ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext || '');
-    }
-    return false;
-  };
-
-  if (!hasFile) return null;
-
-  const displayUrl = getPreviewUrl();
-  const fileName = getDisplayFileName();
-
-  return (
-    <div className="mt-2 p-3 bg-white/70 rounded-xl border border-red/20">
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-sm font-medium text-black/70">
-          {file ? `File baru: ${fileName}` : fileName}
-        </span>
-        {!disabled && (
-          <button
-            onClick={onRemove}
-            className="p-1 hover:bg-red/10 rounded-full transition-colors"
-            type="button"
-          >
-            <X size={16} className="text-red" />
-          </button>
-        )}
-      </div>
-      
-      <div className="flex gap-2">
-        {/* Preview Image */}
-        {displayUrl && !previewError && isImageFile() && (
-          <div className="relative w-20 h-20 flex-shrink-0">
-            <img 
-              src={displayUrl} 
-              alt={`Preview ${label}`}
-              className="w-full h-full object-cover rounded-lg border border-gray-200"
-              onError={(e) => {
-                console.log(`❌ Preview failed for: ${displayUrl}`);
-                setPreviewError(true);
-                // Fallback ke icon jika gambar gagal load
-                (e.target as HTMLImageElement).style.display = 'none';
-              }}
-            />
-          </div>
-        )}
-        
-        {/* File icon untuk non-image atau jika preview error */}
-        {(!displayUrl || previewError || !isImageFile()) && (
-          <div className="flex items-center gap-2 text-sm text-gray-600 w-20 h-20 border rounded-lg justify-center bg-gray-50">
-            <IdCard size={24} className="text-gray-400" />
-          </div>
-        )}
-        
-        {/* Action Buttons */}
-        <div className="flex flex-col gap-1 flex-1">
-          {/* View/Preview Button */}
-          {displayUrl && (
-            <button
-              onClick={() => {
-                console.log(`🔍 Opening preview: ${displayUrl}`);
-                window.open(displayUrl, '_blank', 'noopener,noreferrer');
-              }}
-              className="flex items-center gap-1 px-2 py-1 text-xs bg-blue-100 hover:bg-blue-200 text-blue-600 rounded transition-colors"
-              type="button"
-            >
-              <Eye size={12} />
-              {isImageFile() ? 'Lihat Gambar' : 'Buka File'}
-            </button>
-          )}
-          
-          {/* Download button */}
-          {existingPath && (
-            <button
-              onClick={handleDownload}
-              className="flex items-center gap-1 px-2 py-1 text-xs bg-green-100 hover:bg-green-200 text-green-600 rounded transition-colors"
-              type="button"
-            >
-              <Download size={12} />
-              Download
-            </button>
-          )}
-          
-          {/* Status indicator */}
-          <div className="text-xs text-gray-500">
-            {file ? '📎 File baru' : existingPath ? '💾 File tersimpan' : 'Tidak ada file'}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 function toInputDateFormat(dateStr: string): string {
   if (!dateStr) return "";
@@ -453,19 +247,25 @@ const handleProvinsiChange = (selectedOption: { value: string; label: string } |
 
   // Handler untuk file upload
   const handleFileChange = (field: keyof AtletWithFiles, file: File | null) => {
-    if (!formData) return;
-    setFormData({ ...formData, [field]: file });
-  };
+  if (!formData) return;
+  setFormData({ ...formData, [field]: file });
+};
+
 
   // Handler untuk menghapus file
 const handleFileRemove = (field: keyof AtletWithFiles) => {
   if (!formData) return;
+  
+  // Type assertion untuk memastikan field_path exists
+  const pathField = `${String(field)}_path` as keyof AtletWithFiles;
+  
   setFormData({ 
     ...formData, 
     [field]: null,
-    [`${field}_path`]: undefined // Clear the corresponding path field
+    [pathField]: undefined
   });
 };
+
 
   if (!formData) {
     return (
@@ -839,116 +639,12 @@ const handleFileRemove = (field: keyof AtletWithFiles) => {
           </div>
         </div>
 
-        {/* Document Upload Section with Enhanced Preview */}
-        <div className="bg-white/60 backdrop-blur-sm rounded-2xl lg:rounded-3xl p-4 sm:p-6 lg:p-8 shadow-xl border-2 border-gray-200">
-          <div className="flex items-center gap-3 mb-4 lg:mb-6">
-            <div className="p-2 bg-red/10 rounded-xl">
-              <IdCard className="text-red" size={18} />
-            </div>
-            <h3 className="font-bebas text-xl lg:text-2xl text-black/80 tracking-wide">
-              DOKUMEN PENDUKUNG
-            </h3>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
-            {/* Akte Kelahiran */}
-            <div className="space-y-2">
-              <label className="block font-plex font-medium text-black/70 text-sm lg:text-base">Akte Kelahiran</label>
-              <div className="relative">
-<FileInput 
-  accept="image/*,application/pdf" 
-  disabled={!isEditing}
-  onChange={(e) => handleFileChange('akte_kelahiran', e.target.files?.[0] || null)}
-  className="border-red/20 bg-white/50 backdrop-blur-sm rounded-xl hover:border-red transition-all duration-300"
-/>
-                {!isEditing && <div className="absolute inset-0 bg-gray-100/50 rounded-xl" />}
-              </div>
-              <FilePreview
-  file={formData.akte_kelahiran || null}
-  existingPath={formData.akte_kelahiran_path}
-  onRemove={() => handleFileRemove('akte_kelahiran')}
-  disabled={!isEditing}
-  label="Akte Kelahiran"
-/>
-            </div>
-            
-            {/* Pas Foto */}
-            <div className="space-y-2">
-              <label className="block font-plex font-medium text-black/70 text-sm lg:text-base">Pas Foto 3x4</label>
-              <div className="relative">
-<FileInput 
-  accept="image/*" 
-  disabled={!isEditing}
-  onChange={(e) => handleFileChange('pas_foto', e.target.files?.[0] || null)}
-  className="border-red/20 bg-white/50 backdrop-blur-sm rounded-xl hover:border-red transition-all duration-300"
-/>
-                {!isEditing && <div className="absolute inset-0 bg-gray-100/50 rounded-xl" />}
-              </div>
-              <FilePreview
-  file={formData.pas_foto || null}
-  existingPath={formData.pas_foto_path}
-  onRemove={() => handleFileRemove('pas_foto')}
-  disabled={!isEditing}
-  label="Pas Foto"
-/>
-            </div>
-            
-            {/* Sertifikat Belt */}
-            <div className="space-y-2">
-              <label className="block font-plex font-medium text-black/70 text-sm lg:text-base">Sertifikasi Belt</label>
-              <div className="relative">
-<FileInput 
-  accept="image/*,application/pdf" 
-  disabled={!isEditing}
-  onChange={(e) => handleFileChange('sertifikat_belt', e.target.files?.[0] || null)}
-  className="border-red/20 bg-white/50 backdrop-blur-sm rounded-xl hover:border-red transition-all duration-300"
-/>
-                {!isEditing && <div className="absolute inset-0 bg-gray-100/50 rounded-xl" />}
-              </div>
-              <FilePreview
-  file={formData.sertifikat_belt || null}
-  existingPath={formData.sertifikat_belt_path}
-  onRemove={() => handleFileRemove('sertifikat_belt')}
-  disabled={!isEditing}
-  label="Sertifikat Belt"
-/>
-            </div>
-            
-            {/* KTP */}
-            <div className="space-y-2">
-              <label className="block font-plex font-medium text-black/70 text-sm lg:text-base">KTP (Wajib untuk 17+)</label>
-              <div className="relative">
-<FileInput 
-  accept="image/*" 
-  disabled={!isEditing}
-  onChange={(e) => handleFileChange('ktp', e.target.files?.[0] || null)}
-  className="border-red/20 bg-white/50 backdrop-blur-sm rounded-xl hover:border-red transition-all duration-300"
-/>
-                {!isEditing && <div className="absolute inset-0 bg-gray-100/50 rounded-xl" />}
-              </div>
-              <FilePreview
-  file={formData.ktp || null}
-  existingPath={formData.ktp_path}
-  onRemove={() => handleFileRemove('ktp')}
-  disabled={!isEditing}
-  label="KTP"
-/>
-            </div>
-          </div>
-
-          {/* Upload Tips */}
-          {isEditing && (
-            <div className="mt-6 p-4 bg-blue-50 rounded-xl border border-blue-200">
-              <h4 className="font-plex font-semibold text-blue-800 mb-2">Tips Upload Dokumen:</h4>
-              <ul className="text-sm text-blue-700 space-y-1">
-                <li>• Format yang didukung: JPG, PNG, PDF</li>
-                <li>• Ukuran maksimal per file: 5MB</li>
-                <li>• Pastikan dokumen terlihat jelas dan tidak buram</li>
-                <li>• File baru akan menggantikan file yang sudah ada</li>
-              </ul>
-            </div>
-          )}
-        </div>
+        <AtletDocumentUploader
+          formData={formData}
+          isEditing={isEditing}
+          onFileChange={handleFileChange}
+          onFileRemove={handleFileRemove}
+        />
 
         {/* Debug Section (remove in production) */}
         {process.env.NODE_ENV === 'development' && (
