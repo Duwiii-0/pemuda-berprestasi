@@ -97,73 +97,40 @@ static async create(req: Request, res: Response) {
 }
 
   // Update atlet
-  // Update atlet - FIXED VERSION (following dojang pattern)
-static async update(req: Request, res: Response) {
-  try {
-    const id = parseInt(req.params.id);
-    
-    if (isNaN(id)) {
-      return sendError(res, 'ID atlet tidak valid', 400);
+  static async update(req: Request, res: Response) {
+    try {
+      const id = parseInt(req.params.id);
+      
+      if (isNaN(id)) {
+        return sendError(res, 'ID atlet tidak valid', 400);
+      }
+
+      const updateData = {
+        id_atlet: id,
+        ...req.body
+      };
+
+      // Convert string date to Date object if provided
+      if (updateData.tanggal_lahir) {
+        updateData.tanggal_lahir = new Date(updateData.tanggal_lahir);
+      }
+
+      // Convert weight and height to numbers if provided
+      if (updateData.berat_badan) {
+        updateData.berat_badan = parseFloat(updateData.berat_badan);
+      }
+
+      if (updateData.tinggi_badan) {
+        updateData.tinggi_badan = parseFloat(updateData.tinggi_badan);
+      }
+
+      const updatedAtlet = await AtletService.updateAtlet(updateData);
+      
+      return sendSuccess(res, updatedAtlet, 'Atlet berhasil diperbarui');
+    } catch (error: any) {
+      return sendError(res, error.message, 400);
     }
-
-    console.log("🔄 Updating atlet ID:", id);
-    console.log("📋 Request body:", req.body);
-    console.log("📎 Files received:", req.files ? Object.keys(req.files) : 'No files');
-
-    // Handle uploaded files (following dojang pattern)
-    const files = req.files as { [fieldname: string]: MulterFile[] };
-    
-    const updateData: any = {
-      id_atlet: id,
-      ...req.body
-    };
-
-    // Add file filenames if files are uploaded (just like dojang logo)
-    if (files?.akte_kelahiran?.[0]) {
-      updateData.akte_kelahiran = files.akte_kelahiran[0].filename;
-      console.log("✅ Akte kelahiran file:", files.akte_kelahiran[0].filename);
-    }
-
-    if (files?.pas_foto?.[0]) {
-      updateData.pas_foto = files.pas_foto[0].filename;
-      console.log("✅ Pas foto file:", files.pas_foto[0].filename);
-    }
-
-    if (files?.sertifikat_belt?.[0]) {
-      updateData.sertifikat_belt = files.sertifikat_belt[0].filename;
-      console.log("✅ Sertifikat belt file:", files.sertifikat_belt[0].filename);
-    }
-
-    if (files?.ktp?.[0]) {
-      updateData.ktp = files.ktp[0].filename;
-      console.log("✅ KTP file:", files.ktp[0].filename);
-    }
-
-    // Convert data types (same as before)
-    if (updateData.tanggal_lahir) {
-      updateData.tanggal_lahir = new Date(updateData.tanggal_lahir);
-    }
-
-    if (updateData.berat_badan) {
-      updateData.berat_badan = parseFloat(updateData.berat_badan);
-    }
-
-    if (updateData.tinggi_badan) {
-      updateData.tinggi_badan = parseFloat(updateData.tinggi_badan);
-    }
-
-    console.log("🚀 Final update data:", updateData);
-
-    const updatedAtlet = await AtletService.updateAtlet(updateData);
-    
-    console.log("✅ Update successful:", updatedAtlet?.id_atlet);
-    
-    return sendSuccess(res, updatedAtlet, 'Atlet berhasil diperbarui');
-  } catch (error: any) {
-    console.error("❌ Update error:", error.message);
-    return sendError(res, error.message, 400);
   }
-}
 
   // Delete atlet
   static async delete(req: Request, res: Response) {
