@@ -161,11 +161,11 @@ const handleSave = async () => {
   try {
     setLoading(true);
 
-    // Perbaiki URL sesuai dengan yang di error log
+    // ✅ FIXED: Sesuaikan dengan nama field yang diharapkan controller
     await apiClient.put<ApiResponse<any>>(
       `/kompetisi/${kompetisiId}/participants/${participant.id_peserta_kompetisi}/class`, 
       {
-        kelas_kejuaraan_id: parseInt(selectedClass.value)
+        kelas_kejuaraan_id: parseInt(selectedClass.value) // ✅ FIXED: Sesuai dengan controller
       }
     );
 

@@ -11,7 +11,6 @@ import type { Kompetisi } from "../../context/KompetisiContext";
 import Select from "react-select";
 import { kelasBeratOptionsMap } from "../../dummy/beratOptions";
 import AlertModal from "../../components/alertModal";
-import EditParticipantModal from "../../components/editRegistModal";
 import EditRegistrationModal from "../../components/EditRegistrationModal";
 
 
@@ -840,8 +839,8 @@ const handleEditSuccess = () => {
                               <td className="py-4 px-4 text-center">
                                 {getStatusBadge(peserta.status)}
                               </td>
-                              {/* 👇 Tambahan kolom Aksi */}
-                              <td className="py-4 px-4 text-center flex justify-center gap-3">
+{/* Desktop Table - Kolom Aksi */}
+<td className="py-4 px-4 text-center flex justify-center gap-3">
   <button 
     className={`cursor-pointer hover:scale-102 transition-colors ${
       peserta.status === 'APPROVED' 
@@ -851,7 +850,7 @@ const handleEditSuccess = () => {
     onClick={(e) => {
       e.stopPropagation();
       if (peserta.status !== 'APPROVED') {
-        toast.error("Fitur ini akan segera hadir")
+        handleEditParticipant(peserta); // ✅ FIXED: Gunakan function yang sudah ada
       }
     }}
     disabled={peserta.status === 'APPROVED'}
@@ -969,7 +968,10 @@ const handleEditSuccess = () => {
         </div>
 
         {/* Action buttons untuk mobile */}
-        <div className="flex justify-end gap-3 pt-3 border-t border-gray-100">
+        // Ganti bagian action buttons untuk mobile di DataKompetisi.tsx
+
+{/* Action buttons untuk mobile */}
+<div className="flex justify-end gap-3 pt-3 border-t border-gray-100">
   <button 
     className={`p-2 rounded-lg transition-colors ${
       peserta.status === 'APPROVED'
@@ -979,7 +981,7 @@ const handleEditSuccess = () => {
     onClick={(e) => {
       e.stopPropagation();
       if (peserta.status !== 'APPROVED') {
-        toast.error("Fitur ini akan segera hadir")
+        handleEditParticipant(peserta); // ✅ FIXED: Gunakan function yang sudah ada
       }
     }}
     disabled={peserta.status === 'APPROVED'}
@@ -1112,13 +1114,13 @@ const handleEditSuccess = () => {
             message={`Apakah Anda yakin ingin menghapus peserta "${deleteModal.participantName}" dari kompetisi ini?`}
           />
 
-          <EditParticipantModal
-            isOpen={editModal.isOpen}
-            onClose={handleCloseEditModal}
-            participant={editModal.participant}
-            kompetisiId={selectedKompetisi?.id_kompetisi || 0}
-            onSuccess={handleEditSuccess}
-          />
+<EditRegistrationModal
+  isOpen={editModal.isOpen}
+  onClose={handleCloseEditModal}
+  participant={editModal.participant}
+  kompetisiId={selectedKompetisi?.id_kompetisi || 0}
+  onSuccess={handleEditSuccess}
+/>
       </div>
 
       
