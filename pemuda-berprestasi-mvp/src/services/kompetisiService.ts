@@ -130,7 +130,55 @@ export class KompetisiService {
     };
   }
 
-  // Tambahkan method ini ke KompetisiService
+static async getAvailableClassesSimple(kompetisiId: number, participantId: number) {
+  try {
+    // Get participant info
+    const participant = await prisma.tb_peserta_kompetisi.findFirst({
+      where: {
+        id_peserta_kompetisi: participantId,
+        kelas_kejuaraan: { id_kompetisi: kompetisiId }
+      },
+      include: {
+        kelas_kejuaraan: {
+          include: {
+            kategori_event: true,
+            kelompok: true,
+            kelas_berat: true,
+            poomsae: true
+          }
+        }
+      }
+    });
+
+    if (!participant) {
+      throw new Error('Peserta tidak ditemukan');
+    }
+
+    // Get all classes in same competition and same sport
+    const availableClasses = await prisma.tb_kelas_kejuaraan.findMany({
+      where: {
+        id_kompetisi: kompetisiId,
+        cabang: participant.kelas_kejuaraan.cabang,
+        NOT: {
+          id_kelas_kejuaraan: participant.kelas_kejuaraan.id_kelas_kejuaraan
+        }
+      },
+      include: {
+        kategori_event: true,
+        kelompok: true,
+        kelas_berat: true,
+        poomsae: true
+      }
+    });
+
+    console.log('Available classes found:', availableClasses.length);
+    return availableClasses;
+
+  } catch (error: any) {
+    console.error('Error getting available classes:', error);
+    throw new Error('Gagal mendapatkan kelas yang tersedia');
+  }
+}
 
 static async getAvailableClassesForParticipant(
   kompetisiId: number, 

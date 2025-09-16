@@ -283,6 +283,30 @@ export class KompetisiController {
   }
 }
 
+static async getAvailableClassesSimple(req: Request, res: Response) {
+  try {
+    const { id, participantId } = req.params;
+    
+    const kompetisiId = parseInt(id);
+    const pesertaId = parseInt(participantId);
+
+    if (isNaN(kompetisiId) || isNaN(pesertaId)) {
+      return sendError(res, 'Parameter tidak valid', 400);
+    }
+
+    const availableClasses = await KompetisiService.getAvailableClassesSimple(
+      kompetisiId, 
+      pesertaId
+    );
+
+    return sendSuccess(res, availableClasses, 'Kelas yang tersedia berhasil diambil');
+
+  } catch (error: any) {
+    console.error('Controller - Error getting available classes:', error);
+    return sendError(res, error.message || 'Gagal mendapatkan kelas yang tersedia', 400);
+  }
+}
+
 static async getAvailableClassesForParticipant(req: Request, res: Response) {
   try {
     const { id, participantId } = req.params;

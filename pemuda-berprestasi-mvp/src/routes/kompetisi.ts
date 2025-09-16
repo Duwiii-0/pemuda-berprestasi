@@ -35,6 +35,11 @@ router.get(
   '/:id/participants/:participantId/available-classes',
   KompetisiController.getAvailableClassesForParticipant
 );
+router.get(
+  '/:id/participants/:participantId/available-classes',
+  authenticate,
+  KompetisiController.getAvailableClassesSimple
+);
  router.put(
    '/:id/participants/:participantId/status',
    validateRequest(kompetisiValidation.updateStatus),
