@@ -1,7 +1,7 @@
 // src/pages/atlit/TambahAtlit.tsx
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, User, Phone, MapPinned, CalendarFold, Scale, Ruler, IdCard, Save, Menu } from "lucide-react";
+import { ArrowLeft, User, Phone, MapPinned, CalendarFold, Scale, Ruler, IdCard, Save, Menu, AlertCircle, CheckCircle } from "lucide-react";
 import Select from "react-select";
 import TextInput from "../../components/textInput";
 import FileInput from "../../components/fileInput";
@@ -76,6 +76,95 @@ const provinsiOptions = Object.keys(provinsiKotaData).map(provinsi => ({
   label: provinsi
 }));
 
+const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png'];
+const ALLOWED_DOCUMENT_TYPES = ['application/pdf'];
+
+const compressImage = (file: File, maxSizeKB: number = 500): Promise<File> => {
+  return new Promise((resolve, reject) => {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+    
+    img.onload = () => {
+      let { width, height } = img;
+      const maxWidth = 1200;
+      const maxHeight = 1200;
+      
+      if (width > height) {
+        if (width > maxWidth) {
+          height *= maxWidth / width;
+          width = maxWidth;
+        }
+      } else {
+        if (height > maxHeight) {
+          width *= maxHeight / height;
+          height = maxHeight;
+        }
+      }
+      
+      canvas.width = width;
+      canvas.height = height;
+      ctx!.drawImage(img, 0, 0, width, height);
+      
+      let quality = 0.8;
+      const tryCompress = () => {
+        canvas.toBlob((blob) => {
+          if (!blob) {
+            reject(new Error('Failed to compress image'));
+            return;
+          }
+          
+          const compressedFile = new File([blob], file.name, {
+            type: file.type,
+            lastModified: Date.now(),
+          });
+          
+          if (compressedFile.size > maxSizeKB * 1024 && quality > 0.1) {
+            quality -= 0.1;
+            tryCompress();
+          } else {
+            resolve(compressedFile);
+          }
+        }, file.type, quality);
+      };
+      
+      tryCompress();
+    };
+    
+    img.onerror = () => reject(new Error('Failed to load image'));
+    img.src = URL.createObjectURL(file);
+  });
+};
+
+// Fungsi validasi file
+const validateFile = (file: File, allowPDF: boolean = false) => {
+  if (!file) return { isValid: false, error: 'File tidak ditemukan' };
+  
+  if (file.size > MAX_FILE_SIZE) {
+    return { isValid: false, error: `File terlalu besar. Maksimal 2MB` };
+  }
+  
+  const allowedTypes = allowPDF 
+    ? [...ALLOWED_IMAGE_TYPES, ...ALLOWED_DOCUMENT_TYPES]
+    : ALLOWED_IMAGE_TYPES;
+    
+  if (!allowedTypes.includes(file.type)) {
+    return { isValid: false, error: `Format tidak didukung` };
+  }
+  
+  return { isValid: true };
+};
+
+// Fungsi format file size
+const formatFileSize = (bytes: number): string => {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+};
+
 const TambahAtlit: React.FC = () => {
   const navigate = useNavigate();
   const { createAtlet } = useAtletContext();
@@ -149,9 +238,58 @@ const TambahAtlit: React.FC = () => {
     handleInputChange('kota', selectedOption?.value || '');
   };
 
-  const handleFileChange = (field: keyof AtletForm, file: File | null) => {
+  const [fileProcessing, setFileProcessing] = useState<Record<string, boolean>>({
+  akte_kelahiran: false,
+  pas_foto: false,
+  sertifikat_belt: false,
+  ktp: false
+});
+
+const [fileErrors, setFileErrors] = useState<Record<string, string>>({});
+
+const handleFileChange = async (field: keyof AtletForm, file: File | null) => {
+  if (!file) {
     setFormData((prev) => ({ ...prev, [field]: file }));
-  };
+    setFileErrors((prev) => ({ ...prev, [field]: '' }));
+    return;
+  }
+
+  setFileProcessing((prev) => ({ ...prev, [field]: true }));
+  setFileErrors((prev) => ({ ...prev, [field]: '' }));
+
+  try {
+    const allowPDF = field === 'sertifikat_belt';
+    const validation = validateFile(file, allowPDF);
+    
+    if (!validation.isValid) {
+      setFileErrors((prev) => ({ ...prev, [field]: validation.error || 'File tidak valid' }));
+      setFileProcessing((prev) => ({ ...prev, [field]: false }));
+      return;
+    }
+
+    let processedFile = file;
+
+    // Compress jika image
+    if (file.type.startsWith('image/')) {
+      try {
+        const maxSizeKB = field === 'pas_foto' ? 300 : 500;
+        processedFile = await compressImage(file, maxSizeKB);
+        toast.success(`File dikompres: ${formatFileSize(file.size)} → ${formatFileSize(processedFile.size)}`);
+      } catch (error) {
+        console.warn('Compression failed, using original');
+        processedFile = file;
+      }
+    }
+
+    setFormData((prev) => ({ ...prev, [field]: processedFile }));
+
+  } catch (error) {
+    setFileErrors((prev) => ({ ...prev, [field]: 'Gagal memproses file' }));
+    toast.error(`Gagal memproses ${field}`);
+  } finally {
+    setFileProcessing((prev) => ({ ...prev, [field]: false }));
+  }
+};
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -200,7 +338,7 @@ const TambahAtlit: React.FC = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
 
   if (!validateForm()) {
@@ -208,8 +346,27 @@ const TambahAtlit: React.FC = () => {
     return;
   }
 
-  if (!user?.pelatih?.id_pelatih || !user?.pelatih?.id_dojang) {
-    toast.error("Data pelatih tidak ditemukan, silakan login ulang");
+  // TAMBAH INI - Validasi file size sebelum submit
+  const fileFields = ['akte_kelahiran', 'pas_foto', 'sertifikat_belt', 'ktp'] as const;
+  const maxFileSize = 2 * 1024 * 1024; // 2MB
+
+  for (const field of fileFields) {
+    const file = formData[field] as File | null;
+    if (file && file.size > maxFileSize) {
+      toast.error(`${field} terlalu besar (${formatFileSize(file.size)}). Maksimal 2MB`);
+      return;
+    }
+  }
+
+  // Hitung total size
+  let totalSize = 0;
+  fileFields.forEach(field => {
+    const file = formData[field] as File | null;
+    if (file) totalSize += file.size;
+  });
+
+  if (totalSize > 8 * 1024 * 1024) { // 8MB total limit
+    toast.error(`Total file terlalu besar (${formatFileSize(totalSize)}). Maksimal 8MB`);
     return;
   }
 
@@ -292,23 +449,23 @@ const TambahAtlit: React.FC = () => {
       
       setTimeout(() => navigate("/dashboard/atlit", { state: { refresh: true } }), 1000);
     }
-  } catch (error: any) {
-    console.error("❌ Error creating athlete:", error);
-    
-    // Better error handling
-    if (error.message.includes('File size')) {
-      toast.error("File terlalu besar. Maksimal 5MB per file.");
-    } else if (error.message.includes('Invalid file')) {
-      toast.error("Format file tidak didukung. Gunakan JPG, PNG, atau PDF.");
-    } else if (error.message.includes('wajib diisi')) {
-      toast.error("Ada field wajib yang belum diisi: " + error.message);
-    } else {
-      toast.error(error.message || "Gagal menambahkan Atlet");
-    }
-  } finally {
-    setIsSubmitting(false);
+ } catch (error: any) {
+  console.error("❌ Error creating athlete:", error);
+  
+  if (error.status === 413 || error.message.includes('413') || error.message.includes('Payload Too Large')) {
+    toast.error("File terlalu besar untuk server. Coba kompres lebih kecil atau hubungi admin.");
+  } else if (error.message.includes('File size')) {
+    toast.error("File terlalu besar. Maksimal 2MB per file.");
+  } else if (error.message.includes('Invalid file')) {
+    toast.error("Format file tidak didukung. Gunakan JPG, PNG, atau PDF.");
+  } else if (error.message.includes('wajib diisi')) {
+    toast.error("Ada field wajib yang belum diisi: " + error.message);
+  } else {
+    toast.error(error.message || "Gagal menambahkan Atlet. Coba lagi atau hubungi admin.");
   }
-};
+} finally {
+  setIsSubmitting(false);
+}
 
   // Helper function to get select value for react-select
   const getSelectValue = (options: any[], value: string) => {
@@ -710,48 +867,164 @@ const TambahAtlit: React.FC = () => {
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label className="block font-plex font-medium text-black/70">Akte Kelahiran</label>
-                  <FileInput 
-                    accept="image/*"
-                    file={formData.akte_kelahiran} 
-                    className="border-red/20 bg-white/50 backdrop-blur-sm rounded-xl hover:border-red transition-all duration-300"
-                    onChange={(e) => handleFileChange('akte_kelahiran', e.target.files?.[0] || null)}
-                    disabled={isSubmitting}
-                  />
-                </div>
+  <label className="block font-plex font-medium text-black/70">Akte Kelahiran</label>
+  <div className="relative">
+    <FileInput 
+      accept="image/*"
+      file={formData.akte_kelahiran} 
+      className="border-red/20 bg-white/50 backdrop-blur-sm rounded-xl hover:border-red transition-all duration-300"
+      onChange={(e) => handleFileChange('akte_kelahiran', e.target.files?.[0] || null)}
+      disabled={isSubmitting || fileProcessing.akte_kelahiran}
+    />
+    
+    {fileProcessing.akte_kelahiran && (
+      <div className="absolute inset-0 bg-white/80 rounded-xl flex items-center justify-center">
+        <div className="flex items-center gap-2">
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red"></div>
+          <span className="text-sm text-red font-plex">Kompres...</span>
+        </div>
+      </div>
+    )}
+    
+    {fileErrors.akte_kelahiran && (
+      <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded-lg">
+        <p className="text-red-600 text-sm font-plex flex items-center gap-2">
+          <AlertCircle size={16} />
+          {fileErrors.akte_kelahiran}
+        </p>
+      </div>
+    )}
+    
+    {formData.akte_kelahiran && !fileErrors.akte_kelahiran && !fileProcessing.akte_kelahiran && (
+      <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-lg">
+        <p className="text-green-600 text-sm font-plex flex items-center gap-2">
+          <CheckCircle size={16} />
+          Siap upload ({formatFileSize(formData.akte_kelahiran.size)})
+        </p>
+      </div>
+    )}
+  </div>
+</div>
+                
+<div className="space-y-2">
+  <label className="block font-plex font-medium text-black/70">Pas Foto 3x4</label>
+  <div className="relative">
+    <FileInput 
+      accept="image/*" 
+      file={formData.pas_foto} 
+      className="border-red/20 bg-white/50 backdrop-blur-sm rounded-xl hover:border-red transition-all duration-300"
+      onChange={(e) => handleFileChange('pas_foto', e.target.files?.[0] || null)}
+      disabled={isSubmitting || fileProcessing.pas_foto}
+    />
+    
+    {fileProcessing.pas_foto && (
+      <div className="absolute inset-0 bg-white/80 rounded-xl flex items-center justify-center">
+        <div className="flex items-center gap-2">
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red"></div>
+          <span className="text-sm text-red font-plex">Kompres...</span>
+        </div>
+      </div>
+    )}
+    
+    {fileErrors.pas_foto && (
+      <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded-lg">
+        <p className="text-red-600 text-sm font-plex flex items-center gap-2">
+          <AlertCircle size={16} />
+          {fileErrors.pas_foto}
+        </p>
+      </div>
+    )}
+    
+    {formData.pas_foto && !fileErrors.pas_foto && !fileProcessing.pas_foto && (
+      <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-lg">
+        <p className="text-green-600 text-sm font-plex flex items-center gap-2">
+          <CheckCircle size={16} />
+          Siap upload ({formatFileSize(formData.pas_foto.size)})
+        </p>
+      </div>
+    )}
+  </div>
+</div>
                 
                 <div className="space-y-2">
-                  <label className="block font-plex font-medium text-black/70">Pas Foto 3x4</label>
-                  <FileInput 
-                    accept="image/*" 
-                    file={formData.pas_foto} 
-                    className="border-red/20 bg-white/50 backdrop-blur-sm rounded-xl hover:border-red transition-all duration-300"
-                    onChange={(e) => handleFileChange('pas_foto', e.target.files?.[0] || null)}
-                    disabled={isSubmitting}
-                  />
-                </div>
+  <label className="block font-plex font-medium text-black/70">Sertifikasi Belt</label>
+  <div className="relative">
+    <FileInput 
+      accept="image/*,application/pdf" 
+      file={formData.sertifikat_belt} 
+      className="border-red/20 bg-white/50 backdrop-blur-sm rounded-xl hover:border-red transition-all duration-300"
+      onChange={(e) => handleFileChange('sertifikat_belt', e.target.files?.[0] || null)}
+      disabled={isSubmitting || fileProcessing.sertifikat_belt}
+    />
+    
+    {fileProcessing.sertifikat_belt && (
+      <div className="absolute inset-0 bg-white/80 rounded-xl flex items-center justify-center">
+        <div className="flex items-center gap-2">
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red"></div>
+          <span className="text-sm text-red font-plex">Memproses...</span>
+        </div>
+      </div>
+    )}
+    
+    {fileErrors.sertifikat_belt && (
+      <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded-lg">
+        <p className="text-red-600 text-sm font-plex flex items-center gap-2">
+          <AlertCircle size={16} />
+          {fileErrors.sertifikat_belt}
+        </p>
+      </div>
+    )}
+    
+    {formData.sertifikat_belt && !fileErrors.sertifikat_belt && !fileProcessing.sertifikat_belt && (
+      <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-lg">
+        <p className="text-green-600 text-sm font-plex flex items-center gap-2">
+          <CheckCircle size={16} />
+          Siap upload ({formatFileSize(formData.sertifikat_belt.size)})
+        </p>
+      </div>
+    )}
+  </div>
+</div>
                 
                 <div className="space-y-2">
-                  <label className="block font-plex font-medium text-black/70">Sertifikasi Belt</label>
-                  <FileInput 
-                    accept="image/*,application/pdf" 
-                    file={formData.sertifikat_belt} 
-                    className="border-red/20 bg-white/50 backdrop-blur-sm rounded-xl hover:border-red transition-all duration-300"
-                    onChange={(e) => handleFileChange('sertifikat_belt', e.target.files?.[0] || null)}
-                    disabled={isSubmitting}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <label className="block font-plex font-medium text-black/70">KTP (Wajib untuk 17+)</label>
-                  <FileInput 
-                    accept="image/*"
-                    file={formData.ktp} 
-                    className="border-red/20 bg-white/50 backdrop-blur-sm rounded-xl hover:border-red transition-all duration-300"
-                    onChange={(e) => handleFileChange('ktp', e.target.files?.[0] || null)}
-                    disabled={isSubmitting}
-                  />
-                </div>
+  <label className="block font-plex font-medium text-black/70">KTP (Wajib untuk 17+)</label>
+  <div className="relative">
+    <FileInput 
+      accept="image/*"
+      file={formData.ktp} 
+      className="border-red/20 bg-white/50 backdrop-blur-sm rounded-xl hover:border-red transition-all duration-300"
+      onChange={(e) => handleFileChange('ktp', e.target.files?.[0] || null)}
+      disabled={isSubmitting || fileProcessing.ktp}
+    />
+    
+    {fileProcessing.ktp && (
+      <div className="absolute inset-0 bg-white/80 rounded-xl flex items-center justify-center">
+        <div className="flex items-center gap-2">
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red"></div>
+          <span className="text-sm text-red font-plex">Kompres...</span>
+        </div>
+      </div>
+    )}
+    
+    {fileErrors.ktp && (
+      <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded-lg">
+        <p className="text-red-600 text-sm font-plex flex items-center gap-2">
+          <AlertCircle size={16} />
+          {fileErrors.ktp}
+        </p>
+      </div>
+    )}
+    
+    {formData.ktp && !fileErrors.ktp && !fileProcessing.ktp && (
+      <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-lg">
+        <p className="text-green-600 text-sm font-plex flex items-center gap-2">
+          <CheckCircle size={16} />
+          Siap upload ({formatFileSize(formData.ktp.size)})
+        </p>
+      </div>
+    )}
+  </div>
+</div>
               </div>
             </div>
 
