@@ -421,11 +421,13 @@ const handleFileRemove = (field: keyof AtletWithFiles) => {
         value: provinsi,
         label: provinsi
       })).find(opt => opt.value === formData?.provinsi) || null}
-      onChange={handleProvinsiChange}
-      options={Object.keys(provinsiKotaData).map(provinsi => ({
-        value: provinsi,
-        label: provinsi
-      }))}
+      onChange={(selected) =>
+        setFormData({
+          ...formData,
+          provinsi: selected?.value || "",
+        })
+      }
+      options={provinsiOptions}
       placeholder="Pilih provinsi"
       classNames={{
         control: () =>
@@ -466,13 +468,17 @@ const handleFileRemove = (field: keyof AtletWithFiles) => {
             })).find((opt: { value: string; label: string }) => opt.value === formData.kota) || null 
           : null
       }
-        onChange={(selected) =>
-          setFormData({
-            ...formData,
-            provinsi: selected?.value || "",
-          })
-        }
-      options={provinsiOptions}
+      onChange={(selected: { value: string; label: string } | null) => 
+        handleInputChange('kota', selected?.value || '')
+      }
+      options={
+        formData?.provinsi 
+          ? provinsiKotaData[formData.provinsi]?.map((kota: string) => ({
+              value: kota, 
+              label: kota
+            })) || [] 
+          : []
+      }
       placeholder={formData?.provinsi ? "Pilih kota" : "Pilih provinsi dulu"}
       classNames={{
         control: () =>
