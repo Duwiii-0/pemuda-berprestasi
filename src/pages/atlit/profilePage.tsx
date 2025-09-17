@@ -39,7 +39,7 @@ const provinsiKotaData: Record<string, string[]> = {
   "Riau": ["Pekanbaru", "Dumai"],
   "Kepulauan Riau": ["Tanjung Pinang", "Batam"],
   "Jambi": ["Jambi", "Sungai Penuh"],
-  "Sumatera Selatan": ["Palembang", "Lubuklinggau", "Pagar Alam", "Prabumulih", "Muara Enim"],
+  "Sumatera Selatan": ["Palembang", "Lubuklinggau", "Pagar Alam", "Prabumulih", "Muara Enim", 'lahat'],
   "Bangka Belitung": ["Pangkal Pinang"],
   "Bengkulu": ["Bengkulu"],
   "Lampung": ["Lampung Barat", "Tanggamus", "Lampung Selatan", "Lampung Timur", "Lampung Tengah", "Lampung Utara", "Way Kanan", "Pesawaran", "Pringsewu", 'Mesuji', 'Tulang Bawang Barat', 'Pesisir Barat', 'Bandar Lampung', 'Metro'  ],
