@@ -73,6 +73,10 @@ const provinsiKotaData: Record<string, string[]> = {
   "Papua Barat Daya": ["Sorong"]
 };
 
+const provinsiOptions = Object.keys(provinsiKotaData).map(provinsi => ({
+  value: provinsi,
+  label: provinsi
+}));
 
 
 function toInputDateFormat(dateStr: string): string {
@@ -462,17 +466,13 @@ const handleFileRemove = (field: keyof AtletWithFiles) => {
             })).find((opt: { value: string; label: string }) => opt.value === formData.kota) || null 
           : null
       }
-      onChange={(selected: { value: string; label: string } | null) => 
-        handleInputChange('kota', selected?.value || '')
-      }
-      options={
-        formData?.provinsi 
-          ? provinsiKotaData[formData.provinsi]?.map((kota: string) => ({
-              value: kota, 
-              label: kota
-            })) || [] 
-          : []
-      }
+        onChange={(selected) =>
+          setFormData({
+            ...formData,
+            provinsi: selected?.value || "",
+          })
+        }
+      options={provinsiOptions}
       placeholder={formData?.provinsi ? "Pilih kota" : "Pilih provinsi dulu"}
       classNames={{
         control: () =>
@@ -489,6 +489,36 @@ const handleFileRemove = (field: keyof AtletWithFiles) => {
           ].join(" "),
       }}
     />
+
+    <Select
+                          unstyled
+                          menuPortalTarget={document.body}
+                          styles={{
+                            menuPortal: base => ({ ...base, zIndex: 50 })
+                          }}
+                          isDisabled={isSubmitting}
+                          value={getSelectValue(provinsiOptions, formData.provinsi)}
+                          onChange={handleProvinsiChange}
+                          placeholder="Pilih provinsi"
+                          classNames={{
+                            control: () =>
+                              `flex items-center border-2 ${
+                                !isSubmitting 
+                                  ? 'border-red/20 hover:border-red/40 focus-within:border-red bg-white/80' 
+                                  : 'border-gray-200 bg-gray-50'
+                              } rounded-xl px-4 py-3 gap-3 backdrop-blur-sm transition-all duration-300 hover:shadow-lg`,
+                            valueContainer: () => "px-1",
+                            placeholder: () => "text-gray-400 font-plex text-sm",
+                            menu: () => "border border-red/20 bg-white/95 backdrop-blur-sm rounded-xl shadow-xl mt-2 overflow-hidden z-50",
+                            menuList: () => "max-h-32 overflow-y-auto",
+                            option: ({ isFocused, isSelected }) =>
+                              [
+                                "px-4 py-3 cursor-pointer font-plex text-sm transition-colors duration-200 hover:text-red",
+                                isFocused ? "bg-red/10 text-red" : "text-black/80",
+                                isSelected ? "bg-red text-white" : ""
+                              ].join(" "),
+                          }}
+                        />
     {!isEditing && <div className="absolute inset-0 bg-gray-100/50 rounded-xl z-50" />}
   </div>
 </div>
