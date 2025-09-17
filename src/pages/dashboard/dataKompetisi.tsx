@@ -187,7 +187,6 @@ const handleEditParticipant = (participant: any) => {
   // Check participant status - only allow editing for PENDING and REJECTED
   if (participant.status === 'APPROVED') {
     toast.error("Peserta yang sudah disetujui tidak dapat diubah kelasnya. Hubungi admin jika diperlukan perubahan.");
-    return;
   }
 
   // Check competition status
@@ -968,8 +967,6 @@ const handleEditSuccess = () => {
         </div>
 
         {/* Action buttons untuk mobile */}
-        // Ganti bagian action buttons untuk mobile di DataKompetisi.tsx
-
 {/* Action buttons untuk mobile */}
 <div className="flex justify-end gap-3 pt-3 border-t border-gray-100">
   <button 
@@ -980,11 +977,8 @@ const handleEditSuccess = () => {
     }`}
     onClick={(e) => {
       e.stopPropagation();
-      if (peserta.status !== 'APPROVED') {
         handleEditParticipant(peserta); // ✅ FIXED: Gunakan function yang sudah ada
-      }
     }}
-    disabled={peserta.status === 'APPROVED'}
     title={
       peserta.status === 'APPROVED' 
         ? "Peserta sudah disetujui, tidak dapat diedit" 

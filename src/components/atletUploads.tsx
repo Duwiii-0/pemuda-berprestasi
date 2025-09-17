@@ -366,10 +366,10 @@ export const AtletDocumentUploader: React.FC<AtletDocumentUploaderProps> = ({
     },
     {
       key: 'ktp' as keyof AtletWithFiles,
-      label: 'KTP',
+      label: 'KK',
       accept: 'image/*',
       required: false,
-      description: 'Foto KTP (wajib untuk atlet 17+ tahun)'
+      description: 'Foto KK/KTP (wajib untuk atlet 17+ tahun)'
     }
   ];
 
