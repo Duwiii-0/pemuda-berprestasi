@@ -30,7 +30,7 @@ interface AtletForm {
 }
 
 // Data provinsi dan kota - integrated from RegisterDojang
-const provinsiKotaData = {
+const provinsiKotaData: Record<string, string[]> = {
   "Aceh": ["Banda Aceh", "Langsa", "Lhokseumawe", "Meulaboh", "Sabang", "Subulussalam"],
   "Sumatera Utara": ["Medan", "Binjai", "Gunungsitoli", "Padang Sidempuan", "Pematangsiantar", "Sibolga", "Tanjungbalai", "Tebing Tinggi"],
   "Sumatera Barat": ["Padang", "Bukittinggi", "Padang Panjang", "Pariaman", "Payakumbuh", "Sawahlunto", "Solok"],
@@ -194,10 +194,12 @@ const TambahAtlit: React.FC = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Get city options based on selected province
-  const kotaOptions = formData.provinsi ? provinsiKotaData[formData.provinsi]?.map(kota => ({
-    value: kota,
-    label: kota
-  })) || [] : [];
+  const kotaOptions = formData.provinsi
+    ? provinsiKotaData[formData.provinsi]?.map((kota: string) => ({
+        value: kota,
+        label: kota
+      })) || []
+    : [];
 
   // Handle window resize for responsive sidebar
   useEffect(() => {
@@ -379,8 +381,8 @@ const handleSubmit = async (e: React.FormEvent) => {
     formDataSend.append("nama_atlet", formData.name.trim());
     formDataSend.append("jenis_kelamin", formData.gender);
     formDataSend.append("tanggal_lahir", formData.tanggal_lahir);
-    formDataSend.append("id_dojang", String(user.pelatih.id_dojang));
-    formDataSend.append("id_pelatih_pembuat", String(user?.pelatih?.id_pelatih));
+    formDataSend.append("id_dojang", String(user?.pelatih?.id_dojang ?? ""));
+    formDataSend.append("id_pelatih_pembuat", String(user?.pelatih?.id_pelatih ?? ""));
 
     // ADDITIONAL FIELDS
     if (formData.belt) formDataSend.append("belt", formData.belt);
@@ -392,14 +394,14 @@ const handleSubmit = async (e: React.FormEvent) => {
     
     // NUMERIC FIELDS - PENTING: Convert ke string dengan validation
     if (formData.bb) {
-      const weight = parseFloat(formData.bb);
+      const weight = parseFloat(formData.bb as string);
       if (!isNaN(weight) && weight > 0) {
         formDataSend.append("berat_badan", String(weight));
       }
     }
     
     if (formData.tb) {
-      const height = parseFloat(formData.tb);
+      const height = parseFloat(formData.tb as string);
       if (!isNaN(height) && height > 0) {
         formDataSend.append("tinggi_badan", String(height));
       }
@@ -1076,6 +1078,7 @@ const handleSubmit = async (e: React.FormEvent) => {
       )}
     </div>
   );
+}
 };
 
 export default TambahAtlit;
