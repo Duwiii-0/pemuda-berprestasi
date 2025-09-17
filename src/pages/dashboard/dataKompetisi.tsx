@@ -209,10 +209,12 @@ const handleEditParticipant = (participant: any) => {
     }
   }
 
-  setEditModal({
-    isOpen: true,
-    participant
-  });
+  if (participant.status !== 'APPROVED') {
+    setEditModal({
+      isOpen: true,
+      participant
+    });
+  }
 };
 
 const handleCloseEditModal = () => {
