@@ -165,7 +165,7 @@ const formatFileSize = (bytes: number): string => {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 };
 
-const TambahAtlit: React.FC = () => {
+const TambahAtlit = () => {
   const navigate = useNavigate();
   const { createAtlet } = useAtletContext();
   const { user } = useAuth();
@@ -468,7 +468,7 @@ const handleSubmit = async (e: React.FormEvent) => {
 } finally {
   setIsSubmitting(false);
 }
-
+};
   // Helper function to get select value for react-select
   const getSelectValue = (options: any[], value: string) => {
     return options.find(option => option.value === value) || null;
@@ -1078,7 +1078,6 @@ const handleSubmit = async (e: React.FormEvent) => {
       )}
     </div>
   );
-}
-};
+}; // <- Hapus kurung kurawal extra di sini
 
 export default TambahAtlit;
