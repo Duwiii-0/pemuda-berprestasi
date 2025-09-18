@@ -15,17 +15,17 @@ interface OptionType {
 }
 
 // Data provinsi dan kota
-const provinsiKotaData: { [key: string]: string[] } = {
+const provinsiKotaData: Record<string, string[]> = {
   "Aceh": ["Banda Aceh", "Langsa", "Lhokseumawe", "Meulaboh", "Sabang", "Subulussalam"],
   "Sumatera Utara": ["Medan", "Binjai", "Gunungsitoli", "Padang Sidempuan", "Pematangsiantar", "Sibolga", "Tanjungbalai", "Tebing Tinggi"],
   "Sumatera Barat": ["Padang", "Bukittinggi", "Padang Panjang", "Pariaman", "Payakumbuh", "Sawahlunto", "Solok"],
   "Riau": ["Pekanbaru", "Dumai"],
   "Kepulauan Riau": ["Tanjung Pinang", "Batam"],
-  "Jambi": ["Jambi", "Sungai Penuh", "Merangin"],
-  "Sumatera Selatan": ["Palembang", "Lubuklinggau", "Pagar Alam", "Prabumulih", "Muara Enim"],
+  "Jambi": ["Jambi", "Sungai Penuh"],
+  "Sumatera Selatan": ["Palembang", "Lubuklinggau", "Pagar Alam", "Prabumulih", "Muara Enim", 'Lahat'],
   "Bangka Belitung": ["Pangkal Pinang"],
   "Bengkulu": ["Bengkulu"],
-  "Lampung": ["Bandar Lampung", "Metro"],
+  "Lampung": ["Lampung Barat", "Tanggamus", "Lampung Selatan", "Lampung Timur", "Lampung Tengah", "Lampung Utara", "Way Kanan", "Pesawaran", "Pringsewu", 'Mesuji', 'Tulang Bawang Barat', 'Pesisir Barat', 'Bandar Lampung', 'Metro'  ],
   "DKI Jakarta": ["Jakarta Pusat", "Jakarta Utara", "Jakarta Barat", "Jakarta Selatan", "Jakarta Timur", "Kepulauan Seribu"],
   "Jawa Barat": ["Bandung", "Bekasi", "Bogor", "Cimahi", "Cirebon", "Depok", "Sukabumi", "Tasikmalaya", "Banjar"],
   "Banten": ["Serang", "Tangerang", "Tangerang Selatan", "Cilegon"],
