@@ -25,7 +25,7 @@ interface CreateAtletData {
   nik: string;
   umur: number;
   belt: string;
-  tanggal_lahir: string;
+  tanggal_lahir: Date;
   berat_badan: number;
   tinggi_badan: number;
   jenis_kelamin: JenisKelamin;
@@ -57,17 +57,17 @@ interface AtletFilter {
   max_weight?: number;
 }
 
-export const calculateAge = (birthDate: string): number => {
-  if (!birthDate) return 0;
-  return new Date().getFullYear() - new Date(birthDate).getFullYear();
-};
+export function calculateAge(birthDate: Date): number {
+  const today = new Date();
+  return today.getFullYear() - birthDate.getFullYear();
+}
 
 export class AtletService {
   // Create new atlet
   static async createAtlet(data: CreateAtletData) {
     try {
       // Validate dojang exists
-      const age = calculateAge(data.tanggal_lahir);
+      const age = calculateAge(new Date(data.tanggal_lahir));
       const bener_id_dojang = Number(data.id_dojang);
       const id_pelatih = Number(data.id_pelatih_pembuat);
 
@@ -282,7 +282,7 @@ export class AtletService {
         throw new Error('Atlet tidak ditemukan');
       }
       
-      const age = calculateAge(atlet.tanggal_lahir);
+      const age = calculateAge(new Date(atlet.tanggal_lahir));
 
       return {
         ...atlet,
@@ -331,7 +331,7 @@ export class AtletService {
 
       // Validate age if birth date is being updated
       if (updateData.tanggal_lahir) {
-        updateData.umur = calculateAge(updateData.tanggal_lahir);
+        updateData.umur = calculateAge(new Date(updateData.tanggal_lahir));
       }
 
 
@@ -559,7 +559,7 @@ static async getEligible(
       };
 
       allAtlet.forEach(atlet => {
-        const age = calculateAge(atlet.tanggal_lahir);
+        const age = calculateAge(new Date(atlet.tanggal_lahir));
         if (age >= 5 && age <= 8) ageGroups['5-8']++;
         else if (age >= 9 && age <= 12) ageGroups['9-12']++;
         else if (age >= 13 && age <= 16) ageGroups['13-16']++;
