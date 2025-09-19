@@ -282,7 +282,7 @@ export class AtletService {
         throw new Error('Atlet tidak ditemukan');
       }
       
-      const age = calculateAge(new Date(atlet.tanggal_lahir));
+      const age = calculateAge(atlet.tanggal_lahir);
 
       return {
         ...atlet,
@@ -331,7 +331,7 @@ export class AtletService {
 
       // Validate age if birth date is being updated
       if (updateData.tanggal_lahir) {
-        updateData.umur = calculateAge(new Date(updateData.tanggal_lahir));
+        updateData.umur = calculateAge(updateData.tanggal_lahir);
       }
 
 
@@ -559,7 +559,7 @@ static async getEligible(
       };
 
       allAtlet.forEach(atlet => {
-        const age = calculateAge(new Date(atlet.tanggal_lahir));
+        const age = calculateAge(atlet.tanggal_lahir);
         if (age >= 5 && age <= 8) ageGroups['5-8']++;
         else if (age >= 9 && age <= 12) ageGroups['9-12']++;
         else if (age >= 13 && age <= 16) ageGroups['13-16']++;
