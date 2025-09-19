@@ -57,15 +57,10 @@ interface AtletFilter {
   max_weight?: number;
 }
 
-export function calculateAge(birthDate: Date): number {
-  const today = new Date();
-  let age = today.getFullYear() - birthDate.getFullYear();
-  const m = today.getMonth() - birthDate.getMonth();
-  if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-    age--;
-  }
-  return age;
-}
+export const calculateAge = (birthDate: Date): number => {
+  if (!birthDate) return 0;
+  return new Date().getFullYear() - new Date(birthDate).getFullYear();
+};
 
 export class AtletService {
   // Create new atlet
