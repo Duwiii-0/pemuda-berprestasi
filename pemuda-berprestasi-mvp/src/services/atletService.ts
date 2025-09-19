@@ -25,7 +25,7 @@ interface CreateAtletData {
   nik: string;
   umur: number;
   belt: string;
-  tanggal_lahir: Date;
+  tanggal_lahir: string;
   berat_badan: number;
   tinggi_badan: number;
   jenis_kelamin: JenisKelamin;
@@ -57,7 +57,7 @@ interface AtletFilter {
   max_weight?: number;
 }
 
-export const calculateAge = (birthDate: Date): number => {
+export const calculateAge = (birthDate: string): number => {
   if (!birthDate) return 0;
   return new Date().getFullYear() - new Date(birthDate).getFullYear();
 };
@@ -67,7 +67,7 @@ export class AtletService {
   static async createAtlet(data: CreateAtletData) {
     try {
       // Validate dojang exists
-      const age = calculateAge(new Date(data.tanggal_lahir));
+      const age = calculateAge(data.tanggal_lahir);
       const bener_id_dojang = Number(data.id_dojang);
       const id_pelatih = Number(data.id_pelatih_pembuat);
 
