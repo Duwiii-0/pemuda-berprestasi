@@ -207,10 +207,7 @@ export class AtletService {
       const atletWithAge = atletList.map(atlet => {
         const today = new Date();
         const birthDate = new Date(atlet.tanggal_lahir);
-        const age = today.getFullYear() - birthDate.getFullYear() - 
-                    (today.getMonth() < birthDate.getMonth() || 
-                     (today.getMonth() === birthDate.getMonth() && today.getDate() < birthDate.getDate()) ? 1 : 0);
-
+        const age = calculateAge(birthDate);
         return {
           ...atlet,
           age
@@ -432,9 +429,8 @@ export class AtletService {
       const atletWithAge = atletList.map(atlet => {
         const today = new Date();
         const birthDate = new Date(atlet.tanggal_lahir);
-        const age = today.getFullYear() - birthDate.getFullYear() - 
-                    (today.getMonth() < birthDate.getMonth() || 
-                     (today.getMonth() === birthDate.getMonth() && today.getDate() < birthDate.getDate()) ? 1 : 0);
+        const age = calculateAge(birthDate);
+
 
         return {
           ...atlet,
