@@ -337,9 +337,11 @@ const fetchDojang = async () => {
     });
     
     // Set logo preview dari existing data
-    if (dojangData.logo_url) {
-      setLogoPreview(dojangData.logo_url);
-    }
+if (dojangData.logo) {
+  setLogoPreview(`/uploads/${dojangData.logo}`);
+} else if (dojangData.logo_url) {
+  setLogoPreview(dojangData.logo_url);
+}
     
   } catch (err: any) {
     console.error('❌ Error fetching dojang:', err);
