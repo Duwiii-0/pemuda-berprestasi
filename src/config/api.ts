@@ -1,5 +1,5 @@
 // API Client menggunakan fetch native
-const API_BASE_URL = 'https://pemudaberprestasi.com/api';
+const API_BASE_URL = 'https://cjvmanagementevent.com/api';
 
 interface ApiResponse<T = any> {
   data: T;
