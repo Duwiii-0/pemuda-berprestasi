@@ -223,7 +223,7 @@ const NavbarDashboard: React.FC<NavbarProps> = ({ mobile = false, onClose }) => 
           {/* Copyright */}
           <div className="text-center pt-2">
             <p className="text-xs" style={{ color: '#6B7280', fontFamily: 'IBM Plex Sans, sans-serif' }}>
-              © 2025 Pemuda Berprestasi
+              © 2025 CJV Management
             </p>
           </div>
         </div>

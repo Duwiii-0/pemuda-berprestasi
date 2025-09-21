@@ -111,7 +111,7 @@ const NavbarLanding = ({ onLogoutRequest }: { onLogoutRequest: () => void }) => 
                 window.scrollTo({ top: 0, behavior: "smooth" });
               }}
             >
-              pemuda berprestasi
+              CJV Management
             </Link>
 
             {/* Desktop Navigation */}
