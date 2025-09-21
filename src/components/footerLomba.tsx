@@ -29,7 +29,7 @@ const Footer = () => {
           {/* Enhanced Navigation */}
           <nav className="flex gap-8 mt-6 md:mt-0 font-plex">
             <Link
-              to="/lomba/home"
+              to="/event/home"
               onClick={() => {
                 window.scrollTo({ top: 0, behavior: "smooth" });
               }}
@@ -39,7 +39,7 @@ const Footer = () => {
               <div className="absolute bottom-0 left-0 w-0 group-hover:w-full h-0.5 bg-white/60 transition-all duration-300"></div>
             </Link>
             <Link
-              to="/lomba/timeline"
+              to="/event/timeline"
               onClick={() => {
                 window.scrollTo({ top: 0, behavior: "smooth" });
               }}
@@ -49,7 +49,7 @@ const Footer = () => {
               <div className="absolute bottom-0 left-0 w-0 group-hover:w-full h-0.5 bg-white/60 transition-all duration-300"></div>
             </Link>
             <Link
-              to="/lomba/faq"
+              to="/event/faq"
               onClick={() => {
                 window.scrollTo({ top: 0, behavior: "smooth" });
               }}

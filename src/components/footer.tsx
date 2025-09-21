@@ -34,7 +34,7 @@ const Footer = () => {
               <div className="absolute bottom-0 left-0 w-0 group-hover:w-full h-0.5 bg-white/60 transition-all duration-300"></div>
             </a>
             <a
-              href="/event"
+              href="/events"
               className="group relative px-1 py-2 hover:text-white/90 transition-all duration-300"
             >
               <span className="relative z-10">Event</span>
