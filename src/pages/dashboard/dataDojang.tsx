@@ -338,7 +338,7 @@ const fetchDojang = async () => {
     
     // Set logo preview dari existing data
 if (dojangData.logo) {
-  setLogoPreview(`/uploads/${dojangData.logo}`);
+  setLogoPreview(`/uploads/dojang/logos/${dojangData.logo}`);
 } else if (dojangData.logo_url) {
   setLogoPreview(dojangData.logo_url);
 }
@@ -498,11 +498,14 @@ const handleUpdate = async () => {
       alamat: updatedData.alamat || "",
     });
 
-    // Update logo preview
-    if (updatedData.logo_url) {
-      setLogoPreview(updatedData.logo_url);
-      console.log('📷 Updated logo URL:', updatedData.logo_url);
-    }
+if (updatedData.logo) {
+  setLogoPreview(`/uploads/dojang/logos/${updatedData.logo}`);
+  console.log('📷 Updated logo URL:', `/uploads/dojang/logos/${updatedData.logo}`);
+} else if (updatedData.logo_url) {
+  setLogoPreview(updatedData.logo_url);
+  console.log('📷 Updated logo URL:', updatedData.logo_url);
+}
+
     
     setLogoFile(null);
     setIsEditing(false);
