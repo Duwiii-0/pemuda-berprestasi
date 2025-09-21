@@ -127,7 +127,7 @@ const AtletFilePreview: React.FC<FilePreviewProps> = ({
     }
     
     try {
-      const baseUrl = 'https://pemudaberprestasi.com';
+      const baseUrl = 'https://cjvmanagementevent.com';
       
       // Handle both old format (with subfolder) and new format (filename only)
       let downloadUrl;
@@ -176,7 +176,7 @@ const AtletFilePreview: React.FC<FilePreviewProps> = ({
     if (file && previewUrl) return previewUrl;
     
     if (existingPath) {
-      const baseUrl = 'https://pemudaberprestasi.com';
+      const baseUrl = 'https://cjvmanagementevent.com';
       
       // Handle both old format (with subfolder) and new format (filename only)
       let staticUrl;

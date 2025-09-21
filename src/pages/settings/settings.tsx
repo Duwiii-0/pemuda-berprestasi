@@ -103,7 +103,7 @@ const getDisplayFileName = () => {
   }
   
   try {
-    const baseUrl = 'https://pemudaberprestasi.com';
+    const baseUrl = 'https://cjvmanagementevent.com';
     const downloadUrl = `${baseUrl}/uploads/pelatih/${existingPath}`;
     
     const testResponse = await fetch(downloadUrl, { method: 'HEAD' });
@@ -132,7 +132,7 @@ const getPreviewUrl = () => {
   if (file && previewUrl) return previewUrl;
   
   if (existingPath && typeof existingPath === 'string' && !existingPath.includes('[object Object]')) {
-    const baseUrl = 'https://pemudaberprestasi.com';
+    const baseUrl = 'https://cjvmanagementevent.com';
     const staticUrl = `${baseUrl}/uploads/pelatih/${existingPath}`;
     return staticUrl;
   }
@@ -503,7 +503,7 @@ const getSelectValue = (options: SelectOption[], value: string) => {
       await logout();
       
       // Redirect to reset password page
-      window.location.href = 'https://pemudaberprestasi.com/resetpassword';
+      window.location.href = 'https://cjvmanagementevent.com/resetpassword';
     } catch (error) {
       console.error('Logout error:', error);
       toast.error('Gagal logout. Silakan coba lagi.');
