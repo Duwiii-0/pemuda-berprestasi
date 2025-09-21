@@ -309,7 +309,7 @@ const fetchDojang = async () => {
     console.log('📋 Raw API Response:', response);
     
     // PERBAIKAN: Response langsung adalah data dojang, bukan nested
-    const dojangData = response as any; // Direct response is the dojang data
+    const dojangData = response.data || response;
     console.log('📊 Dojang data:', dojangData);
     
     // PERBAIKAN: Validate dojang data
