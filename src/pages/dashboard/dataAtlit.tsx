@@ -66,24 +66,29 @@ const DataAtlit = () => {
       }
 
       console.log("Fetching athletes for dojang:", id_dojang);
-      const response = await apiClient.get(`/atlet/dojang/${id_dojang}`);
+const response = await apiClient.get(`/atlet/dojang/${id_dojang}`);
 
-      console.log("API Response:", {
-        success: response.success,
-        dataType: typeof response.data,
-        dataLength: Array.isArray(response.data) ? response.data.length : 'not array',
-        pagination: response.pagination
-      });
+console.log("API Response:", response);
 
-      // Handle response properly based on backend structure
-      if (response.success && response.data) {
-        const atletData = Array.isArray(response.data) ? response.data : [];
-        setAtlits(atletData);
-        console.log(`Successfully loaded ${atletData.length} athletes`);
-      } else {
-        console.warn("Unexpected response structure:", response);
-        setAtlits([]);
-      }
+// Handle multiple possible response structures
+let atletData = [];
+
+if (response.success && response.data) {
+  // Structure: { success: true, data: [...] }
+  atletData = Array.isArray(response.data) ? response.data : [];
+} else if (Array.isArray(response.data)) {
+  // Structure: { data: [...] }
+  atletData = response.data;
+} else if (Array.isArray(response)) {
+  // Structure: [...] (direct array)
+  atletData = response;
+} else {
+  // Fallback: empty array
+  atletData = [];
+}
+
+setAtlits(atletData);
+console.log(`Successfully loaded ${atletData.length} athletes`);
     } catch (err) {
       console.error("Error fetching athletes:", err);
       setAtlits([]);
