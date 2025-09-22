@@ -103,6 +103,7 @@ useEffect(() => {
         
         const dataWithFiles: AtletWithFiles = {
   ...data,
+  // PERBAIKAN: Langsung pakai nama file dengan path yang benar
   akte_kelahiran_path: data.akte_kelahiran 
     ? `/uploads/atlet/akte_kelahiran/${data.akte_kelahiran}` 
     : undefined,
@@ -115,7 +116,7 @@ useEffect(() => {
   ktp_path: data.ktp 
     ? `/uploads/atlet/ktp/${data.ktp}` 
     : undefined,
-  // Initialize File objects as null
+  // File objects null
   akte_kelahiran: null,
   pas_foto: null,
   sertifikat_belt: null,
@@ -216,7 +217,7 @@ console.log("📋 Update result keys:", Object.keys(result || {}));
   ktp_path: updatedAtlet.ktp 
     ? `/uploads/atlet/ktp/${updatedAtlet.ktp}` 
     : undefined,
-  // File objects tetap null setelah save
+  // Reset file objects to null after save
   akte_kelahiran: null,
   pas_foto: null,
   sertifikat_belt: null,
