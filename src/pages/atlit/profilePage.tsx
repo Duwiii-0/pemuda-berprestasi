@@ -185,7 +185,11 @@ const handleUpdate = async () => {
 
 
     // FIX: Use updateAtlet and assign to result variable
-    const result = await updateAtlet(Number(id), formDataSend);
+const result = await updateAtlet(Number(id), formDataSend);
+
+console.log("📋 Update result:", result);
+console.log("📋 Update result type:", typeof result);
+console.log("📋 Update result keys:", Object.keys(result || {}));
     
     if (result) {
       // Use the response data directly instead of fetching again
