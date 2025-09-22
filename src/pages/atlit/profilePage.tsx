@@ -102,26 +102,18 @@ useEffect(() => {
         console.log("📋 RAW ATLET DATA:", data);
         
         const dataWithFiles: AtletWithFiles = {
-  ...data,
-  // PERBAIKAN: Langsung pakai nama file dengan path yang benar
-  akte_kelahiran_path: data.akte_kelahiran 
-    ? `/uploads/atlet/akte_kelahiran/${data.akte_kelahiran}` 
-    : undefined,
-  pas_foto_path: data.pas_foto 
-    ? `/uploads/atlet/pas_foto/${data.pas_foto}` 
-    : undefined,
-  sertifikat_belt_path: data.sertifikat_belt 
-    ? `/uploads/atlet/sertifikat_belt/${data.sertifikat_belt}` 
-    : undefined,
-  ktp_path: data.ktp 
-    ? `/uploads/atlet/ktp/${data.ktp}` 
-    : undefined,
-  // File objects null
-  akte_kelahiran: null,
-  pas_foto: null,
-  sertifikat_belt: null,
-  ktp: null,
-};
+          ...data,
+          // PERBAIKAN: Map existing file paths dengan benar
+          akte_kelahiran_path: data.akte_kelahiran || undefined,
+          pas_foto_path: data.pas_foto || undefined,             
+          sertifikat_belt_path: data.sertifikat_belt || undefined,
+          ktp_path: data.ktp || undefined,
+          // Initialize File objects as null
+          akte_kelahiran: null,
+          pas_foto: null,
+          sertifikat_belt: null,
+          ktp: null,
+        };
         setFormData(dataWithFiles);
         setOriginalData(dataWithFiles);
       }
@@ -193,36 +185,23 @@ const handleUpdate = async () => {
 
 
     // FIX: Use updateAtlet and assign to result variable
-const result = await updateAtlet(Number(id), formDataSend);
-
-console.log("📋 Update result:", result);
-console.log("📋 Update result type:", typeof result);
-console.log("📋 Update result keys:", Object.keys(result || {}));
+    const result = await updateAtlet(Number(id), formDataSend);
     
     if (result) {
       // Use the response data directly instead of fetching again
       const updatedAtlet = result; // This is the fresh data from the server
         
       const updatedData: AtletWithFiles = {
-  ...updatedAtlet,
-  akte_kelahiran_path: updatedAtlet.akte_kelahiran 
-    ? `/uploads/atlet/akte_kelahiran/${updatedAtlet.akte_kelahiran}` 
-    : undefined,
-  pas_foto_path: updatedAtlet.pas_foto 
-    ? `/uploads/atlet/pas_foto/${updatedAtlet.pas_foto}` 
-    : undefined,
-  sertifikat_belt_path: updatedAtlet.sertifikat_belt 
-    ? `/uploads/atlet/sertifikat_belt/${updatedAtlet.sertifikat_belt}` 
-    : undefined,
-  ktp_path: updatedAtlet.ktp 
-    ? `/uploads/atlet/ktp/${updatedAtlet.ktp}` 
-    : undefined,
-  // Reset file objects to null after save
-  akte_kelahiran: null,
-  pas_foto: null,
-  sertifikat_belt: null,
-  ktp: null,
-};
+        ...updatedAtlet,
+        akte_kelahiran_path: updatedAtlet.akte_kelahiran || undefined,
+        pas_foto_path: updatedAtlet.pas_foto || undefined,
+        sertifikat_belt_path: updatedAtlet.sertifikat_belt || undefined,
+        ktp_path: updatedAtlet.ktp || undefined,
+        akte_kelahiran: null,
+        pas_foto: null,
+        sertifikat_belt: null,
+        ktp: null,
+      };
       
       setFormData(updatedData);
       setOriginalData(updatedData);
