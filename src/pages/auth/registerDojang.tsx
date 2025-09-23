@@ -302,17 +302,36 @@ const handleRegister = async () => {
     const response = await apiClient.postFormData("/dojang", formData);
     
     console.log('✅ Registration response:', response);
-    toast.success("Registrasi dojang berhasil! Silahkan login.");
+    
+    // ✅ PERBAIKAN: Handle response format yang sama seperti di Dojang component
+    let responseData;
+    if (response && response.data) {
+      responseData = response.data;
+      console.log('📊 Using response.data structure');
+    } else {
+      responseData = response;
+      console.log('📊 Using direct response');
+    }
+    
+    // ✅ PERBAIKAN: Validasi response data sebelum akses property
+    if (responseData && (responseData.nama_dojang || responseData.id_dojang)) {
+      console.log('✅ Valid registration response:', responseData);
+      toast.success("Registrasi dojang berhasil! Silahkan login.");
+    } else {
+      console.log('⚠️ Registration successful but unexpected response format:', responseData);
+      toast.success("Registrasi dojang berhasil! Silahkan login.");
+    }
+    
     resetForm();
 
   } catch (error: any) {
     console.error('❌ Registration error:', error);
     
-    // Error handling yang sesuai dengan API client yang diperbaiki
+    // ✅ PERBAIKAN: Error handling yang lebih robust
     if (error && typeof error === 'object') {
-      const status = error.status;
-      const errorData = error.data;
-      const errorMessage = error.message;
+      const status = error.status || error.response?.status;
+      const errorData = error.data || error.response?.data;
+      const errorMessage = error.message || error.response?.message;
       
       console.log('📡 Error status:', status);
       console.log('📡 Error data:', errorData);
@@ -355,7 +374,7 @@ const handleRegister = async () => {
       } else if (status && status >= 400) {
         toast.error(errorMessage || `Error ${status}`);
       } else {
-        // Kemungkinan network error atau error tanpa status
+        // Network error atau error tanpa status
         if (errorMessage && (errorMessage.includes('Network') || errorMessage.includes('Failed to fetch'))) {
           toast.error("Koneksi bermasalah. Periksa internet Anda.");
         } else {
@@ -370,6 +389,8 @@ const handleRegister = async () => {
         toast.error(error.message || "Registrasi gagal. Coba lagi.");
       }
     } else {
+      // Fallback untuk error format tidak dikenal
+      console.error('❌ Unexpected error format:', typeof error, error);
       toast.error("Terjadi kesalahan tidak terduga.");
     }
   } finally {
