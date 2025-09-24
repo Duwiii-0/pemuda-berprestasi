@@ -25,10 +25,29 @@ export class DojangController {
     }
   }
 
+// Tambahkan ini di DojangController.create untuk debugging
 static async create(req: Request, res: Response) {
   try {
-    console.log('📝 Create dojang request body:', req.body);
-    console.log('📎 Create dojang file:', req.file);
+    // 🔍 DEBUGGING: Log semua data yang masuk
+    console.log('=== DEBUGGING CREATE DOJANG ===');
+    console.log('📋 Headers:', req.headers);
+    console.log('📋 Content-Type:', req.headers['content-type']);
+    console.log('📋 Raw Body:', req.body);
+    console.log('📋 Body keys:', Object.keys(req.body));
+    console.log('📋 Body values:', Object.values(req.body));
+    console.log('📎 File info:', req.file);
+    console.log('📎 File exists:', !!req.file);
+    
+    // 🔍 DEBUGGING: Check individual fields
+    console.log('📝 Individual fields:');
+    console.log('  - nama_dojang:', req.body.nama_dojang, typeof req.body.nama_dojang);
+    console.log('  - email:', req.body.email, typeof req.body.email);
+    console.log('  - no_telp:', req.body.no_telp, typeof req.body.no_telp);
+    console.log('  - negara:', req.body.negara, typeof req.body.negara);
+    console.log('  - provinsi:', req.body.provinsi, typeof req.body.provinsi);
+    console.log('  - kota:', req.body.kota, typeof req.body.kota);
+    
+    console.log('================================');
     
     // Prepare data dengan logo jika ada file upload
     const createData = { ...req.body };
@@ -38,6 +57,8 @@ static async create(req: Request, res: Response) {
       createData.logo = req.file.filename;
       console.log('✅ Logo uploaded:', req.file.filename);
     }
+    
+    console.log('💾 Final createData:', createData);
     
     const dojang = await DojangService.createDojang(createData);
     
@@ -54,6 +75,7 @@ static async create(req: Request, res: Response) {
     });
   } catch (err: any) {
     console.error('❌ Create dojang error:', err.message);
+    console.error('❌ Full error:', err);
     res.status(400).json({ 
       success: false,
       message: err.message 

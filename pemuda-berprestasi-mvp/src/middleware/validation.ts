@@ -63,10 +63,40 @@ export const validateQuery = (schema: Joi.ObjectSchema) => {
 }
 
 
+// Update validateRequest function untuk handle FormData
 export const validateRequest = (schema: Joi.ObjectSchema, property: 'body' | 'query' | 'params' = 'body') => {
   return (req: Request, res: Response, next: NextFunction) => {
-    const { error } = schema.validate(req[property], { abortEarly: false });
+    // DEBUGGING: Log data yang masuk
+    console.log('🔍 Validation - Content-Type:', req.headers['content-type']);
+    console.log('🔍 Validation - Raw data:', req[property]);
+    console.log('🔍 Validation - Data keys:', Object.keys(req[property] || {}));
+    
+    // PERBAIKAN: Handle FormData - convert empty strings untuk optional fields
+    let dataToValidate = { ...req[property] };
+    
+    // Jika Content-Type adalah multipart/form-data, process empty strings
+    if (req.headers['content-type']?.includes('multipart/form-data')) {
+      console.log('📦 Processing FormData...');
+      
+      // Convert empty strings to null/undefined untuk optional fields
+      Object.keys(dataToValidate).forEach(key => {
+        if (dataToValidate[key] === '' || dataToValidate[key] === 'undefined') {
+          dataToValidate[key] = undefined;
+        }
+      });
+      
+      console.log('✅ Processed FormData:', dataToValidate);
+    }
+    
+    const { error } = schema.validate(dataToValidate, { 
+      abortEarly: false,
+      allowUnknown: true,    // Allow unknown fields
+      stripUnknown: false    // Don't remove unknown fields
+    });
+    
     if (error) {
+      console.log('❌ Validation failed:', error.details);
+      
       return res.status(400).json({
         success: false,
         message: 'Request validation error',
@@ -76,6 +106,8 @@ export const validateRequest = (schema: Joi.ObjectSchema, property: 'body' | 'qu
         }))
       });
     }
+    
+    console.log('✅ Validation passed');
     next();
   }
 }
