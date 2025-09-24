@@ -620,7 +620,8 @@ static async handleFileUpload(id_atlet: number, files: any): Promise<AtletFileIn
 }
 
   // Ambil info file yang sudah di-upload
-  static async getUploadedFiles(id_atlet: number): Promise<AtletFileInfo> {
+  // ✅ FIXED: getUploadedFiles method - hanya return filename saja
+static async getUploadedFiles(id_atlet: number): Promise<AtletFileInfo> {
   const atlet = await prisma.tb_atlet.findUnique({
     where: { id_atlet },
     select: {
@@ -635,24 +636,20 @@ static async handleFileUpload(id_atlet: number, files: any): Promise<AtletFileIn
     throw new Error('Atlet tidak ditemukan')
   }
 
-  const checkFile = (filePath: string | null, type: AtletFileType): FileInfo | null => {
-    if (!filePath) return null
+  const checkFile = (filename: string | null, type: AtletFileType): FileInfo | null => {
+    if (!filename) return null
     
-    // Jika path sudah include subfolder, gunakan langsung
-    // Jika belum, tambahkan subfolder (backward compatibility)
-    let fullPath = filePath
-    if (!filePath.includes('/')) {
-      const folder = ATLET_FOLDER_MAP[type]
-      fullPath = `${folder}/${filePath}`
-    }
+    // PERBAIKAN: Extract filename saja jika masih ada path
+    const actualFilename = filename.includes('/') ? filename.split('/').pop() || filename : filename
     
-    const [folder, filename] = fullPath.split('/')
-    const diskPath = path.join(process.cwd(), 'uploads', 'atlet', folder, filename)
+    // PERBAIKAN: Untuk check file existence, gunakan full path ke disk
+    const folder = ATLET_FOLDER_MAP[type]
+    const diskPath = path.join(process.cwd(), 'uploads', 'atlet', folder, actualFilename)
     const exists = fs.existsSync(diskPath)
     
     return {
-      filename: filename,
-      path: fullPath, // Return path with subfolder for frontend
+      filename: actualFilename, // ← HANYA FILENAME SAJA
+      path: `${folder}/${actualFilename}`, // ← PATH RELATIF UNTUK FRONTEND
       exists,
       uploadedAt: exists ? fs.statSync(diskPath).mtime : undefined
     }
