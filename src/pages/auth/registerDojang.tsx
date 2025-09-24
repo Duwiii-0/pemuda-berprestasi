@@ -298,12 +298,12 @@ const handleRegister = async () => {
 
     console.log('🚀 Sending request to /dojang...');
     
-    // Panggil API
+    // Panggil API dengan penanganan error yang lebih baik
     const response = await apiClient.postFormData("/dojang", formData);
     
     console.log('✅ Registration response:', response);
     
-    // ✅ PERBAIKAN: Handle response format yang sama seperti di Dojang component
+    // Handle response format yang sama seperti di Dojang component
     let responseData;
     if (response && response.data) {
       responseData = response.data;
@@ -313,7 +313,7 @@ const handleRegister = async () => {
       console.log('📊 Using direct response');
     }
     
-    // ✅ PERBAIKAN: Validasi response data sebelum akses property
+    // Validasi response data sebelum akses property
     if (responseData && (responseData.nama_dojang || responseData.id_dojang)) {
       console.log('✅ Valid registration response:', responseData);
       toast.success("Registrasi dojang berhasil! Silahkan login.");
@@ -324,18 +324,32 @@ const handleRegister = async () => {
     
     resetForm();
 
-  } catch (error: any) {
+  } catch (error) {
     console.error('❌ Registration error:', error);
     
-    // ✅ PERBAIKAN: Error handling yang lebih robust
-    if (error && typeof error === 'object') {
-      const status = error.status || error.response?.status;
-      const errorData = error.data || error.response?.data;
-      const errorMessage = error.message || error.response?.message;
+    // PERBAIKAN: Defensive error handling
+    try {
+      // Cek apakah error memiliki response dari API
+      let status = null;
+      let errorData = null;
+      let errorMessage = null;
       
-      console.log('📡 Error status:', status);
-      console.log('📡 Error data:', errorData);
-      console.log('📡 Error message:', errorMessage);
+      if (error?.response) {
+        // Axios-style error
+        status = error.response.status;
+        errorData = error.response.data;
+        errorMessage = error.response.data?.message || error.message;
+      } else if (error?.status) {
+        // Custom API client error
+        status = error.status;
+        errorData = error.data;
+        errorMessage = error.data?.message || error.message;
+      } else {
+        // Generic error
+        errorMessage = error?.message || 'Unknown error';
+      }
+      
+      console.log('📡 Parsed error - Status:', status, 'Data:', errorData, 'Message:', errorMessage);
       
       // Handle berdasarkan status code
       if (status === 400) {
@@ -356,13 +370,13 @@ const handleRegister = async () => {
           toast.error("Data tidak valid. Periksa kembali input Anda.");
         }
       } else if (status === 422) {
-        if (errorData && errorData.errors) {
+        if (errorData?.errors) {
           const errors = errorData.errors;
           const firstErrorKey = Object.keys(errors)[0];
           const firstError = errors[firstErrorKey];
           const errorMsg = Array.isArray(firstError) ? firstError[0] : firstError;
           toast.error(errorMsg || "Data tidak sesuai format yang diperlukan.");
-        } else if (errorData && errorData.message) {
+        } else if (errorData?.message) {
           toast.error(errorData.message);
         } else {
           toast.error("Data tidak sesuai format yang diperlukan.");
@@ -375,29 +389,20 @@ const handleRegister = async () => {
         toast.error(errorMessage || `Error ${status}`);
       } else {
         // Network error atau error tanpa status
-        if (errorMessage && (errorMessage.includes('Network') || errorMessage.includes('Failed to fetch'))) {
-          toast.error("Koneksi bermasalah. Periksa internet Anda.");
+        if (errorMessage && (errorMessage.includes('Network') || errorMessage.includes('Failed to fetch') || errorMessage.includes('Cannot read properties'))) {
+          toast.error("Koneksi bermasalah atau ada masalah dengan data. Coba lagi.");
         } else {
           toast.error(errorMessage || "Terjadi kesalahan tidak terduga.");
         }
       }
-    } else if (error instanceof Error) {
-      // Standard JavaScript Error
-      if (error.message.includes('Network') || error.message.includes('Failed to fetch')) {
-        toast.error("Koneksi bermasalah. Periksa internet Anda.");
-      } else {
-        toast.error(error.message || "Registrasi gagal. Coba lagi.");
-      }
-    } else {
-      // Fallback untuk error format tidak dikenal
-      console.error('❌ Unexpected error format:', typeof error, error);
+    } catch (parseError) {
+      console.error('❌ Error parsing error response:', parseError);
       toast.error("Terjadi kesalahan tidak terduga.");
     }
   } finally {
     setIsLoading(false);
   }
 };
-
   const handleSubmit = (e: React.FormEvent) => {
   e.preventDefault();
 
