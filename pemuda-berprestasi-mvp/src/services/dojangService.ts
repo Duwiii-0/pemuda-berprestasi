@@ -45,7 +45,7 @@ static async createDojang(data: CreateDojangData) {
 }
 
   // ===== GET ALL DOJANG =====
-  static async getAllDojang(page = 1, limit = 100, search?: string) {
+  static async getAllDojang(page = 1, limit = 1000, search?: string) {
     const skip = (page - 1) * limit;
     const where = search
       ? { nama_dojang: { contains: search, mode: 'insensitive' } }

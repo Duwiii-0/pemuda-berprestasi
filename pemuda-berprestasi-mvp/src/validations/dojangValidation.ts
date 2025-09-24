@@ -165,14 +165,14 @@ export const dojangValidation = {
     limit: Joi.number()
       .integer()
       .min(1)
-      .max(100)
-      .default(10)
+      .max(1000)
+      .default(1000)
       .optional()
       .messages({
         'number.base': 'Limit harus berupa angka',
         'number.integer': 'Limit harus berupa bilangan bulat',
         'number.min': 'Limit minimal 1',
-        'number.max': 'Limit maksimal 100'
+        'number.max': 'Limit maksimal 1000'
       }),
 
     search: Joi.string()
