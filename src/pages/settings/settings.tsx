@@ -96,7 +96,7 @@ const getDisplayFileName = () => {
   return label;
 };
 
-  const handleDownload = async () => {
+const handleDownload = async () => {
   if (!existingPath || typeof existingPath !== 'string' || existingPath.includes('[object Object]')) {
     toast.error('Path file tidak valid');
     return;
@@ -104,7 +104,14 @@ const getDisplayFileName = () => {
   
   try {
     const baseUrl = 'https://cjvmanagementevent.com';
-    const downloadUrl = `${baseUrl}/uploads/pelatih/${existingPath}`;
+    
+    // FIX: Clean path untuk avoid double path
+    let cleanPath = existingPath;
+    if (existingPath.startsWith('/uploads/pelatih/')) {
+      cleanPath = existingPath.replace('/uploads/pelatih/', '');
+    }
+    
+    const downloadUrl = `${baseUrl}/uploads/pelatih/${cleanPath}`;
     
     const testResponse = await fetch(downloadUrl, { method: 'HEAD' });
     if (!testResponse.ok) {
@@ -133,7 +140,14 @@ const getPreviewUrl = () => {
   
   if (existingPath && typeof existingPath === 'string' && !existingPath.includes('[object Object]')) {
     const baseUrl = 'https://cjvmanagementevent.com';
-    const staticUrl = `${baseUrl}/uploads/pelatih/${existingPath}`;
+    
+    // FIX: Clean path untuk avoid double path
+    let cleanPath = existingPath;
+    if (existingPath.startsWith('/uploads/pelatih/')) {
+      cleanPath = existingPath.replace('/uploads/pelatih/', '');
+    }
+    
+    const staticUrl = `${baseUrl}/uploads/pelatih/${cleanPath}`;
     return staticUrl;
   }
   
