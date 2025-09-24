@@ -120,88 +120,79 @@ const AtletFilePreview: React.FC<FilePreviewProps> = ({
   };
 
   // Handle download
-  const handleDownload = async () => {
-    if (!existingPath) {
-      toast.error('Tidak ada file untuk didownload');
+const handleDownload = async () => {
+  if (!existingPath) {
+    toast.error('Tidak ada file untuk didownload');
+    return;
+  }
+  
+  try {
+    const baseUrl = 'https://cjvmanagementevent.com';
+    
+    const folderMap: Record<string, string> = {
+      'Akte Kelahiran': 'akte_kelahiran',
+      'Pas Foto': 'pas_foto',
+      'Sertifikat Belt': 'sertifikat_belt',
+      'KTP': 'ktp'
+    };
+    const subfolder = folderMap[label] || 'documents';
+    
+    // Extract filename if path includes subfolder
+    const filename = existingPath.includes('/') ? existingPath.split('/').pop() : existingPath;
+    
+    const downloadUrl = `${baseUrl}/uploads/atlet/${subfolder}/${filename}`;
+    
+    console.log(`📥 Downloading from: ${downloadUrl}`);
+    
+    const testResponse = await fetch(downloadUrl, { method: 'HEAD' });
+    if (!testResponse.ok) {
+      toast.error('File tidak ditemukan di server');
       return;
     }
     
-    try {
-      const baseUrl = 'https://cjvmanagementevent.com';
-      
-      // Handle both old format (with subfolder) and new format (filename only)
-      let downloadUrl;
-      
-      if (existingPath.includes('/')) {
-        // Old format: "subfolder/filename.jpg"
-        downloadUrl = `${baseUrl}/uploads/atlet/${existingPath}`;
-      } else {
-        // New format: "filename.jpg" - need to add subfolder based on label
-        const folderMap: Record<string, string> = {
-          'Akte Kelahiran': 'akte_kelahiran',
-          'Pas Foto': 'pas_foto',
-          'Sertifikat Belt': 'sertifikat_belt',
-          'KTP': 'ktp'
-        };
-        const subfolder = folderMap[label] || 'documents';
-        downloadUrl = `${baseUrl}/uploads/atlet/${subfolder}/${existingPath}`;
-      }
-      
-      console.log(`📥 Downloading from: ${downloadUrl}`);
-      
-      const testResponse = await fetch(downloadUrl, { method: 'HEAD' });
-      if (!testResponse.ok) {
-        toast.error('File tidak ditemukan di server');
-        return;
-      }
-      
-      const link = document.createElement('a');
-      link.href = downloadUrl;
-      link.download = getDisplayFileName();
-      link.target = '_blank';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
-      toast.success(`Download ${label} berhasil!`);
-      
-    } catch (error) {
-      console.error('❌ Download error:', error);
-      toast.error('Gagal mendownload file');
-    }
-  };
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.download = getDisplayFileName();
+    link.target = '_blank';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    toast.success(`Download ${label} berhasil!`);
+    
+  } catch (error) {
+    console.error('❌ Download error:', error);
+    toast.error('Gagal mendownload file');
+  }
+};
 
   // Get preview URL
   const getPreviewUrl = () => {
-    if (file && previewUrl) return previewUrl;
+  if (file && previewUrl) return previewUrl;
+  
+  if (existingPath) {
+    const baseUrl = 'https://cjvmanagementevent.com';
     
-    if (existingPath) {
-      const baseUrl = 'https://cjvmanagementevent.com';
-      
-      // Handle both old format (with subfolder) and new format (filename only)
-      let staticUrl;
-      
-      if (existingPath.includes('/')) {
-        // Old format: "subfolder/filename.jpg"
-        staticUrl = `${baseUrl}/uploads/atlet/${existingPath}`;
-      } else {
-        // New format: "filename.jpg" - need to add subfolder based on label
-        const folderMap: Record<string, string> = {
-          'Akte Kelahiran': 'akte_kelahiran',
-          'Pas Foto': 'pas_foto', 
-          'Sertifikat Belt': 'sertifikat_belt',
-          'KTP': 'ktp'
-        };
-        const subfolder = folderMap[label] || 'documents';
-        staticUrl = `${baseUrl}/uploads/atlet/${subfolder}/${existingPath}`;
-      }
-      
-      console.log("🌐 Preview URL:", staticUrl);
-      return staticUrl;
-    }
+    // SIMPLIFIED: Always treat as filename only and construct proper path
+    const folderMap: Record<string, string> = {
+      'Akte Kelahiran': 'akte_kelahiran',
+      'Pas Foto': 'pas_foto', 
+      'Sertifikat Belt': 'sertifikat_belt',
+      'KTP': 'ktp'
+    };
+    const subfolder = folderMap[label] || 'documents';
     
-    return null;
-  };
+    // Extract filename if path includes subfolder
+    const filename = existingPath.includes('/') ? existingPath.split('/').pop() : existingPath;
+    
+    const staticUrl = `${baseUrl}/uploads/atlet/${subfolder}/${filename}`;
+    
+    console.log("🌐 Preview URL:", staticUrl);
+    return staticUrl;
+  }
+  
+  return null;
+};
 
   // Check if file is image (always true since we only accept images)
   const isImageFile = () => {

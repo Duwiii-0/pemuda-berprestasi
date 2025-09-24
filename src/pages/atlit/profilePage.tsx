@@ -101,21 +101,13 @@ useEffect(() => {
       if (data) {
         console.log("📋 RAW ATLET DATA:", data);
         
-        const dataWithFiles: AtletWithFiles = {
+const dataWithFiles: AtletWithFiles = {
   ...data,
-  // PERBAIKAN: Langsung pakai nama file dengan path yang benar
-  akte_kelahiran_path: data.akte_kelahiran 
-    ? `/uploads/atlet/akte_kelahiran/${data.akte_kelahiran}` 
-    : undefined,
-  pas_foto_path: data.pas_foto 
-    ? `/uploads/atlet/pas_foto/${data.pas_foto}` 
-    : undefined,
-  sertifikat_belt_path: data.sertifikat_belt 
-    ? `/uploads/atlet/sertifikat_belt/${data.sertifikat_belt}` 
-    : undefined,
-  ktp_path: data.ktp 
-    ? `/uploads/atlet/ktp/${data.ktp}` 
-    : undefined,
+  // HANYA SIMPAN FILENAME SAJA, JANGAN TAMBAH PATH
+  akte_kelahiran_path: data.akte_kelahiran || undefined,
+  pas_foto_path: data.pas_foto || undefined,
+  sertifikat_belt_path: data.sertifikat_belt || undefined,
+  ktp_path: data.ktp || undefined,
   // File objects null
   akte_kelahiran: null,
   pas_foto: null,
@@ -205,18 +197,11 @@ console.log("📋 Update result keys:", Object.keys(result || {}));
         
       const updatedData: AtletWithFiles = {
   ...updatedAtlet,
-  akte_kelahiran_path: updatedAtlet.akte_kelahiran 
-    ? `/uploads/atlet/akte_kelahiran/${updatedAtlet.akte_kelahiran}` 
-    : undefined,
-  pas_foto_path: updatedAtlet.pas_foto 
-    ? `/uploads/atlet/pas_foto/${updatedAtlet.pas_foto}` 
-    : undefined,
-  sertifikat_belt_path: updatedAtlet.sertifikat_belt 
-    ? `/uploads/atlet/sertifikat_belt/${updatedAtlet.sertifikat_belt}` 
-    : undefined,
-  ktp_path: updatedAtlet.ktp 
-    ? `/uploads/atlet/ktp/${updatedAtlet.ktp}` 
-    : undefined,
+  // HANYA SIMPAN FILENAME SAJA
+  akte_kelahiran_path: updatedAtlet.akte_kelahiran || undefined,
+  pas_foto_path: updatedAtlet.pas_foto || undefined,
+  sertifikat_belt_path: updatedAtlet.sertifikat_belt || undefined,
+  ktp_path: updatedAtlet.ktp || undefined,
   // Reset file objects to null after save
   akte_kelahiran: null,
   pas_foto: null,
