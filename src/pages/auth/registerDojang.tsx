@@ -168,7 +168,7 @@ const FilePreview: React.FC<FilePreviewProps> = ({
 };
 
 const RegisterDojang = () => {
-  const [namaDojang, setNamaDojang] = useState("");
+  const [nama_dojang, setnama_dojang] = useState("");
   const [email, setEmail] = useState("");
   const [no_telp, setno_telp] = useState("");
   const [kabupaten, setKabupaten] = useState("");
@@ -241,7 +241,7 @@ const RegisterDojang = () => {
   };
 
   const resetForm = () => {
-  setNamaDojang("");
+  setnama_dojang("");
   setEmail("");
   setno_telp("");
   setKabupaten("");
@@ -258,73 +258,140 @@ const RegisterDojang = () => {
 
 const handleRegister = async () => {
   setIsLoading(true);
-
   try {
-    // 1️⃣ Siapkan data
-    const trimmedNama = namaDojang.trim();
-    if (!trimmedNama) {
+    console.log('📝 Data yang akan dikirim:', {
+      nama_dojang: nama_dojang.trim(),
+      email: email.trim(),
+      no_telp: no_telp.trim(),
+      negara: negara.trim(),
+      provinsi: provinsi.trim(),
+      kota: kabupaten.trim(),
+      logo: logoFile?.name || 'tidak ada'
+    });
+
+    if (!nama_dojang.trim()) {
       toast.error("Nama dojang tidak boleh kosong");
-      setIsLoading(false);
       return;
     }
 
     const formData = new FormData();
-    formData.append("nama_dojang", trimmedNama);
-    formData.append("email", email.trim() || "");
-    formData.append("no_telp", no_telp.trim() || "");
-    formData.append("negara", negara.trim() || "Indonesia");
-    formData.append("provinsi", provinsi.trim() || "");
-    formData.append("kota", kabupaten.trim() || "");
+    formData.append('nama_dojang', nama_dojang.trim());
+    formData.append('email', email.trim() || '');
+    formData.append('no_telp', no_telp.trim() || '');
+    formData.append('negara', negara.trim() || 'Indonesia');
+    formData.append('provinsi', provinsi.trim() || '');
+    formData.append('kota', kabupaten.trim() || '');
+    
+    if (logoFile) {
+      formData.append('logo', logoFile);
+      console.log('📎 Uploading logo:', logoFile.name, 'Size:', logoFile.size);
+    }
 
-    if (logoFile) formData.append("logo", logoFile);
-
-    console.log("📤 FormData contents:");
+    console.log('📤 FormData contents:');
     for (let [key, value] of formData.entries()) {
-      if (value instanceof File) console.log(`${key}: ${value.name} (${value.size} bytes)`);
-      else console.log(`${key}: ${value}`);
+      if (value instanceof File) {
+        console.log(`${key}:`, value.name, `(${value.size} bytes)`);
+      } else {
+        console.log(`${key}:`, value);
+      }
     }
 
-    // 2️⃣ Kirim request
+    console.log('🚀 Sending request to /dojang...');
+    
+    // Panggil API
     const response = await apiClient.postFormData("/dojang", formData);
-    console.log("✅ Registration response:", response);
-
-    // 3️⃣ Cek response
-    if (response?.data?.success) {
-      const dojang = response.data.data;
-      console.log("✅ Registered dojang:", dojang.nama_dojang);
-      toast.success(response.data.message || "Registrasi berhasil!");
-      resetForm();
+    
+    console.log('✅ Registration response:', response);
+    
+    // ✅ PERBAIKAN: Handle response format yang sama seperti di Dojang component
+    let responseData;
+    if (response && response.data) {
+      responseData = response.data;
+      console.log('📊 Using response.data structure');
     } else {
-      const errorMsg = response?.data?.message || "Registrasi gagal";
-      toast.error(errorMsg);
-      console.warn("⚠️ Registration failed:", response?.data);
+      responseData = response;
+      console.log('📊 Using direct response');
     }
+    
+    // ✅ PERBAIKAN: Validasi response data sebelum akses property
+    if (responseData && (responseData.nama_dojang || responseData.id_dojang)) {
+      console.log('✅ Valid registration response:', responseData);
+      toast.success("Registrasi dojang berhasil! Silahkan login.");
+    } else {
+      console.log('⚠️ Registration successful but unexpected response format:', responseData);
+      toast.success("Registrasi dojang berhasil! Silahkan login.");
+    }
+    
+    resetForm();
 
   } catch (error: any) {
-    console.error("❌ Registration error:", error);
-
-    // Tangani error dari server atau network
-    const status = error?.response?.status;
-    const data = error?.response?.data;
-    const msg = data?.message || error?.message || "Terjadi kesalahan tidak terduga";
-
-    if (status === 400 || status === 422) {
-      if (data?.errors) {
-        // Laravel validation errors
-        const firstKey = Object.keys(data.errors)[0];
-        const firstMsg = Array.isArray(data.errors[firstKey]) ? data.errors[firstKey][0] : data.errors[firstKey];
-        toast.error(firstMsg || msg);
+    console.error('❌ Registration error:', error);
+    
+    // ✅ PERBAIKAN: Error handling yang lebih robust
+    if (error && typeof error === 'object') {
+      const status = error.status || error.response?.status;
+      const errorData = error.data || error.response?.data;
+      const errorMessage = error.message || error.response?.message;
+      
+      console.log('📡 Error status:', status);
+      console.log('📡 Error data:', errorData);
+      console.log('📡 Error message:', errorMessage);
+      
+      // Handle berdasarkan status code
+      if (status === 400) {
+        if (errorData && typeof errorData === 'object') {
+          if (errorData.message) {
+            toast.error(errorData.message);
+          } else if (errorData.errors) {
+            // Laravel validation errors
+            const errors = errorData.errors;
+            const firstErrorKey = Object.keys(errors)[0];
+            const firstError = errors[firstErrorKey];
+            const errorMsg = Array.isArray(firstError) ? firstError[0] : firstError;
+            toast.error(errorMsg || "Data tidak valid");
+          } else {
+            toast.error("Data tidak valid. Periksa kembali input Anda.");
+          }
+        } else {
+          toast.error("Data tidak valid. Periksa kembali input Anda.");
+        }
+      } else if (status === 422) {
+        if (errorData && errorData.errors) {
+          const errors = errorData.errors;
+          const firstErrorKey = Object.keys(errors)[0];
+          const firstError = errors[firstErrorKey];
+          const errorMsg = Array.isArray(firstError) ? firstError[0] : firstError;
+          toast.error(errorMsg || "Data tidak sesuai format yang diperlukan.");
+        } else if (errorData && errorData.message) {
+          toast.error(errorData.message);
+        } else {
+          toast.error("Data tidak sesuai format yang diperlukan.");
+        }
+      } else if (status === 413) {
+        toast.error("File terlalu besar. Maksimal 5MB.");
+      } else if (status === 500) {
+        toast.error("Terjadi kesalahan server. Coba lagi nanti.");
+      } else if (status && status >= 400) {
+        toast.error(errorMessage || `Error ${status}`);
       } else {
-        toast.error(msg);
+        // Network error atau error tanpa status
+        if (errorMessage && (errorMessage.includes('Network') || errorMessage.includes('Failed to fetch'))) {
+          toast.error("Koneksi bermasalah. Periksa internet Anda.");
+        } else {
+          toast.error(errorMessage || "Terjadi kesalahan tidak terduga.");
+        }
       }
-    } else if (status === 413) {
-      toast.error("File terlalu besar. Maksimal 5MB.");
-    } else if (status === 500) {
-      toast.error("Terjadi kesalahan server. Coba lagi nanti.");
-    } else if (!status) {
-      toast.error("Koneksi bermasalah. Periksa internet Anda.");
+    } else if (error instanceof Error) {
+      // Standard JavaScript Error
+      if (error.message.includes('Network') || error.message.includes('Failed to fetch')) {
+        toast.error("Koneksi bermasalah. Periksa internet Anda.");
+      } else {
+        toast.error(error.message || "Registrasi gagal. Coba lagi.");
+      }
     } else {
-      toast.error(msg);
+      // Fallback untuk error format tidak dikenal
+      console.error('❌ Unexpected error format:', typeof error, error);
+      toast.error("Terjadi kesalahan tidak terduga.");
     }
   } finally {
     setIsLoading(false);
@@ -335,7 +402,7 @@ const handleRegister = async () => {
   e.preventDefault();
 
   // Validasi yang lebih ketat
-  const trimmedNama = namaDojang.trim();
+  const trimmedNama = nama_dojang.trim();
   const trimmedEmail = email.trim();
   const trimmedPhone = no_telp.trim();
 
@@ -474,8 +541,8 @@ const handleRegister = async () => {
               </label>
               <div className="relative group">
                 <TextInput
-                  value={namaDojang}
-                  onChange={(e) => setNamaDojang(e.target.value)}
+                  value={nama_dojang}
+                  onChange={(e) => setnama_dojang(e.target.value)}
                   className="h-11 md:h-12 border-2 border-red/25 focus:border-red rounded-xl bg-white/80 backdrop-blur-sm text-sm md:text-base font-plex pl-10 md:pl-12 pr-4 transition-all duration-300 group-hover:border-red/40 focus:bg-white focus:shadow-md focus:shadow-red/10"
                   placeholder="Contoh: Dojang Garuda Sakti"
                   type="text"
