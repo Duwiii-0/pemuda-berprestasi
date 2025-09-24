@@ -298,86 +298,54 @@ const handleRegister = async () => {
 
     console.log('🚀 Sending request to /dojang...');
     
-    // Panggil API dengan penanganan error yang lebih baik
+    // ✅ PERBAIKAN: Call API dengan handling yang sudah diperbaiki
     const response = await apiClient.postFormData("/dojang", formData);
     
     console.log('✅ Registration response:', response);
     
-    // Handle response format yang sama seperti di Dojang component
-    let responseData;
-    if (response && response.data) {
-      responseData = response.data;
-      console.log('📊 Using response.data structure');
-    } else {
-      responseData = response;
-      console.log('📊 Using direct response');
-    }
-    
-    // Validasi response data sebelum akses property
-    if (responseData && (responseData.nama_dojang || responseData.id_dojang)) {
-      console.log('✅ Valid registration response:', responseData);
+    // ✅ PERBAIKAN: Handle response - API Client sudah return parsed JSON
+    if (response) {
+      console.log('✅ Registration successful:', response);
       toast.success("Registrasi dojang berhasil! Silahkan login.");
+      resetForm();
     } else {
-      console.log('⚠️ Registration successful but unexpected response format:', responseData);
+      console.log('⚠️ Empty response but no error thrown');
       toast.success("Registrasi dojang berhasil! Silahkan login.");
+      resetForm();
     }
-    
-    resetForm();
 
   } catch (error) {
     console.error('❌ Registration error:', error);
     
-    // PERBAIKAN: Defensive error handling
-    try {
-      // Cek apakah error memiliki response dari API
-      let status = null;
-      let errorData = null;
-      let errorMessage = null;
+    // ✅ PERBAIKAN: Handle structured error dari API Client
+    if (error && typeof error === 'object' && error.status !== undefined) {
+      const { status, data, message } = error;
       
-      if (error?.response) {
-        // Axios-style error
-        status = error.response.status;
-        errorData = error.response.data;
-        errorMessage = error.response.data?.message || error.message;
-      } else if (error?.status) {
-        // Custom API client error
-        status = error.status;
-        errorData = error.data;
-        errorMessage = error.data?.message || error.message;
-      } else {
-        // Generic error
-        errorMessage = error?.message || 'Unknown error';
-      }
-      
-      console.log('📡 Parsed error - Status:', status, 'Data:', errorData, 'Message:', errorMessage);
+      console.log('📡 API Error - Status:', status, 'Data:', data, 'Message:', message);
       
       // Handle berdasarkan status code
       if (status === 400) {
-        if (errorData && typeof errorData === 'object') {
-          if (errorData.message) {
-            toast.error(errorData.message);
-          } else if (errorData.errors) {
-            // Laravel validation errors
-            const errors = errorData.errors;
-            const firstErrorKey = Object.keys(errors)[0];
-            const firstError = errors[firstErrorKey];
-            const errorMsg = Array.isArray(firstError) ? firstError[0] : firstError;
-            toast.error(errorMsg || "Data tidak valid");
-          } else {
-            toast.error("Data tidak valid. Periksa kembali input Anda.");
-          }
+        if (data && data.errors) {
+          // Laravel validation errors
+          const errors = data.errors;
+          const firstErrorKey = Object.keys(errors)[0];
+          const firstError = errors[firstErrorKey];
+          const errorMsg = Array.isArray(firstError) ? firstError[0] : firstError;
+          toast.error(errorMsg || "Data tidak valid");
+        } else if (data && data.message) {
+          toast.error(data.message);
         } else {
           toast.error("Data tidak valid. Periksa kembali input Anda.");
         }
       } else if (status === 422) {
-        if (errorData?.errors) {
-          const errors = errorData.errors;
+        if (data && data.errors) {
+          const errors = data.errors;
           const firstErrorKey = Object.keys(errors)[0];
           const firstError = errors[firstErrorKey];
           const errorMsg = Array.isArray(firstError) ? firstError[0] : firstError;
           toast.error(errorMsg || "Data tidak sesuai format yang diperlukan.");
-        } else if (errorData?.message) {
-          toast.error(errorData.message);
+        } else if (data && data.message) {
+          toast.error(data.message);
         } else {
           toast.error("Data tidak sesuai format yang diperlukan.");
         }
@@ -385,19 +353,24 @@ const handleRegister = async () => {
         toast.error("File terlalu besar. Maksimal 5MB.");
       } else if (status === 500) {
         toast.error("Terjadi kesalahan server. Coba lagi nanti.");
-      } else if (status && status >= 400) {
-        toast.error(errorMessage || `Error ${status}`);
+      } else if (status === 0) {
+        // Network error
+        toast.error("Koneksi bermasalah. Periksa internet Anda.");
+      } else if (status >= 400) {
+        toast.error(message || `Error ${status}`);
       } else {
-        // Network error atau error tanpa status
-        if (errorMessage && (errorMessage.includes('Network') || errorMessage.includes('Failed to fetch') || errorMessage.includes('Cannot read properties'))) {
-          toast.error("Koneksi bermasalah atau ada masalah dengan data. Coba lagi.");
-        } else {
-          toast.error(errorMessage || "Terjadi kesalahan tidak terduga.");
-        }
+        toast.error(message || "Terjadi kesalahan tidak terduga.");
       }
-    } catch (parseError) {
-      console.error('❌ Error parsing error response:', parseError);
-      toast.error("Terjadi kesalahan tidak terduga.");
+    } else {
+      // Fallback untuk error format lain
+      console.error('❌ Unexpected error format:', error);
+      const errorMessage = error?.message || 'Terjadi kesalahan tidak terduga.';
+      
+      if (errorMessage.includes('Network') || errorMessage.includes('Failed to fetch')) {
+        toast.error("Koneksi bermasalah. Periksa internet Anda.");
+      } else {
+        toast.error(errorMessage);
+      }
     }
   } finally {
     setIsLoading(false);
