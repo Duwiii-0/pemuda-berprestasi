@@ -11,7 +11,7 @@ const ValidasiDojang: React.FC = () => {
   
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(10);
+  const [itemsPerPage] = useState(20);
 
   useEffect(() => {
     refreshDojang().catch(() => toast.error('Gagal memuat data dojang'));
