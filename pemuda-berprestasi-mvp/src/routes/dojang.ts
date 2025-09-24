@@ -3,7 +3,7 @@ import { DojangController } from '../controllers/dojangController';
 import { authenticate } from '../middleware/auth';
 import { validateRequest } from '../middleware/validation';
 import { dojangValidation } from '../validations/dojangValidation';
-import { upload } from '../config/multer'; // Import multer config
+import { upload, uploadDojangRegistration } from '../config/multer';
 
 const router = Router();
 
@@ -18,7 +18,7 @@ router.get('/listdojang', DojangController.getAll);
 
 // ✅ PERBAIKAN: Registrasi dojang baru dengan upload logo
 router.post('/', 
-  uploadDojangRegistration.single('logo'), // Pakai yang khusus registrasi
+  uploadDojangRegistration.single('logo'), 
   validateRequest(dojangValidation.create),
   DojangController.create
 );
