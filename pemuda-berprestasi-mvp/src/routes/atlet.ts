@@ -22,19 +22,24 @@ router.get('/files/:folder/:filename', async (req, res) => {
       return res.status(400).json({ error: 'Invalid folder' });
     }
     
-    const filePath = path.join(__dirname, `../../uploads/atlet/${folder}/${filename}`);
+    // FIX: Use process.cwd() instead of __dirname to match multer config
+    const filePath = path.join(process.cwd(), 'uploads', 'atlet', folder, filename);
+    
+    console.log(`🔍 Looking for file at: ${filePath}`);
     
     if (!fs.existsSync(filePath)) {
+      console.log('❌ File not found at:', filePath);
       return res.status(404).json({ error: 'File not found' });
     }
     
+    console.log('✅ File found, sending...');
     res.sendFile(filePath);
   } catch (error) {
+    console.error('❌ Error serving file:', error);
     res.status(500).json({ error: 'Error serving file' });
   }
 });
 
-// DOWNLOAD ENDPOINT - Public route
 router.get('/download/:folder/:filename', (req, res) => {
   try {
     const { folder, filename } = req.params;
@@ -47,28 +52,17 @@ router.get('/download/:folder/:filename', (req, res) => {
       return res.status(400).json({ error: 'Invalid folder' });
     }
     
-    // Coba beberapa path yang mungkin
-    const possiblePaths = [
-      path.join(process.cwd(), `uploads/atlet/${folder}/${filename}`),
-      path.join(__dirname, `../../uploads/atlet/${folder}/${filename}`),
-      path.join(__dirname, `../uploads/atlet/${folder}/${filename}`),
-    ];
+    // FIX: Use consistent path with multer config
+    const filePath = path.join(process.cwd(), 'uploads', 'atlet', folder, filename);
     
-    let filePath: string | null = null; // ← TAMBAHKAN TYPE ANNOTATION INI
-    for (const p of possiblePaths) {
-      console.log(`🔍 Checking: ${p}`);
-      if (fs.existsSync(p)) {
-        filePath = p;
-        console.log(`✅ Found at: ${filePath}`);
-        break;
-      }
-    }
+    console.log(`🔍 Looking for download file at: ${filePath}`);
     
-    if (!filePath) {
-      console.log('❌ File not found');
+    if (!fs.existsSync(filePath)) {
+      console.log('❌ Download file not found');
+      
       // Debug: list directory contents
       try {
-        const baseUploadPath = path.join(process.cwd(), 'uploads/atlet', folder);
+        const baseUploadPath = path.join(process.cwd(), 'uploads', 'atlet', folder);
         if (fs.existsSync(baseUploadPath)) {
           const files = fs.readdirSync(baseUploadPath);
           console.log(`📁 Files in ${folder}:`, files);
@@ -82,7 +76,7 @@ router.get('/download/:folder/:filename', (req, res) => {
       return res.status(404).json({ 
         error: 'File not found',
         requested: `${folder}/${filename}`,
-        paths_checked: possiblePaths
+        expected_path: filePath
       });
     }
     
@@ -91,7 +85,7 @@ router.get('/download/:folder/:filename', (req, res) => {
     res.setHeader('Content-Disposition', `attachment; filename="${originalName}"`);
     res.setHeader('Content-Type', 'application/octet-stream');
     
-    console.log(`📤 Sending file: ${filePath}`);
+    console.log(`📤 Sending download file: ${filePath}`);
     res.sendFile(path.resolve(filePath));
     
   } catch (error) {
