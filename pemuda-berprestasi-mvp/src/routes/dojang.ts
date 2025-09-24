@@ -3,7 +3,7 @@ import { DojangController } from '../controllers/dojangController';
 import { authenticate } from '../middleware/auth';
 import { validateRequest } from '../middleware/validation';
 import { dojangValidation } from '../validations/dojangValidation';
-import { upload, uploadDojangRegistration } from '../config/multer';
+import { upload, uploadDojangRegistration, debugUpload } from '../config/multer';
 
 const router = Router();
 
@@ -16,9 +16,10 @@ router.get('/stats', DojangController.getStats);
 // get dojang all
 router.get('/listdojang', DojangController.getAll);
 
-// ✅ PERBAIKAN: Registrasi dojang baru dengan upload logo
+// Registrasi dojang baru dengan upload logo
 router.post('/', 
-  uploadDojangRegistration.single('logo'), 
+  uploadDojangRegistration.single('logo'),
+  debugUpload, 
   validateRequest(dojangValidation.create),
   DojangController.create
 );
@@ -33,6 +34,7 @@ router.get('/pelatih/:id_pelatih', DojangController.getByPelatih);
 // Update dan delete dojang (perlu permission check)
 router.put('/:id', 
   upload.single('logo'), // Handle logo upload
+  debugUpload, // Add debug middleware
   validateRequest(dojangValidation.update), 
   DojangController.update
 );

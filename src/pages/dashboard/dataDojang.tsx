@@ -133,7 +133,7 @@ const FilePreview = ({
     }
     
     try {
-      const baseUrl = 'https://pemudaberprestasi.com';
+      const baseUrl = 'https://cjvmanagementevent.com';
       const downloadUrl = `${baseUrl}${existingPath}`;
       console.log(`📥 Downloading logo from: ${downloadUrl}`);
       
@@ -163,7 +163,7 @@ const FilePreview = ({
     if (file && previewUrl) return previewUrl;
     
     if (existingPath) {
-      const baseUrl = 'https://pemudaberprestasi.com';
+      const baseUrl = 'https://cjvmanagementevent.com';
       const staticUrl = `${baseUrl}${existingPath}`;
       console.log("🌐 Logo Preview URL:", staticUrl);
       return staticUrl;
