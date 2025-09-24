@@ -22,7 +22,14 @@ interface Atlit {
   tinggi_badan?: number;
   berat_badan?: number;
   tanggal_lahir?: string;
+  pas_foto?: string;
 }
+
+const getPhotoUrl = (filename) => {
+  if (!filename) return null;
+  return `${process.env.REACT_APP_API_BASE_URL || 'http://:cjvmanagementevent.com'}/uploads/atlet/pas_foto/${filename}`;
+};
+
 
 const StatsCard: React.FC<StatsCardProps> = ({ icon: Icon, title, value, color }) => (
   <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-4 lg:p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-white/50">
@@ -399,15 +406,32 @@ console.log(`Successfully loaded ${atletData.length} athletes`);
                         onClick={() => navigate(`/dashboard/atlit/${atlit.id_atlet}`)}
                       >
                         <td className="px-6 py-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-red to-red/80 flex items-center justify-center text-white font-bebas">
-                              {atlit.nama_atlet.charAt(0).toUpperCase()}
-                            </div>
-                            <div>
-                              <p className="font-plex font-semibold text-black/80">{atlit.nama_atlet}</p>
-                            </div>
-                          </div>
-                        </td>
+  <div className="flex items-center gap-3">
+    <div className="w-20 h-20 lg:w-24 lg:h-24 rounded-full overflow-hidden bg-gradient-to-br from-red to-red/80 flex items-center justify-center text-white font-bebas text-2xl lg:text-3xl shadow-lg flex-shrink-0">
+  {formData.pas_foto_path || formData.pas_foto ? (
+    <img 
+      src={formData.pas_foto ? URL.createObjectURL(formData.pas_foto) : getPhotoUrl(formData.pas_foto_path)}
+      alt={`Foto ${formData.nama_atlet}`}
+      className="w-full h-full object-cover"
+      onError={(e) => {
+        // Fallback ke initial jika gambar gagal load
+        e.target.style.display = 'none';
+        e.target.nextElementSibling.style.display = 'flex';
+      }}
+    />
+  ) : null}
+  <span 
+    className={`w-full h-full flex items-center justify-center ${(formData.pas_foto_path || formData.pas_foto) ? 'hidden' : ''}`}
+    style={{ display: (formData.pas_foto_path || formData.pas_foto) ? 'none' : 'flex' }}
+  >
+    {formData.nama_atlet?.charAt(0)}
+  </span>
+</div>
+    <div>
+      <p className="font-plex font-semibold text-black/80">{atlit.nama_atlet}</p>
+    </div>
+  </div>
+</td>
                         <td className="px-6 py-4 text-center">
                           <span className="font-plex text-black/70">{atlit.provinsi || "-"}</span>
                         </td>
@@ -455,26 +479,28 @@ console.log(`Successfully loaded ${atletData.length} athletes`);
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3 flex-1">
-                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-red to-red/80 flex items-center justify-center text-white font-bebas text-lg">
-                        {atlit.nama_atlet.charAt(0).toUpperCase()}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-plex font-semibold text-black/80 truncate">{atlit.nama_atlet}</p>
-                        <p className="font-plex text-sm text-black/60">{atlit.provinsi || "Tidak diketahui"}</p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <span
-                            className={`px-2 py-0.5 rounded-full text-xs font-plex font-medium ${
-                              atlit.jenis_kelamin === "LAKI_LAKI"
-                                ? "bg-blue-100 text-blue-600"
-                                : "bg-pink-100 text-pink-600"
-                            }`}
-                          >
-                            {atlit.jenis_kelamin === "LAKI_LAKI" ? "L" : "P"}
-                          </span>
-                          <span className="font-plex text-xs text-black/60">{atlit.age} tahun</span>
-                        </div>
-                      </div>
-                    </div>
+  <div className="w-12 h-12 rounded-full overflow-hidden bg-gradient-to-br from-red to-red/80 flex items-center justify-center text-white font-bebas text-lg shadow-lg">
+    {atlit.pas_foto ? (
+      <img 
+        src={getPhotoUrl(atlit.pas_foto)} 
+        alt={`Foto ${atlit.nama_atlet}`}
+        className="w-full h-full object-cover"
+        onError={(e) => {
+          // Fallback ke initial jika gambar gagal load
+          e.target.style.display = 'none';
+          e.target.nextElementSibling.style.display = 'flex';
+        }}
+      />
+    ) : null}
+    <span 
+      className={`w-full h-full flex items-center justify-center ${atlit.pas_foto ? 'hidden' : ''}`}
+      style={{ display: atlit.pas_foto ? 'none' : 'flex' }}
+    >
+      {atlit.nama_atlet.charAt(0).toUpperCase()}
+    </span>
+  </div>
+  {/* rest of the mobile card content */}
+</div>
                     <button 
                       onClick={(e) => {
                         e.stopPropagation();
