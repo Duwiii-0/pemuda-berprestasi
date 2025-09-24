@@ -816,12 +816,6 @@ if (files.fotoKtp instanceof File || files.sertifikatSabuk instanceof File) {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                       </svg>
                     </button>
-                    <button 
-                      onClick={() => toast.error("Fitur ini akan segera hadir")} 
-                      className="w-full px-4 sm:px-6 py-3 sm:py-4 border-2 border-red/30 text-red hover:bg-red/5 hover:border-red/50 rounded-lg sm:rounded-xl font-plex font-medium transition-all duration-300 hover:shadow-lg text-sm sm:text-base"
-                    >
-                      Hapus Akun
-                    </button>
                   </div>
                 </div>
               </div>
