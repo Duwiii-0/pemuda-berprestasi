@@ -28,41 +28,40 @@ export class DojangController {
 // Tambahkan ini di DojangController.create untuk debugging
 static async create(req: Request, res: Response) {
   try {
-    // 🔍 DEBUGGING: Log semua data yang masuk
-    console.log('=== DEBUGGING CREATE DOJANG ===');
-    console.log('📋 Headers:', req.headers);
-    console.log('📋 Content-Type:', req.headers['content-type']);
-    console.log('📋 Raw Body:', req.body);
-    console.log('📋 Body keys:', Object.keys(req.body));
-    console.log('📋 Body values:', Object.values(req.body));
-    console.log('📎 File info:', req.file);
-    console.log('📎 File exists:', !!req.file);
-    
-    // 🔍 DEBUGGING: Check individual fields
-    console.log('📝 Individual fields:');
-    console.log('  - nama_dojang:', req.body.nama_dojang, typeof req.body.nama_dojang);
-    console.log('  - email:', req.body.email, typeof req.body.email);
-    console.log('  - no_telp:', req.body.no_telp, typeof req.body.no_telp);
-    console.log('  - negara:', req.body.negara, typeof req.body.negara);
-    console.log('  - provinsi:', req.body.provinsi, typeof req.body.provinsi);
-    console.log('  - kota:', req.body.kota, typeof req.body.kota);
-    
-    console.log('================================');
-    
-    // Prepare data dengan logo jika ada file upload
+    // DEBUGGING EXTENSIVE
+    console.log('=== FULL DEBUG ===');
+    console.log('req.body exists:', !!req.body);
+    console.log('req.body:', req.body);
+    console.log('req.body type:', typeof req.body);
+    console.log('req.file exists:', !!req.file);
+    console.log('req.file:', req.file);
+    console.log('Content-Type:', req.headers['content-type']);
+    console.log('nama_dojang value:', req.body?.nama_dojang);
+    console.log('nama_dojang type:', typeof req.body?.nama_dojang);
+    console.log('==================');
+
+    // TEMPORARY: Return immediately untuk test
+    return res.status(200).json({
+      success: true,
+      message: 'Debug test - controller reached',
+      debug: {
+        hasBody: !!req.body,
+        bodyKeys: req.body ? Object.keys(req.body) : [],
+        hasFile: !!req.file,
+        namaDojang: req.body?.nama_dojang
+      }
+    });
+
+    // Comment out semua code di bawah ini sementara
+    /*
     const createData = { ...req.body };
     
-    // Handle logo upload
     if (req.file && req.file.fieldname === 'logo') {
       createData.logo = req.file.filename;
-      console.log('✅ Logo uploaded:', req.file.filename);
     }
-    
-    console.log('💾 Final createData:', createData);
     
     const dojang = await DojangService.createDojang(createData);
     
-    // Return dengan logo_url untuk frontend
     const responseData = {
       ...dojang,
       logo_url: dojang.logo ? `/uploads/dojang/logos/${dojang.logo}` : null
@@ -73,6 +72,7 @@ static async create(req: Request, res: Response) {
       message: 'Dojang berhasil didaftarkan',
       data: responseData
     });
+    */
   } catch (err: any) {
     console.error('❌ Create dojang error:', err.message);
     console.error('❌ Full error:', err);
