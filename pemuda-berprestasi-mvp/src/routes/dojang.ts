@@ -18,8 +18,8 @@ router.get('/listdojang', DojangController.getAll);
 
 // ✅ PERBAIKAN: Registrasi dojang baru dengan upload logo
 router.post('/', 
-  upload.single('logo'), // Handle logo upload terlebih dahulu
-  validateRequest(dojangValidation.create), // Validasi setelah upload
+  uploadDojangRegistration.single('logo'), // Pakai yang khusus registrasi
+  validateRequest(dojangValidation.create),
   DojangController.create
 );
 

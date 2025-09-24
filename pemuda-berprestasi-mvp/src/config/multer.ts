@@ -97,3 +97,25 @@ export const upload = multer({
     fileSize: 5 * 1024 * 1024 // 5MB limit
   }
 })
+
+export const uploadDojangRegistration = multer({
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => {
+      if (file.fieldname === 'logo') {
+        cb(null, 'uploads/dojang/logos');
+      } else {
+        cb(new Error(`Invalid file field: ${file.fieldname}`), '');
+      }
+    },
+    filename: (req, file, cb) => {
+      const timestamp = Date.now();
+      const ext = path.extname(file.originalname);
+      const filename = `dojang_registration_${timestamp}${ext}`;
+      cb(null, filename);
+    }
+  }),
+  fileFilter,
+  limits: {
+    fileSize: 5 * 1024 * 1024 // 5MB limit
+  }
+});
