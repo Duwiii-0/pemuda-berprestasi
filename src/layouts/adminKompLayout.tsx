@@ -12,7 +12,7 @@ import {
   X,
   ChevronRight,
   Award,
-  FileText
+  GitBranch
 } from 'lucide-react';
 import { useAuth } from '../context/authContext';
 
@@ -35,7 +35,7 @@ const AdminKompetisiLayout: React.FC = () => {
     navigate('/auth/login');
   };
 
-  // Updated menu items with proper path matching and additional features
+  // Updated menu items with tournament bracket instead of certificates
   const menuItems = [
     {
       icon: ClipboardList,
@@ -59,11 +59,11 @@ const AdminKompetisiLayout: React.FC = () => {
       description: 'Lihat statistik dan buat laporan'
     },
     {
-      icon: FileText,
-      label: 'Sertifikat & Hasil',
-      path: '/admin-kompetisi/hasil',
-      active: location.pathname === '/admin-kompetisi/hasil',
-      description: 'Kelola hasil dan sertifikat'
+      icon: GitBranch,
+      label: 'Drawing Bagan',
+      path: '/admin-kompetisi/drawing-bagan',
+      active: location.pathname === '/admin-kompetisi/drawing-bagan',
+      description: 'Kelola drawing bagan tournament'
     }
   ];
 
@@ -205,29 +205,6 @@ const AdminKompetisiLayout: React.FC = () => {
 
           {/* Settings & Logout */}
           <div className="absolute bottom-6 left-6 right-6 space-y-2">
-            <button
-              onClick={() => navigate('/admin-kompetisi/settings')}
-              className="w-full flex items-center gap-3 p-3 rounded-xl transition-all duration-200 hover:shadow-sm"
-              style={{ 
-                color: '#050505', 
-                backgroundColor: 'rgba(5, 5, 5, 0.05)',
-                opacity: 0.8
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = 'rgba(5, 5, 5, 0.1)';
-                e.currentTarget.style.opacity = '1';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = 'rgba(5, 5, 5, 0.05)';
-                e.currentTarget.style.opacity = '0.8';
-              }}
-            >
-              <Settings size={18} />
-              <span className="font-medium text-sm">
-                Pengaturan
-              </span>
-            </button>
-            
             <button
               onClick={handleLogout}
               className="w-full flex items-center gap-3 p-3 rounded-xl transition-all duration-200 border hover:shadow-sm"

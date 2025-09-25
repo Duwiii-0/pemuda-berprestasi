@@ -50,6 +50,9 @@ import AllAtlets from "./pages/admin/AllAtlets";
 import AllPeserta from "./pages/adminkomp/AllPeserta";
 import ValidasiDojangAdminKomp from "./pages/adminkomp/ValidasiDojang";
 
+// Import the new Drawing Bagan component
+import DrawingBagan from "./pages/adminkomp/DrawingBagan";
+
 // Protected Route Component
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -144,7 +147,8 @@ export default function AppRoutes() {
             <Route index element={<Navigate to="/admin-kompetisi/validasi-peserta" replace />} />
             <Route path="validasi-peserta" element={<AllPeserta />} />
             <Route path="validasi-dojang" element={<ValidasiDojangAdminKomp />} />
-            <Route path="statistik" element={<StatistikAdminKomp />} /> {/* Route baru */}
+            <Route path="statistik" element={<StatistikAdminKomp />} />
+            <Route path="drawing-bagan" element={<DrawingBagan />} />
           </Route>
 
         {/* Admin routes - protected for ADMIN role only */}
