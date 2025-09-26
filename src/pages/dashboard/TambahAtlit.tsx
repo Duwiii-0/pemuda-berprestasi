@@ -477,7 +477,7 @@ const handleSubmit = async (e: React.FormEvent) => {
     let errorMessage = "Terjadi kesalahan saat menyimpan data";
     
     if (error.status === 413 || error.message?.includes('413') || error.message?.includes('Payload Too Large')) {
-      errorMessage = "File terlalu besar untuk server. Kompres file atau hubungi admin.";
+      errorMessage = "Mohon Lengkapi requirement yang dibutuhkan";
     } else if (error.message?.includes('File size') || error.message?.includes('terlalu besar')) {
       errorMessage = "Ukuran file melebihi batas maksimal 2MB per file.";
     } else if (error.message?.includes('Invalid file') || error.message?.includes('format')) {
@@ -485,7 +485,7 @@ const handleSubmit = async (e: React.FormEvent) => {
     } else if (error.message?.includes('Argument') && error.message?.includes('missing')) {
       // Handle Prisma validation errors
       if (error.message.includes('nik')) {
-        errorMessage = "Data NIK tidak valid. Kosongkan atau isi dengan 16 digit.";
+        errorMessage = "Mohon Lengkapi requirement yang dibutuhkan";
       } else {
         errorMessage = "Ada data wajib yang kurang atau tidak valid.";
       }
@@ -608,7 +608,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                 {/* No HP */}
                 <div className="space-y-2">
                   <label className="block font-plex font-medium text-black/70">
-                    No. Telepon
+                    No. Telepon <span className="text-red">*</span>
                   </label>
                   <TextInput
                     className={`h-12 bg-white/50 backdrop-blur-sm rounded-xl focus:border-red transition-all duration-300 ${
@@ -627,7 +627,7 @@ const handleSubmit = async (e: React.FormEvent) => {
 
                 {/* Alamat */}
                 <div className="space-y-2 lg:col-span-2">
-                  <label className="block font-plex font-medium text-black/70">Alamat</label>
+                  <label className="block font-plex font-medium text-black/70">Alamat <span className="text-red">*</span></label>
                   <TextInput
                     className="h-12 border-red/20 bg-white/50 backdrop-blur-sm rounded-xl focus:border-red transition-all duration-300"
                     value={formData.alamat}
@@ -641,7 +641,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                 {/* Provinsi */}
                 <div className="space-y-2">
                   <label className="block font-plex font-medium text-black/70">
-                    Provinsi
+                    Provinsi <span className="text-red">*</span>
                   </label>                 
                     <Select
                       unstyled
@@ -678,7 +678,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                 {/* Kota */}
                 <div className="space-y-2">
                   <label className="block font-plex font-medium text-black/70">
-                    Kota
+                    Kota <span className="text-red">*</span>
                   </label>                 
                     <Select
                       unstyled
@@ -783,7 +783,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                 {/* Sabuk */}
                 <div className="space-y-2">
                   <label className="block font-plex font-medium text-black/70">
-                    Tingkat Sabuk
+                    Tingkat Sabuk <span className="text-red">*</span>
                   </label>
                     <Select
                       unstyled
@@ -833,7 +833,7 @@ const handleSubmit = async (e: React.FormEvent) => {
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Berat Badan */}
                 <div className="space-y-2">
-                  <label className="block font-plex font-medium text-black/70">Berat Badan (kg)</label>
+                  <label className="block font-plex font-medium text-black/70">Berat Badan (kg) <span className="text-red">*</span></label>
                   <TextInput
                     type="number"
                     min="10"
@@ -855,7 +855,7 @@ const handleSubmit = async (e: React.FormEvent) => {
 
                 {/* Tinggi Badan */}
                 <div className="space-y-2">
-                  <label className="block font-plex font-medium text-black/70">Tinggi Badan (cm)</label>
+                  <label className="block font-plex font-medium text-black/70">Tinggi Badan (cm)<span className="text-red">*</span></label>
                   <TextInput
                     type="number"
                     min="50"
@@ -877,7 +877,7 @@ const handleSubmit = async (e: React.FormEvent) => {
 
                 {/* NIK */}
                 <div className="space-y-2">
-                  <label className="block font-plex font-medium text-black/70">NIK</label>
+                  <label className="block font-plex font-medium text-black/70">NIK<span className="text-red">*</span></label>
                   <TextInput
                     type="text"
                     maxLength={16}
