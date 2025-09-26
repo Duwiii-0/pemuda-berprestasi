@@ -293,52 +293,68 @@ const handleFileChange = async (field: keyof AtletForm, file: File | null) => {
   }
 };
 
-  const validateForm = (): boolean => {
-    const newErrors: Record<string, string> = {};
+  // Updated validation function to match backend requirements
+const validateForm = (): boolean => {
+  const newErrors: Record<string, string> = {};
+  
+  // REQUIRED FIELDS (based on backend error)
+  if (!formData.name.trim()) {
+    newErrors.name = "Nama wajib diisi";
+  }
+  
+  if (!formData.tanggal_lahir) {
+    newErrors.tanggal_lahir = "Tanggal lahir wajib diisi";
+  }
+  
+  if (!formData.gender) {
+    newErrors.gender = "Gender wajib dipilih";
+  }
+
+  // OPTIONAL FIELDS - hanya validasi format jika diisi
+  if (formData.phone && !/^(\+62|62|0)[0-9]{9,13}$/.test(formData.phone.trim())) {
+    newErrors.phone = "Format nomor telepon tidak valid (contoh: 08123456789)";
+  }
+
+  if (formData.nik) {
+    const nikClean = formData.nik.trim();
+    if (nikClean && (nikClean.length !== 16 || !/^\d{16}$/.test(nikClean))) {
+      newErrors.nik = "NIK harus 16 digit angka atau kosongkan jika tidak ada";
+    }
+  }
+
+  // Validasi tanggal lahir
+  if (formData.tanggal_lahir) {
+    const today = new Date();
+    const birthDate = new Date(formData.tanggal_lahir);
+    if (birthDate > today) {
+      newErrors.tanggal_lahir = "Tanggal lahir tidak boleh di masa depan";
+    }
     
-    // Field wajib sesuai dengan requirement backend
-    if (!formData.name.trim()) {
-      newErrors.name = "Nama wajib diisi";
+    // Cek umur minimal (misalnya minimal 3 tahun)
+    const age = today.getFullYear() - birthDate.getFullYear();
+    if (age < 3) {
+      newErrors.tanggal_lahir = "Umur minimal 3 tahun";
     }
-    
-    if (!formData.tanggal_lahir) {
-      newErrors.tanggal_lahir = "Tanggal lahir wajib diisi";
-    }
-    
-    if (!formData.gender) {
-      newErrors.gender = "Pilih gender";
-    }
+  }
 
-    // Validasi opsional - hanya validasi jika diisi
-    if (formData.phone && !/^(\+62|62|0)[0-9]{9,13}$/.test(formData.phone.trim())) {
-      newErrors.phone = "Format nomor telepon tidak valid";
+  // Validasi angka
+  if (formData.bb) {
+    const weight = parseFloat(formData.bb as string);
+    if (isNaN(weight) || weight <= 0 || weight > 500) {
+      newErrors.bb = "Berat badan harus antara 1-500 kg";
     }
+  }
 
-    if (formData.nik && formData.nik.trim().length !== 16) {
-      newErrors.nik = "NIK harus 16 digit";
+  if (formData.tb) {
+    const height = parseFloat(formData.tb as string);
+    if (isNaN(height) || height <= 0 || height > 300) {
+      newErrors.tb = "Tinggi badan harus antara 1-300 cm";
     }
+  }
 
-    // Validasi tanggal lahir (tidak boleh di masa depan)
-    if (formData.tanggal_lahir) {
-      const today = new Date();
-      const birthDate = new Date(formData.tanggal_lahir);
-      if (birthDate > today) {
-        newErrors.tanggal_lahir = "Tanggal lahir tidak boleh di masa depan";
-      }
-    }
-
-    // Validasi angka untuk berat dan tinggi badan
-    if (formData.bb && (Number(formData.bb) <= 0 || Number(formData.bb) > 300)) {
-      newErrors.bb = "Berat badan harus antara 1-300 kg";
-    }
-
-    if (formData.tb && (Number(formData.tb) <= 0 || Number(formData.tb) > 250)) {
-      newErrors.tb = "Tinggi badan harus antara 1-250 cm";
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+  setErrors(newErrors);
+  return Object.keys(newErrors).length === 0;
+};
 
 const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
@@ -348,7 +364,7 @@ const handleSubmit = async (e: React.FormEvent) => {
     return;
   }
 
-  // TAMBAH INI - Validasi file size sebelum submit
+  // Validasi file size sebelum submit
   const fileFields = ['akte_kelahiran', 'pas_foto', 'sertifikat_belt', 'ktp'] as const;
   const maxFileSize = 2 * 1024 * 1024; // 2MB
 
@@ -384,15 +400,19 @@ const handleSubmit = async (e: React.FormEvent) => {
     formDataSend.append("id_dojang", String(user?.pelatih?.id_dojang ?? ""));
     formDataSend.append("id_pelatih_pembuat", String(user?.pelatih?.id_pelatih ?? ""));
 
-    // ADDITIONAL FIELDS
+    // IMPORTANT FIX: NIK handling - jangan kirim kalau kosong
+    if (formData.nik?.trim()) {
+      formDataSend.append("nik", formData.nik.trim());
+    }
+
+    // ADDITIONAL FIELDS - hanya kirim jika ada nilai
     if (formData.belt) formDataSend.append("belt", formData.belt);
     if (formData.alamat?.trim()) formDataSend.append("alamat", formData.alamat.trim());
     if (formData.provinsi) formDataSend.append("provinsi", formData.provinsi);
     if (formData.kota) formDataSend.append("kota", formData.kota);
     if (formData.phone?.trim()) formDataSend.append("no_telp", formData.phone.trim());
-    if (formData.nik?.trim()) formDataSend.append("nik", formData.nik.trim());
     
-    // NUMERIC FIELDS - PENTING: Convert ke string dengan validation
+    // NUMERIC FIELDS - Convert dengan validation
     if (formData.bb) {
       const weight = parseFloat(formData.bb as string);
       if (!isNaN(weight) && weight > 0) {
@@ -407,7 +427,7 @@ const handleSubmit = async (e: React.FormEvent) => {
       }
     }
 
-    // FILES - Field names harus exact match dengan backend
+    // FILES
     if (formData.akte_kelahiran) formDataSend.append("akte_kelahiran", formData.akte_kelahiran);
     if (formData.pas_foto) formDataSend.append("pas_foto", formData.pas_foto);
     if (formData.sertifikat_belt) formDataSend.append("sertifikat_belt", formData.sertifikat_belt);
@@ -423,7 +443,6 @@ const handleSubmit = async (e: React.FormEvent) => {
       }
     }
 
-    // PENTING: Pastikan createAtlet function menggunakan apiClient.postFormData
     const result = await createAtlet(formDataSend);
 
     if (result) {
@@ -451,23 +470,53 @@ const handleSubmit = async (e: React.FormEvent) => {
       
       setTimeout(() => navigate("/dashboard/atlit", { state: { refresh: true } }), 1000);
     }
- } catch (error: any) {
-  console.error("❌ Error creating athlete:", error);
-  
-  if (error.status === 413 || error.message.includes('413') || error.message.includes('Payload Too Large')) {
-    toast.error("File terlalu besar untuk server. Coba kompres lebih kecil atau hubungi admin.");
-  } else if (error.message.includes('File size')) {
-    toast.error("File terlalu besar. Maksimal 2MB per file.");
-  } else if (error.message.includes('Invalid file')) {
-    toast.error("Format file tidak didukung. Gunakan JPG, PNG, atau PDF.");
-  } else if (error.message.includes('wajib diisi')) {
-    toast.error("Ada field wajib yang belum diisi: " + error.message);
-  } else {
-    toast.error(error.message || "Gagal menambahkan Atlet. Coba lagi atau hubungi admin.");
+  } catch (error: any) {
+    console.error("❌ Error creating athlete:", error);
+    
+    // Improved error handling with better user messages
+    let errorMessage = "Terjadi kesalahan saat menyimpan data";
+    
+    if (error.status === 413 || error.message?.includes('413') || error.message?.includes('Payload Too Large')) {
+      errorMessage = "File terlalu besar untuk server. Kompres file atau hubungi admin.";
+    } else if (error.message?.includes('File size') || error.message?.includes('terlalu besar')) {
+      errorMessage = "Ukuran file melebihi batas maksimal 2MB per file.";
+    } else if (error.message?.includes('Invalid file') || error.message?.includes('format')) {
+      errorMessage = "Format file tidak didukung. Gunakan JPG, PNG, atau PDF.";
+    } else if (error.message?.includes('Argument') && error.message?.includes('missing')) {
+      // Handle Prisma validation errors
+      if (error.message.includes('nik')) {
+        errorMessage = "Data NIK tidak valid. Kosongkan atau isi dengan 16 digit.";
+      } else {
+        errorMessage = "Ada data wajib yang kurang atau tidak valid.";
+      }
+    } else if (error.message?.includes('wajib diisi')) {
+      errorMessage = `Field wajib kurang: ${error.message}`;
+    } else if (error.message?.includes('Invalid `prisma')) {
+      // Handle database/Prisma errors more gracefully
+      errorMessage = "Terjadi kesalahan database. Periksa data dan coba lagi.";
+    } else if (error.message?.includes('Network Error') || error.message?.includes('fetch')) {
+      errorMessage = "Koneksi bermasalah. Cek internet dan coba lagi.";
+    } else if (error.status === 400) {
+      errorMessage = "Data yang dikirim tidak valid. Periksa kembali form.";
+    } else if (error.status === 500) {
+      errorMessage = "Server mengalami gangguan. Coba lagi nanti.";
+    } else if (error.message) {
+      // Clean up technical error messages for user
+      const cleanMessage = error.message
+        .replace(/Invalid `prisma\..*?` invocation.*?\n/gs, '')
+        .replace(/Argument `.*?` is missing\./g, 'Ada data yang kurang.')
+        .replace(/→.*$/gm, '')
+        .trim();
+      
+      if (cleanMessage && cleanMessage.length < 100 && !cleanMessage.includes('prisma')) {
+        errorMessage = cleanMessage;
+      }
+    }
+    
+    toast.error(errorMessage);
+  } finally {
+    setIsSubmitting(false);
   }
-} finally {
-  setIsSubmitting(false);
-}
 };
   // Helper function to get select value for react-select
   const getSelectValue = (options: any[], value: string) => {
