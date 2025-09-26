@@ -306,6 +306,18 @@ const validateForm = (): boolean => {
   if (!formData.tanggal_lahir) {
     newErrors.tanggal_lahir = "Tanggal lahir wajib diisi";
   }
+
+  if (!formData.alamat) {
+    newErrors.alamat = "Alamat wajib diisi";
+  }
+
+  if (!formData.provinsi) {
+    newErrors.provinsi = "Provinsi wajib dipilih";
+  }
+
+  if (!formData.kota) {
+    newErrors.kota = "Kota wajib dipilih";
+  }
   
   if (!formData.gender) {
     newErrors.gender = "Gender wajib dipilih";
