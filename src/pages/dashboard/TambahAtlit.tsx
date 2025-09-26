@@ -294,10 +294,11 @@ const handleFileChange = async (field: keyof AtletForm, file: File | null) => {
 };
 
   // Updated validation function to match backend requirements
+// Updated validation - hanya file upload yang opsional
 const validateForm = (): boolean => {
   const newErrors: Record<string, string> = {};
   
-  // REQUIRED FIELDS (based on backend error)
+  // SEMUA FIELD WAJIB KECUALI FILE UPLOAD
   if (!formData.name.trim()) {
     newErrors.name = "Nama wajib diisi";
   }
@@ -310,15 +311,47 @@ const validateForm = (): boolean => {
     newErrors.gender = "Gender wajib dipilih";
   }
 
-  // OPTIONAL FIELDS - hanya validasi format jika diisi
+  if (!formData.nik?.trim()) {
+    newErrors.nik = "NIK wajib diisi";
+  }
+
+  if (!formData.phone?.trim()) {
+    newErrors.phone = "Nomor telepon wajib diisi";
+  }
+
+  if (!formData.alamat?.trim()) {
+    newErrors.alamat = "Alamat wajib diisi";
+  }
+
+  if (!formData.provinsi) {
+    newErrors.provinsi = "Provinsi wajib dipilih";
+  }
+
+  if (!formData.kota) {
+    newErrors.kota = "Kota wajib dipilih";
+  }
+
+  if (!formData.belt) {
+    newErrors.belt = "Tingkat sabuk wajib dipilih";
+  }
+
+  if (!formData.bb) {
+    newErrors.bb = "Berat badan wajib diisi";
+  }
+
+  if (!formData.tb) {
+    newErrors.tb = "Tinggi badan wajib diisi";
+  }
+
+  // VALIDATION FORMAT
   if (formData.phone && !/^(\+62|62|0)[0-9]{9,13}$/.test(formData.phone.trim())) {
     newErrors.phone = "Format nomor telepon tidak valid (contoh: 08123456789)";
   }
 
   if (formData.nik) {
     const nikClean = formData.nik.trim();
-    if (nikClean && (nikClean.length !== 16 || !/^\d{16}$/.test(nikClean))) {
-      newErrors.nik = "NIK harus 16 digit angka atau kosongkan jika tidak ada";
+    if (nikClean.length !== 16 || !/^\d{16}$/.test(nikClean)) {
+      newErrors.nik = "NIK harus 16 digit angka";
     }
   }
 
@@ -330,7 +363,6 @@ const validateForm = (): boolean => {
       newErrors.tanggal_lahir = "Tanggal lahir tidak boleh di masa depan";
     }
     
-    // Cek umur minimal (misalnya minimal 3 tahun)
     const age = today.getFullYear() - birthDate.getFullYear();
     if (age < 3) {
       newErrors.tanggal_lahir = "Umur minimal 3 tahun";
@@ -360,7 +392,7 @@ const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
 
   if (!validateForm()) {
-    toast.error("Mohon periksa kembali data yang diisi");
+    toast.error("Mohon lengkapi semua field yang wajib diisi");
     return;
   }
 
@@ -393,41 +425,26 @@ const handleSubmit = async (e: React.FormEvent) => {
   try {
     const formDataSend = new FormData();
     
-    // REQUIRED FIELDS - Pastikan semuanya ada
+    // SEMUA FIELD DATA WAJIB DIKIRIM
     formDataSend.append("nama_atlet", formData.name.trim());
     formDataSend.append("jenis_kelamin", formData.gender);
     formDataSend.append("tanggal_lahir", formData.tanggal_lahir);
+    formDataSend.append("nik", formData.nik.trim());
+    formDataSend.append("no_telp", formData.phone.trim());
+    formDataSend.append("alamat", formData.alamat.trim());
+    formDataSend.append("provinsi", formData.provinsi);
+    formDataSend.append("kota", formData.kota);
+    formDataSend.append("belt", formData.belt);
     formDataSend.append("id_dojang", String(user?.pelatih?.id_dojang ?? ""));
     formDataSend.append("id_pelatih_pembuat", String(user?.pelatih?.id_pelatih ?? ""));
 
-    // IMPORTANT FIX: NIK handling - jangan kirim kalau kosong
-    if (formData.nik?.trim()) {
-      formDataSend.append("nik", formData.nik.trim());
-    }
+    // NUMERIC FIELDS
+    const weight = parseFloat(formData.bb as string);
+    const height = parseFloat(formData.tb as string);
+    formDataSend.append("berat_badan", String(weight));
+    formDataSend.append("tinggi_badan", String(height));
 
-    // ADDITIONAL FIELDS - hanya kirim jika ada nilai
-    if (formData.belt) formDataSend.append("belt", formData.belt);
-    if (formData.alamat?.trim()) formDataSend.append("alamat", formData.alamat.trim());
-    if (formData.provinsi) formDataSend.append("provinsi", formData.provinsi);
-    if (formData.kota) formDataSend.append("kota", formData.kota);
-    if (formData.phone?.trim()) formDataSend.append("no_telp", formData.phone.trim());
-    
-    // NUMERIC FIELDS - Convert dengan validation
-    if (formData.bb) {
-      const weight = parseFloat(formData.bb as string);
-      if (!isNaN(weight) && weight > 0) {
-        formDataSend.append("berat_badan", String(weight));
-      }
-    }
-    
-    if (formData.tb) {
-      const height = parseFloat(formData.tb as string);
-      if (!isNaN(height) && height > 0) {
-        formDataSend.append("tinggi_badan", String(height));
-      }
-    }
-
-    // FILES
+    // FILE UPLOADS - HANYA INI YANG OPSIONAL
     if (formData.akte_kelahiran) formDataSend.append("akte_kelahiran", formData.akte_kelahiran);
     if (formData.pas_foto) formDataSend.append("pas_foto", formData.pas_foto);
     if (formData.sertifikat_belt) formDataSend.append("sertifikat_belt", formData.sertifikat_belt);
