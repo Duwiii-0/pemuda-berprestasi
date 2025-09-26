@@ -40,11 +40,11 @@ router.get(
   authenticate,
   KompetisiController.getAvailableClassesSimple
 );
- router.put(
-   '/:id/participants/:participantId/status',
-   validateRequest(kompetisiValidation.updateStatus),
-   KompetisiController.updateRegistrationStatus
- );
+router.put(
+  '/:id/participants/:participantId/status',
+  validateRequest(kompetisiValidation.updateStatus),
+  KompetisiController.updateRegistrationStatus
+);
 router.delete("/:id/participants/:participantId", KompetisiController.deleteParticipant);
 
 router.put(
@@ -52,9 +52,22 @@ router.put(
   KompetisiController.updateParticipantClass
 );
 
-// Tournament management
-// router.post('/:id/brackets', KompetisiController.generateBrackets);
-// router.get('/:id/brackets', KompetisiController.getBrackets);
-// router.post('/:id/draw', KompetisiController.conductDraw);
+// Tournament/Bracket management - NEW ROUTES
+router.post('/:id/brackets/generate', 
+  validateRequest(kompetisiValidation.generateBracket), 
+  KompetisiController.generateBrackets
+);
+router.get('/:id/brackets', KompetisiController.getBrackets);
+router.put('/:id/brackets/shuffle', KompetisiController.shuffleBrackets);
+router.get('/:id/brackets/pdf', KompetisiController.exportBracketToPdf);
+router.put('/:id/brackets/match/:matchId', 
+  validateRequest(kompetisiValidation.updateMatch), 
+  KompetisiController.updateMatch
+);
+router.post('/:id/draw', KompetisiController.conductDraw);
+
+// Additional bracket routes
+router.get('/:id/brackets/:kelasKejuaraanId', KompetisiController.getBracketByClass);
+router.post('/:id/brackets/:kelasKejuaraanId/regenerate', KompetisiController.regenerateBracket);
 
 export default router;

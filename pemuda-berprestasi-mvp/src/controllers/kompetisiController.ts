@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { KompetisiService } from '../services/kompetisiService';
+import { BracketService } from '../services/bracketService';
 import { sendSuccess, sendError } from '../utils/response';
 import { StatusKompetisi } from '@prisma/client';
 import prisma from '../config/database';
@@ -335,4 +336,564 @@ static async getAvailableClassesForParticipant(req: Request, res: Response) {
   }
 }
 
+// Tournament/Bracket management methods - ADD THESE TO KompetisiController
+
+/**
+ * Generate bracket for a competition class
+ */
+static async generateBrackets(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    const { kelasKejuaraanId } = req.body;
+
+    const kompetisiId = parseInt(id);
+    const kelasId = parseInt(kelasKejuaraanId);
+
+    if (isNaN(kompetisiId) || isNaN(kelasId)) {
+      return sendError(res, 'Parameter tidak valid', 400);
+    }
+
+    // Check authorization
+    const user = req.user;
+    if (!user) {
+      return sendError(res, 'User tidak ditemukan', 401);
+    }
+
+    // Verify competition exists and user has access
+    const kompetisi = await prisma.tb_kompetisi.findUnique({
+      where: { id_kompetisi: kompetisiId },
+      include: {
+        admin: true,
+        kelas_kejuaraan: {
+          where: { id_kelas_kejuaraan: kelasId }
+        }
+      }
+    });
+
+    if (!kompetisi) {
+      return sendError(res, 'Kompetisi tidak ditemukan', 404);
+    }
+
+    if (kompetisi.kelas_kejuaraan.length === 0) {
+      return sendError(res, 'Kelas kejuaraan tidak ditemukan dalam kompetisi ini', 404);
+    }
+
+    // Authorization check
+    if (user.role === 'ADMIN_KOMPETISI') {
+      const isAdminOfThisKompetisi = kompetisi.admin.some(
+        admin => admin.id_akun === user.id_akun
+      );
+      if (!isAdminOfThisKompetisi) {
+        return sendError(res, 'Anda tidak memiliki akses untuk membuat bagan di kompetisi ini', 403);
+      }
+    } else if (user.role !== 'ADMIN') {
+      return sendError(res, 'Tidak memiliki akses untuk membuat bagan', 403);
+    }
+
+    // Generate bracket
+    const bracket = await BracketService.generateBracket(kompetisiId, kelasId);
+
+    return sendSuccess(res, bracket, 'Bagan turnamen berhasil dibuat', 201);
+  } catch (error: any) {
+    console.error('Controller - Error generating bracket:', error);
+    return sendError(res, error.message || 'Gagal membuat bagan turnamen', 400);
+  }
 }
+
+/**
+ * Get bracket for a competition
+ */
+static async getBrackets(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    const { kelasKejuaraanId } = req.query;
+
+    const kompetisiId = parseInt(id);
+    const kelasId = kelasKejuaraanId ? parseInt(kelasKejuaraanId as string) : null;
+
+    if (isNaN(kompetisiId)) {
+      return sendError(res, 'ID kompetisi tidak valid', 400);
+    }
+
+    if (kelasId) {
+      // Get specific class bracket
+      const bracket = await BracketService.getBracket(kompetisiId, kelasId);
+      
+      if (!bracket) {
+        return sendError(res, 'Bagan tidak ditemukan', 404);
+      }
+
+      return sendSuccess(res, bracket, 'Bagan turnamen berhasil diambil');
+    } else {
+      // Get all brackets for competition
+      const kelas = await prisma.tb_kelas_kejuaraan.findMany({
+        where: { id_kompetisi: kompetisiId },
+        include: {
+          kategori_event: true,
+          kelompok: true,
+          kelas_berat: true,
+          poomsae: true
+        }
+      });
+
+      const brackets = await Promise.all(
+        kelas.map(async (k) => {
+          const bracket = await BracketService.getBracket(kompetisiId, k.id_kelas_kejuaraan);
+          return {
+            kelas: k,
+            bracket
+          };
+        })
+      );
+
+      return sendSuccess(res, brackets, 'Semua bagan turnamen berhasil diambil');
+    }
+  } catch (error: any) {
+    console.error('Controller - Error getting brackets:', error);
+    return sendError(res, error.message || 'Gagal mengambil bagan turnamen', 400);
+  }
+}
+
+/**
+ * Get bracket by specific class
+ */
+static async getBracketByClass(req: Request, res: Response) {
+  try {
+    const { id, kelasKejuaraanId } = req.params;
+
+    const kompetisiId = parseInt(id);
+    const kelasId = parseInt(kelasKejuaraanId);
+
+    if (isNaN(kompetisiId) || isNaN(kelasId)) {
+      return sendError(res, 'Parameter tidak valid', 400);
+    }
+
+    const bracket = await BracketService.getBracket(kompetisiId, kelasId);
+    
+    if (!bracket) {
+      return sendError(res, 'Bagan tidak ditemukan untuk kelas ini', 404);
+    }
+
+    return sendSuccess(res, bracket, 'Bagan kelas kejuaraan berhasil diambil');
+  } catch (error: any) {
+    console.error('Controller - Error getting bracket by class:', error);
+    return sendError(res, error.message || 'Gagal mengambil bagan kelas', 400);
+  }
+}
+
+/**
+ * Shuffle/regenerate bracket
+ */
+static async shuffleBrackets(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    const { kelasKejuaraanId } = req.body;
+
+    const kompetisiId = parseInt(id);
+    const kelasId = parseInt(kelasKejuaraanId);
+
+    if (isNaN(kompetisiId) || isNaN(kelasId)) {
+      return sendError(res, 'Parameter tidak valid', 400);
+    }
+
+    // Check authorization
+    const user = req.user;
+    if (!user) {
+      return sendError(res, 'User tidak ditemukan', 401);
+    }
+
+    // Verify competition exists and user has access
+    const kompetisi = await prisma.tb_kompetisi.findUnique({
+      where: { id_kompetisi: kompetisiId },
+      include: {
+        admin: true
+      }
+    });
+
+    if (!kompetisi) {
+      return sendError(res, 'Kompetisi tidak ditemukan', 404);
+    }
+
+    // Authorization check
+    if (user.role === 'ADMIN_KOMPETISI') {
+      const isAdminOfThisKompetisi = kompetisi.admin.some(
+        admin => admin.id_akun === user.id_akun
+      );
+      if (!isAdminOfThisKompetisi) {
+        return sendError(res, 'Anda tidak memiliki akses untuk mengacak bagan di kompetisi ini', 403);
+      }
+    } else if (user.role !== 'ADMIN') {
+      return sendError(res, 'Tidak memiliki akses untuk mengacak bagan', 403);
+    }
+
+    // Check if any matches have been played
+    const existingBagan = await prisma.tb_bagan.findFirst({
+      where: {
+        id_kompetisi: kompetisiId,
+        id_kelas_kejuaraan: kelasId
+      },
+      include: {
+        match: true
+      }
+    });
+
+    if (existingBagan) {
+      const playedMatches = existingBagan.match.some(match => match.skor_a > 0 || match.skor_b > 0);
+      if (playedMatches) {
+        return sendError(res, 'Tidak dapat mengacak bagan karena ada pertandingan yang sudah dimulai', 400);
+      }
+    }
+
+    // Regenerate bracket
+    const bracket = await BracketService.shuffleBracket(kompetisiId, kelasId);
+
+    return sendSuccess(res, bracket, 'Bagan turnamen berhasil diacak ulang');
+  } catch (error: any) {
+    console.error('Controller - Error shuffling bracket:', error);
+    return sendError(res, error.message || 'Gagal mengacak ulang bagan', 400);
+  }
+}
+
+/**
+ * Regenerate bracket for specific class
+ */
+static async regenerateBracket(req: Request, res: Response) {
+  try {
+    const { id, kelasKejuaraanId } = req.params;
+
+    const kompetisiId = parseInt(id);
+    const kelasId = parseInt(kelasKejuaraanId);
+
+    if (isNaN(kompetisiId) || isNaN(kelasId)) {
+      return sendError(res, 'Parameter tidak valid', 400);
+    }
+
+    // Check authorization
+    const user = req.user;
+    if (!user) {
+      return sendError(res, 'User tidak ditemukan', 401);
+    }
+
+    if (user.role !== 'ADMIN' && user.role !== 'ADMIN_KOMPETISI') {
+      return sendError(res, 'Tidak memiliki akses untuk regenerasi bagan', 403);
+    }
+
+    const bracket = await BracketService.shuffleBracket(kompetisiId, kelasId);
+
+    return sendSuccess(res, bracket, 'Bagan berhasil di-regenerasi');
+  } catch (error: any) {
+    console.error('Controller - Error regenerating bracket:', error);
+    return sendError(res, error.message || 'Gagal regenerasi bagan', 400);
+  }
+}
+
+/**
+ * Update match result
+ */
+static async updateMatch(req: Request, res: Response) {
+  try {
+    const { id, matchId } = req.params;
+    const { winnerId, scoreA, scoreB } = req.body;
+
+    const kompetisiId = parseInt(id);
+    const matchIdInt = parseInt(matchId);
+    const winnerIdInt = parseInt(winnerId);
+    const scoreAInt = parseInt(scoreA);
+    const scoreBInt = parseInt(scoreB);
+
+    if (isNaN(kompetisiId) || isNaN(matchIdInt) || isNaN(winnerIdInt)) {
+      return sendError(res, 'Parameter tidak valid', 400);
+    }
+
+    if (isNaN(scoreAInt) || isNaN(scoreBInt)) {
+      return sendError(res, 'Skor tidak valid', 400);
+    }
+
+    if (scoreAInt < 0 || scoreBInt < 0) {
+      return sendError(res, 'Skor tidak boleh negatif', 400);
+    }
+
+    if (scoreAInt === scoreBInt) {
+      return sendError(res, 'Pertandingan tidak boleh berakhir seri', 400);
+    }
+
+    // Check authorization
+    const user = req.user;
+    if (!user) {
+      return sendError(res, 'User tidak ditemukan', 401);
+    }
+
+    if (user.role !== 'ADMIN' && user.role !== 'ADMIN_KOMPETISI') {
+      return sendError(res, 'Tidak memiliki akses untuk mengupdate hasil pertandingan', 403);
+    }
+
+    // Verify match exists and belongs to the competition
+    const match = await prisma.tb_match.findFirst({
+      where: {
+        id_match: matchIdInt,
+        bagan: {
+          id_kompetisi: kompetisiId
+        }
+      },
+      include: {
+        peserta_a: true,
+        peserta_b: true
+      }
+    });
+
+    if (!match) {
+      return sendError(res, 'Pertandingan tidak ditemukan', 404);
+    }
+
+    if (!match.peserta_a || !match.peserta_b) {
+      return sendError(res, 'Pertandingan belum lengkap (peserta kurang)', 400);
+    }
+
+    // Validate winner
+    const validWinnerIds = [match.id_peserta_a, match.id_peserta_b].filter(Boolean);
+    if (!validWinnerIds.includes(winnerIdInt)) {
+      return sendError(res, 'Winner ID tidak valid untuk pertandingan ini', 400);
+    }
+
+    // Validate score matches winner
+    const isWinnerA = winnerIdInt === match.id_peserta_a;
+    if ((isWinnerA && scoreAInt <= scoreBInt) || (!isWinnerA && scoreBInt <= scoreAInt)) {
+      return sendError(res, 'Skor tidak sesuai dengan pemenang', 400);
+    }
+
+    // Update match
+    const updatedMatch = await BracketService.updateMatch(matchIdInt, winnerIdInt, scoreAInt, scoreBInt);
+
+    return sendSuccess(res, updatedMatch, 'Hasil pertandingan berhasil diupdate');
+  } catch (error: any) {
+    console.error('Controller - Error updating match:', error);
+    return sendError(res, error.message || 'Gagal mengupdate hasil pertandingan', 400);
+  }
+}
+
+/**
+ * Export bracket to PDF
+ */
+static async exportBracketToPdf(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    const { kelasKejuaraanId } = req.query;
+
+    const kompetisiId = parseInt(id);
+    const kelasId = kelasKejuaraanId ? parseInt(kelasKejuaraanId as string) : null;
+
+    if (isNaN(kompetisiId)) {
+      return sendError(res, 'ID kompetisi tidak valid', 400);
+    }
+
+    if (!kelasId || isNaN(kelasId)) {
+      return sendError(res, 'ID kelas kejuaraan diperlukan untuk export PDF', 400);
+    }
+
+    // Get bracket data
+    const bracket = await BracketService.getBracket(kompetisiId, kelasId);
+    
+    if (!bracket) {
+      return sendError(res, 'Bagan tidak ditemukan', 404);
+    }
+
+    // Get competition and class info
+    const kompetisi = await prisma.tb_kompetisi.findUnique({
+      where: { id_kompetisi: kompetisiId },
+      include: {
+        penyelenggara: true
+      }
+    });
+
+    const kelas = await prisma.tb_kelas_kejuaraan.findUnique({
+      where: { id_kelas_kejuaraan: kelasId },
+      include: {
+        kategori_event: true,
+        kelompok: true,
+        kelas_berat: true,
+        poomsae: true
+      }
+    });
+
+    if (!kompetisi || !kelas) {
+      return sendError(res, 'Data kompetisi atau kelas tidak ditemukan', 404);
+    }
+
+    // Generate PDF
+    const pdfBuffer = await KompetisiController.generateBracketPDF(kompetisi, kelas, bracket);
+
+    // Set response headers for PDF download
+    const fileName = `Bagan-${kompetisi.nama_event}-${kelas.kategori_event.nama_kategori}.pdf`;
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+    res.setHeader('Content-Length', pdfBuffer.length);
+
+    res.send(pdfBuffer);
+  } catch (error: any) {
+    console.error('Controller - Error exporting bracket PDF:', error);
+    return sendError(res, error.message || 'Gagal export bagan ke PDF', 400);
+  }
+}
+
+/**
+ * Generate PDF for bracket
+ */
+static async generateBracketPDF(kompetisi: any, kelas: any, bracket: any): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    try {
+      const doc = new PDFDocument({ 
+        size: 'A4', 
+        layout: 'landscape',
+        margins: { top: 50, bottom: 50, left: 50, right: 50 }
+      });
+      
+      const chunks: Buffer[] = [];
+      
+      doc.on('data', (chunk) => chunks.push(chunk));
+      doc.on('end', () => resolve(Buffer.concat(chunks)));
+      doc.on('error', reject);
+
+      // Title
+      doc.fontSize(16).font('Helvetica-Bold');
+      doc.text(`BAGAN TURNAMEN`, { align: 'center' });
+      doc.moveDown(0.5);
+      
+      doc.fontSize(14);
+      doc.text(`${kompetisi.nama_event}`, { align: 'center' });
+      doc.moveDown(0.3);
+      
+      doc.fontSize(12);
+      doc.text(`${kelas.kategori_event.nama_kategori}`, { align: 'center' });
+      
+      if (kelas.kelompok) {
+        doc.text(`Kelompok Usia: ${kelas.kelompok.nama_kelompok}`, { align: 'center' });
+      }
+      
+      if (kelas.kelas_berat) {
+        doc.text(`Kelas Berat: ${kelas.kelas_berat.nama_kelas}`, { align: 'center' });
+      }
+      
+      doc.moveDown(1);
+
+      // Draw bracket
+      KompetisiController.drawBracketOnPDF(doc, bracket);
+
+      // Footer
+      doc.fontSize(10);
+      doc.text(`Generated on: ${new Date().toLocaleString('id-ID')}`, 50, doc.page.height - 30);
+      doc.text(`Total Participants: ${bracket.participants.length}`, { align: 'right' });
+
+      doc.end();
+    } catch (error) {
+      reject(error);
+    }
+  });
+}
+
+/**
+ * Draw bracket structure on PDF
+ */
+static drawBracketOnPDF(doc: any, bracket: any) {
+  const pageWidth = doc.page.width - 100; // Account for margins
+  const pageHeight = doc.page.height - 150; // Account for title and margins
+  
+  const rounds = bracket.totalRounds;
+  const roundWidth = pageWidth / rounds;
+  
+  // Group matches by round
+  const matchesByRound: any = {};
+  bracket.matches.forEach((match: any) => {
+    if (!matchesByRound[match.round]) {
+      matchesByRound[match.round] = [];
+    }
+    matchesByRound[match.round].push(match);
+  });
+
+  // Draw each round
+  for (let round = 1; round <= rounds; round++) {
+    const roundMatches = matchesByRound[round] || [];
+    const x = 50 + (round - 1) * roundWidth;
+    const matchHeight = pageHeight / Math.max(roundMatches.length, 1);
+    
+    // Round title
+    doc.fontSize(10).font('Helvetica-Bold');
+    doc.text(`Round ${round}`, x, 130);
+    
+    // Draw matches
+    roundMatches.forEach((match: any, index: number) => {
+      const y = 150 + (index * matchHeight);
+      
+      doc.fontSize(8).font('Helvetica');
+      
+      // Match box
+      doc.rect(x, y, roundWidth - 10, Math.min(matchHeight - 5, 80)).stroke();
+      
+      // Participant 1
+      const p1Name = match.participant1 ? 
+        (match.participant1.name.length > 20 ? match.participant1.name.substring(0, 20) + '...' : match.participant1.name) : 
+        'TBD';
+      doc.text(p1Name, x + 5, y + 5);
+      
+      // Score 1
+      if (match.scoreA !== undefined) {
+        doc.text(match.scoreA.toString(), x + roundWidth - 25, y + 5);
+      }
+      
+      // Participant 2
+      const p2Name = match.participant2 ? 
+        (match.participant2.name.length > 20 ? match.participant2.name.substring(0, 20) + '...' : match.participant2.name) : 
+        'TBD';
+      doc.text(p2Name, x + 5, y + 20);
+      
+      // Score 2
+      if (match.scoreB !== undefined) {
+        doc.text(match.scoreB.toString(), x + roundWidth - 25, y + 20);
+      }
+      
+      // Winner indicator
+      if (match.winner) {
+        doc.font('Helvetica-Bold');
+        doc.text('★', x + roundWidth - 15, y + 35);
+        doc.font('Helvetica');
+      }
+      
+      // Match status
+      if (match.status === 'completed') {
+        doc.fillColor('green').text('✓', x + 5, y + 35);
+      } else if (match.status === 'ongoing') {
+        doc.fillColor('orange').text('●', x + 5, y + 35);
+      } else {
+        doc.fillColor('gray').text('○', x + 5, y + 35);
+      }
+      doc.fillColor('black');
+    });
+  }
+}
+
+/**
+ * Conduct draw (legacy method - kept for compatibility)
+ */
+static async conductDraw(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    const { kelasKejuaraanId } = req.body;
+
+    const kompetisiId = parseInt(id);
+    const kelasId = parseInt(kelasKejuaraanId);
+
+    if (isNaN(kompetisiId) || isNaN(kelasId)) {
+      return sendError(res, 'Parameter tidak valid', 400);
+    }
+
+    // This is essentially the same as generateBrackets
+    const bracket = await BracketService.generateBracket(kompetisiId, kelasId);
+
+    return sendSuccess(res, bracket, 'Drawing berhasil dilakukan', 201);
+  } catch (error: any) {
+    console.error('Controller - Error conducting draw:', error);
+    return sendError(res, error.message || 'Gagal melakukan drawing', 400);
+  }
+}
+
+}
+
