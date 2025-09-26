@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { KompetisiController } from '../controllers/kompetisiController';
 import { authenticate } from '../middleware/auth';
 import { validateRequest } from '../middleware/validation';
-import { kompetisiValidation } from '../validations/kompetisiValidation';
+import { kompetisiValidation, } from '../validations/kompetisiValidation';
 
 const router = Router();
 
