@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Trophy, Medal, User, Users, Eye, Edit3, Save, Clock, CheckCircle, ArrowLeft, RefreshCw } from 'lucide-react';
+import { Trophy, Medal, User, Users, Eye, Edit3, Save, Clock, CheckCircle, ArrowLeft, RefreshCw, Download, FileText, Shuffle } from 'lucide-react';
 
 // Types based on your Prisma schema
 interface Peserta {
@@ -75,14 +75,44 @@ interface KelasKejuaraan {
 interface TournamentBracketProps {
   kelasData?: KelasKejuaraan;
   onBack?: () => void;
+  apiBaseUrl?: string;
 }
 
-const TournamentBracket: React.FC<TournamentBracketProps> = ({ kelasData, onBack }) => {
+const TournamentBracket: React.FC<TournamentBracketProps> = ({ 
+  kelasData, 
+  onBack,
+  apiBaseUrl = '/api' 
+}) => {
   const [selectedKelas, setSelectedKelas] = useState<KelasKejuaraan | null>(kelasData || null);
   const [matches, setMatches] = useState<Match[]>([]);
   const [editingMatch, setEditingMatch] = useState<Match | null>(null);
   const [loading, setLoading] = useState(false);
   const [bracketGenerated, setBracketGenerated] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [exporting, setExporting] = useState(false);
+
+  // Fetch competition class data from database
+  const fetchKelasData = async (id_kelas_kejuaraan: number) => {
+    try {
+      setLoading(true);
+      const response = await fetch(`${apiBaseUrl}/kelas-kejuaraan/${id_kelas_kejuaraan}`);
+      if (response.ok) {
+        const data = await response.json();
+        setSelectedKelas(data);
+        
+        // Check if bracket already exists
+        if (data.bagan && data.bagan.length > 0) {
+          const existingMatches = data.bagan.flatMap(b => b.match);
+          setMatches(existingMatches);
+          setBracketGenerated(true);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching kelas data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Mock data for demonstration - replace with your actual API calls
   useEffect(() => {
@@ -196,22 +226,38 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({ kelasData, onBack
     }
   }, [selectedKelas]);
 
-  // Generate tournament bracket
-  const generateBracket = async () => {
+  // Shuffle array using Fisher-Yates algorithm
+  const shuffleArray = <T,>(array: T[]): T[] => {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  };
+
+  // Generate tournament bracket with shuffle
+  const generateBracket = async (shuffle: boolean = true) => {
     if (!selectedKelas) return;
     
     setLoading(true);
     
-    // Simulate API call delay
-    setTimeout(() => {
+    try {
       const approvedPeserta = selectedKelas.peserta_kompetisi.filter(p => p.status === 'APPROVED');
-      const totalParticipants = approvedPeserta.length;
+      let participants = [...approvedPeserta];
+      
+      if (shuffle) {
+        participants = shuffleArray(participants);
+      }
+      
+      const totalParticipants = participants.length;
       
       if (totalParticipants < 2) {
         setLoading(false);
         return;
       }
 
+      // Calculate number of rounds needed
       const rounds = Math.ceil(Math.log2(totalParticipants));
       const generatedMatches: Match[] = [];
       
@@ -220,8 +266,8 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({ kelasData, onBack
       const firstRoundMatches = Math.ceil(totalParticipants / 2);
       
       for (let i = 0; i < firstRoundMatches; i++) {
-        const pesertaA = approvedPeserta[i * 2];
-        const pesertaB = approvedPeserta[i * 2 + 1];
+        const pesertaA = participants[i * 2];
+        const pesertaB = participants[i * 2 + 1];
         
         generatedMatches.push({
           id_match: matchId++,
@@ -235,7 +281,7 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({ kelasData, onBack
         });
       }
       
-      // Generate subsequent rounds
+      // Generate subsequent rounds (empty matches to be filled by winners)
       for (let round = 2; round <= rounds; round++) {
         const prevRoundMatches = generatedMatches.filter(m => m.ronde === round - 1);
         const currentRoundMatches = Math.ceil(prevRoundMatches.length / 2);
@@ -252,8 +298,131 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({ kelasData, onBack
       
       setMatches(generatedMatches);
       setBracketGenerated(true);
+      
+    } catch (error) {
+      console.error('Error generating bracket:', error);
+    } finally {
       setLoading(false);
-    }, 1500);
+    }
+  };
+
+  // Save bracket to database
+  const saveBracket = async () => {
+    if (!selectedKelas || !bracketGenerated) return;
+    
+    setSaving(true);
+    try {
+      const bracketData = {
+        id_kelas_kejuaraan: selectedKelas.id_kelas_kejuaraan,
+        matches: matches,
+        participants: selectedKelas.peserta_kompetisi.filter(p => p.status === 'APPROVED')
+      };
+
+      const response = await fetch(`${apiBaseUrl}/brackets`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(bracketData)
+      });
+
+      if (response.ok) {
+        alert('Bracket saved successfully!');
+      } else {
+        throw new Error('Failed to save bracket');
+      }
+    } catch (error) {
+      console.error('Error saving bracket:', error);
+      alert('Failed to save bracket. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Export bracket to PDF
+  const exportToPDF = async () => {
+    if (!selectedKelas || !bracketGenerated) return;
+    
+    setExporting(true);
+    try {
+      // Create a temporary div for PDF generation
+      const element = document.createElement('div');
+      element.innerHTML = generatePDFContent();
+      element.style.position = 'absolute';
+      element.style.left = '-9999px';
+      document.body.appendChild(element);
+
+      // Use html2canvas and jsPDF for PDF generation
+      // Note: In a real implementation, you'd need to install these packages
+      // For now, this creates a simple text-based PDF content
+      
+      const pdfContent = generateTextPDFContent();
+      const blob = new Blob([pdfContent], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `tournament-bracket-${selectedKelas.id_kelas_kejuaraan}.txt`;
+      document.body.appendChild(link);
+      link.click();
+      
+      document.body.removeChild(link);
+      document.body.removeChild(element);
+      URL.revokeObjectURL(url);
+      
+    } catch (error) {
+      console.error('Error exporting PDF:', error);
+      alert('Failed to export PDF. Please try again.');
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  // Generate PDF content (text-based for demo)
+  const generateTextPDFContent = (): string => {
+    if (!selectedKelas) return '';
+    
+    let content = `TOURNAMENT BRACKET\n`;
+    content += `================\n\n`;
+    content += `Competition: ${selectedKelas.kompetisi.nama_event}\n`;
+    content += `Class: ${selectedKelas.kelompok?.nama_kelompok} ${selectedKelas.kelas_berat?.jenis_kelamin === 'LAKI_LAKI' ? 'Male' : 'Female'} ${selectedKelas.kelas_berat?.nama_kelas || selectedKelas.poomsae?.nama_kelas}\n`;
+    content += `Date: ${new Date(selectedKelas.kompetisi.tanggal_mulai).toLocaleDateString()}\n`;
+    content += `Location: ${selectedKelas.kompetisi.lokasi}\n\n`;
+    
+    const totalRounds = getTotalRounds();
+    
+    for (let round = 1; round <= totalRounds; round++) {
+      const roundMatches = getMatchesByRound(round);
+      content += `${getRoundName(round, totalRounds).toUpperCase()}\n`;
+      content += `${'-'.repeat(getRoundName(round, totalRounds).length)}\n`;
+      
+      roundMatches.forEach((match, index) => {
+        content += `\nMatch ${index + 1}:\n`;
+        if (match.peserta_a) {
+          content += `  B/${match.peserta_a.id_peserta_kompetisi} ${getParticipantName(match.peserta_a)}`;
+          if (match.skor_a > 0 || match.skor_b > 0) content += ` - ${match.skor_a}`;
+          content += `\n`;
+        }
+        if (match.peserta_b) {
+          content += `  R/${match.peserta_b.id_peserta_kompetisi} ${getParticipantName(match.peserta_b)}`;
+          if (match.skor_a > 0 || match.skor_b > 0) content += ` - ${match.skor_b}`;
+          content += `\n`;
+        }
+        if (match.peserta_a && !match.peserta_b) {
+          content += `  (Free draw)\n`;
+        }
+      });
+      content += `\n`;
+    }
+    
+    return content;
+  };
+
+  // Generate HTML content for PDF
+  const generatePDFContent = (): string => {
+    // This would generate proper HTML for PDF conversion
+    // Implementation would be similar to the render but optimized for print
+    return '<div>PDF Content Here</div>';
   };
 
   const getMatchesByRound = (round: number) => {
@@ -286,13 +455,36 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({ kelasData, onBack
     return peserta.atlet?.dojang.nama_dojang || '';
   };
 
-  const updateMatchResult = (matchId: number, scoreA: number, scoreB: number) => {
-    setMatches(prev => prev.map(match => 
-      match.id_match === matchId 
-        ? { ...match, skor_a: scoreA, skor_b: scoreB }
-        : match
-    ));
-    setEditingMatch(null);
+  const updateMatchResult = async (matchId: number, scoreA: number, scoreB: number) => {
+    try {
+      // Update local state
+      setMatches(prev => prev.map(match => 
+        match.id_match === matchId 
+          ? { ...match, skor_a: scoreA, skor_b: scoreB }
+          : match
+      ));
+
+      // Update in database
+      const response = await fetch(`${apiBaseUrl}/matches/${matchId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          skor_a: scoreA,
+          skor_b: scoreB
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update match result');
+      }
+
+      setEditingMatch(null);
+    } catch (error) {
+      console.error('Error updating match result:', error);
+      alert('Failed to update match result. Please try again.');
+    }
   };
 
   if (!selectedKelas) {
@@ -346,7 +538,26 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({ kelasData, onBack
 
             <div className="flex gap-3">
               <button
-                onClick={generateBracket}
+                onClick={() => generateBracket(true)}
+                disabled={loading || approvedParticipants.length < 2}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50"
+                style={{ backgroundColor: '#6366F1', color: '#F5FBEF' }}
+              >
+                {loading ? (
+                  <>
+                    <RefreshCw size={16} className="animate-spin" />
+                    <span>Shuffling...</span>
+                  </>
+                ) : (
+                  <>
+                    <Shuffle size={16} />
+                    <span>Shuffle & Generate</span>
+                  </>
+                )}
+              </button>
+
+              <button
+                onClick={() => generateBracket(false)}
                 disabled={loading || approvedParticipants.length < 2}
                 className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50"
                 style={{ backgroundColor: '#F5B700', color: '#F5FBEF' }}
@@ -359,17 +570,47 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({ kelasData, onBack
                 ) : (
                   <>
                     <RefreshCw size={16} />
-                    <span>{bracketGenerated ? 'Regenerate' : 'Generate'} Bracket</span>
+                    <span>{bracketGenerated ? 'Regenerate' : 'Generate'}</span>
                   </>
                 )}
               </button>
               
               <button
-                className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all"
+                onClick={saveBracket}
+                disabled={!bracketGenerated || saving}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50"
                 style={{ backgroundColor: '#990D35', color: '#F5FBEF' }}
               >
-                <Save size={16} />
-                <span>Save</span>
+                {saving ? (
+                  <>
+                    <RefreshCw size={16} className="animate-spin" />
+                    <span>Saving...</span>
+                  </>
+                ) : (
+                  <>
+                    <Save size={16} />
+                    <span>Save</span>
+                  </>
+                )}
+              </button>
+
+              <button
+                onClick={exportToPDF}
+                disabled={!bracketGenerated || exporting}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50"
+                style={{ backgroundColor: '#059669', color: '#F5FBEF' }}
+              >
+                {exporting ? (
+                  <>
+                    <RefreshCw size={16} className="animate-spin" />
+                    <span>Exporting...</span>
+                  </>
+                ) : (
+                  <>
+                    <Download size={16} />
+                    <span>Export PDF</span>
+                  </>
+                )}
               </button>
             </div>
           </div>
@@ -571,21 +812,41 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({ kelasData, onBack
               }
             </p>
             {approvedParticipants.length >= 2 && (
-              <button
-                onClick={generateBracket}
-                disabled={loading}
-                className="px-6 py-3 rounded-lg font-medium transition-all disabled:opacity-50"
-                style={{ backgroundColor: '#F5B700', color: '#F5FBEF' }}
-              >
-                {loading ? (
-                  <div className="flex items-center gap-2">
-                    <RefreshCw size={16} className="animate-spin" />
-                    <span>Generating Bracket...</span>
-                  </div>
-                ) : (
-                  'Generate Tournament Bracket'
-                )}
-              </button>
+              <div className="flex gap-3 justify-center">
+                <button
+                  onClick={() => generateBracket(true)}
+                  disabled={loading}
+                  className="px-6 py-3 rounded-lg font-medium transition-all disabled:opacity-50"
+                  style={{ backgroundColor: '#6366F1', color: '#F5FBEF' }}
+                >
+                  {loading ? (
+                    <div className="flex items-center gap-2">
+                      <RefreshCw size={16} className="animate-spin" />
+                      <span>Shuffling & Generating...</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <Shuffle size={16} />
+                      <span>Shuffle & Generate Bracket</span>
+                    </div>
+                  )}
+                </button>
+                <button
+                  onClick={() => generateBracket(false)}
+                  disabled={loading}
+                  className="px-6 py-3 rounded-lg font-medium transition-all disabled:opacity-50"
+                  style={{ backgroundColor: '#F5B700', color: '#F5FBEF' }}
+                >
+                  {loading ? (
+                    <div className="flex items-center gap-2">
+                      <RefreshCw size={16} className="animate-spin" />
+                      <span>Generating...</span>
+                    </div>
+                  ) : (
+                    'Generate Sequential Bracket'
+                  )}
+                </button>
+              </div>
             )}
           </div>
         </div>
