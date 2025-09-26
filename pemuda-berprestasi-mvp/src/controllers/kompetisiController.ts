@@ -4,6 +4,7 @@ import { BracketService } from '../services/bracketService';
 import { sendSuccess, sendError } from '../utils/response';
 import { StatusKompetisi } from '@prisma/client';
 import prisma from '../config/database';
+import PDFDocument from 'pdfkit'; 
 
 export class KompetisiController {
   // Create new kompetisi
