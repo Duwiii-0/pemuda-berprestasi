@@ -329,7 +329,7 @@ const handleFileRemove = (field: keyof AtletWithFiles) => {
                 ) : null}
                 <span 
                   className={`w-full h-full flex items-center justify-center ${formData.pas_foto_path ? 'hidden' : ''}`}
-                  style={{ display: formData.pas_foto ? 'none' : 'flex' }}
+                  style={{ display: formData.pas_foto_path ? 'hidden' : 'flex' }}
                 >
                   {formData.nama_atlet.charAt(0).toUpperCase()}
                 </span>
