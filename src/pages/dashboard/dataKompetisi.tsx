@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Trophy, Users, Search, Clock, CheckCircle, Menu, ChevronLeft, ChevronRight, Edit, Trash } from 'lucide-react';
+import { Trophy, Users, Search, Clock, CheckCircle, Menu, ChevronLeft, ChevronRight, Edit, Trash, Upload } from 'lucide-react';
 import toast from "react-hot-toast";
 import NavbarDashboard from "../../components/navbar/navbarDashboard";
 import { useAuth } from "../../context/authContext";
@@ -12,7 +12,7 @@ import Select from "react-select";
 import { kelasBeratOptionsMap } from "../../dummy/beratOptions";
 import AlertModal from "../../components/alertModal";
 import EditRegistrationModal from "../../components/EditRegistrationModal";
-
+import UploadBuktiModal from '../../components/BuktiTfModal'; // Sesuaikan path import
 
 
 interface StatsCardProps {
@@ -49,6 +49,8 @@ const DataKompetisi = () => {
   const [deletingParticipants, setDeletingParticipants] = useState<Set<number>>(new Set());
   // State untuk modal registrasi
   const [showRegistrationModal, setShowRegistrationModal] = useState(false);
+  const [showUploadBuktiModal, setShowUploadBuktiModal] = useState(false);
+
   const [deleteModal, setDeleteModal] = useState({
     isOpen: false,
     participantId: 0,
@@ -726,6 +728,36 @@ const handleEditSuccess = () => {
               </div>
             </div>
 
+            {/* upload button */}
+            <div className="mb-6">
+              <div className="bg-gradient-to-r from-red/5 via-yellow/5 to-red/5 rounded-2xl border border-red/20 shadow-sm overflow-hidden">
+                <div className="p-4 lg:p-6">
+                  <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                    {/* Content */}
+                    <div className="text-center lg:text-left">
+                      <h3 className="font-bebas text-xl lg:text-2xl text-black/80 mb-1">
+                        Upload bukti Pembayaran Peserta
+                      </h3>
+                      <p className="font-plex text-sm lg:text-base text-black/60">
+                        Upload bukti pambayaran untuk kompetisi {selectedKompetisi.nama_event}
+                      </p>
+                    </div>
+                    
+                    {/* Button */}
+                    <div className="flex justify-center lg:justify-end">
+                      <button
+                        onClick={() => setShowUploadBuktiModal(true)}
+                        className="bg-gradient-to-r from-red to-red/90 hover:from-red/90 hover:to-red text-white font-plex font-semibold px-6 lg:px-8 py-3 rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-105 flex items-center gap-2 min-w-[180px] lg:min-w-[200px] justify-center"
+                      >
+                        <Upload size={20} />
+                        <span>Upload Bukti</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {/* Peserta Table */}
             <div className="w-full bg-white backdrop-blur-sm rounded-3xl p-6 shadow-xl border border-white/50">
               {/* Desktop Table View */}
@@ -840,50 +872,50 @@ const handleEditSuccess = () => {
                               <td className="py-4 px-4 text-center">
                                 {getStatusBadge(peserta.status)}
                               </td>
-{/* Desktop Table - Kolom Aksi */}
-<td className="py-4 px-4 text-center flex justify-center gap-3">
-  <button 
-    className={`cursor-pointer hover:scale-102 transition-colors ${
-      peserta.status === 'APPROVED' 
-        ? 'text-gray-400 cursor-not-allowed' 
-        : 'text-blue-600 hover:text-blue-800'
-    }`}
-    onClick={(e) => {
-      e.stopPropagation();
-      if (peserta.status !== 'APPROVED') {
-        handleEditParticipant(peserta); // ✅ FIXED: Gunakan function yang sudah ada
-      }
-    }}
-    disabled={peserta.status === 'APPROVED'}
-    title={
-      peserta.status === 'APPROVED' 
-        ? "Peserta sudah disetujui, tidak dapat diedit" 
-        : "Edit kelas peserta"
-    }
-  >
-    <Edit size={18} />
-  </button>
-  <button 
-    className={`cursor-pointer hover:scale-102 transition-colors ${
-      isDeleting ? 'opacity-50 cursor-not-allowed' : 'text-red-600 hover:text-red-800'
-    }`}
-    onClick={(e) => {
-      e.stopPropagation();
-      if (!isDeleting) {
-        handleDeleteParticipant(
-          selectedKompetisi.id_kompetisi, 
-          peserta.id_peserta_kompetisi,
-          namaPeserta,
-          peserta.status
-        );
-      }
-    }}
-    disabled={isDeleting}
-    title={isDeleting ? "Menghapus..." : "Hapus peserta"}
-  >
-    <Trash size={18} />
-  </button>
-</td>
+                              {/* Desktop Table - Kolom Aksi */}
+                              <td className="py-4 px-4 text-center flex justify-center gap-3">
+                                <button 
+                                  className={`cursor-pointer hover:scale-102 transition-colors ${
+                                    peserta.status === 'APPROVED' 
+                                      ? 'text-gray-400 cursor-not-allowed' 
+                                      : 'text-blue-600 hover:text-blue-800'
+                                  }`}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (peserta.status !== 'APPROVED') {
+                                      handleEditParticipant(peserta); // ✅ FIXED: Gunakan function yang sudah ada
+                                    }
+                                  }}
+                                  disabled={peserta.status === 'APPROVED'}
+                                  title={
+                                    peserta.status === 'APPROVED' 
+                                      ? "Peserta sudah disetujui, tidak dapat diedit" 
+                                      : "Edit kelas peserta"
+                                  }
+                                >
+                                  <Edit size={18} />
+                                </button>
+                                <button 
+                                  className={`cursor-pointer hover:scale-102 transition-colors ${
+                                    isDeleting ? 'opacity-50 cursor-not-allowed' : 'text-red-600 hover:text-red-800'
+                                  }`}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (!isDeleting) {
+                                      handleDeleteParticipant(
+                                        selectedKompetisi.id_kompetisi, 
+                                        peserta.id_peserta_kompetisi,
+                                        namaPeserta,
+                                        peserta.status
+                                      );
+                                    }
+                                  }}
+                                  disabled={isDeleting}
+                                  title={isDeleting ? "Menghapus..." : "Hapus peserta"}
+                                >
+                                  <Trash size={18} />
+                                </button>
+                              </td>
                             </tr>
                           );
                         })}
@@ -968,7 +1000,6 @@ const handleEditSuccess = () => {
           </div>
         </div>
 
-        {/* Action buttons untuk mobile */}
 {/* Action buttons untuk mobile */}
 <div className="flex justify-end gap-3 pt-3 border-t border-gray-100">
   <button 
@@ -1088,6 +1119,14 @@ const handleEditSuccess = () => {
           kompetisiId={selectedKompetisi.id_kompetisi}
           kompetisiName={selectedKompetisi.nama_event}
           biayaPendaftaran={(selectedKompetisi as any).biaya_pendaftaran}
+        />
+
+        {/* Modal upload */}
+        <UploadBuktiModal
+          isOpen={showUploadBuktiModal}
+          onClose={() => setShowUploadBuktiModal(false)}
+          kompetisiName={selectedKompetisi.nama_event}
+          // onUpload={}
         />
         
         {/* Mobile Sidebar */}
