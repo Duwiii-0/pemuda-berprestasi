@@ -133,9 +133,10 @@ const handleDownload = async () => {
       'Akte Kelahiran': 'akte_kelahiran',
       'Pas Foto': 'pas_foto',
       'Sertifikat Belt': 'sertifikat_belt',
-      'KTP': 'ktp'
+      'KTP': 'ktp',
+      'KK': 'ktp'  // KK menggunakan folder yang sama dengan KTP
     };
-    const subfolder = folderMap[label] || 'documents';
+    const subfolder = folderMap[label] || 'ktp';  // Default ke ktp jika tidak ditemukan
     
     // Extract filename if path includes subfolder
     const filename = existingPath.includes('/') ? existingPath.split('/').pop() : existingPath;
@@ -178,9 +179,10 @@ const handleDownload = async () => {
       'Akte Kelahiran': 'akte_kelahiran',
       'Pas Foto': 'pas_foto', 
       'Sertifikat Belt': 'sertifikat_belt',
-      'KTP': 'ktp'
+      'KTP': 'ktp',
+      'KK': 'ktp'  // KK menggunakan folder yang sama dengan KTP
     };
-    const subfolder = folderMap[label] || 'documents';
+    const subfolder = folderMap[label] || 'ktp';  // Default ke ktp jika tidak ditemukan
     
     // Extract filename if path includes subfolder
     const filename = existingPath.includes('/') ? existingPath.split('/').pop() : existingPath;
@@ -207,7 +209,9 @@ const handleDownload = async () => {
   // Get icon based on document type
   const getDocumentIcon = () => {
     switch (label) {
-      case 'KTP': return <CreditCard size={24} className="text-gray-400" />;
+      case 'KTP': 
+      case 'KK': 
+        return <CreditCard size={24} className="text-gray-400" />;
       case 'Pas Foto': return <User size={24} className="text-gray-400" />;
       case 'Sertifikat Belt': return <Award size={24} className="text-gray-400" />;
       case 'Akte Kelahiran': return <IdCard size={24} className="text-gray-400" />;
