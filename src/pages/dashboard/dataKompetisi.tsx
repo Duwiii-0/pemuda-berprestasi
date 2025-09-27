@@ -888,8 +888,8 @@ const handleEditSuccess = () => {
                     {/* Button */}
                     <div className="flex justify-center lg:justify-end">
                       <button
-                      // toast.error('Fitur ini akan segera tersedia!')
-                        onClick={handleOpenUploadModal}
+                      //  handleOpenUploadModal
+                        onClick={() => toast.error('Fitur ini akan segera tersedia!')}
                         className="bg-gradient-to-r from-yellow to-yellow/90 hover:from-yellow/90 hover:to-yellow text-white font-plex font-semibold px-6 lg:px-8 py-3 rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-105 flex items-center gap-2 min-w-[180px] lg:min-w-[200px] justify-center"
                       >
                         <Upload size={20} />
