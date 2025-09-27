@@ -78,6 +78,11 @@ const provinsiOptions = Object.keys(provinsiKotaData).map(provinsi => ({
   label: provinsi
 }));
 
+const getPhotoUrl = (filename: string): string | null => {
+  if (!filename) return null;
+  return `${process.env.REACT_APP_API_BASE_URL || 'http://cjvmanagementevent.com'}/uploads/atlet/pas_foto/${filename}`;
+};
+
 
 function toInputDateFormat(dateStr: string): string {
   if (!dateStr) return "";
@@ -307,7 +312,27 @@ const handleFileRemove = (field: keyof AtletWithFiles) => {
             {/* Avatar and Info */}
             <div className="flex items-center gap-4 lg:gap-6 flex-1">
               <div className="w-20 h-20 lg:w-24 lg:h-24 rounded-full bg-gradient-to-br from-red to-red/80 flex items-center justify-center text-white font-bebas text-2xl lg:text-3xl shadow-lg flex-shrink-0">
-                {formData.nama_atlet?.charAt(0)}
+                {/* disini */}
+                {formData.pas_foto_path ? (
+                  <img 
+                    src={getPhotoUrl(formData.pas_foto_path)} 
+                    alt={`Foto ${formData.nama_atlet}`}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      // Fallback ke initial jika gambar gagal load
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = 'none';
+                      const sibling = target.nextElementSibling as HTMLElement;
+                      if (sibling) sibling.style.display = 'flex';
+                    }}
+                  />
+                ) : null}
+                <span 
+                  className={`w-full h-full flex items-center justify-center bg-white ${formData.pas_foto_path ? 'hidden' : ''}`}
+                  style={{ display: formData.pas_foto ? 'none' : 'flex' }}
+                >
+                  {formData.nama_atlet.charAt(0).toUpperCase()}
+                </span>
               </div>
               <div className="min-w-0 flex-1">
                 <h2 className="font-bebas text-2xl lg:text-3xl text-black/80 tracking-wide truncate">

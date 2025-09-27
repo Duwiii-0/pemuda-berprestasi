@@ -422,7 +422,7 @@ console.log(`Successfully loaded ${atletData.length} athletes`);
         />
       ) : null}
       <span 
-        className={`w-full h-full flex items-center justify-center ${atlit.pas_foto ? 'hidden' : ''}`}
+        className={`w-full h-full flex items-center justify-center bg-white ${atlit.pas_foto ? 'hidden' : ''}`}
         style={{ display: atlit.pas_foto ? 'none' : 'flex' }}
       >
         {atlit.nama_atlet.charAt(0).toUpperCase()}
