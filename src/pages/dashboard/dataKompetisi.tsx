@@ -12,14 +12,28 @@ import Select from "react-select";
 import { kelasBeratOptionsMap } from "../../dummy/beratOptions";
 import AlertModal from "../../components/alertModal";
 import EditRegistrationModal from "../../components/EditRegistrationModal";
-import UploadBuktiModal from '../../components/BuktiTfModal'; // Sesuaikan path import
-
+import UploadBuktiModal from '../../components/BuktiTfModal'; // Updated import
 
 interface StatsCardProps {
   icon: React.ComponentType<{ size?: number; className?: string }>;
   title: string;
   value: string;
   color: string;
+}
+
+// Interface untuk data dojang user
+interface UserDojangData {
+  dojangId: string;
+  dojangName: string;
+}
+
+// Interface untuk existing bukti files
+interface ExistingBuktiFile {
+  id: string;
+  fileName: string;
+  filePath: string;
+  fileSize: number;
+  uploadDate: string;
 }
 
 const StatsCard: React.FC<StatsCardProps> = ({ icon: Icon, title, value, color }) => (
@@ -51,6 +65,9 @@ const DataKompetisi = () => {
   const [showRegistrationModal, setShowRegistrationModal] = useState(false);
   const [showUploadBuktiModal, setShowUploadBuktiModal] = useState(false);
 
+  const [userDojang, setUserDojang] = useState<UserDojangData | null>(null);
+  const [existingBuktiFiles, setExistingBuktiFiles] = useState<ExistingBuktiFile[]>([]);
+
   const [deleteModal, setDeleteModal] = useState({
     isOpen: false,
     participantId: 0,
@@ -75,6 +92,131 @@ const DataKompetisi = () => {
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(100);
+
+
+    // Function untuk mendapatkan data dojang user
+  const getUserDojangData = async (): Promise<UserDojangData | null> => {
+    try {
+      if (user?.role === 'PELATIH' && user?.pelatih?.id_dojang) {
+        // Untuk pelatih, ambil dari data user
+        // Ambil nama dojang dari dojangOptions berdasarkan id_dojang
+        const dojangInfo = dojangOptions.find(dojang => dojang.value === String(user.pelatih?.id_dojang));
+        const dojangName = dojangInfo?.label || `Dojang ID: ${user.pelatih.id_dojang}`;
+        return {
+          dojangId: user.pelatih.id_dojang.toString(),
+          dojangName: dojangName
+        };
+      } else if (user?.role === 'ADMIN' || user?.role === 'ADMIN_KOMPETISI') {
+        // Untuk admin, mungkin perlu logic berbeda atau pilih dojang
+        toast.error('Admin tidak dapat upload bukti transfer untuk dojang tertentu');
+        return null;
+      }
+      
+      toast.error('Data dojang tidak ditemukan');
+      return null;
+    } catch (error) {
+      console.error('Error getting user dojang:', error);
+      return null;
+    }
+  };
+
+  // Function untuk mendapatkan existing files
+  const getExistingBuktiFiles = async (dojangId: string, kompetisiId: string): Promise<ExistingBuktiFile[]> => {
+    try {
+      // Ganti dengan endpoint API yang sesuai
+      const response = await fetch(`/api/bukti-transfer?dojang_id=${dojangId}&kompetisi_id=${kompetisiId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        return data.files || [];
+      }
+      return [];
+    } catch (error) {
+      console.error('Error fetching existing files:', error);
+      return [];
+    }
+  };
+
+  // Function untuk handle upload bukti
+  const handleUploadBukti = async (files: File[], dojangId: string): Promise<void> => {
+    try {
+      if (!selectedKompetisi) {
+        throw new Error('Kompetisi tidak ditemukan');
+      }
+
+      const formData = new FormData();
+      
+      // Append each file
+      files.forEach((file, index) => {
+        formData.append(`bukti_transfer_${index}`, file);
+      });
+      
+      // Append metadata
+      formData.append('id_kompetisi', selectedKompetisi.id_kompetisi.toString());
+      formData.append('id_dojang', dojangId);
+      formData.append('total_files', files.length.toString());
+      
+      // API call untuk upload (sesuaikan dengan endpoint Anda)
+      const response = await fetch('/api/upload-bukti-transfer', {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        console.log('Upload successful:', result);
+        
+        // Refresh existing files
+        if (userDojang) {
+          const updatedFiles = await getExistingBuktiFiles(userDojang.dojangId, selectedKompetisi.id_kompetisi.toString());
+          setExistingBuktiFiles(updatedFiles);
+        }
+        
+        toast.success(`Berhasil mengupload ${files.length} file bukti transfer`);
+      } else {
+        const error = await response.json();
+        throw new Error(error.message || 'Gagal mengupload bukti transfer');
+      }
+      
+    } catch (error) {
+      console.error('Upload error:', error);
+      throw new Error('Gagal mengupload bukti transfer. Silakan coba lagi.');
+    }
+  };
+
+  // Function untuk handle buka modal upload
+  const handleOpenUploadModal = async (): Promise<void> => {
+    // Check user permissions
+    if (!user || !['PELATIH', 'ADMIN', 'ADMIN_KOMPETISI'].includes(user.role)) {
+      toast.error('Anda tidak memiliki akses untuk upload bukti transfer');
+      return;
+    }
+
+    // Ambil data dojang user terlebih dahulu
+    const dojangData = await getUserDojangData();
+    
+    if (!dojangData) {
+      return; // Error sudah ditampilkan di getUserDojangData
+    }
+    
+    setUserDojang(dojangData);
+
+    // Load existing files
+    if (selectedKompetisi) {
+      const files = await getExistingBuktiFiles(dojangData.dojangId, selectedKompetisi.id_kompetisi.toString());
+      setExistingBuktiFiles(files);
+    }
+    
+    setShowUploadBuktiModal(true);
+  };
+
 
   useEffect(() => {
     refreshDojang();
@@ -746,8 +888,8 @@ const handleEditSuccess = () => {
                     {/* Button */}
                     <div className="flex justify-center lg:justify-end">
                       <button
-                      // setShowUploadBuktiModal(true)
-                        onClick={() => toast.error('Fitur ini akan segera tersedia!')}
+                      // toast.error('Fitur ini akan segera tersedia!')
+                        onClick={handleOpenUploadModal}
                         className="bg-gradient-to-r from-yellow to-yellow/90 hover:from-yellow/90 hover:to-yellow text-white font-plex font-semibold px-6 lg:px-8 py-3 rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-105 flex items-center gap-2 min-w-[180px] lg:min-w-[200px] justify-center"
                       >
                         <Upload size={20} />
@@ -1123,12 +1265,18 @@ const handleEditSuccess = () => {
         />
 
         {/* Modal upload */}
-        <UploadBuktiModal
-          isOpen={showUploadBuktiModal}
-          onClose={() => setShowUploadBuktiModal(false)}
-          kompetisiName={selectedKompetisi.nama_event}
-          // onUpload={}
-        />
+        {userDojang && (
+          <UploadBuktiModal
+            isOpen={showUploadBuktiModal}
+            onClose={() => setShowUploadBuktiModal(false)}
+            kompetisiName={selectedKompetisi.nama_event}
+            dojangId={userDojang.dojangId}          // TAMBAHAN
+            dojangName={userDojang.dojangName}      // TAMBAHAN
+            onUpload={handleUploadBukti}            // TAMBAHAN
+            existingFiles={existingBuktiFiles}      // TAMBAHAN
+          />
+        )}
+
         
         {/* Mobile Sidebar */}
         {sidebarOpen && (
