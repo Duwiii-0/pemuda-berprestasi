@@ -317,7 +317,7 @@ const handleFileRemove = (field: keyof AtletWithFiles) => {
                   <img 
                     src={getPhotoUrl(formData.pas_foto_path)} 
                     alt={`Foto ${formData.nama_atlet}`}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover rounded-full"
                     onError={(e) => {
                       // Fallback ke initial jika gambar gagal load
                       const target = e.target as HTMLImageElement;
