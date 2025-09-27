@@ -730,7 +730,7 @@ const handleEditSuccess = () => {
 
             {/* upload button */}
             <div className="mb-6">
-              <div className="bg-gradient-to-r from-red/5 via-yellow/5 to-red/5 rounded-2xl border border-red/20 shadow-sm overflow-hidden">
+              <div className="bg-gradient-to-r from-yellow/5 via-red/5 to-yellow/5 rounded-2xl border border-red/20 shadow-sm overflow-hidden">
                 <div className="p-4 lg:p-6">
                   <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                     {/* Content */}
@@ -746,8 +746,9 @@ const handleEditSuccess = () => {
                     {/* Button */}
                     <div className="flex justify-center lg:justify-end">
                       <button
-                        onClick={() => setShowUploadBuktiModal(true)}
-                        className="bg-gradient-to-r from-red to-red/90 hover:from-red/90 hover:to-red text-white font-plex font-semibold px-6 lg:px-8 py-3 rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-105 flex items-center gap-2 min-w-[180px] lg:min-w-[200px] justify-center"
+                      // setShowUploadBuktiModal(true)
+                        onClick={() => toast.error('Fitur ini akan segera tersedia!')}
+                        className="bg-gradient-to-r from-yellow to-yellow/90 hover:from-yellow/90 hover:to-yellow text-white font-plex font-semibold px-6 lg:px-8 py-3 rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-105 flex items-center gap-2 min-w-[180px] lg:min-w-[200px] justify-center"
                       >
                         <Upload size={20} />
                         <span>Upload Bukti</span>
