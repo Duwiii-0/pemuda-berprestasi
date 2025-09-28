@@ -129,7 +129,7 @@ peserta_tim      tb_peserta_tim[]
 @@index([id_pelatih_pembuat])
 }
 
-model BuktiTransfer {
+model tb_buktiTransfer {
   id_bukti_transfer   Int      @id @default(autoincrement())
   id_dojang          Int
   id_pelatih         Int
