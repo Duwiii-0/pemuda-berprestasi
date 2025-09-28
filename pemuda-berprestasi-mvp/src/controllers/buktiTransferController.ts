@@ -37,7 +37,7 @@ export const BuktiTransferController = {
       })
       
       // Save to database
-      const buktiTransfer = await prisma.bukti_transfer.create({
+      const buktiTransfer = await prisma.tb_buktiTransfer.create({
         data: {
           id_dojang: parseInt(id_dojang),
           id_pelatih: parseInt(pelatihId),
@@ -58,7 +58,7 @@ export const BuktiTransferController = {
   // Get semua bukti transfer
   getAll: async (req: Request, res: Response) => {
     try {
-      const buktiTransfers = await prisma.bukti_transfer.findMany({
+      const buktiTransfers = await prisma.tb_buktiTransfer.findMany({
         orderBy: { created_at: 'desc' }
       })
       
@@ -74,7 +74,7 @@ export const BuktiTransferController = {
     try {
       const { id_dojang } = req.params
       
-      const buktiTransfers = await prisma.bukti_transfer.findMany({
+      const buktiTransfers = await prisma.tb_buktiTransfer.findMany({
         where: { id_dojang: parseInt(id_dojang) },
         orderBy: { created_at: 'desc' }
       })
@@ -91,7 +91,7 @@ export const BuktiTransferController = {
     try {
       const { id_pelatih } = req.params
       
-      const buktiTransfers = await prisma.bukti_transfer.findMany({
+      const buktiTransfers = await prisma.tb_buktiTransfer.findMany({
         where: { id_pelatih: parseInt(id_pelatih) },
         orderBy: { created_at: 'desc' }
       })
@@ -109,7 +109,7 @@ export const BuktiTransferController = {
       const { id } = req.params
       
       // Find the record first to get file path
-      const buktiTransfer = await prisma.bukti_transfer.findUnique({
+      const buktiTransfer = await prisma.tb_buktiTransfer.findUnique({
         where: { id_bukti_transfer: parseInt(id) }
       })
       
@@ -125,7 +125,7 @@ export const BuktiTransferController = {
       }
       
       // Delete from database
-      await prisma.bukti_transfer.delete({
+      await prisma.tb_buktiTransfer.delete({
         where: { id_bukti_transfer: parseInt(id) }
       })
       
