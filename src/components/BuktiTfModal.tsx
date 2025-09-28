@@ -382,12 +382,13 @@ const UploadBuktiModal: React.FC<UploadBuktiModalProps> = ({
             <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
               <div className="flex items-start gap-3">
                 <FileText size={20} className="text-yellow-600 mt-0.5 flex-shrink-0" />
-                <div className="text-sm text-yellow-800">
+                <div className="text-sm text-yellow-800 flex flex-col gap-2">
                   <p className="font-semibold mb-1">Catatan Penting:</p>
                   <p className="text-xs">
-                    Bukti transfer akan dikaitkan dengan dojang Anda dan diverifikasi oleh admin. 
-                    Status pembayaran akan diupdate setelah verifikasi selesai.
+                    • Bukti transfer akan dikaitkan dengan dojang Anda dan diverifikasi oleh admin. 
+                    Status Atlet akan diupdate setelah verifikasi selesai.
                   </p>
+                  <p>• Format yang didukung: JPG, PNG, JPEG, WebP</p>
                 </div>
               </div>
             </div>
