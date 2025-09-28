@@ -120,60 +120,51 @@ const DataKompetisi = () => {
     }
   };
 
-  // Function untuk mendapatkan existing files
 
   // Function untuk handle upload bukti
-  const handleUploadBukti = async (file: File, dojangId: string): Promise<void> => {
-    try {
-      if (!selectedKompetisi || !user) {
-        throw new Error('Kompetisi atau user tidak ditemukan');
-      }
-
-      // Get pelatihId from user context
-      const pelatihId = user.pelatih?.id_pelatih;
-      if (!pelatihId) {
-        throw new Error('ID Pelatih tidak ditemukan');
-      }
-
-      console.log('📤 Uploading single file:', file.name);
-
-      const formData = new FormData();
-
-      // Append data sesuai format backend
-      formData.append('bukti_transfer', file); // Field name sesuai multer config
-      formData.append('id_dojang', dojangId);
-      formData.append('id_pelatih', pelatihId.toString());
-
-      // API call ke endpoint yang benar
-      const response = await fetch('/api/bukti-transfer', {
-        method: 'POST',
-        body: formData,
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || `Gagal mengupload ${file.name}`);
-      }
-
-      const result = await response.json();
-      console.log('✅ Upload successful:', result);
-
-      // Refresh existing files setelah upload
-      if (userDojang) {
-        const updatedFiles = await getExistingBuktiFiles(userDojang.dojangId);
-        setExistingBuktiFiles(updatedFiles);
-      }
-
-      toast.success(`Berhasil mengupload bukti transfer: ${file.name}`);
-
-    } catch (error) {
-      console.error('❌ Upload error:', error);
-      throw new Error(error instanceof Error ? error.message : 'Gagal mengupload bukti transfer');
+  // Ganti handleUploadBukti sementara untuk debugging:
+const handleUploadBukti = async (file: File, dojangId: string): Promise<void> => {
+  try {
+    const pelatihId = user.pelatih?.id_pelatih;
+    if (!pelatihId) {
+      throw new Error('ID Pelatih tidak ditemukan');
     }
-  };
+
+    const formData = new FormData();
+    formData.append('bukti_transfer', file);
+    formData.append('id_dojang', dojangId);
+    formData.append('id_pelatih', pelatihId.toString());
+
+    // DEBUG: Log FormData contents
+    console.log('📋 FormData contents:');
+    for (let [key, value] of formData.entries()) {
+      console.log(`${key}:`, value);
+    }
+
+    // Manual fetch tanpa API Client
+    const response = await fetch('https://cjvmanagementevent.com/api/bukti-transfer', {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'Authorization': `Bearer ${token}`
+        // Jangan set Content-Type untuk FormData
+      }
+    });
+
+    console.log('Response status:', response.status);
+    const result = await response.text(); // Get as text first
+    console.log('Raw response:', result);
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${result}`);
+    }
+
+    toast.success('Upload berhasil!');
+  } catch (error) {
+    console.error('Upload error:', error);
+    throw error;
+  }
+};
 
   const getExistingBuktiFiles = async (dojangId: string): Promise<ExistingBuktiFile[]> => {
     try {
@@ -1283,10 +1274,10 @@ const handleEditSuccess = () => {
             isOpen={showUploadBuktiModal}
             onClose={() => setShowUploadBuktiModal(false)}
             kompetisiName={selectedKompetisi.nama_event}
-            dojangId={userDojang.dojangId}          // TAMBAHAN
-            dojangName={userDojang.dojangName}      // TAMBAHAN
-            onUpload={handleUploadBukti}            // TAMBAHAN
-            existingFiles={existingBuktiFiles}      // TAMBAHAN
+            dojangId={userDojang.dojangId}          
+            dojangName={userDojang.dojangName}      
+            onUpload={handleUploadBukti}            
+            existingFiles={existingBuktiFiles}      
           />
         )}
 
