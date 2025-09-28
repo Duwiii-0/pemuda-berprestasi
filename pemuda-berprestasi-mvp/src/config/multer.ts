@@ -1,7 +1,10 @@
 import multer from 'multer'
+import { PrismaClient } from "@prisma/client";
 import path from 'path'
 import fs from 'fs'
 import { ATLET_FOLDER_MAP, PELATIH_FOLDER_MAP, DOJANG_FOLDER_MAP } from '../constants/fileMapping'
+
+const prisma = new PrismaClient();
 
 // Get absolute path for uploads directory
 const getUploadsPath = () => {
@@ -64,7 +67,7 @@ const storage = multer.diskStorage({
     console.log(`📂 Upload destination: ${folder}`);
     cb(null, folder)
   },
-  filename: (req, file, cb) => {
+  filename: async (req, file, cb) => {
   const user = req.user as any
   const type = file.fieldname
   const timestamp = Date.now()
@@ -84,10 +87,20 @@ const storage = multer.diskStorage({
     } else if (type === 'sertifikat_sabuk') {
       filename = `${pelatihId}_sertifikat_${timestamp}${ext}`
     } else if (type === 'bukti_transfer') {
-      // ⬅️ TAMBAH INI: Special handling untuk bukti transfer
-      const dojangId = req.body.id_dojang || user?.dojangId || 'unknown'
-      filename = `${pelatihId}_dojang${dojangId}_bukti_${timestamp}${ext}`
-    }
+    const pelatihId = user?.pelatihId || user?.pelatih?.id_pelatih
+    const dojangId = user.pelatih?.id_dojang || user?.dojangId
+    
+    // Query database untuk menghitung jumlah upload yang sudah ada
+    const existingCount = await prisma.tb_buktiTransfer.count({
+      where: { 
+        id_dojang: dojangId,
+        id_pelatih: pelatihId 
+      }
+    })
+    
+    const counter = existingCount + 1
+    filename = `${pelatihId}_dojang${dojangId}_bukti_${counter}_${timestamp}${ext}`
+  }
   } 
   // UNTUK ATLET
   else if (ATLET_FOLDER_MAP[type]) {
