@@ -64,6 +64,11 @@ const DataKompetisi = () => {
   // State untuk modal registrasi
   const [showRegistrationModal, setShowRegistrationModal] = useState(false);
   const [showUploadBuktiModal, setShowUploadBuktiModal] = useState(false);
+  const [deleteBuktiModal, setDeleteBuktiModal] = useState({
+    isOpen: false,
+    fileId: '',
+    fileName: ''
+  });
 
   const [userDojang, setUserDojang] = useState<UserDojangData | null>(null);
   const [existingBuktiFiles, setExistingBuktiFiles] = useState<ExistingBuktiFile[]>([]);
@@ -125,7 +130,7 @@ const DataKompetisi = () => {
   // Ganti handleUploadBukti sementara untuk debugging:
 const handleUploadBukti = async (file: File, dojangId: string): Promise<void> => {
   try {
-    const pelatihId = user.pelatih?.id_pelatih;
+    const pelatihId = user?.pelatih?.id_pelatih;
     if (!pelatihId) {
       throw new Error('ID Pelatih tidak ditemukan');
     }
@@ -221,6 +226,35 @@ const handleUploadBukti = async (file: File, dojangId: string): Promise<void> =>
 
     setShowUploadBuktiModal(true);
   };
+
+  const handleDeleteBuktiTransfer = async (fileId: string): Promise<void> => {
+    try {
+      const response = await fetch(`https://cjvmanagementevent.com/api/bukti-transfer/${fileId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Gagal menghapus file');
+      }
+
+      // Refresh existing files setelah delete
+      if (userDojang) {
+        const updatedFiles = await getExistingBuktiFiles(userDojang.dojangId);
+        setExistingBuktiFiles(updatedFiles);
+      }
+
+      toast.success('File bukti transfer berhasil dihapus');
+    } catch (error) {
+      console.error('Delete error:', error);
+      throw error;
+    }
+  };
+
 
   useEffect(() => {
     refreshDojang();
@@ -1276,7 +1310,8 @@ const handleEditSuccess = () => {
             kompetisiName={selectedKompetisi.nama_event}
             dojangId={userDojang.dojangId}          
             dojangName={userDojang.dojangName}      
-            onUpload={handleUploadBukti}            
+            onUpload={handleUploadBukti}   
+            onDelete={handleDeleteBuktiTransfer} // Tambah callback delete         
             existingFiles={existingBuktiFiles}      
           />
         )}

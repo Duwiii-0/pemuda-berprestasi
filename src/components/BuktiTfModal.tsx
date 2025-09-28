@@ -1,7 +1,8 @@
 // UploadBuktiModal.tsx - SINGLE FILE VERSION
 
 import React, { useState, useEffect } from 'react';
-import { X, Upload, FileText, AlertCircle, CheckCircle, Eye, Download } from 'lucide-react';
+import { X, Upload, FileText, AlertCircle, CheckCircle, Eye, Download, Trash2 } from 'lucide-react';
+import AlertModal from '../components/alertModal'; // Sesuaikan path
 
 interface ExistingBuktiFile {
   id: string;
@@ -17,7 +18,8 @@ interface UploadBuktiModalProps {
   kompetisiName: string;
   dojangId: string;
   dojangName: string;
-  onUpload?: (file: File, dojangId: string) => Promise<void>; // Single file
+  onUpload?: (file: File, dojangId: string) => Promise<void>;
+  onDelete?: (fileId: string) => Promise<void>; // Tambah delete callback
   existingFiles?: ExistingBuktiFile[];
 }
 
@@ -28,6 +30,7 @@ const UploadBuktiModal: React.FC<UploadBuktiModalProps> = ({
   dojangId,
   dojangName,
   onUpload,
+  onDelete,
   existingFiles = []
 }) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -35,6 +38,14 @@ const UploadBuktiModal: React.FC<UploadBuktiModalProps> = ({
   const [uploadError, setUploadError] = useState<string>('');
   const [dragActive, setDragActive] = useState<boolean>(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  
+  // State untuk delete confirmation
+  const [deletingFiles, setDeletingFiles] = useState<Set<string>>(new Set());
+  const [deleteModal, setDeleteModal] = useState<{
+    isOpen: boolean;
+    fileId: string;
+    fileName: string;
+  }>({ isOpen: false, fileId: '', fileName: '' });
 
   // Reset state when modal opens/closes
   useEffect(() => {
@@ -43,6 +54,7 @@ const UploadBuktiModal: React.FC<UploadBuktiModalProps> = ({
       setUploadError('');
       setIsUploading(false);
       setDragActive(false);
+      setDeleteModal({ isOpen: false, fileId: '', fileName: '' });
       if (previewUrl) {
         URL.revokeObjectURL(previewUrl);
         setPreviewUrl(null);
@@ -50,24 +62,43 @@ const UploadBuktiModal: React.FC<UploadBuktiModalProps> = ({
     }
   }, [isOpen, previewUrl]);
 
-  const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://cjvmanagementevent.com';
+  // Fungsi show delete confirmation
+  const showDeleteConfirmation = (fileId: string, fileName: string) => {
+    setDeleteModal({ isOpen: true, fileId, fileName });
+  };
 
-   const buktiTransferUrls = {
-    // Preview/View URL - untuk menampilkan gambar
-    getPreviewUrl: (filename: string): string => {
-      return `${API_BASE_URL}/uploads/pelatih/BuktiTf/${filename}`;
-    },
+  // Fungsi handle confirm delete
+  const handleConfirmDelete = async () => {
+    const { fileId } = deleteModal;
+    
+    // Close modal
+    setDeleteModal({ isOpen: false, fileId: '', fileName: '' });
+    
+    if (!fileId || !onDelete) return;
 
-    // Download URL - untuk download file
-    getDownloadUrl: (filename: string): string => {
-      return `${API_BASE_URL}/uploads/pelatih/BuktiTf/${filename}`;
+    // Set loading state
+    setDeletingFiles(prev => new Set(prev).add(fileId));
+
+    try {
+      await onDelete(fileId);
+      // File akan hilang dari list karena parent akan refresh existingFiles
+    } catch (error) {
+      console.error('Delete error:', error);
+      setUploadError('Gagal menghapus file: ' + (error instanceof Error ? error.message : 'Unknown error'));
+    } finally {
+      // Remove loading state
+      setDeletingFiles(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(fileId);
+        return newSet;
+      });
     }
   };
 
-  //  individual functions for easier import
-   const getBuktiTransferPreviewUrl = buktiTransferUrls.getPreviewUrl;
-   const getBuktiTransferDownloadUrl = buktiTransferUrls.getDownloadUrl;
-
+  // Fungsi close delete confirmation
+  const handleCloseDeleteModal = () => {
+    setDeleteModal({ isOpen: false, fileId: '', fileName: '' });
+  };
 
   const validateFile = (file: File): string | null => {
     // Validate file type
@@ -178,6 +209,25 @@ const UploadBuktiModal: React.FC<UploadBuktiModalProps> = ({
     fileInput?.click();
   };
 
+  // Import utility functions
+  const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://cjvmanagementevent.com';
+
+   const buktiTransferUrls = {
+    // Preview/View URL - untuk menampilkan gambar
+    getPreviewUrl: (filename: string): string => {
+      return `${API_BASE_URL}/uploads/pelatih/BuktiTf/${filename}`;
+    },
+
+    // Download URL - untuk download file
+    getDownloadUrl: (filename: string): string => {
+      return `${API_BASE_URL}/uploads/pelatih/BuktiTf/${filename}`;
+    }
+  };
+
+  //  individual functions for easier import
+   const getBuktiTransferPreviewUrl = buktiTransferUrls.getPreviewUrl;
+   const getBuktiTransferDownloadUrl = buktiTransferUrls.getDownloadUrl;
+
   const getExistingFileUrl = (filename: string): string => {
     return getBuktiTransferPreviewUrl(filename);
   };
@@ -242,31 +292,60 @@ const UploadBuktiModal: React.FC<UploadBuktiModalProps> = ({
             <div className="mb-6">
               <h3 className="font-semibold text-gray-900 mb-3">Bukti Transfer yang Sudah Diupload</h3>
               <div className="space-y-3">
-                {existingFiles.map((file) => (
-                  <div key={file.id} className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-xl">
-                    <CheckCircle size={20} className="text-green-500 flex-shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">{file.fileName}</p>
-                      <p className="text-xs text-gray-500">{formatFileSize(file.fileSize)} • {file.uploadDate}</p>
+                {existingFiles.map((file) => {
+                  const isDeleting = deletingFiles.has(file.id);
+                  
+                  return (
+                    <div key={file.id} className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-xl">
+                      <CheckCircle size={20} className="text-green-500 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 truncate">{file.fileName}</p>
+                        <p className="text-xs text-gray-500">{formatFileSize(file.fileSize)} • {file.uploadDate}</p>
+                      </div>
+                      <div className="flex gap-2">
+                        {/* View Button */}
+                        <button
+                          onClick={() => window.open(getExistingFileUrl(file.filePath), '_blank')}
+                          className="p-1 text-blue-600 hover:text-blue-800 disabled:opacity-50"
+                          title="Lihat file"
+                          disabled={isDeleting}
+                        >
+                          <Eye size={16} />
+                        </button>
+                        
+                        {/* Download Button */}
+                        <button
+                          onClick={() => handleDownloadExisting(file)}
+                          className="p-1 text-green-600 hover:text-green-800 disabled:opacity-50"
+                          title="Download file"
+                          disabled={isDeleting}
+                        >
+                          <Download size={16} />
+                        </button>
+                        
+                        {/* Delete Button */}
+                        {onDelete && (
+                          <button
+                            onClick={() => showDeleteConfirmation(file.id, file.fileName)}
+                            className={`p-1 transition-colors disabled:opacity-50 ${
+                              isDeleting 
+                                ? 'text-gray-400 cursor-not-allowed' 
+                                : 'text-red-600 hover:text-red-800 hover:bg-red-50 rounded'
+                            }`}
+                            title={isDeleting ? "Menghapus..." : "Hapus file"}
+                            disabled={isDeleting}
+                          >
+                            {isDeleting ? (
+                              <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                            ) : (
+                              <Trash2 size={16} />
+                            )}
+                          </button>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => window.open(getExistingFileUrl(file.filePath), '_blank')}
-                        className="p-1 text-blue-600 hover:text-blue-800"
-                        title="Lihat file"
-                      >
-                        <Eye size={16} />
-                      </button>
-                      <button
-                        onClick={() => handleDownloadExisting(file)}
-                        className="p-1 text-green-600 hover:text-green-800"
-                        title="Download file"
-                      >
-                        <Download size={16} />
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
@@ -382,13 +461,12 @@ const UploadBuktiModal: React.FC<UploadBuktiModalProps> = ({
             <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
               <div className="flex items-start gap-3">
                 <FileText size={20} className="text-yellow-600 mt-0.5 flex-shrink-0" />
-                <div className="text-sm text-yellow-800 flex flex-col gap-2">
+                <div className="text-sm text-yellow-800">
                   <p className="font-semibold mb-1">Catatan Penting:</p>
                   <p className="text-xs">
-                    • Bukti transfer akan dikaitkan dengan dojang Anda dan diverifikasi oleh admin. 
-                    Status Atlet akan diupdate setelah verifikasi selesai.
+                    Bukti transfer akan dikaitkan dengan dojang Anda dan diverifikasi oleh admin. 
+                    Status pembayaran akan diupdate setelah verifikasi selesai.
                   </p>
-                  <p>• Format yang didukung: JPG, PNG, JPEG, WebP</p>
                 </div>
               </div>
             </div>
@@ -425,6 +503,13 @@ const UploadBuktiModal: React.FC<UploadBuktiModalProps> = ({
           </button>
         </div>
       </div>
+    
+      <AlertModal
+        isOpen={deleteModal.isOpen}
+        message={`Apakah Anda yakin ingin menghapus file "${deleteModal.fileName}"?`}
+        onClose={handleCloseDeleteModal}
+        onConfirm={handleConfirmDelete}
+      />
     </div>
   );
 };
