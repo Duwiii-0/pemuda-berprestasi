@@ -300,7 +300,6 @@ const UploadBuktiModal: React.FC<UploadBuktiModalProps> = ({
                       <CheckCircle size={20} className="text-green-500 flex-shrink-0" />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-gray-900 truncate">{file.fileName}</p>
-                        <p className="text-xs text-gray-500">{formatFileSize(file.fileSize)} • {file.uploadDate}</p>
                       </div>
                       <div className="flex gap-2">
                         {/* View Button */}
