@@ -190,7 +190,8 @@ const UploadBuktiModal: React.FC<UploadBuktiModalProps> = ({
 
     } catch (error) {
       console.error('Upload error:', error);
-      setUploadError(error instanceof Error ? error.message : 'Gagal mengupload file');
+      // buat liat error "setUploadError(error instanceof Error ? error.message : 'Gagal mengupload file');"
+      setUploadError('Gagal mengupload file, silahkan hubungi admin');
     } finally {
       setIsUploading(false);
     }
