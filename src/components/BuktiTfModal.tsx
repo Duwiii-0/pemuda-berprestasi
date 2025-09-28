@@ -55,12 +55,12 @@ const UploadBuktiModal: React.FC<UploadBuktiModalProps> = ({
    const buktiTransferUrls = {
     // Preview/View URL - untuk menampilkan gambar
     getPreviewUrl: (filename: string): string => {
-      return `${API_BASE_URL}/api/bukti-transfer/files/${filename}`;
+      return `${API_BASE_URL}/uploads/pelatih/BuktiTf/${filename}`;
     },
 
     // Download URL - untuk download file
     getDownloadUrl: (filename: string): string => {
-      return `${API_BASE_URL}/api/bukti-transfer/download/${filename}`;
+      return `${API_BASE_URL}/uploads/pelatih/BuktiTf/${filename}`;
     }
   };
 
