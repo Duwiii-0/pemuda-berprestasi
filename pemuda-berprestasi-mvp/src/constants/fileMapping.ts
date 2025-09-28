@@ -8,7 +8,8 @@ export const ATLET_FOLDER_MAP: Record<string, string> = {
 
 export const PELATIH_FOLDER_MAP: Record<string, string> = {
   'foto_ktp': 'ktp',
-  'sertifikat_sabuk': 'sertifikat'
+  'sertifikat_sabuk': 'sertifikat',
+  'bukti_transfer': 'BuktiTf' // ⬅️ TAMBAH INI
 }
 
 // TAMBAHAN: Mapping untuk dojang files
