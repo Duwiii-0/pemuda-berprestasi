@@ -498,7 +498,7 @@ const UploadBuktiModal: React.FC<UploadBuktiModalProps> = ({
             type="checkbox"
             checked={confirmedWA}
             onChange={(e) => setConfirmedWA(e.target.checked)}
-            className="mt-1 w-6 h-6 text-blue-600 border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
+            className="mt-1 w-6 h-6 cursor-pointer"
           />
           <label htmlFor="confirm-wa" className="text-md font-medium text-gray-800 cursor-pointer">
             Saya sudah konfirmasi pembayaran ke nomor WhatsApp panitia di atas.
