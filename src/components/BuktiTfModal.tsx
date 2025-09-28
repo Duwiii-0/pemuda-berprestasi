@@ -382,7 +382,7 @@ const UploadBuktiModal: React.FC<UploadBuktiModalProps> = ({
               </div>
               <div className="mt-4 text-sm text-green-700 flex items-center gap-2">
                 <span className="font-medium">Konfirmasi WA:</span>
-                <span className="font-semibold"><a>0853-7844-1489</a> (Jeje)</span>
+                <span className="font-semibold"><a href='https://wa.me/6285378441489' className='underline font-bold'>0853-7844-1489</a> (Jeje)</span>
               </div>
             </div>
           </div>
@@ -492,7 +492,7 @@ const UploadBuktiModal: React.FC<UploadBuktiModalProps> = ({
         </div>
         
         {/* Confirmation Checkbox */}
-        <div className="mb-6 flex items-start gap-2 p-4">
+        <div className="mb-6 flex items-start gap-2 px-6">
           <input
             id="confirm-wa"
             type="checkbox"
