@@ -475,7 +475,7 @@ const UploadBuktiModal: React.FC<UploadBuktiModalProps> = ({
           </div>
 
           {/* Upload Notes */}
-          <div className="mb-6">
+          <div className="">
             <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
               <div className="flex items-start gap-3">
                 <FileText size={20} className="text-yellow-600 mt-0.5 flex-shrink-0" />
@@ -492,18 +492,19 @@ const UploadBuktiModal: React.FC<UploadBuktiModalProps> = ({
         </div>
         
         {/* Confirmation Checkbox */}
-        <div className="mb-6 flex items-start gap-2 px-6">
+        <div className="mb-6 flex items-start gap-3 px-6">
           <input
             id="confirm-wa"
             type="checkbox"
             checked={confirmedWA}
             onChange={(e) => setConfirmedWA(e.target.checked)}
-            className="mt-1"
+            className="mt-1 w-6 h-6 text-blue-600 border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
           />
-          <label htmlFor="confirm-wa" className="text-sm text-gray-700">
+          <label htmlFor="confirm-wa" className="text-md font-medium text-gray-800 cursor-pointer">
             Saya sudah konfirmasi pembayaran ke nomor WhatsApp panitia di atas.
           </label>
         </div>
+
 
         {/* Footer */}
         <div className="flex flex-col-reverse sm:flex-row gap-3 p-6 border-t border-gray-200">
