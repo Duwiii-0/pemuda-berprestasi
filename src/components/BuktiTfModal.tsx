@@ -492,7 +492,7 @@ const UploadBuktiModal: React.FC<UploadBuktiModalProps> = ({
         </div>
         
         {/* Confirmation Checkbox */}
-        <div className="mb-6 flex items-start gap-3 px-6">
+        <div className="mb-6 flex justify-start items-center gap-3 px-6">
           <input
             id="confirm-wa"
             type="checkbox"
