@@ -159,15 +159,18 @@ const UploadBuktiModal: React.FC<UploadBuktiModalProps> = ({
     fileInput?.click();
   };
 
+  // Import utility functions
+  import { getBuktiTransferPreviewUrl, getBuktiTransferDownloadUrl } from '../utils/buktiTransferUrls';
+
   const getExistingFileUrl = (filename: string): string => {
-    const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:3000';
-    return `${baseUrl}/api/bukti-transfer/files/${filename}`;
+    return getBuktiTransferPreviewUrl(filename);
   };
 
   const handleDownloadExisting = async (file: ExistingBuktiFile): Promise<void> => {
     try {
-      const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:3000';
-      const downloadUrl = `${baseUrl}/api/bukti-transfer/download/${file.filePath}`;
+      const downloadUrl = getBuktiTransferDownloadUrl(file.filePath);
+      
+      console.log('Downloading from:', downloadUrl);
       
       const link = document.createElement('a');
       link.href = downloadUrl;
