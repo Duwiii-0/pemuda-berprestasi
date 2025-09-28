@@ -50,6 +50,25 @@ const UploadBuktiModal: React.FC<UploadBuktiModalProps> = ({
     }
   }, [isOpen, previewUrl]);
 
+  const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://cjvmanagementevent.com';
+
+   const buktiTransferUrls = {
+    // Preview/View URL - untuk menampilkan gambar
+    getPreviewUrl: (filename: string): string => {
+      return `${API_BASE_URL}/api/bukti-transfer/files/${filename}`;
+    },
+
+    // Download URL - untuk download file
+    getDownloadUrl: (filename: string): string => {
+      return `${API_BASE_URL}/api/bukti-transfer/download/${filename}`;
+    }
+  };
+
+  //  individual functions for easier import
+   const getBuktiTransferPreviewUrl = buktiTransferUrls.getPreviewUrl;
+   const getBuktiTransferDownloadUrl = buktiTransferUrls.getDownloadUrl;
+
+
   const validateFile = (file: File): string | null => {
     // Validate file type
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
@@ -158,9 +177,6 @@ const UploadBuktiModal: React.FC<UploadBuktiModalProps> = ({
     const fileInput = document.getElementById('bukti-file-input') as HTMLInputElement;
     fileInput?.click();
   };
-
-  // Import utility functions
-  import { getBuktiTransferPreviewUrl, getBuktiTransferDownloadUrl } from '../utils/buktiTransferUrls';
 
   const getExistingFileUrl = (filename: string): string => {
     return getBuktiTransferPreviewUrl(filename);
