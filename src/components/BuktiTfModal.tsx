@@ -380,9 +380,9 @@ const UploadBuktiModal: React.FC<UploadBuktiModalProps> = ({
                 <p>Keterangan Transfer: <span className="font-semibold">Nama Club_Total Peserta</span></p>
                 <p>Pembayaran terakhir: <span className="font-semibold">08 November</span> atau bila kuota penuh.</p>
               </div>
-              <div className="mt-4 text-sm text-green-700 flex items-center gap-2">
+              <div className="mt-4 text-md text-green-700 flex items-center gap-2">
                 <span className="font-medium">Konfirmasi WA:</span>
-                <span className="font-semibold"><a href='https://wa.me/6285378441489' className='underline font-bold'>0853-7844-1489</a> (Jeje)</span>
+                <span className="font-semibold "><a href='https://wa.me/6285378441489' className='underline font-bold'>0853-7844-1489</a> (Jeje)</span>
               </div>
             </div>
           </div>
@@ -500,7 +500,7 @@ const UploadBuktiModal: React.FC<UploadBuktiModalProps> = ({
             onChange={(e) => setConfirmedWA(e.target.checked)}
             className="mt-1 w-6 h-6 cursor-pointer"
           />
-          <label htmlFor="confirm-wa" className="pt-2 text-md font-medium text-gray-800 cursor-pointer">
+          <label htmlFor="confirm-wa" className="pt-1 text-md font-medium text-gray-800 cursor-pointer">
             Saya sudah konfirmasi pembayaran ke nomor WhatsApp panitia di atas.
           </label>
         </div>
