@@ -506,7 +506,7 @@ const UploadBuktiModal: React.FC<UploadBuktiModalProps> = ({
     
       <AlertModal
         isOpen={deleteModal.isOpen}
-        message={`Apakah Anda yakin ingin menghapus file "${deleteModal.fileName}"?`}
+        message={`Apakah Anda yakin ingin menghapus file ini?`}
         onClose={handleCloseDeleteModal}
         onConfirm={handleConfirmDelete}
       />

@@ -88,7 +88,7 @@ const storage = multer.diskStorage({
       filename = `${pelatihId}_sertifikat_${timestamp}${ext}`
     } else if (type === 'bukti_transfer') {
     const pelatihId = user?.pelatihId || user?.pelatih?.id_pelatih
-    const dojangId = user.pelatih?.id_dojang || user?.dojangId
+    const dojangId = user?.dojangId ||user.pelatih?.id_dojang 
     
     // Query database untuk menghitung jumlah upload yang sudah ada
     const existingCount = await prisma.tb_buktiTransfer.count({
