@@ -66,6 +66,7 @@ const UploadBuktiModal: React.FC<UploadBuktiModalProps> = ({
         URL.revokeObjectURL(previewUrl);
         setPreviewUrl(null);
       }
+      setConfirmedWA(false);
     }
   }, [isOpen, previewUrl]);
 
