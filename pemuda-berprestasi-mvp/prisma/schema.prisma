@@ -129,6 +129,16 @@ peserta_tim      tb_peserta_tim[]
 @@index([id_pelatih_pembuat])
 }
 
+model BuktiTransfer {
+  id_bukti_transfer   Int      @id @default(autoincrement())
+  id_dojang          Int
+  id_pelatih         Int
+  bukti_transfer_path String   @db.VarChar(255)
+  created_at         DateTime @default(now())
+  
+  @@map("bukti_transfer")
+}
+
 model tb_peserta_tim {
   id                 Int                   @id @default(autoincrement())
   id_peserta_kompetisi Int
