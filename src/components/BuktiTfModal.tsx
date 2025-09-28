@@ -21,6 +21,7 @@ interface UploadBuktiModalProps {
   onUpload?: (file: File, dojangId: string) => Promise<void>;
   onDelete?: (fileId: string) => Promise<void>; // Tambah delete callback
   existingFiles?: ExistingBuktiFile[];
+  totalPeserta: number;
 }
 
 const UploadBuktiModal: React.FC<UploadBuktiModalProps> = ({ 
@@ -31,14 +32,20 @@ const UploadBuktiModal: React.FC<UploadBuktiModalProps> = ({
   dojangName,
   onUpload,
   onDelete,
-  existingFiles = []
+  existingFiles = [],
+  totalPeserta = 0
 }) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const [uploadError, setUploadError] = useState<string>('');
   const [dragActive, setDragActive] = useState<boolean>(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  
+  const [confirmedWA, setConfirmedWA] = useState(false);
+
+  // hitung biaya
+  const biayaPerPeserta = 500000;
+  const totalBiaya = totalPeserta * biayaPerPeserta;
+
   // State untuk delete confirmation
   const [deletingFiles, setDeletingFiles] = useState<Set<string>>(new Set());
   const [deleteModal, setDeleteModal] = useState<{
@@ -350,21 +357,28 @@ const UploadBuktiModal: React.FC<UploadBuktiModalProps> = ({
             </div>
           )}
 
-          {/* Instructions */}
+          {/* Payment Info */}
           <div className="mb-6">
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-              <div className="flex items-start gap-3">
-                <AlertCircle size={20} className="text-blue-600 mt-0.5 flex-shrink-0" />
-                <div className="text-sm text-blue-800">
-                  <p className="font-semibold mb-1">Petunjuk Upload Bukti Transfer:</p>
-                  <ul className="space-y-1 text-xs">
-                    <li>• Format yang didukung: JPG, PNG, JPEG, WebP</li>
-                    <li>• Maksimal ukuran file: 5MB</li>
-                    <li>• Upload satu file bukti transfer</li>
-                    <li>• Pastikan bukti transfer jelas dan terbaca</li>
-                    <li>• Bukti transfer akan dikaitkan dengan Dojang: {dojangName}</li>
-                  </ul>
-                </div>
+            <div className="bg-red-50 border border-red-200 rounded-xl p-6">
+              <h3 className="text-lg font-bold text-red-700 mb-4">Biaya Pendaftaran</h3>
+              <ul className="text-sm text-red-800 space-y-2">
+                <li><span className="font-semibold">Rp 500.000 / Atlet</span></li>
+                <li>Jumlah Peserta: <span className="font-semibold">{totalPeserta}</span> orang</li>
+                <li>Total Biaya: <span className="font-semibold">Rp {totalBiaya.toLocaleString("id-ID")}</span></li>
+              </ul>
+              <div className="mt-4 text-sm text-gray-700">
+                <p>Pembayaran melalui rekening:</p>
+                <p className="font-semibold">BANK SUMSEL BABEL</p>
+                <p className="font-semibold text-lg">19309010367</p>
+                <p>a.n Panitia UKT Pengprov TISS</p>
+              </div>
+              <div className="mt-4 text-xs text-gray-600">
+                <p>Keterangan Transfer: <span className="font-semibold">Nama Club_Total Peserta</span></p>
+                <p>Pembayaran terakhir: <span className="font-semibold">08 November</span> atau bila kuota penuh.</p>
+              </div>
+              <div className="mt-4 text-sm text-green-700 flex items-center gap-2">
+                <span className="font-medium">Konfirmasi WA:</span>
+                <span className="font-semibold">0853-7844-1489 (Jeje)</span>
               </div>
             </div>
           </div>
@@ -472,6 +486,20 @@ const UploadBuktiModal: React.FC<UploadBuktiModalProps> = ({
             </div>
           </div>
         </div>
+        
+        {/* Confirmation Checkbox */}
+        <div className="mb-6 flex items-start gap-2">
+          <input
+            id="confirm-wa"
+            type="checkbox"
+            checked={confirmedWA}
+            onChange={(e) => setConfirmedWA(e.target.checked)}
+            className="mt-1"
+          />
+          <label htmlFor="confirm-wa" className="text-sm text-gray-700">
+            Saya sudah konfirmasi pembayaran ke nomor WhatsApp panitia di atas.
+          </label>
+        </div>
 
         {/* Footer */}
         <div className="flex flex-col-reverse sm:flex-row gap-3 p-6 border-t border-gray-200">
@@ -485,7 +513,7 @@ const UploadBuktiModal: React.FC<UploadBuktiModalProps> = ({
           </button>
           <button
             onClick={handleUpload}
-            disabled={!selectedFile || isUploading}
+            disabled={!selectedFile || isUploading || !confirmedWA}
             className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-xl hover:from-blue-700 hover:to-blue-600 font-medium transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             type="button"
           >

@@ -1313,6 +1313,7 @@ const handleEditSuccess = () => {
             onUpload={handleUploadBukti}   
             onDelete={handleDeleteBuktiTransfer} // Tambah callback delete         
             existingFiles={existingBuktiFiles}      
+            totalPeserta={displayedPesertas.length}
           />
         )}
 
@@ -1330,20 +1331,20 @@ const handleEditSuccess = () => {
           </>
         )}
 
-                <AlertModal
-            isOpen={deleteModal.isOpen}
-            onClose={handleCloseDeleteModal}
-            onConfirm={handleConfirmDelete}
-            message={`Apakah Anda yakin ingin menghapus peserta "${deleteModal.participantName}" dari kompetisi ini?`}
-          />
+        <AlertModal
+          isOpen={deleteModal.isOpen}
+          onClose={handleCloseDeleteModal}
+          onConfirm={handleConfirmDelete}
+          message={`Apakah Anda yakin ingin menghapus peserta "${deleteModal.participantName}" dari kompetisi ini?`}
+        />
 
-<EditRegistrationModal
-  isOpen={editModal.isOpen}
-  onClose={handleCloseEditModal}
-  participant={editModal.participant}
-  kompetisiId={selectedKompetisi?.id_kompetisi || 0}
-  onSuccess={handleEditSuccess}
-/>
+        <EditRegistrationModal
+          isOpen={editModal.isOpen}
+          onClose={handleCloseEditModal}
+          participant={editModal.participant}
+          kompetisiId={selectedKompetisi?.id_kompetisi || 0}
+          onSuccess={handleEditSuccess}
+        />
       </div>
 
       
