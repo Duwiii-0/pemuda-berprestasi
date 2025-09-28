@@ -82,7 +82,7 @@ const storage = multer.diskStorage({
   filename: async (req, file, cb) => {
   const user = req.user as any
   const type = file.fieldname
-  const timestamp = Date.now()
+  const timestamp = getTimestamp()
   const ext = path.extname(file.originalname)
   let filename = ''
 
