@@ -184,6 +184,10 @@ const UploadBuktiModal: React.FC<UploadBuktiModalProps> = ({
   const handleUpload = async (): Promise<void> => {
     if (!selectedFile || !onUpload) return;
 
+    if (!confirmedWA) {
+      setUploadError('Silahkan konfirmasi melalui WA terlebih dahulu');
+      return;
+    }
     setIsUploading(true);
     setUploadError('');
 
@@ -378,7 +382,7 @@ const UploadBuktiModal: React.FC<UploadBuktiModalProps> = ({
               </div>
               <div className="mt-4 text-sm text-green-700 flex items-center gap-2">
                 <span className="font-medium">Konfirmasi WA:</span>
-                <span className="font-semibold">0853-7844-1489 (Jeje)</span>
+                <span className="font-semibold"><a>0853-7844-1489</a> (Jeje)</span>
               </div>
             </div>
           </div>
@@ -488,7 +492,7 @@ const UploadBuktiModal: React.FC<UploadBuktiModalProps> = ({
         </div>
         
         {/* Confirmation Checkbox */}
-        <div className="mb-6 flex items-start gap-2">
+        <div className="mb-6 flex items-start gap-2 p-4">
           <input
             id="confirm-wa"
             type="checkbox"
