@@ -11,6 +11,7 @@ import dojangRoutes from './routes/dojang'
 import atletRoutes from './routes/atlet'
 import kelasRoutes from './routes/kelas'
 import kompetisiRoutes from './routes/kompetisi'
+import buktiTransferRoutes from './routes/buktiTransfer' // ⬅️ TAMBAH INI
 
 // Import middleware
 import { errorHandler, notFoundHandler } from './middleware/errorHandler'
@@ -56,7 +57,8 @@ app.get('/api', (req, res) => {
       'GET /api/dojang',
       'GET /api/atlet',
       'GET /api/kompetisi',
-      'GET /api/kelas'
+      'GET /api/kelas',
+      'POST /api/bukti-transfer'
     ]
   })
 })
@@ -70,7 +72,9 @@ app.use('/api/dojang', dojangRoutes)
 app.use('/api/atlet', atletRoutes)
 app.use('/api/kompetisi', kompetisiRoutes)
 // app.use('/api/admin', adminRoutes)
-app.use('/api/kelas', kelasRoutes) 
+app.use('/api/kelas', kelasRoutes)
+app.use('/api/bukti-transfer', buktiTransferRoutes) 
+
 // 404 handler
 app.use(notFoundHandler)
 

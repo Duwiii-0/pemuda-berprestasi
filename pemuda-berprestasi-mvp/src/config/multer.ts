@@ -14,6 +14,7 @@ const createUploadDirs = () => {
   const dirs = [
     'pelatih/ktp',
     'pelatih/sertifikat',
+    'pelatih/BuktiTf',
     'atlet/akte_kelahiran',
     'atlet/pas_foto', 
     'atlet/sertifikat_belt',
@@ -64,37 +65,46 @@ const storage = multer.diskStorage({
     cb(null, folder)
   },
   filename: (req, file, cb) => {
-    const user = req.user as any
-    const type = file.fieldname
-    const timestamp = Date.now()
-    const ext = path.extname(file.originalname)
-    let filename = ''
+  const user = req.user as any
+  const type = file.fieldname
+  const timestamp = Date.now()
+  const ext = path.extname(file.originalname)
+  let filename = ''
 
-    // UNTUK PELATIH
-    if (PELATIH_FOLDER_MAP[type]) {
-      const pelatihId = user?.pelatihId || user?.pelatih?.id_pelatih
-      if (!pelatihId) {
-        return cb(new Error('Pelatih ID not found'), '')
-      }
-      const fileType = type === 'foto_ktp' ? 'ktp' : 'sertifikat'
-      filename = `${pelatihId}_${fileType}_${timestamp}${ext}`
-    } 
-    // UNTUK ATLET
-    else if (ATLET_FOLDER_MAP[type]) {
-      const pelatihId = user?.pelatihId || user?.pelatih?.id_pelatih || 'temp'
-      filename = `atlet_${pelatihId}_${type}_${timestamp}${ext}`
-    }
-    // UNTUK DOJANG
-    else if (DOJANG_FOLDER_MAP[type]) {
-      const dojangId = user?.dojangId || user?.dojang?.id_dojang || 'temp'
-      filename = `dojang_${dojangId}_logo_${timestamp}${ext}`
-    } else {
-      return cb(new Error('Invalid file type'), '')
+  // UNTUK PELATIH
+  if (PELATIH_FOLDER_MAP[type]) {
+    const pelatihId = user?.pelatihId || user?.pelatih?.id_pelatih
+    if (!pelatihId) {
+      return cb(new Error('Pelatih ID not found'), '')
     }
     
-    console.log(`📄 Generated filename: ${filename}`);
-    cb(null, filename)
+    // Handle different pelatih file types
+    if (type === 'foto_ktp') {
+      filename = `${pelatihId}_ktp_${timestamp}${ext}`
+    } else if (type === 'sertifikat_sabuk') {
+      filename = `${pelatihId}_sertifikat_${timestamp}${ext}`
+    } else if (type === 'bukti_transfer') {
+      // ⬅️ TAMBAH INI: Special handling untuk bukti transfer
+      const dojangId = req.body.id_dojang || user?.dojangId || 'unknown'
+      filename = `${pelatihId}_dojang${dojangId}_bukti_${timestamp}${ext}`
+    }
+  } 
+  // UNTUK ATLET
+  else if (ATLET_FOLDER_MAP[type]) {
+    const pelatihId = user?.pelatihId || user?.pelatih?.id_pelatih || 'temp'
+    filename = `atlet_${pelatihId}_${type}_${timestamp}${ext}`
   }
+  // UNTUK DOJANG
+  else if (DOJANG_FOLDER_MAP[type]) {
+    const dojangId = user?.dojangId || user?.dojang?.id_dojang || 'temp'
+    filename = `dojang_${dojangId}_logo_${timestamp}${ext}`
+  } else {
+    return cb(new Error('Invalid file type'), '')
+  }
+  
+  console.log(`📄 Generated filename: ${filename}`);
+  cb(null, filename)
+}
 })
 
 const fileFilter = (req: any, file: any, cb: any) => {

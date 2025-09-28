@@ -12,7 +12,8 @@ export const handleUploadError = (req: Request, res: Response, next: NextFunctio
     { name: 'ktp', maxCount: 1 },
     { name: 'foto_ktp', maxCount: 1 },
     { name: 'sertifikat_sabuk', maxCount: 1 },
-    { name: 'logo', maxCount: 1 } // Added logo support for dojang
+    { name: 'logo', maxCount: 1 },
+    { name: 'bukti_transfer', maxCount: 1 }
   ])(req, res, (err: any) => {
     if (err) {
       if (err.code === 'LIMIT_FILE_SIZE') {
@@ -80,6 +81,25 @@ export const uploadDojangLogo = (req: Request, res: Response, next: NextFunction
       }
       
       return sendError(res, err.message || 'Logo upload error', 400)
+    }
+    
+    next()
+  })
+}
+
+// ⬅️ TAMBAH: Specific middleware untuk bukti transfer upload
+export const uploadBuktiTransfer = (req: Request, res: Response, next: NextFunction) => {
+  upload.single('bukti_transfer')(req, res, (err: any) => {
+    if (err) {
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return sendError(res, 'Bukti transfer file size too large. Maximum 5MB allowed', 400)
+      }
+      
+      if (err.message.includes('Only JPEG, PNG')) {
+        return sendError(res, 'Invalid bukti transfer file type. Only JPEG, PNG, JPG, and WebP files are allowed', 400)
+      }
+      
+      return sendError(res, err.message || 'Bukti transfer upload error', 400)
     }
     
     next()
