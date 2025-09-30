@@ -59,6 +59,20 @@ export const BuktiTransferController = {
   getAll: async (req: Request, res: Response) => {
     try {
       const buktiTransfers = await prisma.tb_buktiTransfer.findMany({
+        include: {
+          tb_dojang: {
+            select: {
+              nama_dojang: true,
+              kota: true
+            }
+          },
+          tb_pelatih: {
+            select: {
+              nama_pelatih: true,
+              no_telp: true
+            }
+          }
+        },
         orderBy: { created_at: 'desc' }
       })
       
@@ -76,6 +90,20 @@ export const BuktiTransferController = {
       
       const buktiTransfers = await prisma.tb_buktiTransfer.findMany({
         where: { id_dojang: parseInt(id_dojang) },
+        include: {
+          tb_dojang: {
+            select: {
+              nama_dojang: true,
+              kota: true
+            }
+          },
+          tb_pelatih: {
+            select: {
+              nama_pelatih: true,
+              no_telp: true
+            }
+          }
+        },
         orderBy: { created_at: 'desc' }
       })
       
@@ -93,6 +121,20 @@ export const BuktiTransferController = {
       
       const buktiTransfers = await prisma.tb_buktiTransfer.findMany({
         where: { id_pelatih: parseInt(id_pelatih) },
+        include: {
+          tb_dojang: {
+            select: {
+              nama_dojang: true,
+              kota: true
+            }
+          },
+          tb_pelatih: {
+            select: {
+              nama_pelatih: true,
+              no_telp: true
+            }
+          }
+        },
         orderBy: { created_at: 'desc' }
       })
       

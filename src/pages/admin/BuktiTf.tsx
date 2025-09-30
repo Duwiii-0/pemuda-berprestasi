@@ -11,11 +11,11 @@ interface BuktiTransfer {
   id_pelatih: number;
   bukti_transfer_path: string;
   created_at: string;
-  dojang?: {
+  tb_dojang?: {
     nama_dojang: string;
     kota: string;
   };
-  pelatih?: {
+  tb_pelatih?: {
     nama_pelatih: string;
     no_telp: string;
   };
@@ -89,8 +89,8 @@ const BuktiTf = () => {
   useEffect(() => {
     if (searchTerm) {
       const filtered = buktiTransferList.filter(bukti => 
-        bukti.dojang?.nama_dojang?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        bukti.pelatih?.nama_pelatih?.toLowerCase().includes(searchTerm.toLowerCase())
+        bukti.tb_dojang?.nama_dojang?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        bukti.tb_pelatih?.nama_pelatih?.toLowerCase().includes(searchTerm.toLowerCase())
       );
       setFilteredBukti(filtered);
     } else {
@@ -284,12 +284,12 @@ const BuktiTf = () => {
                   {/* Content */}
                   <div className="p-4">
                     <h3 className="font-bebas text-lg text-black/80 mb-2">
-                      {bukti.dojang?.nama_dojang || 'Dojang Unknown'}
+                      {bukti.tb_dojang?.nama_dojang || 'Dojang Unknown'}
                     </h3>
                     
                     <div className="space-y-1 text-sm text-black/60 mb-4">
-                      <p>👤 {bukti.pelatih?.nama_pelatih || '-'}</p>
-                      <p>📍 {bukti.dojang?.kota || '-'}</p>
+                      <p>👤 {bukti.tb_pelatih?.nama_pelatih || '-'}</p>
+                      <p>📍 {bukti.tb_dojang?.kota || '-'}</p>
                       <p>📅 {formatDate(bukti.created_at)}</p>
                     </div>
 
