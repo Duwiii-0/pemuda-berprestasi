@@ -340,7 +340,7 @@ useEffect(() => {
     valueContainer: () => "px-2",
     placeholder: () => "text-red/50 text-inter",
     menu: () => "border-2 border-red bg-white rounded-lg shadow-lg mt-1 z-50",
-    menuList: () => "max-h-32 overflow-y-scroll",
+    menuList: () => "max-h-28 overflow-y-scroll",
     option: ({ isFocused, isSelected }: any) =>
       [
         "px-4 py-2 cursor-pointer",
