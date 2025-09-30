@@ -30,6 +30,7 @@ import DataKompetisi from "./pages/dashboard/dataKompetisi";
 import AdminLayout from "./layouts/adminlayout";
 import ValidasiPeserta from "./pages/admin/ValidasiPeserta";
 import ValidasiDojang from "./pages/admin/ValidasiDojang";
+import BuktiTf from "./pages/admin/BuktiTf";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminStats from "./pages/admin/AdminStats";
 import Reports from "./pages/admin/Reports";
@@ -161,6 +162,7 @@ export default function AppRoutes() {
           <Route path="validasi-peserta" element={<ValidasiPeserta />} />
           <Route path="validasi-dojang" element={<ValidasiDojang />} />
           <Route path="atlets" element={<AllAtlets />} />
+          <Route path="bukti-pembayaran" element={<BuktiTf />} />
           <Route path="users" element={<AdminUsers />} />
           <Route path="statistik" element={<AdminStats />} />
           <Route path="reports" element={<Reports />} />

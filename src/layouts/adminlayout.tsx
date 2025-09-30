@@ -10,6 +10,7 @@ import {
   X,
   ChevronRight,
   UserCheck,
+  CreditCard,
 } from 'lucide-react';
 import { useAuth } from '../context/authContext';
 
@@ -56,6 +57,12 @@ const AdminLayout: React.FC = () => {
       label: 'Validasi Dojang',
       path: '/admin/validasi-dojang',
       active: location.pathname === '/admin/validasi-dojang'
+    },
+    {
+      icon: CreditCard,
+      label: 'Bukti Transfer',
+      path: '/admin/bukti-pembayaran',
+      active: location.pathname === '/admin/bukti-pembayaran'
     },
   ];
 
