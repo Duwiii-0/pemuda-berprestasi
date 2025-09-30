@@ -928,20 +928,8 @@ const handleSubmit = async () => {
             <li>WNA: Rp 1.000.000</li>
           </ul>
 
-          <p><span className="font-semibold">Pembayaran melalui:</span></p>
-          <p>Bank Sumsel Babel</p>
-          <p>No. Rekening: <span className="font-mono">19309010367</span></p>
-          <p>a.n. Panitia UKT Pengprov TISS</p>
+          <p><span className="font-semibold">Pembayaran melalui dilakukan dalam dashboard pelatih untuk mengunci slot peserta </span></p>
 
-          <p>
-            <span className="font-semibold">Keterangan transfer:</span><br />
-            <span className="italic">nama_dojang_total peserta</span>
-          </p>
-
-          <p>
-            <span className="font-semibold">Konfirmasi pembayaran:</span> <br />
-            Kirim bukti transfer & data ke nomor <span className="font-mono">0853 7844 1489 (Jeje)</span>
-          </p>
         </div>
 
         <div className="flex justify-between">
@@ -957,7 +945,7 @@ const handleSubmit = async () => {
 
   return (
     <Modal isOpen={isOpen}>
-      <div className="bg-gradient-to-b from-white/90 to-white/80 h-screen md:h-[80vh] w-screen md:w-[80vw] lg:w-[70vw] xl:w-[60vw] rounded-xl flex flex-col justify-start items-center overflow-y-scroll font-plex">
+      <div className="bg-gradient-to-b from-white/90 to-white/80 h-screen md:h-full w-screen md:w-[80vw] lg:w-[70vw] xl:w-[60vw] rounded-xl flex flex-col justify-start items-center overflow-y-scroll font-plex">
         <div className="w-full p-8">
           {/* Header dengan tombol back dan progress */}
           <div className="flex items-center justify-between mb-8">
