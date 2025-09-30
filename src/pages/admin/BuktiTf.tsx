@@ -128,7 +128,7 @@ const BuktiTf = () => {
     return (
       <div className="min-h-screen w-full bg-gradient-to-br from-white via-red/5 to-yellow/10">
         <NavbarDashboard />
-        <div className="lg:ml-48">
+        <div className="2xl:ml-48">
           <div className="px-4 lg:px-8 py-8 pb-16">
             {/* Mobile Menu Button */}
             <div className="lg:hidden mb-6">
@@ -208,7 +208,7 @@ const BuktiTf = () => {
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-white via-red/5 to-yellow/10">
       <NavbarDashboard />
-      <div className="lg:ml-48">
+      <div className="2xl:ml-48">
         <div className="px-4 lg:px-8 py-8 pb-16">
           {/* Mobile Menu + Back Button */}
           <div className="flex items-center gap-4 mb-6">
