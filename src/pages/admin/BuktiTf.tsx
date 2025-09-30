@@ -52,7 +52,13 @@ const BuktiTf = () => {
 
       if (response.ok) {
         const result = await response.json();
+        console.log('📋 Bukti Transfer Response:', result); // Debug log
         const buktiList = result.data || [];
+        
+        // Log first item to see structure
+        if (buktiList.length > 0) {
+          console.log('📋 Sample bukti transfer:', buktiList[0]);
+        }
         
         // TODO: Filter by kompetisi if needed (depends on your data structure)
         // For now, show all bukti transfer
