@@ -336,7 +336,7 @@ useEffect(() => {
   );
 
   const selectClassNames = {
-    control: () => "border-2 border-red rounded-lg h-12 px-2 text-inter",
+    control: () => "border-2 border-red rounded-lg h-10 px-2 text-inter",
     valueContainer: () => "px-2",
     placeholder: () => "text-red/50 text-inter",
     menu: () => "border-2 border-red bg-white rounded-lg shadow-lg mt-1 z-50",
