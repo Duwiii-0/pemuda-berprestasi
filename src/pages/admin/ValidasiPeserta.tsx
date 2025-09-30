@@ -419,7 +419,7 @@ const handleRejection = async (id: number) => {
     
     {/* HEADER - Diperbaiki untuk mobile */}
     <div className="mb-6 sm:mb-8">
-      <h1 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-bold text-black mb-4 leading-tight font-bebas">
+      <h1 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-bold text-black mb-4 font-bebas">
         Validasi Peserta Kompetisi
       </h1>
       
@@ -561,37 +561,37 @@ const handleRejection = async (id: number) => {
           <div>
             <label className="block text-black/60 text-xs mb-2 font-medium font-inter">Level</label>
             <Select
-  unstyled
-  value={{
-    value: filterLevel,
-    label:
-      !filterLevel || filterLevel === "ALL"
-        ? "Semua Level"
-        : filterLevel.charAt(0).toUpperCase() + filterLevel.slice(1),
-  }}
-  onChange={(selected) => setFilterLevel(selected?.value as any)}
-  options={[
-    { value: "ALL", label: "Semua Level" },
-    { value: "pemula", label: "Pemula" },
-    { value: "prestasi", label: "Prestasi" },
-  ]}
-  placeholder="Pilih level"
-  classNames={{
-    control: () =>
-      `w-full flex items-center border border-black/20 rounded-2xl px-3 py-3 gap-2 transition-all duration-300 hover:shadow-sm focus-within:border-yellow-500 focus-within:ring-2 focus-within:ring-yellow-500/20`,
-    valueContainer: () => "px-1",
-    placeholder: () => "text-black/40 text-sm font-inter",
-    menu: () =>
-      "border border-black/10 bg-white rounded-xl shadow-lg mt-2 overflow-hidden z-50",
-    menuList: () => "max-h-40 overflow-y-auto",
-    option: ({ isFocused, isSelected }) =>
-      [
-        "px-3 py-3 cursor-pointer text-sm transition-colors duration-200 font-inter",
-        isFocused ? "bg-yellow-50 text-black" : "text-black/70",
-        isSelected ? "bg-yellow-500 text-black" : "",
-      ].join(" "),
-  }}
-/>
+              unstyled
+              value={{
+                value: filterLevel,
+                label:
+                  !filterLevel || filterLevel === "ALL"
+                    ? "Semua Level"
+                    : filterLevel.charAt(0).toUpperCase() + filterLevel.slice(1),
+              }}
+              onChange={(selected) => setFilterLevel(selected?.value as any)}
+              options={[
+                { value: "ALL", label: "Semua Level" },
+                { value: "pemula", label: "Pemula" },
+                { value: "prestasi", label: "Prestasi" },
+              ]}
+              placeholder="Pilih level"
+              classNames={{
+                control: () =>
+                  `w-full flex items-center border border-black/20 rounded-2xl px-3 py-3 gap-2 transition-all duration-300 hover:shadow-sm focus-within:border-yellow-500 focus-within:ring-2 focus-within:ring-yellow-500/20`,
+                valueContainer: () => "px-1",
+                placeholder: () => "text-black/40 text-sm font-inter",
+                menu: () =>
+                  "border border-black/10 bg-white rounded-xl shadow-lg mt-2 overflow-hidden z-50",
+                menuList: () => "max-h-40 overflow-y-auto",
+                option: ({ isFocused, isSelected }) =>
+                  [
+                    "px-3 py-3 cursor-pointer text-sm transition-colors duration-200 font-inter",
+                    isFocused ? "bg-yellow-50 text-black" : "text-black/70",
+                    isSelected ? "bg-yellow-500 text-black" : "",
+                  ].join(" "),
+              }}
+            />
           </div>
 
           <div>
@@ -624,16 +624,16 @@ const handleRejection = async (id: number) => {
           </div>
           <div>
             <label className="block text-black/60 text-xs mb-2 font-medium font-inter">Dojang</label>
-<Select
-  unstyled
-  value={
-    filterDojang === "ALL"
-      ? { value: "ALL", label: "Semua Dojang" }
-      : dojangOptions.find((opt) => opt.value === filterDojang)
-  }
-  onChange={(selected) => setFilterDojang(selected?.value || "ALL")}
-  options={[{ value: "ALL", label: "Semua Dojang" }, ...dojangOptions]}
-  placeholder="Pilih Dojang"
+            <Select
+              unstyled
+              value={
+                filterDojang === "ALL"
+                  ? { value: "ALL", label: "Semua Dojang" }
+                  : dojangOptions.find((opt) => opt.value === filterDojang)
+              }
+              onChange={(selected) => setFilterDojang(selected?.value || "ALL")}
+              options={[{ value: "ALL", label: "Semua Dojang" }, ...dojangOptions]}
+              placeholder="Pilih Dojang"
               classNames={{
                 control: () =>
                   `w-full flex items-center border border-black/20 rounded-2xl px-3 py-3 gap-2 transition-all duration-300 hover:shadow-sm focus-within:border-yellow-500 focus-within:ring-2 focus-within:ring-yellow-500/20`,
@@ -652,6 +652,11 @@ const handleRejection = async (id: number) => {
             />
           </div>
         </div>
+        {/* Count Peserta */}
+        <p className="text-black/70 text-sm sm:text-base font-inter mb-4">
+          Menampilkan <span className="font-semibold">{displayedPesertas.length}</span>{" "}
+          peserta dari total <span className="font-semibold">{pesertaList.length}</span>
+        </p>
       </div>
     </div>
 

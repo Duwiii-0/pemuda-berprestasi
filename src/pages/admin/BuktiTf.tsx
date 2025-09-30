@@ -43,7 +43,7 @@ const BuktiTf = () => {
     setLoading(true);
     try {
       // Get all bukti transfer
-      const response = await fetch(`${API_BASE_URL}/api/bukti-transfer`, {
+      const response = await fetch(`${API_BASE_URL}/api/bukti-transfer/`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
