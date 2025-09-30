@@ -37,6 +37,9 @@ model tb_pelatih {
 
   sertifikat_sabuk String?     @db.VarChar(255)
 
+
+  tb_buktiTransfer   tb_buktiTransfer[]
+
   id_akun   Int     @unique  
   akun      tb_akun @relation(fields: [id_akun], references: [id_akun])
 
@@ -96,6 +99,7 @@ model tb_dojang {
 
   atlet       tb_atlet[]
   pelatih     tb_pelatih[]   // satu dojang bisa punya banyak pelatih
+  buktiTransfer   tb_buktiTransfer[]
 }
 
 model tb_atlet {
@@ -136,6 +140,9 @@ model tb_buktiTransfer {
   bukti_transfer_path String   @db.VarChar(255)
   created_at         DateTime @default(now())
   
+  tb_dojang  tb_dojang  @relation(fields: [id_dojang], references: [id_dojang], onDelete: Cascade)
+  tb_pelatih tb_pelatih @relation(fields: [id_pelatih], references: [id_pelatih], onDelete: Cascade)
+
   @@map("bukti_transfer")
 }
 

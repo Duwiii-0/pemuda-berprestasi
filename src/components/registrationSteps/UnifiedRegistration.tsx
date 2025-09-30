@@ -32,7 +32,6 @@ const UnifiedRegistration = ({
   isOpen,
   onClose,
   kompetisiId = 1, // default value
-  biayaPendaftaran = 150000
 }: UnifiedRegistrationProps) => {
   // Temporary mock functions until you implement the actual registration system
   
