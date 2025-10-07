@@ -781,7 +781,6 @@ const handleSubmit = async () => {
   menuPortalTarget={document.body}
   menuPosition="fixed"
   menuPlacement="auto"
-  maxMenuHeight={300}
   styles={{
     menuPortal: (base: any) => ({ 
       ...base, 
@@ -794,7 +793,7 @@ const handleSubmit = async () => {
     menuList: (base: any) => ({
       // ✅ JANGAN hapus base, tapi tambahkan properties penting
       ...base,
-      maxHeight: '300px',
+      maxHeight: '150px',
       overflowY: 'auto',
       WebkitOverflowScrolling: 'touch', // ✅ PENTING untuk iOS
       // Scrollbar styling
