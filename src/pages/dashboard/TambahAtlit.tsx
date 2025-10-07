@@ -789,7 +789,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                     Tanggal Lahir <span className="text-red">*</span>
                   </label>
                   <TextInput
-                    className={`h-12 bg-white/50 backdrop-blur-sm rounded-xl focus:border-red transition-all duration-300 ${
+                    className={`h-12 bg-white/50 backdrop-blur-sm rounded-xl focus:border-red w-full transition-all duration-300 ${
                       errors.tanggal_lahir ? 'border-red-500' : 'border-red/20'
                     }`}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, tanggal_lahir: e.target.value })}

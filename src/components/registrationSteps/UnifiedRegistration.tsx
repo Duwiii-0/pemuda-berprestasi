@@ -762,37 +762,56 @@ const handleSubmit = async () => {
                     <label className="block text-black mb-3 text-lg font-plex font-semibold pl-2">
                       Kelas Berat <span className="text-red">*</span>
                     </label>
-                    <LockedSelect
-                      unstyled
-                      options={weightOptions}
-                      value={formData.selectedWeight}
-                      onChange={(value: OptionType | null) => setFormData({
-                        ...formData, 
-                        selectedWeight: value,
-                        selectedAtlit: null,
-                        selectedAtlit2: null
-                      })}
-                      placeholder="Pilih kelas berat..."
-                      isSearchable={false}
-                      classNames={selectClassNames}
-                      disabled={!formData.selectedAge || !formData.selectedGender}
-                      message="Harap pilih kelas umur dan jenis kelamin terlebih dahulu"
-                      
-                      menuPortalTarget={document.body}
-                      menuPosition="fixed"
-                      menuPlacement="auto"
-                      maxMenuHeight={300}
-                      styles={{
-                        menuPortal: (base: any) => ({ ...base, zIndex: 9999 }),
-                        menu: (base: any) => ({ ...base, zIndex: 9999 }),
-                        menuList: (base: any) => ({
-                          ...base,
-                          maxHeight: '300px',
-                          overflowY: 'scroll', // ✅ Paksa tampilkan scrollbar
-                          // Atau gunakan 'auto' untuk scrollbar muncul hanya saat perlu
-                        })
-                      }}
-                    />
+<LockedSelect
+  unstyled
+  options={weightOptions}
+  value={formData.selectedWeight}
+  onChange={(value: OptionType | null) => setFormData({
+    ...formData, 
+    selectedWeight: value,
+    selectedAtlit: null,
+    selectedAtlit2: null
+  })}
+  placeholder="Pilih kelas berat..."
+  isSearchable={false}
+  classNames={selectClassNames}
+  disabled={!formData.selectedAge || !formData.selectedGender}
+  message="Harap pilih kelas umur dan jenis kelamin terlebih dahulu"
+  
+  menuPortalTarget={document.body}
+  menuPosition="fixed"
+  menuPlacement="auto"
+  maxMenuHeight={300}
+  styles={{
+    menuPortal: (base: any) => ({ 
+      ...base, 
+      zIndex: 9999 
+    }),
+    menu: (base: any) => ({ 
+      ...base, 
+      zIndex: 9999 
+    }),
+    menuList: (base: any) => ({
+      // ✅ JANGAN hapus base, tapi tambahkan properties penting
+      ...base,
+      maxHeight: '300px',
+      overflowY: 'auto',
+      WebkitOverflowScrolling: 'touch', // ✅ PENTING untuk iOS
+      // Scrollbar styling
+      '::-webkit-scrollbar': {
+        width: '8px',
+      },
+      '::-webkit-scrollbar-track': {
+        background: '#f1f1f1',
+        borderRadius: '4px',
+      },
+      '::-webkit-scrollbar-thumb': {
+        background: '#cbd5e1',
+        borderRadius: '4px',
+      },
+    })
+  }}
+/>
                   </div>
                 )}
             </div>
