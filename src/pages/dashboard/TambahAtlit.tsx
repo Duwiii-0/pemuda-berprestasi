@@ -784,7 +784,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                 </div>
 
                 {/* Tanggal Lahir */}
-                <div className="space-y-2">
+                <div className="space-y-2 w-full">
                   <label className="block font-plex font-medium text-black/70">
                     Tanggal Lahir <span className="text-red">*</span>
                   </label>

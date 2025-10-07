@@ -770,13 +770,28 @@ const handleSubmit = async () => {
                         ...formData, 
                         selectedWeight: value,
                         selectedAtlit: null,
-                        selectedAtlit2: null // ✅ ADDED
+                        selectedAtlit2: null
                       })}
                       placeholder="Pilih kelas berat..."
                       isSearchable={false}
                       classNames={selectClassNames}
                       disabled={!formData.selectedAge || !formData.selectedGender}
                       message="Harap pilih kelas umur dan jenis kelamin terlebih dahulu"
+                      
+                      menuPortalTarget={document.body}
+                      menuPosition="fixed"
+                      menuPlacement="auto"
+                      maxMenuHeight={300}
+                      styles={{
+                        menuPortal: (base: any) => ({ ...base, zIndex: 9999 }),
+                        menu: (base: any) => ({ ...base, zIndex: 9999 }),
+                        menuList: (base: any) => ({
+                          ...base,
+                          maxHeight: '300px',
+                          overflowY: 'scroll', // ✅ Paksa tampilkan scrollbar
+                          // Atau gunakan 'auto' untuk scrollbar muncul hanya saat perlu
+                        })
+                      }}
                     />
                   </div>
                 )}
