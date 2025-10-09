@@ -55,6 +55,7 @@ interface KelasKejuaraan {
     nama_kelas: string;
   };
   kompetisi: {
+    id_kompetisi: number;
     nama_event: string;
     tanggal_mulai: string;
     tanggal_selesai: string;
@@ -75,12 +76,14 @@ interface TournamentBracketProps {
   kelasData?: KelasKejuaraan;
   onBack?: () => void;
   apiBaseUrl?: string;
+  kompetisiId?: number;
 }
 
 const TournamentBracket: React.FC<TournamentBracketProps> = ({ 
   kelasData, 
   onBack,
-  apiBaseUrl = '/api' 
+  apiBaseUrl = '/api',
+  kompetisiId
 }) => {
   const [selectedKelas, setSelectedKelas] = useState<KelasKejuaraan | null>(kelasData || null);
   const [matches, setMatches] = useState<Match[]>([]);
@@ -94,20 +97,23 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
   const fetchKelasData = async (id_kelas_kejuaraan: number) => {
     try {
       setLoading(true);
-      const response = await fetch(`${apiBaseUrl}/kelas-kejuaraan/${id_kelas_kejuaraan}`);
-      if (response.ok) {
-        const data = await response.json();
-        setSelectedKelas(data);
-        
-        // Check if bracket already exists
-        if (data.bagan && data.bagan.length > 0) {
-          const existingMatches = data.bagan.flatMap(b => b.match);
-          setMatches(existingMatches);
-          setBracketGenerated(true);
-        }
+      
+      // Note: You need to know the kompetisi ID to fetch bracket
+      // This should be passed as prop or fetched from kelas data
+      // For now, assuming kelasData already has kompetisi info
+      
+      if (!selectedKelas?.kompetisi?.id_kompetisi) {
+        console.error('❌ Kompetisi ID not found');
+        return;
       }
+
+      const kompetisiId = selectedKelas.kompetisi.id_kompetisi;
+
+      // Fetch bracket data if exists
+      await fetchBracketData(kompetisiId, id_kelas_kejuaraan);
+      
     } catch (error) {
-      console.error('Error fetching kelas data:', error);
+      console.error('❌ Error fetching kelas data:', error);
     } finally {
       setLoading(false);
     }
@@ -115,115 +121,11 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
 
   // Mock data for demonstration - replace with your actual API calls
   useEffect(() => {
-    if (!selectedKelas) {
-      // Mock data that matches your schema structure
-      const mockKelas: KelasKejuaraan = {
-        id_kelas_kejuaraan: 1,
-        cabang: 'KYORUGI',
-        kategori_event: {
-          nama_kategori: 'Prestasi'
-        },
-        kelompok: {
-          nama_kelompok: 'Juniors',
-          usia_min: 15,
-          usia_max: 17
-        },
-        kelas_berat: {
-          nama_kelas: 'Male -63kg',
-          batas_min: 59,
-          batas_max: 63,
-          jenis_kelamin: 'LAKI_LAKI'
-        },
-        kompetisi: {
-          nama_event: 'Kejuaraan Taekwondo Bela Negara Piala Menteri Pertahanan',
-          tanggal_mulai: '2025-07-25',
-          tanggal_selesai: '2025-07-27',
-          lokasi: 'Palembang, Indonesia'
-        },
-        peserta_kompetisi: [
-          {
-            id_peserta_kompetisi: 1,
-            id_atlet: 1,
-            is_team: false,
-            status: 'APPROVED',
-            atlet: {
-              id_atlet: 1,
-              nama_atlet: 'IQBAL KURNIAWAN',
-              dojang: { nama_dojang: 'LAMPUNG TENGAH TAEKWONDO TEAM INA' }
-            }
-          },
-          {
-            id_peserta_kompetisi: 2,
-            id_atlet: 2,
-            is_team: false,
-            status: 'APPROVED',
-            atlet: {
-              id_atlet: 2,
-              nama_atlet: 'M. ARAPAT',
-              dojang: { nama_dojang: 'PENGKAB TI LAMPUNG UTARA INA' }
-            }
-          },
-          {
-            id_peserta_kompetisi: 3,
-            id_atlet: 3,
-            is_team: false,
-            status: 'APPROVED',
-            atlet: {
-              id_atlet: 3,
-              nama_atlet: 'FIRMAN ABABIL',
-              dojang: { nama_dojang: 'TI BENGKULU INA' }
-            }
-          },
-          {
-            id_peserta_kompetisi: 4,
-            id_atlet: 4,
-            is_team: false,
-            status: 'APPROVED',
-            atlet: {
-              id_atlet: 4,
-              nama_atlet: 'RAFFIE RADITYA',
-              dojang: { nama_dojang: 'PAPA CLUB LUBUKLINGGAU INA' }
-            }
-          },
-          {
-            id_peserta_kompetisi: 5,
-            id_atlet: 5,
-            is_team: false,
-            status: 'APPROVED',
-            atlet: {
-              id_atlet: 5,
-              nama_atlet: 'MUHAMMAD NABHAN SETIAWAN',
-              dojang: { nama_dojang: 'JAKABARING CERIA INA' }
-            }
-          },
-          {
-            id_peserta_kompetisi: 6,
-            id_atlet: 6,
-            is_team: false,
-            status: 'APPROVED',
-            atlet: {
-              id_atlet: 6,
-              nama_atlet: 'ANDHIKA FRANWIJAYA',
-              dojang: { nama_dojang: 'CRANIUM INA' }
-            }
-          },
-          {
-            id_peserta_kompetisi: 7,
-            id_atlet: 7,
-            is_team: false,
-            status: 'APPROVED',
-            atlet: {
-              id_atlet: 7,
-              nama_atlet: 'MUHAMMAD ALFATH KAYSAN ZULKARNAIN',
-              dojang: { nama_dojang: 'X FIGHTER INA' }
-            }
-          }
-        ],
-        bagan: []
-      };
-      setSelectedKelas(mockKelas);
+    if (!kelasData && !selectedKelas) {
+      // If no data provided, component will show "Pilih Kelas Kejuaraan" message
+      console.log('⚠️ No kelas data provided. Waiting for selection...');
     }
-  }, [selectedKelas]);
+  }, [kelasData, selectedKelas]);
 
   // Shuffle array using Fisher-Yates algorithm
   const shuffleArray = <T,>(array: T[]): T[] => {
@@ -242,135 +144,197 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
     setLoading(true);
     
     try {
-      const approvedPeserta = selectedKelas.peserta_kompetisi.filter(p => p.status === 'APPROVED');
-      let participants = [...approvedPeserta];
+      const kompetisiId = selectedKelas.kompetisi.id_kompetisi; // ⬅️ Pastikan ada field ini
+      const kelasKejuaraanId = selectedKelas.id_kelas_kejuaraan;
+
+      console.log(`🎯 Generating bracket for kompetisi ${kompetisiId}, kelas ${kelasKejuaraanId}`);
+
+      // Call API to generate bracket
+      const endpoint = shuffle 
+        ? `${apiBaseUrl}/kompetisi/${kompetisiId}/brackets/shuffle`
+        : `${apiBaseUrl}/kompetisi/${kompetisiId}/brackets/generate`;
       
-      if (shuffle) {
-        participants = shuffleArray(participants);
-      }
-      
-      const totalParticipants = participants.length;
-      
-      if (totalParticipants < 2) {
-        setLoading(false);
-        return;
+      const response = await fetch(endpoint, {
+        method: shuffle ? 'PUT' : 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}` // ⬅️ Sesuaikan dengan auth kamu
+        },
+        body: JSON.stringify({
+          kelasKejuaraanId: kelasKejuaraanId
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to generate bracket');
       }
 
-      // Calculate number of rounds needed
-      const rounds = Math.ceil(Math.log2(totalParticipants));
-      const generatedMatches: Match[] = [];
+      const result = await response.json();
+      console.log('✅ Bracket generated:', result);
+
+      // Fetch updated bracket data
+      await fetchBracketData(kompetisiId, kelasKejuaraanId);
       
-      // Generate first round matches
-      let matchId = 1;
-      const firstRoundMatches = Math.ceil(totalParticipants / 2);
+      alert(shuffle ? 'Bracket shuffled successfully!' : 'Bracket generated successfully!');
       
-      for (let i = 0; i < firstRoundMatches; i++) {
-        const pesertaA = participants[i * 2];
-        const pesertaB = participants[i * 2 + 1];
-        
-        generatedMatches.push({
-          id_match: matchId++,
-          ronde: 1,
-          id_peserta_a: pesertaA?.id_peserta_kompetisi,
-          id_peserta_b: pesertaB?.id_peserta_kompetisi,
-          skor_a: 0,
-          skor_b: 0,
-          peserta_a: pesertaA,
-          peserta_b: pesertaB
-        });
-      }
-      
-      // Generate subsequent rounds (empty matches to be filled by winners)
-      for (let round = 2; round <= rounds; round++) {
-        const prevRoundMatches = generatedMatches.filter(m => m.ronde === round - 1);
-        const currentRoundMatches = Math.ceil(prevRoundMatches.length / 2);
-        
-        for (let i = 0; i < currentRoundMatches; i++) {
-          generatedMatches.push({
-            id_match: matchId++,
-            ronde: round,
-            skor_a: 0,
-            skor_b: 0
-          });
-        }
-      }
-      
-      setMatches(generatedMatches);
-      setBracketGenerated(true);
-      
-    } catch (error) {
-      console.error('Error generating bracket:', error);
+    } catch (error: any) {
+      console.error('❌ Error generating bracket:', error);
+      alert(error.message || 'Failed to generate bracket. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
+  const fetchBracketData = async (kompetisiId: number, kelasKejuaraanId: number) => {
+    try {
+      setLoading(true);
+      
+      const response = await fetch(
+        `${apiBaseUrl}/kompetisi/${kompetisiId}/brackets/${kelasKejuaraanId}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        }
+      );
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          // Bracket not found - not an error, just not generated yet
+          console.log('ℹ️ Bracket not yet generated for this class');
+          setBracketGenerated(false);
+          setMatches([]);
+          return;
+        }
+        throw new Error('Failed to fetch bracket data');
+      }
+
+      const result = await response.json();
+      console.log('📊 Bracket data fetched:', result);
+
+      // Transform API response to match component interface
+      if (result.data && result.data.matches) {
+        const transformedMatches: Match[] = result.data.matches.map((m: any) => ({
+          id_match: m.id,
+          ronde: m.round,
+          id_peserta_a: m.participant1?.id,
+          id_peserta_b: m.participant2?.id,
+          skor_a: m.scoreA || 0,
+          skor_b: m.scoreB || 0,
+          peserta_a: m.participant1 ? transformParticipantFromAPI(m.participant1) : undefined,
+          peserta_b: m.participant2 ? transformParticipantFromAPI(m.participant2) : undefined,
+          venue: m.venue ? { nama_venue: m.venue } : undefined
+        }));
+
+        setMatches(transformedMatches);
+        setBracketGenerated(true);
+        console.log(`✅ Loaded ${transformedMatches.length} matches`);
+      }
+      
+    } catch (error: any) {
+      console.error('❌ Error fetching bracket:', error);
+      // Don't show alert here, as this might be called on mount
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /**
+   * Transform participant data from API format
+   */
+  const transformParticipantFromAPI = (participant: any): Peserta => {
+    if (participant.isTeam) {
+      return {
+        id_peserta_kompetisi: participant.id,
+        is_team: true,
+        status: 'APPROVED',
+        anggota_tim: participant.teamMembers?.map((name: string) => ({
+          atlet: { nama_atlet: name }
+        })) || []
+      };
+    } else {
+      return {
+        id_peserta_kompetisi: participant.id,
+        id_atlet: participant.atletId,
+        is_team: false,
+        status: 'APPROVED',
+        atlet: {
+          id_atlet: participant.atletId || 0,
+          nama_atlet: participant.name,
+          dojang: {
+            nama_dojang: participant.dojang || ''
+          }
+        }
+      };
+    }
+  };
+
   // Save bracket to database
-  const saveBracket = async () => {
+    const saveBracket = async () => {
     if (!selectedKelas || !bracketGenerated) return;
     
     setSaving(true);
     try {
-      const bracketData = {
-        id_kelas_kejuaraan: selectedKelas.id_kelas_kejuaraan,
-        matches: matches,
-        participants: selectedKelas.peserta_kompetisi.filter(p => p.status === 'APPROVED')
-      };
+      const kompetisiId = selectedKelas.kompetisi.id_kompetisi;
+      const kelasKejuaraanId = selectedKelas.id_kelas_kejuaraan;
 
-      const response = await fetch(`${apiBaseUrl}/brackets`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(bracketData)
-      });
-
-      if (response.ok) {
-        alert('Bracket saved successfully!');
-      } else {
-        throw new Error('Failed to save bracket');
-      }
-    } catch (error) {
-      console.error('Error saving bracket:', error);
+      // Note: Bracket is already saved when generated via API
+      // This button can be used to manually trigger save or update
+      console.log('ℹ️ Bracket is already saved via API');
+      
+      alert('Bracket is already saved in the database!');
+      
+    } catch (error: any) {
+      console.error('❌ Error saving bracket:', error);
       alert('Failed to save bracket. Please try again.');
     } finally {
       setSaving(false);
     }
   };
 
-  // Export bracket to PDF
-  const exportToPDF = async () => {
+    const exportToPDF = async () => {
     if (!selectedKelas || !bracketGenerated) return;
     
     setExporting(true);
     try {
-      // Create a temporary div for PDF generation
-      const element = document.createElement('div');
-      element.innerHTML = generatePDFContent();
-      element.style.position = 'absolute';
-      element.style.left = '-9999px';
-      document.body.appendChild(element);
+      const kompetisiId = selectedKelas.kompetisi.id_kompetisi;
+      const kelasKejuaraanId = selectedKelas.id_kelas_kejuaraan;
 
-      // Use html2canvas and jsPDF for PDF generation
-      // Note: In a real implementation, you'd need to install these packages
-      // For now, this creates a simple text-based PDF content
+      console.log(`📄 Exporting PDF for kompetisi ${kompetisiId}, kelas ${kelasKejuaraanId}`);
+
+      // Call API to export PDF
+      const response = await fetch(
+        `${apiBaseUrl}/kompetisi/${kompetisiId}/brackets/pdf?kelasKejuaraanId=${kelasKejuaraanId}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to export PDF');
+      }
+
+      // Get PDF as blob
+      const blob = await response.blob();
       
-      const pdfContent = generateTextPDFContent();
-      const blob = new Blob([pdfContent], { type: 'text/plain' });
+      // Create download link
       const url = URL.createObjectURL(blob);
-      
       const link = document.createElement('a');
       link.href = url;
-      link.download = `tournament-bracket-${selectedKelas.id_kelas_kejuaraan}.txt`;
+      link.download = `tournament-bracket-${kelasKejuaraanId}.pdf`;
       document.body.appendChild(link);
       link.click();
       
       document.body.removeChild(link);
-      document.body.removeChild(element);
       URL.revokeObjectURL(url);
+
+      console.log('✅ PDF exported successfully');
       
-    } catch (error) {
-      console.error('Error exporting PDF:', error);
+    } catch (error: any) {
+      console.error('❌ Error exporting PDF:', error);
       alert('Failed to export PDF. Please try again.');
     } finally {
       setExporting(false);
@@ -454,35 +418,62 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
     return peserta.atlet?.dojang.nama_dojang || '';
   };
 
-  const updateMatchResult = async (matchId: number, scoreA: number, scoreB: number) => {
+    const updateMatchResult = async (matchId: number, scoreA: number, scoreB: number) => {
+    if (!selectedKelas) return;
+
     try {
-      // Update local state
-      setMatches(prev => prev.map(match => 
-        match.id_match === matchId 
-          ? { ...match, skor_a: scoreA, skor_b: scoreB }
-          : match
-      ));
-
-      // Update in database
-      const response = await fetch(`${apiBaseUrl}/matches/${matchId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          skor_a: scoreA,
-          skor_b: scoreB
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update match result');
+      const kompetisiId = selectedKelas.kompetisi.id_kompetisi;
+      
+      // Determine winner based on scores
+      const match = matches.find(m => m.id_match === matchId);
+      if (!match) {
+        throw new Error('Match not found');
       }
 
+      const winnerId = scoreA > scoreB 
+        ? match.id_peserta_a 
+        : match.id_peserta_b;
+
+      if (!winnerId) {
+        throw new Error('Cannot determine winner');
+      }
+
+      console.log(`🎯 Updating match ${matchId}: ${scoreA} - ${scoreB}, winner: ${winnerId}`);
+
+      // Call API to update match
+      const response = await fetch(
+        `${apiBaseUrl}/kompetisi/${kompetisiId}/brackets/match/${matchId}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          },
+          body: JSON.stringify({
+            winnerId: winnerId,
+            scoreA: scoreA,
+            scoreB: scoreB
+          })
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to update match result');
+      }
+
+      const result = await response.json();
+      console.log('✅ Match updated:', result);
+
+      // Refresh bracket data to get updated state
+      await fetchBracketData(kompetisiId, selectedKelas.id_kelas_kejuaraan);
+
       setEditingMatch(null);
-    } catch (error) {
-      console.error('Error updating match result:', error);
-      alert('Failed to update match result. Please try again.');
+      alert('Match result updated successfully!');
+      
+    } catch (error: any) {
+      console.error('❌ Error updating match result:', error);
+      alert(error.message || 'Failed to update match result. Please try again.');
     }
   };
 
@@ -504,6 +495,16 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
 
   const totalRounds = getTotalRounds();
   const approvedParticipants = selectedKelas.peserta_kompetisi.filter(p => p.status === 'APPROVED');
+
+  useEffect(() => {
+    if (selectedKelas && selectedKelas.kompetisi?.id_kompetisi) {
+      const kompetisiId = selectedKelas.kompetisi.id_kompetisi;
+      const kelasKejuaraanId = selectedKelas.id_kelas_kejuaraan;
+      
+      console.log(`🔄 Loading bracket for kelas ${kelasKejuaraanId}...`);
+      fetchBracketData(kompetisiId, kelasKejuaraanId);
+    }
+  }, [selectedKelas?.id_kelas_kejuaraan]);
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#F5FBEF' }}>
