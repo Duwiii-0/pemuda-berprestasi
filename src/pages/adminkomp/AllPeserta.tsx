@@ -7,6 +7,7 @@ import { apiClient } from "../../config/api";
 import { useNavigate } from "react-router-dom";
 import SelectTeamMemberModal from "../../components/selectTeamModal";
 import { useDojang } from "../../context/dojangContext";
+import { kelasBeratOptionsMap } from "../../dummy/beratOptions";
 
 const AllPeserta: React.FC = () => {
   const { token, user } = useAuth();

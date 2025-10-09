@@ -9,6 +9,7 @@ import { useDojang } from "../../context/dojangContext";
 import UnifiedRegistration from "../../components/registrationSteps/UnifiedRegistration";
 import type { Kompetisi } from "../../context/KompetisiContext";
 import Select from "react-select";
+import { kelasBeratOptionsMap } from "../../dummy/beratOptions";
 import AlertModal from "../../components/alertModal";
 import EditRegistrationModal from "../../components/EditRegistrationModal";
 import UploadBuktiModal from '../../components/BuktiTfModal'; // Updated import
