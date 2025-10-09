@@ -12,7 +12,8 @@ import {
   X,
   ChevronRight,
   Award,
-  GitBranch
+  GitBranch,
+  CreditCard
 } from 'lucide-react';
 import { useAuth } from '../context/authContext';
 
@@ -64,7 +65,13 @@ const AdminKompetisiLayout: React.FC = () => {
       path: '/admin-kompetisi/drawing-bagan',
       active: location.pathname === '/admin-kompetisi/drawing-bagan',
       description: 'Kelola drawing bagan tournament'
-    }
+    },
+    {
+      icon: CreditCard,
+      label: 'Bukti Transfer',
+      path: '/admin-kompetisi/bukti-pembayaran',
+      active: location.pathname === '/admin/bukti-pembayaran'
+    },
   ];
 
   const displayName = user?.admin?.nama_admin || user?.email || 'Admin Kompetisi';
