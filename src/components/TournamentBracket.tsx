@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Trophy, Edit3, Save, CheckCircle, ArrowLeft, RefreshCw, Download, Shuffle } from 'lucide-react';
+import { useAuth } from '../context/authContext'; // ⬅️ TAMBAHKAN INI
 
 interface Peserta {
   id_peserta_kompetisi: number;
@@ -85,6 +86,7 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
   apiBaseUrl = '/api',
   kompetisiId
 }) => {
+  const { token } = useAuth(); // ⬅️ TAMBAHKAN INI
   const [selectedKelas, setSelectedKelas] = useState<KelasKejuaraan | null>(kelasData || null);
   const [matches, setMatches] = useState<Match[]>([]);
   const [editingMatch, setEditingMatch] = useState<Match | null>(null);
@@ -158,7 +160,7 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
         method: shuffle ? 'PUT' : 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}` // ⬅️ Sesuaikan dengan auth kamu
+          ...(token && { 'Authorization': `Bearer ${token}` })
         },
         body: JSON.stringify({
           kelasKejuaraanId: kelasKejuaraanId
@@ -194,7 +196,7 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
         `${apiBaseUrl}/kompetisi/${kompetisiId}/brackets/${kelasKejuaraanId}`,
         {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
+            ...(token && { 'Authorization': `Bearer ${token}` })
           }
         }
       );
@@ -308,7 +310,7 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
         `${apiBaseUrl}/kompetisi/${kompetisiId}/brackets/pdf?kelasKejuaraanId=${kelasKejuaraanId}`,
         {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
+            ...(token && { 'Authorization': `Bearer ${token}` })
           }
         }
       );
@@ -447,7 +449,7 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
+            ...(token && { 'Authorization': `Bearer ${token}` })
           },
           body: JSON.stringify({
             winnerId: winnerId,
