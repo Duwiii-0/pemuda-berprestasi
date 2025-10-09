@@ -31,6 +31,7 @@ import AdminLayout from "./layouts/adminlayout";
 import ValidasiPeserta from "./pages/admin/ValidasiPeserta";
 import ValidasiDojang from "./pages/admin/ValidasiDojang";
 import BuktiTf from "./pages/admin/BuktiTf";
+import BuktiTfkomp from "./pages/adminkomp/BuktiTf";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminStats from "./pages/admin/AdminStats";
 import Reports from "./pages/admin/Reports";
@@ -149,6 +150,7 @@ export default function AppRoutes() {
             <Route path="validasi-peserta" element={<AllPeserta />} />
             <Route path="validasi-dojang" element={<ValidasiDojangAdminKomp />} />
             <Route path="statistik" element={<StatistikAdminKomp />} />
+            <Route path="bukti-pembayaran" element={<BuktiTfkomp />} />
             <Route path="drawing-bagan" element={<DrawingBagan />} />
           </Route>
 
