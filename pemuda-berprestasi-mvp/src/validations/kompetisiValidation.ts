@@ -157,7 +157,6 @@ export const kompetisiValidation = {
       })
   }),
 
-  // Validation for updating match result
   updateMatch: Joi.object({
     winnerId: Joi.number()
       .integer()
@@ -195,24 +194,16 @@ export const kompetisiValidation = {
         'number.max': 'Skor B maksimal 100',
         'any.required': 'Skor B wajib diisi'
       })
-  }).custom((value, helpers) => {
-    // Ensure scores are not equal (no ties allowed)
+  })
+  .custom((value, helpers) => {
+    // ✅ Simple validation: scores must not be equal
     if (value.scoreA === value.scoreB) {
       return helpers.error('custom.tieNotAllowed');
     }
-    
-    // Ensure winner's score is higher
-    const winnerScore = value.winnerId === value.participantA ? value.scoreA : value.scoreB;
-    const loserScore = value.winnerId === value.participantA ? value.scoreB : value.scoreA;
-    
-    if (winnerScore <= loserScore) {
-      return helpers.error('custom.winnerScoreMustBeHigher');
-    }
-    
     return value;
-  }, 'Match result validation').messages({
-    'custom.tieNotAllowed': 'Pertandingan tidak boleh berakhir seri',
-    'custom.winnerScoreMustBeHigher': 'Skor pemenang harus lebih tinggi dari lawannya'
+  }, 'Match result validation')
+  .messages({
+    'custom.tieNotAllowed': 'Pertandingan tidak boleh berakhir seri'
   }),
 
   // Validation for shuffle bracket
