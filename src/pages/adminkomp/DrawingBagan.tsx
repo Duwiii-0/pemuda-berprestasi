@@ -166,7 +166,48 @@ const DrawingBagan: React.FC = () => {
   }
 
   if (showBracket && selectedKelas) {
-    return <TournamentBracket />;
+    return (
+      <TournamentBracket 
+        kelasData={{
+          ...selectedKelas,
+          id_kelas_kejuaraan: parseInt(selectedKelas.id_kelas_kejuaraan),
+          kompetisi: {
+            id_kompetisi: kompetisiId!,
+            nama_event: pesertaList[0]?.kelas_kejuaraan?.kompetisi?.nama_event || 'Competition',
+            tanggal_mulai: pesertaList[0]?.kelas_kejuaraan?.kompetisi?.tanggal_mulai || new Date().toISOString(),
+            tanggal_selesai: pesertaList[0]?.kelas_kejuaraan?.kompetisi?.tanggal_selesai || new Date().toISOString(),
+            lokasi: pesertaList[0]?.kelas_kejuaraan?.kompetisi?.lokasi || 'Location'
+          },
+          peserta_kompetisi: pesertaList
+            .filter(p => p.status === 'APPROVED' && p.kelas_kejuaraan?.id_kelas_kejuaraan === selectedKelas.id_kelas_kejuaraan)
+            .map(p => ({
+              id_peserta_kompetisi: p.id_peserta_kompetisi,
+              id_atlet: p.atlet?.id_atlet,
+              is_team: p.is_team,
+              status: p.status,
+              atlet: p.atlet ? {
+                id_atlet: p.atlet.id_atlet,
+                nama_atlet: p.atlet.nama_atlet,
+                dojang: {
+                  nama_dojang: p.atlet.dojang?.nama_dojang || ''
+                }
+              } : undefined,
+              anggota_tim: p.anggota_tim?.map(at => ({
+                atlet: {
+                  nama_atlet: at.atlet.nama_atlet
+                }
+              }))
+            })),
+          bagan: []
+        }}
+        onBack={() => {
+          console.log('🔙 Back to drawing bagan list');
+          setShowBracket(false);
+          setSelectedKelas(null);
+        }}
+        apiBaseUrl={import.meta.env.VITE_API_URL || '/api'}
+      />
+    );
   }
 
   if (loadingAtlet) {
