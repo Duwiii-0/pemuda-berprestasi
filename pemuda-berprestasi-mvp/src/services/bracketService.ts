@@ -19,7 +19,7 @@ export interface Match {
   winner?: Participant | null;
   scoreA?: number;
   scoreB?: number;
-  status: 'pending' | 'ongoing' | 'completed';
+  status: 'pending' | 'ongoing' | 'completed' | 'bye';
   venue?: string;
 }
 
@@ -77,7 +77,8 @@ export class BracketService {
           },
           kelas_kejuaraan: {
             include: {
-              kompetisi: true
+              kompetisi: true,
+              kategori_event: true  // ⬅️ PENTING! Tambahkan ini untuk deteksi kategori
             }
           }
         }
@@ -86,6 +87,12 @@ export class BracketService {
       if (registrations.length < 2) {
         throw new Error('Minimal 2 peserta diperlukan untuk membuat bagan');
       }
+
+      // 🔥 DETEKSI KATEGORI PEMULA vs PRESTASI
+      const kategori = registrations[0]?.kelas_kejuaraan?.kategori_event?.nama_kategori?.toLowerCase() || '';
+      const isPemula = kategori.includes('pemula');
+
+      console.log(`📊 Generating bracket for kategori: ${kategori} (isPemula: ${isPemula})`);
 
       // Transform to participants
       const participants: Participant[] = registrations.map(reg => {
@@ -133,14 +140,16 @@ export class BracketService {
         )
       );
 
-      // Generate matches
-      const matches = await this.generateMatches(bagan.id_bagan, shuffledParticipants);
+      // 🔥 GENERATE MATCHES BASED ON KATEGORI
+      const matches = isPemula
+        ? await this.generatePemulaBracket(bagan.id_bagan, shuffledParticipants)
+        : await this.generatePrestasiBracket(bagan.id_bagan, shuffledParticipants);
       
       return {
         id: bagan.id_bagan,
         kompetisiId,
         kelasKejuaraanId,
-        totalRounds: this.calculateTotalRounds(shuffledParticipants.length),
+        totalRounds: isPemula ? 1 : this.calculateTotalRounds(shuffledParticipants.length),
         isGenerated: true,
         participants: shuffledParticipants,
         matches
@@ -166,7 +175,7 @@ export class BracketService {
   /**
    * Generate tournament matches using existing schema
    */
-  static async generateMatches(baganId: number, participants: Participant[]): Promise<Match[]> {
+  static async generatePrestasiBracket(baganId: number, participants: Participant[]): Promise<Match[]> {
     const participantCount = participants.length;
     
     if (participantCount < 2) {
@@ -255,6 +264,50 @@ export class BracketService {
     // Advance bye winners to next round
     await this.advanceByeWinners(baganId, matches.filter(m => m.winner));
 
+    return matches;
+  }
+
+  static async generatePemulaBracket(baganId: number, participants: Participant[]): Promise<Match[]> {
+    const matches: Match[] = [];
+    const shuffled = [...participants]; // Already shuffled from parent method
+    
+    console.log(`🥋 Generating PEMULA bracket for ${shuffled.length} participants`);
+
+    // Pair participants: [0,1], [2,3], [4,5]...
+    for (let i = 0; i < shuffled.length; i += 2) {
+      const participant1 = shuffled[i];
+      const participant2 = shuffled[i + 1] || null; // null jika ganjil
+      
+      // Create match in database
+      const match = await prisma.tb_match.create({
+        data: {
+          id_bagan: baganId,
+          ronde: 1, // Pemula selalu 1 ronde
+          id_peserta_a: participant1.id,
+          id_peserta_b: participant2?.id || null,
+          skor_a: 0,
+          skor_b: 0
+        }
+      });
+      
+      matches.push({
+        id: match.id_match,
+        round: 1,
+        position: Math.floor(i / 2) + 1,
+        participant1,
+        participant2: participant2 || null,
+        status: participant2 ? 'pending' : 'bye', // bye jika tidak ada lawan
+        scoreA: 0,
+        scoreB: 0
+      });
+      
+      // Log untuk peserta yang BYE
+      if (!participant2) {
+        console.log(`⚠️ Peserta ${participant1.name} mendapat BYE (otomatis perak)`);
+      }
+    }
+    
+    console.log(`✅ Generated ${matches.length} matches for PEMULA category`);
     return matches;
   }
 
@@ -366,18 +419,23 @@ export class BracketService {
       }).filter(Boolean) as Participant[];
 
       // Transform matches
-      const matches: Match[] = bagan.match.map(match => ({
-        id: match.id_match,
-        round: match.ronde,
-        position: 0, // Will be calculated based on round and order
-        participant1: match.peserta_a ? this.transformParticipant(match.peserta_a) : null,
-        participant2: match.peserta_b ? this.transformParticipant(match.peserta_b) : null,
-        winner: this.determineWinner(match),
-        scoreA: match.skor_a,
-        scoreB: match.skor_b,
-        status: this.determineMatchStatus(match),
-        venue: match.venue?.nama_venue
-      }));
+      const matches: Match[] = bagan.match.map(match => {
+        const hasParticipant1 = !!match.peserta_a;
+        const hasParticipant2 = !!match.peserta_b;
+        
+        return {
+          id: match.id_match,
+          round: match.ronde,
+          position: 0,
+          participant1: hasParticipant1 ? this.transformParticipant(match.peserta_a) : null,
+          participant2: hasParticipant2 ? this.transformParticipant(match.peserta_b) : null,
+          winner: this.determineWinner(match),
+          scoreA: match.skor_a,
+          scoreB: match.skor_b,
+          status: (hasParticipant1 && !hasParticipant2) ? 'bye' : this.determineMatchStatus(match), // ⬅️ Detect BYE
+          venue: match.venue?.nama_venue
+        };
+      });
 
       return {
         id: bagan.id_bagan,

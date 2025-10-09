@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Trophy, Medal, User, Users, Eye, Edit3, Save, Clock, CheckCircle, ArrowLeft, RefreshCw, Download, FileText, Shuffle } from 'lucide-react';
+import { Trophy, Edit3, Save, CheckCircle, ArrowLeft, RefreshCw, Download, Shuffle } from 'lucide-react';
 
-// Types based on your Prisma schema
 interface Peserta {
   id_peserta_kompetisi: number;
   id_atlet?: number;
