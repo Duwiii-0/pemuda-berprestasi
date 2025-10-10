@@ -368,84 +368,175 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
       setSaving(false);
     }
   };
-// Helper to convert oklch to rgb
-const convertOklchToRgb = (clonedDoc: Document) => {
+// Helper to convert modern color spaces (oklch, oklab, lch, lab) to rgb
+const convertModernColorsToRgb = (clonedDoc: Document) => {
   const allElements = clonedDoc.querySelectorAll('*');
   
+  // Comprehensive color mapping for common Tailwind colors
+  const colorMap: { [key: string]: string } = {
+    // Black & White
+    'oklch(0 0 0)': 'rgb(0, 0, 0)',
+    'oklch(1 0 0)': 'rgb(255, 255, 255)',
+    'oklab(0 0 0)': 'rgb(0, 0, 0)',
+    'oklab(1 0 0)': 'rgb(255, 255, 255)',
+    
+    // Custom theme colors
+    'oklch(0.98 0.01 106.42)': 'rgb(245, 251, 239)', // white
+    'oklch(0.39 0.13 16.32)': 'rgb(153, 13, 53)', // red
+    'oklch(0.80 0.13 91.23)': 'rgb(245, 183, 0)', // yellow
+    'oklch(0.08 0 0)': 'rgb(5, 5, 5)', // black
+    
+    // Common grays
+    'oklch(0.95 0 0)': 'rgb(242, 242, 242)',
+    'oklch(0.90 0 0)': 'rgb(229, 229, 229)',
+    'oklch(0.85 0 0)': 'rgb(212, 212, 212)',
+    'oklch(0.75 0 0)': 'rgb(191, 191, 191)',
+    'oklch(0.50 0 0)': 'rgb(128, 128, 128)',
+    'oklch(0.25 0 0)': 'rgb(64, 64, 64)',
+    
+    // Tailwind blue
+    'oklch(0.55 0.25 263.03)': 'rgb(59, 130, 246)',
+    
+    // Tailwind red
+    'oklch(0.55 0.22 25.33)': 'rgb(239, 68, 68)',
+    
+    // Tailwind yellow/gold
+    'oklch(0.85 0.15 95.78)': 'rgb(245, 183, 0)',
+    
+    // Tailwind green
+    'oklch(0.65 0.20 145.82)': 'rgb(34, 197, 94)',
+    
+    // Tailwind gray variants
+    'oklch(0.97 0 0)': 'rgb(249, 250, 251)',
+    'oklch(0.94 0 0)': 'rgb(243, 244, 246)',
+  };
+  
+  // Function to replace any modern color format with rgb
+  const replaceModernColor = (value: string): string => {
+    if (!value) return value;
+    
+    // Check if contains any modern color function
+    if (!value.includes('oklch') && !value.includes('oklab') && 
+        !value.includes('lch') && !value.includes('lab')) {
+      return value;
+    }
+    
+    // Try exact match first
+    for (const [modernColor, rgbColor] of Object.entries(colorMap)) {
+      if (value.includes(modernColor)) {
+        return value.replace(modernColor, rgbColor);
+      }
+    }
+    
+    // Parse and convert oklch
+    const oklchMatch = value.match(/oklch\(([\d.]+)\s+([\d.]+)\s+([\d.]+)(?:\s*\/\s*([\d.]+))?\)/);
+    if (oklchMatch) {
+      const [, l, c, h, alpha] = oklchMatch;
+      const rgbColor = oklchToRgb(parseFloat(l), parseFloat(c), parseFloat(h));
+      const alphaValue = alpha ? parseFloat(alpha) : 1;
+      
+      if (alphaValue < 1) {
+        return value.replace(oklchMatch[0], `rgba(${rgbColor.r}, ${rgbColor.g}, ${rgbColor.b}, ${alphaValue})`);
+      }
+      return value.replace(oklchMatch[0], `rgb(${rgbColor.r}, ${rgbColor.g}, ${rgbColor.b})`);
+    }
+    
+    // Parse and convert oklab
+    const oklabMatch = value.match(/oklab\(([\d.]+)\s+([-\d.]+)\s+([-\d.]+)(?:\s*\/\s*([\d.]+))?\)/);
+    if (oklabMatch) {
+      const [, l, a, b, alpha] = oklabMatch;
+      const rgbColor = oklabToRgb(parseFloat(l), parseFloat(a), parseFloat(b));
+      const alphaValue = alpha ? parseFloat(alpha) : 1;
+      
+      if (alphaValue < 1) {
+        return value.replace(oklabMatch[0], `rgba(${rgbColor.r}, ${rgbColor.g}, ${rgbColor.b}, ${alphaValue})`);
+      }
+      return value.replace(oklabMatch[0], `rgb(${rgbColor.r}, ${rgbColor.g}, ${rgbColor.b})`);
+    }
+    
+    // Fallback for any remaining modern colors
+    return value
+      .replace(/oklch\([^)]+\)/g, 'rgb(128, 128, 128)')
+      .replace(/oklab\([^)]+\)/g, 'rgb(128, 128, 128)')
+      .replace(/lch\([^)]+\)/g, 'rgb(128, 128, 128)')
+      .replace(/lab\([^)]+\)/g, 'rgb(128, 128, 128)');
+  };
+  
+  // Simple OKLCH to RGB conversion
+  function oklchToRgb(l: number, c: number, h: number): { r: number, g: number, b: number } {
+    // Convert to OKLab first
+    const hRad = (h * Math.PI) / 180;
+    const a = c * Math.cos(hRad);
+    const b = c * Math.sin(hRad);
+    
+    return oklabToRgb(l, a, b);
+  }
+  
+  // Simple OKLab to RGB conversion (simplified, not perfect but works for html2canvas)
+  function oklabToRgb(l: number, a: number, b: number): { r: number, g: number, b: number } {
+    // This is a simplified conversion
+    // For perfect accuracy, would need proper OKLab -> XYZ -> RGB pipeline
+    
+    // Approximate conversion
+    const l_ = l + 0.3963377774 * a + 0.2158037573 * b;
+    const m_ = l - 0.1055613458 * a - 0.0638541728 * b;
+    const s_ = l - 0.0894841775 * a - 1.2914855480 * b;
+    
+    const l_3 = l_ * l_ * l_;
+    const m_3 = m_ * m_ * m_;
+    const s_3 = s_ * s_ * s_;
+    
+    const r = +4.0767416621 * l_3 - 3.3077115913 * m_3 + 0.2309699292 * s_3;
+    const g = -1.2684380046 * l_3 + 2.6097574011 * m_3 - 0.3413193965 * s_3;
+    const b_ = -0.0041960863 * l_3 - 0.7034186147 * m_3 + 1.7076147010 * s_3;
+    
+    // Clamp and convert to 0-255 range
+    const clamp = (v: number) => Math.max(0, Math.min(255, Math.round(v * 255)));
+    
+    return {
+      r: clamp(r),
+      g: clamp(g),
+      b: clamp(b_)
+    };
+  }
+  
+  // Apply conversions to all elements
   allElements.forEach((el) => {
     const element = el as HTMLElement;
+    
+    // Get all style properties
     const style = element.style;
+    const computedStyle = window.getComputedStyle(element);
     
-    // Convert oklch colors to rgb fallbacks
-    const colorMap: { [key: string]: string } = {
-      // Tailwind default colors yang sering dipakai
-      'oklch(0 0 0)': 'rgb(0, 0, 0)',
-      'oklch(1 0 0)': 'rgb(255, 255, 255)',
-      'oklch(0.98 0.01 106.42)': 'rgb(245, 251, 239)', // white
-      'oklch(0.39 0.13 16.32)': 'rgb(153, 13, 53)', // red
-      'oklch(0.80 0.13 91.23)': 'rgb(245, 183, 0)', // yellow
-      'oklch(0.08 0 0)': 'rgb(5, 5, 5)', // black
-    };
+    // Color-related properties to check
+    const colorProps = [
+      'color', 'backgroundColor', 'borderColor', 
+      'borderTopColor', 'borderRightColor', 'borderBottomColor', 'borderLeftColor',
+      'fill', 'stroke', 'outlineColor', 'textDecorationColor'
+    ];
     
-    // Function to replace oklch with rgb
-    const replaceOklch = (value: string): string => {
-      if (!value || !value.includes('oklch')) return value;
-      
-      // Try exact match first
-      for (const [oklch, rgb] of Object.entries(colorMap)) {
-        if (value.includes(oklch)) {
-          return value.replace(oklch, rgb);
-        }
+    colorProps.forEach(prop => {
+      // Check inline style
+      const inlineValue = style.getPropertyValue(prop);
+      if (inlineValue && (inlineValue.includes('oklch') || inlineValue.includes('oklab'))) {
+        style.setProperty(prop, replaceModernColor(inlineValue));
       }
       
-      // Fallback: extract oklch and convert to best guess
-      if (value.includes('oklch')) {
-        // Parse oklch values
-        const match = value.match(/oklch\(([\d.]+)\s+([\d.]+)\s+([\d.]+)\)/);
-        if (match) {
-          const [, l, c, h] = match.map(Number);
-          
-          // Simple conversion (not perfect but works for html2canvas)
-          if (c < 0.02) {
-            // Grayscale
-            const gray = Math.round(l * 255);
-            return `rgb(${gray}, ${gray}, ${gray})`;
-          }
-          
-          // For colored values, use rough approximation
-          // This is simplified - real conversion is complex
-          const r = Math.round((l + c * Math.cos((h * Math.PI) / 180)) * 255);
-          const g = Math.round((l + c * Math.cos(((h - 120) * Math.PI) / 180)) * 255);
-          const b = Math.round((l + c * Math.cos(((h - 240) * Math.PI) / 180)) * 255);
-          
-          const clamp = (v: number) => Math.max(0, Math.min(255, v));
-          return `rgb(${clamp(r)}, ${clamp(g)}, ${clamp(b)})`;
-        }
-      }
-      
-      return value;
-    };
-    
-    // Replace in style properties
-    ['color', 'backgroundColor', 'borderColor', 'borderTopColor', 
-     'borderRightColor', 'borderBottomColor', 'borderLeftColor',
-     'fill', 'stroke'].forEach(prop => {
-      const value = style.getPropertyValue(prop);
-      if (value && value.includes('oklch')) {
-        style.setProperty(prop, replaceOklch(value));
+      // Check computed style and apply inline if needed
+      const computedValue = computedStyle.getPropertyValue(prop);
+      if (computedValue && (computedValue.includes('oklch') || computedValue.includes('oklab'))) {
+        style.setProperty(prop, replaceModernColor(computedValue));
       }
     });
     
-    // Also check computed style and apply inline
-    const computed = window.getComputedStyle(element);
-    if (computed.color && computed.color.includes('oklch')) {
-      element.style.color = replaceOklch(computed.color);
+    // Also check for background shorthand
+    if (style.background && (style.background.includes('oklch') || style.background.includes('oklab'))) {
+      style.background = replaceModernColor(style.background);
     }
-    if (computed.backgroundColor && computed.backgroundColor.includes('oklch')) {
-      element.style.backgroundColor = replaceOklch(computed.backgroundColor);
-    }
-    if (computed.borderColor && computed.borderColor.includes('oklch')) {
-      element.style.borderColor = replaceOklch(computed.borderColor);
+    
+    const computedBg = computedStyle.background;
+    if (computedBg && (computedBg.includes('oklch') || computedBg.includes('oklab'))) {
+      style.background = replaceModernColor(computedBg);
     }
   });
 };
@@ -532,7 +623,7 @@ if (isPemula) {
       backgroundColor: '#F5FBEF',
       windowWidth: (matchesContainer as HTMLElement).scrollWidth,
       windowHeight: (matchesContainer as HTMLElement).scrollHeight,
-      onclone: convertOklchToRgb
+      onclone: convertModernColorsToRgb  
     });
 
     const imgWidth = 180; // Slightly smaller for better margins
@@ -612,7 +703,7 @@ if (isPemula) {
     backgroundColor: '#FFFFFF',
     windowWidth: leaderboardRef.current.scrollWidth,
     windowHeight: leaderboardRef.current.scrollHeight,
-    onclone: convertOklchToRgb
+    onclone: convertModernColorsToRgb  
   });
 
   const lbImgWidth = 180;
@@ -678,7 +769,7 @@ if (isPemula) {
   backgroundColor: '#F5FBEF',
   windowWidth: bracketRef.current.scrollWidth,
   windowHeight: bracketRef.current.scrollHeight,
-  onclone: convertOklchToRgb
+  onclone: convertModernColorsToRgb  
 });
 
       const imgWidth = 277; // A4 landscape width minus margins
