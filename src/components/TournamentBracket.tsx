@@ -90,7 +90,7 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
   kompetisiId
 }) => {
   const { token } = useAuth(); // ⬅️ TAMBAHKAN INI
-   const [selectedKelas, setSelectedKelas] = useState<KelasKejuaraan | null>(kelasData || null);
+  const [selectedKelas, setSelectedKelas] = useState<KelasKejuaraan | null>(kelasData || null);
   const [matches, setMatches] = useState<Match[]>([]);
   const [editingMatch, setEditingMatch] = useState<Match | null>(null);
   const [loading, setLoading] = useState(false);
@@ -99,6 +99,9 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
   const [exporting, setExporting] = useState(false);
   const [clearing, setClearing] = useState(false); 
   const [deleting, setDeleting] = useState(false); 
+  const [showParticipantSelection, setShowParticipantSelection] = useState(false);
+  const [selectedParticipants, setSelectedParticipants] = useState<Set<number>>(new Set());
+  const [selectAll, setSelectAll] = useState(false);
   const bracketRef = React.useRef<HTMLDivElement>(null);
   const leaderboardRef = React.useRef<HTMLDivElement>(null);
   
@@ -153,6 +156,45 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
     setShowModal(true);
   };
 
+  // Tambahkan setelah fungsi showConfirmation
+
+const handleSelectParticipant = (participantId: number) => {
+  setSelectedParticipants(prev => {
+    const newSet = new Set(prev);
+    if (newSet.has(participantId)) {
+      newSet.delete(participantId);
+    } else {
+      newSet.add(participantId);
+    }
+    return newSet;
+  });
+};
+
+const handleSelectAll = () => {
+  if (selectAll) {
+    // Deselect all
+    setSelectedParticipants(new Set());
+    setSelectAll(false);
+  } else {
+    // Select all approved participants
+    const allIds = new Set(
+      approvedParticipants.map(p => p.id_peserta_kompetisi)
+    );
+    setSelectedParticipants(allIds);
+    setSelectAll(true);
+  }
+};
+
+const openParticipantSelection = () => {
+  // Auto-select all participants by default
+  const allIds = new Set(
+    approvedParticipants.map(p => p.id_peserta_kompetisi)
+  );
+  setSelectedParticipants(allIds);
+  setSelectAll(true);
+  setShowParticipantSelection(true);
+};
+
   const isPemula = selectedKelas?.kategori_event?.nama_kategori?.toLowerCase().includes('pemula') || false;
   
   console.log('📊 Category type:', isPemula ? 'PEMULA' : 'PRESTASI');
@@ -198,63 +240,79 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
   };
 
   // Generate tournament bracket with shuffle
-  const generateBracket = async (shuffle: boolean = true) => {
-    if (!selectedKelas) return;
+  // REPLACE fungsi generateBracket dengan ini:
+
+const generateBracket = async (shuffle: boolean = true) => {
+  if (!selectedKelas) return;
+  
+  // Validate selection
+  if (selectedParticipants.size < 2) {
+    showNotification(
+      'warning',
+      'Peserta Tidak Cukup',
+      'Minimal 2 peserta harus dipilih untuk membuat bracket',
+      () => setShowModal(false)
+    );
+    return;
+  }
+  
+  setLoading(true);
+  setShowParticipantSelection(false); // Close modal
+  
+  try {
+    const kompetisiId = selectedKelas.kompetisi.id_kompetisi;
+    const kelasKejuaraanId = selectedKelas.id_kelas_kejuaraan;
+
+    console.log(`🎯 Generating bracket for kompetisi ${kompetisiId}, kelas ${kelasKejuaraanId}`);
+    console.log(`✅ Selected ${selectedParticipants.size} participants:`, Array.from(selectedParticipants));
+
+    // Call API to generate bracket
+    const endpoint = shuffle 
+      ? `${apiBaseUrl}/kompetisi/${kompetisiId}/brackets/shuffle`
+      : `${apiBaseUrl}/kompetisi/${kompetisiId}/brackets/generate`;
     
-    setLoading(true);
-    
-    try {
-      const kompetisiId = selectedKelas.kompetisi.id_kompetisi; // ⬅️ Pastikan ada field ini
-      const kelasKejuaraanId = selectedKelas.id_kelas_kejuaraan;
+    const response = await fetch(endpoint, {
+      method: shuffle ? 'PUT' : 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token && { 'Authorization': `Bearer ${token}` })
+      },
+      body: JSON.stringify({
+        kelasKejuaraanId: kelasKejuaraanId,
+        participantIds: Array.from(selectedParticipants) // ⭐ Kirim selected participants
+      })
+    });
 
-      console.log(`🎯 Generating bracket for kompetisi ${kompetisiId}, kelas ${kelasKejuaraanId}`);
-
-      // Call API to generate bracket
-      const endpoint = shuffle 
-        ? `${apiBaseUrl}/kompetisi/${kompetisiId}/brackets/shuffle`
-        : `${apiBaseUrl}/kompetisi/${kompetisiId}/brackets/generate`;
-      
-      const response = await fetch(endpoint, {
-        method: shuffle ? 'PUT' : 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token && { 'Authorization': `Bearer ${token}` })
-        },
-        body: JSON.stringify({
-          kelasKejuaraanId: kelasKejuaraanId
-        })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to generate bracket');
-      }
-
-      const result = await response.json();
-      console.log('✅ Bracket generated:', result);
-
-      // Fetch updated bracket data
-      await fetchBracketData(kompetisiId, kelasKejuaraanId);
-      
-      showNotification(
-        'success',
-        'Berhasil!',
-        shuffle ? 'Bracket berhasil diacak ulang!' : 'Bracket berhasil dibuat!',
-        () => setShowModal(false)
-      );
-      
-    } catch (error: any) {
-      console.error('❌ Error generating bracket:', error);
-      showNotification(
-        'error',
-        'Gagal Membuat Bracket',
-        error.message || 'Terjadi kesalahan saat membuat bracket. Silakan coba lagi.',
-        () => setShowModal(false)
-      );
-    } finally {
-      setLoading(false);
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to generate bracket');
     }
-  };
+
+    const result = await response.json();
+    console.log('✅ Bracket generated:', result);
+
+    // Fetch updated bracket data
+    await fetchBracketData(kompetisiId, kelasKejuaraanId);
+    
+    showNotification(
+      'success',
+      'Berhasil!',
+      shuffle ? 'Bracket berhasil diacak ulang!' : 'Bracket berhasil dibuat!',
+      () => setShowModal(false)
+    );
+    
+  } catch (error: any) {
+    console.error('❌ Error generating bracket:', error);
+    showNotification(
+      'error',
+      'Gagal Membuat Bracket',
+      error.message || 'Terjadi kesalahan saat membuat bracket. Silakan coba lagi.',
+      () => setShowModal(false)
+    );
+  } finally {
+    setLoading(false);
+  }
+};
 
   const fetchBracketData = async (kompetisiId: number, kelasKejuaraanId: number) => {
     try {
@@ -1106,24 +1164,26 @@ const canvas = await html2canvas(bracketRef.current, {
             </div>
 
             <div className="flex gap-3">
-  <button
-    onClick={() => generateBracket(true)}
-    disabled={loading || approvedParticipants.length < 2}
-    className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50"
-    style={{ backgroundColor: '#6366F1', color: '#F5FBEF' }}
-  >
-    {loading ? (
-      <>
-        <RefreshCw size={16} className="animate-spin" />
-        <span>Shuffling...</span>
-      </>
-    ) : (
-      <>
-        <Shuffle size={16} />
-        <span>Shuffle & Generate</span>
-      </>
-    )}
-  </button>
+// REPLACE bagian button "Shuffle & Generate" dan "Regenerate" dengan ini:
+
+<button
+  onClick={openParticipantSelection} // ⭐ Ubah dari generateBracket(true)
+  disabled={loading || approvedParticipants.length < 2}
+  className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50"
+  style={{ backgroundColor: '#6366F1', color: '#F5FBEF' }}
+>
+  {loading ? (
+    <>
+      <RefreshCw size={16} className="animate-spin" />
+      <span>Processing...</span>
+    </>
+  ) : (
+    <>
+      <Shuffle size={16} />
+      <span>{bracketGenerated ? 'Edit & Regenerate' : 'Select & Generate'}</span>
+    </>
+  )}
+</button>
 
   <button
     onClick={() => generateBracket(false)}
@@ -2081,6 +2141,145 @@ const canvas = await html2canvas(bracketRef.current, {
           </div>
         </div>
       )}
+      {/* Participant Selection Modal */}
+{showParticipantSelection && (
+  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[80vh] flex flex-col">
+      {/* Modal Header */}
+      <div className="p-6 border-b" style={{ borderColor: '#990D35' }}>
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-xl font-bold" style={{ color: '#050505' }}>
+              Pilih Peserta untuk Bracket
+            </h3>
+            <p className="text-sm mt-1" style={{ color: '#050505', opacity: 0.6 }}>
+              Pilih minimal 2 peserta untuk membuat bracket turnamen
+            </p>
+          </div>
+          <button
+            onClick={() => setShowParticipantSelection(false)}
+            className="p-2 rounded-lg hover:bg-black/5 transition-all"
+          >
+            <span className="text-2xl" style={{ color: '#990D35' }}>×</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Select All */}
+      <div className="p-4 border-b" style={{ borderColor: 'rgba(0,0,0,0.1)' }}>
+        <label className="flex items-center gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={selectAll}
+            onChange={handleSelectAll}
+            className="w-5 h-5 rounded border-2 cursor-pointer"
+            style={{ 
+              accentColor: '#990D35',
+              borderColor: '#990D35' 
+            }}
+          />
+          <span className="font-semibold" style={{ color: '#050505' }}>
+            Pilih Semua ({approvedParticipants.length} peserta)
+          </span>
+        </label>
+      </div>
+
+      {/* Participants List */}
+      <div className="flex-1 overflow-y-auto p-4">
+        <div className="space-y-2">
+          {approvedParticipants.map((participant) => (
+            <label
+              key={participant.id_peserta_kompetisi}
+              className="flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer hover:bg-gray-50 transition-all"
+              style={{ 
+                borderColor: selectedParticipants.has(participant.id_peserta_kompetisi) 
+                  ? '#990D35' 
+                  : '#e5e7eb',
+                backgroundColor: selectedParticipants.has(participant.id_peserta_kompetisi)
+                  ? 'rgba(153, 13, 53, 0.05)'
+                  : 'white'
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={selectedParticipants.has(participant.id_peserta_kompetisi)}
+                onChange={() => handleSelectParticipant(participant.id_peserta_kompetisi)}
+                className="w-5 h-5 rounded border-2 cursor-pointer"
+                style={{ 
+                  accentColor: '#990D35',
+                  borderColor: '#990D35' 
+                }}
+              />
+              
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <span 
+                    className="text-xs font-bold px-2 py-0.5 rounded"
+                    style={{ 
+                      backgroundColor: '#990D35', 
+                      color: 'white' 
+                    }}
+                  >
+                    #{participant.id_peserta_kompetisi}
+                  </span>
+                  <span className="font-bold" style={{ color: '#050505' }}>
+                    {getParticipantName(participant)}
+                  </span>
+                </div>
+                <p className="text-xs uppercase mt-1" style={{ color: '#050505', opacity: 0.6 }}>
+                  {getDojoName(participant)}
+                </p>
+              </div>
+
+              {selectedParticipants.has(participant.id_peserta_kompetisi) && (
+                <CheckCircle size={20} style={{ color: '#22c55e' }} />
+              )}
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {/* Modal Footer */}
+      <div className="p-6 border-t flex gap-3" style={{ borderColor: 'rgba(0,0,0,0.1)' }}>
+        <button
+          onClick={() => setShowParticipantSelection(false)}
+          className="flex-1 py-3 px-4 rounded-lg border font-medium transition-all hover:bg-gray-50"
+          style={{ borderColor: '#990D35', color: '#990D35' }}
+        >
+          Batal
+        </button>
+        <button
+          onClick={() => generateBracket(true)} // ⭐ Shuffle mode
+          disabled={selectedParticipants.size < 2}
+          className="flex-1 py-3 px-4 rounded-lg font-medium transition-all disabled:opacity-50"
+          style={{ 
+            backgroundColor: '#6366F1', 
+            color: '#F5FBEF' 
+          }}
+        >
+          <div className="flex items-center justify-center gap-2">
+            <Shuffle size={16} />
+            <span>Shuffle ({selectedParticipants.size})</span>
+          </div>
+        </button>
+        <button
+          onClick={() => generateBracket(false)} // ⭐ Sequential mode
+          disabled={selectedParticipants.size < 2}
+          className="flex-1 py-3 px-4 rounded-lg font-medium transition-all disabled:opacity-50"
+          style={{ 
+            backgroundColor: '#F5B700', 
+            color: '#F5FBEF' 
+          }}
+        >
+          <div className="flex items-center justify-center gap-2">
+            <RefreshCw size={16} />
+            <span>Sequential ({selectedParticipants.size})</span>
+          </div>
+        </button>
+      </div>
+    </div>
+  </div>
+)}
     </div>
   );
 };
