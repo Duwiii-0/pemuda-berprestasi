@@ -550,56 +550,73 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
   };
 
   const generateLeaderboard = () => {
-    if (!isPemula || matches.length === 0) return null;
+  if (!isPemula || matches.length === 0) return null;
 
-    const leaderboard: {
-      gold: { name: string; dojo: string; id: number }[];
-      silver: { name: string; dojo: string; id: number }[];
-      bye: { name: string; dojo: string; id: number }[];
-    } = {
-      gold: [],
-      silver: [],
-      bye: []
-    };
-
-    matches.forEach(match => {
-      // Check if match has been played
-      const hasScore = match.skor_a > 0 || match.skor_b > 0;
-      
-      if (hasScore) {
-        // Determine winner and loser
-        const winner = match.skor_a > match.skor_b ? match.peserta_a : match.peserta_b;
-        const loser = match.skor_a > match.skor_b ? match.peserta_b : match.peserta_a;
-        
-        if (winner) {
-          leaderboard.gold.push({
-            name: getParticipantName(winner),
-            dojo: getDojoName(winner),
-            id: winner.id_peserta_kompetisi
-          });
-        }
-        
-        if (loser) {
-          leaderboard.silver.push({
-            name: getParticipantName(loser),
-            dojo: getDojoName(loser),
-            id: loser.id_peserta_kompetisi
-          });
-        }
-      } else {
-        // Match not played yet - check for BYE
-        if (match.peserta_a && !match.peserta_b) {
-          leaderboard.bye.push({
-            name: getParticipantName(match.peserta_a),
-            dojo: getDojoName(match.peserta_a),
-            id: match.peserta_a.id_peserta_kompetisi
-          });
-        }
-      }
-    });
-
-    return leaderboard;
+  const leaderboard: {
+    gold: { name: string; dojo: string; id: number }[];
+    silver: { name: string; dojo: string; id: number }[];
+    bye: { name: string; dojo: string; id: number }[];
+  } = {
+    gold: [],
+    silver: [],
+    bye: []
   };
+
+  // Track processed participants to avoid duplicates
+  const processedGold = new Set<number>();
+  const processedSilver = new Set<number>();
+  const processedBye = new Set<number>();
+
+  matches.forEach(match => {
+    // Check for BYE (free draw) - must have participant A but NO participant B
+    if (match.peserta_a && !match.peserta_b) {
+      const id = match.peserta_a.id_peserta_kompetisi;
+      if (!processedBye.has(id)) {
+        leaderboard.bye.push({
+          name: getParticipantName(match.peserta_a),
+          dojo: getDojoName(match.peserta_a),
+          id: id
+        });
+        processedBye.add(id);
+      }
+      return; // Skip to next match, don't process as normal match
+    }
+
+    // Check if match has been played (has scores)
+    const hasScore = match.skor_a > 0 || match.skor_b > 0;
+    
+    if (hasScore && match.peserta_a && match.peserta_b) {
+      // Determine winner and loser
+      const winner = match.skor_a > match.skor_b ? match.peserta_a : match.peserta_b;
+      const loser = match.skor_a > match.skor_b ? match.peserta_b : match.peserta_a;
+      
+      const winnerId = winner.id_peserta_kompetisi;
+      const loserId = loser.id_peserta_kompetisi;
+      
+      // Add winner to gold (if not already there)
+      if (!processedGold.has(winnerId) && !processedBye.has(winnerId)) {
+        leaderboard.gold.push({
+          name: getParticipantName(winner),
+          dojo: getDojoName(winner),
+          id: winnerId
+        });
+        processedGold.add(winnerId);
+      }
+      
+      // Add loser to silver (if not already there and not in bye)
+      if (!processedSilver.has(loserId) && !processedBye.has(loserId)) {
+        leaderboard.silver.push({
+          name: getParticipantName(loser),
+          dojo: getDojoName(loser),
+          id: loserId
+        });
+        processedSilver.add(loserId);
+      }
+    }
+  });
+
+  return leaderboard;
+};
 
   const leaderboard = generateLeaderboard();
 
