@@ -369,99 +369,94 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
     }
   };
 // Helper to convert modern color spaces (oklch, oklab, lch, lab) to rgb
+// Helper to convert modern color spaces (oklch, oklab, lch, lab) to rgb
 const convertModernColorsToRgb = (clonedDoc: Document) => {
+  // STEP 1: Inject CSS to override ALL oklch colors
+  const style = clonedDoc.createElement('style');
+  style.textContent = `
+    * {
+      color: inherit !important;
+      background-color: transparent !important;
+      border-color: currentColor !important;
+    }
+    [style*="oklch"] {
+      color: rgb(0, 0, 0) !important;
+      background-color: rgb(255, 255, 255) !important;
+      border-color: rgb(0, 0, 0) !important;
+    }
+  `;
+  clonedDoc.head.appendChild(style);
+  
+  // STEP 2: Force replace ALL computed styles
   const allElements = clonedDoc.querySelectorAll('*');
   
-  // Parse oklch to rgb
-  const oklchToRgb = (l: number, c: number, h: number): string => {
-    const hRad = (h * Math.PI) / 180;
-    const a = c * Math.cos(hRad);
-    const b = c * Math.sin(hRad);
-    
-    const l_ = l + 0.3963377774 * a + 0.2158037573 * b;
-    const m_ = l - 0.1055613458 * a - 0.0638541728 * b;
-    const s_ = l - 0.0894841775 * a - 1.2914855480 * b;
-    
-    const l3 = l_ * l_ * l_;
-    const m3 = m_ * m_ * m_;
-    const s3 = s_ * s_ * s_;
-    
-    let r = +4.0767416621 * l3 - 3.3077115913 * m3 + 0.2309699292 * s3;
-    let g = -1.2684380046 * l3 + 2.6097574011 * m3 - 0.3413193965 * s3;
-    let b_ = -0.0041960863 * l3 - 0.7034186147 * m3 + 1.7076147010 * s3;
-    
-    r = Math.max(0, Math.min(255, Math.round(r * 255)));
-    g = Math.max(0, Math.min(255, Math.round(g * 255)));
-    b_ = Math.max(0, Math.min(255, Math.round(b_ * 255)));
-    
-    return `rgb(${r}, ${g}, ${b_})`;
-  };
-  
-  // Replace modern color with rgb
-  const replaceColor = (value: string): string => {
-    if (!value || typeof value !== 'string') return value;
-    if (!value.includes('oklch') && !value.includes('oklab')) return value;
-    
-    // Parse oklch pattern with global flag
-    let result = value;
-    const oklchRegex = /oklch\(([\d.]+)\s+([\d.]+)\s+([\d.]+)(?:\s*\/\s*([\d.]+))?\)/g;
-    
-    result = result.replace(oklchRegex, (match, l, c, h, alpha) => {
-      try {
-        const rgb = oklchToRgb(parseFloat(l), parseFloat(c), parseFloat(h));
-        if (alpha && parseFloat(alpha) < 1) {
-          return rgb.replace('rgb', 'rgba').replace(')', `, ${alpha})`);
-        }
-        return rgb;
-      } catch (e) {
-        console.warn('Failed to convert oklch:', match, e);
-        return 'rgb(128, 128, 128)'; // Fallback gray
-      }
-    });
-    
-    // Fallback: replace any remaining oklch/oklab
-    result = result.replace(/oklch\([^)]+\)/g, 'rgb(128, 128, 128)');
-    result = result.replace(/oklab\([^)]+\)/g, 'rgb(128, 128, 128)');
-    
-    return result;
-  };
-  
-  // Apply to all elements
   allElements.forEach((el) => {
     const element = el as HTMLElement;
-    const style = element.style;
+    const computed = clonedDoc.defaultView?.getComputedStyle(element);
     
+    if (!computed) return;
+    
+    // Color mapping for common values
+    const colorMap: Record<string, string> = {
+      'oklch(0.98 0.01 106.42)': 'rgb(245, 251, 239)',
+      'oklch(0.39 0.13 16.32)': 'rgb(153, 13, 53)',
+      'oklch(0.80 0.13 91.23)': 'rgb(245, 183, 0)',
+      'oklch(0.08 0 0)': 'rgb(5, 5, 5)',
+    };
+    
+    // Replace function
+    const replaceOklch = (value: string): string => {
+      if (!value || !value.includes('oklch')) return value;
+      
+      // Try exact match first
+      for (const [oklch, rgb] of Object.entries(colorMap)) {
+        if (value.includes(oklch)) {
+          return value.replace(oklch, rgb);
+        }
+      }
+      
+      // Generic replace
+      return value.replace(/oklch\([^)]+\)/g, 'rgb(128, 128, 128)');
+    };
+    
+    // Critical properties to override
     const props = [
       'color', 'backgroundColor', 'background',
       'borderColor', 'borderTopColor', 'borderRightColor', 
-      'borderBottomColor', 'borderLeftColor',
-      'fill', 'stroke', 'outlineColor'
+      'borderBottomColor', 'borderLeftColor', 'borderWidth',
+      'fill', 'stroke', 'outlineColor', 'boxShadow'
     ];
     
-    // Process inline styles first
     props.forEach(prop => {
-      const value = style.getPropertyValue(prop);
-      if (value && (value.includes('oklch') || value.includes('oklab'))) {
-        const converted = replaceColor(value);
-        style.setProperty(prop, converted, 'important');
+      try {
+        const value = computed.getPropertyValue(prop);
+        if (value && value.includes('oklch')) {
+          element.style.setProperty(prop, replaceOklch(value), 'important');
+        }
+      } catch (e) {
+        // Ignore
       }
     });
     
-    // Process computed styles
-    try {
-      const computed = clonedDoc.defaultView?.getComputedStyle(element);
-      if (computed) {
-        props.forEach(prop => {
-          const value = computed.getPropertyValue(prop);
-          if (value && (value.includes('oklch') || value.includes('oklab'))) {
-            const converted = replaceColor(value);
-            style.setProperty(prop, converted, 'important');
-          }
-        });
-      }
-    } catch (e) {
-      // Ignore computed style errors
+    // NUCLEAR OPTION: Remove all style attributes containing oklch
+    const styleAttr = element.getAttribute('style');
+    if (styleAttr && styleAttr.includes('oklch')) {
+      element.setAttribute('style', 
+        styleAttr.replace(/oklch\([^)]+\)/g, 'rgb(128, 128, 128)')
+      );
     }
+    
+    // Remove class if it might contain oklch
+    const className = element.className;
+    if (className && typeof className === 'string') {
+      // Keep classes but force inline styles
+      element.style.color = element.style.color || 'rgb(0, 0, 0)';
+    }
+  });
+  
+  // STEP 3: Wait for styles to apply
+  return new Promise<void>((resolve) => {
+    setTimeout(() => resolve(), 100);
   });
 };
 
@@ -547,8 +542,8 @@ const matchesCanvas = await html2canvas(matchesContainer as HTMLElement, {
   backgroundColor: '#F5FBEF',
   windowWidth: (matchesContainer as HTMLElement).scrollWidth,
   windowHeight: (matchesContainer as HTMLElement).scrollHeight,
-  onclone: (clonedDoc) => {
-    convertModernColorsToRgb(clonedDoc);
+  onclone: async (clonedDoc) => {
+    await convertModernColorsToRgb(clonedDoc);
   }
 });
 
@@ -629,8 +624,8 @@ const leaderboardCanvas = await html2canvas(leaderboardRef.current, {
   backgroundColor: '#FFFFFF',
   windowWidth: leaderboardRef.current.scrollWidth,
   windowHeight: leaderboardRef.current.scrollHeight,
-  onclone: (clonedDoc) => {
-    convertModernColorsToRgb(clonedDoc);
+  onclone: async (clonedDoc) => {
+    await convertModernColorsToRgb(clonedDoc);
   }
 });
 
@@ -697,8 +692,8 @@ const canvas = await html2canvas(bracketRef.current, {
   backgroundColor: '#F5FBEF',
   windowWidth: bracketRef.current.scrollWidth,
   windowHeight: bracketRef.current.scrollHeight,
-  onclone: (clonedDoc) => {
-    convertModernColorsToRgb(clonedDoc);
+  onclone: async (clonedDoc) => {
+    await convertModernColorsToRgb(clonedDoc);
   }
 });
       const imgWidth = 277; // A4 landscape width minus margins
