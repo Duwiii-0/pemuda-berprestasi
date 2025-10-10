@@ -1193,29 +1193,30 @@ const canvas = await html2canvas(bracketRef.current, {
               </div>
             </div>
 
-            <div className="flex gap-3">
-
-<button
-  onClick={openParticipantSelection} // ⭐ Ubah dari generateBracket(true)
-  disabled={loading || approvedParticipants.length < 2}
-  className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50"
-  style={{ backgroundColor: '#6366F1', color: '#F5FBEF' }}
->
-  {loading ? (
-    <>
-      <RefreshCw size={16} className="animate-spin" />
-      <span>Processing...</span>
-    </>
-  ) : (
-    <>
-      <Shuffle size={16} />
-      <span>{bracketGenerated ? 'Edit & Regenerate' : 'Select & Generate'}</span>
-    </>
-  )}
-</button>
-
+<div className="flex gap-3">
+  {/* Button 1: Shuffle & Generate */}
   <button
-    onClick={() => generateBracket(false)}
+    onClick={() => generateBracket(true)} // ✅ SHUFFLE mode
+    disabled={loading || approvedParticipants.length < 2}
+    className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50"
+    style={{ backgroundColor: '#6366F1', color: '#F5FBEF' }}
+  >
+    {loading ? (
+      <>
+        <RefreshCw size={16} className="animate-spin" />
+        <span>Shuffling...</span>
+      </>
+    ) : (
+      <>
+        <Shuffle size={16} />
+        <span>Shuffle & Generate</span>
+      </>
+    )}
+  </button>
+
+  {/* Button 2: Generate (Sequential) */}
+  <button
+    onClick={() => generateBracket(false)} // ✅ SEQUENTIAL mode
     disabled={loading || approvedParticipants.length < 2}
     className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50"
     style={{ backgroundColor: '#F5B700', color: '#F5FBEF' }}
@@ -1233,7 +1234,7 @@ const canvas = await html2canvas(bracketRef.current, {
     )}
   </button>
   
-  {/* Clear Results Button */}
+  {/* Button 3: Clear Results */}
   <button
     onClick={clearBracketResults}
     disabled={!bracketGenerated || clearing}
@@ -1254,7 +1255,7 @@ const canvas = await html2canvas(bracketRef.current, {
     )}
   </button>
 
-  {/* Delete Bracket Button */}
+  {/* Button 4: Delete Bracket */}
   <button
     onClick={deleteBracketPermanent}
     disabled={!bracketGenerated || deleting}
@@ -1275,6 +1276,7 @@ const canvas = await html2canvas(bracketRef.current, {
     )}
   </button>
   
+  {/* Button 5: Save */}
   <button
     onClick={saveBracket}
     disabled={!bracketGenerated || saving}
@@ -1294,6 +1296,7 @@ const canvas = await html2canvas(bracketRef.current, {
     )}
   </button>
 
+  {/* Button 6: Export PDF */}
   <button
     onClick={exportToPDF}
     disabled={!bracketGenerated || exporting}
