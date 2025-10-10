@@ -1655,75 +1655,86 @@ const canvas = await html2canvas(bracketRef.current, {
               </div>
             </div>
           ) : (
-            /* ========== PRESTASI LAYOUT (IMPROVED) ========== */
-<div className="overflow-x-auto overflow-y-hidden pb-8">
+/* ========== PRESTASI LAYOUT (IMPROVED - HORIZONTAL WITH TOP HEADERS) ========== */
+<div className="overflow-x-auto overflow-y-visible pb-8">
+  {/* Round Headers - HORIZONTAL AT TOP */}
+  <div className="flex gap-8 mb-6 px-8 sticky top-0 z-20 bg-white/95 backdrop-blur-sm py-4 shadow-sm">
+    {Array.from({ length: totalRounds }, (_, roundIndex) => {
+      const round = roundIndex + 1;
+      const roundMatches = getMatchesByRound(round);
+      
+      return (
+        <div 
+          key={`header-${round}`}
+          className="flex-shrink-0"
+          style={{ width: '340px' }} // Match card width + padding
+        >
+          <div 
+            className="text-center px-6 py-3 rounded-lg font-bold text-lg shadow-md"
+            style={{ backgroundColor: '#990D35', color: '#F5FBEF' }}
+          >
+            {getRoundName(round, totalRounds)}
+          </div>
+          <div className="text-center mt-2 text-sm font-medium" style={{ color: '#050505', opacity: 0.6 }}>
+            {roundMatches.length} {roundMatches.length === 1 ? 'Match' : 'Matches'}
+          </div>
+        </div>
+      );
+    })}
+  </div>
+
+  {/* Matches Container - HORIZONTAL FLOW */}
   <div 
-    className="inline-flex gap-8 min-w-full px-8" 
-    style={{ 
-      minHeight: '600px',
-      alignItems: 'center' // ⭐ Vertical center alignment
-    }}
+    className="inline-flex items-center gap-8 min-w-full px-8" 
+    style={{ minHeight: '700px' }}
   >
     {Array.from({ length: totalRounds }, (_, roundIndex) => {
       const round = roundIndex + 1;
       const roundMatches = getMatchesByRound(round);
       
-      // ⭐ DYNAMIC SPACING berdasarkan round
-      const matchCardHeight = 140; // Fixed height per match
-      const baseGap = 40; // Base gap
-      const verticalSpacing = baseGap * Math.pow(2, roundIndex); // Exponential spacing
+      // Dynamic spacing based on round progression
+      const matchCardHeight = 160; // Increased from 140
+      const baseGap = 60; // Increased base gap
+      const verticalSpacing = baseGap * Math.pow(2, roundIndex);
       
       return (
         <div 
-          key={round} 
-          className="flex flex-col relative"
+          key={`round-${round}`} 
+          className="flex flex-col justify-center relative flex-shrink-0"
           style={{ 
-            minWidth: '320px', // ⭐ Lebih lebar untuk readability
-            gap: `${verticalSpacing}px` // ⭐ Consistent gap between matches
+            width: '340px', // Fixed width for consistency
+            gap: `${verticalSpacing}px`,
+            minHeight: '600px' // Ensure minimum height
           }}
         >
-          {/* Round Header */}
-          <div className="mb-6 sticky top-0 z-10 bg-white/95 backdrop-blur-sm py-3 rounded-lg shadow-sm">
-            <div 
-              className="text-center px-6 py-3 rounded-lg font-bold text-lg"
-              style={{ backgroundColor: '#990D35', color: '#F5FBEF' }}
-            >
-              {getRoundName(round, totalRounds)}
-            </div>
-            <div className="text-center mt-2 text-sm font-medium" style={{ color: '#050505', opacity: 0.6 }}>
-              {roundMatches.length} {roundMatches.length === 1 ? 'Match' : 'Matches'}
-            </div>
-          </div>
-
-          {/* Matches Container - IMPROVED LAYOUT */}
-          <div 
-            className="flex flex-col relative"
-            style={{
-              justifyContent: 'center', // ⭐ Center matches vertically
-              flex: 1,
-              gap: `${verticalSpacing}px` // ⭐ Equal spacing
-            }}
-          >
-            {roundMatches.map((match, matchIndex) => (
+          {/* Matches */}
+          {roundMatches.map((match, matchIndex) => {
+            const hasScores = match.skor_a > 0 || match.skor_b > 0;
+            const winner = hasScores 
+              ? (match.skor_a > match.skor_b ? match.peserta_a : match.peserta_b)
+              : null;
+            
+            return (
               <div
                 key={match.id_match}
                 className="relative"
                 style={{ 
-                  minHeight: `${matchCardHeight}px` // ⭐ Fixed height
+                  minHeight: `${matchCardHeight}px`,
+                  maxHeight: `${matchCardHeight}px`
                 }}
               >
-                {/* Connecting Lines - IMPROVED */}
+                {/* Connecting Lines */}
                 {round < totalRounds && (
                   <>
-                    {/* Horizontal line to next round */}
+                    {/* Horizontal connector to next round */}
                     <div
                       className="absolute left-full border-t-2"
                       style={{ 
                         borderColor: '#990D35',
                         top: '50%',
-                        width: '32px', // ⭐ Fixed connector width
+                        width: '32px',
                         transform: 'translateY(-1px)',
-                        zIndex: 0
+                        zIndex: 1
                       }}
                     />
                     
@@ -1733,9 +1744,9 @@ const canvas = await html2canvas(bracketRef.current, {
                         className="absolute border-l-2"
                         style={{
                           borderColor: '#990D35',
-                          left: 'calc(100% + 32px)', // ⭐ Match horizontal line
+                          left: 'calc(100% + 32px)',
                           top: '50%',
-                          height: `calc(${verticalSpacing + matchCardHeight}px)`, // ⭐ Connect to sibling
+                          height: `calc(${verticalSpacing + matchCardHeight}px)`,
                           zIndex: 0
                         }}
                       />
@@ -1743,19 +1754,19 @@ const canvas = await html2canvas(bracketRef.current, {
                   </>
                 )}
 
-                {/* Match Card - KOMPAK & KONSISTEN */}
+                {/* Match Card */}
                 <div
                   className="bg-white rounded-xl shadow-lg border-2 overflow-hidden hover:shadow-xl transition-all relative z-10"
                   style={{ 
-                    borderColor: '#990D35',
-                    height: `${matchCardHeight}px`, // ⭐ Fixed height
+                    borderColor: winner ? '#22c55e' : '#990D35',
+                    height: `${matchCardHeight}px`,
                     display: 'flex',
                     flexDirection: 'column'
                   }}
                 >
-                  {/* Match Header - COMPACT */}
+                  {/* Match Header */}
                   <div 
-                    className="px-3 py-2 flex items-center justify-between border-b flex-shrink-0"
+                    className="px-4 py-2.5 flex items-center justify-between border-b flex-shrink-0"
                     style={{ 
                       backgroundColor: 'rgba(153, 13, 53, 0.05)',
                       borderColor: '#990D35'
@@ -1763,60 +1774,67 @@ const canvas = await html2canvas(bracketRef.current, {
                   >
                     <div className="flex items-center gap-2">
                       <div 
-                        className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold"
+                        className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold"
                         style={{ backgroundColor: '#990D35', color: 'white' }}
                       >
                         {matchIndex + 1}
                       </div>
                       <span className="text-xs font-semibold" style={{ color: '#050505' }}>
-                        M{match.id_match}
+                        Match {match.id_match}
                       </span>
                     </div>
                     <button
                       onClick={() => setEditingMatch(match)}
-                      className="p-1 rounded hover:bg-black/5 transition-all"
+                      className="p-1.5 rounded-lg hover:bg-black/5 transition-all"
                       title="Edit Score"
                     >
-                      <Edit3 size={12} style={{ color: '#990D35' }} />
+                      <Edit3 size={14} style={{ color: '#990D35' }} />
                     </button>
                   </div>
 
-                  {/* Participants - COMPACT */}
+                  {/* Participants */}
                   <div className="flex-1 flex flex-col">
                     {/* Participant A */}
                     <div 
-                      className={`flex-1 px-3 py-2 border-b flex items-center justify-between gap-2 ${
-                        match.skor_a > match.skor_b && (match.skor_a > 0 || match.skor_b > 0)
-                          ? 'bg-green-50' 
-                          : ''
+                      className={`flex-1 px-4 py-3 border-b flex items-center justify-between gap-3 transition-all ${
+                        match.skor_a > match.skor_b && hasScores
+                          ? 'bg-gradient-to-r from-green-50 to-green-100' 
+                          : 'hover:bg-blue-50/30'
                       }`}
                       style={{ borderColor: 'rgba(0, 0, 0, 0.05)' }}
                     >
                       {match.peserta_a ? (
                         <>
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-1 mb-0.5">
+                            <div className="flex items-center gap-2 mb-1">
                               <span 
-                                className="text-xs font-bold px-1.5 py-0.5 rounded"
+                                className="text-xs font-bold px-2 py-0.5 rounded shadow-sm"
                                 style={{ backgroundColor: '#3B82F6', color: 'white' }}
                               >
-                                B
+                                B/{match.peserta_a.id_peserta_kompetisi}
                               </span>
-                              {match.skor_a > match.skor_b && (match.skor_a > 0 || match.skor_b > 0) && (
-                                <CheckCircle size={12} className="text-green-600" />
+                              {match.skor_a > match.skor_b && hasScores && (
+                                <CheckCircle size={14} className="text-green-600 flex-shrink-0" />
                               )}
                             </div>
                             <p 
-                              className="font-bold text-xs truncate"
+                              className="font-bold text-sm truncate leading-tight"
                               style={{ color: '#050505' }}
                               title={getParticipantName(match.peserta_a)}
                             >
                               {getParticipantName(match.peserta_a)}
                             </p>
+                            <p 
+                              className="text-xs truncate mt-0.5"
+                              style={{ color: '#3B82F6', opacity: 0.7 }}
+                              title={getDojoName(match.peserta_a)}
+                            >
+                              {getDojoName(match.peserta_a)}
+                            </p>
                           </div>
-                          {(match.skor_a > 0 || match.skor_b > 0) && (
+                          {hasScores && (
                             <div 
-                              className="w-8 h-8 rounded flex items-center justify-center font-bold text-sm flex-shrink-0"
+                              className="w-12 h-12 rounded-lg flex items-center justify-center font-bold text-lg shadow-sm flex-shrink-0"
                               style={{ 
                                 backgroundColor: match.skor_a > match.skor_b ? '#22c55e' : '#e5e7eb',
                                 color: match.skor_a > match.skor_b ? 'white' : '#6b7280'
@@ -1827,43 +1845,50 @@ const canvas = await html2canvas(bracketRef.current, {
                           )}
                         </>
                       ) : (
-                        <span className="text-xs text-gray-400 w-full text-center">TBD</span>
+                        <span className="text-sm text-gray-400 w-full text-center font-medium">TBD</span>
                       )}
                     </div>
 
                     {/* Participant B */}
                     <div 
-                      className={`flex-1 px-3 py-2 flex items-center justify-between gap-2 ${
-                        match.skor_b > match.skor_a && (match.skor_a > 0 || match.skor_b > 0)
-                          ? 'bg-green-50' 
-                          : ''
+                      className={`flex-1 px-4 py-3 flex items-center justify-between gap-3 transition-all ${
+                        match.skor_b > match.skor_a && hasScores
+                          ? 'bg-gradient-to-r from-green-50 to-green-100' 
+                          : 'hover:bg-red-50/30'
                       }`}
                     >
                       {match.peserta_b ? (
                         <>
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-1 mb-0.5">
+                            <div className="flex items-center gap-2 mb-1">
                               <span 
-                                className="text-xs font-bold px-1.5 py-0.5 rounded"
+                                className="text-xs font-bold px-2 py-0.5 rounded shadow-sm"
                                 style={{ backgroundColor: '#EF4444', color: 'white' }}
                               >
-                                R
+                                R/{match.peserta_b.id_peserta_kompetisi}
                               </span>
-                              {match.skor_b > match.skor_a && (match.skor_a > 0 || match.skor_b > 0) && (
-                                <CheckCircle size={12} className="text-green-600" />
+                              {match.skor_b > match.skor_a && hasScores && (
+                                <CheckCircle size={14} className="text-green-600 flex-shrink-0" />
                               )}
                             </div>
                             <p 
-                              className="font-bold text-xs truncate"
+                              className="font-bold text-sm truncate leading-tight"
                               style={{ color: '#050505' }}
                               title={getParticipantName(match.peserta_b)}
                             >
                               {getParticipantName(match.peserta_b)}
                             </p>
+                            <p 
+                              className="text-xs truncate mt-0.5"
+                              style={{ color: '#EF4444', opacity: 0.7 }}
+                              title={getDojoName(match.peserta_b)}
+                            >
+                              {getDojoName(match.peserta_b)}
+                            </p>
                           </div>
-                          {(match.skor_a > 0 || match.skor_b > 0) && (
+                          {hasScores && (
                             <div 
-                              className="w-8 h-8 rounded flex items-center justify-center font-bold text-sm flex-shrink-0"
+                              className="w-12 h-12 rounded-lg flex items-center justify-center font-bold text-lg shadow-sm flex-shrink-0"
                               style={{ 
                                 backgroundColor: match.skor_b > match.skor_a ? '#22c55e' : '#e5e7eb',
                                 color: match.skor_b > match.skor_a ? 'white' : '#6b7280'
@@ -1874,16 +1899,40 @@ const canvas = await html2canvas(bracketRef.current, {
                           )}
                         </>
                       ) : (
-                        <span className="text-xs px-2 py-1 rounded" style={{ backgroundColor: '#f3f4f6', color: '#6b7280' }}>
-                          🎁 BYE
-                        </span>
+                        <div className="w-full flex justify-center">
+                          <span 
+                            className="text-xs px-3 py-1.5 rounded-full font-medium"
+                            style={{ 
+                              backgroundColor: 'rgba(192, 192, 192, 0.15)',
+                              color: '#6b7280'
+                            }}
+                          >
+                            🎁 BYE
+                          </span>
+                        </div>
                       )}
                     </div>
                   </div>
+
+                  {/* Match Status Footer */}
+                  {hasScores && (
+                    <div 
+                      className="px-3 py-1.5 text-center border-t flex-shrink-0"
+                      style={{ 
+                        backgroundColor: 'rgba(34, 197, 94, 0.05)',
+                        borderColor: 'rgba(34, 197, 94, 0.2)'
+                      }}
+                    >
+                      <span className="text-xs font-semibold text-green-700 flex items-center justify-center gap-1">
+                        <CheckCircle size={12} />
+                        Completed
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
-            ))}
-          </div>
+            );
+          })}
         </div>
       );
     })}
