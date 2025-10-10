@@ -156,35 +156,6 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
     setShowModal(true);
   };
 
-  // Tambahkan setelah fungsi showConfirmation
-
-const handleSelectParticipant = (participantId: number) => {
-  setSelectedParticipants(prev => {
-    const newSet = new Set(prev);
-    if (newSet.has(participantId)) {
-      newSet.delete(participantId);
-    } else {
-      newSet.add(participantId);
-    }
-    return newSet;
-  });
-};
-
-const handleSelectAll = () => {
-  if (selectAll) {
-    // Deselect all
-    setSelectedParticipants(new Set());
-    setSelectAll(false);
-  } else {
-    // Select all approved participants
-    const allIds = new Set(
-      approvedParticipants.map(p => p.id_peserta_kompetisi)
-    );
-    setSelectedParticipants(allIds);
-    setSelectAll(true);
-  }
-};
-
 const openParticipantSelection = () => {
   const total = approvedParticipants.length;
   const nextPowerOf2 = Math.pow(2, Math.ceil(Math.log2(total)));
@@ -2181,63 +2152,6 @@ const canvas = await html2canvas(bracketRef.current, {
           </div>
         </div>
       )}
-{/* Participant Selection Modal - BYE SELECTION ONLY */}
-{showParticipantSelection && (
-  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-    <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[80vh] flex flex-col">
-      {/* Modal Header */}
-<div className="p-6 border-b" style={{ borderColor: '#990D35' }}>
-  <div className="flex items-center justify-between">
-    <div className="flex-1">
-      <h3 className="text-xl font-bold mb-2" style={{ color: '#050505' }}>
-        {isPemula ? 'Generate Bracket Pemula' : 'Pilih Peserta BYE (Opsional)'}
-      </h3>
-      
-      {!isPemula && (() => {
-        const total = approvedParticipants.length;
-        const nextPowerOf2 = Math.pow(2, Math.ceil(Math.log2(total)));
-        const byesNeeded = nextPowerOf2 - total;
-        
-        return byesNeeded > 0 ? (
-          <div className="space-y-1">
-            <p className="text-sm" style={{ color: '#050505', opacity: 0.7 }}>
-              Bracket Size: <strong>{nextPowerOf2}</strong> | 
-              Peserta: <strong>{total}</strong> | 
-              BYE Diperlukan: <strong>{byesNeeded}</strong>
-            </p>
-            <p className="text-xs" style={{ color: '#050505', opacity: 0.6 }}>
-              • Pilih <strong>{byesNeeded} peserta</strong> yang akan skip Round 1 dan langsung masuk Round 2
-            </p>
-            <p className="text-xs" style={{ color: '#050505', opacity: 0.6 }}>
-              • Atau klik <strong>"Skip"</strong> untuk auto-random BYE
-            </p>
-          </div>
-        ) : (
-          <p className="text-sm text-green-600">
-            ✓ Perfect bracket! Tidak perlu BYE ({total} peserta = {nextPowerOf2} bracket size)
-          </p>
-        );
-      })()}
-      
-      {isPemula && (
-        <p className="text-sm mt-1" style={{ color: '#050505', opacity: 0.6 }}>
-          Kategori pemula: Semua peserta langsung bertanding
-        </p>
-      )}
-    </div>
-    
-    <button
-      onClick={() => {
-        setShowParticipantSelection(false);
-        setSelectedParticipants(new Set());
-      }}
-      className="p-2 rounded-lg hover:bg-black/5 transition-all ml-4"
-    >
-      <span className="text-2xl" style={{ color: '#990D35' }}>×</span>
-    </button>
-  </div>
-</div>
-
       {/* BYE Info Banner */}
       <div className="p-4 bg-yellow-50 border-b border-yellow-200">
         <div className="flex items-start gap-3">
@@ -2294,7 +2208,6 @@ const canvas = await html2canvas(bracketRef.current, {
                 <input
                   type="checkbox"
                   checked={isSelected}
-                  onChange={() => canSelect && handleSelectParticipant(participant.id_peserta_kompetisi)}
                   disabled={!canSelect}
                   className="w-5 h-5 rounded border-2 cursor-pointer"
                   style={{ 
@@ -2376,9 +2289,6 @@ const canvas = await html2canvas(bracketRef.current, {
           </div>
         </button>
       </div>
-    </div>
-  </div>
-)}
     </div>
   );
 };
