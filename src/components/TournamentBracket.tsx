@@ -186,31 +186,45 @@ const handleSelectAll = () => {
 };
 
 const openParticipantSelection = () => {
-  // ⭐ OPTIONAL MODE: User can choose to skip BYE selection
   const total = approvedParticipants.length;
   const nextPowerOf2 = Math.pow(2, Math.ceil(Math.log2(total)));
   const byesNeeded = nextPowerOf2 - total;
-  
-  if (byesNeeded === 0) {
-    // Perfect bracket - no BYEs needed, generate directly
-    showNotification(
-      'info',
-      'Perfect Bracket!',
-      `Jumlah peserta (${total}) sudah perfect power of 2. Tidak perlu BYE.`,
-      () => {
-        setShowModal(false);
-        generateBracket(false);
-      }
-    );
-    return;
-  }
   
   // Clear previous selection
   setSelectedParticipants(new Set());
   setSelectAll(false);
   
-  console.log(`📊 Optional BYE selection: ${byesNeeded} BYEs recommended for ${total} participants`);
+  console.log(`📊 Opening selection modal: ${total} participants, ${byesNeeded} BYEs needed`);
   
+  // ⭐ PEMULA: Langsung generate tanpa pilih BYE
+  if (isPemula) {
+    showConfirmation(
+      'Generate Bracket Pemula?',
+      `Semua ${total} peserta akan bertanding langsung tanpa sistem BYE. Lanjutkan?`,
+      () => {
+        setShowModal(false);
+        generateBracket(false);
+      },
+      () => setShowModal(false)
+    );
+    return;
+  }
+  
+  // ⭐ PRESTASI: Perfect bracket (no BYE needed)
+  if (byesNeeded === 0) {
+    showConfirmation(
+      'Perfect Bracket!',
+      `Jumlah peserta (${total}) sudah perfect power of 2. Tidak perlu BYE. Generate sekarang?`,
+      () => {
+        setShowModal(false);
+        generateBracket(false);
+      },
+      () => setShowModal(false)
+    );
+    return;
+  }
+  
+  // ⭐ PRESTASI: Show selection modal
   setShowParticipantSelection(true);
 };
 
@@ -1708,7 +1722,7 @@ const canvas = await html2canvas(bracketRef.current, {
       const round = roundIndex + 1;
       const roundMatches = getMatchesByRound(round);
       
-      const matchCardHeight = 200; // ⭐ LARGER: 160px → 200px
+      const matchCardHeight = 240; // ⭐ LARGER: 160px → 200px
       const baseGap = 80; // ⭐ MORE SPACE: 60px → 80px
       const verticalSpacing = baseGap * Math.pow(2, roundIndex);
       
@@ -2116,48 +2130,40 @@ const canvas = await html2canvas(bracketRef.current, {
             
             {/* Modal Footer - WITH SKIP OPTION */}
 <div className="p-6 border-t flex gap-3" style={{ borderColor: 'rgba(0,0,0,0.1)' }}>
-  <button
-    onClick={() => setShowParticipantSelection(false)}
-    className="flex-1 py-3 px-4 rounded-lg border font-medium transition-all hover:bg-gray-50"
-    style={{ borderColor: '#990D35', color: '#990D35' }}
-  >
-    Batal
-  </button>
-  
-  {/* ⭐ NEW: Skip Button */}
+    {/* Button 1: Batal */}
   <button
     onClick={() => {
+      setShowParticipantSelection(false);
       setSelectedParticipants(new Set()); // Clear selection
-      generateBracket(false); // Generate with auto-random BYE
     }}
-    className="flex-1 py-3 px-4 rounded-lg font-medium transition-all"
-    style={{ 
-      backgroundColor: '#6366F1', 
-      color: '#F5FBEF' 
-    }}
+    className="flex-1 py-3 px-4 rounded-lg border-2 font-medium transition-all hover:bg-gray-50"
+    style={{ borderColor: '#DC2626', color: '#DC2626' }}
   >
     <div className="flex items-center justify-center gap-2">
-      <Shuffle size={16} />
-      <span>Skip (Auto Random)</span>
+      <span className="text-lg">✕</span>
+      <span>Batal</span>
     </div>
   </button>
   
-  <button
+<button
     onClick={() => {
       const byesNeeded = Math.pow(2, Math.ceil(Math.log2(approvedParticipants.length))) - approvedParticipants.length;
+      
       if (selectedParticipants.size !== byesNeeded) {
         showNotification(
           'warning',
           'Jumlah BYE Tidak Sesuai',
-          `Anda harus memilih tepat ${byesNeeded} peserta`,
+          `Anda harus memilih tepat ${byesNeeded} peserta untuk BYE. Saat ini: ${selectedParticipants.size}`,
           () => setShowModal(false)
         );
         return;
       }
-      generateBracket(false);
+      
+      setShowParticipantSelection(false);
+      generateBracket(false); // Generate with manual selection
     }}
     disabled={selectedParticipants.size === 0}
-    className="flex-1 py-3 px-4 rounded-lg font-medium transition-all disabled:opacity-50"
+    className="flex-1 py-3 px-4 rounded-lg font-medium transition-all disabled:opacity-50 hover:opacity-90"
     style={{ 
       backgroundColor: '#990D35', 
       color: '#F5FBEF' 
@@ -2177,28 +2183,57 @@ const canvas = await html2canvas(bracketRef.current, {
   <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
     <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[80vh] flex flex-col">
       {/* Modal Header */}
-      <div className="p-6 border-b" style={{ borderColor: '#990D35' }}>
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-xl font-bold" style={{ color: '#050505' }}>
-              Pilih Peserta yang Mendapat BYE
-            </h3>
-            <p className="text-sm mt-1" style={{ color: '#050505', opacity: 0.6 }}>
-              Pilih <strong>{(() => {
-                const total = approvedParticipants.length;
-                const nextPowerOf2 = Math.pow(2, Math.ceil(Math.log2(total)));
-                return nextPowerOf2 - total;
-              })()}</strong> peserta yang akan mendapat BYE (auto ke Round 2)
+<div className="p-6 border-b" style={{ borderColor: '#990D35' }}>
+  <div className="flex items-center justify-between">
+    <div className="flex-1">
+      <h3 className="text-xl font-bold mb-2" style={{ color: '#050505' }}>
+        {isPemula ? 'Generate Bracket Pemula' : 'Pilih Peserta BYE (Opsional)'}
+      </h3>
+      
+      {!isPemula && (() => {
+        const total = approvedParticipants.length;
+        const nextPowerOf2 = Math.pow(2, Math.ceil(Math.log2(total)));
+        const byesNeeded = nextPowerOf2 - total;
+        
+        return byesNeeded > 0 ? (
+          <div className="space-y-1">
+            <p className="text-sm" style={{ color: '#050505', opacity: 0.7 }}>
+              Bracket Size: <strong>{nextPowerOf2}</strong> | 
+              Peserta: <strong>{total}</strong> | 
+              BYE Diperlukan: <strong>{byesNeeded}</strong>
+            </p>
+            <p className="text-xs" style={{ color: '#050505', opacity: 0.6 }}>
+              • Pilih <strong>{byesNeeded} peserta</strong> yang akan skip Round 1 dan langsung masuk Round 2
+            </p>
+            <p className="text-xs" style={{ color: '#050505', opacity: 0.6 }}>
+              • Atau klik <strong>"Skip"</strong> untuk auto-random BYE
             </p>
           </div>
-          <button
-            onClick={() => setShowParticipantSelection(false)}
-            className="p-2 rounded-lg hover:bg-black/5 transition-all"
-          >
-            <span className="text-2xl" style={{ color: '#990D35' }}>×</span>
-          </button>
-        </div>
-      </div>
+        ) : (
+          <p className="text-sm text-green-600">
+            ✓ Perfect bracket! Tidak perlu BYE ({total} peserta = {nextPowerOf2} bracket size)
+          </p>
+        );
+      })()}
+      
+      {isPemula && (
+        <p className="text-sm mt-1" style={{ color: '#050505', opacity: 0.6 }}>
+          Kategori pemula: Semua peserta langsung bertanding
+        </p>
+      )}
+    </div>
+    
+    <button
+      onClick={() => {
+        setShowParticipantSelection(false);
+        setSelectedParticipants(new Set());
+      }}
+      className="p-2 rounded-lg hover:bg-black/5 transition-all ml-4"
+    >
+      <span className="text-2xl" style={{ color: '#990D35' }}>×</span>
+    </button>
+  </div>
+</div>
 
       {/* BYE Info Banner */}
       <div className="p-4 bg-yellow-50 border-b border-yellow-200">
