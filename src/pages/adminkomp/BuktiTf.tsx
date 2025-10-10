@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Trophy, Search, Eye, Download, CheckCircle, XCircle, Clock, Menu, ChevronLeft, FileText } from 'lucide-react';
+import { Search, Eye, Download, Menu, FileText } from 'lucide-react';
 import { useAuth } from '../../context/authContext';
-import { useKompetisi, type Kompetisi } from '../../context/KompetisiContext';
 import NavbarDashboard from '../../components/navbar/navbarDashboard';
 import toast from 'react-hot-toast';
 
@@ -23,26 +22,24 @@ interface BuktiTransfer {
 
 const BuktiTf = () => {
   const { user, token } = useAuth();
-  const { kompetisiList, fetchKompetisiList } = useKompetisi();
   
-  const [selectedKompetisi, setSelectedKompetisi] = useState<Kompetisi | null>(null);
   const [buktiTransferList, setBuktiTransferList] = useState<BuktiTransfer[]>([]);
   const [filteredBukti, setFilteredBukti] = useState<BuktiTransfer[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const API_BASE_URL = 'https://cjvmanagementevent.com';
+  const KOMPETISI_ID = 1; // Langsung ke kompetisi ID 1
 
+  // Fetch bukti transfer saat component mount
   useEffect(() => {
-    fetchKompetisiList();
+    fetchBuktiTransfer();
   }, []);
 
-  // Fetch bukti transfer berdasarkan kompetisi
-  const fetchBuktiTransfer = async (kompetisiId: number) => {
+  const fetchBuktiTransfer = async () => {
     setLoading(true);
     try {
-      // Get all bukti transfer
       const response = await fetch(`${API_BASE_URL}/api/bukti-transfer/`, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -52,16 +49,13 @@ const BuktiTf = () => {
 
       if (response.ok) {
         const result = await response.json();
-        console.log('📋 Bukti Transfer Response:', result); // Debug log
+        console.log('📋 Bukti Transfer Response:', result);
         const buktiList = result.data || [];
         
-        // Log first item to see structure
         if (buktiList.length > 0) {
           console.log('📋 Sample bukti transfer:', buktiList[0]);
         }
         
-        // TODO: Filter by kompetisi if needed (depends on your data structure)
-        // For now, show all bukti transfer
         setBuktiTransferList(buktiList);
         setFilteredBukti(buktiList);
       }
@@ -71,18 +65,6 @@ const BuktiTf = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleKompetisiSelect = (kompetisi: Kompetisi) => {
-    setSelectedKompetisi(kompetisi);
-    fetchBuktiTransfer(kompetisi.id_kompetisi);
-  };
-
-  const handleBack = () => {
-    setSelectedKompetisi(null);
-    setBuktiTransferList([]);
-    setFilteredBukti([]);
-    setSearchTerm('');
   };
 
   // Filter berdasarkan search
@@ -123,117 +105,25 @@ const BuktiTf = () => {
     });
   };
 
-  // Jika belum pilih kompetisi, tampilkan list kompetisi
-  if (!selectedKompetisi) {
-    return (
-      <div className="min-h-screen w-full bg-gradient-to-br from-white via-red/5 to-yellow/10">
-        <NavbarDashboard />
-        <div className="2xl:ml-48">
-          <div className="px-4 lg:px-8 py-8 pb-16">
-            {/* Mobile Menu Button */}
-            <div className="lg:hidden mb-6">
-              <button
-                onClick={() => setSidebarOpen(true)}
-                className="p-3 rounded-xl hover:bg-white/50 transition-all duration-300 border border-red/20"
-              >
-                <Menu size={24} className="text-red" />
-              </button>
-            </div>
-
-            {/* Header */}
-            <div className="mb-8">
-              <h1 className="font-bebas text-4xl lg:text-6xl text-black/80 tracking-wider">
-                BUKTI TRANSFER
-              </h1>
-              <p className="font-plex text-black/60 text-lg mt-2">
-                Pilih kompetisi untuk melihat bukti transfer dari pelatih
-              </p>
-            </div>
-
-            {/* Kompetisi List */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {kompetisiList.map((kompetisi) => (
-                <div
-                  key={kompetisi.id_kompetisi}
-                  onClick={() => handleKompetisiSelect(kompetisi)}
-                  className="bg-white/80 backdrop-blur-sm rounded-xl p-6 shadow-lg border border-red/20 hover:border-red/40 hover:shadow-xl transition-all duration-300 cursor-pointer"
-                >
-                  <div className="flex items-start gap-4">
-                    <div className="p-3 bg-red/10 rounded-xl">
-                      <Trophy size={24} className="text-red" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-bebas text-xl text-black/80 mb-2">
-                        {kompetisi.nama_event}
-                      </h3>
-                      <p className="text-sm text-black/60 mb-1">
-                        📍 {kompetisi.lokasi}
-                      </p>
-                      <p className="text-xs text-black/50">
-                        {new Date(kompetisi.tanggal_mulai).toLocaleDateString('id-ID')} - 
-                        {new Date(kompetisi.tanggal_selesai).toLocaleDateString('id-ID')}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {kompetisiList.length === 0 && (
-              <div className="text-center py-12 bg-white/60 backdrop-blur-sm rounded-xl border border-red/20">
-                <Trophy className="mx-auto text-red/40 mb-4" size={48} />
-                <p className="font-plex text-black/60">Tidak ada kompetisi tersedia</p>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Mobile Sidebar */}
-        {sidebarOpen && (
-          <>
-            <div
-              className="fixed inset-0 bg-black/60 z-40 lg:hidden"
-              onClick={() => setSidebarOpen(false)}
-            />
-            <div className="lg:hidden z-50">
-              <NavbarDashboard mobile onClose={() => setSidebarOpen(false)} />
-            </div>
-          </>
-        )}
-      </div>
-    );
-  }
-
-  // Jika sudah pilih kompetisi, tampilkan bukti transfer
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-white via-red/5 to-yellow/10">
       <NavbarDashboard />
       <div className="2xl:ml-48">
         <div className="px-4 lg:px-8 py-8 pb-16">
-          {/* Mobile Menu + Back Button */}
-          <div className="flex items-center gap-4 mb-6">
-            <div className="lg:hidden">
-              <button
-                onClick={() => setSidebarOpen(true)}
-                className="p-3 rounded-xl hover:bg-white/50 transition-all duration-300 border border-red/20"
-              >
-                <Menu size={24} className="text-red" />
-              </button>
-            </div>
-            
+          {/* Mobile Menu Button */}
+          <div className="lg:hidden mb-6">
             <button
-              onClick={handleBack}
-              className="flex items-center gap-2 text-red hover:text-red/80 font-plex transition-colors"
+              onClick={() => setSidebarOpen(true)}
+              className="p-3 rounded-xl hover:bg-white/50 transition-all duration-300 border border-red/20"
             >
-              <ChevronLeft size={20} />
-              Kembali
+              <Menu size={24} className="text-red" />
             </button>
           </div>
 
           {/* Header */}
           <div className="mb-8">
             <h1 className="font-bebas text-3xl lg:text-5xl text-black/80 tracking-wider">
-              BUKTI TRANSFER - {selectedKompetisi.nama_event}
+              BUKTI TRANSFER
             </h1>
             <p className="font-plex text-black/60 text-lg mt-2">
               Total: {filteredBukti.length} bukti transfer

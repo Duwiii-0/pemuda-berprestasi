@@ -124,30 +124,29 @@ const AdminKompetisiLayout: React.FC = () => {
             </div>
           </div>
 
-          {/* Quick Stats */}
-          <div className="p-6 border-b" style={{ borderColor: '#990D35' }}>
-            <h3 className="text-sm font-semibold mb-3" style={{ color: '#050505', opacity: 0.7 }}>
-              QUICK OVERVIEW
-            </h3>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="p-3 rounded-lg" style={{ backgroundColor: 'rgba(153, 13, 53, 0.1)' }}>
-                <div className="text-lg font-bold" style={{ color: '#990D35' }}>
-                  128
-                </div>
-                <div className="text-xs font-medium" style={{ color: '#050505', opacity: 0.7 }}>
-                  Total Peserta
-                </div>
-              </div>
-              <div className="p-3 rounded-lg" style={{ backgroundColor: 'rgba(245, 183, 0, 0.1)' }}>
-                <div className="text-lg font-bold" style={{ color: '#F5B700' }}>
-                  24
-                </div>
-                <div className="text-xs font-medium" style={{ color: '#050505', opacity: 0.7 }}>
-                  Pending Validasi
-                </div>
-              </div>
-            </div>
-          </div>
+          {/* <div className="p-6 border-b" style={{ borderColor: '#990D35' }}> */}
+            {/* <h3 className="text-sm font-semibold mb-3" style={{ color: '#050505', opacity: 0.7 }}> */}
+              {/* QUICK OVERVIEW */}
+            {/* </h3> */}
+            {/* <div className="grid grid-cols-2 gap-3"> */}
+              {/* <div className="p-3 rounded-lg" style={{ backgroundColor: 'rgba(153, 13, 53, 0.1)' }}> */}
+                {/* <div className="text-lg font-bold" style={{ color: '#990D35' }}> */}
+                  {/* 128 */}
+                {/* </div> */}
+                {/* <div className="text-xs font-medium" style={{ color: '#050505', opacity: 0.7 }}> */}
+                  {/* Total Peserta */}
+                {/* </div> */}
+              {/* </div> */}
+              {/* <div className="p-3 rounded-lg" style={{ backgroundColor: 'rgba(245, 183, 0, 0.1)' }}> */}
+                {/* <div className="text-lg font-bold" style={{ color: '#F5B700' }}> */}
+                  {/* 24 */}
+                {/* </div> */}
+                {/* <div className="text-xs font-medium" style={{ color: '#050505', opacity: 0.7 }}> */}
+                  {/* Pending Validasi */}
+                {/* </div> */}
+              {/* </div> */}
+            {/* </div> */}
+          {/* </div> */}
 
           {/* Navigation */}
           <nav className="p-6 space-y-2">
