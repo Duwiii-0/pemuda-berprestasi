@@ -186,7 +186,7 @@ const handleSelectAll = () => {
 };
 
 const openParticipantSelection = () => {
-  // Calculate BYEs needed
+  // ⭐ BYE SEKARANG OPSIONAL - bisa 0
   const total = approvedParticipants.length;
   const nextPowerOf2 = Math.pow(2, Math.ceil(Math.log2(total)));
   const byesNeeded = nextPowerOf2 - total;
@@ -195,7 +195,7 @@ const openParticipantSelection = () => {
   setSelectedParticipants(new Set());
   setSelectAll(false);
   
-  console.log(`📊 Need to select ${byesNeeded} participants for BYE out of ${total}`);
+  console.log(`📊 Total: ${total}, Bracket size: ${nextPowerOf2}, BYE recommended: ${byesNeeded}`);
   
   setShowParticipantSelection(true);
 };
@@ -247,18 +247,18 @@ const openParticipantSelection = () => {
 const generateBracket = async (shuffle: boolean = false) => {
   if (!selectedKelas) return;
   
-  // Validate BYE selection for PRESTASI
-  if (!isPemula && selectedParticipants.size > 0) {
-    const byesNeeded = Math.pow(2, Math.ceil(Math.log2(approvedParticipants.length))) - approvedParticipants.length;
-    if (selectedParticipants.size !== byesNeeded) {
-      showNotification(
-        'warning',
-        'Jumlah BYE Tidak Sesuai',
-        `Pilih tepat ${byesNeeded} peserta untuk BYE`,
-        () => setShowModal(false)
-      );
-      return;
-    }
+  // ⭐ VALIDASI: BYE bisa 0 (skip) atau sesuai kebutuhan
+  const byesNeeded = Math.pow(2, Math.ceil(Math.log2(approvedParticipants.length))) - approvedParticipants.length;
+  
+  // Jika user select BYE tapi jumlah salah
+  if (!isPemula && selectedParticipants.size > 0 && selectedParticipants.size !== byesNeeded) {
+    showNotification(
+      'warning',
+      'Jumlah BYE Tidak Sesuai',
+      `Pilih 0 (skip BYE) atau tepat ${byesNeeded} peserta untuk BYE`,
+      () => setShowModal(false)
+    );
+    return;
   }
   
   setLoading(true);
@@ -280,7 +280,8 @@ const generateBracket = async (shuffle: boolean = false) => {
       },
       body: JSON.stringify({
         kelasKejuaraanId: kelasKejuaraanId,
-        byeParticipantIds: isPemula ? undefined : Array.from(selectedParticipants) // ⭐ Send BYE IDs
+        // ⭐ Kirim array kosong jika skip BYE
+        byeParticipantIds: isPemula ? undefined : (selectedParticipants.size > 0 ? Array.from(selectedParticipants) : [])
       })
     });
 
@@ -2284,31 +2285,36 @@ const canvas = await html2canvas(bracketRef.current, {
           Batal
         </button>
         <button
-          onClick={() => {
-            const byesNeeded = Math.pow(2, Math.ceil(Math.log2(approvedParticipants.length))) - approvedParticipants.length;
-            if (selectedParticipants.size !== byesNeeded) {
-              showNotification(
-                'warning',
-                'Jumlah BYE Tidak Sesuai',
-                `Anda harus memilih tepat ${byesNeeded} peserta untuk BYE. Saat ini: ${selectedParticipants.size}`,
-                () => setShowModal(false)
-              );
-              return;
-            }
-            generateBracket(false); // Generate with BYE selection
-          }}
-          disabled={selectedParticipants.size !== (Math.pow(2, Math.ceil(Math.log2(approvedParticipants.length))) - approvedParticipants.length)}
-          className="flex-1 py-3 px-4 rounded-lg font-medium transition-all disabled:opacity-50"
-          style={{ 
-            backgroundColor: '#990D35', 
-            color: '#F5FBEF' 
-          }}
-        >
-          <div className="flex items-center justify-center gap-2">
-            <RefreshCw size={16} />
-            <span>Generate Bracket</span>
-          </div>
-        </button>
+  onClick={() => {
+    const byesNeeded = Math.pow(2, Math.ceil(Math.log2(approvedParticipants.length))) - approvedParticipants.length;
+    
+    // ⭐ Allow 0 (skip) atau exact count
+    if (selectedParticipants.size !== 0 && selectedParticipants.size !== byesNeeded) {
+      showNotification(
+        'warning',
+        'Jumlah BYE Tidak Sesuai',
+        `Pilih 0 untuk skip BYE, atau tepat ${byesNeeded} peserta`,
+        () => setShowModal(false)
+      );
+      return;
+    }
+    generateBracket(false);
+  }}
+  className="flex-1 py-3 px-4 rounded-lg font-medium transition-all"
+  style={{ 
+    backgroundColor: '#990D35', 
+    color: '#F5FBEF' 
+  }}
+>
+  <div className="flex items-center justify-center gap-2">
+    <RefreshCw size={16} />
+    <span>
+      {selectedParticipants.size === 0 
+        ? 'Generate (No BYE)' 
+        : `Generate with ${selectedParticipants.size} BYE`}
+    </span>
+  </div>
+</button>
       </div>
     </div>
   </div>
