@@ -345,13 +345,18 @@ static async getAvailableClassesForParticipant(req: Request, res: Response) {
 static async generateBrackets(req: Request, res: Response) {
   try {
     const { id } = req.params;
-    const { kelasKejuaraanId } = req.body;
+    const { kelasKejuaraanId, participantIds } = req.body; // ⭐ TAMBAH participantIds
 
     const kompetisiId = parseInt(id);
     const kelasId = parseInt(kelasKejuaraanId);
 
     if (isNaN(kompetisiId) || isNaN(kelasId)) {
       return sendError(res, 'Parameter tidak valid', 400);
+    }
+
+    // ⭐ VALIDASI participantIds
+    if (participantIds && (!Array.isArray(participantIds) || participantIds.length < 2)) {
+      return sendError(res, 'Minimal 2 peserta harus dipilih', 400);
     }
 
     // Check authorization
@@ -391,8 +396,12 @@ static async generateBrackets(req: Request, res: Response) {
       return sendError(res, 'Tidak memiliki akses untuk membuat bagan', 403);
     }
 
-    // Generate bracket
-    const bracket = await BracketService.generateBracket(kompetisiId, kelasId);
+    // ⭐ Generate bracket dengan selected participants
+    const bracket = await BracketService.generateBracket(
+      kompetisiId, 
+      kelasId,
+      participantIds 
+    );
 
     return sendSuccess(res, bracket, 'Bagan turnamen berhasil dibuat', 201);
   } catch (error: any) {
@@ -488,13 +497,18 @@ static async getBracketByClass(req: Request, res: Response) {
 static async shuffleBrackets(req: Request, res: Response) {
   try {
     const { id } = req.params;
-    const { kelasKejuaraanId } = req.body;
+    const { kelasKejuaraanId, participantIds } = req.body; // ⭐ TAMBAH participantIds
 
     const kompetisiId = parseInt(id);
     const kelasId = parseInt(kelasKejuaraanId);
 
     if (isNaN(kompetisiId) || isNaN(kelasId)) {
       return sendError(res, 'Parameter tidak valid', 400);
+    }
+
+    // ⭐ VALIDASI participantIds
+    if (participantIds && (!Array.isArray(participantIds) || participantIds.length < 2)) {
+      return sendError(res, 'Minimal 2 peserta harus dipilih', 400);
     }
 
     // Check authorization
@@ -545,8 +559,12 @@ static async shuffleBrackets(req: Request, res: Response) {
       }
     }
 
-    // Regenerate bracket
-    const bracket = await BracketService.shuffleBracket(kompetisiId, kelasId);
+    // ⭐ Regenerate bracket dengan shuffled participants
+    const bracket = await BracketService.shuffleBracket(
+      kompetisiId, 
+      kelasId,
+      participantIds // ⭐ Pass participantIds
+    );
 
     return sendSuccess(res, bracket, 'Bagan turnamen berhasil diacak ulang');
   } catch (error: any) {

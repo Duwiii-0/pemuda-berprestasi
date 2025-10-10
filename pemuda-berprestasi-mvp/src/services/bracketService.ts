@@ -39,8 +39,13 @@ export class BracketService {
   
   /**
    * Generate bracket for a competition class
+   * @param participantIds - Optional array of selected participant IDs
    */
-  static async generateBracket(kompetisiId: number, kelasKejuaraanId: number): Promise<Bracket> {
+  static async generateBracket(
+    kompetisiId: number, 
+    kelasKejuaraanId: number,
+    participantIds?: number[] // ⭐ NEW PARAMETER
+  ): Promise<Bracket> {
     try {
       // Check if bracket already exists
       const existingBagan = await prisma.tb_bagan.findFirst({
@@ -54,12 +59,22 @@ export class BracketService {
         throw new Error('Bagan sudah dibuat untuk kelas kejuaraan ini');
       }
 
+      // ⭐ Build WHERE clause for participant filtering
+      const participantFilter: any = {
+        id_kelas_kejuaraan: kelasKejuaraanId,
+        status: 'APPROVED'
+      };
+
+      // ⭐ If specific participants are selected, filter by IDs
+      if (participantIds && participantIds.length > 0) {
+        participantFilter.id_peserta_kompetisi = {
+          in: participantIds
+        };
+      }
+
       // Get approved participants for this class
       const registrations = await prisma.tb_peserta_kompetisi.findMany({
-        where: {
-          id_kelas_kejuaraan: kelasKejuaraanId,
-          status: 'APPROVED'
-        },
+        where: participantFilter, // ⭐ Use dynamic filter
         include: {
           atlet: {
             include: {
@@ -78,15 +93,22 @@ export class BracketService {
           kelas_kejuaraan: {
             include: {
               kompetisi: true,
-              kategori_event: true  // ⬅️ PENTING! Tambahkan ini untuk deteksi kategori
+              kategori_event: true
             }
           }
         }
       });
 
+      // ⭐ Validate participant count
       if (registrations.length < 2) {
-        throw new Error('Minimal 2 peserta diperlukan untuk membuat bagan');
+        throw new Error(
+          participantIds && participantIds.length > 0
+            ? `Minimal 2 peserta diperlukan. Anda memilih ${registrations.length} peserta.`
+            : 'Minimal 2 peserta diperlukan untuk membuat bagan'
+        );
       }
+
+      console.log(`✅ Generating bracket for ${registrations.length} selected participants`);
 
       // 🔥 DETEKSI KATEGORI PEMULA vs PRESTASI
       const kategori = registrations[0]?.kelas_kejuaraan?.kategori_event?.nama_kategori?.toLowerCase() || '';
@@ -173,7 +195,8 @@ export class BracketService {
   }
 
   /**
-   * Generate tournament matches using existing schema
+   * Generate PRESTASI bracket with proper BYE handling
+   * FIXED: Better layout and consistent spacing
    */
   static async generatePrestasiBracket(baganId: number, participants: Participant[]): Promise<Match[]> {
     const participantCount = participants.length;
@@ -182,22 +205,34 @@ export class BracketService {
       throw new Error('At least 2 participants required for bracket');
     }
 
-    // Calculate next power of 2
+    // ⭐ Calculate proper bracket size
     const nextPowerOf2 = Math.pow(2, Math.ceil(Math.log2(participantCount)));
     const totalRounds = Math.log2(nextPowerOf2);
+    const byesNeeded = nextPowerOf2 - participantCount;
     
-    // Prepare participants with byes
-    let currentParticipants = [...participants];
-    while (currentParticipants.length < nextPowerOf2) {
-      currentParticipants.push(null as any); // null represents bye
+    console.log(`📊 Bracket stats: ${participantCount} participants, ${byesNeeded} byes, ${totalRounds} rounds`);
+
+    // ⭐ IMPROVED: Distribute BYEs evenly throughout bracket
+    let currentParticipants: (Participant | null)[] = [...participants];
+    
+    // Add byes at strategic positions (spread them out)
+    if (byesNeeded > 0) {
+      const positions = this.calculateByePositions(participantCount, nextPowerOf2);
+      for (const pos of positions) {
+        currentParticipants.splice(pos, 0, null);
+      }
     }
 
     const matches: Match[] = [];
+    let matchIdCounter = 0;
 
-    // Generate first round matches
+    // ⭐ Generate Round 1 matches
     for (let i = 0; i < currentParticipants.length; i += 2) {
       const participant1 = currentParticipants[i];
       const participant2 = currentParticipants[i + 1];
+      
+      const isBye = (participant1 && !participant2) || (!participant1 && participant2);
+      const winner = isBye ? (participant1 || participant2) : null;
       
       // Create match in database
       const match = await prisma.tb_match.create({
@@ -206,33 +241,31 @@ export class BracketService {
           ronde: 1,
           id_peserta_a: participant1?.id || null,
           id_peserta_b: participant2?.id || null,
-          skor_a: 0,
-          skor_b: 0
+          skor_a: isBye ? (participant1 ? 1 : 0) : 0,
+          skor_b: isBye ? (participant2 ? 1 : 0) : 0
         }
       });
 
       matches.push({
         id: match.id_match,
         round: 1,
-        position: Math.floor(i / 2) + 1,
+        position: matchIdCounter++,
         participant1: participant1 || null,
         participant2: participant2 || null,
-        status: (participant1 && participant2) ? 'pending' : 'completed',
-        winner: (!participant2) ? participant1 : null, // Auto-win for bye
+        status: isBye ? 'bye' : 'pending',
+        winner: winner || null,
         scoreA: match.skor_a,
         scoreB: match.skor_b
       });
 
-      // If there's a bye (auto-win), update match immediately
-      if (participant1 && !participant2) {
-        await prisma.tb_match.update({
-          where: { id_match: match.id_match },
-          data: { skor_a: 1, skor_b: 0 }
-        });
-      }
+      console.log(
+        isBye 
+          ? `⚠️ Match ${match.id_match}: ${winner?.name} gets BYE (auto-advance)`
+          : `✅ Match ${match.id_match}: ${participant1?.name} vs ${participant2?.name}`
+      );
     }
 
-    // Generate subsequent rounds (empty matches)
+    // ⭐ Generate subsequent rounds (empty placeholders)
     for (let round = 2; round <= totalRounds; round++) {
       const matchesInRound = Math.pow(2, totalRounds - round);
       
@@ -251,7 +284,7 @@ export class BracketService {
         matches.push({
           id: match.id_match,
           round,
-          position: i + 1,
+          position: i,
           participant1: null,
           participant2: null,
           status: 'pending',
@@ -261,28 +294,54 @@ export class BracketService {
       }
     }
 
-    // Advance bye winners to next round
-    await this.advanceByeWinners(baganId, matches.filter(m => m.winner));
+    // ⭐ Auto-advance BYE winners to next round
+    const byeWinners = matches.filter(m => m.status === 'bye' && m.winner);
+    if (byeWinners.length > 0) {
+      console.log(`🚀 Auto-advancing ${byeWinners.length} BYE winners to Round 2`);
+      await this.advanceByeWinners(baganId, byeWinners);
+    }
 
     return matches;
   }
 
+  /**
+   * ⭐ NEW: Calculate optimal BYE positions to spread them evenly
+   */
+  static calculateByePositions(participantCount: number, targetSize: number): number[] {
+    const byesNeeded = targetSize - participantCount;
+    const positions: number[] = [];
+    
+    // Spread byes evenly throughout the bracket
+    const spacing = Math.floor(targetSize / byesNeeded);
+    
+    for (let i = 0; i < byesNeeded; i++) {
+      positions.push(spacing * i + Math.floor(spacing / 2));
+    }
+    
+    return positions.sort((a, b) => b - a); // Reverse order for insertion
+  }
+
+  /**
+   * Generate PEMULA bracket (single round, all matches)
+   */
   static async generatePemulaBracket(baganId: number, participants: Participant[]): Promise<Match[]> {
     const matches: Match[] = [];
-    const shuffled = [...participants]; // Already shuffled from parent method
+    const shuffled = [...participants];
     
     console.log(`🥋 Generating PEMULA bracket for ${shuffled.length} participants`);
 
     // Pair participants: [0,1], [2,3], [4,5]...
     for (let i = 0; i < shuffled.length; i += 2) {
       const participant1 = shuffled[i];
-      const participant2 = shuffled[i + 1] || null; // null jika ganjil
+      const participant2 = shuffled[i + 1] || null;
+      
+      const isBye = !participant2;
       
       // Create match in database
       const match = await prisma.tb_match.create({
         data: {
           id_bagan: baganId,
-          ronde: 1, // Pemula selalu 1 ronde
+          ronde: 1,
           id_peserta_a: participant1.id,
           id_peserta_b: participant2?.id || null,
           skor_a: 0,
@@ -293,16 +352,15 @@ export class BracketService {
       matches.push({
         id: match.id_match,
         round: 1,
-        position: Math.floor(i / 2) + 1,
+        position: Math.floor(i / 2),
         participant1,
         participant2: participant2 || null,
-        status: participant2 ? 'pending' : 'bye', // bye jika tidak ada lawan
+        status: isBye ? 'bye' : 'pending',
         scoreA: 0,
         scoreB: 0
       });
       
-      // Log untuk peserta yang BYE
-      if (!participant2) {
+      if (isBye) {
         console.log(`⚠️ Peserta ${participant1.name} mendapat BYE (otomatis perak)`);
       }
     }
@@ -432,7 +490,9 @@ export class BracketService {
           winner: this.determineWinner(match),
           scoreA: match.skor_a,
           scoreB: match.skor_b,
-          status: (hasParticipant1 && !hasParticipant2) ? 'bye' : this.determineMatchStatus(match), // ⬅️ Detect BYE
+          status: (hasParticipant1 && !hasParticipant2) || (!hasParticipant1 && hasParticipant2)
+            ? 'bye' 
+            : this.determineMatchStatus(match),
           venue: match.venue?.nama_venue
         };
       });
@@ -527,7 +587,7 @@ export class BracketService {
    * Advance winner to next round
    */
   static async advanceWinnerToNextRound(match: any, winnerId: number): Promise<void> {
-    // Find next round match
+    // Find next round matches
     const nextRoundMatches = await prisma.tb_match.findMany({
       where: {
         id_bagan: match.id_bagan,
@@ -566,8 +626,13 @@ export class BracketService {
 
   /**
    * Shuffle/regenerate bracket
+   * ⭐ NOW supports participantIds parameter
    */
-  static async shuffleBracket(kompetisiId: number, kelasKejuaraanId: number): Promise<Bracket> {
+  static async shuffleBracket(
+    kompetisiId: number, 
+    kelasKejuaraanId: number,
+    participantIds?: number[] // ⭐ NEW PARAMETER
+  ): Promise<Bracket> {
     try {
       // Delete existing bracket and all related data
       const existingBagan = await prisma.tb_bagan.findFirst({
@@ -594,8 +659,8 @@ export class BracketService {
         });
       }
 
-      // Generate new bracket
-      return await this.generateBracket(kompetisiId, kelasKejuaraanId);
+      // ⭐ Generate new bracket with selected participants
+      return await this.generateBracket(kompetisiId, kelasKejuaraanId, participantIds);
     } catch (error: any) {
       console.error('Error shuffling bracket:', error);
       throw new Error('Failed to shuffle bracket');
@@ -673,155 +738,136 @@ export class BracketService {
   }
 
   /**
-   * Export bracket to PDF (placeholder - will be implemented in controller)
+   * Clear all match results (scores) but keep bracket structure
    */
-  static async exportBracketToPdf(kompetisiId: number, kelasKejuaraanId: number): Promise<Buffer> {
-    // This will be implemented in the controller using a PDF library
-    throw new Error('PDF export functionality will be implemented in controller');
+  static async clearMatchResults(kompetisiId: number, kelasKejuaraanId: number): Promise<{
+    success: boolean;
+    message: string;
+    clearedMatches: number;
+  }> {
+    try {
+      console.log(`🧹 Clearing match results for kompetisi ${kompetisiId}, kelas ${kelasKejuaraanId}`);
+
+      const bagan = await prisma.tb_bagan.findFirst({
+        where: {
+          id_kompetisi: kompetisiId,
+          id_kelas_kejuaraan: kelasKejuaraanId
+        },
+        include: {
+          match: true
+        }
+      });
+
+      if (!bagan) {
+        throw new Error('Bagan tidak ditemukan');
+      }
+
+      // Reset all match scores to 0
+      const updatePromises = bagan.match.map((match) => {
+        if (match.ronde === 1) {
+          return prisma.tb_match.update({
+            where: { id_match: match.id_match },
+            data: {
+              skor_a: 0,
+              skor_b: 0
+            }
+          });
+        } else {
+          return prisma.tb_match.update({
+            where: { id_match: match.id_match },
+            data: {
+              skor_a: 0,
+              skor_b: 0,
+              id_peserta_a: null,
+              id_peserta_b: null
+            }
+          });
+        }
+      });
+
+      await Promise.all(updatePromises);
+
+      console.log(`✅ Cleared ${bagan.match.length} matches`);
+
+      return {
+        success: true,
+        message: `Berhasil mereset ${bagan.match.length} pertandingan`,
+        clearedMatches: bagan.match.length
+      };
+    } catch (error: any) {
+      console.error('❌ Error clearing match results:', error);
+      throw new Error(error.message || 'Gagal mereset hasil pertandingan');
+    }
   }
 
   /**
- * Clear all match results (scores) but keep bracket structure
- * Useful when admin wants to reset scores without regenerating bracket
- */
-static async clearMatchResults(kompetisiId: number, kelasKejuaraanId: number): Promise<{
-  success: boolean;
-  message: string;
-  clearedMatches: number;
-}> {
-  try {
-    console.log(`🧹 Clearing match results for kompetisi ${kompetisiId}, kelas ${kelasKejuaraanId}`);
-
-    // Find existing bracket
-    const bagan = await prisma.tb_bagan.findFirst({
-      where: {
-        id_kompetisi: kompetisiId,
-        id_kelas_kejuaraan: kelasKejuaraanId
-      },
-      include: {
-        match: true
-      }
-    });
-
-    if (!bagan) {
-      throw new Error('Bagan tidak ditemukan');
-    }
-
-    // Reset all match scores to 0
-    // Also clear participants from rounds > 1 (they were auto-filled from previous rounds)
-    const updatePromises = bagan.match.map((match) => {
-      if (match.ronde === 1) {
-        // Round 1: Keep participants, reset scores only
-        return prisma.tb_match.update({
-          where: { id_match: match.id_match },
-          data: {
-            skor_a: 0,
-            skor_b: 0
-          }
-        });
-      } else {
-        // Rounds > 1: Clear participants AND scores (they advance from previous rounds)
-        return prisma.tb_match.update({
-          where: { id_match: match.id_match },
-          data: {
-            skor_a: 0,
-            skor_b: 0,
-            id_peserta_a: null,
-            id_peserta_b: null
-          }
-        });
-      }
-    });
-
-    await Promise.all(updatePromises);
-
-    console.log(`✅ Cleared ${bagan.match.length} matches`);
-
-    return {
-      success: true,
-      message: `Berhasil mereset ${bagan.match.length} pertandingan`,
-      clearedMatches: bagan.match.length
+   * Delete entire bracket (bagan + matches + seeds)
+   */
+  static async deleteBracket(kompetisiId: number, kelasKejuaraanId: number): Promise<{
+    success: boolean;
+    message: string;
+    deletedItems: {
+      matches: number;
+      seeds: number;
+      bracket: boolean;
     };
-  } catch (error: any) {
-    console.error('❌ Error clearing match results:', error);
-    throw new Error(error.message || 'Gagal mereset hasil pertandingan');
-  }
-}
+  }> {
+    try {
+      console.log(`🗑️ Deleting bracket for kompetisi ${kompetisiId}, kelas ${kelasKejuaraanId}`);
 
-/**
- * Delete entire bracket (bagan + matches + seeds)
- * This is destructive and cannot be undone
- */
-static async deleteBracket(kompetisiId: number, kelasKejuaraanId: number): Promise<{
-  success: boolean;
-  message: string;
-  deletedItems: {
-    matches: number;
-    seeds: number;
-    bracket: boolean;
-  };
-}> {
-  try {
-    console.log(`🗑️ Deleting bracket for kompetisi ${kompetisiId}, kelas ${kelasKejuaraanId}`);
-
-    // Find existing bracket
-    const bagan = await prisma.tb_bagan.findFirst({
-      where: {
-        id_kompetisi: kompetisiId,
-        id_kelas_kejuaraan: kelasKejuaraanId
-      },
-      include: {
-        match: true,
-        drawing_seed: true
-      }
-    });
-
-    if (!bagan) {
-      throw new Error('Bagan tidak ditemukan');
-    }
-
-    const matchCount = bagan.match.length;
-    const seedCount = bagan.drawing_seed.length;
-
-    // Delete in correct order due to foreign key constraints
-    // 1. Delete match_audit (if any)
-    await prisma.tb_match_audit.deleteMany({
-      where: {
-        match: {
-          id_bagan: bagan.id_bagan
+      const bagan = await prisma.tb_bagan.findFirst({
+        where: {
+          id_kompetisi: kompetisiId,
+          id_kelas_kejuaraan: kelasKejuaraanId
+        },
+        include: {
+          match: true,
+          drawing_seed: true
         }
+      });
+
+      if (!bagan) {
+        throw new Error('Bagan tidak ditemukan');
       }
-    });
 
-    // 2. Delete matches
-    await prisma.tb_match.deleteMany({
-      where: { id_bagan: bagan.id_bagan }
-    });
+      const matchCount = bagan.match.length;
+      const seedCount = bagan.drawing_seed.length;
 
-    // 3. Delete drawing seeds
-    await prisma.tb_drawing_seed.deleteMany({
-      where: { id_bagan: bagan.id_bagan }
-    });
+      // Delete in correct order
+      await prisma.tb_match_audit.deleteMany({
+        where: {
+          match: {
+            id_bagan: bagan.id_bagan
+          }
+        }
+      });
 
-    // 4. Delete the bracket itself
-    await prisma.tb_bagan.delete({
-      where: { id_bagan: bagan.id_bagan }
-    });
+      await prisma.tb_match.deleteMany({
+        where: { id_bagan: bagan.id_bagan }
+      });
 
-    console.log(`✅ Deleted bracket: ${matchCount} matches, ${seedCount} seeds`);
+      await prisma.tb_drawing_seed.deleteMany({
+        where: { id_bagan: bagan.id_bagan }
+      });
 
-    return {
-      success: true,
-      message: 'Bracket berhasil dihapus',
-      deletedItems: {
-        matches: matchCount,
-        seeds: seedCount,
-        bracket: true
-      }
-    };
-  } catch (error: any) {
-    console.error('❌ Error deleting bracket:', error);
-    throw new Error(error.message || 'Gagal menghapus bracket');
+      await prisma.tb_bagan.delete({
+        where: { id_bagan: bagan.id_bagan }
+      });
+
+      console.log(`✅ Deleted bracket: ${matchCount} matches, ${seedCount} seeds`);
+
+      return {
+        success: true,
+        message: 'Bracket berhasil dihapus',
+        deletedItems: {
+          matches: matchCount,
+          seeds: seedCount,
+          bracket: true
+        }
+      };
+    } catch (error: any) {
+      console.error('❌ Error deleting bracket:', error);
+      throw new Error(error.message || 'Gagal menghapus bracket');
+    }
   }
-}
 }
