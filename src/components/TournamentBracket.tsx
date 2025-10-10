@@ -1068,124 +1068,190 @@ if (isPemula) {
 
                 <div className="space-y-4">
                   {matches.map((match, matchIndex) => (
-                    <div
-                      key={match.id_match}
-                      className="bg-white rounded-lg shadow-sm border overflow-hidden"
-                      style={{ borderColor: '#990D35' }}
-                    >
-                      {/* Match Header */}
-                      <div className="px-4 py-2 border-b flex items-center justify-between" style={{ backgroundColor: 'rgba(153, 13, 53, 0.05)', borderColor: '#990D35' }}>
-                        <span className="text-sm font-medium" style={{ color: '#050505' }}>
-                          Partai {matchIndex + 1}
-                        </span>
-                        <button
-                          onClick={() => setEditingMatch(match)}
-                          className="p-1 rounded hover:bg-black/5"
-                        >
-                          <Edit3 size={14} style={{ color: '#050505', opacity: 0.6 }} />
-                        </button>
-                      </div>
+  <div
+    key={match.id_match}
+    className="bg-white rounded-xl shadow-md border-2 overflow-hidden"
+    style={{ borderColor: '#990D35' }}
+  >
+    {/* Match Header */}
+    <div 
+      className="px-4 py-2.5 border-b flex items-center justify-between"
+      style={{ 
+        backgroundColor: 'rgba(153, 13, 53, 0.05)',
+        borderColor: '#990D35'
+      }}
+    >
+      <span className="text-sm font-semibold" style={{ color: '#050505' }}>
+        Partai {matchIndex + 1}
+      </span>
+      <button
+        onClick={() => setEditingMatch(match)}
+        className="p-1.5 rounded-lg hover:bg-black/5 transition-all"
+        title="Edit Score"
+      >
+        <Edit3 size={14} style={{ color: '#050505', opacity: 0.6 }} />
+      </button>
+    </div>
 
-                      {/* Participants */}
-                      <div className="p-4">
-                        {/* Participant A */}
-                        <div className={`p-3 rounded border-2 mb-3 transition-all ${
-                          match.skor_a > match.skor_b && (match.skor_a > 0 || match.skor_b > 0)
-                            ? 'border-yellow-500 bg-yellow-50' 
-                            : 'border-gray-200'
-                        }`}>
-                          {match.peserta_a ? (
-                            <div className="flex items-center justify-between">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <span className="text-xs font-bold px-2 py-1 rounded" style={{ backgroundColor: '#990D35', color: 'white' }}>
-                                    B/{match.peserta_a.id_peserta_kompetisi}
-                                  </span>
-                                  <span className="text-sm font-bold text-blue-600">
-                                    {getParticipantName(match.peserta_a)}
-                                  </span>
-                                  {match.skor_a > match.skor_b && (match.skor_a > 0 || match.skor_b > 0) && (
-                                    <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: '#F5B700', color: 'white' }}>
-                                      🥇 GOLD
-                                    </span>
-                                  )}
-                                </div>
-                                <p className="text-xs text-blue-600 uppercase">
-                                  {getDojoName(match.peserta_a)}
-                                </p>
-                              </div>
-                              {(match.skor_a > 0 || match.skor_b > 0) && (
-                                <div className="text-right ml-4">
-                                  <span className="text-lg font-bold" style={{ color: '#050505' }}>
-                                    {match.skor_a}
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-                          ) : (
-                            <div className="text-center py-4">
-                              <span className="text-sm" style={{ color: '#050505', opacity: 0.5 }}>
-                                TBD
-                              </span>
-                            </div>
-                          )}
-                        </div>
+    {/* Participants Container */}
+    <div className="p-4 space-y-3">
+      {/* Participant A (Blue Corner) */}
+      <div 
+        className={`relative rounded-lg border-2 p-3 transition-all ${
+          match.skor_a > match.skor_b && (match.skor_a > 0 || match.skor_b > 0)
+            ? 'border-yellow-400 bg-yellow-50/50' 
+            : 'border-gray-200 bg-white'
+        }`}
+      >
+        {match.peserta_a ? (
+          <div className="flex items-center gap-3">
+            {/* Left: Badge + Info */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1.5">
+                <span 
+                  className="inline-flex items-center text-xs font-bold px-2.5 py-1 rounded shadow-sm flex-shrink-0"
+                  style={{ backgroundColor: '#990D35', color: 'white' }}
+                >
+                  B/{match.peserta_a.id_peserta_kompetisi}
+                </span>
+                <span 
+                  className="font-bold text-base truncate"
+                  style={{ color: '#3B82F6' }}
+                  title={getParticipantName(match.peserta_a)}
+                >
+                  {getParticipantName(match.peserta_a)}
+                </span>
+              </div>
+              <p 
+                className="text-xs uppercase truncate pl-0.5"
+                style={{ color: '#3B82F6', opacity: 0.7 }}
+                title={getDojoName(match.peserta_a)}
+              >
+                {getDojoName(match.peserta_a)}
+              </p>
+            </div>
 
-                        {/* Participant B */}
-                        {match.peserta_b ? (
-                          <div className={`p-3 rounded border-2 transition-all ${
-                            match.skor_b > match.skor_a && (match.skor_a > 0 || match.skor_b > 0)
-                              ? 'border-yellow-500 bg-yellow-50' 
-                              : match.skor_a > 0 || match.skor_b > 0
-                              ? 'border-gray-300 bg-gray-50'
-                              : 'border-gray-200'
-                          }`}>
-                            <div className="flex items-center justify-between">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <span className="text-xs font-bold px-2 py-1 rounded" style={{ backgroundColor: '#990D35', color: 'white' }}>
-                                    R/{match.peserta_b.id_peserta_kompetisi}
-                                  </span>
-                                  <span className="text-sm font-bold text-red-600">
-                                    {getParticipantName(match.peserta_b)}
-                                  </span>
-                                  {match.skor_b > match.skor_a && (match.skor_a > 0 || match.skor_b > 0) && (
-                                    <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: '#F5B700', color: 'white' }}>
-                                      🥇 GOLD
-                                    </span>
-                                  )}
-                                  {match.skor_b < match.skor_a && (match.skor_a > 0 || match.skor_b > 0) && (
-                                    <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: '#C0C0C0', color: 'white' }}>
-                                      🥈 SILVER
-                                    </span>
-                                  )}
-                                </div>
-                                <p className="text-xs text-red-600 uppercase">
-                                  {getDojoName(match.peserta_b)}
-                                </p>
-                              </div>
-                              {(match.skor_a > 0 || match.skor_b > 0) && (
-                                <div className="text-right ml-4">
-                                  <span className="text-lg font-bold" style={{ color: '#050505' }}>
-                                    {match.skor_b}
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="text-center py-2">
-                            <span className="text-sm px-3 py-1 rounded-full" style={{ 
-                              backgroundColor: 'rgba(192, 192, 192, 0.2)', 
-                              color: '#6b7280' 
-                            }}>
-                              🥈 Free draw (Silver Medal)
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
+            {/* Right: Medal + Score */}
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {match.skor_a > match.skor_b && (match.skor_a > 0 || match.skor_b > 0) && (
+                <span 
+                  className="inline-flex items-center text-xs font-semibold px-3 py-1 rounded-full shadow-sm"
+                  style={{ backgroundColor: '#F5B700', color: 'white' }}
+                >
+                  🏆 GOLD
+                </span>
+              )}
+              {(match.skor_a > 0 || match.skor_b > 0) && (
+                <div 
+                  className="w-12 h-12 rounded-lg flex items-center justify-center font-bold text-xl shadow-sm"
+                  style={{ 
+                    backgroundColor: match.skor_a > match.skor_b ? '#22c55e' : '#e5e7eb',
+                    color: match.skor_a > match.skor_b ? 'white' : '#6b7280'
+                  }}
+                >
+                  {match.skor_a}
+                </div>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="text-center py-4">
+            <span 
+              className="text-sm font-medium"
+              style={{ color: '#050505', opacity: 0.4 }}
+            >
+              TBD
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Participant B (Red Corner) */}
+      {match.peserta_b ? (
+        <div 
+          className={`relative rounded-lg border-2 p-3 transition-all ${
+            match.skor_b > match.skor_a && (match.skor_a > 0 || match.skor_b > 0)
+              ? 'border-yellow-400 bg-yellow-50/50' 
+              : match.skor_a > 0 || match.skor_b > 0
+              ? 'border-gray-300 bg-gray-50/30'
+              : 'border-gray-200 bg-white'
+          }`}
+        >
+          <div className="flex items-center gap-3">
+            {/* Left: Badge + Info */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1.5">
+                <span 
+                  className="inline-flex items-center text-xs font-bold px-2.5 py-1 rounded shadow-sm flex-shrink-0"
+                  style={{ backgroundColor: '#990D35', color: 'white' }}
+                >
+                  R/{match.peserta_b.id_peserta_kompetisi}
+                </span>
+                <span 
+                  className="font-bold text-base truncate"
+                  style={{ color: '#EF4444' }}
+                  title={getParticipantName(match.peserta_b)}
+                >
+                  {getParticipantName(match.peserta_b)}
+                </span>
+              </div>
+              <p 
+                className="text-xs uppercase truncate pl-0.5"
+                style={{ color: '#EF4444', opacity: 0.7 }}
+                title={getDojoName(match.peserta_b)}
+              >
+                {getDojoName(match.peserta_b)}
+              </p>
+            </div>
+
+            {/* Right: Medal + Score */}
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {match.skor_b > match.skor_a && (match.skor_a > 0 || match.skor_b > 0) && (
+                <span 
+                  className="inline-flex items-center text-xs font-semibold px-3 py-1 rounded-full shadow-sm"
+                  style={{ backgroundColor: '#F5B700', color: 'white' }}
+                >
+                  🏆 GOLD
+                </span>
+              )}
+              {match.skor_b < match.skor_a && (match.skor_a > 0 || match.skor_b > 0) && (
+                <span 
+                  className="inline-flex items-center text-xs font-semibold px-3 py-1 rounded-full shadow-sm"
+                  style={{ backgroundColor: '#C0C0C0', color: 'white' }}
+                >
+                  🥈 SILVER
+                </span>
+              )}
+              {(match.skor_a > 0 || match.skor_b > 0) && (
+                <div 
+                  className="w-12 h-12 rounded-lg flex items-center justify-center font-bold text-xl shadow-sm"
+                  style={{ 
+                    backgroundColor: match.skor_b > match.skor_a ? '#22c55e' : '#e5e7eb',
+                    color: match.skor_b > match.skor_a ? 'white' : '#6b7280'
+                  }}
+                >
+                  {match.skor_b}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="text-center py-3 px-4 rounded-lg" style={{ backgroundColor: 'rgba(192, 192, 192, 0.05)' }}>
+          <span 
+            className="inline-flex items-center text-xs font-medium px-3 py-1.5 rounded-full"
+            style={{ 
+              backgroundColor: 'rgba(192, 192, 192, 0.2)', 
+              color: '#6b7280' 
+            }}
+          >
+            🎁 Free draw (Silver Medal)
+          </span>
+        </div>
+      )}
+    </div>
+  </div>
+))}
                 </div>
               </div>
 
