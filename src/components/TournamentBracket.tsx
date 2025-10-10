@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Trophy, Edit3, Save, Medal, ArrowLeft, RefreshCw, Download, Shuffle } from 'lucide-react';
+import { Trophy, Edit3, Save, Medal, CheckCircle, ArrowLeft, AlertTriangle, RefreshCw, Download, Shuffle } from 'lucide-react';
 import { useAuth } from '../context/authContext'; // ⬅️ TAMBAHKAN INI
 
 interface Peserta {
@@ -87,13 +87,64 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
   kompetisiId
 }) => {
   const { token } = useAuth(); // ⬅️ TAMBAHKAN INI
-  const [selectedKelas, setSelectedKelas] = useState<KelasKejuaraan | null>(kelasData || null);
+   const [selectedKelas, setSelectedKelas] = useState<KelasKejuaraan | null>(kelasData || null);
   const [matches, setMatches] = useState<Match[]>([]);
   const [editingMatch, setEditingMatch] = useState<Match | null>(null);
   const [loading, setLoading] = useState(false);
   const [bracketGenerated, setBracketGenerated] = useState(false);
   const [saving, setSaving] = useState(false);
   const [exporting, setExporting] = useState(false);
+  
+  // ⬅️ TAMBAHKAN STATE MODAL INI
+  const [showModal, setShowModal] = useState(false);
+  const [modalConfig, setModalConfig] = useState<{
+    type: 'success' | 'error' | 'warning' | 'info';
+    title: string;
+    message: string;
+    onConfirm?: () => void;
+    onCancel?: () => void;
+    confirmText?: string;
+    cancelText?: string;
+  }>({
+    type: 'info',
+    title: '',
+    message: '',
+  });
+
+    // Helper function to show modal
+  const showNotification = (
+    type: 'success' | 'error' | 'warning' | 'info',
+    title: string,
+    message: string,
+    onConfirm?: () => void
+  ) => {
+    setModalConfig({
+      type,
+      title,
+      message,
+      onConfirm,
+      confirmText: 'OK',
+    });
+    setShowModal(true);
+  };
+
+  const showConfirmation = (
+    title: string,
+    message: string,
+    onConfirm: () => void,
+    onCancel?: () => void
+  ) => {
+    setModalConfig({
+      type: 'warning',
+      title,
+      message,
+      onConfirm,
+      onCancel,
+      confirmText: 'Ya, Lanjutkan',
+      cancelText: 'Batal',
+    });
+    setShowModal(true);
+  };
 
   const isPemula = selectedKelas?.kategori_event?.nama_kategori?.toLowerCase().includes('pemula') || false;
   
@@ -178,11 +229,21 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
       // Fetch updated bracket data
       await fetchBracketData(kompetisiId, kelasKejuaraanId);
       
-      alert(shuffle ? 'Bracket shuffled successfully!' : 'Bracket generated successfully!');
+      showNotification(
+        'success',
+        'Berhasil!',
+        shuffle ? 'Bracket berhasil diacak ulang!' : 'Bracket berhasil dibuat!',
+        () => setShowModal(false)
+      );
       
     } catch (error: any) {
       console.error('❌ Error generating bracket:', error);
-      alert(error.message || 'Failed to generate bracket. Please try again.');
+      showNotification(
+        'error',
+        'Gagal Membuat Bracket',
+        error.message || 'Terjadi kesalahan saat membuat bracket. Silakan coba lagi.',
+        () => setShowModal(false)
+      );
     } finally {
       setLoading(false);
     }
@@ -236,7 +297,6 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
       
     } catch (error: any) {
       console.error('❌ Error fetching bracket:', error);
-      // Don't show alert here, as this might be called on mount
     } finally {
       setLoading(false);
     }
@@ -285,11 +345,21 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
       // This button can be used to manually trigger save or update
       console.log('ℹ️ Bracket is already saved via API');
       
-      alert('Bracket is already saved in the database!');
+      showNotification(
+        'info',
+        'Informasi',
+        'Bracket sudah tersimpan di database!',
+        () => setShowModal(false)
+      );
       
     } catch (error: any) {
       console.error('❌ Error saving bracket:', error);
-      alert('Failed to save bracket. Please try again.');
+      showNotification(
+        'error',
+        'Gagal Menyimpan',
+        'Gagal menyimpan bracket. Silakan coba lagi.',
+        () => setShowModal(false)
+      );
     } finally {
       setSaving(false);
     }
@@ -337,7 +407,12 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
       
     } catch (error: any) {
       console.error('❌ Error exporting PDF:', error);
-      alert('Failed to export PDF. Please try again.');
+      showNotification(
+        'error',
+        'Gagal Export PDF',
+        'Gagal mengekspor PDF. Silakan coba lagi.',
+        () => setShowModal(false)
+      );
     } finally {
       setExporting(false);
     }
@@ -525,11 +600,21 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
       await fetchBracketData(kompetisiId, selectedKelas.id_kelas_kejuaraan);
 
       setEditingMatch(null);
-      alert('Match result updated successfully!');
+      showNotification(
+        'info',
+        'Informasi',
+        'Informasi Match Berhasil Diperbarui!',
+        () => setShowModal(false)
+      );
       
     } catch (error: any) {
       console.error('❌ Error updating match result:', error);
-      alert(error.message || 'Failed to update match result. Please try again.');
+      showNotification(
+        'error',
+        'Gagal Memperbarui',
+        error.message || 'Gagal memperbarui hasil pertandingan. Silakan coba lagi.',
+        () => setShowModal(false)
+      );
     }
   };
 
@@ -1107,6 +1192,101 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
                 style={{ backgroundColor: '#990D35', color: '#F5FBEF' }}
               >
                 Save Result
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Notification/Confirmation Modal */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-fadeIn">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full animate-slideUp">
+            {/* Modal Header */}
+            <div 
+              className="p-6 border-b rounded-t-xl" 
+              style={{ 
+                backgroundColor: 
+                  modalConfig.type === 'success' ? 'rgba(34, 197, 94, 0.1)' :
+                  modalConfig.type === 'error' ? 'rgba(239, 68, 68, 0.1)' :
+                  modalConfig.type === 'warning' ? 'rgba(245, 183, 0, 0.1)' :
+                  'rgba(99, 102, 241, 0.1)',
+                borderColor: 
+                  modalConfig.type === 'success' ? '#22c55e' :
+                  modalConfig.type === 'error' ? '#ef4444' :
+                  modalConfig.type === 'warning' ? '#F5B700' :
+                  '#6366f1'
+              }}
+            >
+              <div className="flex items-center gap-3">
+                {/* Icon */}
+                <div 
+                  className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
+                  style={{ 
+                    backgroundColor: 
+                      modalConfig.type === 'success' ? '#22c55e' :
+                      modalConfig.type === 'error' ? '#ef4444' :
+                      modalConfig.type === 'warning' ? '#F5B700' :
+                      '#6366f1'
+                  }}
+                >
+                  {modalConfig.type === 'success' && (
+                    <CheckCircle size={24} style={{ color: 'white' }} />
+                  )}
+                  {modalConfig.type === 'error' && (
+                    <span className="text-2xl">❌</span>
+                  )}
+                  {modalConfig.type === 'warning' && (
+                    <AlertTriangle size={24} style={{ color: 'white' }} />
+                  )}
+                  {modalConfig.type === 'info' && (
+                    <span className="text-2xl">ℹ️</span>
+                  )}
+                </div>
+
+                {/* Title */}
+                <h3 className="text-xl font-bold flex-1" style={{ color: '#050505' }}>
+                  {modalConfig.title}
+                </h3>
+              </div>
+            </div>
+            
+            {/* Modal Body */}
+            <div className="p-6">
+              <p className="text-base leading-relaxed" style={{ color: '#050505', opacity: 0.8 }}>
+                {modalConfig.message}
+              </p>
+            </div>
+            
+            {/* Modal Footer */}
+            <div className="p-6 border-t flex gap-3" style={{ borderColor: 'rgba(0, 0, 0, 0.1)' }}>
+              {modalConfig.cancelText && (
+                <button
+                  onClick={() => {
+                    if (modalConfig.onCancel) modalConfig.onCancel();
+                    setShowModal(false);
+                  }}
+                  className="flex-1 py-3 px-4 rounded-lg border font-medium transition-all hover:bg-gray-50"
+                  style={{ borderColor: '#990D35', color: '#990D35' }}
+                >
+                  {modalConfig.cancelText}
+                </button>
+              )}
+              <button
+                onClick={() => {
+                  if (modalConfig.onConfirm) modalConfig.onConfirm();
+                  setShowModal(false);
+                }}
+                className="flex-1 py-3 px-4 rounded-lg font-medium transition-all hover:opacity-90"
+                style={{ 
+                  backgroundColor: 
+                    modalConfig.type === 'success' ? '#22c55e' :
+                    modalConfig.type === 'error' ? '#ef4444' :
+                    modalConfig.type === 'warning' ? '#F5B700' :
+                    '#990D35',
+                  color: '#F5FBEF' 
+                }}
+              >
+                {modalConfig.confirmText || 'OK'}
               </button>
             </div>
           </div>
