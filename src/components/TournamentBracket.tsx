@@ -186,12 +186,17 @@ const handleSelectAll = () => {
 };
 
 const openParticipantSelection = () => {
-  // Auto-select all participants by default
-  const allIds = new Set(
-    approvedParticipants.map(p => p.id_peserta_kompetisi)
-  );
-  setSelectedParticipants(allIds);
-  setSelectAll(true);
+  // Calculate BYEs needed
+  const total = approvedParticipants.length;
+  const nextPowerOf2 = Math.pow(2, Math.ceil(Math.log2(total)));
+  const byesNeeded = nextPowerOf2 - total;
+  
+  // Clear previous selection
+  setSelectedParticipants(new Set());
+  setSelectAll(false);
+  
+  console.log(`📊 Need to select ${byesNeeded} participants for BYE out of ${total}`);
+  
   setShowParticipantSelection(true);
 };
 
@@ -239,47 +244,43 @@ const openParticipantSelection = () => {
     return shuffled;
   };
 
-  // Generate tournament bracket with shuffle
-  // REPLACE fungsi generateBracket dengan ini:
-
-const generateBracket = async (shuffle: boolean = true) => {
+const generateBracket = async (shuffle: boolean = false) => {
   if (!selectedKelas) return;
   
-  // Validate selection
-  if (selectedParticipants.size < 2) {
-    showNotification(
-      'warning',
-      'Peserta Tidak Cukup',
-      'Minimal 2 peserta harus dipilih untuk membuat bracket',
-      () => setShowModal(false)
-    );
-    return;
+  // Validate BYE selection for PRESTASI
+  if (!isPemula && selectedParticipants.size > 0) {
+    const byesNeeded = Math.pow(2, Math.ceil(Math.log2(approvedParticipants.length))) - approvedParticipants.length;
+    if (selectedParticipants.size !== byesNeeded) {
+      showNotification(
+        'warning',
+        'Jumlah BYE Tidak Sesuai',
+        `Pilih tepat ${byesNeeded} peserta untuk BYE`,
+        () => setShowModal(false)
+      );
+      return;
+    }
   }
   
   setLoading(true);
-  setShowParticipantSelection(false); // Close modal
+  setShowParticipantSelection(false);
   
   try {
     const kompetisiId = selectedKelas.kompetisi.id_kompetisi;
     const kelasKejuaraanId = selectedKelas.id_kelas_kejuaraan;
 
-    console.log(`🎯 Generating bracket for kompetisi ${kompetisiId}, kelas ${kelasKejuaraanId}`);
-    console.log(`✅ Selected ${selectedParticipants.size} participants:`, Array.from(selectedParticipants));
+    console.log(`🎯 Generating bracket with ${selectedParticipants.size} BYE participants`);
 
-    // Call API to generate bracket
-    const endpoint = shuffle 
-      ? `${apiBaseUrl}/kompetisi/${kompetisiId}/brackets/shuffle`
-      : `${apiBaseUrl}/kompetisi/${kompetisiId}/brackets/generate`;
+    const endpoint = `${apiBaseUrl}/kompetisi/${kompetisiId}/brackets/generate`;
     
     const response = await fetch(endpoint, {
-      method: shuffle ? 'PUT' : 'POST',
+      method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         ...(token && { 'Authorization': `Bearer ${token}` })
       },
       body: JSON.stringify({
         kelasKejuaraanId: kelasKejuaraanId,
-        participantIds: Array.from(selectedParticipants) // ⭐ Kirim selected participants
+        byeParticipantIds: isPemula ? undefined : Array.from(selectedParticipants) // ⭐ Send BYE IDs
       })
     });
 
@@ -291,13 +292,12 @@ const generateBracket = async (shuffle: boolean = true) => {
     const result = await response.json();
     console.log('✅ Bracket generated:', result);
 
-    // Fetch updated bracket data
     await fetchBracketData(kompetisiId, kelasKejuaraanId);
     
     showNotification(
       'success',
       'Berhasil!',
-      shuffle ? 'Bracket berhasil diacak ulang!' : 'Bracket berhasil dibuat!',
+      'Bracket berhasil dibuat!',
       () => setShowModal(false)
     );
     
@@ -306,7 +306,7 @@ const generateBracket = async (shuffle: boolean = true) => {
     showNotification(
       'error',
       'Gagal Membuat Bracket',
-      error.message || 'Terjadi kesalahan saat membuat bracket. Silakan coba lagi.',
+      error.message || 'Terjadi kesalahan saat membuat bracket.',
       () => setShowModal(false)
     );
   } finally {
@@ -2144,7 +2144,7 @@ const canvas = await html2canvas(bracketRef.current, {
           </div>
         </div>
       )}
-      {/* Participant Selection Modal */}
+{/* Participant Selection Modal - BYE SELECTION ONLY */}
 {showParticipantSelection && (
   <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
     <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[80vh] flex flex-col">
@@ -2153,10 +2153,14 @@ const canvas = await html2canvas(bracketRef.current, {
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-xl font-bold" style={{ color: '#050505' }}>
-              Pilih Peserta untuk Bracket
+              Pilih Peserta yang Mendapat BYE
             </h3>
             <p className="text-sm mt-1" style={{ color: '#050505', opacity: 0.6 }}>
-              Pilih minimal 2 peserta untuk membuat bracket turnamen
+              Pilih <strong>{(() => {
+                const total = approvedParticipants.length;
+                const nextPowerOf2 = Math.pow(2, Math.ceil(Math.log2(total)));
+                return nextPowerOf2 - total;
+              })()}</strong> peserta yang akan mendapat BYE (auto ke Round 2)
             </p>
           </div>
           <button
@@ -2168,77 +2172,105 @@ const canvas = await html2canvas(bracketRef.current, {
         </div>
       </div>
 
-      {/* Select All */}
+      {/* BYE Info Banner */}
+      <div className="p-4 bg-yellow-50 border-b border-yellow-200">
+        <div className="flex items-start gap-3">
+          <AlertTriangle size={20} className="text-yellow-600 flex-shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-yellow-800">
+              Total Peserta: {approvedParticipants.length}
+            </p>
+            <p className="text-xs text-yellow-700 mt-1">
+              Bracket size: {Math.pow(2, Math.ceil(Math.log2(approvedParticipants.length)))} | 
+              BYE diperlukan: {Math.pow(2, Math.ceil(Math.log2(approvedParticipants.length))) - approvedParticipants.length} peserta
+            </p>
+            <p className="text-xs text-yellow-700 mt-1">
+              Peserta yang dipilih akan langsung masuk Round 2 tanpa bertanding di Round 1
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Selection Counter */}
       <div className="p-4 border-b" style={{ borderColor: 'rgba(0,0,0,0.1)' }}>
-        <label className="flex items-center gap-3 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={selectAll}
-            onChange={handleSelectAll}
-            className="w-5 h-5 rounded border-2 cursor-pointer"
-            style={{ 
-              accentColor: '#990D35',
-              borderColor: '#990D35' 
-            }}
-          />
+        <div className="flex items-center justify-between">
           <span className="font-semibold" style={{ color: '#050505' }}>
-            Pilih Semua ({approvedParticipants.length} peserta)
+            Dipilih: {selectedParticipants.size} / {Math.pow(2, Math.ceil(Math.log2(approvedParticipants.length))) - approvedParticipants.length}
           </span>
-        </label>
+          {selectedParticipants.size === (Math.pow(2, Math.ceil(Math.log2(approvedParticipants.length))) - approvedParticipants.length) && (
+            <span className="text-sm font-medium text-green-600 flex items-center gap-1">
+              <CheckCircle size={16} />
+              Sudah cukup!
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Participants List */}
       <div className="flex-1 overflow-y-auto p-4">
         <div className="space-y-2">
-          {approvedParticipants.map((participant) => (
-            <label
-              key={participant.id_peserta_kompetisi}
-              className="flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer hover:bg-gray-50 transition-all"
-              style={{ 
-                borderColor: selectedParticipants.has(participant.id_peserta_kompetisi) 
-                  ? '#990D35' 
-                  : '#e5e7eb',
-                backgroundColor: selectedParticipants.has(participant.id_peserta_kompetisi)
-                  ? 'rgba(153, 13, 53, 0.05)'
-                  : 'white'
-              }}
-            >
-              <input
-                type="checkbox"
-                checked={selectedParticipants.has(participant.id_peserta_kompetisi)}
-                onChange={() => handleSelectParticipant(participant.id_peserta_kompetisi)}
-                className="w-5 h-5 rounded border-2 cursor-pointer"
+          {approvedParticipants.map((participant) => {
+            const isSelected = selectedParticipants.has(participant.id_peserta_kompetisi);
+            const byesNeeded = Math.pow(2, Math.ceil(Math.log2(approvedParticipants.length))) - approvedParticipants.length;
+            const canSelect = isSelected || selectedParticipants.size < byesNeeded;
+            
+            return (
+              <label
+                key={participant.id_peserta_kompetisi}
+                className={`flex items-center gap-3 p-3 rounded-lg border-2 transition-all ${
+                  canSelect ? 'cursor-pointer hover:bg-gray-50' : 'opacity-50 cursor-not-allowed'
+                }`}
                 style={{ 
-                  accentColor: '#990D35',
-                  borderColor: '#990D35' 
+                  borderColor: isSelected ? '#F5B700' : '#e5e7eb',
+                  backgroundColor: isSelected ? 'rgba(245, 183, 0, 0.05)' : 'white'
                 }}
-              />
-              
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <span 
-                    className="text-xs font-bold px-2 py-0.5 rounded"
-                    style={{ 
-                      backgroundColor: '#990D35', 
-                      color: 'white' 
-                    }}
-                  >
-                    #{participant.id_peserta_kompetisi}
-                  </span>
-                  <span className="font-bold" style={{ color: '#050505' }}>
-                    {getParticipantName(participant)}
-                  </span>
+              >
+                <input
+                  type="checkbox"
+                  checked={isSelected}
+                  onChange={() => canSelect && handleSelectParticipant(participant.id_peserta_kompetisi)}
+                  disabled={!canSelect}
+                  className="w-5 h-5 rounded border-2 cursor-pointer"
+                  style={{ 
+                    accentColor: '#F5B700',
+                    borderColor: '#F5B700' 
+                  }}
+                />
+                
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <span 
+                      className="text-xs font-bold px-2 py-0.5 rounded"
+                      style={{ 
+                        backgroundColor: '#990D35', 
+                        color: 'white' 
+                      }}
+                    >
+                      #{participant.id_peserta_kompetisi}
+                    </span>
+                    <span className="font-bold" style={{ color: '#050505' }}>
+                      {getParticipantName(participant)}
+                    </span>
+                    {isSelected && (
+                      <span 
+                        className="text-xs font-semibold px-2 py-0.5 rounded-full"
+                        style={{ backgroundColor: '#F5B700', color: 'white' }}
+                      >
+                        🎁 BYE
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs uppercase mt-1" style={{ color: '#050505', opacity: 0.6 }}>
+                    {getDojoName(participant)}
+                  </p>
                 </div>
-                <p className="text-xs uppercase mt-1" style={{ color: '#050505', opacity: 0.6 }}>
-                  {getDojoName(participant)}
-                </p>
-              </div>
 
-              {selectedParticipants.has(participant.id_peserta_kompetisi) && (
-                <CheckCircle size={20} style={{ color: '#22c55e' }} />
-              )}
-            </label>
-          ))}
+                {isSelected && (
+                  <CheckCircle size={20} style={{ color: '#F5B700' }} />
+                )}
+              </label>
+            );
+          })}
         </div>
       </div>
 
@@ -2252,31 +2284,29 @@ const canvas = await html2canvas(bracketRef.current, {
           Batal
         </button>
         <button
-          onClick={() => generateBracket(true)} // ⭐ Shuffle mode
-          disabled={selectedParticipants.size < 2}
-          className="flex-1 py-3 px-4 rounded-lg font-medium transition-all disabled:opacity-50"
-          style={{ 
-            backgroundColor: '#6366F1', 
-            color: '#F5FBEF' 
+          onClick={() => {
+            const byesNeeded = Math.pow(2, Math.ceil(Math.log2(approvedParticipants.length))) - approvedParticipants.length;
+            if (selectedParticipants.size !== byesNeeded) {
+              showNotification(
+                'warning',
+                'Jumlah BYE Tidak Sesuai',
+                `Anda harus memilih tepat ${byesNeeded} peserta untuk BYE. Saat ini: ${selectedParticipants.size}`,
+                () => setShowModal(false)
+              );
+              return;
+            }
+            generateBracket(false); // Generate with BYE selection
           }}
-        >
-          <div className="flex items-center justify-center gap-2">
-            <Shuffle size={16} />
-            <span>Shuffle ({selectedParticipants.size})</span>
-          </div>
-        </button>
-        <button
-          onClick={() => generateBracket(false)} // ⭐ Sequential mode
-          disabled={selectedParticipants.size < 2}
+          disabled={selectedParticipants.size !== (Math.pow(2, Math.ceil(Math.log2(approvedParticipants.length))) - approvedParticipants.length)}
           className="flex-1 py-3 px-4 rounded-lg font-medium transition-all disabled:opacity-50"
           style={{ 
-            backgroundColor: '#F5B700', 
+            backgroundColor: '#990D35', 
             color: '#F5FBEF' 
           }}
         >
           <div className="flex items-center justify-center gap-2">
             <RefreshCw size={16} />
-            <span>Sequential ({selectedParticipants.size})</span>
+            <span>Generate Bracket</span>
           </div>
         </button>
       </div>
