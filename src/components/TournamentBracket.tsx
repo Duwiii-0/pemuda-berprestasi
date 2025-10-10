@@ -1164,7 +1164,6 @@ const canvas = await html2canvas(bracketRef.current, {
             </div>
 
             <div className="flex gap-3">
-// REPLACE bagian button "Shuffle & Generate" dan "Regenerate" dengan ini:
 
 <button
   onClick={openParticipantSelection} // ⭐ Ubah dari generateBracket(true)
@@ -1924,57 +1923,42 @@ const canvas = await html2canvas(bracketRef.current, {
         </div>
       ) : (
         /* No Bracket State */
-        <div className="p-6">
-          <div className="text-center py-16">
-            <Trophy size={64} style={{ color: '#990D35', opacity: 0.4 }} className="mx-auto mb-4" />
-            <h3 className="text-xl font-semibold mb-2" style={{ color: '#050505' }}>
-              {approvedParticipants.length < 2 ? 'Insufficient Participants' : 'Tournament Bracket Not Generated'}
-            </h3>
-            <p className="text-base mb-6" style={{ color: '#050505', opacity: 0.6 }}>
-              {approvedParticipants.length < 2 
-                ? `Need at least 2 approved participants. Currently have ${approvedParticipants.length}.`
-                : 'Click "Generate Bracket" to create the tournament bracket'
-              }
-            </p>
-            {approvedParticipants.length >= 2 && (
-              <div className="flex gap-3 justify-center">
-                <button
-                  onClick={() => generateBracket(true)}
-                  disabled={loading}
-                  className="px-6 py-3 rounded-lg font-medium transition-all disabled:opacity-50"
-                  style={{ backgroundColor: '#6366F1', color: '#F5FBEF' }}
-                >
-                  {loading ? (
-                    <div className="flex items-center gap-2">
-                      <RefreshCw size={16} className="animate-spin" />
-                      <span>Shuffling & Generating...</span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <Shuffle size={16} />
-                      <span>Shuffle & Generate Bracket</span>
-                    </div>
-                  )}
-                </button>
-                <button
-                  onClick={() => generateBracket(false)}
-                  disabled={loading}
-                  className="px-6 py-3 rounded-lg font-medium transition-all disabled:opacity-50"
-                  style={{ backgroundColor: '#F5B700', color: '#F5FBEF' }}
-                >
-                  {loading ? (
-                    <div className="flex items-center gap-2">
-                      <RefreshCw size={16} className="animate-spin" />
-                      <span>Generating...</span>
-                    </div>
-                  ) : (
-                    'Generate Sequential Bracket'
-                  )}
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
+<div className="p-6">
+  <div className="text-center py-16">
+    <Trophy size={64} style={{ color: '#990D35', opacity: 0.4 }} className="mx-auto mb-4" />
+    <h3 className="text-xl font-semibold mb-2" style={{ color: '#050505' }}>
+      {approvedParticipants.length < 2 ? 'Insufficient Participants' : 'Tournament Bracket Not Generated'}
+    </h3>
+    <p className="text-base mb-6" style={{ color: '#050505', opacity: 0.6 }}>
+      {approvedParticipants.length < 2 
+        ? `Need at least 2 approved participants. Currently have ${approvedParticipants.length}.`
+        : 'Click "Select & Generate" to create the tournament bracket'
+      }
+    </p>
+    {approvedParticipants.length >= 2 && (
+      <div className="flex gap-3 justify-center">
+        <button
+          onClick={openParticipantSelection} // ⭐ CHANGED: Buka modal selection
+          disabled={loading}
+          className="px-6 py-3 rounded-lg font-medium transition-all disabled:opacity-50 hover:opacity-90"
+          style={{ backgroundColor: '#6366F1', color: '#F5FBEF' }}
+        >
+          {loading ? (
+            <div className="flex items-center gap-2">
+              <RefreshCw size={16} className="animate-spin" />
+              <span>Processing...</span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <Shuffle size={16} />
+              <span>Select & Generate Bracket</span>
+            </div>
+          )}
+        </button>
+      </div>
+    )}
+  </div>
+</div>
       )}
 
       {/* Edit Match Modal */}
