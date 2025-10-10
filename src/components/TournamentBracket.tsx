@@ -63,6 +63,7 @@ interface KelasKejuaraan {
     tanggal_mulai: string;
     tanggal_selesai: string;
     lokasi: string;
+    status: 'PENDAFTARAN' | 'SEDANG_DIMULAI' | 'SELESAI'; // ⬅️ TAMBAH INI
   };
   peserta_kompetisi: Peserta[];
   bagan: {
@@ -96,6 +97,8 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
   const [bracketGenerated, setBracketGenerated] = useState(false);
   const [saving, setSaving] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [clearing, setClearing] = useState(false); 
+  const [deleting, setDeleting] = useState(false); 
   const bracketRef = React.useRef<HTMLDivElement>(null);
   const leaderboardRef = React.useRef<HTMLDivElement>(null);
   
@@ -368,7 +371,148 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
       setSaving(false);
     }
   };
-// Helper to convert modern color spaces (oklch, oklab, lch, lab) to rgb
+
+// Clear match results (reset scores only)
+const clearBracketResults = async () => {
+  if (!selectedKelas) return;
+  
+  const kompetisiId = selectedKelas.kompetisi.id_kompetisi;
+  const kelasKejuaraanId = selectedKelas.id_kelas_kejuaraan;
+
+  showConfirmation(
+    'Hapus Semua Hasil Pertandingan?',
+    'Semua skor akan direset ke 0. Struktur bracket tetap sama. Aksi ini tidak dapat dibatalkan.',
+    async () => {
+      setClearing(true);
+      try {
+        console.log(`🧹 Clearing results for kompetisi ${kompetisiId}, kelas ${kelasKejuaraanId}`);
+
+        const response = await fetch(
+          `${apiBaseUrl}/kompetisi/${kompetisiId}/brackets/${kelasKejuaraanId}/clear-results`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(token && { 'Authorization': `Bearer ${token}` })
+            }
+          }
+        );
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Failed to clear results');
+        }
+
+        const result = await response.json();
+        console.log('✅ Results cleared:', result);
+
+        // Refresh bracket data
+        await fetchBracketData(kompetisiId, kelasKejuaraanId);
+
+        showNotification(
+          'success',
+          'Berhasil!',
+          'Semua hasil pertandingan berhasil direset',
+          () => setShowModal(false)
+        );
+      } catch (error: any) {
+        console.error('❌ Error clearing results:', error);
+        showNotification(
+          'error',
+          'Gagal Mereset Hasil',
+          error.message || 'Terjadi kesalahan saat mereset hasil. Silakan coba lagi.',
+          () => setShowModal(false)
+        );
+      } finally {
+        setClearing(false);
+      }
+    },
+    () => setShowModal(false)
+  );
+};
+
+// Delete entire bracket
+const deleteBracketPermanent = async () => {
+  if (!selectedKelas) return;
+  
+  const kompetisiId = selectedKelas.kompetisi.id_kompetisi;
+  const kelasKejuaraanId = selectedKelas.id_kelas_kejuaraan;
+  const isSelesai = selectedKelas.kompetisi.status === 'SELESAI';
+
+  const confirmationSteps = async () => {
+    // First confirmation
+    showConfirmation(
+      'Hapus Bracket Turnamen?',
+      'Bracket akan dihapus PERMANENT termasuk semua pertandingan dan hasil. Anda harus generate ulang dari awal. Aksi ini tidak dapat dibatalkan.',
+      async () => {
+        // If competition is SELESAI, show second confirmation
+        if (isSelesai) {
+          showConfirmation(
+            '⚠️ Kompetisi Sudah Selesai!',
+            'Kompetisi ini sudah berstatus SELESAI. Apakah Anda YAKIN ingin menghapus bracket? Data hasil tidak dapat dikembalikan.',
+            async () => {
+              await executeDeletion();
+            },
+            () => setShowModal(false)
+          );
+        } else {
+          await executeDeletion();
+        }
+      },
+      () => setShowModal(false)
+    );
+  };
+
+  const executeDeletion = async () => {
+    setDeleting(true);
+    try {
+      console.log(`🗑️ Deleting bracket for kompetisi ${kompetisiId}, kelas ${kelasKejuaraanId}`);
+
+      const response = await fetch(
+        `${apiBaseUrl}/kompetisi/${kompetisiId}/brackets/${kelasKejuaraanId}`,
+        {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token && { 'Authorization': `Bearer ${token}` })
+          }
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to delete bracket');
+      }
+
+      const result = await response.json();
+      console.log('✅ Bracket deleted:', result);
+
+      // Reset state
+      setMatches([]);
+      setBracketGenerated(false);
+
+      showNotification(
+        'success',
+        'Berhasil!',
+        'Bracket berhasil dihapus. Anda dapat generate bracket baru.',
+        () => setShowModal(false)
+      );
+    } catch (error: any) {
+      console.error('❌ Error deleting bracket:', error);
+      showNotification(
+        'error',
+        'Gagal Menghapus Bracket',
+        error.message || 'Terjadi kesalahan saat menghapus bracket. Silakan coba lagi.',
+        () => setShowModal(false)
+      );
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  confirmationSteps();
+};
+
 // Helper to convert modern color spaces (oklch, oklab, lch, lab) to rgb
 const convertModernColorsToRgb = (clonedDoc: Document) => {
   // STEP 1: Inject CSS to override ALL oklch colors
@@ -962,82 +1106,124 @@ const canvas = await html2canvas(bracketRef.current, {
             </div>
 
             <div className="flex gap-3">
-              <button
-                onClick={() => generateBracket(true)}
-                disabled={loading || approvedParticipants.length < 2}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50"
-                style={{ backgroundColor: '#6366F1', color: '#F5FBEF' }}
-              >
-                {loading ? (
-                  <>
-                    <RefreshCw size={16} className="animate-spin" />
-                    <span>Shuffling...</span>
-                  </>
-                ) : (
-                  <>
-                    <Shuffle size={16} />
-                    <span>Shuffle & Generate</span>
-                  </>
-                )}
-              </button>
+  <button
+    onClick={() => generateBracket(true)}
+    disabled={loading || approvedParticipants.length < 2}
+    className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50"
+    style={{ backgroundColor: '#6366F1', color: '#F5FBEF' }}
+  >
+    {loading ? (
+      <>
+        <RefreshCw size={16} className="animate-spin" />
+        <span>Shuffling...</span>
+      </>
+    ) : (
+      <>
+        <Shuffle size={16} />
+        <span>Shuffle & Generate</span>
+      </>
+    )}
+  </button>
 
-              <button
-                onClick={() => generateBracket(false)}
-                disabled={loading || approvedParticipants.length < 2}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50"
-                style={{ backgroundColor: '#F5B700', color: '#F5FBEF' }}
-              >
-                {loading ? (
-                  <>
-                    <RefreshCw size={16} className="animate-spin" />
-                    <span>Generating...</span>
-                  </>
-                ) : (
-                  <>
-                    <RefreshCw size={16} />
-                    <span>{bracketGenerated ? 'Regenerate' : 'Generate'}</span>
-                  </>
-                )}
-              </button>
-              
-              <button
-                onClick={saveBracket}
-                disabled={!bracketGenerated || saving}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50"
-                style={{ backgroundColor: '#990D35', color: '#F5FBEF' }}
-              >
-                {saving ? (
-                  <>
-                    <RefreshCw size={16} className="animate-spin" />
-                    <span>Saving...</span>
-                  </>
-                ) : (
-                  <>
-                    <Save size={16} />
-                    <span>Save</span>
-                  </>
-                )}
-              </button>
+  <button
+    onClick={() => generateBracket(false)}
+    disabled={loading || approvedParticipants.length < 2}
+    className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50"
+    style={{ backgroundColor: '#F5B700', color: '#F5FBEF' }}
+  >
+    {loading ? (
+      <>
+        <RefreshCw size={16} className="animate-spin" />
+        <span>Generating...</span>
+      </>
+    ) : (
+      <>
+        <RefreshCw size={16} />
+        <span>{bracketGenerated ? 'Regenerate' : 'Generate'}</span>
+      </>
+    )}
+  </button>
+  
+  {/* Clear Results Button */}
+  <button
+    onClick={clearBracketResults}
+    disabled={!bracketGenerated || clearing}
+    className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50"
+    style={{ backgroundColor: '#F97316', color: '#F5FBEF' }}
+    title="Reset semua skor pertandingan"
+  >
+    {clearing ? (
+      <>
+        <RefreshCw size={16} className="animate-spin" />
+        <span>Clearing...</span>
+      </>
+    ) : (
+      <>
+        <AlertTriangle size={16} />
+        <span>Clear Results</span>
+      </>
+    )}
+  </button>
 
-              <button
-                onClick={exportToPDF}
-                disabled={!bracketGenerated || exporting}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50"
-                style={{ backgroundColor: '#059669', color: '#F5FBEF' }}
-              >
-                {exporting ? (
-                  <>
-                    <RefreshCw size={16} className="animate-spin" />
-                    <span>Exporting...</span>
-                  </>
-                ) : (
-                  <>
-                    <Download size={16} />
-                    <span>Export PDF</span>
-                  </>
-                )}
-              </button>
-            </div>
+  {/* Delete Bracket Button */}
+  <button
+    onClick={deleteBracketPermanent}
+    disabled={!bracketGenerated || deleting}
+    className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50"
+    style={{ backgroundColor: '#DC2626', color: '#F5FBEF' }}
+    title="Hapus bracket secara permanen"
+  >
+    {deleting ? (
+      <>
+        <RefreshCw size={16} className="animate-spin" />
+        <span>Deleting...</span>
+      </>
+    ) : (
+      <>
+        <AlertTriangle size={16} />
+        <span>Delete Bracket</span>
+      </>
+    )}
+  </button>
+  
+  <button
+    onClick={saveBracket}
+    disabled={!bracketGenerated || saving}
+    className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50"
+    style={{ backgroundColor: '#990D35', color: '#F5FBEF' }}
+  >
+    {saving ? (
+      <>
+        <RefreshCw size={16} className="animate-spin" />
+        <span>Saving...</span>
+      </>
+    ) : (
+      <>
+        <Save size={16} />
+        <span>Save</span>
+      </>
+    )}
+  </button>
+
+  <button
+    onClick={exportToPDF}
+    disabled={!bracketGenerated || exporting}
+    className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50"
+    style={{ backgroundColor: '#059669', color: '#F5FBEF' }}
+  >
+    {exporting ? (
+      <>
+        <RefreshCw size={16} className="animate-spin" />
+        <span>Exporting...</span>
+      </>
+    ) : (
+      <>
+        <Download size={16} />
+        <span>Export PDF</span>
+      </>
+    )}
+  </button>
+</div>
           </div>
 
           {/* Competition details */}

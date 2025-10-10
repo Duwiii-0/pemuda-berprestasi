@@ -736,6 +736,139 @@ static async exportBracketToPdf(req: Request, res: Response) {
   }
 }
 
+// ==========================================
+// ADD THESE METHODS TO kompetisiController.ts
+// Place them AFTER exportBracketToPdf method
+// ==========================================
+
+/**
+ * Clear all match results (reset scores)
+ */
+static async clearBracketResults(req: Request, res: Response) {
+  try {
+    const { id, kelasKejuaraanId } = req.params;
+
+    const kompetisiId = parseInt(id);
+    const kelasId = parseInt(kelasKejuaraanId);
+
+    if (isNaN(kompetisiId) || isNaN(kelasId)) {
+      return sendError(res, 'Parameter tidak valid', 400);
+    }
+
+    // Check authorization
+    const user = req.user;
+    if (!user) {
+      return sendError(res, 'User tidak ditemukan', 401);
+    }
+
+    // Verify competition exists and user has access
+    const kompetisi = await prisma.tb_kompetisi.findUnique({
+      where: { id_kompetisi: kompetisiId },
+      include: {
+        admin: true,
+        kelas_kejuaraan: {
+          where: { id_kelas_kejuaraan: kelasId }
+        }
+      }
+    });
+
+    if (!kompetisi) {
+      return sendError(res, 'Kompetisi tidak ditemukan', 404);
+    }
+
+    if (kompetisi.kelas_kejuaraan.length === 0) {
+      return sendError(res, 'Kelas kejuaraan tidak ditemukan dalam kompetisi ini', 404);
+    }
+
+    // Authorization check
+    if (user.role === 'ADMIN_KOMPETISI') {
+      const isAdminOfThisKompetisi = kompetisi.admin.some(
+        admin => admin.id_akun === user.id_akun
+      );
+      if (!isAdminOfThisKompetisi) {
+        return sendError(res, 'Anda tidak memiliki akses untuk mereset hasil di kompetisi ini', 403);
+      }
+    } else if (user.role !== 'ADMIN') {
+      return sendError(res, 'Tidak memiliki akses untuk mereset hasil pertandingan', 403);
+    }
+
+    // Clear match results
+    const result = await BracketService.clearMatchResults(kompetisiId, kelasId);
+
+    return sendSuccess(res, result, result.message);
+  } catch (error: any) {
+    console.error('Controller - Error clearing bracket results:', error);
+    return sendError(res, error.message || 'Gagal mereset hasil pertandingan', 400);
+  }
+}
+
+/**
+ * Delete entire bracket (permanent deletion)
+ */
+static async deleteBracket(req: Request, res: Response) {
+  try {
+    const { id, kelasKejuaraanId } = req.params;
+
+    const kompetisiId = parseInt(id);
+    const kelasId = parseInt(kelasKejuaraanId);
+
+    if (isNaN(kompetisiId) || isNaN(kelasId)) {
+      return sendError(res, 'Parameter tidak valid', 400);
+    }
+
+    // Check authorization
+    const user = req.user;
+    if (!user) {
+      return sendError(res, 'User tidak ditemukan', 401);
+    }
+
+    // Verify competition exists and user has access
+    const kompetisi = await prisma.tb_kompetisi.findUnique({
+      where: { id_kompetisi: kompetisiId },
+      include: {
+        admin: true,
+        kelas_kejuaraan: {
+          where: { id_kelas_kejuaraan: kelasId }
+        }
+      }
+    });
+
+    if (!kompetisi) {
+      return sendError(res, 'Kompetisi tidak ditemukan', 404);
+    }
+
+    if (kompetisi.kelas_kejuaraan.length === 0) {
+      return sendError(res, 'Kelas kejuaraan tidak ditemukan dalam kompetisi ini', 404);
+    }
+
+    // Authorization check
+    if (user.role === 'ADMIN_KOMPETISI') {
+      const isAdminOfThisKompetisi = kompetisi.admin.some(
+        admin => admin.id_akun === user.id_akun
+      );
+      if (!isAdminOfThisKompetisi) {
+        return sendError(res, 'Anda tidak memiliki akses untuk menghapus bracket di kompetisi ini', 403);
+      }
+    } else if (user.role !== 'ADMIN') {
+      return sendError(res, 'Tidak memiliki akses untuk menghapus bracket', 403);
+    }
+
+    // Extra validation for SELESAI status - requires double confirmation from frontend
+    if (kompetisi.status === 'SELESAI') {
+      console.log('⚠️ Attempting to delete bracket for SELESAI competition - requires confirmation');
+      // Frontend should handle double confirmation before calling this
+    }
+
+    // Delete bracket
+    const result = await BracketService.deleteBracket(kompetisiId, kelasId);
+
+    return sendSuccess(res, result, result.message);
+  } catch (error: any) {
+    console.error('Controller - Error deleting bracket:', error);
+    return sendError(res, error.message || 'Gagal menghapus bracket', 400);
+  }
+}
+
 /**
  * Generate PDF for bracket
  */

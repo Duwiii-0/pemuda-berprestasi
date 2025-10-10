@@ -220,6 +220,16 @@ export const kompetisiValidation = {
       })
   }),
 
+    // Validation for clearing bracket results
+  clearBracketResults: Joi.object({
+    // No body params needed, kelasKejuaraanId comes from URL params
+  }),
+
+  // Validation for deleting bracket
+  deleteBracket: Joi.object({
+    // No body params needed, kelasKejuaraanId comes from URL params
+  }),
+
   query: Joi.object({
     page: Joi.number().integer().min(1).default(1).messages({
       'number.base': 'Page harus berupa angka',
@@ -249,5 +259,6 @@ export const kompetisiValidation = {
       'date.min': 'Tanggal mulai sampai tidak boleh sebelum tanggal mulai dari'
     })
   })
+  
 };
 

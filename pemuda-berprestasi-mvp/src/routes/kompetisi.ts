@@ -28,6 +28,15 @@ router.delete('/:id', KompetisiController.delete);
 // );
 // sementara update & delete class belum ada di controller
 
+router.post('/:id/brackets/:kelasKejuaraanId/clear-results',
+  KompetisiController.clearBracketResults
+);
+
+// Delete entire bracket (permanent)
+router.delete('/:id/brackets/:kelasKejuaraanId',
+  KompetisiController.deleteBracket
+);
+
 // Registration management
 router.get("/:id/atlet", authenticate, KompetisiController.getAtletsByKompetisi);
 router.post('/:id/register', authenticate, KompetisiController.registerAtlet);

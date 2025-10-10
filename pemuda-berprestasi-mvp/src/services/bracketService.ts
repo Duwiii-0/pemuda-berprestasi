@@ -679,4 +679,149 @@ export class BracketService {
     // This will be implemented in the controller using a PDF library
     throw new Error('PDF export functionality will be implemented in controller');
   }
+
+  /**
+ * Clear all match results (scores) but keep bracket structure
+ * Useful when admin wants to reset scores without regenerating bracket
+ */
+static async clearMatchResults(kompetisiId: number, kelasKejuaraanId: number): Promise<{
+  success: boolean;
+  message: string;
+  clearedMatches: number;
+}> {
+  try {
+    console.log(`🧹 Clearing match results for kompetisi ${kompetisiId}, kelas ${kelasKejuaraanId}`);
+
+    // Find existing bracket
+    const bagan = await prisma.tb_bagan.findFirst({
+      where: {
+        id_kompetisi: kompetisiId,
+        id_kelas_kejuaraan: kelasKejuaraanId
+      },
+      include: {
+        match: true
+      }
+    });
+
+    if (!bagan) {
+      throw new Error('Bagan tidak ditemukan');
+    }
+
+    // Reset all match scores to 0
+    // Also clear participants from rounds > 1 (they were auto-filled from previous rounds)
+    const updatePromises = bagan.match.map((match) => {
+      if (match.ronde === 1) {
+        // Round 1: Keep participants, reset scores only
+        return prisma.tb_match.update({
+          where: { id_match: match.id_match },
+          data: {
+            skor_a: 0,
+            skor_b: 0
+          }
+        });
+      } else {
+        // Rounds > 1: Clear participants AND scores (they advance from previous rounds)
+        return prisma.tb_match.update({
+          where: { id_match: match.id_match },
+          data: {
+            skor_a: 0,
+            skor_b: 0,
+            id_peserta_a: null,
+            id_peserta_b: null
+          }
+        });
+      }
+    });
+
+    await Promise.all(updatePromises);
+
+    console.log(`✅ Cleared ${bagan.match.length} matches`);
+
+    return {
+      success: true,
+      message: `Berhasil mereset ${bagan.match.length} pertandingan`,
+      clearedMatches: bagan.match.length
+    };
+  } catch (error: any) {
+    console.error('❌ Error clearing match results:', error);
+    throw new Error(error.message || 'Gagal mereset hasil pertandingan');
+  }
+}
+
+/**
+ * Delete entire bracket (bagan + matches + seeds)
+ * This is destructive and cannot be undone
+ */
+static async deleteBracket(kompetisiId: number, kelasKejuaraanId: number): Promise<{
+  success: boolean;
+  message: string;
+  deletedItems: {
+    matches: number;
+    seeds: number;
+    bracket: boolean;
+  };
+}> {
+  try {
+    console.log(`🗑️ Deleting bracket for kompetisi ${kompetisiId}, kelas ${kelasKejuaraanId}`);
+
+    // Find existing bracket
+    const bagan = await prisma.tb_bagan.findFirst({
+      where: {
+        id_kompetisi: kompetisiId,
+        id_kelas_kejuaraan: kelasKejuaraanId
+      },
+      include: {
+        match: true,
+        drawing_seed: true
+      }
+    });
+
+    if (!bagan) {
+      throw new Error('Bagan tidak ditemukan');
+    }
+
+    const matchCount = bagan.match.length;
+    const seedCount = bagan.drawing_seed.length;
+
+    // Delete in correct order due to foreign key constraints
+    // 1. Delete match_audit (if any)
+    await prisma.tb_match_audit.deleteMany({
+      where: {
+        match: {
+          id_bagan: bagan.id_bagan
+        }
+      }
+    });
+
+    // 2. Delete matches
+    await prisma.tb_match.deleteMany({
+      where: { id_bagan: bagan.id_bagan }
+    });
+
+    // 3. Delete drawing seeds
+    await prisma.tb_drawing_seed.deleteMany({
+      where: { id_bagan: bagan.id_bagan }
+    });
+
+    // 4. Delete the bracket itself
+    await prisma.tb_bagan.delete({
+      where: { id_bagan: bagan.id_bagan }
+    });
+
+    console.log(`✅ Deleted bracket: ${matchCount} matches, ${seedCount} seeds`);
+
+    return {
+      success: true,
+      message: 'Bracket berhasil dihapus',
+      deletedItems: {
+        matches: matchCount,
+        seeds: seedCount,
+        bracket: true
+      }
+    };
+  } catch (error: any) {
+    console.error('❌ Error deleting bracket:', error);
+    throw new Error(error.message || 'Gagal menghapus bracket');
+  }
+}
 }
