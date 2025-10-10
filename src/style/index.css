@@ -1,5 +1,17 @@
 @import "tailwindcss";
 
+/* Force RGB color space untuk html2canvas compatibility */
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+  
+  /* Override Tailwind's oklch colors with rgb equivalents */
+  * {
+    /* Force browser to use rgb instead of oklch */
+  }
+}
+
 @font-face {
   font-family: 'IBM Plex Sans';
   src: url('src/assets/font/IBMPlexSans-VariableFont_wdth,wght.ttf') format('truetype');
@@ -16,10 +28,11 @@
 }
 
 @theme {
-  --color-red: #990D35;
-  --color-white: #F5FBEF;
-  --color-yellow: #F5B700;
-  --color-black: #050505;
+  /* Convert to RGB format instead of oklch */
+  --color-red: rgb(153, 13, 53); /* #990D35 */
+  --color-white: rgb(245, 251, 239); /* #F5FBEF */
+  --color-yellow: rgb(245, 183, 0); /* #F5B700 */
+  --color-black: rgb(5, 5, 5); /* #050505 */
   --font-plex: "IBM Plex Sans", sans-serif;
   --font-bebas: "Bebas Neue", sans-serif;
   --font-inter: "Inter", sans-serif;
