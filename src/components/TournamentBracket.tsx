@@ -156,7 +156,37 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
     setShowModal(true);
   };
 
+  // Tambahkan setelah fungsi showConfirmation
+
+const handleSelectParticipant = (participantId: number) => {
+  setSelectedParticipants(prev => {
+    const newSet = new Set(prev);
+    if (newSet.has(participantId)) {
+      newSet.delete(participantId);
+    } else {
+      newSet.add(participantId);
+    }
+    return newSet;
+  });
+};
+
+const handleSelectAll = () => {
+  if (selectAll) {
+    // Deselect all
+    setSelectedParticipants(new Set());
+    setSelectAll(false);
+  } else {
+    // Select all approved participants
+    const allIds = new Set(
+      approvedParticipants.map(p => p.id_peserta_kompetisi)
+    );
+    setSelectedParticipants(allIds);
+    setSelectAll(true);
+  }
+};
+
 const openParticipantSelection = () => {
+  // Calculate BYEs needed
   const total = approvedParticipants.length;
   const nextPowerOf2 = Math.pow(2, Math.ceil(Math.log2(total)));
   const byesNeeded = nextPowerOf2 - total;
@@ -165,37 +195,8 @@ const openParticipantSelection = () => {
   setSelectedParticipants(new Set());
   setSelectAll(false);
   
-  console.log(`📊 Opening selection modal: ${total} participants, ${byesNeeded} BYEs needed`);
+  console.log(`📊 Need to select ${byesNeeded} participants for BYE out of ${total}`);
   
-  // ⭐ PEMULA: Langsung generate tanpa pilih BYE
-  if (isPemula) {
-    showConfirmation(
-      'Generate Bracket Pemula?',
-      `Semua ${total} peserta akan bertanding langsung tanpa sistem BYE. Lanjutkan?`,
-      () => {
-        setShowModal(false);
-        generateBracket(false);
-      },
-      () => setShowModal(false)
-    );
-    return;
-  }
-  
-  // ⭐ PRESTASI: Perfect bracket (no BYE needed)
-  if (byesNeeded === 0) {
-    showConfirmation(
-      'Perfect Bracket!',
-      `Jumlah peserta (${total}) sudah perfect power of 2. Tidak perlu BYE. Generate sekarang?`,
-      () => {
-        setShowModal(false);
-        generateBracket(false);
-      },
-      () => setShowModal(false)
-    );
-    return;
-  }
-  
-  // ⭐ PRESTASI: Show selection modal
   setShowParticipantSelection(true);
 };
 
@@ -246,14 +247,14 @@ const openParticipantSelection = () => {
 const generateBracket = async (shuffle: boolean = false) => {
   if (!selectedKelas) return;
   
-  // ⭐ OPTIONAL VALIDATION: Only validate if BYE selection mode was used
-  if (!isPemula && showParticipantSelection && selectedParticipants.size > 0) {
+  // Validate BYE selection for PRESTASI
+  if (!isPemula && selectedParticipants.size > 0) {
     const byesNeeded = Math.pow(2, Math.ceil(Math.log2(approvedParticipants.length))) - approvedParticipants.length;
     if (selectedParticipants.size !== byesNeeded) {
       showNotification(
         'warning',
         'Jumlah BYE Tidak Sesuai',
-        `Pilih tepat ${byesNeeded} peserta untuk BYE, atau kosongkan untuk auto-random`,
+        `Pilih tepat ${byesNeeded} peserta untuk BYE`,
         () => setShowModal(false)
       );
       return;
@@ -267,8 +268,7 @@ const generateBracket = async (shuffle: boolean = false) => {
     const kompetisiId = selectedKelas.kompetisi.id_kompetisi;
     const kelasKejuaraanId = selectedKelas.id_kelas_kejuaraan;
 
-    const byeIds = selectedParticipants.size > 0 ? Array.from(selectedParticipants) : undefined;
-    console.log(`🎯 Generating bracket${byeIds ? ` with ${byeIds.length} manual BYEs` : ' with auto-random BYEs'}`);
+    console.log(`🎯 Generating bracket with ${selectedParticipants.size} BYE participants`);
 
     const endpoint = `${apiBaseUrl}/kompetisi/${kompetisiId}/brackets/generate`;
     
@@ -280,7 +280,7 @@ const generateBracket = async (shuffle: boolean = false) => {
       },
       body: JSON.stringify({
         kelasKejuaraanId: kelasKejuaraanId,
-        byeParticipantIds: isPemula ? undefined : byeIds // ⭐ Optional BYE IDs
+        byeParticipantIds: isPemula ? undefined : Array.from(selectedParticipants) // ⭐ Send BYE IDs
       })
     });
 
@@ -311,7 +311,6 @@ const generateBracket = async (shuffle: boolean = false) => {
     );
   } finally {
     setLoading(false);
-    setSelectedParticipants(new Set()); // Clear selection
   }
 };
 
@@ -1164,30 +1163,29 @@ const canvas = await html2canvas(bracketRef.current, {
               </div>
             </div>
 
-<div className="flex gap-3">
-  {/* Button 1: Shuffle & Generate */}
-  <button
-    onClick={() => generateBracket(true)} // ✅ SHUFFLE mode
-    disabled={loading || approvedParticipants.length < 2}
-    className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50"
-    style={{ backgroundColor: '#6366F1', color: '#F5FBEF' }}
-  >
-    {loading ? (
-      <>
-        <RefreshCw size={16} className="animate-spin" />
-        <span>Shuffling...</span>
-      </>
-    ) : (
-      <>
-        <Shuffle size={16} />
-        <span>Shuffle & Generate</span>
-      </>
-    )}
-  </button>
+            <div className="flex gap-3">
 
-  {/* Button 2: Generate (Sequential) */}
+<button
+  onClick={openParticipantSelection} // ⭐ Ubah dari generateBracket(true)
+  disabled={loading || approvedParticipants.length < 2}
+  className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50"
+  style={{ backgroundColor: '#6366F1', color: '#F5FBEF' }}
+>
+  {loading ? (
+    <>
+      <RefreshCw size={16} className="animate-spin" />
+      <span>Processing...</span>
+    </>
+  ) : (
+    <>
+      <Shuffle size={16} />
+      <span>{bracketGenerated ? 'Edit & Regenerate' : 'Select & Generate'}</span>
+    </>
+  )}
+</button>
+
   <button
-    onClick={() => generateBracket(false)} // ✅ SEQUENTIAL mode
+    onClick={() => generateBracket(false)}
     disabled={loading || approvedParticipants.length < 2}
     className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50"
     style={{ backgroundColor: '#F5B700', color: '#F5FBEF' }}
@@ -1205,7 +1203,7 @@ const canvas = await html2canvas(bracketRef.current, {
     )}
   </button>
   
-  {/* Button 3: Clear Results */}
+  {/* Clear Results Button */}
   <button
     onClick={clearBracketResults}
     disabled={!bracketGenerated || clearing}
@@ -1226,7 +1224,7 @@ const canvas = await html2canvas(bracketRef.current, {
     )}
   </button>
 
-  {/* Button 4: Delete Bracket */}
+  {/* Delete Bracket Button */}
   <button
     onClick={deleteBracketPermanent}
     disabled={!bracketGenerated || deleting}
@@ -1247,7 +1245,6 @@ const canvas = await html2canvas(bracketRef.current, {
     )}
   </button>
   
-  {/* Button 5: Save */}
   <button
     onClick={saveBracket}
     disabled={!bracketGenerated || saving}
@@ -1267,7 +1264,6 @@ const canvas = await html2canvas(bracketRef.current, {
     )}
   </button>
 
-  {/* Button 6: Export PDF */}
   <button
     onClick={exportToPDF}
     disabled={!bracketGenerated || exporting}
@@ -1659,10 +1655,10 @@ const canvas = await html2canvas(bracketRef.current, {
               </div>
             </div>
           ) : (
-/* ========== PRESTASI LAYOUT (IMPROVED - LARGER CARDS) ========== */
+/* ========== PRESTASI LAYOUT (IMPROVED - HORIZONTAL WITH TOP HEADERS) ========== */
 <div className="overflow-x-auto overflow-y-visible pb-8">
-  {/* Round Headers */}
-  <div className="flex gap-12 mb-8 px-8 sticky top-0 z-20 bg-white/95 backdrop-blur-sm py-4 shadow-sm">
+  {/* Round Headers - HORIZONTAL AT TOP */}
+  <div className="flex gap-8 mb-6 px-8 sticky top-0 z-20 bg-white/95 backdrop-blur-sm py-4 shadow-sm">
     {Array.from({ length: totalRounds }, (_, roundIndex) => {
       const round = roundIndex + 1;
       const roundMatches = getMatchesByRound(round);
@@ -1671,15 +1667,15 @@ const canvas = await html2canvas(bracketRef.current, {
         <div 
           key={`header-${round}`}
           className="flex-shrink-0"
-          style={{ width: '400px' }} // ⭐ LARGER: 340px → 400px
+          style={{ width: '340px' }} // Match card width + padding
         >
           <div 
-            className="text-center px-6 py-4 rounded-lg font-bold text-xl shadow-md"
+            className="text-center px-6 py-3 rounded-lg font-bold text-lg shadow-md"
             style={{ backgroundColor: '#990D35', color: '#F5FBEF' }}
           >
             {getRoundName(round, totalRounds)}
           </div>
-          <div className="text-center mt-2 text-base font-medium" style={{ color: '#050505', opacity: 0.7 }}>
+          <div className="text-center mt-2 text-sm font-medium" style={{ color: '#050505', opacity: 0.6 }}>
             {roundMatches.length} {roundMatches.length === 1 ? 'Match' : 'Matches'}
           </div>
         </div>
@@ -1687,17 +1683,18 @@ const canvas = await html2canvas(bracketRef.current, {
     })}
   </div>
 
-  {/* Matches Container */}
+  {/* Matches Container - HORIZONTAL FLOW */}
   <div 
-    className="inline-flex items-center gap-12 min-w-full px-8" 
-    style={{ minHeight: '800px' }} // ⭐ TALLER: 700px → 800px
+    className="inline-flex items-center gap-8 min-w-full px-8" 
+    style={{ minHeight: '700px' }}
   >
     {Array.from({ length: totalRounds }, (_, roundIndex) => {
       const round = roundIndex + 1;
       const roundMatches = getMatchesByRound(round);
       
-      const matchCardHeight = 240; // ⭐ LARGER: 160px → 200px
-      const baseGap = 80; // ⭐ MORE SPACE: 60px → 80px
+      // Dynamic spacing based on round progression
+      const matchCardHeight = 160; // Increased from 140
+      const baseGap = 60; // Increased base gap
       const verticalSpacing = baseGap * Math.pow(2, roundIndex);
       
       return (
@@ -1705,9 +1702,9 @@ const canvas = await html2canvas(bracketRef.current, {
           key={`round-${round}`} 
           className="flex flex-col justify-center relative flex-shrink-0"
           style={{ 
-            width: '400px', // ⭐ LARGER: 340px → 400px
+            width: '340px', // Fixed width for consistency
             gap: `${verticalSpacing}px`,
-            minHeight: '700px'
+            minHeight: '600px' // Ensure minimum height
           }}
         >
           {/* Matches */}
@@ -1757,154 +1754,164 @@ const canvas = await html2canvas(bracketRef.current, {
                   </>
                 )}
 
-{/* Match Card - LARGER VERSION */}
-<div
-  className="bg-white rounded-xl shadow-lg border-2 overflow-hidden hover:shadow-2xl transition-all relative z-10"
-  style={{ 
-    borderColor: winner ? '#22c55e' : '#990D35',
-    height: `${matchCardHeight}px`, // 200px
-    display: 'flex',
-    flexDirection: 'column'
-  }}
->
-  {/* Match Header - LARGER */}
-  <div 
-    className="px-5 py-3 flex items-center justify-between border-b flex-shrink-0"
-    style={{ 
-      backgroundColor: 'rgba(153, 13, 53, 0.05)',
-      borderColor: '#990D35'
-    }}
-  >
-    <div className="flex items-center gap-3">
-      <div 
-        className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold"
-        style={{ backgroundColor: '#990D35', color: 'white' }}
-      >
-        {matchIndex + 1}
-      </div>
-      <span className="text-sm font-semibold" style={{ color: '#050505' }}>
-        Match {match.id_match}
-      </span>
-    </div>
-    <button
-      onClick={() => setEditingMatch(match)}
-      className="p-2 rounded-lg hover:bg-black/5 transition-all"
-      title="Edit Score"
-    >
-      <Edit3 size={16} style={{ color: '#990D35' }} />
-    </button>
-  </div>
+                {/* Match Card */}
+                <div
+                  className="bg-white rounded-xl shadow-lg border-2 overflow-hidden hover:shadow-xl transition-all relative z-10"
+                  style={{ 
+                    borderColor: winner ? '#22c55e' : '#990D35',
+                    height: `${matchCardHeight}px`,
+                    display: 'flex',
+                    flexDirection: 'column'
+                  }}
+                >
+                  {/* Match Header */}
+                  <div 
+                    className="px-4 py-2.5 flex items-center justify-between border-b flex-shrink-0"
+                    style={{ 
+                      backgroundColor: 'rgba(153, 13, 53, 0.05)',
+                      borderColor: '#990D35'
+                    }}
+                  >
+                    <div className="flex items-center gap-2">
+                      <div 
+                        className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold"
+                        style={{ backgroundColor: '#990D35', color: 'white' }}
+                      >
+                        {matchIndex + 1}
+                      </div>
+                      <span className="text-xs font-semibold" style={{ color: '#050505' }}>
+                        Match {match.id_match}
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => setEditingMatch(match)}
+                      className="p-1.5 rounded-lg hover:bg-black/5 transition-all"
+                      title="Edit Score"
+                    >
+                      <Edit3 size={14} style={{ color: '#990D35' }} />
+                    </button>
+                  </div>
 
-  {/* Participants - LARGER TEXT */}
-  <div className="flex-1 flex flex-col">
-    {/* Participant A */}
-    <div className="flex-1 px-5 py-4 border-b flex items-center justify-between gap-3">
-      {match.peserta_a ? (
-        <>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1.5">
-              <span 
-                className="text-sm font-bold px-3 py-1 rounded shadow-sm"
-                style={{ backgroundColor: '#3B82F6', color: 'white' }}
-              >
-                B/{match.peserta_a.id_peserta_kompetisi}
-              </span>
-              {match.skor_a > match.skor_b && hasScores && (
-                <CheckCircle size={16} className="text-green-600" />
-              )}
-            </div>
-            <p 
-              className="font-bold text-base truncate"
-              style={{ color: '#050505' }}
-            >
-              {getParticipantName(match.peserta_a)}
-            </p>
-            <p 
-              className="text-sm truncate mt-1"
-              style={{ color: '#3B82F6', opacity: 0.7 }}
-            >
-              {getDojoName(match.peserta_a)}
-            </p>
-          </div>
-          {hasScores && (
-            <div 
-              className="w-14 h-14 rounded-lg flex items-center justify-center font-bold text-2xl shadow-sm"
-              style={{ 
-                backgroundColor: match.skor_a > match.skor_b ? '#22c55e' : '#e5e7eb',
-                color: match.skor_a > match.skor_b ? 'white' : '#6b7280'
-              }}
-            >
-              {match.skor_a}
-            </div>
-          )}
-        </>
-      ) : (
-        <span className="text-base text-gray-400 w-full text-center">TBD</span>
-      )}
-    </div>
-                    {/* Participant B - LARGER VERSION */}
-<div 
-  className={`flex-1 px-5 py-4 flex items-center justify-between gap-3 transition-all ${
-    match.skor_b > match.skor_a && hasScores
-      ? 'bg-gradient-to-r from-green-50 to-green-100' 
-      : 'hover:bg-red-50/30'
-  }`}
->
-  {match.peserta_b ? (
-    <>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-1.5">
-          <span 
-            className="text-sm font-bold px-3 py-1 rounded shadow-sm flex-shrink-0"
-            style={{ backgroundColor: '#EF4444', color: 'white' }}
-          >
-            R/{match.peserta_b.id_peserta_kompetisi}
-          </span>
-          {match.skor_b > match.skor_a && hasScores && (
-            <CheckCircle size={16} className="text-green-600 flex-shrink-0" />
-          )}
-        </div>
-        <p 
-          className="font-bold text-base truncate leading-tight"
-          style={{ color: '#050505' }}
-          title={getParticipantName(match.peserta_b)}
-        >
-          {getParticipantName(match.peserta_b)}
-        </p>
-        <p 
-          className="text-sm truncate mt-1"
-          style={{ color: '#EF4444', opacity: 0.7 }}
-          title={getDojoName(match.peserta_b)}
-        >
-          {getDojoName(match.peserta_b)}
-        </p>
-      </div>
-      {hasScores && (
-        <div 
-          className="w-14 h-14 rounded-lg flex items-center justify-center font-bold text-2xl shadow-sm flex-shrink-0"
-          style={{ 
-            backgroundColor: match.skor_b > match.skor_a ? '#22c55e' : '#e5e7eb',
-            color: match.skor_b > match.skor_a ? 'white' : '#6b7280'
-          }}
-        >
-          {match.skor_b}
-        </div>
-      )}
-    </>
-  ) : (
-    <div className="w-full flex justify-center">
-      <span 
-        className="text-sm px-4 py-2 rounded-full font-semibold"
-        style={{ 
-          backgroundColor: 'rgba(192, 192, 192, 0.2)',
-          color: '#6b7280'
-        }}
-      >
-        🎁 BYE
-      </span>
-    </div>
-  )}
-</div>
+                  {/* Participants */}
+                  <div className="flex-1 flex flex-col">
+                    {/* Participant A */}
+                    <div 
+                      className={`flex-1 px-4 py-3 border-b flex items-center justify-between gap-3 transition-all ${
+                        match.skor_a > match.skor_b && hasScores
+                          ? 'bg-gradient-to-r from-green-50 to-green-100' 
+                          : 'hover:bg-blue-50/30'
+                      }`}
+                      style={{ borderColor: 'rgba(0, 0, 0, 0.05)' }}
+                    >
+                      {match.peserta_a ? (
+                        <>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span 
+                                className="text-xs font-bold px-2 py-0.5 rounded shadow-sm"
+                                style={{ backgroundColor: '#3B82F6', color: 'white' }}
+                              >
+                                B/{match.peserta_a.id_peserta_kompetisi}
+                              </span>
+                              {match.skor_a > match.skor_b && hasScores && (
+                                <CheckCircle size={14} className="text-green-600 flex-shrink-0" />
+                              )}
+                            </div>
+                            <p 
+                              className="font-bold text-sm truncate leading-tight"
+                              style={{ color: '#050505' }}
+                              title={getParticipantName(match.peserta_a)}
+                            >
+                              {getParticipantName(match.peserta_a)}
+                            </p>
+                            <p 
+                              className="text-xs truncate mt-0.5"
+                              style={{ color: '#3B82F6', opacity: 0.7 }}
+                              title={getDojoName(match.peserta_a)}
+                            >
+                              {getDojoName(match.peserta_a)}
+                            </p>
+                          </div>
+                          {hasScores && (
+                            <div 
+                              className="w-12 h-12 rounded-lg flex items-center justify-center font-bold text-lg shadow-sm flex-shrink-0"
+                              style={{ 
+                                backgroundColor: match.skor_a > match.skor_b ? '#22c55e' : '#e5e7eb',
+                                color: match.skor_a > match.skor_b ? 'white' : '#6b7280'
+                              }}
+                            >
+                              {match.skor_a}
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <span className="text-sm text-gray-400 w-full text-center font-medium">TBD</span>
+                      )}
+                    </div>
+
+                    {/* Participant B */}
+                    <div 
+                      className={`flex-1 px-4 py-3 flex items-center justify-between gap-3 transition-all ${
+                        match.skor_b > match.skor_a && hasScores
+                          ? 'bg-gradient-to-r from-green-50 to-green-100' 
+                          : 'hover:bg-red-50/30'
+                      }`}
+                    >
+                      {match.peserta_b ? (
+                        <>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span 
+                                className="text-xs font-bold px-2 py-0.5 rounded shadow-sm"
+                                style={{ backgroundColor: '#EF4444', color: 'white' }}
+                              >
+                                R/{match.peserta_b.id_peserta_kompetisi}
+                              </span>
+                              {match.skor_b > match.skor_a && hasScores && (
+                                <CheckCircle size={14} className="text-green-600 flex-shrink-0" />
+                              )}
+                            </div>
+                            <p 
+                              className="font-bold text-sm truncate leading-tight"
+                              style={{ color: '#050505' }}
+                              title={getParticipantName(match.peserta_b)}
+                            >
+                              {getParticipantName(match.peserta_b)}
+                            </p>
+                            <p 
+                              className="text-xs truncate mt-0.5"
+                              style={{ color: '#EF4444', opacity: 0.7 }}
+                              title={getDojoName(match.peserta_b)}
+                            >
+                              {getDojoName(match.peserta_b)}
+                            </p>
+                          </div>
+                          {hasScores && (
+                            <div 
+                              className="w-12 h-12 rounded-lg flex items-center justify-center font-bold text-lg shadow-sm flex-shrink-0"
+                              style={{ 
+                                backgroundColor: match.skor_b > match.skor_a ? '#22c55e' : '#e5e7eb',
+                                color: match.skor_b > match.skor_a ? 'white' : '#6b7280'
+                              }}
+                            >
+                              {match.skor_b}
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <div className="w-full flex justify-center">
+                          <span 
+                            className="text-xs px-3 py-1.5 rounded-full font-medium"
+                            style={{ 
+                              backgroundColor: 'rgba(192, 192, 192, 0.15)',
+                              color: '#6b7280'
+                            }}
+                          >
+                            🎁 BYE
+                          </span>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   {/* Match Status Footer */}
@@ -2102,56 +2109,69 @@ const canvas = await html2canvas(bracketRef.current, {
               </p>
             </div>
             
-            {/* Modal Footer - WITH SKIP OPTION */}
-<div className="p-6 border-t flex gap-3" style={{ borderColor: 'rgba(0,0,0,0.1)' }}>
-    {/* Button 1: Batal */}
-  <button
-    onClick={() => {
-      setShowParticipantSelection(false);
-      setSelectedParticipants(new Set()); // Clear selection
-    }}
-    className="flex-1 py-3 px-4 rounded-lg border-2 font-medium transition-all hover:bg-gray-50"
-    style={{ borderColor: '#DC2626', color: '#DC2626' }}
-  >
-    <div className="flex items-center justify-center gap-2">
-      <span className="text-lg">✕</span>
-      <span>Batal</span>
-    </div>
-  </button>
-  
-<button
-    onClick={() => {
-      const byesNeeded = Math.pow(2, Math.ceil(Math.log2(approvedParticipants.length))) - approvedParticipants.length;
-      
-      if (selectedParticipants.size !== byesNeeded) {
-        showNotification(
-          'warning',
-          'Jumlah BYE Tidak Sesuai',
-          `Anda harus memilih tepat ${byesNeeded} peserta untuk BYE. Saat ini: ${selectedParticipants.size}`,
-          () => setShowModal(false)
-        );
-        return;
-      }
-      
-      setShowParticipantSelection(false);
-      generateBracket(false); // Generate with manual selection
-    }}
-    disabled={selectedParticipants.size === 0}
-    className="flex-1 py-3 px-4 rounded-lg font-medium transition-all disabled:opacity-50 hover:opacity-90"
-    style={{ 
-      backgroundColor: '#990D35', 
-      color: '#F5FBEF' 
-    }}
-  >
-    <div className="flex items-center justify-center gap-2">
-      <CheckCircle size={16} />
-      <span>Generate with Selection</span>
-    </div>
-  </button>
-</div>
+            {/* Modal Footer */}
+            <div className="p-6 border-t flex gap-3" style={{ borderColor: 'rgba(0, 0, 0, 0.1)' }}>
+              {modalConfig.cancelText && (
+                <button
+                  onClick={() => {
+                    if (modalConfig.onCancel) modalConfig.onCancel();
+                    setShowModal(false);
+                  }}
+                  className="flex-1 py-3 px-4 rounded-lg border font-medium transition-all hover:bg-gray-50"
+                  style={{ borderColor: '#990D35', color: '#990D35' }}
+                >
+                  {modalConfig.cancelText}
+                </button>
+              )}
+              <button
+                onClick={() => {
+                  if (modalConfig.onConfirm) modalConfig.onConfirm();
+                  setShowModal(false);
+                }}
+                className="flex-1 py-3 px-4 rounded-lg font-medium transition-all hover:opacity-90"
+                style={{ 
+                  backgroundColor: 
+                    modalConfig.type === 'success' ? '#22c55e' :
+                    modalConfig.type === 'error' ? '#ef4444' :
+                    modalConfig.type === 'warning' ? '#F5B700' :
+                    '#990D35',
+                  color: '#F5FBEF' 
+                }}
+              >
+                {modalConfig.confirmText || 'OK'}
+              </button>
+            </div>
           </div>
         </div>
       )}
+{/* Participant Selection Modal - BYE SELECTION ONLY */}
+{showParticipantSelection && (
+  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[80vh] flex flex-col">
+      {/* Modal Header */}
+      <div className="p-6 border-b" style={{ borderColor: '#990D35' }}>
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-xl font-bold" style={{ color: '#050505' }}>
+              Pilih Peserta yang Mendapat BYE
+            </h3>
+            <p className="text-sm mt-1" style={{ color: '#050505', opacity: 0.6 }}>
+              Pilih <strong>{(() => {
+                const total = approvedParticipants.length;
+                const nextPowerOf2 = Math.pow(2, Math.ceil(Math.log2(total)));
+                return nextPowerOf2 - total;
+              })()}</strong> peserta yang akan mendapat BYE (auto ke Round 2)
+            </p>
+          </div>
+          <button
+            onClick={() => setShowParticipantSelection(false)}
+            className="p-2 rounded-lg hover:bg-black/5 transition-all"
+          >
+            <span className="text-2xl" style={{ color: '#990D35' }}>×</span>
+          </button>
+        </div>
+      </div>
+
       {/* BYE Info Banner */}
       <div className="p-4 bg-yellow-50 border-b border-yellow-200">
         <div className="flex items-start gap-3">
@@ -2208,6 +2228,7 @@ const canvas = await html2canvas(bracketRef.current, {
                 <input
                   type="checkbox"
                   checked={isSelected}
+                  onChange={() => canSelect && handleSelectParticipant(participant.id_peserta_kompetisi)}
                   disabled={!canSelect}
                   className="w-5 h-5 rounded border-2 cursor-pointer"
                   style={{ 
@@ -2289,6 +2310,9 @@ const canvas = await html2canvas(bracketRef.current, {
           </div>
         </button>
       </div>
+    </div>
+  </div>
+)}
     </div>
   );
 };
