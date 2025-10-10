@@ -372,171 +372,95 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
 const convertModernColorsToRgb = (clonedDoc: Document) => {
   const allElements = clonedDoc.querySelectorAll('*');
   
-  // Comprehensive color mapping for common Tailwind colors
-  const colorMap: { [key: string]: string } = {
-    // Black & White
-    'oklch(0 0 0)': 'rgb(0, 0, 0)',
-    'oklch(1 0 0)': 'rgb(255, 255, 255)',
-    'oklab(0 0 0)': 'rgb(0, 0, 0)',
-    'oklab(1 0 0)': 'rgb(255, 255, 255)',
-    
-    // Custom theme colors
-    'oklch(0.98 0.01 106.42)': 'rgb(245, 251, 239)', // white
-    'oklch(0.39 0.13 16.32)': 'rgb(153, 13, 53)', // red
-    'oklch(0.80 0.13 91.23)': 'rgb(245, 183, 0)', // yellow
-    'oklch(0.08 0 0)': 'rgb(5, 5, 5)', // black
-    
-    // Common grays
-    'oklch(0.95 0 0)': 'rgb(242, 242, 242)',
-    'oklch(0.90 0 0)': 'rgb(229, 229, 229)',
-    'oklch(0.85 0 0)': 'rgb(212, 212, 212)',
-    'oklch(0.75 0 0)': 'rgb(191, 191, 191)',
-    'oklch(0.50 0 0)': 'rgb(128, 128, 128)',
-    'oklch(0.25 0 0)': 'rgb(64, 64, 64)',
-    
-    // Tailwind blue
-    'oklch(0.55 0.25 263.03)': 'rgb(59, 130, 246)',
-    
-    // Tailwind red
-    'oklch(0.55 0.22 25.33)': 'rgb(239, 68, 68)',
-    
-    // Tailwind yellow/gold
-    'oklch(0.85 0.15 95.78)': 'rgb(245, 183, 0)',
-    
-    // Tailwind green
-    'oklch(0.65 0.20 145.82)': 'rgb(34, 197, 94)',
-    
-    // Tailwind gray variants
-    'oklch(0.97 0 0)': 'rgb(249, 250, 251)',
-    'oklch(0.94 0 0)': 'rgb(243, 244, 246)',
-  };
-  
-  // Function to replace any modern color format with rgb
-  const replaceModernColor = (value: string): string => {
-    if (!value) return value;
-    
-    // Check if contains any modern color function
-    if (!value.includes('oklch') && !value.includes('oklab') && 
-        !value.includes('lch') && !value.includes('lab')) {
-      return value;
-    }
-    
-    // Try exact match first
-    for (const [modernColor, rgbColor] of Object.entries(colorMap)) {
-      if (value.includes(modernColor)) {
-        return value.replace(modernColor, rgbColor);
-      }
-    }
-    
-    // Parse and convert oklch
-    const oklchMatch = value.match(/oklch\(([\d.]+)\s+([\d.]+)\s+([\d.]+)(?:\s*\/\s*([\d.]+))?\)/);
-    if (oklchMatch) {
-      const [, l, c, h, alpha] = oklchMatch;
-      const rgbColor = oklchToRgb(parseFloat(l), parseFloat(c), parseFloat(h));
-      const alphaValue = alpha ? parseFloat(alpha) : 1;
-      
-      if (alphaValue < 1) {
-        return value.replace(oklchMatch[0], `rgba(${rgbColor.r}, ${rgbColor.g}, ${rgbColor.b}, ${alphaValue})`);
-      }
-      return value.replace(oklchMatch[0], `rgb(${rgbColor.r}, ${rgbColor.g}, ${rgbColor.b})`);
-    }
-    
-    // Parse and convert oklab
-    const oklabMatch = value.match(/oklab\(([\d.]+)\s+([-\d.]+)\s+([-\d.]+)(?:\s*\/\s*([\d.]+))?\)/);
-    if (oklabMatch) {
-      const [, l, a, b, alpha] = oklabMatch;
-      const rgbColor = oklabToRgb(parseFloat(l), parseFloat(a), parseFloat(b));
-      const alphaValue = alpha ? parseFloat(alpha) : 1;
-      
-      if (alphaValue < 1) {
-        return value.replace(oklabMatch[0], `rgba(${rgbColor.r}, ${rgbColor.g}, ${rgbColor.b}, ${alphaValue})`);
-      }
-      return value.replace(oklabMatch[0], `rgb(${rgbColor.r}, ${rgbColor.g}, ${rgbColor.b})`);
-    }
-    
-    // Fallback for any remaining modern colors
-    return value
-      .replace(/oklch\([^)]+\)/g, 'rgb(128, 128, 128)')
-      .replace(/oklab\([^)]+\)/g, 'rgb(128, 128, 128)')
-      .replace(/lch\([^)]+\)/g, 'rgb(128, 128, 128)')
-      .replace(/lab\([^)]+\)/g, 'rgb(128, 128, 128)');
-  };
-  
-  // Simple OKLCH to RGB conversion
-  function oklchToRgb(l: number, c: number, h: number): { r: number, g: number, b: number } {
-    // Convert to OKLab first
+  // Parse oklch to rgb
+  const oklchToRgb = (l: number, c: number, h: number): string => {
     const hRad = (h * Math.PI) / 180;
     const a = c * Math.cos(hRad);
     const b = c * Math.sin(hRad);
     
-    return oklabToRgb(l, a, b);
-  }
-  
-  // Simple OKLab to RGB conversion (simplified, not perfect but works for html2canvas)
-  function oklabToRgb(l: number, a: number, b: number): { r: number, g: number, b: number } {
-    // This is a simplified conversion
-    // For perfect accuracy, would need proper OKLab -> XYZ -> RGB pipeline
-    
-    // Approximate conversion
     const l_ = l + 0.3963377774 * a + 0.2158037573 * b;
     const m_ = l - 0.1055613458 * a - 0.0638541728 * b;
     const s_ = l - 0.0894841775 * a - 1.2914855480 * b;
     
-    const l_3 = l_ * l_ * l_;
-    const m_3 = m_ * m_ * m_;
-    const s_3 = s_ * s_ * s_;
+    const l3 = l_ * l_ * l_;
+    const m3 = m_ * m_ * m_;
+    const s3 = s_ * s_ * s_;
     
-    const r = +4.0767416621 * l_3 - 3.3077115913 * m_3 + 0.2309699292 * s_3;
-    const g = -1.2684380046 * l_3 + 2.6097574011 * m_3 - 0.3413193965 * s_3;
-    const b_ = -0.0041960863 * l_3 - 0.7034186147 * m_3 + 1.7076147010 * s_3;
+    let r = +4.0767416621 * l3 - 3.3077115913 * m3 + 0.2309699292 * s3;
+    let g = -1.2684380046 * l3 + 2.6097574011 * m3 - 0.3413193965 * s3;
+    let b_ = -0.0041960863 * l3 - 0.7034186147 * m3 + 1.7076147010 * s3;
     
-    // Clamp and convert to 0-255 range
-    const clamp = (v: number) => Math.max(0, Math.min(255, Math.round(v * 255)));
+    r = Math.max(0, Math.min(255, Math.round(r * 255)));
+    g = Math.max(0, Math.min(255, Math.round(g * 255)));
+    b_ = Math.max(0, Math.min(255, Math.round(b_ * 255)));
     
-    return {
-      r: clamp(r),
-      g: clamp(g),
-      b: clamp(b_)
-    };
-  }
+    return `rgb(${r}, ${g}, ${b_})`;
+  };
   
-  // Apply conversions to all elements
-  allElements.forEach((el) => {
-    const element = el as HTMLElement;
+  // Replace modern color with rgb
+  const replaceColor = (value: string): string => {
+    if (!value || typeof value !== 'string') return value;
+    if (!value.includes('oklch') && !value.includes('oklab')) return value;
     
-    // Get all style properties
-    const style = element.style;
-    const computedStyle = window.getComputedStyle(element);
+    // Parse oklch pattern with global flag
+    let result = value;
+    const oklchRegex = /oklch\(([\d.]+)\s+([\d.]+)\s+([\d.]+)(?:\s*\/\s*([\d.]+))?\)/g;
     
-    // Color-related properties to check
-    const colorProps = [
-      'color', 'backgroundColor', 'borderColor', 
-      'borderTopColor', 'borderRightColor', 'borderBottomColor', 'borderLeftColor',
-      'fill', 'stroke', 'outlineColor', 'textDecorationColor'
-    ];
-    
-    colorProps.forEach(prop => {
-      // Check inline style
-      const inlineValue = style.getPropertyValue(prop);
-      if (inlineValue && (inlineValue.includes('oklch') || inlineValue.includes('oklab'))) {
-        style.setProperty(prop, replaceModernColor(inlineValue));
-      }
-      
-      // Check computed style and apply inline if needed
-      const computedValue = computedStyle.getPropertyValue(prop);
-      if (computedValue && (computedValue.includes('oklch') || computedValue.includes('oklab'))) {
-        style.setProperty(prop, replaceModernColor(computedValue));
+    result = result.replace(oklchRegex, (match, l, c, h, alpha) => {
+      try {
+        const rgb = oklchToRgb(parseFloat(l), parseFloat(c), parseFloat(h));
+        if (alpha && parseFloat(alpha) < 1) {
+          return rgb.replace('rgb', 'rgba').replace(')', `, ${alpha})`);
+        }
+        return rgb;
+      } catch (e) {
+        console.warn('Failed to convert oklch:', match, e);
+        return 'rgb(128, 128, 128)'; // Fallback gray
       }
     });
     
-    // Also check for background shorthand
-    if (style.background && (style.background.includes('oklch') || style.background.includes('oklab'))) {
-      style.background = replaceModernColor(style.background);
-    }
+    // Fallback: replace any remaining oklch/oklab
+    result = result.replace(/oklch\([^)]+\)/g, 'rgb(128, 128, 128)');
+    result = result.replace(/oklab\([^)]+\)/g, 'rgb(128, 128, 128)');
     
-    const computedBg = computedStyle.background;
-    if (computedBg && (computedBg.includes('oklch') || computedBg.includes('oklab'))) {
-      style.background = replaceModernColor(computedBg);
+    return result;
+  };
+  
+  // Apply to all elements
+  allElements.forEach((el) => {
+    const element = el as HTMLElement;
+    const style = element.style;
+    
+    const props = [
+      'color', 'backgroundColor', 'background',
+      'borderColor', 'borderTopColor', 'borderRightColor', 
+      'borderBottomColor', 'borderLeftColor',
+      'fill', 'stroke', 'outlineColor'
+    ];
+    
+    // Process inline styles first
+    props.forEach(prop => {
+      const value = style.getPropertyValue(prop);
+      if (value && (value.includes('oklch') || value.includes('oklab'))) {
+        const converted = replaceColor(value);
+        style.setProperty(prop, converted, 'important');
+      }
+    });
+    
+    // Process computed styles
+    try {
+      const computed = clonedDoc.defaultView?.getComputedStyle(element);
+      if (computed) {
+        props.forEach(prop => {
+          const value = computed.getPropertyValue(prop);
+          if (value && (value.includes('oklch') || value.includes('oklab'))) {
+            const converted = replaceColor(value);
+            style.setProperty(prop, converted, 'important');
+          }
+        });
+      }
+    } catch (e) {
+      // Ignore computed style errors
     }
   });
 };
@@ -616,15 +540,17 @@ if (isPemula) {
     pdf.setTextColor(5, 5, 5);
     
     // Capture matches
-    const matchesCanvas = await html2canvas(matchesContainer as HTMLElement, {
-      scale: 2,
-      useCORS: true,
-      logging: false,
-      backgroundColor: '#F5FBEF',
-      windowWidth: (matchesContainer as HTMLElement).scrollWidth,
-      windowHeight: (matchesContainer as HTMLElement).scrollHeight,
-      onclone: convertModernColorsToRgb  
-    });
+const matchesCanvas = await html2canvas(matchesContainer as HTMLElement, {
+  scale: 2,
+  useCORS: true,
+  logging: false,
+  backgroundColor: '#F5FBEF',
+  windowWidth: (matchesContainer as HTMLElement).scrollWidth,
+  windowHeight: (matchesContainer as HTMLElement).scrollHeight,
+  onclone: (clonedDoc) => {
+    convertModernColorsToRgb(clonedDoc);
+  }
+});
 
     const imgWidth = 180; // Slightly smaller for better margins
     const imgHeight = (matchesCanvas.height * imgWidth) / matchesCanvas.width;
@@ -696,15 +622,17 @@ if (isPemula) {
 
   console.log('📸 Capturing leaderboard...');
 
-  const leaderboardCanvas = await html2canvas(leaderboardRef.current, {
-    scale: 2,
-    useCORS: true,
-    logging: false,
-    backgroundColor: '#FFFFFF',
-    windowWidth: leaderboardRef.current.scrollWidth,
-    windowHeight: leaderboardRef.current.scrollHeight,
-    onclone: convertModernColorsToRgb  
-  });
+const leaderboardCanvas = await html2canvas(leaderboardRef.current, {
+  scale: 2,
+  useCORS: true,
+  logging: false,
+  backgroundColor: '#FFFFFF',
+  windowWidth: leaderboardRef.current.scrollWidth,
+  windowHeight: leaderboardRef.current.scrollHeight,
+  onclone: (clonedDoc) => {
+    convertModernColorsToRgb(clonedDoc);
+  }
+});
 
   const lbImgWidth = 180;
   const lbImgHeight = (leaderboardCanvas.height * lbImgWidth) / leaderboardCanvas.width;
@@ -762,16 +690,17 @@ if (isPemula) {
         throw new Error('Bracket element not found');
       }
       
-      const canvas = await html2canvas(bracketRef.current, {
+const canvas = await html2canvas(bracketRef.current, {
   scale: 2,
   useCORS: true,
   logging: false,
   backgroundColor: '#F5FBEF',
   windowWidth: bracketRef.current.scrollWidth,
   windowHeight: bracketRef.current.scrollHeight,
-  onclone: convertModernColorsToRgb  
+  onclone: (clonedDoc) => {
+    convertModernColorsToRgb(clonedDoc);
+  }
 });
-
       const imgWidth = 277; // A4 landscape width minus margins
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
       const imgData = canvas.toDataURL('image/png', 1.0);
