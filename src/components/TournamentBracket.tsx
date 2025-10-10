@@ -409,63 +409,119 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
       // ========== PEMULA: CAPTURE BAGAN + LEADERBOARD ==========
       
       // Add page for PARTAI PERTANDINGAN (matches)
-      pdf.addPage('a4', 'portrait');
-      
-      if (!bracketRef.current) {
-        throw new Error('Bracket element not found');
-      }
+  pdf.addPage('a4', 'portrait');
+  
+  if (!bracketRef.current) {
+    throw new Error('Bracket element not found');
+  }
 
-      // Find the matches container (left side)
-      const matchesContainer = bracketRef.current.querySelector('.grid > div:first-child');
-      
-      if (matchesContainer) {
-        const matchesCanvas = await html2canvas(matchesContainer as HTMLElement, {
-          scale: 2,
-          useCORS: true,
-          logging: false,
-          backgroundColor: '#F5FBEF',
-          windowWidth: (matchesContainer as HTMLElement).scrollWidth,
-          windowHeight: (matchesContainer as HTMLElement).scrollHeight
-        });
+  // Find the matches container (left column in grid)
+  const gridContainer = bracketRef.current.querySelector('.grid');
+  
+  if (!gridContainer) {
+    throw new Error('Grid container not found');
+  }
 
-        const imgWidth = 190; // A4 width minus margins
-        const imgHeight = (matchesCanvas.height * imgWidth) / matchesCanvas.width;
-        const imgData = matchesCanvas.toDataURL('image/png', 1.0);
+  const matchesContainer = gridContainer.querySelector('div:first-child');
+  
+  if (matchesContainer) {
+    console.log('📸 Capturing matches container...');
+    
+    const matchesCanvas = await html2canvas(matchesContainer as HTMLElement, {
+      scale: 2,
+      useCORS: true,
+      logging: false,
+      backgroundColor: '#F5FBEF',
+      windowWidth: (matchesContainer as HTMLElement).scrollWidth,
+      windowHeight: (matchesContainer as HTMLElement).scrollHeight
+    });
+
+    const imgWidth = 190; // A4 width minus margins
+    const imgHeight = (matchesCanvas.height * imgWidth) / matchesCanvas.width;
+    const imgData = matchesCanvas.toDataURL('image/png', 1.0);
+    
+    // Title
+    pdf.setFontSize(16);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setTextColor(153, 13, 53); // #990D35
+    pdf.text('🥋 PARTAI PERTANDINGAN', pdf.internal.pageSize.getWidth() / 2, 15, { align: 'center' });
+    
+    pdf.setFontSize(10);
+    pdf.setFont('helvetica', 'normal');
+    pdf.setTextColor(5, 5, 5);
+    pdf.text('Semua pertandingan dalam 1 babak', pdf.internal.pageSize.getWidth() / 2, 22, { align: 'center' });
+    
+    // Add matches image
+    const xOffset = (pdf.internal.pageSize.getWidth() - imgWidth) / 2;
+    
+    // Check if image fits in one page
+    if (imgHeight > 250) {
+      // Multi-page
+      let yPosition = 30;
+      let remainingHeight = imgHeight;
+      let sourceY = 0;
+      
+      while (remainingHeight > 0) {
+        const pageHeight = Math.min(remainingHeight, 250);
+        const sourceHeight = (pageHeight / imgWidth) * matchesCanvas.width;
         
-        // Title
-        pdf.setFontSize(16);
-        pdf.setFont('helvetica', 'bold');
-        pdf.text('🥋 PARTAI PERTANDINGAN', pdf.internal.pageSize.getWidth() / 2, 15, { align: 'center' });
+        // Create cropped canvas
+        const croppedCanvas = document.createElement('canvas');
+        croppedCanvas.width = matchesCanvas.width;
+        croppedCanvas.height = sourceHeight;
+        const ctx = croppedCanvas.getContext('2d');
         
-        // Add matches image
-        const xOffset = (pdf.internal.pageSize.getWidth() - imgWidth) / 2;
-        pdf.addImage(imgData, 'PNG', xOffset, 25, imgWidth, imgHeight);
+        if (ctx) {
+          ctx.drawImage(
+            matchesCanvas,
+            0, sourceY, matchesCanvas.width, sourceHeight,
+            0, 0, matchesCanvas.width, sourceHeight
+          );
+          
+          const croppedData = croppedCanvas.toDataURL('image/png', 1.0);
+          pdf.addImage(croppedData, 'PNG', xOffset, yPosition, imgWidth, pageHeight);
+        }
+        
+        sourceY += sourceHeight;
+        remainingHeight -= pageHeight;
+        
+        if (remainingHeight > 0) {
+          pdf.addPage('a4', 'portrait');
+          yPosition = 10;
+        }
       }
-
-      // Add page for LEADERBOARD
-      pdf.addPage('a4', 'portrait');
-      
-      if (!leaderboardRef.current) {
-        throw new Error('Leaderboard element not found');
-      }
-
-      const leaderboardCanvas = await html2canvas(leaderboardRef.current, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        backgroundColor: '#F5FBEF',
-        windowWidth: leaderboardRef.current.scrollWidth,
-        windowHeight: leaderboardRef.current.scrollHeight
-      });
-
-      const lbImgWidth = 190;
-      const lbImgHeight = (leaderboardCanvas.height * lbImgWidth) / leaderboardCanvas.width;
-      const lbImgData = leaderboardCanvas.toDataURL('image/png', 1.0);
-      
-      const lbXOffset = (pdf.internal.pageSize.getWidth() - lbImgWidth) / 2;
-      pdf.addImage(lbImgData, 'PNG', lbXOffset, 10, lbImgWidth, lbImgHeight);
-
     } else {
+      // Single page
+      pdf.addImage(imgData, 'PNG', xOffset, 30, imgWidth, imgHeight);
+    }
+  }
+
+  // Add page for LEADERBOARD
+  pdf.addPage('a4', 'portrait');
+  
+  if (!leaderboardRef.current) {
+    throw new Error('Leaderboard element not found');
+  }
+
+  console.log('📸 Capturing leaderboard...');
+
+  const leaderboardCanvas = await html2canvas(leaderboardRef.current, {
+    scale: 2,
+    useCORS: true,
+    logging: false,
+    backgroundColor: '#FFFFFF',
+    windowWidth: leaderboardRef.current.scrollWidth,
+    windowHeight: leaderboardRef.current.scrollHeight
+  });
+
+  const lbImgWidth = 190;
+  const lbImgHeight = (leaderboardCanvas.height * lbImgWidth) / leaderboardCanvas.width;
+  const lbImgData = leaderboardCanvas.toDataURL('image/png', 1.0);
+  
+  const lbXOffset = (pdf.internal.pageSize.getWidth() - lbImgWidth) / 2;
+  pdf.addImage(lbImgData, 'PNG', lbXOffset, 10, lbImgWidth, lbImgHeight);
+
+} else {
       // ========== PRESTASI: CAPTURE BRACKET TREE ==========
       
       pdf.addPage('a4', 'landscape');
@@ -848,7 +904,7 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
 
       {/* Tournament Bracket */}
       {bracketGenerated && matches.length > 0 ? (
-        <div className="p-6" ref={isPemula ? undefined : bracketRef}>
+        <div className="p-6" ref={bracketRef}>
           {isPemula ? (
             /* ========== PEMULA LAYOUT ========== */
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
