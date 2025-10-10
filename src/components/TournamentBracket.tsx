@@ -486,11 +486,8 @@ const convertOklchToRgb = (clonedDoc: Document) => {
     pdf.text(`Competition: ${kategori}`, pdf.internal.pageSize.getWidth() / 2, 55, { align: 'center' });
     pdf.text(`Category: ${kelompok} | Class: ${kelas}`, pdf.internal.pageSize.getWidth() / 2, 62, { align: 'center' });
 
-    if (isPemula) {
-      // ========== PEMULA: CAPTURE BAGAN + LEADERBOARD ==========
-      
-      // Add page for PARTAI PERTANDINGAN (matches)
-  pdf.addPage('a4', 'portrait');
+if (isPemula) {
+  // ========== PEMULA: CAPTURE BAGAN + LEADERBOARD ==========
   
   if (!bracketRef.current) {
     throw new Error('Bracket element not found');
@@ -508,46 +505,68 @@ const convertOklchToRgb = (clonedDoc: Document) => {
   if (matchesContainer) {
     console.log('📸 Capturing matches container...');
     
-    const matchesCanvas = await html2canvas(matchesContainer as HTMLElement, {
-  scale: 2,
-  useCORS: true,
-  logging: false,
-  backgroundColor: '#F5FBEF',
-  windowWidth: (matchesContainer as HTMLElement).scrollWidth,
-  windowHeight: (matchesContainer as HTMLElement).scrollHeight,
-  onclone: convertOklchToRgb
-});
-
-    const imgWidth = 190; // A4 width minus margins
-    const imgHeight = (matchesCanvas.height * imgWidth) / matchesCanvas.width;
-    const imgData = matchesCanvas.toDataURL('image/png', 1.0);
+    // Add page for PARTAI PERTANDINGAN
+    pdf.addPage('a4', 'portrait');
     
-    // Title
-    pdf.setFontSize(16);
+    // Add styled header FIRST
+    pdf.setFillColor(153, 13, 53); // #990D35
+    pdf.rect(0, 0, 210, 35, 'F'); // Full width header
+    
+    pdf.setFontSize(18);
     pdf.setFont('helvetica', 'bold');
-    pdf.setTextColor(153, 13, 53); // #990D35
-    pdf.text('🥋 PARTAI PERTANDINGAN', pdf.internal.pageSize.getWidth() / 2, 15, { align: 'center' });
+    pdf.setTextColor(255, 255, 255);
+    pdf.text('PARTAI PERTANDINGAN', 105, 15, { align: 'center' });
     
     pdf.setFontSize(10);
     pdf.setFont('helvetica', 'normal');
-    pdf.setTextColor(5, 5, 5);
-    pdf.text('Semua pertandingan dalam 1 babak', pdf.internal.pageSize.getWidth() / 2, 22, { align: 'center' });
+    pdf.text('Semua pertandingan dalam 1 babak', 105, 25, { align: 'center' });
     
-    // Add matches image
+    // Reset text color
+    pdf.setTextColor(5, 5, 5);
+    
+    // Capture matches
+    const matchesCanvas = await html2canvas(matchesContainer as HTMLElement, {
+      scale: 2,
+      useCORS: true,
+      logging: false,
+      backgroundColor: '#F5FBEF',
+      windowWidth: (matchesContainer as HTMLElement).scrollWidth,
+      windowHeight: (matchesContainer as HTMLElement).scrollHeight,
+      onclone: convertOklchToRgb
+    });
+
+    const imgWidth = 180; // Slightly smaller for better margins
+    const imgHeight = (matchesCanvas.height * imgWidth) / matchesCanvas.width;
+    const imgData = matchesCanvas.toDataURL('image/png', 1.0);
+    
     const xOffset = (pdf.internal.pageSize.getWidth() - imgWidth) / 2;
     
     // Check if image fits in one page
-    if (imgHeight > 250) {
-      // Multi-page
-      let yPosition = 30;
+    const maxHeight = 245; // Max height per page (accounting for header)
+    
+    if (imgHeight > maxHeight) {
+      // Multi-page layout
       let remainingHeight = imgHeight;
       let sourceY = 0;
+      let pageNum = 0;
       
       while (remainingHeight > 0) {
-        const pageHeight = Math.min(remainingHeight, 250);
-        const sourceHeight = (pageHeight / imgWidth) * matchesCanvas.width;
+        const pageHeight = Math.min(remainingHeight, maxHeight);
+        const sourceHeight = (pageHeight / imgHeight) * matchesCanvas.height;
         
-        // Create cropped canvas
+        if (pageNum > 0) {
+          pdf.addPage('a4', 'portrait');
+          // Add header on continuation pages too
+          pdf.setFillColor(153, 13, 53);
+          pdf.rect(0, 0, 210, 25, 'F');
+          pdf.setFontSize(12);
+          pdf.setFont('helvetica', 'bold');
+          pdf.setTextColor(255, 255, 255);
+          pdf.text('PARTAI PERTANDINGAN (lanjutan)', 105, 15, { align: 'center' });
+          pdf.setTextColor(5, 5, 5);
+        }
+        
+        // Create cropped canvas for this page
         const croppedCanvas = document.createElement('canvas');
         croppedCanvas.width = matchesCanvas.width;
         croppedCanvas.height = sourceHeight;
@@ -556,29 +575,28 @@ const convertOklchToRgb = (clonedDoc: Document) => {
         if (ctx) {
           ctx.drawImage(
             matchesCanvas,
-            0, sourceY, matchesCanvas.width, sourceHeight,
-            0, 0, matchesCanvas.width, sourceHeight
+            0, sourceY, 
+            matchesCanvas.width, sourceHeight,
+            0, 0, 
+            matchesCanvas.width, sourceHeight
           );
           
           const croppedData = croppedCanvas.toDataURL('image/png', 1.0);
-          pdf.addImage(croppedData, 'PNG', xOffset, yPosition, imgWidth, pageHeight);
+          const yPos = pageNum === 0 ? 40 : 30;
+          pdf.addImage(croppedData, 'PNG', xOffset, yPos, imgWidth, pageHeight);
         }
         
         sourceY += sourceHeight;
         remainingHeight -= pageHeight;
-        
-        if (remainingHeight > 0) {
-          pdf.addPage('a4', 'portrait');
-          yPosition = 10;
-        }
+        pageNum++;
       }
     } else {
       // Single page
-      pdf.addImage(imgData, 'PNG', xOffset, 30, imgWidth, imgHeight);
+      pdf.addImage(imgData, 'PNG', xOffset, 40, imgWidth, imgHeight);
     }
   }
 
-  // Add page for LEADERBOARD
+  // ========== LEADERBOARD PAGE ==========
   pdf.addPage('a4', 'portrait');
   
   if (!leaderboardRef.current) {
@@ -588,21 +606,61 @@ const convertOklchToRgb = (clonedDoc: Document) => {
   console.log('📸 Capturing leaderboard...');
 
   const leaderboardCanvas = await html2canvas(leaderboardRef.current, {
-  scale: 2,
-  useCORS: true,
-  logging: false,
-  backgroundColor: '#FFFFFF',
-  windowWidth: leaderboardRef.current.scrollWidth,
-  windowHeight: leaderboardRef.current.scrollHeight,
-  onclone: convertOklchToRgb
-});
+    scale: 2,
+    useCORS: true,
+    logging: false,
+    backgroundColor: '#FFFFFF',
+    windowWidth: leaderboardRef.current.scrollWidth,
+    windowHeight: leaderboardRef.current.scrollHeight,
+    onclone: convertOklchToRgb
+  });
 
-  const lbImgWidth = 190;
+  const lbImgWidth = 180;
   const lbImgHeight = (leaderboardCanvas.height * lbImgWidth) / leaderboardCanvas.width;
   const lbImgData = leaderboardCanvas.toDataURL('image/png', 1.0);
   
   const lbXOffset = (pdf.internal.pageSize.getWidth() - lbImgWidth) / 2;
-  pdf.addImage(lbImgData, 'PNG', lbXOffset, 10, lbImgWidth, lbImgHeight);
+  
+  // Add leaderboard with better positioning
+  if (lbImgHeight > 270) {
+    // If too tall, split into multiple pages
+    let remainingHeight = lbImgHeight;
+    let sourceY = 0;
+    let pageNum = 0;
+    
+    while (remainingHeight > 0) {
+      if (pageNum > 0) {
+        pdf.addPage('a4', 'portrait');
+      }
+      
+      const pageHeight = Math.min(remainingHeight, 270);
+      const sourceHeight = (pageHeight / lbImgHeight) * leaderboardCanvas.height;
+      
+      const croppedCanvas = document.createElement('canvas');
+      croppedCanvas.width = leaderboardCanvas.width;
+      croppedCanvas.height = sourceHeight;
+      const ctx = croppedCanvas.getContext('2d');
+      
+      if (ctx) {
+        ctx.drawImage(
+          leaderboardCanvas,
+          0, sourceY,
+          leaderboardCanvas.width, sourceHeight,
+          0, 0,
+          leaderboardCanvas.width, sourceHeight
+        );
+        
+        const croppedData = croppedCanvas.toDataURL('image/png', 1.0);
+        pdf.addImage(croppedData, 'PNG', lbXOffset, 15, lbImgWidth, pageHeight);
+      }
+      
+      sourceY += sourceHeight;
+      remainingHeight -= pageHeight;
+      pageNum++;
+    }
+  } else {
+    pdf.addImage(lbImgData, 'PNG', lbXOffset, 15, lbImgWidth, lbImgHeight);
+  }
 
 } else {
       // ========== PRESTASI: CAPTURE BRACKET TREE ==========
@@ -995,12 +1053,17 @@ const convertOklchToRgb = (clonedDoc: Document) => {
               {/* LEFT: All Matches */}
               <div>
                 <div className="mb-6">
-                  <h3 className="text-2xl font-bold text-center" style={{ color: '#990D35' }}>
-                    🥋 PARTAI PERTANDINGAN
-                  </h3>
-                  <p className="text-center text-sm mt-2" style={{ color: '#050505', opacity: 0.6 }}>
-                    Semua pertandingan dalam 1 babak
-                  </p>
+  <div 
+    className="rounded-lg p-4 shadow-sm"
+    style={{ backgroundColor: 'rgba(153, 13, 53, 0.05)' }}
+  >
+    <h3 className="text-2xl font-bold text-center" style={{ color: '#990D35' }}>
+      🥋 PARTAI PERTANDINGAN
+    </h3>
+    <p className="text-center text-sm mt-2" style={{ color: '#050505', opacity: 0.6 }}>
+      Semua pertandingan dalam 1 babak
+    </p>
+  </div>
                 </div>
 
                 <div className="space-y-4">
