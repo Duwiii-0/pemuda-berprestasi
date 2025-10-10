@@ -52,13 +52,13 @@ const AdminKompetisiLayout: React.FC = () => {
       active: location.pathname === '/admin-kompetisi/validasi-dojang',
       description: 'Validasi pendaftaran dojang'
     },
-    {
-      icon: BarChart3,
-      label: 'Statistik & Laporan',
-      path: '/admin-kompetisi/statistik',
-      active: location.pathname === '/admin-kompetisi/statistik',
-      description: 'Lihat statistik dan buat laporan'
-    },
+    // {
+    //   icon: BarChart3,
+    //   label: 'Statistik & Laporan',
+    //   path: '/admin-kompetisi/statistik',
+    //   active: location.pathname === '/admin-kompetisi/statistik',
+    //   description: 'Lihat statistik dan buat laporan'
+    // },
     {
       icon: GitBranch,
       label: 'Drawing Bagan',
