@@ -183,7 +183,7 @@ export class BracketService {
 static async generatePrestasiBracket(
   baganId: number, 
   participants: Participant[],
-  byeParticipantIds?: number[] // ⭐ NEW: Manual BYE selection
+  byeParticipantIds?: number[] // ⭐ OPTIONAL
 ): Promise<Match[]> {
   const participantCount = participants.length;
   
@@ -191,45 +191,46 @@ static async generatePrestasiBracket(
     throw new Error('At least 2 participants required for bracket');
   }
 
-  // ⭐ Calculate bracket structure
+  // ⭐ Calculate DYNAMIC bracket structure
   const nextPowerOf2 = Math.pow(2, Math.ceil(Math.log2(participantCount)));
   const totalRounds = Math.log2(nextPowerOf2);
   const byesNeeded = nextPowerOf2 - participantCount;
   
-  console.log(`📊 Bracket: ${participantCount} participants, ${byesNeeded} byes needed, ${totalRounds} rounds`);
+  console.log(`📊 Bracket: ${participantCount} participants, ${byesNeeded} byes needed, ${totalRounds} rounds, bracket size: ${nextPowerOf2}`);
 
   // ⭐ Separate participants: BYE vs FIGHTING
   let byeParticipants: Participant[] = [];
   let fightingParticipants: Participant[] = [];
 
   if (byeParticipantIds && byeParticipantIds.length > 0) {
-    // Manual BYE selection
+    // ⭐ VALIDASI: Jika ada yang dipilih, HARUS TEPAT
+    if (byeParticipantIds.length !== byesNeeded) {
+      throw new Error(`Pilih tepat ${byesNeeded} peserta untuk BYE. Anda memilih ${byeParticipantIds.length}.`);
+    }
+    
     byeParticipants = participants.filter(p => byeParticipantIds.includes(p.id));
     fightingParticipants = participants.filter(p => !byeParticipantIds.includes(p.id));
     
-    console.log(`✅ Manual BYE: ${byeParticipants.length} participants`);
-    console.log(`⚔️ Fighting: ${fightingParticipants.length} participants`);
-    
-    // Validate BYE count
-    if (byeParticipants.length !== byesNeeded) {
-      throw new Error(`Pilih tepat ${byesNeeded} peserta untuk BYE. Anda memilih ${byeParticipants.length}.`);
-    }
+    console.log(`✅ Manual BYE: ${byeParticipants.length} participants selected`);
   } else {
-    // Auto-assign BYEs (random)
-    const shuffled = this.shuffleArray([...participants]);
-    byeParticipants = shuffled.slice(0, byesNeeded);
-    fightingParticipants = shuffled.slice(byesNeeded);
-    
-    console.log(`🎲 Auto BYE: ${byeParticipants.length} random participants`);
+    // ⭐ AUTO-ASSIGN BYEs (random) - OPTIONAL FLOW
+    if (byesNeeded > 0) {
+      const shuffled = this.shuffleArray([...participants]);
+      byeParticipants = shuffled.slice(0, byesNeeded);
+      fightingParticipants = shuffled.slice(byesNeeded);
+      
+      console.log(`🎲 Auto BYE: ${byeParticipants.length} random participants (optional mode)`);
+    } else {
+      // ⭐ PERFECT POWER OF 2 - No BYEs needed
+      fightingParticipants = this.shuffleArray([...participants]);
+      console.log(`✅ Perfect bracket: ${participantCount} participants, no BYEs needed`);
+    }
   }
 
   // ⭐ Build Round 1 matches
   const matches: Match[] = [];
   let matchPosition = 0;
 
-  // Strategy: Interleave BYE matches with fighting matches for better distribution
-  const fightsPerRound = fightingParticipants.length / 2;
-  
   // Create fighting matches (1v1)
   for (let i = 0; i < fightingParticipants.length; i += 2) {
     const participant1 = fightingParticipants[i];
@@ -258,7 +259,7 @@ static async generatePrestasiBracket(
     });
   }
 
-  // Create BYE matches (auto-win)
+  // Create BYE matches (auto-win to Round 2)
   for (const participant of byeParticipants) {
     const match = await prisma.tb_match.create({
       data: {
@@ -316,8 +317,8 @@ static async generatePrestasiBracket(
   }
 
   // ⭐ Auto-advance BYE winners to Round 2
-  const byeWinners = matches.filter(m => m.status === 'bye' && m.winner);
-  if (byeWinners.length > 0) {
+  if (byeParticipants.length > 0) {
+    const byeWinners = matches.filter(m => m.status === 'bye' && m.winner);
     console.log(`🚀 Auto-advancing ${byeWinners.length} BYE winners to Round 2`);
     await this.advanceByeWinners(baganId, byeWinners);
   }
