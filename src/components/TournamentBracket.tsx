@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Trophy, Edit3, Save, Medal, CheckCircle, ArrowLeft, AlertTriangle, RefreshCw, Download, Shuffle } from 'lucide-react';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 import { useAuth } from '../context/authContext'; // ⬅️ TAMBAHKAN INI
 
 interface Peserta {
@@ -94,6 +96,8 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
   const [bracketGenerated, setBracketGenerated] = useState(false);
   const [saving, setSaving] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const bracketRef = React.useRef<HTMLDivElement>(null);
+  const leaderboardRef = React.useRef<HTMLDivElement>(null);
   
   // ⬅️ TAMBAHKAN STATE MODAL INI
   const [showModal, setShowModal] = useState(false);
@@ -366,104 +370,135 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
   };
 
     const exportToPDF = async () => {
-    if (!selectedKelas || !bracketGenerated) return;
+  if (!selectedKelas || !bracketGenerated) return;
+  
+  setExporting(true);
+  try {
+    console.log(`📄 Exporting PDF for ${isPemula ? 'PEMULA' : 'PRESTASI'} category...`);
+
+    let canvas: HTMLCanvasElement;
     
-    setExporting(true);
-    try {
-      const kompetisiId = selectedKelas.kompetisi.id_kompetisi;
-      const kelasKejuaraanId = selectedKelas.id_kelas_kejuaraan;
-
-      console.log(`📄 Exporting PDF for kompetisi ${kompetisiId}, kelas ${kelasKejuaraanId}`);
-
-      // Call API to export PDF
-      const response = await fetch(
-        `${apiBaseUrl}/kompetisi/${kompetisiId}/brackets/pdf?kelasKejuaraanId=${kelasKejuaraanId}`,
-        {
-          headers: {
-            ...(token && { 'Authorization': `Bearer ${token}` })
-          }
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to export PDF');
+    if (isPemula) {
+      // PEMULA: Capture leaderboard only
+      if (!leaderboardRef.current) {
+        throw new Error('Leaderboard element not found');
       }
-
-      // Get PDF as blob
-      const blob = await response.blob();
       
-      // Create download link
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `tournament-bracket-${kelasKejuaraanId}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-
-      console.log('✅ PDF exported successfully');
-      
-    } catch (error: any) {
-      console.error('❌ Error exporting PDF:', error);
-      showNotification(
-        'error',
-        'Gagal Export PDF',
-        'Gagal mengekspor PDF. Silakan coba lagi.',
-        () => setShowModal(false)
-      );
-    } finally {
-      setExporting(false);
-    }
-  };
-
-  // Generate PDF content (text-based for demo)
-  const generateTextPDFContent = (): string => {
-    if (!selectedKelas) return '';
-    
-    let content = `TOURNAMENT BRACKET\n`;
-    content += `================\n\n`;
-    content += `Competition: ${selectedKelas.kompetisi.nama_event}\n`;
-    content += `Class: ${selectedKelas.kelompok?.nama_kelompok} ${selectedKelas.kelas_berat?.jenis_kelamin === 'LAKI_LAKI' ? 'Male' : 'Female'} ${selectedKelas.kelas_berat?.nama_kelas || selectedKelas.poomsae?.nama_kelas}\n`;
-    content += `Date: ${new Date(selectedKelas.kompetisi.tanggal_mulai).toLocaleDateString()}\n`;
-    content += `Location: ${selectedKelas.kompetisi.lokasi}\n\n`;
-    
-    const totalRounds = getTotalRounds();
-    
-    for (let round = 1; round <= totalRounds; round++) {
-      const roundMatches = getMatchesByRound(round);
-      content += `${getRoundName(round, totalRounds).toUpperCase()}\n`;
-      content += `${'-'.repeat(getRoundName(round, totalRounds).length)}\n`;
-      
-      roundMatches.forEach((match, index) => {
-        content += `\nMatch ${index + 1}:\n`;
-        if (match.peserta_a) {
-          content += `  B/${match.peserta_a.id_peserta_kompetisi} ${getParticipantName(match.peserta_a)}`;
-          if (match.skor_a > 0 || match.skor_b > 0) content += ` - ${match.skor_a}`;
-          content += `\n`;
-        }
-        if (match.peserta_b) {
-          content += `  R/${match.peserta_b.id_peserta_kompetisi} ${getParticipantName(match.peserta_b)}`;
-          if (match.skor_a > 0 || match.skor_b > 0) content += ` - ${match.skor_b}`;
-          content += `\n`;
-        }
-        if (match.peserta_a && !match.peserta_b) {
-          content += `  (Free draw)\n`;
-        }
+      canvas = await html2canvas(leaderboardRef.current, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#F5FBEF',
+        windowWidth: leaderboardRef.current.scrollWidth,
+        windowHeight: leaderboardRef.current.scrollHeight
       });
-      content += `\n`;
+    } else {
+      // PRESTASI: Capture full bracket tree
+      if (!bracketRef.current) {
+        throw new Error('Bracket element not found');
+      }
+      
+      canvas = await html2canvas(bracketRef.current, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#F5FBEF',
+        windowWidth: bracketRef.current.scrollWidth,
+        windowHeight: bracketRef.current.scrollHeight
+      });
     }
-    
-    return content;
-  };
 
-  // Generate HTML content for PDF
-  const generatePDFContent = (): string => {
-    // This would generate proper HTML for PDF conversion
-    // Implementation would be similar to the render but optimized for print
-    return '<div>PDF Content Here</div>';
-  };
+    // Calculate PDF dimensions
+    const imgWidth = 297; // A4 width in mm
+    const pageHeight = 210; // A4 height in mm
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+    
+    // Determine orientation based on content
+    const orientation = imgHeight > imgWidth ? 'portrait' : 'landscape';
+    
+    // Create PDF
+    const pdf = new jsPDF({
+      orientation: orientation,
+      unit: 'mm',
+      format: 'a4',
+      compress: true
+    });
+
+    // Add title page
+    const title = selectedKelas.kompetisi.nama_event;
+    const kategori = selectedKelas.kategori_event.nama_kategori;
+    const kelompok = selectedKelas.kelompok?.nama_kelompok || '';
+    const kelas = selectedKelas.kelas_berat?.nama_kelas || selectedKelas.poomsae?.nama_kelas || '';
+    const gender = selectedKelas.kelas_berat?.jenis_kelamin === 'LAKI_LAKI' ? 'Male' : 'Female';
+    
+    pdf.setFontSize(20);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('BAGAN TURNAMEN', pdf.internal.pageSize.getWidth() / 2, 20, { align: 'center' });
+    
+    pdf.setFontSize(16);
+    pdf.text(title, pdf.internal.pageSize.getWidth() / 2, 35, { align: 'center' });
+    
+    pdf.setFontSize(12);
+    pdf.setFont('helvetica', 'normal');
+    pdf.text(`${kategori} - ${kelompok} ${gender} ${kelas}`, pdf.internal.pageSize.getWidth() / 2, 45, { align: 'center' });
+    
+    pdf.setFontSize(10);
+    pdf.text(`Competition: ${kategori}`, pdf.internal.pageSize.getWidth() / 2, 55, { align: 'center' });
+    pdf.text(`Category: ${kelompok} | Class: ${kelas}`, pdf.internal.pageSize.getWidth() / 2, 62, { align: 'center' });
+    
+    // Add new page for bracket/leaderboard
+    pdf.addPage(orientation === 'landscape' ? [297, 210] : [210, 297], orientation);
+
+    // Add captured image
+    const imgData = canvas.toDataURL('image/png', 1.0);
+    
+    if (imgHeight > pageHeight && orientation === 'portrait') {
+      // Multi-page for tall content
+      let heightLeft = imgHeight;
+      let position = 0;
+      
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+      
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage([210, 297], 'portrait');
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+    } else {
+      // Single page
+      const xOffset = orientation === 'landscape' ? 0 : (pdf.internal.pageSize.getWidth() - imgWidth) / 2;
+      pdf.addImage(imgData, 'PNG', xOffset, 0, imgWidth, imgHeight);
+    }
+
+    // Generate filename
+    const filename = `Bracket_${kategori}_${kelompok}_${kelas}_${gender}.pdf`.replace(/\s+/g, '_');
+
+    // Save PDF
+    pdf.save(filename);
+
+    console.log('✅ PDF exported successfully:', filename);
+    
+    showNotification(
+      'success',
+      'Berhasil Export PDF!',
+      `Bracket ${isPemula ? 'Leaderboard' : 'Tournament'} berhasil diexport ke PDF`,
+      () => setShowModal(false)
+    );
+    
+  } catch (error: any) {
+    console.error('❌ Error exporting PDF:', error);
+    showNotification(
+      'error',
+      'Gagal Export PDF',
+      error.message || 'Terjadi kesalahan saat export PDF. Silakan coba lagi.',
+      () => setShowModal(false)
+    );
+  } finally {
+    setExporting(false);
+  }
+};
 
   const getMatchesByRound = (round: number) => {
     return matches.filter(match => match.ronde === round);
@@ -777,7 +812,7 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
 
       {/* Tournament Bracket */}
       {bracketGenerated && matches.length > 0 ? (
-        <div className="p-6">
+        <div className="p-6" ref={isPemula ? undefined : bracketRef}>
           {isPemula ? (
             /* ========== PEMULA LAYOUT ========== */
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -916,7 +951,7 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
               </div>
 
               {/* RIGHT: Leaderboard */}
-              <div className="lg:sticky lg:top-6 lg:self-start">
+              <div className="lg:sticky lg:top-6 lg:self-start" ref={leaderboardRef}>
                 <div className="bg-white rounded-lg shadow-lg border-2" style={{ borderColor: '#990D35' }}>
                   <div className="p-6 border-b" style={{ backgroundColor: 'rgba(153, 13, 53, 0.05)', borderColor: '#990D35' }}>
                     <div className="flex items-center gap-3 justify-center">
@@ -1055,17 +1090,265 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
               </div>
             </div>
           ) : (
-            /* ========== PRESTASI LAYOUT (EXISTING) ========== */
-            <div className="overflow-x-auto">
-              <div className="inline-flex gap-8 min-w-full">
+            /* ========== PRESTASI LAYOUT ========== */
+            <div className="overflow-x-auto pb-8">
+              <div className="inline-flex gap-16 min-w-full px-8" style={{ minHeight: '600px' }}>
                 {Array.from({ length: totalRounds }, (_, roundIndex) => {
                   const round = roundIndex + 1;
                   const roundMatches = getMatchesByRound(round);
+                  const matchHeight = 120; // Height per match card
+                  const verticalGap = Math.pow(2, roundIndex) * 80; // Exponential gap between matches
                   
                   return (
-                    <div key={round} className="flex flex-col min-w-[300px]">
-                      {/* ... EXISTING PRESTASI RENDERING ... */}
-                      {/* COPY PASTE dari code yang sekarang ada */}
+                    <div 
+                      key={round} 
+                      className="flex flex-col relative"
+                      style={{ minWidth: '280px' }}
+                    >
+                      {/* Round Header */}
+                      <div className="mb-8 sticky top-0 z-10 bg-white/90 backdrop-blur-sm py-2 rounded-lg">
+                        <div 
+                          className="text-center px-6 py-3 rounded-lg font-bold text-lg shadow-sm"
+                          style={{ backgroundColor: '#990D35', color: '#F5FBEF' }}
+                        >
+                          {getRoundName(round, totalRounds)}
+                        </div>
+                        <div className="text-center mt-2 text-sm font-medium" style={{ color: '#050505', opacity: 0.6 }}>
+                          {roundMatches.length} {roundMatches.length === 1 ? 'Match' : 'Matches'}
+                        </div>
+                      </div>
+
+                      {/* Matches Container */}
+                      <div className="flex-1 flex flex-col justify-around relative">
+                        {roundMatches.map((match, matchIndex) => {
+                          const topPosition = matchIndex * verticalGap + (matchIndex * matchHeight);
+                          
+                          return (
+                            <div
+                              key={match.id_match}
+                              className="relative"
+                              style={{ 
+                                marginTop: matchIndex === 0 ? '0' : `${verticalGap - matchHeight}px`
+                              }}
+                            >
+                              {/* Connecting Line to Next Round */}
+                              {round < totalRounds && (
+                                <>
+                                  {/* Horizontal line going right */}
+                                  <div
+                                    className="absolute top-1/2 left-full w-16 border-t-2"
+                                    style={{ 
+                                      borderColor: '#990D35',
+                                      transform: 'translateY(-1px)',
+                                      zIndex: 0
+                                    }}
+                                  />
+                                  
+                                  {/* Vertical line connecting to sibling match */}
+                                  {matchIndex % 2 === 0 && matchIndex + 1 < roundMatches.length && (
+                                    <div
+                                      className="absolute left-full border-l-2"
+                                      style={{
+                                        borderColor: '#990D35',
+                                        top: '50%',
+                                        height: `${verticalGap + matchHeight}px`,
+                                        marginLeft: '64px',
+                                        zIndex: 0
+                                      }}
+                                    />
+                                  )}
+                                </>
+                              )}
+
+                              {/* Match Card */}
+                              <div
+                                className="bg-white rounded-xl shadow-lg border-2 overflow-hidden hover:shadow-xl transition-all relative z-10"
+                                style={{ 
+                                  borderColor: '#990D35',
+                                  minHeight: `${matchHeight}px`
+                                }}
+                              >
+                                {/* Match Header */}
+                                <div 
+                                  className="px-4 py-2 flex items-center justify-between border-b"
+                                  style={{ 
+                                    backgroundColor: 'rgba(153, 13, 53, 0.05)',
+                                    borderColor: '#990D35'
+                                  }}
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <div 
+                                      className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold"
+                                      style={{ backgroundColor: '#990D35', color: 'white' }}
+                                    >
+                                      {matchIndex + 1}
+                                    </div>
+                                    <span className="text-xs font-semibold" style={{ color: '#050505' }}>
+                                      Match {match.id_match}
+                                    </span>
+                                  </div>
+                                  <button
+                                    onClick={() => setEditingMatch(match)}
+                                    className="p-1.5 rounded-lg hover:bg-black/5 transition-all"
+                                    title="Edit Score"
+                                  >
+                                    <Edit3 size={14} style={{ color: '#990D35' }} />
+                                  </button>
+                                </div>
+
+                                {/* Participants */}
+                                <div>
+                                  {/* Participant A (Blue Corner) */}
+                                  <div 
+                                    className={`p-3 border-b transition-all ${
+                                      match.skor_a > match.skor_b && (match.skor_a > 0 || match.skor_b > 0)
+                                        ? 'bg-gradient-to-r from-green-50 to-green-100' 
+                                        : 'hover:bg-blue-50/30'
+                                    }`}
+                                    style={{ borderColor: 'rgba(0, 0, 0, 0.05)' }}
+                                  >
+                                    {match.peserta_a ? (
+                                      <div className="flex items-center justify-between gap-3">
+                                        <div className="flex-1 min-w-0">
+                                          <div className="flex items-center gap-2 mb-1">
+                                            <span 
+                                              className="text-xs font-bold px-2 py-0.5 rounded shadow-sm"
+                                              style={{ backgroundColor: '#3B82F6', color: 'white' }}
+                                            >
+                                              B/{match.peserta_a.id_peserta_kompetisi}
+                                            </span>
+                                            {match.skor_a > match.skor_b && (match.skor_a > 0 || match.skor_b > 0) && (
+                                              <CheckCircle size={16} className="text-green-600 flex-shrink-0" />
+                                            )}
+                                          </div>
+                                          <p 
+                                            className="font-bold text-sm truncate leading-tight"
+                                            style={{ color: '#050505' }}
+                                            title={getParticipantName(match.peserta_a)}
+                                          >
+                                            {getParticipantName(match.peserta_a)}
+                                          </p>
+                                          <p 
+                                            className="text-xs truncate uppercase mt-0.5"
+                                            style={{ color: '#3B82F6', opacity: 0.8 }}
+                                            title={getDojoName(match.peserta_a)}
+                                          >
+                                            {getDojoName(match.peserta_a)}
+                                          </p>
+                                        </div>
+                                        {(match.skor_a > 0 || match.skor_b > 0) && (
+                                          <div className="flex-shrink-0">
+                                            <div 
+                                              className="w-10 h-10 rounded-lg flex items-center justify-center font-bold text-lg shadow-sm"
+                                              style={{ 
+                                                backgroundColor: match.skor_a > match.skor_b ? '#22c55e' : '#e5e7eb',
+                                                color: match.skor_a > match.skor_b ? 'white' : '#6b7280'
+                                              }}
+                                            >
+                                              {match.skor_a}
+                                            </div>
+                                          </div>
+                                        )}
+                                      </div>
+                                    ) : (
+                                      <div className="text-center py-3">
+                                        <span 
+                                          className="text-sm font-medium"
+                                          style={{ color: '#050505', opacity: 0.4 }}
+                                        >
+                                          TBD
+                                        </span>
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  {/* Participant B (Red Corner) */}
+                                  <div 
+                                    className={`p-3 transition-all ${
+                                      match.skor_b > match.skor_a && (match.skor_a > 0 || match.skor_b > 0)
+                                        ? 'bg-gradient-to-r from-green-50 to-green-100' 
+                                        : 'hover:bg-red-50/30'
+                                    }`}
+                                  >
+                                    {match.peserta_b ? (
+                                      <div className="flex items-center justify-between gap-3">
+                                        <div className="flex-1 min-w-0">
+                                          <div className="flex items-center gap-2 mb-1">
+                                            <span 
+                                              className="text-xs font-bold px-2 py-0.5 rounded shadow-sm"
+                                              style={{ backgroundColor: '#EF4444', color: 'white' }}
+                                            >
+                                              R/{match.peserta_b.id_peserta_kompetisi}
+                                            </span>
+                                            {match.skor_b > match.skor_a && (match.skor_a > 0 || match.skor_b > 0) && (
+                                              <CheckCircle size={16} className="text-green-600 flex-shrink-0" />
+                                            )}
+                                          </div>
+                                          <p 
+                                            className="font-bold text-sm truncate leading-tight"
+                                            style={{ color: '#050505' }}
+                                            title={getParticipantName(match.peserta_b)}
+                                          >
+                                            {getParticipantName(match.peserta_b)}
+                                          </p>
+                                          <p 
+                                            className="text-xs truncate uppercase mt-0.5"
+                                            style={{ color: '#EF4444', opacity: 0.8 }}
+                                            title={getDojoName(match.peserta_b)}
+                                          >
+                                            {getDojoName(match.peserta_b)}
+                                          </p>
+                                        </div>
+                                        {(match.skor_a > 0 || match.skor_b > 0) && (
+                                          <div className="flex-shrink-0">
+                                            <div 
+                                              className="w-10 h-10 rounded-lg flex items-center justify-center font-bold text-lg shadow-sm"
+                                              style={{ 
+                                                backgroundColor: match.skor_b > match.skor_a ? '#22c55e' : '#e5e7eb',
+                                                color: match.skor_b > match.skor_a ? 'white' : '#6b7280'
+                                              }}
+                                            >
+                                              {match.skor_b}
+                                            </div>
+                                          </div>
+                                        )}
+                                      </div>
+                                    ) : (
+                                      <div className="text-center py-2">
+                                        <span 
+                                          className="text-xs px-3 py-1 rounded-full inline-block"
+                                          style={{ 
+                                            backgroundColor: 'rgba(192, 192, 192, 0.15)',
+                                            color: '#6b7280',
+                                            fontSize: '0.7rem'
+                                          }}
+                                        >
+                                          🎁 Free draw
+                                        </span>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+
+                                {/* Match Status Footer */}
+                                {(match.skor_a > 0 || match.skor_b > 0) && (
+                                  <div 
+                                    className="px-3 py-1.5 text-center border-t"
+                                    style={{ 
+                                      backgroundColor: 'rgba(34, 197, 94, 0.05)',
+                                      borderColor: 'rgba(34, 197, 94, 0.2)'
+                                    }}
+                                  >
+                                    <span className="text-xs font-semibold text-green-700">
+                                      ✓ Completed
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
                   );
                 })}

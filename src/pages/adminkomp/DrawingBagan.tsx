@@ -166,7 +166,7 @@ const DrawingBagan: React.FC = () => {
     };
 
     fetchBracketStatus();
-  }, [kelasKejuaraan.length, kompetisiId]);
+  }, [kelasKejuaraan.length, kompetisiId,]); // ⬅️ Only re-run when kelas count or kompetisi changes
 
   // Apply filters
   useEffect(() => {
