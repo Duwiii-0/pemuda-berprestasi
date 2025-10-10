@@ -368,6 +368,87 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
       setSaving(false);
     }
   };
+// Helper to convert oklch to rgb
+const convertOklchToRgb = (clonedDoc: Document) => {
+  const allElements = clonedDoc.querySelectorAll('*');
+  
+  allElements.forEach((el) => {
+    const element = el as HTMLElement;
+    const style = element.style;
+    
+    // Convert oklch colors to rgb fallbacks
+    const colorMap: { [key: string]: string } = {
+      // Tailwind default colors yang sering dipakai
+      'oklch(0 0 0)': 'rgb(0, 0, 0)',
+      'oklch(1 0 0)': 'rgb(255, 255, 255)',
+      'oklch(0.98 0.01 106.42)': 'rgb(245, 251, 239)', // white
+      'oklch(0.39 0.13 16.32)': 'rgb(153, 13, 53)', // red
+      'oklch(0.80 0.13 91.23)': 'rgb(245, 183, 0)', // yellow
+      'oklch(0.08 0 0)': 'rgb(5, 5, 5)', // black
+    };
+    
+    // Function to replace oklch with rgb
+    const replaceOklch = (value: string): string => {
+      if (!value || !value.includes('oklch')) return value;
+      
+      // Try exact match first
+      for (const [oklch, rgb] of Object.entries(colorMap)) {
+        if (value.includes(oklch)) {
+          return value.replace(oklch, rgb);
+        }
+      }
+      
+      // Fallback: extract oklch and convert to best guess
+      if (value.includes('oklch')) {
+        // Parse oklch values
+        const match = value.match(/oklch\(([\d.]+)\s+([\d.]+)\s+([\d.]+)\)/);
+        if (match) {
+          const [, l, c, h] = match.map(Number);
+          
+          // Simple conversion (not perfect but works for html2canvas)
+          if (c < 0.02) {
+            // Grayscale
+            const gray = Math.round(l * 255);
+            return `rgb(${gray}, ${gray}, ${gray})`;
+          }
+          
+          // For colored values, use rough approximation
+          // This is simplified - real conversion is complex
+          const r = Math.round((l + c * Math.cos((h * Math.PI) / 180)) * 255);
+          const g = Math.round((l + c * Math.cos(((h - 120) * Math.PI) / 180)) * 255);
+          const b = Math.round((l + c * Math.cos(((h - 240) * Math.PI) / 180)) * 255);
+          
+          const clamp = (v: number) => Math.max(0, Math.min(255, v));
+          return `rgb(${clamp(r)}, ${clamp(g)}, ${clamp(b)})`;
+        }
+      }
+      
+      return value;
+    };
+    
+    // Replace in style properties
+    ['color', 'backgroundColor', 'borderColor', 'borderTopColor', 
+     'borderRightColor', 'borderBottomColor', 'borderLeftColor',
+     'fill', 'stroke'].forEach(prop => {
+      const value = style.getPropertyValue(prop);
+      if (value && value.includes('oklch')) {
+        style.setProperty(prop, replaceOklch(value));
+      }
+    });
+    
+    // Also check computed style and apply inline
+    const computed = window.getComputedStyle(element);
+    if (computed.color && computed.color.includes('oklch')) {
+      element.style.color = replaceOklch(computed.color);
+    }
+    if (computed.backgroundColor && computed.backgroundColor.includes('oklch')) {
+      element.style.backgroundColor = replaceOklch(computed.backgroundColor);
+    }
+    if (computed.borderColor && computed.borderColor.includes('oklch')) {
+      element.style.borderColor = replaceOklch(computed.borderColor);
+    }
+  });
+};
 
     const exportToPDF = async () => {
   if (!selectedKelas || !bracketGenerated) return;
@@ -428,13 +509,14 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
     console.log('📸 Capturing matches container...');
     
     const matchesCanvas = await html2canvas(matchesContainer as HTMLElement, {
-      scale: 2,
-      useCORS: true,
-      logging: false,
-      backgroundColor: '#F5FBEF',
-      windowWidth: (matchesContainer as HTMLElement).scrollWidth,
-      windowHeight: (matchesContainer as HTMLElement).scrollHeight
-    });
+  scale: 2,
+  useCORS: true,
+  logging: false,
+  backgroundColor: '#F5FBEF',
+  windowWidth: (matchesContainer as HTMLElement).scrollWidth,
+  windowHeight: (matchesContainer as HTMLElement).scrollHeight,
+  onclone: convertOklchToRgb
+});
 
     const imgWidth = 190; // A4 width minus margins
     const imgHeight = (matchesCanvas.height * imgWidth) / matchesCanvas.width;
@@ -506,13 +588,14 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
   console.log('📸 Capturing leaderboard...');
 
   const leaderboardCanvas = await html2canvas(leaderboardRef.current, {
-    scale: 2,
-    useCORS: true,
-    logging: false,
-    backgroundColor: '#FFFFFF',
-    windowWidth: leaderboardRef.current.scrollWidth,
-    windowHeight: leaderboardRef.current.scrollHeight
-  });
+  scale: 2,
+  useCORS: true,
+  logging: false,
+  backgroundColor: '#FFFFFF',
+  windowWidth: leaderboardRef.current.scrollWidth,
+  windowHeight: leaderboardRef.current.scrollHeight,
+  onclone: convertOklchToRgb
+});
 
   const lbImgWidth = 190;
   const lbImgHeight = (leaderboardCanvas.height * lbImgWidth) / leaderboardCanvas.width;
@@ -531,13 +614,14 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
       }
       
       const canvas = await html2canvas(bracketRef.current, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        backgroundColor: '#F5FBEF',
-        windowWidth: bracketRef.current.scrollWidth,
-        windowHeight: bracketRef.current.scrollHeight
-      });
+  scale: 2,
+  useCORS: true,
+  logging: false,
+  backgroundColor: '#F5FBEF',
+  windowWidth: bracketRef.current.scrollWidth,
+  windowHeight: bracketRef.current.scrollHeight,
+  onclone: convertOklchToRgb
+});
 
       const imgWidth = 277; // A4 landscape width minus margins
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
