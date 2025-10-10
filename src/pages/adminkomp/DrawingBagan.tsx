@@ -32,6 +32,7 @@ const DrawingBagan: React.FC = () => {
   const [filteredKelas, setFilteredKelas] = useState<KelasKejuaraan[]>([]);
   const [selectedKelas, setSelectedKelas] = useState<KelasKejuaraan | null>(null);
   const [showBracket, setShowBracket] = useState(false);
+  const [loadingBracketStatus, setLoadingBracketStatus] = useState(false);
   
   // Filter states
   const [searchTerm, setSearchTerm] = useState("");
@@ -65,7 +66,7 @@ const DrawingBagan: React.FC = () => {
             const existing = kelasMap.get(key)!;
             existing.peserta_count += 1;
           } else {
-            kelasMap.set(key, {
+              kelasMap.set(key, {
               id_kelas_kejuaraan: kelas.id_kelas_kejuaraan,
               cabang: kelas.cabang,
               kategori_event: kelas.kategori_event,
@@ -74,7 +75,7 @@ const DrawingBagan: React.FC = () => {
               poomsae: kelas.poomsae,
               jenis_kelamin: kelas.jenis_kelamin,
               peserta_count: 1,
-              bracket_status: 'not_created' // This should come from backend
+              bracket_status: 'not_created' // ⬅️ Initial state, will be updated by fetchBracketStatus
             });
           }
         });
@@ -83,6 +84,89 @@ const DrawingBagan: React.FC = () => {
       setKelasKejuaraan(kelasArray);
     }
   }, [pesertaList]);
+
+  // Fetch bracket status for each kelas from backend
+  useEffect(() => {
+    const fetchBracketStatus = async () => {
+      if (kelasKejuaraan.length === 0 || !kompetisiId) return;
+      
+      setLoadingBracketStatus(true);
+      
+      try {
+        console.log(`🔄 Fetching bracket status for ${kelasKejuaraan.length} kelas...`);
+        
+        // Fetch bracket status for each kelas
+        const updatedKelas = await Promise.all(
+          kelasKejuaraan.map(async (kelas) => {
+            try {
+              const response = await fetch(
+                `${import.meta.env.VITE_API_URL || '/api'}/kompetisi/${kompetisiId}/brackets/${kelas.id_kelas_kejuaraan}`,
+                {
+                  headers: {
+                    'Authorization': `Bearer ${token}`
+                  }
+                }
+              );
+
+              if (response.ok) {
+                const result = await response.json();
+                console.log(`✅ Bracket exists for kelas ${kelas.id_kelas_kejuaraan}:`, result.data);
+                
+                // Determine status based on matches
+                const matches = result.data?.matches || [];
+                let status: 'not_created' | 'created' | 'in_progress' | 'completed' = 'created';
+                
+                if (matches.length > 0) {
+                  // Check if any match has scores
+                  const hasScores = matches.some((m: any) => m.scoreA > 0 || m.scoreB > 0);
+                  
+                  if (hasScores) {
+                    // Check if all matches are completed
+                    const allCompleted = matches.every((m: any) => 
+                      (m.participant1 && m.participant2 && (m.scoreA > 0 || m.scoreB > 0)) ||
+                      (!m.participant1 || !m.participant2) // Empty slots
+                    );
+                    
+                    status = allCompleted ? 'completed' : 'in_progress';
+                  } else {
+                    status = 'created';
+                  }
+                }
+                
+                return {
+                  ...kelas,
+                  bracket_status: status
+                };
+              } else if (response.status === 404) {
+                // Bracket not found - not created yet
+                console.log(`ℹ️ Bracket not found for kelas ${kelas.id_kelas_kejuaraan}`);
+                return {
+                  ...kelas,
+                  bracket_status: 'not_created' as const
+                };
+              } else {
+                console.error(`❌ Error fetching bracket for kelas ${kelas.id_kelas_kejuaraan}:`, response.status);
+                return kelas; // Keep existing status
+              }
+            } catch (error) {
+              console.error(`❌ Error fetching bracket for kelas ${kelas.id_kelas_kejuaraan}:`, error);
+              return kelas; // Keep existing status on error
+            }
+          })
+        );
+        
+        console.log('✅ Bracket status updated for all kelas');
+        setKelasKejuaraan(updatedKelas);
+        
+      } catch (error) {
+        console.error('❌ Error fetching bracket status:', error);
+      } finally {
+        setLoadingBracketStatus(false);
+      }
+    };
+
+    fetchBracketStatus();
+  }, [kelasKejuaraan.length, kompetisiId]);
 
   // Apply filters
   useEffect(() => {
@@ -204,18 +288,25 @@ const DrawingBagan: React.FC = () => {
           console.log('🔙 Back to drawing bagan list');
           setShowBracket(false);
           setSelectedKelas(null);
+          
+          // ⬅️ REFRESH DATA setelah kembali
+          if (kompetisiId) {
+            fetchAtletByKompetisi(kompetisiId);
+          }
         }}
         apiBaseUrl={import.meta.env.VITE_API_URL || '/api'}
       />
     );
   }
 
-  if (loadingAtlet) {
+if (loadingAtlet || loadingBracketStatus) {
     return (
       <div className="min-h-screen flex items-center justify-center px-4" style={{ backgroundColor: '#F5FBEF' }}>
         <div className="flex flex-col items-center gap-3">
           <Loader className="animate-spin" style={{ color: '#990D35' }} size={32} />
-          <p style={{ color: '#050505', opacity: 0.6 }}>Memuat data kelas kejuaraan...</p>
+          <p style={{ color: '#050505', opacity: 0.6 }}>
+            {loadingAtlet ? 'Memuat data kelas kejuaraan...' : 'Memeriksa status bracket...'}
+          </p>
         </div>
       </div>
     );
@@ -486,7 +577,12 @@ const DrawingBagan: React.FC = () => {
                       {kelas.cabang}
                     </span>
                   </div>
-                  {getStatusBadge(kelas.bracket_status)}
+                  <div className="flex items-center gap-2">
+                    {loadingBracketStatus && (
+                      <Loader size={14} className="animate-spin" style={{ color: '#6b7280' }} />
+                    )}
+                    {getStatusBadge(kelas.bracket_status)}
+                  </div>
                 </div>
                 
                 <h3 className="font-bold text-base leading-tight" style={{ color: '#050505' }}>
