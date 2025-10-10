@@ -42,6 +42,34 @@
   --text-isi: 16px;
 }
 
+@media print {
+  @page {
+    size: A3 landscape;
+    margin: 10mm;
+  }
+  
+  body {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  
+  /* Hide buttons when printing */
+  button, .no-print {
+    display: none !important;
+  }
+  
+  /* Ensure bracket is visible */
+  .overflow-x-auto {
+    overflow: visible !important;
+  }
+  
+  /* Scale down if needed */
+  .inline-flex {
+    transform: scale(0.9);
+    transform-origin: top left;
+  }
+}
+
 html {
   scroll-behavior: smooth;
   background-color: #F5FBEF;
