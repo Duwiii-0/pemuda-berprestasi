@@ -247,18 +247,25 @@ const openParticipantSelection = () => {
 const generateBracket = async (shuffle: boolean = false) => {
   if (!selectedKelas) return;
   
-  // ⭐ VALIDASI: BYE bisa 0 (skip) atau sesuai kebutuhan
-  const byesNeeded = Math.pow(2, Math.ceil(Math.log2(approvedParticipants.length))) - approvedParticipants.length;
-  
-  // Jika user select BYE tapi jumlah salah
-  if (!isPemula && selectedParticipants.size > 0 && selectedParticipants.size !== byesNeeded) {
-    showNotification(
-      'warning',
-      'Jumlah BYE Tidak Sesuai',
-      `Pilih 0 (skip BYE) atau tepat ${byesNeeded} peserta untuk BYE`,
-      () => setShowModal(false)
-    );
-    return;
+  // ⭐ VALIDASI: Berbeda untuk PEMULA vs PRESTASI
+  if (isPemula) {
+    // Pemula: any number of BYEs is OK
+    console.log(`🥋 PEMULA: Generating with ${selectedParticipants.size} BYE participants`);
+  } else {
+    // Prestasi: 0 (no BYE) or exact recommended count
+    const recommended = Math.pow(2, Math.ceil(Math.log2(approvedParticipants.length))) - approvedParticipants.length;
+    
+    if (selectedParticipants.size !== 0 && selectedParticipants.size !== recommended) {
+      showNotification(
+        'warning',
+        'Jumlah BYE Tidak Sesuai',
+        `Pilih 0 untuk skip BYE atau ${recommended} peserta sesuai rekomendasi`,
+        () => setShowModal(false)
+      );
+      return;
+    }
+    
+    console.log(`🏆 PRESTASI: Generating with ${selectedParticipants.size} BYE participants`);
   }
   
   setLoading(true);
@@ -267,8 +274,6 @@ const generateBracket = async (shuffle: boolean = false) => {
   try {
     const kompetisiId = selectedKelas.kompetisi.id_kompetisi;
     const kelasKejuaraanId = selectedKelas.id_kelas_kejuaraan;
-
-    console.log(`🎯 Generating bracket with ${selectedParticipants.size} BYE participants`);
 
     const endpoint = `${apiBaseUrl}/kompetisi/${kompetisiId}/brackets/generate`;
     
@@ -280,8 +285,7 @@ const generateBracket = async (shuffle: boolean = false) => {
       },
       body: JSON.stringify({
         kelasKejuaraanId: kelasKejuaraanId,
-        // ⭐ Kirim array kosong jika skip BYE
-        byeParticipantIds: isPemula ? undefined : (selectedParticipants.size > 0 ? Array.from(selectedParticipants) : [])
+        byeParticipantIds: selectedParticipants.size > 0 ? Array.from(selectedParticipants) : []
       })
     });
 
@@ -298,7 +302,7 @@ const generateBracket = async (shuffle: boolean = false) => {
     showNotification(
       'success',
       'Berhasil!',
-      'Bracket berhasil dibuat!',
+      `Bracket berhasil dibuat${selectedParticipants.size > 0 ? ` dengan ${selectedParticipants.size} BYE` : ' tanpa BYE'}!`,
       () => setShowModal(false)
     );
     
@@ -2150,62 +2154,127 @@ const canvas = await html2canvas(bracketRef.current, {
   <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
     <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[80vh] flex flex-col">
       {/* Modal Header */}
-      <div className="p-6 border-b" style={{ borderColor: '#990D35' }}>
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-xl font-bold" style={{ color: '#050505' }}>
-              Pilih Peserta yang Mendapat BYE
-            </h3>
-            <p className="text-sm mt-1" style={{ color: '#050505', opacity: 0.6 }}>
-              Pilih <strong>{(() => {
-                const total = approvedParticipants.length;
-                const nextPowerOf2 = Math.pow(2, Math.ceil(Math.log2(total)));
-                return nextPowerOf2 - total;
-              })()}</strong> peserta yang akan mendapat BYE (auto ke Round 2)
-            </p>
-          </div>
-          <button
-            onClick={() => setShowParticipantSelection(false)}
-            className="p-2 rounded-lg hover:bg-black/5 transition-all"
-          >
-            <span className="text-2xl" style={{ color: '#990D35' }}>×</span>
-          </button>
-        </div>
-      </div>
+<div className="p-6 border-b" style={{ borderColor: '#990D35' }}>
+  <div className="flex items-center justify-between">
+    <div>
+      <h3 className="text-xl font-bold" style={{ color: '#050505' }}>
+        {isPemula 
+          ? '🥋 Kategori PEMULA - Pilih Peserta untuk BYE (Opsional)'
+          : '🏆 Kategori PRESTASI - Pilih Peserta untuk BYE (Opsional)'}
+      </h3>
+      <p className="text-sm mt-1" style={{ color: '#050505', opacity: 0.6 }}>
+        {isPemula 
+          ? 'Pemula: BYE = auto mendapat medali perak tanpa bertanding'
+          : (() => {
+              const total = approvedParticipants.length;
+              const nextPowerOf2 = Math.pow(2, Math.ceil(Math.log2(total)));
+              const recommended = nextPowerOf2 - total;
+              return `Pilih 0 (skip BYE) atau ${recommended} peserta untuk langsung ke Round 2`;
+            })()
+        }
+      </p>
+    </div>
+    <button
+      onClick={() => {
+        setShowParticipantSelection(false);
+        setSelectedParticipants(new Set());
+      }}
+      className="p-2 rounded-lg hover:bg-black/5 transition-all"
+    >
+      <span className="text-2xl" style={{ color: '#990D35' }}>×</span>
+    </button>
+  </div>
+</div>
 
       {/* BYE Info Banner */}
-      <div className="p-4 bg-yellow-50 border-b border-yellow-200">
-        <div className="flex items-start gap-3">
-          <AlertTriangle size={20} className="text-yellow-600 flex-shrink-0 mt-0.5" />
-          <div className="flex-1">
-            <p className="text-sm font-semibold text-yellow-800">
-              Total Peserta: {approvedParticipants.length}
-            </p>
-            <p className="text-xs text-yellow-700 mt-1">
-              Bracket size: {Math.pow(2, Math.ceil(Math.log2(approvedParticipants.length)))} | 
-              BYE diperlukan: {Math.pow(2, Math.ceil(Math.log2(approvedParticipants.length))) - approvedParticipants.length} peserta
-            </p>
-            <p className="text-xs text-yellow-700 mt-1">
-              Peserta yang dipilih akan langsung masuk Round 2 tanpa bertanding di Round 1
-            </p>
-          </div>
-        </div>
-      </div>
+<div className={`p-4 border-b ${
+  isPemula ? 'bg-blue-50 border-blue-200' : 'bg-yellow-50 border-yellow-200'
+}`}>
+  <div className="flex items-start gap-3">
+    {isPemula ? (
+      <span className="text-2xl">ℹ️</span>
+    ) : (
+      <AlertTriangle size={20} className="text-yellow-600 flex-shrink-0 mt-0.5" />
+    )}
+    <div className="flex-1">
+      <p className={`text-sm font-semibold ${
+        isPemula ? 'text-blue-800' : 'text-yellow-800'
+      }`}>
+        Total Peserta: {approvedParticipants.length}
+      </p>
+      
+      {isPemula ? (
+        <>
+          <p className="text-xs text-blue-700 mt-1">
+            Kategori PEMULA: Semua peserta bertanding dalam 1 babak
+          </p>
+          <p className="text-xs text-blue-700 mt-1">
+            ⚠️ Peserta yang di-BYE otomatis mendapat medali PERAK tanpa bertanding
+          </p>
+        </>
+      ) : (
+        <>
+          <p className="text-xs text-yellow-700 mt-1">
+            Bracket size: {Math.pow(2, Math.ceil(Math.log2(approvedParticipants.length)))} | 
+            BYE direkomendasikan: {Math.pow(2, Math.ceil(Math.log2(approvedParticipants.length))) - approvedParticipants.length} peserta
+          </p>
+          <p className="text-xs text-yellow-700 mt-1">
+            💡 BYE = peserta langsung masuk Round 2 tanpa bertanding di Round 1
+          </p>
+          <p className="text-xs text-yellow-700 mt-1">
+            ✅ Anda bisa skip BYE (pilih 0) dan semua peserta bertanding dari Round 1
+          </p>
+        </>
+      )}
+    </div>
+  </div>
+</div>
 
       {/* Selection Counter */}
-      <div className="p-4 border-b" style={{ borderColor: 'rgba(0,0,0,0.1)' }}>
-        <div className="flex items-center justify-between">
-          <span className="font-semibold" style={{ color: '#050505' }}>
-            Dipilih: {selectedParticipants.size} / {Math.pow(2, Math.ceil(Math.log2(approvedParticipants.length))) - approvedParticipants.length}
-          </span>
-          {selectedParticipants.size === (Math.pow(2, Math.ceil(Math.log2(approvedParticipants.length))) - approvedParticipants.length) && (
-            <span className="text-sm font-medium text-green-600 flex items-center gap-1">
-              <CheckCircle size={16} />
-              Sudah cukup!
-            </span>
-          )}
-        </div>
-      </div>
+<div className="p-4 border-b" style={{ borderColor: 'rgba(0,0,0,0.1)' }}>
+  <div className="flex items-center justify-between">
+    <div className="flex items-center gap-3">
+      <span className="font-semibold" style={{ color: '#050505' }}>
+        Dipilih: {selectedParticipants.size}
+      </span>
+      
+      {!isPemula && (
+        <span className="text-sm" style={{ color: '#050505', opacity: 0.6 }}>
+          / {Math.pow(2, Math.ceil(Math.log2(approvedParticipants.length))) - approvedParticipants.length} (rekomendasi)
+        </span>
+      )}
+    </div>
+    
+    <div className="flex items-center gap-2">
+      {/* Clear Selection Button */}
+      {selectedParticipants.size > 0 && (
+        <button
+          onClick={() => setSelectedParticipants(new Set())}
+          className="text-xs px-3 py-1.5 rounded-lg border font-medium transition-all hover:bg-gray-50"
+          style={{ borderColor: '#990D35', color: '#990D35' }}
+        >
+          Clear Selection
+        </button>
+      )}
+      
+      {/* Status Badge */}
+      {selectedParticipants.size === 0 ? (
+        <span className="text-sm font-medium text-gray-600 flex items-center gap-1">
+          ⚪ No BYE
+        </span>
+      ) : !isPemula && selectedParticipants.size === (Math.pow(2, Math.ceil(Math.log2(approvedParticipants.length))) - approvedParticipants.length) ? (
+        <span className="text-sm font-medium text-green-600 flex items-center gap-1">
+          <CheckCircle size={16} />
+          Perfect!
+        </span>
+      ) : (
+        <span className="text-sm font-medium text-blue-600 flex items-center gap-1">
+          🎯 {selectedParticipants.size} BYE
+        </span>
+      )}
+    </div>
+  </div>
+</div>
 
       {/* Participants List */}
       <div className="flex-1 overflow-y-auto p-4">
@@ -2275,47 +2344,60 @@ const canvas = await html2canvas(bracketRef.current, {
         </div>
       </div>
 
-      {/* Modal Footer */}
-      <div className="p-6 border-t flex gap-3" style={{ borderColor: 'rgba(0,0,0,0.1)' }}>
-        <button
-          onClick={() => setShowParticipantSelection(false)}
-          className="flex-1 py-3 px-4 rounded-lg border font-medium transition-all hover:bg-gray-50"
-          style={{ borderColor: '#990D35', color: '#990D35' }}
-        >
-          Batal
-        </button>
-        <button
-  onClick={() => {
-    const byesNeeded = Math.pow(2, Math.ceil(Math.log2(approvedParticipants.length))) - approvedParticipants.length;
-    
-    // ⭐ Allow 0 (skip) atau exact count
-    if (selectedParticipants.size !== 0 && selectedParticipants.size !== byesNeeded) {
-      showNotification(
-        'warning',
-        'Jumlah BYE Tidak Sesuai',
-        `Pilih 0 untuk skip BYE, atau tepat ${byesNeeded} peserta`,
-        () => setShowModal(false)
-      );
-      return;
-    }
-    generateBracket(false);
-  }}
-  className="flex-1 py-3 px-4 rounded-lg font-medium transition-all"
-  style={{ 
-    backgroundColor: '#990D35', 
-    color: '#F5FBEF' 
-  }}
->
-  <div className="flex items-center justify-center gap-2">
-    <RefreshCw size={16} />
-    <span>
-      {selectedParticipants.size === 0 
-        ? 'Generate (No BYE)' 
-        : `Generate with ${selectedParticipants.size} BYE`}
-    </span>
-  </div>
-</button>
-      </div>
+{/* Modal Footer */}
+<div className="p-6 border-t flex gap-3" style={{ borderColor: 'rgba(0,0,0,0.1)' }}>
+  <button
+    onClick={() => {
+      setShowParticipantSelection(false);
+      setSelectedParticipants(new Set());
+    }}
+    className="flex-1 py-3 px-4 rounded-lg border font-medium transition-all hover:bg-gray-50"
+    style={{ borderColor: '#990D35', color: '#990D35' }}
+  >
+    Batal
+  </button>
+  
+  <button
+    onClick={() => {
+      // ⭐ VALIDASI BARU: Allow ANY count untuk PEMULA, allow 0 atau exact untuk PRESTASI
+      if (isPemula) {
+        // Pemula: any count OK
+        generateBracket(false);
+      } else {
+        // Prestasi: 0 (no BYE) atau exact recommended count
+        const recommended = Math.pow(2, Math.ceil(Math.log2(approvedParticipants.length))) - approvedParticipants.length;
+        
+        if (selectedParticipants.size !== 0 && selectedParticipants.size !== recommended) {
+          showNotification(
+            'warning',
+            'Jumlah BYE Tidak Sesuai',
+            `Untuk kategori PRESTASI, pilih 0 untuk skip BYE atau tepat ${recommended} peserta sesuai rekomendasi`,
+            () => setShowModal(false)
+          );
+          return;
+        }
+        
+        generateBracket(false);
+      }
+    }}
+    className="flex-1 py-3 px-4 rounded-lg font-medium transition-all hover:opacity-90"
+    style={{ 
+      backgroundColor: '#990D35', 
+      color: '#F5FBEF' 
+    }}
+  >
+    <div className="flex items-center justify-center gap-2">
+      <RefreshCw size={16} />
+      <span>
+        {selectedParticipants.size === 0 
+          ? 'Generate (No BYE)' 
+          : isPemula
+          ? `Generate dengan ${selectedParticipants.size} BYE (Auto Perak)`
+          : `Generate dengan ${selectedParticipants.size} BYE (ke Round 2)`}
+      </span>
+    </div>
+  </button>
+</div>
     </div>
   </div>
 )}
