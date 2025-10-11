@@ -1771,17 +1771,20 @@ const prestasiLeaderboard = generatePrestasiLeaderboard();
 /* ========== PRESTASI LAYOUT (IMPROVED - HORIZONTAL WITH TOP HEADERS) ========== */
 <div className="overflow-x-auto overflow-y-visible pb-8">
   {/* Round Headers - HORIZONTAL AT TOP */}
-<div className="flex gap-8 mb-6 px-8 sticky top-0 z-20 bg-white/95 backdrop-blur-sm py-4 shadow-sm">
+<div className="flex gap-6 mb-6 px-8 sticky top-0 z-20 bg-white/95 backdrop-blur-sm py-4 shadow-sm">
   {Array.from({ length: totalRounds }, (_, roundIndex) => {
     const round = roundIndex + 1;
     const roundMatches = getMatchesByRound(round);
-    const roundName = getRoundName(round, totalRounds); // ✅ Use fixed function
+    const roundName = getRoundName(round, totalRounds);
     
     return (
       <div 
         key={`header-${round}`}
         className="flex-shrink-0"
-        style={{ width: '340px' }}
+        style={{ 
+          width: '380px', // ⭐ Match bracket column width
+          marginRight: roundIndex < totalRounds - 1 ? '32px' : '0px' // ⭐ Match bracket spacing
+        }}
       >
         <div 
           className="text-center px-6 py-3 rounded-lg font-bold text-lg shadow-md"
