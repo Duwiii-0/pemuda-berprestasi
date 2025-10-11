@@ -38,13 +38,16 @@ export interface Bracket {
 export class BracketService {
   
 
-  static async generateBracket(
-    kompetisiId: number, 
-    kelasKejuaraanId: number,
-    byeParticipantIds?: number[] // ⭐ CHANGE: Now for BYE selection only
-  ): Promise<Bracket> {
-    try {
-      // Check if bracket already exists
+static async generateBracket(
+  kompetisiId: number, 
+  kelasKejuaraanId: number,
+  byeParticipantIds?: number[]
+): Promise<Bracket> {
+  try {
+    console.log(`\n🎯 generateBracket called:`);
+    console.log(`   Kompetisi: ${kompetisiId}`);
+    console.log(`   Kelas: ${kelasKejuaraanId}`);
+    console.log(`   BYE IDs:`, byeParticipantIds);
       const existingBagan = await prisma.tb_bagan.findFirst({
         where: {
           id_kompetisi: kompetisiId,
@@ -95,8 +98,11 @@ export class BracketService {
       }
 
       // DETEKSI KATEGORI PEMULA vs PRESTASI
-      const kategori = registrations[0]?.kelas_kejuaraan?.kategori_event?.nama_kategori?.toLowerCase() || '';
-      const isPemula = kategori.includes('pemula');
+    const kategori = registrations[0]?.kelas_kejuaraan?.kategori_event?.nama_kategori?.toLowerCase() || '';
+    const isPemula = kategori.includes('pemula');
+
+    console.log(`📊 Category detected: ${isPemula ? 'PEMULA' : 'PRESTASI'}`);
+    console.log(`   BYE participants to select: ${byeParticipantIds?.length || 0}`);
 
       // ⭐ ALL participants must be included
       const participants: Participant[] = registrations.map(reg => {
@@ -145,24 +151,24 @@ export class BracketService {
       );
 
       // ⭐ Generate matches with BYE selection
-const matches = isPemula
-  ? await this.generatePemulaBracket(bagan.id_bagan, shuffledParticipants, byeParticipantIds) // ⭐ TAMBAH byeParticipantIds
-  : await this.generatePrestasiBracket(bagan.id_bagan, shuffledParticipants, byeParticipantIds);
-      
-      return {
-        id: bagan.id_bagan,
-        kompetisiId,
-        kelasKejuaraanId,
-        totalRounds: isPemula ? 1 : this.calculateTotalRounds(shuffledParticipants.length),
-        isGenerated: true,
-        participants: shuffledParticipants,
-        matches
-      };
-    } catch (error: any) {
-      console.error('Error generating bracket:', error);
-      throw new Error(error.message || 'Failed to generate bracket');
-    }
+  const matches = isPemula
+      ? await this.generatePemulaBracket(bagan.id_bagan, shuffledParticipants, byeParticipantIds)
+      : await this.generatePrestasiBracket(bagan.id_bagan, shuffledParticipants, byeParticipantIds);
+    
+    return {
+      id: bagan.id_bagan,
+      kompetisiId,
+      kelasKejuaraanId,
+      totalRounds: isPemula ? 1 : this.calculateTotalRounds(shuffledParticipants.length),
+      isGenerated: true,
+      participants: shuffledParticipants,
+      matches
+    };
+  } catch (error: any) {
+    console.error('❌ Error generating bracket:', error);
+    throw new Error(error.message || 'Failed to generate bracket');
   }
+}
 
   /**
    * Shuffle participants randomly
