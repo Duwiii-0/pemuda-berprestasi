@@ -327,57 +327,58 @@ const generateBracket = async (shuffle: boolean = false) => {
 };
 
   const fetchBracketData = async (kompetisiId: number, kelasKejuaraanId: number) => {
-    try {
-      setLoading(true);
-      
-      const response = await fetch(
-        `${apiBaseUrl}/kompetisi/${kompetisiId}/brackets/${kelasKejuaraanId}`,
-        {
-          headers: {
-            ...(token && { 'Authorization': `Bearer ${token}` })
-          }
+  try {
+    setLoading(true);
+    
+    const response = await fetch(
+      `${apiBaseUrl}/kompetisi/${kompetisiId}/brackets/${kelasKejuaraanId}`,
+      {
+        headers: {
+          ...(token && { 'Authorization': `Bearer ${token}` })
         }
-      );
-
-      if (!response.ok) {
-        if (response.status === 404) {
-          // Bracket not found - not an error, just not generated yet
-          console.log('ℹ️ Bracket not yet generated for this class');
-          setBracketGenerated(false);
-          setMatches([]);
-          return;
-        }
-        throw new Error('Failed to fetch bracket data');
       }
+    );
 
-      const result = await response.json();
-      console.log('📊 Bracket data fetched:', result);
-
-      // Transform API response to match component interface
-      if (result.data && result.data.matches) {
-        const transformedMatches: Match[] = result.data.matches.map((m: any) => ({
-          id_match: m.id,
-          ronde: m.round,
-          id_peserta_a: m.participant1?.id,
-          id_peserta_b: m.participant2?.id,
-          skor_a: m.scoreA || 0,
-          skor_b: m.scoreB || 0,
-          peserta_a: m.participant1 ? transformParticipantFromAPI(m.participant1) : undefined,
-          peserta_b: m.participant2 ? transformParticipantFromAPI(m.participant2) : undefined,
-          venue: m.venue ? { nama_venue: m.venue } : undefined
-        }));
-
-        setMatches(transformedMatches);
-        setBracketGenerated(true);
-        console.log(`✅ Loaded ${transformedMatches.length} matches`);
+    if (!response.ok) {
+      if (response.status === 404) {
+        console.log('ℹ️ Bracket not yet generated for this class');
+        setBracketGenerated(false);
+        setMatches([]);
+        return;
       }
-      
-    } catch (error: any) {
-      console.error('❌ Error fetching bracket:', error);
-    } finally {
-      setLoading(false);
+      throw new Error('Failed to fetch bracket data');
     }
-  };
+
+    const result = await response.json();
+    console.log('📊 Bracket data fetched:', result);
+
+    // Transform API response to match component interface
+    if (result.data && result.data.matches) {
+      const transformedMatches: Match[] = result.data.matches.map((m: any) => ({
+        id_match: m.id,
+        ronde: m.round,
+        id_peserta_a: m.participant1?.id,
+        id_peserta_b: m.participant2?.id,
+        skor_a: m.scoreA || 0,
+        skor_b: m.scoreB || 0,
+        peserta_a: m.participant1 ? transformParticipantFromAPI(m.participant1) : undefined,
+        peserta_b: m.participant2 ? transformParticipantFromAPI(m.participant2) : undefined,
+        venue: m.venue ? { nama_venue: m.venue } : undefined,
+        tanggal_pertandingan: m.tanggalPertandingan,  // ⭐ TAMBAH INI
+        nomor_partai: m.nomorPartai                    // ⭐ TAMBAH INI
+      }));
+
+      setMatches(transformedMatches);
+      setBracketGenerated(true);
+      console.log(`✅ Loaded ${transformedMatches.length} matches`);
+    }
+    
+  } catch (error: any) {
+    console.error('❌ Error fetching bracket:', error);
+  } finally {
+    setLoading(false);
+  }
+};
 
   /**
    * Transform participant data from API format
@@ -1494,7 +1495,7 @@ const updateMatchResult = async (matchId: number, scoreA: number, scoreB: number
     className="bg-white rounded-xl shadow-md border-2 overflow-hidden"
     style={{ borderColor: '#990D35' }}
   >
-    {/* Match Header */}
+{/* Match Header */}
 <div 
   className="px-4 py-2.5 border-b flex items-center justify-between"
   style={{ 
@@ -1506,7 +1507,7 @@ const updateMatchResult = async (matchId: number, scoreA: number, scoreB: number
     <span className="text-sm font-semibold" style={{ color: '#050505' }}>
       Partai {matchIndex + 1}
     </span>
-    {/* ⭐ TAMBAH INFO NOMOR PARTAI */}
+    {/* ⭐ TAMPILKAN NOMOR PARTAI */}
     {match.nomor_partai && (
       <span 
         className="text-xs px-2 py-0.5 rounded-full font-medium"
@@ -1517,11 +1518,15 @@ const updateMatchResult = async (matchId: number, scoreA: number, scoreB: number
     )}
   </div>
   
-  <div className="flex items-center gap-2">
-    {/* ⭐ TAMBAH INFO TANGGAL */}
+  <div className="flex items-center gap-3">
+    {/* ⭐ TAMPILKAN TANGGAL */}
     {match.tanggal_pertandingan && (
-      <span className="text-xs" style={{ color: '#050505', opacity: 0.6 }}>
-        📅 {new Date(match.tanggal_pertandingan).toLocaleDateString('id-ID')}
+      <span className="text-xs flex items-center gap-1" style={{ color: '#050505', opacity: 0.7 }}>
+        📅 {new Date(match.tanggal_pertandingan).toLocaleDateString('id-ID', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric'
+        })}
       </span>
     )}
     <button
@@ -1911,32 +1916,52 @@ const verticalSpacing = baseSpacing * spacingMultiplier;
                   }}
                 >
                   {/* Match Header */}
-                  <div 
-                    className="px-4 py-2.5 flex items-center justify-between border-b flex-shrink-0"
-                    style={{ 
-                      backgroundColor: 'rgba(153, 13, 53, 0.05)',
-                      borderColor: '#990D35'
-                    }}
-                  >
-                    <div className="flex items-center gap-2">
-                      <div 
-                        className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold"
-                        style={{ backgroundColor: '#990D35', color: 'white' }}
-                      >
-                        {matchIndex + 1}
-                      </div>
-                      <span className="text-xs font-semibold" style={{ color: '#050505' }}>
-                        Match {match.id_match}
-                      </span>
-                    </div>
-                    <button
-                      onClick={() => setEditingMatch(match)}
-                      className="p-1.5 rounded-lg hover:bg-black/5 transition-all"
-                      title="Edit Score"
-                    >
-                      <Edit3 size={14} style={{ color: '#990D35' }} />
-                    </button>
-                  </div>
+<div 
+  className="px-4 py-2.5 flex items-center justify-between border-b flex-shrink-0"
+  style={{ 
+    backgroundColor: 'rgba(153, 13, 53, 0.05)',
+    borderColor: '#990D35'
+  }}
+>
+  <div className="flex items-center gap-2">
+    <div 
+      className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold"
+      style={{ backgroundColor: '#990D35', color: 'white' }}
+    >
+      {matchIndex + 1}
+    </div>
+    <span className="text-xs font-semibold" style={{ color: '#050505' }}>
+      Match {match.id_match}
+    </span>
+    {/* ⭐ NOMOR PARTAI */}
+    {match.nomor_partai && (
+      <span 
+        className="text-xs px-2 py-0.5 rounded-full font-medium"
+        style={{ backgroundColor: '#F5B700', color: 'white' }}
+      >
+        {match.nomor_partai}
+      </span>
+    )}
+  </div>
+  <div className="flex items-center gap-2">
+    {/* ⭐ TANGGAL */}
+    {match.tanggal_pertandingan && (
+      <span className="text-xs" style={{ color: '#050505', opacity: 0.6 }}>
+        📅 {new Date(match.tanggal_pertandingan).toLocaleDateString('id-ID', {
+          day: 'numeric',
+          month: 'short'
+        })}
+      </span>
+    )}
+    <button
+      onClick={() => setEditingMatch(match)}
+      className="p-1.5 rounded-lg hover:bg-black/5 transition-all"
+      title="Edit Score"
+    >
+      <Edit3 size={14} style={{ color: '#990D35' }} />
+    </button>
+  </div>
+</div>
 
                   {/* Participants */}
                   <div className="flex flex-col">
