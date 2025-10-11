@@ -1806,23 +1806,24 @@ const prestasiLeaderboard = generatePrestasiLeaderboard();
     const round = roundIndex + 1;
     const roundMatches = getMatchesByRound(round);
     
-    // ⭐ IMPROVED: Dynamic spacing dengan formula lebih baik
-    const matchCardHeight = 180; // Increased untuk participant info lebih jelas
-    const baseGap = 40; // Base gap lebih kecil untuk round 1
-    const verticalSpacing = roundIndex === 0 
-      ? baseGap 
-      : baseGap * Math.pow(1.8, roundIndex); // Growth factor lebih kecil
+// ⭐ IMPROVED: Dynamic spacing dengan formula lebih baik
+const matchCardHeight = 200; // ⭐ Increased untuk text wrap
+const baseGap = 50; // ⭐ Increased base gap
+const verticalSpacing = roundIndex === 0 
+  ? baseGap 
+  : baseGap * Math.pow(1.8, roundIndex);
       
 return (
-  <div 
-    key={`round-${round}`} 
-    className="flex flex-col justify-start relative flex-shrink-0"
-    style={{ 
-      width: '360px', // ⭐ Sedikit lebih lebar
-      gap: `${verticalSpacing}px`,
-      paddingTop: roundIndex === 0 ? '0px' : `${verticalSpacing / 2}px` // ⭐ Offset untuk alignment
-    }}
-  >
+<div 
+  key={`round-${round}`} 
+  className="flex flex-col justify-start relative flex-shrink-0"
+  style={{ 
+    width: '380px', // ⭐ Lebih lebar dari 360px
+    gap: `${verticalSpacing}px`,
+    paddingTop: roundIndex === 0 ? '0px' : `${verticalSpacing / 2}px`,
+    marginRight: '32px' // ⭐ Space antar round
+  }}
+>
           {/* Matches */}
           {roundMatches.map((match, matchIndex) => {
             const hasScores = match.skor_a > 0 || match.skor_b > 0;
@@ -1843,15 +1844,15 @@ return (
 {round < totalRounds && (
   <>
     {/* Horizontal connector to next round */}
-    <div
-      className="absolute left-full border-t-2"
-      style={{ 
-        borderColor: '#990D35',
-        top: `${matchCardHeight / 2}px`, // ⭐ Fixed position dari top
-        width: '24px', // ⭐ Sedikit lebih pendek
-        zIndex: 1
-      }}
-    />
+<div
+  className="absolute left-full border-t-2"
+  style={{ 
+    borderColor: '#990D35',
+    top: `${matchCardHeight / 2}px`,
+    width: '32px', // ⭐ Match dengan marginRight
+    zIndex: 1
+  }}
+/>
                     
                     {/* Vertical bracket connector */}
                     {matchIndex % 2 === 0 && matchIndex + 1 < roundMatches.length && (
@@ -1869,16 +1870,16 @@ return (
                   </>
                 )}
 
-                {/* Match Card */}
-                <div
-                  className="bg-white rounded-xl shadow-lg border-2 overflow-hidden hover:shadow-xl transition-all relative z-10"
-                  style={{ 
-                    borderColor: winner ? '#22c55e' : '#990D35',
-                    height: `${matchCardHeight}px`,
-                    display: 'flex',
-                    flexDirection: 'column'
-                  }}
-                >
+{/* Match Card */}
+<div
+  className="bg-white rounded-xl shadow-lg border-2 overflow-hidden hover:shadow-xl transition-all relative z-10"
+  style={{ 
+    borderColor: winner ? '#22c55e' : '#990D35',
+    minHeight: `${matchCardHeight}px`, // ⭐ min-height instead of height
+    display: 'flex',
+    flexDirection: 'column'
+  }}
+>
                   {/* Match Header */}
                   <div 
                     className="px-4 py-2.5 flex items-center justify-between border-b flex-shrink-0"
@@ -1908,7 +1909,7 @@ return (
                   </div>
 
                   {/* Participants */}
-                  <div className="flex-1 flex flex-col">
+                  <div className="flex flex-col">
                     {/* Participant A */}
                     <div 
                       className={`flex-1 px-4 py-3 border-b flex items-center justify-between gap-3 transition-all ${
@@ -1916,7 +1917,7 @@ return (
                           ? 'bg-gradient-to-r from-green-50 to-green-100' 
                           : 'hover:bg-blue-50/30'
                       }`}
-                      style={{ borderColor: 'rgba(0, 0, 0, 0.05)' }}
+                      style={{ borderColor: 'rgba(0, 0, 0, 0.05)', minHeight: '85px' }}
                     >
                       {match.peserta_a ? (
                         <>
@@ -1932,13 +1933,21 @@ return (
                                 <CheckCircle size={14} className="text-green-600 flex-shrink-0" />
                               )}
                             </div>
-                            <p 
-                              className="font-bold text-sm truncate leading-tight"
-                              style={{ color: '#050505' }}
-                              title={getParticipantName(match.peserta_a)}
-                            >
-                              {getParticipantName(match.peserta_a)}
-                            </p>
+<p 
+  className="font-bold text-sm leading-tight break-words"
+  style={{ 
+    color: '#050505',
+    wordBreak: 'break-word',
+    overflowWrap: 'break-word',
+    display: '-webkit-box',
+    WebkitLineClamp: 2,
+    WebkitBoxOrient: 'vertical',
+    overflow: 'hidden'
+  }}
+  title={getParticipantName(match.peserta_a)}
+>
+  {getParticipantName(match.peserta_a)}
+</p>
                             <p 
                               className="text-xs truncate mt-0.5"
                               style={{ color: '#3B82F6', opacity: 0.7 }}
@@ -1971,7 +1980,7 @@ return (
       ? 'bg-gradient-to-r from-green-50 to-green-100' 
       : 'hover:bg-red-50/30'
   }`}
-  style={{ minHeight: '70px' }} // ⭐ Ensure minimal height
+  style={{ minHeight: '85px' }} // ⭐ Ensure minimal height
 >
   {match.peserta_b ? (
     <>
@@ -1988,13 +1997,21 @@ return (
             <CheckCircle size={14} className="text-green-600 flex-shrink-0" />
           )}
         </div>
-        <p 
-          className="font-bold text-sm truncate leading-tight"
-          style={{ color: '#050505' }}
-          title={getParticipantName(match.peserta_b)}
-        >
-          {getParticipantName(match.peserta_b)}
-        </p>
+<p 
+  className="font-bold text-sm leading-tight break-words"
+  style={{ 
+    color: '#050505',
+    wordBreak: 'break-word',
+    overflowWrap: 'break-word',
+    display: '-webkit-box',
+    WebkitLineClamp: 2,
+    WebkitBoxOrient: 'vertical',
+    overflow: 'hidden'
+  }}
+  title={getParticipantName(match.peserta_b)}
+>
+  {getParticipantName(match.peserta_b)}
+</p>
         <p 
           className="text-xs truncate mt-0.5"
           style={{ color: '#EF4444', opacity: 0.7 }}
