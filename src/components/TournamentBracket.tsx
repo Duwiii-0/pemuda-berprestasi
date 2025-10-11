@@ -985,20 +985,21 @@ const generateLeaderboard = () => {
   // Track processed participants to avoid duplicates
   const processedGold = new Set<number>();
   const processedSilver = new Set<number>();
-  const processedBye = new Set<number>();
 
   matches.forEach(match => {
     // ⭐ BYE DETECTION: participant A exists but NO participant B
+    // Di PEMULA: BYE = GOLD (auto menang tanpa bertanding)
     if (match.peserta_a && !match.peserta_b) {
       const id = match.peserta_a.id_peserta_kompetisi;
-      if (!processedBye.has(id)) {
-        leaderboard.bye.push({
+      
+      if (!processedGold.has(id)) {
+        leaderboard.gold.push({
           name: getParticipantName(match.peserta_a),
           dojo: getDojoName(match.peserta_a),
           id: id
         });
-        processedBye.add(id);
-        console.log(`🎁 BYE detected: ${getParticipantName(match.peserta_a)} → Auto SILVER`);
+        processedGold.add(id);
+        console.log(`🏆 BYE (PEMULA) detected: ${getParticipantName(match.peserta_a)} → Auto GOLD`);
       }
       return; // Skip to next match
     }
@@ -1014,8 +1015,8 @@ const generateLeaderboard = () => {
       const winnerId = winner.id_peserta_kompetisi;
       const loserId = loser.id_peserta_kompetisi;
       
-      // ⭐ Winner = GOLD (not BYE)
-      if (!processedGold.has(winnerId) && !processedBye.has(winnerId)) {
+      // ⭐ Winner = GOLD
+      if (!processedGold.has(winnerId)) {
         leaderboard.gold.push({
           name: getParticipantName(winner),
           dojo: getDojoName(winner),
@@ -1024,8 +1025,8 @@ const generateLeaderboard = () => {
         processedGold.add(winnerId);
       }
       
-      // ⭐ Loser = SILVER (not BYE)
-      if (!processedSilver.has(loserId) && !processedBye.has(loserId)) {
+      // ⭐ Loser = SILVER
+      if (!processedSilver.has(loserId)) {
         leaderboard.silver.push({
           name: getParticipantName(loser),
           dojo: getDojoName(loser),
@@ -1036,11 +1037,10 @@ const generateLeaderboard = () => {
     }
   });
 
-  console.log(`📊 Leaderboard: ${leaderboard.gold.length} GOLD, ${leaderboard.silver.length} SILVER, ${leaderboard.bye.length} BYE`);
+  console.log(`📊 PEMULA Leaderboard: ${leaderboard.gold.length} GOLD, ${leaderboard.silver.length} SILVER`);
   
   return leaderboard;
 };
-
   const leaderboard = generateLeaderboard();
 
     const updateMatchResult = async (matchId: number, scoreA: number, scoreB: number) => {
@@ -1435,16 +1435,16 @@ const generateLeaderboard = () => {
       </div>
 
       {/* Participant B (Red Corner) */}
-      {match.peserta_b ? (
-        <div 
-          className={`relative rounded-lg border-2 p-3 transition-all ${
-            match.skor_b > match.skor_a && (match.skor_a > 0 || match.skor_b > 0)
-              ? 'border-yellow-400 bg-yellow-50/50' 
-              : match.skor_a > 0 || match.skor_b > 0
-              ? 'border-gray-300 bg-gray-50/30'
-              : 'border-gray-200 bg-white'
-          }`}
-        >
+{match.peserta_b ? (
+  <div 
+    className={`relative rounded-lg border-2 p-3 transition-all ${
+      match.skor_b > match.skor_a && (match.skor_a > 0 || match.skor_b > 0)
+        ? 'border-yellow-400 bg-yellow-50/50' 
+        : match.skor_a > 0 || match.skor_b > 0
+        ? 'border-gray-300 bg-gray-50/30'
+        : 'border-gray-200 bg-white'
+    }`}
+  >
           <div className="flex items-center gap-3">
             {/* Left: Badge + Info */}
             <div className="flex-1 min-w-0">
@@ -1505,18 +1505,18 @@ const generateLeaderboard = () => {
           </div>
         </div>
       ) : (
-        <div className="text-center py-3 px-4 rounded-lg" style={{ backgroundColor: 'rgba(192, 192, 192, 0.05)' }}>
-          <span 
-            className="inline-flex items-center text-xs font-medium px-3 py-1.5 rounded-full"
-            style={{ 
-              backgroundColor: 'rgba(192, 192, 192, 0.2)', 
-              color: '#6b7280' 
-            }}
-          >
-            🎁 Free draw (Silver Medal)
-          </span>
-        </div>
-      )}
+        <div className="text-center py-3 px-4 rounded-lg" style={{ backgroundColor: 'rgba(245, 183, 0, 0.05)' }}>
+    <span 
+      className="inline-flex items-center text-xs font-medium px-3 py-1.5 rounded-full"
+      style={{ 
+        backgroundColor: '#F5B700', 
+        color: 'white' 
+      }}
+    >
+      🏆 FREE DRAW (Gold Medal)
+    </span>
+  </div>
+)}
     </div>
   </div>
 ))}
@@ -1536,129 +1536,90 @@ const generateLeaderboard = () => {
                   </div>
 
                   <div className="p-6 space-y-6">
-                    {/* Gold Medals */}
-                    {leaderboard && leaderboard.gold.length > 0 && (
-                      <div>
-                        <div className="flex items-center gap-2 mb-3">
-                          <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ backgroundColor: '#F5B700' }}>
-                            <span className="text-lg">🥇</span>
-                          </div>
-                          <h4 className="font-bold text-lg" style={{ color: '#050505' }}>
-                            GOLD MEDALS
-                          </h4>
-                        </div>
-                        <div className="space-y-2">
-                          {leaderboard.gold.map((participant, idx) => (
-                            <div key={participant.id} className="p-3 rounded-lg border-2" style={{ 
-                              backgroundColor: 'rgba(245, 183, 0, 0.1)', 
-                              borderColor: '#F5B700' 
-                            }}>
-                              <div className="flex items-center gap-2">
-                                <span className="text-xl font-bold" style={{ color: '#F5B700' }}>
-                                  {idx + 1}.
-                                </span>
-                                <div className="flex-1">
-                                  <p className="font-bold text-sm" style={{ color: '#050505' }}>
-                                    {participant.name}
-                                  </p>
-                                  <p className="text-xs uppercase" style={{ color: '#050505', opacity: 0.6 }}>
-                                    {participant.dojo}
-                                  </p>
-                                </div>
-                                <Trophy size={20} style={{ color: '#F5B700' }} />
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
+  {/* Gold Medals */}
+  {leaderboard && leaderboard.gold.length > 0 && (
+    <div>
+      <div className="flex items-center gap-2 mb-3">
+        <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ backgroundColor: '#F5B700' }}>
+          <span className="text-lg">🥇</span>
+        </div>
+        <h4 className="font-bold text-lg" style={{ color: '#050505' }}>
+          GOLD MEDALS
+        </h4>
+      </div>
+      <div className="space-y-2">
+        {leaderboard.gold.map((participant, idx) => (
+          <div key={participant.id} className="p-3 rounded-lg border-2" style={{ 
+            backgroundColor: 'rgba(245, 183, 0, 0.1)', 
+            borderColor: '#F5B700' 
+          }}>
+            <div className="flex items-center gap-2">
+              <span className="text-xl font-bold" style={{ color: '#F5B700' }}>
+                {idx + 1}.
+              </span>
+              <div className="flex-1">
+                <p className="font-bold text-sm" style={{ color: '#050505' }}>
+                  {participant.name}
+                </p>
+                <p className="text-xs uppercase" style={{ color: '#050505', opacity: 0.6 }}>
+                  {participant.dojo}
+                </p>
+              </div>
+              <Trophy size={20} style={{ color: '#F5B700' }} />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )}
 
-                    {/* Silver Medals */}
-                    {leaderboard && leaderboard.silver.length > 0 && (
-                      <div>
-                        <div className="flex items-center gap-2 mb-3">
-                          <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ backgroundColor: '#C0C0C0' }}>
-                            <span className="text-lg">🥈</span>
-                          </div>
-                          <h4 className="font-bold text-lg" style={{ color: '#050505' }}>
-                            SILVER MEDALS
-                          </h4>
-                        </div>
-                        <div className="space-y-2">
-                          {leaderboard.silver.map((participant, idx) => (
-                            <div key={participant.id} className="p-3 rounded-lg border" style={{ 
-                              backgroundColor: 'rgba(192, 192, 192, 0.1)', 
-                              borderColor: '#C0C0C0' 
-                            }}>
-                              <div className="flex items-center gap-2">
-                                <span className="text-lg font-bold" style={{ color: '#6b7280' }}>
-                                  {idx + 1}.
-                                </span>
-                                <div className="flex-1">
-                                  <p className="font-bold text-sm" style={{ color: '#050505' }}>
-                                    {participant.name}
-                                  </p>
-                                  <p className="text-xs uppercase" style={{ color: '#050505', opacity: 0.6 }}>
-                                    {participant.dojo}
-                                  </p>
-                                </div>
-                                <Medal size={20} style={{ color: '#C0C0C0' }} />
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
+  {/* Silver Medals */}
+  {leaderboard && leaderboard.silver.length > 0 && (
+    <div>
+      <div className="flex items-center gap-2 mb-3">
+        <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ backgroundColor: '#C0C0C0' }}>
+          <span className="text-lg">🥈</span>
+        </div>
+        <h4 className="font-bold text-lg" style={{ color: '#050505' }}>
+          SILVER MEDALS
+        </h4>
+      </div>
+      <div className="space-y-2">
+        {leaderboard.silver.map((participant, idx) => (
+          <div key={participant.id} className="p-3 rounded-lg border" style={{ 
+            backgroundColor: 'rgba(192, 192, 192, 0.1)', 
+            borderColor: '#C0C0C0' 
+          }}>
+            <div className="flex items-center gap-2">
+              <span className="text-lg font-bold" style={{ color: '#6b7280' }}>
+                {idx + 1}.
+              </span>
+              <div className="flex-1">
+                <p className="font-bold text-sm" style={{ color: '#050505' }}>
+                  {participant.name}
+                </p>
+                <p className="text-xs uppercase" style={{ color: '#050505', opacity: 0.6 }}>
+                  {participant.dojo}
+                </p>
+              </div>
+              <Medal size={20} style={{ color: '#C0C0C0' }} />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )}
 
-                    {/* BYE (Free Draw) */}
-                    {leaderboard && leaderboard.bye.length > 0 && (
-                      <div>
-                        <div className="flex items-center gap-2 mb-3">
-                          <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ backgroundColor: '#6b7280' }}>
-                            <span className="text-lg">🎁</span>
-                          </div>
-                          <h4 className="font-bold text-lg" style={{ color: '#050505' }}>
-                            FREE DRAW (Silver)
-                          </h4>
-                        </div>
-                        <div className="space-y-2">
-                          {leaderboard.bye.map((participant) => (
-                            <div key={participant.id} className="p-3 rounded-lg border" style={{ 
-                              backgroundColor: 'rgba(107, 114, 128, 0.1)', 
-                              borderColor: '#6b7280' 
-                            }}>
-                              <div className="flex items-center gap-2">
-                                <div className="flex-1">
-                                  <p className="font-bold text-sm" style={{ color: '#050505' }}>
-                                    {participant.name}
-                                  </p>
-                                  <p className="text-xs uppercase" style={{ color: '#050505', opacity: 0.6 }}>
-                                    {participant.dojo}
-                                  </p>
-                                </div>
-                                <span className="text-xs px-2 py-1 rounded-full" style={{ 
-                                  backgroundColor: '#C0C0C0', 
-                                  color: 'white' 
-                                }}>
-                                  🥈 Auto Silver
-                                </span>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Empty State */}
-                    {leaderboard && leaderboard.gold.length === 0 && leaderboard.silver.length === 0 && (
-                      <div className="text-center py-8">
-                        <Trophy size={48} style={{ color: '#990D35', opacity: 0.3 }} className="mx-auto mb-3" />
-                        <p className="text-sm" style={{ color: '#050505', opacity: 0.5 }}>
-                          Belum ada hasil pertandingan
-                        </p>
-                      </div>
-                    )}
-                  </div>
+  {/* Empty State */}
+  {leaderboard && leaderboard.gold.length === 0 && leaderboard.silver.length === 0 && (
+    <div className="text-center py-8">
+      <Trophy size={48} style={{ color: '#990D35', opacity: 0.3 }} className="mx-auto mb-3" />
+      <p className="text-sm" style={{ color: '#050505', opacity: 0.5 }}>
+        Belum ada hasil pertandingan
+      </p>
+    </div>
+  )}
+</div>
                 </div>
               </div>
             </div>

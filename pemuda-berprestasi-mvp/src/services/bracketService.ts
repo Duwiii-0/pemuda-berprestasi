@@ -414,30 +414,30 @@ static async generatePrestasiBracket(
 
   // ⭐ CREATE BYE MATCHES (peserta vs NULL) - AUTO SILVER
   for (const byeParticipant of byeParticipants) {
-    const match = await prisma.tb_match.create({
-      data: {
-        id_bagan: baganId,
-        ronde: 1,
-        id_peserta_a: byeParticipant.id,
-        id_peserta_b: null, // NULL = BYE = auto SILVER
-        skor_a: 0,
-        skor_b: 0
-      }
-    });
-    
-    matches.push({
-      id: match.id_match,
-      round: 1,
-      position: matches.length,
-      participant1: byeParticipant,
-      participant2: null,
-      status: 'bye',
-      scoreA: 0,
-      scoreB: 0
-    });
-    
-    console.log(`  🎁 BYE Match ${matches.length}: ${byeParticipant.name} → Auto SILVER (FREE DRAW)`);
-  }
+  const match = await prisma.tb_match.create({
+    data: {
+      id_bagan: baganId,
+      ronde: 1,
+      id_peserta_a: byeParticipant.id,
+      id_peserta_b: null,
+      skor_a: 0,
+      skor_b: 0
+    }
+  });
+  
+  matches.push({
+    id: match.id_match,
+    round: 1,
+    position: matches.length,
+    participant1: byeParticipant,
+    participant2: null,
+    status: 'bye',
+    scoreA: 0,
+    scoreB: 0
+  });
+  
+  console.log(`  🏆 BYE Match created: ID=${match.id_match}, Participant=${byeParticipant.name} (ID=${byeParticipant.id}) → Auto GOLD`);
+}
   
   console.log(`✅ Generated ${matches.length} matches for PEMULA category`);
   console.log(`   - ${fightingParticipants.length} fighters in ${Math.ceil(fightingParticipants.length / 2)} matches`);
