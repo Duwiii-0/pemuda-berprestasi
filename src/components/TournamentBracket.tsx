@@ -1802,34 +1802,33 @@ const prestasiLeaderboard = generatePrestasiLeaderboard();
 
 {/* Matches Container - HORIZONTAL FLOW */}
 <div 
-  className="inline-flex items-stretch gap-0 min-w-full px-8 py-8" 
+  className="inline-flex items-stretch gap-6 min-w-full px-8 py-8" 
   style={{ 
     minHeight: 'auto',
-    alignItems: 'stretch'
+    alignItems: 'stretch' // ⭐ Semua column sama tinggi
   }}
 >
   {Array.from({ length: totalRounds }, (_, roundIndex) => {
     const round = roundIndex + 1;
     const roundMatches = getMatchesByRound(round);
     
-    const matchCardHeight = 200;
-    const baseGap = 60;
-    // ⭐ UPDATED: More aggressive spacing multiplier
-    const verticalSpacing = roundIndex === 0 
-      ? baseGap 
-      : baseGap * Math.pow(2.5, roundIndex); // Changed from 2.2 to 2.5
+const matchCardHeight = 200;
+const baseGap = 50;
+const verticalSpacing = roundIndex === 0 
+  ? baseGap 
+  : baseGap * Math.pow(2.2, roundIndex); // ⭐ 2.2 instead of 1.8
       
-    return (
-      <div 
-        key={`round-${round}`} 
-        className="flex flex-col justify-center relative flex-shrink-0"
-        style={{ 
-          width: '400px', // ⭐ Increased from 380px
-          gap: `${verticalSpacing}px`,
-          marginRight: roundIndex < totalRounds - 1 ? '64px' : '0px', // ⭐ Changed from 32px
-          minHeight: '100%'
-        }}
-      >
+return (
+  <div 
+    key={`round-${round}`} 
+    className="flex flex-col justify-center relative flex-shrink-0" // ⭐ TAMBAH justify-center
+    style={{ 
+      width: '380px',
+      gap: `${verticalSpacing}px`,
+      marginRight: '32px',
+      minHeight: '100%' // ⭐ TAMBAH ini
+    }}
+  >
           {/* Matches */}
 {roundMatches.map((match, matchIndex) => {
   const hasScores = match.skor_a > 0 || match.skor_b > 0;
@@ -1845,34 +1844,33 @@ const prestasiLeaderboard = generatePrestasiLeaderboard();
         minHeight: `${matchCardHeight}px`
       }}
     >
-{/* Connecting Lines */}
+                {/* Connecting Lines */}
 {round < totalRounds && (
   <>
-    {/* ⭐ HORIZONTAL connector - longer line */}
-    <div
-      className="absolute left-full border-t-2"
-      style={{ 
-        borderColor: '#990D35',
-        top: `${matchCardHeight / 2}px`,
-        width: '64px', // ⭐ Changed from 32px
-        zIndex: 1
-      }}
-    />
-    
-    {/* ⭐ VERTICAL bracket connector - fixed positioning */}
-    {matchIndex % 2 === 0 && matchIndex + 1 < roundMatches.length && (
-      <div
-        className="absolute border-l-2"
-        style={{
-          borderColor: '#990D35',
-          left: 'calc(100% + 64px)', // ⭐ Changed from 32px
-          top: `${matchCardHeight / 2}px`,
-          height: `${verticalSpacing + matchCardHeight}px`,
-          zIndex: 0
-        }}
-      />
-    )}
-  </>
+{/* Horizontal connector to next round */}
+<div
+  className="absolute left-full border-t-2"
+  style={{ 
+    borderColor: '#990D35',
+    top: `${matchCardHeight / 2}px`,
+    width: '64px',
+    zIndex: 1
+  }}
+/>
+                    
+                    {/* Vertical bracket connector */}
+{/* Vertical bracket connector */}
+{matchIndex % 2 === 0 && matchIndex + 1 < roundMatches.length && (
+  <div
+    className="absolute border-l-2"
+    style={{
+      borderColor: '#990D35',
+      left: 'calc(100% + 64px)',
+      top: `${matchCardHeight / 2}px`, // ⭐ Start from center of current card
+      height: `${verticalSpacing + matchCardHeight}px`, // ⭐ Connect to center of next card
+      zIndex: 0
+    }}
+  />
 )}
                   </>
                 )}
