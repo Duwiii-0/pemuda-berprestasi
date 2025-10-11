@@ -1806,7 +1806,7 @@ const prestasiLeaderboard = generatePrestasiLeaderboard();
       const round = roundIndex + 1;
       const roundMatches = getMatchesByRound(round);
       
-      const matchCardHeight = 160; // ⭐ ORIGINAL height
+      const matchCardHeight = 200; // ⭐ ORIGINAL height
       
       // ⭐ DYNAMIC vertical spacing
       const baseSpacing = 60; // ⭐ ORIGINAL base spacing
@@ -1817,7 +1817,7 @@ const prestasiLeaderboard = generatePrestasiLeaderboard();
           key={`round-${round}`} 
           className="flex flex-col justify-center flex-shrink-0"
           style={{ 
-            width: '340px', // ⭐ ORIGINAL width
+            width: '380px', // ⭐ ORIGINAL width
             gap: `${verticalSpacing}px`,
             marginRight: roundIndex < totalRounds - 1 ? '80px' : '0px',
             position: 'relative'
@@ -1875,7 +1875,7 @@ const prestasiLeaderboard = generatePrestasiLeaderboard();
                   className="bg-white rounded-xl shadow-lg border-2 overflow-hidden hover:shadow-xl transition-all relative z-10"
                   style={{ 
                     borderColor: winner ? '#22c55e' : '#990D35',
-                    height: `${matchCardHeight}px`, // ⭐ FIXED height
+                    minHeight: `${matchCardHeight}px`, // ⭐ FIXED height
                     display: 'flex',
                     flexDirection: 'column'
                   }}
@@ -1909,7 +1909,7 @@ const prestasiLeaderboard = generatePrestasiLeaderboard();
                   </div>
 
                   {/* Participants */}
-                  <div className="flex-1 flex flex-col">
+                  <div className="flex flex-col">
                     {/* Participant A */}
                     <div 
                       className={`flex-1 px-4 py-3 border-b flex items-center justify-between gap-3 transition-all ${
@@ -1917,7 +1917,7 @@ const prestasiLeaderboard = generatePrestasiLeaderboard();
                           ? 'bg-gradient-to-r from-green-50 to-green-100' 
                           : 'hover:bg-blue-50/30'
                       }`}
-                      style={{ borderColor: 'rgba(0, 0, 0, 0.05)' }}
+                      style={{ borderColor: 'rgba(0, 0, 0, 0.05)', minHeight: '85px' }}
                     >
                       {match.peserta_a ? (
                         <>
@@ -1933,13 +1933,21 @@ const prestasiLeaderboard = generatePrestasiLeaderboard();
                                 <CheckCircle size={14} className="text-green-600 flex-shrink-0" />
                               )}
                             </div>
-                            <p 
-                              className="font-bold text-sm truncate leading-tight"
-                              style={{ color: '#050505' }}
-                              title={getParticipantName(match.peserta_a)}
-                            >
-                              {getParticipantName(match.peserta_a)}
-                            </p>
+<p 
+  className="font-bold text-sm leading-tight break-words"
+  style={{ 
+    color: '#050505',
+    wordBreak: 'break-word',
+    overflowWrap: 'break-word',
+    display: '-webkit-box',
+    WebkitLineClamp: 2,
+    WebkitBoxOrient: 'vertical',
+    overflow: 'hidden'
+  }}
+  title={getParticipantName(match.peserta_a)}
+>
+  {getParticipantName(match.peserta_a)}
+</p>
                             <p 
                               className="text-xs truncate mt-0.5"
                               style={{ color: '#3B82F6', opacity: 0.7 }}
@@ -1972,6 +1980,7 @@ const prestasiLeaderboard = generatePrestasiLeaderboard();
                           ? 'bg-gradient-to-r from-green-50 to-green-100' 
                           : 'hover:bg-red-50/30'
                       }`}
+                        style={{ minHeight: '85px' }}
                     >
                       {match.peserta_b ? (
                         <>
@@ -1987,13 +1996,21 @@ const prestasiLeaderboard = generatePrestasiLeaderboard();
                                 <CheckCircle size={14} className="text-green-600 flex-shrink-0" />
                               )}
                             </div>
-                            <p 
-                              className="font-bold text-sm truncate leading-tight"
-                              style={{ color: '#050505' }}
-                              title={getParticipantName(match.peserta_b)}
-                            >
-                              {getParticipantName(match.peserta_b)}
-                            </p>
+<p 
+  className="font-bold text-sm leading-tight break-words"
+  style={{ 
+    color: '#050505',
+    wordBreak: 'break-word',
+    overflowWrap: 'break-word',
+    display: '-webkit-box',
+    WebkitLineClamp: 2,
+    WebkitBoxOrient: 'vertical',
+    overflow: 'hidden'
+  }}
+  title={getParticipantName(match.peserta_b)}
+>
+  {getParticipantName(match.peserta_b)}
+</p>
                             <p 
                               className="text-xs truncate mt-0.5"
                               style={{ color: '#EF4444', opacity: 0.7 }}
