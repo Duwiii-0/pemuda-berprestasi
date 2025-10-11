@@ -879,73 +879,95 @@ static async generatePemulaBracket(
   /**
    * Update match result
    */
-  static async updateMatch(matchId: number, winnerId: number, scoreA: number, scoreB: number): Promise<Match> {
-    try {
-      const updatedMatch = await prisma.tb_match.update({
-        where: { id_match: matchId },
-        data: {
-          skor_a: scoreA,
-          skor_b: scoreB
-        },
-        include: {
-          peserta_a: {
-            include: {
-              atlet: {
-                include: {
-                  dojang: true
-                }
-              },
-              anggota_tim: {
-                include: {
-                  atlet: {
-                    include: {
-                      dojang: true
-                    }
+  /**
+ * Update match result with tanggal and nomor partai
+ */
+static async updateMatch(
+  matchId: number, 
+  winnerId: number, 
+  scoreA: number, 
+  scoreB: number,
+  tanggalPertandingan?: Date | null,  // ⭐ TAMBAH PARAMETER
+  nomorPartai?: string | null         // ⭐ TAMBAH PARAMETER
+): Promise<Match> {
+  try {
+    const updateData: any = {
+      skor_a: scoreA,
+      skor_b: scoreB
+    };
+
+    // ⭐ Add optional fields if provided
+    if (tanggalPertandingan !== undefined) {
+      updateData.tanggal_pertandingan = tanggalPertandingan;
+    }
+    if (nomorPartai !== undefined) {
+      updateData.nomor_partai = nomorPartai;
+    }
+
+    const updatedMatch = await prisma.tb_match.update({
+      where: { id_match: matchId },
+      data: updateData,
+      include: {
+        peserta_a: {
+          include: {
+            atlet: {
+              include: {
+                dojang: true
+              }
+            },
+            anggota_tim: {
+              include: {
+                atlet: {
+                  include: {
+                    dojang: true
                   }
                 }
               }
             }
-          },
-          peserta_b: {
-            include: {
-              atlet: {
-                include: {
-                  dojang: true
-                }
-              },
-              anggota_tim: {
-                include: {
-                  atlet: {
-                    include: {
-                      dojang: true
-                    }
+          }
+        },
+        peserta_b: {
+          include: {
+            atlet: {
+              include: {
+                dojang: true
+              }
+            },
+            anggota_tim: {
+              include: {
+                atlet: {
+                  include: {
+                    dojang: true
                   }
                 }
               }
             }
           }
         }
-      });
+      }
+    });
 
-      // Advance winner to next round
-      await this.advanceWinnerToNextRound(updatedMatch, winnerId);
+    // Advance winner to next round
+    await this.advanceWinnerToNextRound(updatedMatch, winnerId);
 
-      return {
-        id: updatedMatch.id_match,
-        round: updatedMatch.ronde,
-        position: 0,
-        participant1: updatedMatch.peserta_a ? this.transformParticipant(updatedMatch.peserta_a) : null,
-        participant2: updatedMatch.peserta_b ? this.transformParticipant(updatedMatch.peserta_b) : null,
-        winner: this.determineWinner(updatedMatch),
-        scoreA: updatedMatch.skor_a,
-        scoreB: updatedMatch.skor_b,
-        status: this.determineMatchStatus(updatedMatch)
-      };
-    } catch (error: any) {
-      console.error('Error updating match:', error);
-      throw new Error('Failed to update match');
-    }
+    return {
+      id: updatedMatch.id_match,
+      round: updatedMatch.ronde,
+      position: 0,
+      participant1: updatedMatch.peserta_a ? this.transformParticipant(updatedMatch.peserta_a) : null,
+      participant2: updatedMatch.peserta_b ? this.transformParticipant(updatedMatch.peserta_b) : null,
+      winner: this.determineWinner(updatedMatch),
+      scoreA: updatedMatch.skor_a,
+      scoreB: updatedMatch.skor_b,
+      status: this.determineMatchStatus(updatedMatch),
+      tanggalPertandingan: updatedMatch.tanggal_pertandingan, // ⭐ RETURN VALUE
+      nomorPartai: updatedMatch.nomor_partai                  // ⭐ RETURN VALUE
+    };
+  } catch (error: any) {
+    console.error('Error updating match:', error);
+    throw new Error('Failed to update match');
   }
+}
 
   /**
    * Advance winner to next round
