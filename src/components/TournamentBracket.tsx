@@ -969,7 +969,7 @@ const canvas = await html2canvas(bracketRef.current, {
     return peserta.atlet?.dojang.nama_dojang || '';
   };
 
-  const generateLeaderboard = () => {
+const generateLeaderboard = () => {
   if (!isPemula || matches.length === 0) return null;
 
   const leaderboard: {
@@ -988,7 +988,7 @@ const canvas = await html2canvas(bracketRef.current, {
   const processedBye = new Set<number>();
 
   matches.forEach(match => {
-    // Check for BYE (free draw) - must have participant A but NO participant B
+    // ⭐ BYE DETECTION: participant A exists but NO participant B
     if (match.peserta_a && !match.peserta_b) {
       const id = match.peserta_a.id_peserta_kompetisi;
       if (!processedBye.has(id)) {
@@ -998,8 +998,9 @@ const canvas = await html2canvas(bracketRef.current, {
           id: id
         });
         processedBye.add(id);
+        console.log(`🎁 BYE detected: ${getParticipantName(match.peserta_a)} → Auto SILVER`);
       }
-      return; // Skip to next match, don't process as normal match
+      return; // Skip to next match
     }
 
     // Check if match has been played (has scores)
@@ -1013,7 +1014,7 @@ const canvas = await html2canvas(bracketRef.current, {
       const winnerId = winner.id_peserta_kompetisi;
       const loserId = loser.id_peserta_kompetisi;
       
-      // Add winner to gold (if not already there)
+      // ⭐ Winner = GOLD (not BYE)
       if (!processedGold.has(winnerId) && !processedBye.has(winnerId)) {
         leaderboard.gold.push({
           name: getParticipantName(winner),
@@ -1023,7 +1024,7 @@ const canvas = await html2canvas(bracketRef.current, {
         processedGold.add(winnerId);
       }
       
-      // Add loser to silver (if not already there and not in bye)
+      // ⭐ Loser = SILVER (not BYE)
       if (!processedSilver.has(loserId) && !processedBye.has(loserId)) {
         leaderboard.silver.push({
           name: getParticipantName(loser),
@@ -1035,6 +1036,8 @@ const canvas = await html2canvas(bracketRef.current, {
     }
   });
 
+  console.log(`📊 Leaderboard: ${leaderboard.gold.length} GOLD, ${leaderboard.silver.length} SILVER, ${leaderboard.bye.length} BYE`);
+  
   return leaderboard;
 };
 

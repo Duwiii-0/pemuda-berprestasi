@@ -345,7 +345,7 @@ static async getAvailableClassesForParticipant(req: Request, res: Response) {
 static async generateBrackets(req: Request, res: Response) {
   try {
     const { id } = req.params;
-    const { kelasKejuaraanId, participantIds } = req.body; // ⭐ TAMBAH participantIds
+    const { kelasKejuaraanId, byeParticipantIds } = req.body; // ⭐ Ambil byeParticipantIds
 
     const kompetisiId = parseInt(id);
     const kelasId = parseInt(kelasKejuaraanId);
@@ -354,10 +354,8 @@ static async generateBrackets(req: Request, res: Response) {
       return sendError(res, 'Parameter tidak valid', 400);
     }
 
-    // ⭐ VALIDASI participantIds
-    if (participantIds && (!Array.isArray(participantIds) || participantIds.length < 2)) {
-      return sendError(res, 'Minimal 2 peserta harus dipilih', 400);
-    }
+    // ⭐ VALIDASI: byeParticipantIds is optional (bisa [] atau undefined)
+    console.log(`🎯 Received BYE participant IDs:`, byeParticipantIds);
 
     // Check authorization
     const user = req.user;
@@ -396,11 +394,11 @@ static async generateBrackets(req: Request, res: Response) {
       return sendError(res, 'Tidak memiliki akses untuk membuat bagan', 403);
     }
 
-    // ⭐ Generate bracket dengan selected participants
+    // ⭐ Generate bracket dengan byeParticipantIds (bisa [] atau array of IDs)
     const bracket = await BracketService.generateBracket(
       kompetisiId, 
       kelasId,
-      participantIds 
+      byeParticipantIds && byeParticipantIds.length > 0 ? byeParticipantIds : undefined
     );
 
     return sendSuccess(res, bracket, 'Bagan turnamen berhasil dibuat', 201);
