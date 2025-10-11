@@ -1799,29 +1799,31 @@ const prestasiLeaderboard = generatePrestasiLeaderboard();
 
 {/* Matches Container - HORIZONTAL FLOW */}
 <div 
-  className="inline-flex items-start gap-6 min-w-full px-8 py-8" 
-  style={{ minHeight: 'auto' }}
+  className="inline-flex items-stretch gap-6 min-w-full px-8 py-8" 
+  style={{ 
+    minHeight: 'auto',
+    alignItems: 'stretch' // ⭐ Semua column sama tinggi
+  }}
 >
   {Array.from({ length: totalRounds }, (_, roundIndex) => {
     const round = roundIndex + 1;
     const roundMatches = getMatchesByRound(round);
     
-// ⭐ IMPROVED: Dynamic spacing dengan formula lebih baik
-const matchCardHeight = 200; // ⭐ Increased untuk text wrap
-const baseGap = 50; // ⭐ Increased base gap
+const matchCardHeight = 200;
+const baseGap = 50;
 const verticalSpacing = roundIndex === 0 
   ? baseGap 
-  : baseGap * Math.pow(1.8, roundIndex);
+  : baseGap * Math.pow(2.2, roundIndex); // ⭐ 2.2 instead of 1.8
       
 return (
   <div 
     key={`round-${round}`} 
-    className="flex flex-col relative flex-shrink-0"
+    className="flex flex-col justify-center relative flex-shrink-0" // ⭐ TAMBAH justify-center
     style={{ 
       width: '380px',
       gap: `${verticalSpacing}px`,
       marginRight: '32px',
-      // ⭐ NO justify-start, NO paddingTop
+      minHeight: '100%' // ⭐ TAMBAH ini
     }}
   >
           {/* Matches */}
@@ -1831,39 +1833,12 @@ return (
     ? (match.skor_a > match.skor_b ? match.peserta_a : match.peserta_b)
     : null;
   
-  let marginTop = 0;
-  
-  if (roundIndex > 0) {
-    
-    const prevRoundSpacing = roundIndex === 1 
-      ? baseGap 
-      : baseGap * Math.pow(1.8, roundIndex - 1);
-    
-    const prevMatchTotalHeight = matchCardHeight + prevRoundSpacing;
-    
-    // Position of first parent match
-    const firstParentTop = matchIndex * 2 * prevMatchTotalHeight;
-    
-    // Position of second parent match
-    const secondParentTop = (matchIndex * 2 + 1) * prevMatchTotalHeight;
-    
-    // Center position between two parents
-    const centerBetweenParents = (firstParentTop + secondParentTop + matchCardHeight) / 2;
-    
-    // Current match natural position
-    const currentMatchTop = matchIndex * (matchCardHeight + verticalSpacing);
-    
-    // Offset needed to center
-    marginTop = centerBetweenParents - currentMatchTop - (matchCardHeight / 2);
-  }
-  
   return (
     <div
       key={match.id_match}
       className="relative"
       style={{ 
-        minHeight: `${matchCardHeight}px`,
-        marginTop: roundIndex === 0 ? '0px' : `${marginTop}px` // ⭐ Apply offset
+        minHeight: `${matchCardHeight}px`
       }}
     >
                 {/* Connecting Lines */}
