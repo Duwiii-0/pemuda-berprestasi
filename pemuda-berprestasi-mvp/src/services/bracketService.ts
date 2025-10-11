@@ -182,6 +182,231 @@ static async generateBracket(
     return shuffled;
   }
 
+  /**
+ * Validate and adjust BYE count for bracket generation
+ * Returns validation result with optional auto-adjustment
+ */
+static validateAndAdjustBye(
+  totalParticipants: number,
+  userSelectedByeCount: number,
+  targetWinners: number // 4 for Semi, 8 for Quarter
+): {
+  isValid: boolean;
+  adjustedByeCount: number | null;
+  message: string;
+  recommendedBye: number;
+} {
+  
+  // Calculate recommended BYE count
+  const nextPower = Math.pow(2, Math.ceil(Math.log2(totalParticipants)));
+  const recommended = nextPower - totalParticipants;
+  
+  console.log(`\n🔍 Validating BYE count:`);
+  console.log(`   Total participants: ${totalParticipants}`);
+  console.log(`   Target winners: ${targetWinners}`);
+  console.log(`   Recommended BYE: ${recommended}`);
+  console.log(`   User selected BYE: ${userSelectedByeCount}`);
+  
+  // STEP 1: Check if EXACT match (PERFECT)
+  if (userSelectedByeCount === recommended) {
+    console.log(`   ✅ PERFECT! Exact match`);
+    return {
+      isValid: true,
+      adjustedByeCount: null,
+      message: 'BYE count perfect!',
+      recommendedBye: recommended
+    };
+  }
+  
+  // STEP 2: Check if within TOLERANCE (±1)
+  const minBye = Math.max(0, recommended - 1);
+  const maxBye = recommended + 1;
+  
+  console.log(`   📊 Tolerance range: ${minBye}-${maxBye}`);
+  
+  if (userSelectedByeCount >= minBye && userSelectedByeCount <= maxBye) {
+    // Within tolerance → Calculate if it produces correct winners
+    const fighters = totalParticipants - userSelectedByeCount;
+    const fightMatches = Math.floor(fighters / 2);
+    const oddFighter = fighters % 2;
+    const totalWinners = fightMatches + userSelectedByeCount + oddFighter;
+    
+    console.log(`   🧮 Calculation:`);
+    console.log(`      Fighters: ${fighters}`);
+    console.log(`      Fight matches: ${fightMatches}`);
+    console.log(`      Odd fighter: ${oddFighter}`);
+    console.log(`      Total winners: ${totalWinners}`);
+    
+    if (totalWinners === targetWinners) {
+      console.log(`   ✅ VALID! Within tolerance and produces correct winners`);
+      return {
+        isValid: true,
+        adjustedByeCount: null,
+        message: userSelectedByeCount === 0 
+          ? 'Valid: 1 fighter akan dapat bye otomatis' 
+          : 'BYE count valid (within tolerance)',
+        recommendedBye: recommended
+      };
+    } else {
+      // Need auto-adjust to recommended
+      console.log(`   ⚠️ AUTO-ADJUST needed: ${userSelectedByeCount} → ${recommended}`);
+      return {
+        isValid: true,
+        adjustedByeCount: recommended,
+        message: `BYE auto-adjusted from ${userSelectedByeCount} to ${recommended} untuk menghasilkan ${targetWinners} winners`,
+        recommendedBye: recommended
+      };
+    }
+  }
+  
+  // STEP 3: OUTSIDE tolerance → REJECT
+  console.log(`   ❌ INVALID! Outside tolerance range`);
+  return {
+    isValid: false,
+    adjustedByeCount: null,
+    message: `BYE count invalid! Harus ${recommended} (±1 tolerance: ${minBye}-${maxBye}). Anda memilih ${userSelectedByeCount}`,
+    recommendedBye: recommended
+  };
+}
+
+static calculateBracketStructure(
+  participantCount: number
+): {
+  totalRounds: number;
+  rounds: {
+    round: number;
+    name: string;
+    participants: number;
+    matches: number;
+  }[];
+  round1Target: number;
+  byesRecommended: number;
+} {
+  console.log(`\n📐 === CALCULATING BRACKET STRUCTURE ===`);
+  console.log(`   Participant Count: ${participantCount}`);
+  
+  // CRITICAL: Minimal 4 peserta untuk proper bracket
+  if (participantCount < 4) {
+    throw new Error('Minimal 4 peserta diperlukan untuk bracket turnamen');
+  }
+  
+  const rounds: {
+    round: number;
+    name: string;
+    participants: number;
+    matches: number;
+  }[] = [];
+  
+  let currentRound = 1;
+  
+  // ========================================
+  // STEP 1: WAJIB - FINAL (2→1)
+  // ========================================
+  rounds.push({
+    round: currentRound++,
+    name: 'Final',
+    participants: 2,
+    matches: 1
+  });
+  
+  console.log(`   ✅ Round ${rounds.length}: Final (2 → 1)`);
+  
+  // ========================================
+  // STEP 2: WAJIB - SEMI FINAL (4→2)
+  // ========================================
+  rounds.push({
+    round: currentRound++,
+    name: 'Semi Final',
+    participants: 4,
+    matches: 2
+  });
+  
+  console.log(`   ✅ Round ${rounds.length}: Semi Final (4 → 2)`);
+  
+  let round1Target = 4; // Default: Round 1 feeds Semi
+  
+  // ========================================
+  // STEP 3: OPTIONAL - QUARTER FINAL (8→4)
+  // ========================================
+  if (participantCount >= 8) {
+    rounds.push({
+      round: currentRound++,
+      name: 'Quarter Final',
+      participants: 8,
+      matches: 4
+    });
+    round1Target = 8; // Round 1 feeds Quarter
+    
+    console.log(`   ✅ Round ${rounds.length}: Quarter Final (8 → 4)`);
+    console.log(`      → Round 1 target changed to: ${round1Target}`);
+  } else {
+    console.log(`   ℹ️ No Quarter Final (participants < 8)`);
+  }
+  
+  // ========================================
+  // STEP 4: OPTIONAL - ROUND 1
+  // ========================================
+  let firstRoundParticipants = round1Target;
+  
+  if (participantCount === round1Target) {
+    // Perfect fit! No Round 1 needed
+    // Quarter/Semi becomes the first round
+    console.log(`   ✅ Perfect fit! No Round 1 needed (${participantCount} = ${round1Target})`);
+    
+  } else if (participantCount > round1Target) {
+    // Need Round 1 to reduce participants to target
+    const nextPowerOf2 = Math.pow(2, Math.ceil(Math.log2(participantCount)));
+    firstRoundParticipants = nextPowerOf2;
+    
+    rounds.push({
+      round: currentRound++,
+      name: 'Round 1',
+      participants: nextPowerOf2,
+      matches: nextPowerOf2 / 2
+    });
+    
+    console.log(`   ✅ Round ${rounds.length}: Round 1 (${nextPowerOf2} → ${round1Target})`);
+    console.log(`      Next Power of 2: ${nextPowerOf2}`);
+    
+  } else {
+    // participantCount < round1Target
+    // Need Round 1 with BYE to reach target
+    rounds.push({
+      round: currentRound++,
+      name: 'Round 1',
+      participants: round1Target,
+      matches: round1Target / 2
+    });
+    
+    console.log(`   ✅ Round ${rounds.length}: Round 1 (${round1Target} with BYE → ${round1Target})`);
+  }
+  
+  // ========================================
+  // STEP 5: REVERSE & RENUMBER
+  // ========================================
+  // Reverse rounds (Final first → Round 1 last dalam array)
+  // But renumber dari Round 1 = 1, Round 2, ..., Final
+  rounds.reverse();
+  rounds.forEach((r, idx) => r.round = idx + 1);
+  
+  // Calculate BYE recommendation
+  const byesRecommended = firstRoundParticipants - participantCount;
+  
+  console.log(`\n   📊 FINAL STRUCTURE:`);
+  rounds.forEach(r => {
+    console.log(`      Round ${r.round}: ${r.name} - ${r.participants} participants, ${r.matches} matches`);
+  });
+  console.log(`   💡 Recommended BYE: ${byesRecommended}`);
+  console.log(`   🎯 Total Rounds: ${rounds.length}\n`);
+  
+  return {
+    totalRounds: rounds.length,
+    rounds,
+    round1Target,
+    byesRecommended
+  };
+}
+
 static async generatePrestasiBracket(
   baganId: number, 
   participants: Participant[],
@@ -189,18 +414,50 @@ static async generatePrestasiBracket(
 ): Promise<Match[]> {
   const participantCount = participants.length;
   
-  if (participantCount < 2) {
-    throw new Error('At least 2 participants required for bracket');
-  }
-
-  // ✅ CALCULATE TOTAL ROUNDS based on next power of 2
-  const nextPowerOf2 = Math.pow(2, Math.ceil(Math.log2(participantCount)));
-  const totalRounds = Math.log2(nextPowerOf2);
-  
   console.log(`\n🏆 === GENERATING PRESTASI BRACKET ===`);
   console.log(`Total Participants: ${participantCount}`);
-  console.log(`Next Power of 2: ${nextPowerOf2}`);
-  console.log(`Total Rounds: ${totalRounds}`);
+  
+  // ⭐ VALIDATE minimal participants
+  if (participantCount < 4) {
+    throw new Error('Minimal 4 peserta diperlukan untuk bracket prestasi');
+  }
+
+  // ⭐ CALCULATE BRACKET STRUCTURE using new method
+  const structure = this.calculateBracketStructure(participantCount);
+  const totalRounds = structure.totalRounds;
+  const round1Target = structure.round1Target;
+  const byesRecommended = structure.byesRecommended;
+  
+  console.log(`📊 Bracket Structure:`);
+  console.log(`   Total Rounds: ${totalRounds}`);
+  console.log(`   Round 1 Target: ${round1Target}`);
+  console.log(`   BYE Recommended: ${byesRecommended}`);
+  
+  // ⭐ VALIDATE BYE count if provided
+  if (byeParticipantIds && byeParticipantIds.length > 0) {
+    const validation = this.validateAndAdjustBye(
+      participantCount,
+      byeParticipantIds.length,
+      round1Target
+    );
+    
+    console.log(`   BYE Validation: ${validation.message}`);
+    
+    if (!validation.isValid) {
+      throw new Error(validation.message);
+    }
+    
+    // ⭐ AUTO-ADJUST if needed (hybrid approach)
+    if (validation.adjustedByeCount !== null) {
+      console.log(`   ⚠️ BYE auto-adjusted from ${byeParticipantIds.length} to ${validation.adjustedByeCount}`);
+      // Randomly select subset if user selected too many
+      if (byeParticipantIds.length > validation.adjustedByeCount) {
+        const shuffled = this.shuffleArray([...byeParticipantIds]);
+        byeParticipantIds = shuffled.slice(0, validation.adjustedByeCount);
+        console.log(`   → Selected BYE IDs: ${byeParticipantIds}`);
+      }
+    }
+  }
 
   const matches: Match[] = [];
 
@@ -807,8 +1064,19 @@ static async advanceWinnerToNextRound(match: any, winnerId: number): Promise<voi
    * Calculate total rounds needed
    */
 static calculateTotalRounds(participantCount: number): number {
-  const nextPowerOf2 = Math.pow(2, Math.ceil(Math.log2(participantCount)));
-  return Math.log2(nextPowerOf2);
+  if (participantCount < 4) {
+    throw new Error('Minimal 4 peserta diperlukan untuk bracket turnamen');
+  }
+  
+  try {
+    const structure = this.calculateBracketStructure(participantCount);
+    return structure.totalRounds;
+  } catch (error) {
+    // Fallback to old logic if structure calculation fails
+    console.warn('⚠️ Using fallback calculation for total rounds');
+    const nextPowerOf2 = Math.pow(2, Math.ceil(Math.log2(participantCount)));
+    return Math.log2(nextPowerOf2);
+  }
 }
 
   /**

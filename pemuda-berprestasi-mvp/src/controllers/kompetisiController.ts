@@ -360,11 +360,87 @@ static async generateBrackets(req: Request, res: Response) {
       return sendError(res, 'Parameter tidak valid', 400);
     }
 
-    // ⭐ VALIDASI: byeParticipantIds is optional (bisa [] atau undefined)
-    console.log(`🎯 Received BYE participant IDs:`, byeParticipantIds);
+// ⭐ VALIDASI: byeParticipantIds is optional (bisa [] atau undefined)
+console.log(`🎯 Received BYE participant IDs:`, byeParticipantIds);
 
-    // Check authorization
-    const user = req.user;
+// ⭐ DECLARE finalByeIds OUTSIDE validation block
+let finalByeIds = byeParticipantIds; // Initialize dengan value asli
+
+// ========================================
+// ⭐ NEW: GET PARTICIPANTS & VALIDATE COUNT
+// ========================================
+const registrations = await prisma.tb_peserta_kompetisi.findMany({
+  where: {
+    id_kelas_kejuaraan: kelasId,
+    status: 'APPROVED'
+  }
+});
+
+const participantCount = registrations.length;
+console.log(`📊 Total approved participants: ${participantCount}`);
+
+// Check if enough participants for Prestasi bracket
+const kategori = registrations[0]?.kelas_kejuaraan?.kategori_event?.nama_kategori?.toLowerCase() || '';
+const isPemula = kategori.includes('pemula');
+
+if (!isPemula && participantCount < 4) {
+  return sendError(res, 'Minimal 4 peserta diperlukan untuk bracket prestasi', 400);
+}
+
+// ========================================
+// ⭐ NEW: VALIDATE BYE COUNT (HYBRID APPROACH)
+// ========================================
+if (!isPemula && byeParticipantIds && byeParticipantIds.length > 0) {
+  try {
+    // Calculate bracket structure to get target
+    const structure = BracketService.calculateBracketStructure(participantCount);
+    const targetWinners = structure.round1Target;
+    const byesRecommended = structure.byesRecommended;
+    
+    console.log(`\n🔍 BYE Validation:`);
+    console.log(`   Participant count: ${participantCount}`);
+    console.log(`   Target winners: ${targetWinners}`);
+    console.log(`   Recommended BYE: ${byesRecommended}`);
+    console.log(`   User selected BYE: ${byeParticipantIds.length}`);
+    
+    // Validate BYE count with tolerance
+    const validation = BracketService.validateAndAdjustBye(
+      participantCount,
+      byeParticipantIds.length,
+      targetWinners
+    );
+    
+    console.log(`   Validation result: ${validation.message}`);
+    
+    // ❌ REJECT if outside tolerance
+    if (!validation.isValid) {
+      return sendError(
+        res, 
+        `${validation.message}\n\nRekomendasi: Pilih ${byesRecommended} peserta untuk BYE (tolerance: ${Math.max(0, byesRecommended - 1)}-${byesRecommended + 1})`,
+        400
+      );
+    }
+    
+if (validation.adjustedByeCount !== null) {
+  console.log(`   ⚠️ Auto-adjusting BYE count from ${byeParticipantIds.length} to ${validation.adjustedByeCount}`);
+  
+  // Randomly select subset if user selected too many
+  if (byeParticipantIds.length > validation.adjustedByeCount) {
+    const shuffled = BracketService.shuffleArray([...byeParticipantIds]);
+    finalByeIds = shuffled.slice(0, validation.adjustedByeCount); // ⭐ ASSIGN KE finalByeIds
+    console.log(`   → Adjusted BYE IDs: ${finalByeIds}`);
+  }
+  // If user selected too few, we'll let the bracket generation handle it
+}
+    
+  } catch (error: any) {
+    console.error('❌ BYE validation error:', error);
+    return sendError(res, error.message || 'Invalid BYE selection', 400);
+  }
+}
+
+// Check authorization
+const user = req.user;
     if (!user) {
       return sendError(res, 'User tidak ditemukan', 401);
     }
@@ -407,9 +483,31 @@ static async generateBrackets(req: Request, res: Response) {
       byeParticipantIds && byeParticipantIds.length > 0 ? byeParticipantIds : undefined
     );
 
-    console.log(`✅ Bracket generated with ${bracket.matches.length} matches`);
+console.log(`✅ Bracket generated with ${bracket.matches.length} matches`);
 
-    return sendSuccess(res, bracket, 'Bagan turnamen berhasil dibuat', 201);
+// ⭐ Check if BYE was auto-adjusted
+let responseMessage = 'Bagan turnamen berhasil dibuat';
+let warningMessage: string | null = null; // ✅ EXPLICIT TYPE
+
+if (!isPemula && finalByeIds && finalByeIds.length > 0) { // ⭐ GANTI byeParticipantIds → finalByeIds
+  const structure = BracketService.calculateBracketStructure(participantCount);
+  const byesRecommended = structure.byesRecommended;
+  
+  if (finalByeIds.length !== byesRecommended) { // ⭐ GANTI byeParticipantIds → finalByeIds
+    warningMessage = `BYE auto-adjusted: Menggunakan ${finalByeIds.length} BYE (rekomendasi: ${byesRecommended})`;
+    console.log(`   ⚠️ ${warningMessage}`);
+  }
+}
+
+return sendSuccess(
+  res, 
+  {
+    ...bracket,
+    warning: warningMessage
+  },
+  responseMessage, 
+  201
+);
   } catch (error: any) {
     console.error('❌ Controller - Error generating bracket:', error);
     return sendError(res, error.message || 'Gagal membuat bagan turnamen', 400);
@@ -565,12 +663,12 @@ static async shuffleBrackets(req: Request, res: Response) {
       }
     }
 
-    // ⭐ Regenerate bracket dengan shuffled participants
-    const bracket = await BracketService.shuffleBracket(
-      kompetisiId, 
-      kelasId,
-      participantIds // ⭐ Pass participantIds
-    );
+// ⭐ Regenerate bracket dengan participantIds (untuk shuffle)
+const bracket = await BracketService.shuffleBracket(
+  kompetisiId, 
+  kelasId,
+  participantIds // Menggunakan participantIds, bukan finalByeIds
+);
 
     return sendSuccess(res, bracket, 'Bagan turnamen berhasil diacak ulang');
   } catch (error: any) {

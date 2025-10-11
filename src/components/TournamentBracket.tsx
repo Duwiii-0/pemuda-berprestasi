@@ -186,16 +186,30 @@ const handleSelectAll = () => {
 };
 
 const openParticipantSelection = () => {
-  // ⭐ BYE SEKARANG OPSIONAL - bisa 0
   const total = approvedParticipants.length;
-  const nextPowerOf2 = Math.pow(2, Math.ceil(Math.log2(total)));
-  const byesNeeded = nextPowerOf2 - total;
   
-  // Clear previous selection
+  let byesRecommended = 0;
+  
+  if (total >= 4) {
+    if (total === 4 || total === 8 || total === 16) {
+      byesRecommended = 0;
+    } else if (total < 8) {
+      const nextPowerOf2 = 8;
+      byesRecommended = nextPowerOf2 - total;
+    } else if (total < 16) {
+      const nextPowerOf2 = 16;
+      byesRecommended = nextPowerOf2 - total;
+    } else {
+      const nextPowerOf2 = Math.pow(2, Math.ceil(Math.log2(total)));
+      byesRecommended = nextPowerOf2 - total;
+    }
+  }
+  
   setSelectedParticipants(new Set());
   setSelectAll(false);
   
-  console.log(`📊 Total: ${total}, Bracket size: ${nextPowerOf2}, BYE recommended: ${byesNeeded}`);
+  console.log(`📊 Total: ${total}, BYE recommended: ${byesRecommended}`);
+  console.log(`   Category: ${isPemula ? 'PEMULA' : 'PRESTASI'}`);
   
   setShowParticipantSelection(true);
 };
@@ -942,10 +956,23 @@ const getTotalRounds = (): number => {
     return Math.max(...matches.map(m => m.ronde));
   }
   
-  // Fallback: calculate from participant count
   const approvedCount = selectedKelas.peserta_kompetisi.filter(p => p.status === 'APPROVED').length;
-  const nextPowerOf2 = Math.pow(2, Math.ceil(Math.log2(approvedCount)));
-  return Math.log2(nextPowerOf2);
+  
+  if (approvedCount < 4) return 0;
+  
+  let rounds = 2; // Final (1) + Semi (1) = minimum 2 rounds
+  
+  if (approvedCount >= 8) {
+    rounds++; // Add Quarter Final
+    
+    if (approvedCount > 8) {
+      rounds++; // Add Round 1
+    }
+  } else if (approvedCount > 4) {
+    rounds++; // Add Round 1
+  }
+  
+  return rounds;
 };
 
 const getRoundName = (round: number, totalRounds: number): string => {
@@ -959,11 +986,22 @@ const getRoundName = (round: number, totalRounds: number): string => {
       return 'Semi Final';
       
     case 2: 
-      // Only call it "Quarter Final" if there are 4+ rounds (means 16+ bracket)
-      return totalRounds >= 4 ? 'Quarter Final' : `Round ${round}`;
+      if (totalRounds >= 3) {
+        const approvedCount = selectedKelas?.peserta_kompetisi.filter(p => p.status === 'APPROVED').length || 0;
+        if (approvedCount >= 8) {
+          return 'Quarter Final';
+        }
+      }
+      return 'Round 1';
+      
+    case 3:
+      const approvedCount = selectedKelas?.peserta_kompetisi.filter(p => p.status === 'APPROVED').length || 0;
+      if (approvedCount >= 16) {
+        return 'Round of 16';
+      }
+      return 'Round 1';
       
     default: 
-      // Generic "Round X" for earlier rounds
       return `Round ${round}`;
   }
 };
