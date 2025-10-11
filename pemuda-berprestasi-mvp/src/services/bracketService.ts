@@ -369,25 +369,35 @@ static async generatePemulaBracket(
 ): Promise<Match[]> {
   const matches: Match[] = [];
   
-  console.log(`🥋 Generating PEMULA bracket for ${participants.length} participants`);
-  console.log(`🎯 BYE participant IDs received:`, byeParticipantIds);
+  console.log(`\n🥋 === GENERATING PEMULA BRACKET ===`);
+  console.log(`Total participants: ${participants.length}`);
+  console.log(`BYE participant IDs received:`, byeParticipantIds);
 
   // ⭐ Separate BYE vs FIGHTING participants
   let byeParticipants: Participant[] = [];
-  let fightingParticipants: Participant[] = [...participants];
+  let fightingParticipants: Participant[] = [];
 
   if (byeParticipantIds && byeParticipantIds.length > 0) {
-    byeParticipants = participants.filter(p => byeParticipantIds.includes(p.id));
+    console.log(`\n🔍 Filtering participants...`);
+    console.log(`All participants:`, participants.map(p => ({ id: p.id, name: p.name })));
+    
+    byeParticipants = participants.filter(p => {
+      const isBye = byeParticipantIds.includes(p.id);
+      console.log(`  ${p.name} (ID: ${p.id}) -> ${isBye ? '🎁 BYE' : '⚔️ FIGHT'}`);
+      return isBye;
+    });
+    
     fightingParticipants = participants.filter(p => !byeParticipantIds.includes(p.id));
     
-    console.log(`✅ ${byeParticipants.length} BYE participants:`, byeParticipants.map(p => `${p.name} (ID: ${p.id})`));
-    console.log(`⚔️ ${fightingParticipants.length} FIGHTING participants:`, fightingParticipants.map(p => `${p.name} (ID: ${p.id})`));
+    console.log(`\n✅ BYE participants (${byeParticipants.length}):`, byeParticipants.map(p => `${p.name} (${p.id})`));
+    console.log(`⚔️ FIGHTING participants (${fightingParticipants.length}):`, fightingParticipants.map(p => `${p.name} (${p.id})`));
   } else {
-    console.log(`⚠️ No BYE participants selected - all will fight`);
+    console.log(`⚠️ No BYE selection - all participants will fight`);
+    fightingParticipants = [...participants];
   }
 
-  // ⭐ CREATE MATCHES for FIGHTING participants (pair them up)
-  console.log(`\n📝 Creating matches for fighting participants...`);
+  // ⭐ CREATE MATCHES for FIGHTING participants
+  console.log(`\n📝 Creating fighting matches...`);
   for (let i = 0; i < fightingParticipants.length; i += 2) {
     const participant1 = fightingParticipants[i];
     const participant2 = fightingParticipants[i + 1] || null;
@@ -415,50 +425,64 @@ static async generatePemulaBracket(
     });
     
     if (participant2) {
-      console.log(`  ✅ Match ${match.id_match}: ${participant1.name} vs ${participant2.name}`);
+      console.log(`  ✅ Match ${match.id_match}: ${participant1.name} (${participant1.id}) vs ${participant2.name} (${participant2.id})`);
     } else {
-      console.log(`  ⚠️ Match ${match.id_match}: ${participant1.name} vs BYE (odd fighter)`);
+      console.log(`  ⚠️ Match ${match.id_match}: ${participant1.name} (${participant1.id}) vs BYE (odd)`);
     }
   }
 
-  // ⭐ CREATE BYE MATCHES (peserta vs NULL) - AUTO GOLD
+  // ⭐ CREATE BYE MATCHES
   console.log(`\n🎁 Creating BYE matches (Auto GOLD)...`);
-  for (const byeParticipant of byeParticipants) {
-    console.log(`  📝 Creating BYE match for ${byeParticipant.name} (ID: ${byeParticipant.id})...`);
-    
-    const match = await prisma.tb_match.create({
-      data: {
-        id_bagan: baganId,
-        ronde: 1,
-        id_peserta_a: byeParticipant.id,
-        id_peserta_b: null, // NULL = BYE = auto GOLD
-        skor_a: 0,
-        skor_b: 0
-      }
-    });
-    
-    console.log(`  ✅ BYE Match created: ID=${match.id_match}, Participant=${byeParticipant.name} (ID=${byeParticipant.id})`);
-    
-    matches.push({
-      id: match.id_match,
-      round: 1,
-      position: matches.length,
-      participant1: byeParticipant,
-      participant2: null,
-      status: 'bye',
-      scoreA: 0,
-      scoreB: 0
-    });
+  console.log(`BYE participants count: ${byeParticipants.length}`);
+  
+  if (byeParticipants.length === 0) {
+    console.log(`⚠️ No BYE participants to process!`);
   }
   
-  console.log(`\n✅ PEMULA bracket generated successfully!`);
-  console.log(`   Total matches: ${matches.length}`);
-  console.log(`   - Fighting matches: ${Math.ceil(fightingParticipants.length / 2)}`);
-  console.log(`   - BYE matches: ${byeParticipants.length}`);
+  for (let i = 0; i < byeParticipants.length; i++) {
+    const byeParticipant = byeParticipants[i];
+    console.log(`\n  📝 [${i + 1}/${byeParticipants.length}] Creating BYE match for:`);
+    console.log(`     Name: ${byeParticipant.name}`);
+    console.log(`     ID: ${byeParticipant.id}`);
+    
+    try {
+      const match = await prisma.tb_match.create({
+        data: {
+          id_bagan: baganId,
+          ronde: 1,
+          id_peserta_a: byeParticipant.id,
+          id_peserta_b: null,
+          skor_a: 0,
+          skor_b: 0
+        }
+      });
+      
+      console.log(`     ✅ Match created with ID: ${match.id_match}`);
+      
+      matches.push({
+        id: match.id_match,
+        round: 1,
+        position: matches.length,
+        participant1: byeParticipant,
+        participant2: null,
+        status: 'bye',
+        scoreA: 0,
+        scoreB: 0
+      });
+    } catch (error) {
+      console.error(`     ❌ Error creating BYE match:`, error);
+      throw error;
+    }
+  }
+  
+  console.log(`\n✅ === PEMULA BRACKET COMPLETE ===`);
+  console.log(`Total matches created: ${matches.length}`);
+  console.log(`  - Fighting matches: ${Math.ceil(fightingParticipants.length / 2)}`);
+  console.log(`  - BYE matches: ${byeParticipants.length}`);
+  console.log(`===================================\n`);
   
   return matches;
 }
-
   /**
    * Get bracket by competition and class
    */
