@@ -356,7 +356,7 @@ static async generatePrestasiBracket(
   /**
    * Generate PEMULA bracket (single round, all matches)
    */
-  static async generatePemulaBracket(
+static async generatePemulaBracket(
   baganId: number, 
   participants: Participant[],
   byeParticipantIds?: number[]
@@ -364,7 +364,7 @@ static async generatePrestasiBracket(
   const matches: Match[] = [];
   
   console.log(`🥋 Generating PEMULA bracket for ${participants.length} participants`);
-  console.log(`🎁 BYE participants: ${byeParticipantIds?.length || 0}`);
+  console.log(`🎯 BYE participant IDs received:`, byeParticipantIds);
 
   // ⭐ Separate BYE vs FIGHTING participants
   let byeParticipants: Participant[] = [];
@@ -374,11 +374,14 @@ static async generatePrestasiBracket(
     byeParticipants = participants.filter(p => byeParticipantIds.includes(p.id));
     fightingParticipants = participants.filter(p => !byeParticipantIds.includes(p.id));
     
-    console.log(`✅ ${byeParticipants.length} BYE: ${byeParticipants.map(p => p.name).join(', ')}`);
-    console.log(`⚔️ ${fightingParticipants.length} FIGHTING: ${fightingParticipants.map(p => p.name).join(', ')}`);
+    console.log(`✅ ${byeParticipants.length} BYE participants:`, byeParticipants.map(p => `${p.name} (ID: ${p.id})`));
+    console.log(`⚔️ ${fightingParticipants.length} FIGHTING participants:`, fightingParticipants.map(p => `${p.name} (ID: ${p.id})`));
+  } else {
+    console.log(`⚠️ No BYE participants selected - all will fight`);
   }
 
   // ⭐ CREATE MATCHES for FIGHTING participants (pair them up)
+  console.log(`\n📝 Creating matches for fighting participants...`);
   for (let i = 0; i < fightingParticipants.length; i += 2) {
     const participant1 = fightingParticipants[i];
     const participant2 = fightingParticipants[i + 1] || null;
@@ -406,42 +409,46 @@ static async generatePrestasiBracket(
     });
     
     if (participant2) {
-      console.log(`  Match ${matches.length}: ${participant1.name} vs ${participant2.name}`);
+      console.log(`  ✅ Match ${match.id_match}: ${participant1.name} vs ${participant2.name}`);
     } else {
-      console.log(`  ⚠️ Match ${matches.length}: ${participant1.name} vs BYE (odd fighter)`);
+      console.log(`  ⚠️ Match ${match.id_match}: ${participant1.name} vs BYE (odd fighter)`);
     }
   }
 
-  // ⭐ CREATE BYE MATCHES (peserta vs NULL) - AUTO SILVER
+  // ⭐ CREATE BYE MATCHES (peserta vs NULL) - AUTO GOLD
+  console.log(`\n🎁 Creating BYE matches (Auto GOLD)...`);
   for (const byeParticipant of byeParticipants) {
-  const match = await prisma.tb_match.create({
-    data: {
-      id_bagan: baganId,
-      ronde: 1,
-      id_peserta_a: byeParticipant.id,
-      id_peserta_b: null,
-      skor_a: 0,
-      skor_b: 0
-    }
-  });
+    console.log(`  📝 Creating BYE match for ${byeParticipant.name} (ID: ${byeParticipant.id})...`);
+    
+    const match = await prisma.tb_match.create({
+      data: {
+        id_bagan: baganId,
+        ronde: 1,
+        id_peserta_a: byeParticipant.id,
+        id_peserta_b: null, // NULL = BYE = auto GOLD
+        skor_a: 0,
+        skor_b: 0
+      }
+    });
+    
+    console.log(`  ✅ BYE Match created: ID=${match.id_match}, Participant=${byeParticipant.name} (ID=${byeParticipant.id})`);
+    
+    matches.push({
+      id: match.id_match,
+      round: 1,
+      position: matches.length,
+      participant1: byeParticipant,
+      participant2: null,
+      status: 'bye',
+      scoreA: 0,
+      scoreB: 0
+    });
+  }
   
-  matches.push({
-    id: match.id_match,
-    round: 1,
-    position: matches.length,
-    participant1: byeParticipant,
-    participant2: null,
-    status: 'bye',
-    scoreA: 0,
-    scoreB: 0
-  });
-  
-  console.log(`  🏆 BYE Match created: ID=${match.id_match}, Participant=${byeParticipant.name} (ID=${byeParticipant.id}) → Auto GOLD`);
-}
-  
-  console.log(`✅ Generated ${matches.length} matches for PEMULA category`);
-  console.log(`   - ${fightingParticipants.length} fighters in ${Math.ceil(fightingParticipants.length / 2)} matches`);
-  console.log(`   - ${byeParticipants.length} BYE (auto silver)`);
+  console.log(`\n✅ PEMULA bracket generated successfully!`);
+  console.log(`   Total matches: ${matches.length}`);
+  console.log(`   - Fighting matches: ${Math.ceil(fightingParticipants.length / 2)}`);
+  console.log(`   - BYE matches: ${byeParticipants.length}`);
   
   return matches;
 }

@@ -345,7 +345,13 @@ static async getAvailableClassesForParticipant(req: Request, res: Response) {
 static async generateBrackets(req: Request, res: Response) {
   try {
     const { id } = req.params;
-    const { kelasKejuaraanId, byeParticipantIds } = req.body; // ⭐ Ambil byeParticipantIds
+    const { kelasKejuaraanId, byeParticipantIds } = req.body;
+
+    console.log(`\n📥 Generate Bracket Request:`);
+    console.log(`   Kompetisi ID: ${id}`);
+    console.log(`   Kelas Kejuaraan ID: ${kelasKejuaraanId}`);
+    console.log(`   BYE Participant IDs:`, byeParticipantIds);
+    console.log(`   BYE Count: ${byeParticipantIds?.length || 0}`);
 
     const kompetisiId = parseInt(id);
     const kelasId = parseInt(kelasKejuaraanId);
@@ -401,9 +407,11 @@ static async generateBrackets(req: Request, res: Response) {
       byeParticipantIds && byeParticipantIds.length > 0 ? byeParticipantIds : undefined
     );
 
+    console.log(`✅ Bracket generated with ${bracket.matches.length} matches`);
+
     return sendSuccess(res, bracket, 'Bagan turnamen berhasil dibuat', 201);
   } catch (error: any) {
-    console.error('Controller - Error generating bracket:', error);
+    console.error('❌ Controller - Error generating bracket:', error);
     return sendError(res, error.message || 'Gagal membuat bagan turnamen', 400);
   }
 }

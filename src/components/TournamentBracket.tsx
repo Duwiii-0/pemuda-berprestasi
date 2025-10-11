@@ -247,12 +247,11 @@ const openParticipantSelection = () => {
 const generateBracket = async (shuffle: boolean = false) => {
   if (!selectedKelas) return;
   
-  // ⭐ VALIDASI: Berbeda untuk PEMULA vs PRESTASI
+  // Validasi
   if (isPemula) {
-    // Pemula: any number of BYEs is OK
     console.log(`🥋 PEMULA: Generating with ${selectedParticipants.size} BYE participants`);
+    console.log(`   Selected IDs:`, Array.from(selectedParticipants));
   } else {
-    // Prestasi: 0 (no BYE) or exact recommended count
     const recommended = Math.pow(2, Math.ceil(Math.log2(approvedParticipants.length))) - approvedParticipants.length;
     
     if (selectedParticipants.size !== 0 && selectedParticipants.size !== recommended) {
@@ -266,6 +265,7 @@ const generateBracket = async (shuffle: boolean = false) => {
     }
     
     console.log(`🏆 PRESTASI: Generating with ${selectedParticipants.size} BYE participants`);
+    console.log(`   Selected IDs:`, Array.from(selectedParticipants));
   }
   
   setLoading(true);
@@ -274,6 +274,14 @@ const generateBracket = async (shuffle: boolean = false) => {
   try {
     const kompetisiId = selectedKelas.kompetisi.id_kompetisi;
     const kelasKejuaraanId = selectedKelas.id_kelas_kejuaraan;
+
+    // ⭐ CRITICAL: Convert Set to Array
+    const byeIds = selectedParticipants.size > 0 ? Array.from(selectedParticipants) : [];
+    
+    console.log(`📤 Sending to API:`, {
+      kelasKejuaraanId,
+      byeParticipantIds: byeIds
+    });
 
     const endpoint = `${apiBaseUrl}/kompetisi/${kompetisiId}/brackets/generate`;
     
@@ -285,7 +293,7 @@ const generateBracket = async (shuffle: boolean = false) => {
       },
       body: JSON.stringify({
         kelasKejuaraanId: kelasKejuaraanId,
-        byeParticipantIds: selectedParticipants.size > 0 ? Array.from(selectedParticipants) : []
+        byeParticipantIds: byeIds // ⭐ Kirim array, bukan Set
       })
     });
 
@@ -302,7 +310,7 @@ const generateBracket = async (shuffle: boolean = false) => {
     showNotification(
       'success',
       'Berhasil!',
-      `Bracket berhasil dibuat${selectedParticipants.size > 0 ? ` dengan ${selectedParticipants.size} BYE` : ' tanpa BYE'}!`,
+      `Bracket berhasil dibuat${byeIds.length > 0 ? ` dengan ${byeIds.length} BYE` : ' tanpa BYE'}!`,
       () => setShowModal(false)
     );
     
