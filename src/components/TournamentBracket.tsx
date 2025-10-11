@@ -1808,27 +1808,30 @@ const prestasiLeaderboard = generatePrestasiLeaderboard();
     alignItems: 'stretch' // ⭐ Semua column sama tinggi
   }}
 >
-  {Array.from({ length: totalRounds }, (_, roundIndex) => {
-    const round = roundIndex + 1;
-    const roundMatches = getMatchesByRound(round);
+{Array.from({ length: totalRounds }, (_, roundIndex) => {
+  const round = roundIndex + 1;
+  const roundMatches = getMatchesByRound(round);
+  
+  const matchCardHeight = 200;
+  
+  // ⭐ CRITICAL: Calculate vertical spacing based on total bracket height
+  const totalBracketHeight = 1200; // Base height for bracket
+  const matchesInRound = roundMatches.length;
+  const verticalSpacing = matchesInRound > 1 
+    ? (totalBracketHeight - (matchCardHeight * matchesInRound)) / (matchesInRound - 1)
+    : 0;
     
-const matchCardHeight = 200;
-const baseGap = 50;
-const verticalSpacing = roundIndex === 0 
-  ? baseGap 
-  : baseGap * Math.pow(2.2, roundIndex); // ⭐ 2.2 instead of 1.8
-      
-return (
-  <div 
-    key={`round-${round}`} 
-    className="flex flex-col justify-center relative flex-shrink-0" // ⭐ TAMBAH justify-center
-    style={{ 
-      width: '380px',
-      gap: `${verticalSpacing}px`,
-      marginRight: '32px',
-      minHeight: '100%' // ⭐ TAMBAH ini
-    }}
-  >
+  return (
+    <div 
+      key={`round-${round}`} 
+      className="flex flex-col justify-center relative flex-shrink-0"
+      style={{ 
+        width: '400px',
+        gap: `${verticalSpacing}px`,
+        marginRight: roundIndex < totalRounds - 1 ? '64px' : '0px',
+        minHeight: `${totalBracketHeight}px` // ⭐ Fixed height for alignment
+      }}
+    >
           {/* Matches */}
 {roundMatches.map((match, matchIndex) => {
   const hasScores = match.skor_a > 0 || match.skor_b > 0;
@@ -1844,36 +1847,49 @@ return (
         minHeight: `${matchCardHeight}px`
       }}
     >
-                {/* Connecting Lines */}
+         {/* Connecting Lines */}
 {round < totalRounds && (
   <>
-{/* Horizontal connector to next round */}
-<div
-  className="absolute left-full border-t-2"
-  style={{ 
-    borderColor: '#990D35',
-    top: `${matchCardHeight / 2}px`,
-    width: '64px',
-    zIndex: 1
-  }}
-/>
-                    
-                    {/* Vertical bracket connector */}
-{/* Vertical bracket connector */}
-{matchIndex % 2 === 0 && matchIndex + 1 < roundMatches.length && (
-  <div
-    className="absolute border-l-2"
-    style={{
-      borderColor: '#990D35',
-      left: 'calc(100% + 64px)',
-      top: `${matchCardHeight / 2}px`, // ⭐ Start from center of current card
-      height: `${verticalSpacing + matchCardHeight}px`, // ⭐ Connect to center of next card
-      zIndex: 0
-    }}
-  />
+    {/* ⭐ Horizontal connector to next round */}
+    <div
+      className="absolute left-full border-t-2"
+      style={{ 
+        borderColor: '#990D35',
+        top: '50%',
+        transform: 'translateY(-1px)',
+        width: '64px',
+        zIndex: 1
+      }}
+    />
+    
+    {/* ⭐ Vertical bracket connector */}
+    {matchIndex % 2 === 0 && (
+      <>
+        {/* Find next match below */}
+        {(() => {
+          const nextMatchBelow = roundMatches[matchIndex + 1];
+          if (!nextMatchBelow) return null;
+          
+          // Calculate vertical distance to next match
+          const distanceToNext = verticalSpacing + matchCardHeight;
+          
+          return (
+            <div
+              className="absolute border-l-2"
+              style={{
+                borderColor: '#990D35',
+                left: 'calc(100% + 64px)',
+                top: '50%',
+                height: `${distanceToNext}px`,
+                zIndex: 0
+              }}
+            />
+          );
+        })()}
+      </>
+    )}
+  </>
 )}
-                  </>
-                )}
 
 {/* Match Card */}
 <div
