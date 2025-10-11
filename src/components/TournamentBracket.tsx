@@ -1814,59 +1814,86 @@ const verticalSpacing = roundIndex === 0
   : baseGap * Math.pow(1.8, roundIndex);
       
 return (
-<div 
-  key={`round-${round}`} 
-  className="flex flex-col justify-start relative flex-shrink-0"
-  style={{ 
-    width: '380px', // ⭐ Lebih lebar dari 360px
-    gap: `${verticalSpacing}px`,
-    paddingTop: roundIndex === 0 ? '0px' : `${verticalSpacing / 2}px`,
-    marginRight: '32px' // ⭐ Space antar round
-  }}
->
+  <div 
+    key={`round-${round}`} 
+    className="flex flex-col relative flex-shrink-0"
+    style={{ 
+      width: '380px',
+      gap: `${verticalSpacing}px`,
+      marginRight: '32px',
+      // ⭐ NO justify-start, NO paddingTop
+    }}
+  >
           {/* Matches */}
-          {roundMatches.map((match, matchIndex) => {
-            const hasScores = match.skor_a > 0 || match.skor_b > 0;
-            const winner = hasScores 
-              ? (match.skor_a > match.skor_b ? match.peserta_a : match.peserta_b)
-              : null;
-            
-            return (
-<div
-  key={match.id_match}
-  className="relative"
-  style={{ 
-    minHeight: `${matchCardHeight}px`,
-    maxHeight: 'auto' // ⭐ Allow expansion jika perlu
-  }}
->
+{roundMatches.map((match, matchIndex) => {
+  const hasScores = match.skor_a > 0 || match.skor_b > 0;
+  const winner = hasScores 
+    ? (match.skor_a > match.skor_b ? match.peserta_a : match.peserta_b)
+    : null;
+  
+  let marginTop = 0;
+  
+  if (roundIndex > 0) {
+    
+    const prevRoundSpacing = roundIndex === 1 
+      ? baseGap 
+      : baseGap * Math.pow(1.8, roundIndex - 1);
+    
+    const prevMatchTotalHeight = matchCardHeight + prevRoundSpacing;
+    
+    // Position of first parent match
+    const firstParentTop = matchIndex * 2 * prevMatchTotalHeight;
+    
+    // Position of second parent match
+    const secondParentTop = (matchIndex * 2 + 1) * prevMatchTotalHeight;
+    
+    // Center position between two parents
+    const centerBetweenParents = (firstParentTop + secondParentTop + matchCardHeight) / 2;
+    
+    // Current match natural position
+    const currentMatchTop = matchIndex * (matchCardHeight + verticalSpacing);
+    
+    // Offset needed to center
+    marginTop = centerBetweenParents - currentMatchTop - (matchCardHeight / 2);
+  }
+  
+  return (
+    <div
+      key={match.id_match}
+      className="relative"
+      style={{ 
+        minHeight: `${matchCardHeight}px`,
+        marginTop: roundIndex === 0 ? '0px' : `${marginTop}px` // ⭐ Apply offset
+      }}
+    >
                 {/* Connecting Lines */}
 {round < totalRounds && (
   <>
-    {/* Horizontal connector to next round */}
+{/* Horizontal connector to next round */}
 <div
   className="absolute left-full border-t-2"
   style={{ 
     borderColor: '#990D35',
     top: `${matchCardHeight / 2}px`,
-    width: '32px', // ⭐ Match dengan marginRight
+    width: '32px',
     zIndex: 1
   }}
 />
                     
                     {/* Vertical bracket connector */}
-                    {matchIndex % 2 === 0 && matchIndex + 1 < roundMatches.length && (
-                      <div
-                        className="absolute border-l-2"
-                        style={{
-                          borderColor: '#990D35',
-                          left: 'calc(100% + 32px)',
-                          top: '50%',
-                          height: `calc(${verticalSpacing + matchCardHeight}px)`,
-                          zIndex: 0
-                        }}
-                      />
-                    )}
+{/* Vertical bracket connector */}
+{matchIndex % 2 === 0 && matchIndex + 1 < roundMatches.length && (
+  <div
+    className="absolute border-l-2"
+    style={{
+      borderColor: '#990D35',
+      left: 'calc(100% + 32px)',
+      top: `${matchCardHeight / 2}px`, // ⭐ Start from center of current card
+      height: `${verticalSpacing + matchCardHeight}px`, // ⭐ Connect to center of next card
+      zIndex: 0
+    }}
+  />
+)}
                   </>
                 )}
 
