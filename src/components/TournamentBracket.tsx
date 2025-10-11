@@ -1797,30 +1797,32 @@ const prestasiLeaderboard = generatePrestasiLeaderboard();
   })}
 </div>
 
-  {/* Matches Container - HORIZONTAL FLOW */}
+{/* Matches Container - HORIZONTAL FLOW */}
+<div 
+  className="inline-flex items-start gap-6 min-w-full px-8 py-8" 
+  style={{ minHeight: 'auto' }}
+>
+  {Array.from({ length: totalRounds }, (_, roundIndex) => {
+    const round = roundIndex + 1;
+    const roundMatches = getMatchesByRound(round);
+    
+    // ⭐ IMPROVED: Dynamic spacing dengan formula lebih baik
+    const matchCardHeight = 180; // Increased untuk participant info lebih jelas
+    const baseGap = 40; // Base gap lebih kecil untuk round 1
+    const verticalSpacing = roundIndex === 0 
+      ? baseGap 
+      : baseGap * Math.pow(1.8, roundIndex); // Growth factor lebih kecil
+      
+return (
   <div 
-    className="inline-flex items-center gap-8 min-w-full px-8" 
-    style={{ minHeight: '700px' }}
+    key={`round-${round}`} 
+    className="flex flex-col justify-start relative flex-shrink-0"
+    style={{ 
+      width: '360px', // ⭐ Sedikit lebih lebar
+      gap: `${verticalSpacing}px`,
+      paddingTop: roundIndex === 0 ? '0px' : `${verticalSpacing / 2}px` // ⭐ Offset untuk alignment
+    }}
   >
-    {Array.from({ length: totalRounds }, (_, roundIndex) => {
-      const round = roundIndex + 1;
-      const roundMatches = getMatchesByRound(round);
-      
-      // Dynamic spacing based on round progression
-      const matchCardHeight = 160; // Increased from 140
-      const baseGap = 60; // Increased base gap
-      const verticalSpacing = baseGap * Math.pow(2, roundIndex);
-      
-      return (
-        <div 
-          key={`round-${round}`} 
-          className="flex flex-col justify-center relative flex-shrink-0"
-          style={{ 
-            width: '340px', // Fixed width for consistency
-            gap: `${verticalSpacing}px`,
-            minHeight: '600px' // Ensure minimum height
-          }}
-        >
           {/* Matches */}
           {roundMatches.map((match, matchIndex) => {
             const hasScores = match.skor_a > 0 || match.skor_b > 0;
@@ -1829,28 +1831,27 @@ const prestasiLeaderboard = generatePrestasiLeaderboard();
               : null;
             
             return (
-              <div
-                key={match.id_match}
-                className="relative"
-                style={{ 
-                  minHeight: `${matchCardHeight}px`,
-                  maxHeight: `${matchCardHeight}px`
-                }}
-              >
+<div
+  key={match.id_match}
+  className="relative"
+  style={{ 
+    minHeight: `${matchCardHeight}px`,
+    maxHeight: 'auto' // ⭐ Allow expansion jika perlu
+  }}
+>
                 {/* Connecting Lines */}
-                {round < totalRounds && (
-                  <>
-                    {/* Horizontal connector to next round */}
-                    <div
-                      className="absolute left-full border-t-2"
-                      style={{ 
-                        borderColor: '#990D35',
-                        top: '50%',
-                        width: '32px',
-                        transform: 'translateY(-1px)',
-                        zIndex: 1
-                      }}
-                    />
+{round < totalRounds && (
+  <>
+    {/* Horizontal connector to next round */}
+    <div
+      className="absolute left-full border-t-2"
+      style={{ 
+        borderColor: '#990D35',
+        top: `${matchCardHeight / 2}px`, // ⭐ Fixed position dari top
+        width: '24px', // ⭐ Sedikit lebih pendek
+        zIndex: 1
+      }}
+    />
                     
                     {/* Vertical bracket connector */}
                     {matchIndex % 2 === 0 && matchIndex + 1 < roundMatches.length && (
@@ -1970,6 +1971,7 @@ const prestasiLeaderboard = generatePrestasiLeaderboard();
       ? 'bg-gradient-to-r from-green-50 to-green-100' 
       : 'hover:bg-red-50/30'
   }`}
+  style={{ minHeight: '70px' }} // ⭐ Ensure minimal height
 >
   {match.peserta_b ? (
     <>
