@@ -578,11 +578,32 @@ static async generatePrestasiBracket(
     }
   }
 
-  console.log(`\n✅ PRESTASI bracket complete: ${matches.length} matches`);
-  console.log(`   - Round 1: ${this.getMatchesByRound(matches, 1).length} matches`);
-  console.log(`   - Total Rounds: ${totalRounds}\n`);
-  
-  return matches;
+// ⭐ ADVANCE BYE WINNERS AUTOMATICALLY
+console.log(`\n🎯 Auto-advancing BYE winners to next round...`);
+const round1Matches = matches.filter(m => m.round === 1);
+
+for (const match of round1Matches) {
+  // Check if this is a BYE match (participant A exists, no participant B)
+  if (match.participant1 && !match.participant2 && match.id) {
+    console.log(`   🎁 BYE detected: ${match.participant1.name} (Match ${match.id})`);
+    
+    // Create a mock match object for advanceWinnerToNextRound
+    const mockMatch = await prisma.tb_match.findUnique({
+      where: { id_match: match.id },
+      include: {
+        bagan: true
+      }
+    });
+    
+    if (mockMatch) {
+      // Advance the BYE winner to next round
+      await this.advanceWinnerToNextRound(mockMatch, match.participant1.id);
+      console.log(`   ✅ Advanced ${match.participant1.name} to Round 2`);
+    }
+  }
+}
+
+return matches;
 }
 
 static getMatchesByRound(matches: Match[], round: number): Match[] {
