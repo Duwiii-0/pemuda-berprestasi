@@ -193,16 +193,12 @@ static async generatePrestasiBracket(
     throw new Error('At least 2 participants required for bracket');
   }
 
-  // ⭐ BYE COUNT: bisa 0 (no BYE) atau sesuai user selection
+  // ⭐ BYE logic: FLEXIBLE - bisa 0 atau custom amount
   const byeCount = byeParticipantIds ? byeParticipantIds.length : 0;
   
-  console.log(`
-📊 BRACKET CALCULATION (FLEXIBLE BYE):
-   Total Participants: ${participantCount}
-   User Selected BYEs: ${byeCount}
-   
-   ${byeCount === 0 ? '⚠️ NO BYE - All participants fight from Round 1' : `✅ ${byeCount} participants get BYE to Round 2`}
-  `);
+  console.log(`\n🏆 === GENERATING PRESTASI BRACKET ===`);
+  console.log(`Total Participants: ${participantCount}`);
+  console.log(`User Selected BYEs: ${byeCount}`);
 
   // ⭐ Separate participants
   let byeParticipants: Participant[] = [];
@@ -212,41 +208,44 @@ static async generatePrestasiBracket(
     byeParticipants = participants.filter(p => byeParticipantIds.includes(p.id));
     fightingParticipants = participants.filter(p => !byeParticipantIds.includes(p.id));
     
-    console.log(`🎁 BYE: ${byeParticipants.map(p => p.name).join(', ')}`);
-    console.log(`⚔️ FIGHTING: ${fightingParticipants.map(p => p.name).join(', ')}`);
+    console.log(`🎁 BYE (${byeParticipants.length}):`, byeParticipants.map(p => p.name));
+    console.log(`⚔️ FIGHTING (${fightingParticipants.length}):`, fightingParticipants.map(p => p.name));
   } else {
-    // NO BYE - all fight
     fightingParticipants = [...participants];
-    console.log(`⚔️ ALL FIGHTING (no BYE): ${fightingParticipants.length} participants`);
+    console.log(`⚔️ ALL FIGHTING (no BYE): ${fightingParticipants.length}`);
   }
 
-  // ⭐ Calculate rounds based on ACTUAL fighters in Round 1
+  // ⭐ CRITICAL: Calculate bracket structure based on ACTUAL Round 1 fighters
   const round1Fighters = fightingParticipants.length;
-  const round1Winners = Math.floor(round1Fighters / 2);
-  const round2Total = round1Winners + byeCount;
-  
-  // Handle odd number of fighters in Round 1 (auto-BYE)
+  const round1Matches = Math.ceil(round1Fighters / 2);
+  const round1Winners = Math.floor(round1Fighters / 2); // Winners from actual matches
   const hasOddFighter = round1Fighters % 2 !== 0;
-  const actualRound2Total = hasOddFighter ? round2Total + 1 : round2Total;
   
-  const totalRounds = Math.ceil(Math.log2(actualRound2Total)) + 1; // +1 for Round 1
+  // Round 2 participants = Round 1 winners + odd fighter (if any) + BYE participants
+  const round2Participants = round1Winners + (hasOddFighter ? 1 : 0) + byeCount;
   
-  console.log(`
-🎯 BRACKET STRUCTURE:
-   Round 1: ${round1Fighters} fighters → ${round1Winners} winners ${hasOddFighter ? '+ 1 auto-BYE' : ''}
-   Round 2: ${actualRound2Total} participants (${round1Winners} winners + ${byeCount} selected BYEs ${hasOddFighter ? '+ 1 auto-BYE' : ''})
-   Total Rounds: ${totalRounds}
-  `);
+  // Total rounds = log2 of Round 2 participants + 1 (for Round 1)
+  const totalRounds = round2Participants > 1 
+    ? Math.ceil(Math.log2(round2Participants)) + 1 
+    : 1;
+
+  console.log(`\n📊 BRACKET STRUCTURE:`);
+  console.log(`   Round 1: ${round1Fighters} fighters → ${round1Matches} matches`);
+  console.log(`            ${round1Winners} winners ${hasOddFighter ? '+ 1 odd' : ''}`);
+  console.log(`   Round 2: ${round2Participants} participants (${round1Winners} winners + ${hasOddFighter ? 1 : 0} odd + ${byeCount} BYEs)`);
+  console.log(`   Total Rounds: ${totalRounds}`);
 
   const matches: Match[] = [];
-  let matchPosition = 0;
 
   // ========================================
-  // ROUND 1: Pair fighters
+  // ROUND 1: Shuffle and pair fighters
   // ========================================
-  for (let i = 0; i < fightingParticipants.length; i += 2) {
-    const participant1 = fightingParticipants[i];
-    const participant2 = fightingParticipants[i + 1] || null;
+  console.log(`\n📝 Creating Round 1 matches...`);
+  const shuffledFighters = this.shuffleArray([...fightingParticipants]);
+  
+  for (let i = 0; i < shuffledFighters.length; i += 2) {
+    const participant1 = shuffledFighters[i];
+    const participant2 = shuffledFighters[i + 1] || null;
     
     const match = await prisma.tb_match.create({
       data: {
@@ -262,7 +261,7 @@ static async generatePrestasiBracket(
     matches.push({
       id: match.id_match,
       round: 1,
-      position: matchPosition++,
+      position: matches.length,
       participant1,
       participant2: participant2 || null,
       status: participant2 ? 'pending' : 'bye',
@@ -270,16 +269,21 @@ static async generatePrestasiBracket(
       scoreB: 0
     });
     
-    console.log(`  Match ${matchPosition}: ${participant1.name} vs ${participant2?.name || 'BYE'}`);
+    console.log(`  Match ${match.id_match}: ${participant1.name} vs ${participant2?.name || 'BYE (odd)'}`);
   }
 
   // ========================================
-  // ROUND 2+: Placeholder matches
+  // ROUND 2+: Create placeholder matches
   // ========================================
   for (let round = 2; round <= totalRounds; round++) {
-    const matchesInRound = Math.ceil(actualRound2Total / Math.pow(2, round - 2));
+    // Calculate matches for this round
+    const participantsInRound = round === 2 
+      ? round2Participants 
+      : Math.ceil(round2Participants / Math.pow(2, round - 2));
     
-    console.log(`   Creating ${matchesInRound} matches for Round ${round}`);
+    const matchesInRound = Math.ceil(participantsInRound / 2);
+    
+    console.log(`   Round ${round}: Creating ${matchesInRound} placeholder matches`);
     
     for (let i = 0; i < matchesInRound; i++) {
       const match = await prisma.tb_match.create({
@@ -307,7 +311,7 @@ static async generatePrestasiBracket(
   }
 
   // ========================================
-  // AUTO-PLACE BYE PARTICIPANTS (if any)
+  // AUTO-PLACE BYE PARTICIPANTS into Round 2
   // ========================================
   if (byeParticipants.length > 0) {
     console.log(`\n🚀 Placing ${byeParticipants.length} BYE participants into Round 2...`);
@@ -320,24 +324,31 @@ static async generatePrestasiBracket(
       orderBy: { id_match: 'asc' }
     });
 
-    let byeIndex = 0;
-    for (const byeParticipant of byeParticipants) {
-      const targetMatch = round2Matches[byeIndex];
+    // Distribute BYE participants evenly
+    for (let i = 0; i < byeParticipants.length; i++) {
+      const byeParticipant = byeParticipants[i];
+      const targetMatch = round2Matches[i % round2Matches.length];
       
       if (targetMatch) {
-        await prisma.tb_match.update({
-          where: { id_match: targetMatch.id_match },
-          data: { id_peserta_a: byeParticipant.id }
-        });
-        
-        console.log(`   ✅ ${byeParticipant.name} → Round 2 Match ${targetMatch.id_match}`);
+        // Check which slot is empty
+        if (!targetMatch.id_peserta_a) {
+          await prisma.tb_match.update({
+            where: { id_match: targetMatch.id_match },
+            data: { id_peserta_a: byeParticipant.id }
+          });
+          console.log(`   ✅ ${byeParticipant.name} → Match ${targetMatch.id_match} (Slot A)`);
+        } else if (!targetMatch.id_peserta_b) {
+          await prisma.tb_match.update({
+            where: { id_match: targetMatch.id_match },
+            data: { id_peserta_b: byeParticipant.id }
+          });
+          console.log(`   ✅ ${byeParticipant.name} → Match ${targetMatch.id_match} (Slot B)`);
+        }
       }
-      
-      byeIndex++;
     }
   }
 
-  console.log(`\n✅ Bracket generated: ${matches.length} matches total`);
+  console.log(`\n✅ PRESTASI bracket complete: ${matches.length} matches\n`);
   
   return matches;
 }
@@ -462,6 +473,7 @@ static async generatePemulaBracket(
   
   return matches;
 }
+
   /**
    * Get bracket by competition and class
    */
