@@ -306,6 +306,8 @@ model tb_match {
   skor_a       Int                   @default(0)
   skor_b       Int                   @default(0)
   id_venue     Int?
+  tanggal_pertandingan DateTime?          // Tanggal pertandingan
+  nomor_partai         String?   @db.VarChar(50)  // Nomor partai (misal: "1A", "2B")
 
   bagan        tb_bagan              @relation(fields: [id_bagan], references: [id_bagan])
   peserta_a    tb_peserta_kompetisi? @relation("PesertaA", fields: [id_peserta_a], references: [id_peserta_kompetisi])

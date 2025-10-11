@@ -21,6 +21,8 @@ export interface Match {
   scoreB?: number;
   status: 'pending' | 'ongoing' | 'completed' | 'bye';
   venue?: string;
+  tanggalPertandingan?: Date | null; 
+  nomorPartai?: string | null;       
 }
 
 export interface Bracket {

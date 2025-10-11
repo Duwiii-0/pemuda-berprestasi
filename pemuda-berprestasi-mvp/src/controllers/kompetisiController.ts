@@ -717,86 +717,102 @@ static async regenerateBracket(req: Request, res: Response) {
 /**
  * Update match result
  */
-static async updateMatch(req: Request, res: Response) {
-  try {
-    const { id, matchId } = req.params;
-    const { winnerId, scoreA, scoreB } = req.body;
+  static async updateMatch(req: Request, res: Response) {
+    try {
+      const { id, matchId } = req.params;
+      const { winnerId, scoreA, scoreB, tanggalPertandingan, nomorPartai } = req.body; // ⭐ NEW FIELDS
 
-    const kompetisiId = parseInt(id);
-    const matchIdInt = parseInt(matchId);
-    const winnerIdInt = parseInt(winnerId);
-    const scoreAInt = parseInt(scoreA);
-    const scoreBInt = parseInt(scoreB);
+      const kompetisiId = parseInt(id);
+      const matchIdInt = parseInt(matchId);
+      const winnerIdInt = parseInt(winnerId);
+      const scoreAInt = parseInt(scoreA);
+      const scoreBInt = parseInt(scoreB);
 
-    if (isNaN(kompetisiId) || isNaN(matchIdInt) || isNaN(winnerIdInt)) {
-      return sendError(res, 'Parameter tidak valid', 400);
-    }
-
-    if (isNaN(scoreAInt) || isNaN(scoreBInt)) {
-      return sendError(res, 'Skor tidak valid', 400);
-    }
-
-    if (scoreAInt < 0 || scoreBInt < 0) {
-      return sendError(res, 'Skor tidak boleh negatif', 400);
-    }
-
-    if (scoreAInt === scoreBInt) {
-      return sendError(res, 'Pertandingan tidak boleh berakhir seri', 400);
-    }
-
-    // Check authorization
-    const user = req.user;
-    if (!user) {
-      return sendError(res, 'User tidak ditemukan', 401);
-    }
-
-    if (user.role !== 'ADMIN' && user.role !== 'ADMIN_KOMPETISI') {
-      return sendError(res, 'Tidak memiliki akses untuk mengupdate hasil pertandingan', 403);
-    }
-
-    // Verify match exists and belongs to the competition
-    const match = await prisma.tb_match.findFirst({
-      where: {
-        id_match: matchIdInt,
-        bagan: {
-          id_kompetisi: kompetisiId
-        }
-      },
-      include: {
-        peserta_a: true,
-        peserta_b: true
+      if (isNaN(kompetisiId) || isNaN(matchIdInt) || isNaN(winnerIdInt)) {
+        return sendError(res, 'Parameter tidak valid', 400);
       }
-    });
 
-    if (!match) {
-      return sendError(res, 'Pertandingan tidak ditemukan', 404);
+      if (isNaN(scoreAInt) || isNaN(scoreBInt)) {
+        return sendError(res, 'Skor tidak valid', 400);
+      }
+
+      if (scoreAInt < 0 || scoreBInt < 0) {
+        return sendError(res, 'Skor tidak boleh negatif', 400);
+      }
+
+      if (scoreAInt === scoreBInt) {
+        return sendError(res, 'Pertandingan tidak boleh berakhir seri', 400);
+      }
+
+      // ⭐ Parse tanggal if provided
+      let parsedTanggal: Date | null = null;
+      if (tanggalPertandingan) {
+        parsedTanggal = new Date(tanggalPertandingan);
+        if (isNaN(parsedTanggal.getTime())) {
+          return sendError(res, 'Format tanggal tidak valid', 400);
+        }
+      }
+
+      // Check authorization
+      const user = req.user;
+      if (!user) {
+        return sendError(res, 'User tidak ditemukan', 401);
+      }
+
+      if (user.role !== 'ADMIN' && user.role !== 'ADMIN_KOMPETISI') {
+        return sendError(res, 'Tidak memiliki akses untuk mengupdate hasil pertandingan', 403);
+      }
+
+      // Verify match exists and belongs to the competition
+      const match = await prisma.tb_match.findFirst({
+        where: {
+          id_match: matchIdInt,
+          bagan: {
+            id_kompetisi: kompetisiId
+          }
+        },
+        include: {
+          peserta_a: true,
+          peserta_b: true
+        }
+      });
+
+      if (!match) {
+        return sendError(res, 'Pertandingan tidak ditemukan', 404);
+      }
+
+      if (!match.peserta_a || !match.peserta_b) {
+        return sendError(res, 'Pertandingan belum lengkap (peserta kurang)', 400);
+      }
+
+      // Validate winner
+      const validWinnerIds = [match.id_peserta_a, match.id_peserta_b].filter(Boolean);
+      if (!validWinnerIds.includes(winnerIdInt)) {
+        return sendError(res, 'Winner ID tidak valid untuk pertandingan ini', 400);
+      }
+
+      // Validate score matches winner
+      const isWinnerA = winnerIdInt === match.id_peserta_a;
+      if ((isWinnerA && scoreAInt <= scoreBInt) || (!isWinnerA && scoreBInt <= scoreAInt)) {
+        return sendError(res, 'Skor tidak sesuai dengan pemenang', 400);
+      }
+
+      // ⭐ Update match with new fields
+      const updatedMatch = await BracketService.updateMatch(
+        matchIdInt, 
+        winnerIdInt, 
+        scoreAInt, 
+        scoreBInt,
+        parsedTanggal,      
+        nomorPartai || null 
+      );
+
+      return sendSuccess(res, updatedMatch, 'Hasil pertandingan berhasil diupdate');
+    } catch (error: any) {
+      console.error('Controller - Error updating match:', error);
+      return sendError(res, error.message || 'Gagal mengupdate hasil pertandingan', 400);
     }
-
-    if (!match.peserta_a || !match.peserta_b) {
-      return sendError(res, 'Pertandingan belum lengkap (peserta kurang)', 400);
-    }
-
-    // Validate winner
-    const validWinnerIds = [match.id_peserta_a, match.id_peserta_b].filter(Boolean);
-    if (!validWinnerIds.includes(winnerIdInt)) {
-      return sendError(res, 'Winner ID tidak valid untuk pertandingan ini', 400);
-    }
-
-    // Validate score matches winner
-    const isWinnerA = winnerIdInt === match.id_peserta_a;
-    if ((isWinnerA && scoreAInt <= scoreBInt) || (!isWinnerA && scoreBInt <= scoreAInt)) {
-      return sendError(res, 'Skor tidak sesuai dengan pemenang', 400);
-    }
-
-    // Update match
-    const updatedMatch = await BracketService.updateMatch(matchIdInt, winnerIdInt, scoreAInt, scoreBInt);
-
-    return sendSuccess(res, updatedMatch, 'Hasil pertandingan berhasil diupdate');
-  } catch (error: any) {
-    console.error('Controller - Error updating match:', error);
-    return sendError(res, error.message || 'Gagal mengupdate hasil pertandingan', 400);
   }
-}
 
 /**
  * Export bracket to PDF

@@ -35,6 +35,8 @@ interface Match {
   venue?: {
     nama_venue: string;
   };
+  tanggal_pertandingan?: string; 
+  nomor_partai?: string;         
 }
 
 interface KelasKejuaraan {
@@ -1187,74 +1189,81 @@ const prestasiLeaderboard = generatePrestasiLeaderboard();
 
   const leaderboard = generateLeaderboard();
 
-    const updateMatchResult = async (matchId: number, scoreA: number, scoreB: number) => {
-    if (!selectedKelas) return;
+const updateMatchResult = async (matchId: number, scoreA: number, scoreB: number) => {
+  if (!selectedKelas) return;
 
-    try {
-      const kompetisiId = selectedKelas.kompetisi.id_kompetisi;
-      
-      // Determine winner based on scores
-      const match = matches.find(m => m.id_match === matchId);
-      if (!match) {
-        throw new Error('Match not found');
-      }
-
-      const winnerId = scoreA > scoreB 
-        ? match.id_peserta_a 
-        : match.id_peserta_b;
-
-      if (!winnerId) {
-        throw new Error('Cannot determine winner');
-      }
-
-      console.log(`🎯 Updating match ${matchId}: ${scoreA} - ${scoreB}, winner: ${winnerId}`);
-
-      // Call API to update match
-      const response = await fetch(
-        `${apiBaseUrl}/kompetisi/${kompetisiId}/brackets/match/${matchId}`,
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token && { 'Authorization': `Bearer ${token}` })
-          },
-          body: JSON.stringify({
-            winnerId: winnerId,
-            scoreA: scoreA,
-            scoreB: scoreB
-          })
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to update match result');
-      }
-
-      const result = await response.json();
-      console.log('✅ Match updated:', result);
-
-      // Refresh bracket data to get updated state
-      await fetchBracketData(kompetisiId, selectedKelas.id_kelas_kejuaraan);
-
-      setEditingMatch(null);
-      showNotification(
-        'info',
-        'Informasi',
-        'Informasi Match Berhasil Diperbarui!',
-        () => setShowModal(false)
-      );
-      
-    } catch (error: any) {
-      console.error('❌ Error updating match result:', error);
-      showNotification(
-        'error',
-        'Gagal Memperbarui',
-        error.message || 'Gagal memperbarui hasil pertandingan. Silakan coba lagi.',
-        () => setShowModal(false)
-      );
+  try {
+    const kompetisiId = selectedKelas.kompetisi.id_kompetisi;
+    
+    // Determine winner based on scores
+    const match = matches.find(m => m.id_match === matchId);
+    if (!match) {
+      throw new Error('Match not found');
     }
-  };
+
+    const winnerId = scoreA > scoreB 
+      ? match.id_peserta_a 
+      : match.id_peserta_b;
+
+    if (!winnerId) {
+      throw new Error('Cannot determine winner');
+    }
+
+    // ⭐ AMBIL nilai tanggal dan nomor partai dari form
+    const tanggalInput = (document.getElementById('tanggalPertandingan') as HTMLInputElement)?.value || null;
+    const nomorPartaiInput = (document.getElementById('nomorPartai') as HTMLInputElement)?.value || null;
+
+    console.log(`🎯 Updating match ${matchId}: ${scoreA} - ${scoreB}, winner: ${winnerId}`);
+    console.log(`   Tanggal: ${tanggalInput}, Nomor Partai: ${nomorPartaiInput}`);
+
+    // Call API to update match
+    const response = await fetch(
+      `${apiBaseUrl}/kompetisi/${kompetisiId}/brackets/match/${matchId}`,
+      {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { 'Authorization': `Bearer ${token}` })
+        },
+        body: JSON.stringify({
+          winnerId: winnerId,
+          scoreA: scoreA,
+          scoreB: scoreB,
+          tanggalPertandingan: tanggalInput,  // ⭐ KIRIM KE BACKEND
+          nomorPartai: nomorPartaiInput       // ⭐ KIRIM KE BACKEND
+        })
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to update match result');
+    }
+
+    const result = await response.json();
+    console.log('✅ Match updated:', result);
+
+    // Refresh bracket data to get updated state
+    await fetchBracketData(kompetisiId, selectedKelas.id_kelas_kejuaraan);
+
+    setEditingMatch(null);
+    showNotification(
+      'info',
+      'Informasi',
+      'Informasi Match Berhasil Diperbarui!',
+      () => setShowModal(false)
+    );
+    
+  } catch (error: any) {
+    console.error('❌ Error updating match result:', error);
+    showNotification(
+      'error',
+      'Gagal Memperbarui',
+      error.message || 'Gagal memperbarui hasil pertandingan. Silakan coba lagi.',
+      () => setShowModal(false)
+    );
+  }
+};
 
   if (!selectedKelas) {
     return (
@@ -1486,24 +1495,44 @@ const prestasiLeaderboard = generatePrestasiLeaderboard();
     style={{ borderColor: '#990D35' }}
   >
     {/* Match Header */}
-    <div 
-      className="px-4 py-2.5 border-b flex items-center justify-between"
-      style={{ 
-        backgroundColor: 'rgba(153, 13, 53, 0.05)',
-        borderColor: '#990D35'
-      }}
-    >
-      <span className="text-sm font-semibold" style={{ color: '#050505' }}>
-        Partai {matchIndex + 1}
-      </span>
-      <button
-        onClick={() => setEditingMatch(match)}
-        className="p-1.5 rounded-lg hover:bg-black/5 transition-all"
-        title="Edit Score"
+<div 
+  className="px-4 py-2.5 border-b flex items-center justify-between"
+  style={{ 
+    backgroundColor: 'rgba(153, 13, 53, 0.05)',
+    borderColor: '#990D35'
+  }}
+>
+  <div className="flex items-center gap-2">
+    <span className="text-sm font-semibold" style={{ color: '#050505' }}>
+      Partai {matchIndex + 1}
+    </span>
+    {/* ⭐ TAMBAH INFO NOMOR PARTAI */}
+    {match.nomor_partai && (
+      <span 
+        className="text-xs px-2 py-0.5 rounded-full font-medium"
+        style={{ backgroundColor: '#F5B700', color: 'white' }}
       >
-        <Edit3 size={14} style={{ color: '#050505', opacity: 0.6 }} />
-      </button>
-    </div>
+        {match.nomor_partai}
+      </span>
+    )}
+  </div>
+  
+  <div className="flex items-center gap-2">
+    {/* ⭐ TAMBAH INFO TANGGAL */}
+    {match.tanggal_pertandingan && (
+      <span className="text-xs" style={{ color: '#050505', opacity: 0.6 }}>
+        📅 {new Date(match.tanggal_pertandingan).toLocaleDateString('id-ID')}
+      </span>
+    )}
+    <button
+      onClick={() => setEditingMatch(match)}
+      className="p-1.5 rounded-lg hover:bg-black/5 transition-all"
+      title="Edit Score"
+    >
+      <Edit3 size={14} style={{ color: '#050505', opacity: 0.6 }} />
+    </button>
+  </div>
+</div>
 
     {/* Participants Container */}
     <div className="p-4 space-y-3">
@@ -2271,74 +2300,120 @@ const verticalSpacing = baseSpacing * spacingMultiplier;
       )}
 
       {/* Edit Match Modal */}
-      {editingMatch && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
-            <div className="p-6 border-b" style={{ borderColor: '#990D35' }}>
-              <h3 className="text-xl font-bold" style={{ color: '#050505' }}>
-                Update Match Result
-              </h3>
-            </div>
-            
-            <div className="p-6 space-y-4">
-              {editingMatch.peserta_a && (
-                <div>
-                  <label className="block text-sm font-medium mb-2" style={{ color: '#050505' }}>
-                    {getParticipantName(editingMatch.peserta_a)} Score
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    placeholder="Score"
-                    className="w-full px-3 py-2 rounded-lg border"
-                    style={{ borderColor: '#990D35', backgroundColor: '#F5FBEF' }}
-                    defaultValue={editingMatch.skor_a}
-                    id="scoreA"
-                  />
-                </div>
-              )}
-              
-              {editingMatch.peserta_b && (
-                <div>
-                  <label className="block text-sm font-medium mb-2" style={{ color: '#050505' }}>
-                    {getParticipantName(editingMatch.peserta_b)} Score
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    placeholder="Score"
-                    className="w-full px-3 py-2 rounded-lg border"
-                    style={{ borderColor: '#990D35', backgroundColor: '#F5FBEF' }}
-                    defaultValue={editingMatch.skor_b}
-                    id="scoreB"
-                  />
-                </div>
-              )}
-            </div>
-            
-            <div className="p-6 border-t flex gap-3" style={{ borderColor: '#990D35' }}>
-              <button
-                onClick={() => setEditingMatch(null)}
-                className="flex-1 py-2 px-4 rounded-lg border font-medium transition-all"
-                style={{ borderColor: '#990D35', color: '#990D35' }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  const scoreA = parseInt((document.getElementById('scoreA') as HTMLInputElement)?.value || '0');
-                  const scoreB = parseInt((document.getElementById('scoreB') as HTMLInputElement)?.value || '0');
-                  updateMatchResult(editingMatch.id_match, scoreA, scoreB);
-                }}
-                className="flex-1 py-2 px-4 rounded-lg font-medium transition-all"
-                style={{ backgroundColor: '#990D35', color: '#F5FBEF' }}
-              >
-                Save Result
-              </button>
-            </div>
-          </div>
+{editingMatch && (
+  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div className="bg-white rounded-xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+      <div className="p-6 border-b" style={{ borderColor: '#990D35' }}>
+        <h3 className="text-xl font-bold" style={{ color: '#050505' }}>
+          Update Match Result
+        </h3>
+        <p className="text-sm mt-1" style={{ color: '#050505', opacity: 0.6 }}>
+          Match #{editingMatch.id_match}
+        </p>
+      </div>
+      
+      <div className="p-6 space-y-4">
+        {/* ⭐ NEW: Tanggal Pertandingan */}
+        <div>
+          <label className="block text-sm font-medium mb-2" style={{ color: '#050505' }}>
+            📅 Tanggal Pertandingan
+          </label>
+          <input
+            type="date"
+            className="w-full px-3 py-2 rounded-lg border"
+            style={{ borderColor: '#990D35', backgroundColor: '#F5FBEF' }}
+            defaultValue={
+              editingMatch.tanggal_pertandingan 
+                ? new Date(editingMatch.tanggal_pertandingan).toISOString().split('T')[0] 
+                : ''
+            }
+            id="tanggalPertandingan"
+          />
         </div>
-      )}
+
+        {/* ⭐ NEW: Nomor Partai */}
+        <div>
+          <label className="block text-sm font-medium mb-2" style={{ color: '#050505' }}>
+            🎯 Nomor Partai
+          </label>
+          <input
+            type="text"
+            placeholder="Contoh: 1A, 2B, 3C"
+            className="w-full px-3 py-2 rounded-lg border"
+            style={{ borderColor: '#990D35', backgroundColor: '#F5FBEF' }}
+            defaultValue={editingMatch.nomor_partai || ''}
+            id="nomorPartai"
+            maxLength={50}
+          />
+          <p className="text-xs mt-1" style={{ color: '#050505', opacity: 0.5 }}>
+            Opsional - Nomor identifikasi partai pertandingan
+          </p>
+        </div>
+
+        <div className="border-t pt-4" style={{ borderColor: 'rgba(0,0,0,0.1)' }}>
+          <p className="text-sm font-semibold mb-3" style={{ color: '#050505' }}>
+            Skor Pertandingan
+          </p>
+
+          {editingMatch.peserta_a && (
+            <div className="mb-3">
+              <label className="block text-sm font-medium mb-2" style={{ color: '#3B82F6' }}>
+                🔵 {getParticipantName(editingMatch.peserta_a)}
+              </label>
+              <input
+                type="number"
+                min="0"
+                placeholder="Score"
+                className="w-full px-3 py-2 rounded-lg border"
+                style={{ borderColor: '#990D35', backgroundColor: '#F5FBEF' }}
+                defaultValue={editingMatch.skor_a}
+                id="scoreA"
+              />
+            </div>
+          )}
+          
+          {editingMatch.peserta_b && (
+            <div>
+              <label className="block text-sm font-medium mb-2" style={{ color: '#EF4444' }}>
+                🔴 {getParticipantName(editingMatch.peserta_b)}
+              </label>
+              <input
+                type="number"
+                min="0"
+                placeholder="Score"
+                className="w-full px-3 py-2 rounded-lg border"
+                style={{ borderColor: '#990D35', backgroundColor: '#F5FBEF' }}
+                defaultValue={editingMatch.skor_b}
+                id="scoreB"
+              />
+            </div>
+          )}
+        </div>
+      </div>
+      
+      <div className="p-6 border-t flex gap-3" style={{ borderColor: '#990D35' }}>
+        <button
+          onClick={() => setEditingMatch(null)}
+          className="flex-1 py-2 px-4 rounded-lg border font-medium transition-all hover:bg-gray-50"
+          style={{ borderColor: '#990D35', color: '#990D35' }}
+        >
+          Cancel
+        </button>
+        <button
+          onClick={() => {
+            const scoreA = parseInt((document.getElementById('scoreA') as HTMLInputElement)?.value || '0');
+            const scoreB = parseInt((document.getElementById('scoreB') as HTMLInputElement)?.value || '0');
+            updateMatchResult(editingMatch.id_match, scoreA, scoreB);
+          }}
+          className="flex-1 py-2 px-4 rounded-lg font-medium transition-all hover:opacity-90"
+          style={{ backgroundColor: '#990D35', color: '#F5FBEF' }}
+        >
+          💾 Save Result
+        </button>
+      </div>
+    </div>
+  </div>
+)}
       {/* Notification/Confirmation Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-fadeIn">
