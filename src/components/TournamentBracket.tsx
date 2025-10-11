@@ -1768,9 +1768,9 @@ const prestasiLeaderboard = generatePrestasiLeaderboard();
               </div>
             </div>
           ) : (
-/* ========== PRESTASI LAYOUT - FIXED ALIGNMENT ========== */
+/* ========== PRESTASI LAYOUT (IMPROVED - HORIZONTAL WITH TOP HEADERS) ========== */
 <div className="overflow-x-auto overflow-y-visible pb-8">
-  {/* Round Headers */}
+  {/* Round Headers - HORIZONTAL AT TOP */}
   <div className="flex gap-0 mb-6 px-8 sticky top-0 z-20 bg-white/95 backdrop-blur-sm py-4 shadow-sm">
     {Array.from({ length: totalRounds }, (_, roundIndex) => {
       const round = roundIndex + 1;
@@ -1782,7 +1782,7 @@ const prestasiLeaderboard = generatePrestasiLeaderboard();
           key={`header-${round}`}
           className="flex-shrink-0"
           style={{ 
-            width: '400px',
+            width: '340px', // ⭐ ORIGINAL width
             marginRight: roundIndex < totalRounds - 1 ? '80px' : '0px'
           }}
         >
@@ -1800,17 +1800,16 @@ const prestasiLeaderboard = generatePrestasiLeaderboard();
     })}
   </div>
 
-  {/* Matches Container */}
+  {/* Matches Container - HORIZONTAL FLOW */}
   <div className="flex items-center min-w-full px-8 py-8">
     {Array.from({ length: totalRounds }, (_, roundIndex) => {
       const round = roundIndex + 1;
       const roundMatches = getMatchesByRound(round);
       
-      const matchCardHeight = 200;
+      const matchCardHeight = 160; // ⭐ ORIGINAL height
       
-      // ⭐ DYNAMIC vertical spacing based on round
-      // Each subsequent round should have 2x spacing of previous
-      const baseSpacing = 80;
+      // ⭐ DYNAMIC vertical spacing
+      const baseSpacing = 60; // ⭐ ORIGINAL base spacing
       const verticalSpacing = baseSpacing * Math.pow(2, roundIndex);
       
       return (
@@ -1818,12 +1817,13 @@ const prestasiLeaderboard = generatePrestasiLeaderboard();
           key={`round-${round}`} 
           className="flex flex-col justify-center flex-shrink-0"
           style={{ 
-            width: '400px',
+            width: '340px', // ⭐ ORIGINAL width
             gap: `${verticalSpacing}px`,
             marginRight: roundIndex < totalRounds - 1 ? '80px' : '0px',
             position: 'relative'
           }}
         >
+          {/* Matches */}
           {roundMatches.map((match, matchIndex) => {
             const hasScores = match.skor_a > 0 || match.skor_b > 0;
             const winner = hasScores 
@@ -1835,13 +1835,13 @@ const prestasiLeaderboard = generatePrestasiLeaderboard();
                 key={match.id_match}
                 className="relative"
                 style={{ 
-                  height: `${matchCardHeight}px`
+                  minHeight: `${matchCardHeight}px`
                 }}
               >
-                {/* ⭐ CONNECTORS - POSITIONED FROM MATCH CENTER */}
+                {/* Connecting Lines */}
                 {round < totalRounds && (
                   <>
-                    {/* Horizontal line to next round */}
+                    {/* Horizontal connector to next round */}
                     <div
                       className="absolute border-t-2"
                       style={{ 
@@ -1854,7 +1854,7 @@ const prestasiLeaderboard = generatePrestasiLeaderboard();
                       }}
                     />
                     
-                    {/* Vertical bracket line (connects pairs) */}
+                    {/* Vertical bracket connector */}
                     {matchIndex % 2 === 0 && matchIndex + 1 < roundMatches.length && (
                       <div
                         className="absolute border-l-2"
@@ -1872,9 +1872,10 @@ const prestasiLeaderboard = generatePrestasiLeaderboard();
 
                 {/* Match Card */}
                 <div
-                  className="bg-white rounded-xl shadow-lg border-2 overflow-hidden hover:shadow-xl transition-all h-full"
+                  className="bg-white rounded-xl shadow-lg border-2 overflow-hidden hover:shadow-xl transition-all relative z-10"
                   style={{ 
                     borderColor: winner ? '#22c55e' : '#990D35',
+                    height: `${matchCardHeight}px`, // ⭐ FIXED height
                     display: 'flex',
                     flexDirection: 'column'
                   }}
@@ -1907,7 +1908,7 @@ const prestasiLeaderboard = generatePrestasiLeaderboard();
                     </button>
                   </div>
 
-                  {/* Participants Container */}
+                  {/* Participants */}
                   <div className="flex-1 flex flex-col">
                     {/* Participant A */}
                     <div 
@@ -1933,7 +1934,7 @@ const prestasiLeaderboard = generatePrestasiLeaderboard();
                               )}
                             </div>
                             <p 
-                              className="font-bold text-sm leading-tight break-words line-clamp-2"
+                              className="font-bold text-sm truncate leading-tight"
                               style={{ color: '#050505' }}
                               title={getParticipantName(match.peserta_a)}
                             >
@@ -1987,7 +1988,7 @@ const prestasiLeaderboard = generatePrestasiLeaderboard();
                               )}
                             </div>
                             <p 
-                              className="font-bold text-sm leading-tight break-words line-clamp-2"
+                              className="font-bold text-sm truncate leading-tight"
                               style={{ color: '#050505' }}
                               title={getParticipantName(match.peserta_b)}
                             >
