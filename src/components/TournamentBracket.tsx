@@ -1808,9 +1808,10 @@ const prestasiLeaderboard = generatePrestasiLeaderboard();
       
       const matchCardHeight = 200; // ⭐ ORIGINAL height
       
-      // ⭐ DYNAMIC vertical spacing
-      const baseSpacing = 60; // ⭐ ORIGINAL base spacing
-      const verticalSpacing = baseSpacing * Math.pow(2, roundIndex);
+// ✅ ALTERNATIVE (even more spacing):
+const baseSpacing = 100;
+const spacingMultiplier = Math.pow(2, roundIndex);
+const verticalSpacing = baseSpacing * spacingMultiplier;
       
       return (
         <div 
