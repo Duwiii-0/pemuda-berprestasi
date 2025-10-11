@@ -934,18 +934,39 @@ const canvas = await html2canvas(bracketRef.current, {
     return matches.filter(match => match.ronde === round);
   };
 
-  const getTotalRounds = () => {
-    if (!selectedKelas) return 0;
-    const approvedCount = selectedKelas.peserta_kompetisi.filter(p => p.status === 'APPROVED').length;
-    return Math.ceil(Math.log2(approvedCount));
-  };
+const getTotalRounds = (): number => {
+  if (!selectedKelas) return 0;
+  
+  // Try to get from matches (highest round number)
+  if (matches.length > 0) {
+    return Math.max(...matches.map(m => m.ronde));
+  }
+  
+  // Fallback: calculate from participant count
+  const approvedCount = selectedKelas.peserta_kompetisi.filter(p => p.status === 'APPROVED').length;
+  const nextPowerOf2 = Math.pow(2, Math.ceil(Math.log2(approvedCount)));
+  return Math.log2(nextPowerOf2);
+};
 
-  const getRoundName = (round: number, totalRounds: number) => {
-    if (round === totalRounds) return 'Final';
-    if (round === totalRounds - 1) return 'Semi Final';
-    if (round === totalRounds - 2) return 'Quarter Final';
-    return `Round ${round}`;
-  };
+const getRoundName = (round: number, totalRounds: number): string => {
+  const fromEnd = totalRounds - round;
+  
+  switch (fromEnd) {
+    case 0: 
+      return 'Final';
+      
+    case 1: 
+      return 'Semi Final';
+      
+    case 2: 
+      // Only call it "Quarter Final" if there are 4+ rounds (means 16+ bracket)
+      return totalRounds >= 4 ? 'Quarter Final' : `Round ${round}`;
+      
+    default: 
+      // Generic "Round X" for earlier rounds
+      return `Round ${round}`;
+  }
+};
 
   const getParticipantName = (peserta?: Peserta) => {
     if (!peserta) return '';
@@ -1618,30 +1639,31 @@ const generateLeaderboard = () => {
 /* ========== PRESTASI LAYOUT (IMPROVED - HORIZONTAL WITH TOP HEADERS) ========== */
 <div className="overflow-x-auto overflow-y-visible pb-8">
   {/* Round Headers - HORIZONTAL AT TOP */}
-  <div className="flex gap-8 mb-6 px-8 sticky top-0 z-20 bg-white/95 backdrop-blur-sm py-4 shadow-sm">
-    {Array.from({ length: totalRounds }, (_, roundIndex) => {
-      const round = roundIndex + 1;
-      const roundMatches = getMatchesByRound(round);
-      
-      return (
+<div className="flex gap-8 mb-6 px-8 sticky top-0 z-20 bg-white/95 backdrop-blur-sm py-4 shadow-sm">
+  {Array.from({ length: totalRounds }, (_, roundIndex) => {
+    const round = roundIndex + 1;
+    const roundMatches = getMatchesByRound(round);
+    const roundName = getRoundName(round, totalRounds); // ✅ Use fixed function
+    
+    return (
+      <div 
+        key={`header-${round}`}
+        className="flex-shrink-0"
+        style={{ width: '340px' }}
+      >
         <div 
-          key={`header-${round}`}
-          className="flex-shrink-0"
-          style={{ width: '340px' }} // Match card width + padding
+          className="text-center px-6 py-3 rounded-lg font-bold text-lg shadow-md"
+          style={{ backgroundColor: '#990D35', color: '#F5FBEF' }}
         >
-          <div 
-            className="text-center px-6 py-3 rounded-lg font-bold text-lg shadow-md"
-            style={{ backgroundColor: '#990D35', color: '#F5FBEF' }}
-          >
-            {getRoundName(round, totalRounds)}
-          </div>
-          <div className="text-center mt-2 text-sm font-medium" style={{ color: '#050505', opacity: 0.6 }}>
-            {roundMatches.length} {roundMatches.length === 1 ? 'Match' : 'Matches'}
-          </div>
+          {roundName}
         </div>
-      );
-    })}
-  </div>
+        <div className="text-center mt-2 text-sm font-medium" style={{ color: '#050505', opacity: 0.6 }}>
+          {roundMatches.length} {roundMatches.length === 1 ? 'Match' : 'Matches'}
+        </div>
+      </div>
+    );
+  })}
+</div>
 
   {/* Matches Container - HORIZONTAL FLOW */}
   <div 
