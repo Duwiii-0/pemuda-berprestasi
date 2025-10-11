@@ -366,13 +366,17 @@ console.log(`🎯 Received BYE participant IDs:`, byeParticipantIds);
 // ⭐ DECLARE finalByeIds OUTSIDE validation block
 let finalByeIds = byeParticipantIds; // Initialize dengan value asli
 
-// ========================================
-// ⭐ NEW: GET PARTICIPANTS & VALIDATE COUNT
-// ========================================
 const registrations = await prisma.tb_peserta_kompetisi.findMany({
   where: {
     id_kelas_kejuaraan: kelasId,
     status: 'APPROVED'
+  },
+  include: {
+    kelas_kejuaraan: {
+      include: {
+        kategori_event: true
+      }
+    }
   }
 });
 
