@@ -1089,44 +1089,65 @@ static async advanceWinnerToNextRound(match: any, winnerId: number): Promise<voi
    * Shuffle/regenerate bracket
    * ⭐ NOW supports participantIds parameter
    */
-  static async shuffleBracket(
-    kompetisiId: number, 
-    kelasKejuaraanId: number,
-    participantIds?: number[] // ⭐ NEW PARAMETER
-  ): Promise<Bracket> {
-    try {
-      // Delete existing bracket and all related data
-      const existingBagan = await prisma.tb_bagan.findFirst({
+static async shuffleBracket(
+  kompetisiId: number, 
+  kelasKejuaraanId: number,
+  participantIds?: number[]
+): Promise<Bracket> {
+  try {
+    console.log(`\n🔀 Shuffling PRESTASI bracket...`);
+    console.log(`   Kompetisi: ${kompetisiId}, Kelas: ${kelasKejuaraanId}`);
+
+    // ⭐ STEP 1: DELETE EXISTING BRACKET
+    const existingBagan = await prisma.tb_bagan.findFirst({
+      where: {
+        id_kompetisi: kompetisiId,
+        id_kelas_kejuaraan: kelasKejuaraanId
+      },
+      include: {
+        match: true
+      }
+    });
+
+    if (existingBagan) {
+      console.log(`   🗑️ Deleting existing bracket (${existingBagan.match.length} matches)...`);
+
+      // Delete in correct order to avoid foreign key constraints
+      await prisma.tb_match_audit.deleteMany({
         where: {
-          id_kompetisi: kompetisiId,
-          id_kelas_kejuaraan: kelasKejuaraanId
+          match: {
+            id_bagan: existingBagan.id_bagan
+          }
         }
       });
 
-      if (existingBagan) {
-        // Delete matches first (due to foreign key constraints)
-        await prisma.tb_match.deleteMany({
-          where: { id_bagan: existingBagan.id_bagan }
-        });
+      await prisma.tb_match.deleteMany({
+        where: { id_bagan: existingBagan.id_bagan }
+      });
 
-        // Delete drawing seeds
-        await prisma.tb_drawing_seed.deleteMany({
-          where: { id_bagan: existingBagan.id_bagan }
-        });
+      await prisma.tb_drawing_seed.deleteMany({
+        where: { id_bagan: existingBagan.id_bagan }
+      });
 
-        // Delete the bracket
-        await prisma.tb_bagan.delete({
-          where: { id_bagan: existingBagan.id_bagan }
-        });
-      }
+      await prisma.tb_bagan.delete({
+        where: { id_bagan: existingBagan.id_bagan }
+      });
 
-      // ⭐ Generate new bracket with selected participants
-      return await this.generateBracket(kompetisiId, kelasKejuaraanId, participantIds);
-    } catch (error: any) {
-      console.error('Error shuffling bracket:', error);
-      throw new Error('Failed to shuffle bracket');
+      console.log(`   ✅ Bracket deleted successfully`);
     }
+
+    // ⭐ STEP 2: GENERATE NEW BRACKET (auto BYE selection)
+    console.log(`   🎲 Generating new bracket with random BYE...`);
+    const newBracket = await this.generateBracket(kompetisiId, kelasKejuaraanId);
+    
+    console.log(`   ✅ New bracket generated with ${newBracket.matches.length} matches`);
+    return newBracket;
+
+  } catch (error: any) {
+    console.error('❌ Error shuffling bracket:', error);
+    throw new Error(error.message || 'Failed to shuffle bracket');
   }
+}
 
 /**
  * ⭐ NEW: Shuffle PEMULA bracket (re-arrange participants only)
