@@ -226,7 +226,13 @@ const BuktiTf = () => {
       await Promise.all(promises);
       
       toast.success(`${selectedPesertas.length} peserta berhasil di-approve`);
+
+      // Clear cache agar data fresh
+      setPesertaCache([]);
+      console.log('💾 Cache cleared - Will fetch fresh data on next open');
       
+      fetchAllPendingPeserta();
+
       // Refresh list
       await fetchPendingPesertaByDojang(selectedDojang!.id_dojang);
       setSelectedPesertas([]);
