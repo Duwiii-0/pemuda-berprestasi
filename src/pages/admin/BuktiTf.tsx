@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Trophy, Search, Eye, Download, CheckCircle, XCircle, Clock, Menu, ChevronLeft, FileText, Filter } from 'lucide-react';
+import { Trophy, Search, Eye, Download, Menu, ChevronLeft, FileText, Filter } from 'lucide-react';
 import { useAuth } from '../../context/authContext';
 import { useKompetisi, type Kompetisi } from '../../context/KompetisiContext';
 import NavbarDashboard from '../../components/navbar/navbarDashboard';
