@@ -188,6 +188,13 @@ const handleSelectAll = () => {
 };
 
 const openParticipantSelection = () => {
+  // ⭐ PEMULA: Skip modal, langsung generate
+  if (isPemula) {
+    generateBracket(false);
+    return;
+  }
+  
+  // PRESTASI: Show modal
   const total = approvedParticipants.length;
   
   let byesRecommended = 0;
@@ -211,7 +218,7 @@ const openParticipantSelection = () => {
   setSelectAll(false);
   
   console.log(`📊 Total: ${total}, BYE recommended: ${byesRecommended}`);
-  console.log(`   Category: ${isPemula ? 'PEMULA' : 'PRESTASI'}`);
+  console.log(`   Category: PRESTASI`);
   
   setShowParticipantSelection(true);
 };
@@ -1376,7 +1383,7 @@ const updateMatchResult = async (matchId: number, scoreA: number, scoreB: number
             <div className="flex gap-3">
 
 <button
-  onClick={openParticipantSelection} // ⭐ Ubah dari generateBracket(true)
+  onClick={openParticipantSelection}
   disabled={loading || approvedParticipants.length < 2}
   className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50"
   style={{ backgroundColor: '#6366F1', color: '#F5FBEF' }}
@@ -1389,7 +1396,15 @@ const updateMatchResult = async (matchId: number, scoreA: number, scoreB: number
   ) : (
     <>
       <Shuffle size={16} />
-      <span>{bracketGenerated ? 'Edit & Regenerate' : 'Select & Generate'}</span>
+      {/* ⭐ PERUBAHAN: Ganti text berdasarkan kategori */}
+      <span>
+        {bracketGenerated 
+          ? 'Edit & Regenerate' 
+          : isPemula 
+            ? 'Generate (Auto)' 
+            : 'Select & Generate'
+        }
+      </span>
     </>
   )}
 </button>
@@ -1660,7 +1675,7 @@ const updateMatchResult = async (matchId: number, scoreA: number, scoreB: number
         )}
       </div>
 
-      {/* Participant B (Red Corner) */}
+{/* Participant B (Red Corner) */}
 {match.peserta_b ? (
   <div 
     className={`relative rounded-lg border-2 p-3 transition-all ${
@@ -1671,75 +1686,79 @@ const updateMatchResult = async (matchId: number, scoreA: number, scoreB: number
         : 'border-gray-200 bg-white'
     }`}
   >
-          <div className="flex items-center gap-3">
-            {/* Left: Badge + Info */}
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1.5">
-                <span 
-                  className="inline-flex items-center text-xs font-bold px-2.5 py-1 rounded shadow-sm flex-shrink-0"
-                  style={{ backgroundColor: '#990D35', color: 'white' }}
-                >
-                  R/{match.peserta_b.id_peserta_kompetisi}
-                </span>
-                <span 
-                  className="font-bold text-base truncate"
-                  style={{ color: '#EF4444' }}
-                  title={getParticipantName(match.peserta_b)}
-                >
-                  {getParticipantName(match.peserta_b)}
-                </span>
-              </div>
-              <p 
-                className="text-xs uppercase truncate pl-0.5"
-                style={{ color: '#EF4444', opacity: 0.7 }}
-                title={getDojoName(match.peserta_b)}
-              >
-                {getDojoName(match.peserta_b)}
-              </p>
-            </div>
-
-            {/* Right: Medal + Score */}
-            <div className="flex items-center gap-2 flex-shrink-0">
-              {match.skor_b > match.skor_a && (match.skor_a > 0 || match.skor_b > 0) && (
-                <span 
-                  className="inline-flex items-center text-xs font-semibold px-3 py-1 rounded-full shadow-sm"
-                  style={{ backgroundColor: '#F5B700', color: 'white' }}
-                >
-                  🏆 GOLD
-                </span>
-              )}
-              {match.skor_b < match.skor_a && (match.skor_a > 0 || match.skor_b > 0) && (
-                <span 
-                  className="inline-flex items-center text-xs font-semibold px-3 py-1 rounded-full shadow-sm"
-                  style={{ backgroundColor: '#C0C0C0', color: 'white' }}
-                >
-                  🥈 SILVER
-                </span>
-              )}
-              {(match.skor_a > 0 || match.skor_b > 0) && (
-                <div 
-                  className="w-12 h-12 rounded-lg flex items-center justify-center font-bold text-xl shadow-sm"
-                  style={{ 
-                    backgroundColor: match.skor_b > match.skor_a ? '#22c55e' : '#e5e7eb',
-                    color: match.skor_b > match.skor_a ? 'white' : '#6b7280'
-                  }}
-                >
-                  {match.skor_b}
-                </div>
-              )}
-            </div>
-          </div>
+    <div className="flex items-center gap-3">
+      {/* Left: Badge + Info */}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 mb-1.5">
+          <span 
+            className="inline-flex items-center text-xs font-bold px-2.5 py-1 rounded shadow-sm flex-shrink-0"
+            style={{ backgroundColor: '#990D35', color: 'white' }}
+          >
+            R/{match.peserta_b.id_peserta_kompetisi}
+          </span>
+          <span 
+            className="font-bold text-base truncate"
+            style={{ color: '#EF4444' }}
+            title={getParticipantName(match.peserta_b)}
+          >
+            {getParticipantName(match.peserta_b)}
+          </span>
         </div>
-      ) : (
-        <div className="text-center py-3 px-4 rounded-lg" style={{ backgroundColor: 'rgba(245, 183, 0, 0.05)' }}>
+        <p 
+          className="text-xs uppercase truncate pl-0.5"
+          style={{ color: '#EF4444', opacity: 0.7 }}
+          title={getDojoName(match.peserta_b)}
+        >
+          {getDojoName(match.peserta_b)}
+        </p>
+      </div>
+
+      {/* Right: Medal + Score */}
+      <div className="flex items-center gap-2 flex-shrink-0">
+        {match.skor_b > match.skor_a && (match.skor_a > 0 || match.skor_b > 0) && (
+          <span 
+            className="inline-flex items-center text-xs font-semibold px-3 py-1 rounded-full shadow-sm"
+            style={{ backgroundColor: '#F5B700', color: 'white' }}
+          >
+            🏆 GOLD
+          </span>
+        )}
+        {match.skor_b < match.skor_a && (match.skor_a > 0 || match.skor_b > 0) && (
+          <span 
+            className="inline-flex items-center text-xs font-semibold px-3 py-1 rounded-full shadow-sm"
+            style={{ backgroundColor: '#C0C0C0', color: 'white' }}
+          >
+            🥈 SILVER
+          </span>
+        )}
+        {(match.skor_a > 0 || match.skor_b > 0) && (
+          <div 
+            className="w-12 h-12 rounded-lg flex items-center justify-center font-bold text-xl shadow-sm"
+            style={{ 
+              backgroundColor: match.skor_b > match.skor_a ? '#22c55e' : '#e5e7eb',
+              color: match.skor_b > match.skor_a ? 'white' : '#6b7280'
+            }}
+          >
+            {match.skor_b}
+          </div>
+        )}
+      </div>
+    </div>
+  </div>
+) : (
+  // ⭐ PERUBAHAN: Ganti "FREE DRAW (Gold Medal)" → "TBD"
+  <div className="text-center py-3 px-4 rounded-lg border-2" style={{ 
+    backgroundColor: 'rgba(156, 163, 175, 0.05)',
+    borderColor: '#e5e7eb'
+  }}>
     <span 
       className="inline-flex items-center text-xs font-medium px-3 py-1.5 rounded-full"
       style={{ 
-        backgroundColor: '#F5B700', 
+        backgroundColor: '#9CA3AF', 
         color: 'white' 
       }}
     >
-      🏆 FREE DRAW (Gold Medal)
+      ⏳ TBD
     </span>
   </div>
 )}
@@ -1872,7 +1891,6 @@ const updateMatchResult = async (matchId: number, scoreA: number, scoreB: number
     </div>
   </div>
 )}
-
 
   {/* Empty State */}
   {leaderboard && leaderboard.gold.length === 0 && leaderboard.silver.length === 0 && (
@@ -2385,27 +2403,33 @@ const verticalSpacing = baseSpacing * spacingMultiplier;
       }
     </p>
     {approvedParticipants.length >= 2 && (
-      <div className="flex gap-3 justify-center">
-        <button
-          onClick={openParticipantSelection} // ⭐ CHANGED: Buka modal selection
-          disabled={loading}
-          className="px-6 py-3 rounded-lg font-medium transition-all disabled:opacity-50 hover:opacity-90"
-          style={{ backgroundColor: '#6366F1', color: '#F5FBEF' }}
-        >
-          {loading ? (
-            <div className="flex items-center gap-2">
-              <RefreshCw size={16} className="animate-spin" />
-              <span>Processing...</span>
-            </div>
-          ) : (
-            <div className="flex items-center gap-2">
-              <Shuffle size={16} />
-              <span>Select & Generate Bracket</span>
-            </div>
-          )}
-        </button>
-      </div>
-    )}
+  <div className="flex gap-3 justify-center">
+    <button
+      onClick={openParticipantSelection}
+      disabled={loading}
+      className="px-6 py-3 rounded-lg font-medium transition-all disabled:opacity-50 hover:opacity-90"
+      style={{ backgroundColor: '#6366F1', color: '#F5FBEF' }}
+    >
+      {loading ? (
+        <div className="flex items-center gap-2">
+          <RefreshCw size={16} className="animate-spin" />
+          <span>Processing...</span>
+        </div>
+      ) : (
+        <div className="flex items-center gap-2">
+          <Shuffle size={16} />
+          {/* ⭐ PERUBAHAN: Update text */}
+          <span>
+            {isPemula 
+              ? 'Generate Bracket (Auto)' 
+              : 'Select & Generate Bracket'
+            }
+          </span>
+        </div>
+      )}
+    </button>
+  </div>
+)}
   </div>
 </div>
       )}
