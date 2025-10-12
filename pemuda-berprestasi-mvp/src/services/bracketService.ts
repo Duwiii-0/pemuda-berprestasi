@@ -635,101 +635,88 @@ static getMatchesByRound(matches: Match[], round: number): Match[] {
 static async generatePemulaBracket(
   baganId: number, 
   participants: Participant[],
-  byeParticipantIds?: number[]
+  byeParticipantIds?: number[] // ⭐ IGNORED - BYE otomatis
 ): Promise<Match[]> {
   const matches: Match[] = [];
   
-  console.log(`\n🥋 === GENERATING PEMULA BRACKET ===`);
+  console.log(`\n🥋 === GENERATING PEMULA BRACKET (AUTO BYE) ===`);
   console.log(`Total participants: ${participants.length}`);
-  console.log(`BYE participant IDs:`, byeParticipantIds);
 
-  // ⭐ STEP 1: Separate BYE vs FIGHTING
-  let byeParticipants: Participant[] = [];
-  let fightingParticipants: Participant[] = [];
-
-  if (byeParticipantIds && byeParticipantIds.length > 0) {
-    console.log(`\n🔍 Separating BYE and FIGHTING participants...`);
-    
-    byeParticipants = participants.filter(p => byeParticipantIds.includes(p.id));
-    fightingParticipants = participants.filter(p => !byeParticipantIds.includes(p.id));
-    
-    console.log(`✅ BYE (${byeParticipants.length}):`, byeParticipants.map(p => `${p.name} (${p.id})`));
-    console.log(`⚔️ FIGHTING (${fightingParticipants.length}):`, fightingParticipants.map(p => `${p.name} (${p.id})`));
-  } else {
-    console.log(`⚠️ No BYE - all fight`);
-    fightingParticipants = [...participants];
-  }
-
-  // ⭐ STEP 2: Shuffle ONLY fighting participants
-  const shuffledFighters = this.shuffleArray([...fightingParticipants]);
-  console.log(`\n🔀 Shuffled fighters:`, shuffledFighters.map(p => `${p.name} (${p.id})`));
-
-  // ⭐ STEP 3: Create FIGHTING matches
-  console.log(`\n📝 Creating fighting matches...`);
-  for (let i = 0; i < shuffledFighters.length; i += 2) {
-    const participant1 = shuffledFighters[i];
-    const participant2 = shuffledFighters[i + 1] || null;
+  // ⭐ SHUFFLE all participants
+  const shuffled = this.shuffleArray([...participants]);
+  
+  // ⭐ CALCULATE pairs
+  const totalParticipants = shuffled.length;
+  const hasBye = totalParticipants % 2 === 1;
+  
+  // ⭐ STEP 1: Pair up participants for normal matches
+  const normalMatchCount = Math.floor(totalParticipants / 2);
+  
+  console.log(`\n📊 Creating ${normalMatchCount} normal matches...`);
+  
+  for (let i = 0; i < normalMatchCount * 2; i += 2) {
+    const participant1 = shuffled[i];
+    const participant2 = shuffled[i + 1];
     
     const match = await prisma.tb_match.create({
       data: {
         id_bagan: baganId,
         ronde: 1,
         id_peserta_a: participant1.id,
-        id_peserta_b: participant2?.id || null,
+        id_peserta_b: participant2.id,
         skor_a: 0,
         skor_b: 0
       }
     });
-    
-    matches.push({
-      id: match.id_match,
-      round: 1,
-      position: Math.floor(i / 2),
-      participant1,
-      participant2: participant2 || null,
-      status: participant2 ? 'pending' : 'bye',
-      scoreA: 0,
-      scoreB: 0
-    });
-    
-    console.log(`  ✅ Fighting Match ${match.id_match}: ${participant1.name} vs ${participant2?.name || 'BYE (odd)'}`);
-  }
-
-  // ⭐ STEP 4: Create BYE matches (AUTO GOLD)
-  console.log(`\n🎁 Creating BYE matches (Auto GOLD)...`);
-  
-  for (const byeParticipant of byeParticipants) {
-    console.log(`  📝 Creating BYE for ${byeParticipant.name} (${byeParticipant.id})`);
-    
-    const match = await prisma.tb_match.create({
-      data: {
-        id_bagan: baganId,
-        ronde: 1,
-        id_peserta_a: byeParticipant.id,
-        id_peserta_b: null, // ⭐ NULL = BYE
-        skor_a: 0,
-        skor_b: 0
-      }
-    });
-    
-    console.log(`     ✅ BYE Match ${match.id_match} created`);
     
     matches.push({
       id: match.id_match,
       round: 1,
       position: matches.length,
-      participant1: byeParticipant,
-      participant2: null,
-      status: 'bye',
+      participant1,
+      participant2,
+      status: 'pending',
       scoreA: 0,
       scoreB: 0
     });
+    
+    console.log(`  Match ${match.id_match}: ${participant1.name} vs ${participant2.name}`);
   }
-  
+
+  // ⭐ STEP 2: If ODD, create ADDITIONAL MATCH (BYE participant vs last winner)
+  if (hasBye) {
+    const byeParticipant = shuffled[totalParticipants - 1]; // Last participant gets BYE
+    
+    console.log(`\n🎁 BYE participant: ${byeParticipant.name} (${byeParticipant.id})`);
+    console.log(`   → Will compete in ADDITIONAL match after round 1 completes`);
+    
+    // Create placeholder match (will be filled after match 3 winner is determined)
+    const additionalMatch = await prisma.tb_match.create({
+      data: {
+        id_bagan: baganId,
+        ronde: 2, // ⭐ ROUND 2 (additional match)
+        id_peserta_a: byeParticipant.id, // BYE participant
+        id_peserta_b: null, // ⭐ TBD - winner of last match in round 1
+        skor_a: 0,
+        skor_b: 0
+      }
+    });
+    
+    matches.push({
+      id: additionalMatch.id_match,
+      round: 2,
+      position: 0,
+      participant1: byeParticipant,
+      participant2: null,
+      status: 'pending',
+      scoreA: 0,
+      scoreB: 0
+    });
+    
+    console.log(`  ⭐ Additional Match ${additionalMatch.id_match}: ${byeParticipant.name} vs [Winner of Match ${matches[matches.length - 2].id}]`);
+  }
+
   console.log(`\n✅ PEMULA bracket complete: ${matches.length} matches`);
-  console.log(`   - Fighting: ${Math.ceil(shuffledFighters.length / 2)}`);
-  console.log(`   - BYE: ${byeParticipants.length}\n`);
-  
   return matches;
 }
 
@@ -978,7 +965,59 @@ static async advanceWinnerToNextRound(match: any, winnerId: number): Promise<voi
   
   console.log(`🎯 Advancing winner ${winnerId} from Round ${currentRound} to Round ${nextRound}`);
   
-  // Get all matches in current round
+  // ⭐ CHECK: Is this PEMULA category?
+  const bagan = await prisma.tb_bagan.findUnique({
+    where: { id_bagan: match.id_bagan },
+    include: {
+      kelas_kejuaraan: {
+        include: {
+          kategori_event: true
+        }
+      }
+    }
+  });
+  
+  const isPemula = bagan?.kelas_kejuaraan?.kategori_event?.nama_kategori?.toLowerCase().includes('pemula') || false;
+  
+  // ⭐ PEMULA LOGIC: Check if this is the LAST match in Round 1
+  if (isPemula && currentRound === 1) {
+    // Get all Round 1 matches
+    const round1Matches = await prisma.tb_match.findMany({
+      where: {
+        id_bagan: match.id_bagan,
+        ronde: 1
+      },
+      orderBy: { id_match: 'asc' }
+    });
+    
+    // Check if there's a Round 2 match (additional match)
+    const round2Match = await prisma.tb_match.findFirst({
+      where: {
+        id_bagan: match.id_bagan,
+        ronde: 2
+      }
+    });
+    
+    if (round2Match) {
+      // Find the last match in Round 1
+      const lastMatchInRound1 = round1Matches[round1Matches.length - 1];
+      
+      // If this is the last match winner, advance to Round 2 additional match
+      if (match.id_match === lastMatchInRound1.id_match) {
+        console.log(`   ⭐ PEMULA: Last match winner → Advance to additional match (Round 2)`);
+        
+        await prisma.tb_match.update({
+          where: { id_match: round2Match.id_match },
+          data: { id_peserta_b: winnerId }
+        });
+        
+        console.log(`   ✅ Winner ${winnerId} placed in Round 2 Additional Match (Slot B)`);
+        return; // Exit early
+      }
+    }
+  }
+  
+  // ⭐ EXISTING LOGIC FOR PRESTASI (continue as normal)
   const currentRoundMatches = await prisma.tb_match.findMany({
     where: {
       id_bagan: match.id_bagan,
@@ -987,7 +1026,6 @@ static async advanceWinnerToNextRound(match: any, winnerId: number): Promise<voi
     orderBy: { id_match: 'asc' }
   });
 
-  // Get all matches in next round
   const nextRoundMatches = await prisma.tb_match.findMany({
     where: {
       id_bagan: match.id_bagan,
@@ -1001,7 +1039,6 @@ static async advanceWinnerToNextRound(match: any, winnerId: number): Promise<voi
     return;
   }
 
-  // Find current match position
   const currentMatchIndex = currentRoundMatches.findIndex(m => m.id_match === match.id_match);
   
   if (currentMatchIndex === -1) {
@@ -1009,7 +1046,6 @@ static async advanceWinnerToNextRound(match: any, winnerId: number): Promise<voi
     return;
   }
 
-  // ✅ Calculate which match in next round this winner goes to
   const nextMatchIndex = Math.floor(currentMatchIndex / 2);
   const nextMatch = nextRoundMatches[nextMatchIndex];
 
@@ -1018,14 +1054,12 @@ static async advanceWinnerToNextRound(match: any, winnerId: number): Promise<voi
     return;
   }
 
-  // ✅ Determine slot (A or B) based on whether current match is even or odd
   const isFirstSlot = currentMatchIndex % 2 === 0;
   
-  // ✅ CHECK if slot is already occupied (should NOT happen with correct logic)
   if (isFirstSlot) {
     if (nextMatch.id_peserta_a) {
-      console.log(`   ⚠️ Slot A already occupied by participant ${nextMatch.id_peserta_a} - SKIPPING`);
-      return; // Don't overwrite!
+      console.log(`   ⚠️ Slot A already occupied - SKIPPING`);
+      return;
     }
     
     await prisma.tb_match.update({
@@ -1036,8 +1070,8 @@ static async advanceWinnerToNextRound(match: any, winnerId: number): Promise<voi
     console.log(`   ✅ Winner ${winnerId} placed in Round ${nextRound} Match ${nextMatch.id_match} (Slot A)`);
   } else {
     if (nextMatch.id_peserta_b) {
-      console.log(`   ⚠️ Slot B already occupied by participant ${nextMatch.id_peserta_b} - SKIPPING`);
-      return; // Don't overwrite!
+      console.log(`   ⚠️ Slot B already occupied - SKIPPING`);
+      return;
     }
     
     await prisma.tb_match.update({
@@ -1048,6 +1082,7 @@ static async advanceWinnerToNextRound(match: any, winnerId: number): Promise<voi
     console.log(`   ✅ Winner ${winnerId} placed in Round ${nextRound} Match ${nextMatch.id_match} (Slot B)`);
   }
 }
+
   /**
    * Shuffle/regenerate bracket
    * ⭐ NOW supports participantIds parameter

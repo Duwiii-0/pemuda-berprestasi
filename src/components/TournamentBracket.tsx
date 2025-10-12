@@ -1028,69 +1028,117 @@ const generateLeaderboard = () => {
   const leaderboard: {
     gold: { name: string; dojo: string; id: number }[];
     silver: { name: string; dojo: string; id: number }[];
-    bye: { name: string; dojo: string; id: number }[];
+    bronze: { name: string; dojo: string; id: number }[];
   } = {
     gold: [],
     silver: [],
-    bye: []
+    bronze: []
   };
 
-  // Track processed participants to avoid duplicates
   const processedGold = new Set<number>();
   const processedSilver = new Set<number>();
+  const processedBronze = new Set<number>();
 
-  matches.forEach(match => {
-    // ⭐ BYE DETECTION: participant A exists but NO participant B
-    // Di PEMULA: BYE = GOLD (auto menang tanpa bertanding)
-    if (match.peserta_a && !match.peserta_b) {
-      const id = match.peserta_a.id_peserta_kompetisi;
+  // ⭐ STEP 1: Separate Round 1 and Round 2 matches
+  const round1Matches = matches.filter(m => m.ronde === 1);
+  const round2Matches = matches.filter(m => m.ronde === 2);
+
+  console.log(`\n📊 PEMULA Leaderboard Calculation:`);
+  console.log(`   Round 1 matches: ${round1Matches.length}`);
+  console.log(`   Round 2 matches: ${round2Matches.length}`);
+
+  // ⭐ STEP 2: Process Round 2 (Additional Match) FIRST
+  if (round2Matches.length > 0) {
+    const additionalMatch = round2Matches[0];
+    const hasScore = additionalMatch.skor_a > 0 || additionalMatch.skor_b > 0;
+    
+    if (hasScore && additionalMatch.peserta_a && additionalMatch.peserta_b) {
+      const winner = additionalMatch.skor_a > additionalMatch.skor_b 
+        ? additionalMatch.peserta_a 
+        : additionalMatch.peserta_b;
+      const loser = additionalMatch.skor_a > additionalMatch.skor_b 
+        ? additionalMatch.peserta_b 
+        : additionalMatch.peserta_a;
       
-      if (!processedGold.has(id)) {
+      // Winner = GOLD
+      if (!processedGold.has(winner.id_peserta_kompetisi)) {
         leaderboard.gold.push({
-          name: getParticipantName(match.peserta_a),
-          dojo: getDojoName(match.peserta_a),
-          id: id
+          name: getParticipantName(winner),
+          dojo: getDojoName(winner),
+          id: winner.id_peserta_kompetisi
         });
-        processedGold.add(id);
-        console.log(`🏆 BYE (PEMULA) detected: ${getParticipantName(match.peserta_a)} → Auto GOLD`);
+        processedGold.add(winner.id_peserta_kompetisi);
+        console.log(`   🥇 Additional Match Winner (GOLD): ${getParticipantName(winner)}`);
       }
-      return; // Skip to next match
+      
+      // Loser = SILVER
+      if (!processedSilver.has(loser.id_peserta_kompetisi)) {
+        leaderboard.silver.push({
+          name: getParticipantName(loser),
+          dojo: getDojoName(loser),
+          id: loser.id_peserta_kompetisi
+        });
+        processedSilver.add(loser.id_peserta_kompetisi);
+        console.log(`   🥈 Additional Match Loser (SILVER): ${getParticipantName(loser)}`);
+      }
     }
+  }
 
-    // Check if match has been played (has scores)
+  // ⭐ STEP 3: Process Round 1 matches
+  const lastMatchIndex = round1Matches.length - 1;
+  
+  round1Matches.forEach((match, matchIndex) => {
     const hasScore = match.skor_a > 0 || match.skor_b > 0;
     
     if (hasScore && match.peserta_a && match.peserta_b) {
-      // Determine winner and loser
       const winner = match.skor_a > match.skor_b ? match.peserta_a : match.peserta_b;
       const loser = match.skor_a > match.skor_b ? match.peserta_b : match.peserta_a;
       
       const winnerId = winner.id_peserta_kompetisi;
       const loserId = loser.id_peserta_kompetisi;
       
-      // ⭐ Winner = GOLD
-      if (!processedGold.has(winnerId)) {
+      // Winner = GOLD (unless already processed in Round 2)
+      if (!processedGold.has(winnerId) && !processedSilver.has(winnerId)) {
         leaderboard.gold.push({
           name: getParticipantName(winner),
           dojo: getDojoName(winner),
           id: winnerId
         });
         processedGold.add(winnerId);
+        console.log(`   🥇 Match ${matchIndex + 1} Winner (GOLD): ${getParticipantName(winner)}`);
       }
       
-      // ⭐ Loser = SILVER
-      if (!processedSilver.has(loserId)) {
-        leaderboard.silver.push({
-          name: getParticipantName(loser),
-          dojo: getDojoName(loser),
-          id: loserId
-        });
-        processedSilver.add(loserId);
+      // ⭐ LOSER LOGIC:
+      if (matchIndex === lastMatchIndex && round2Matches.length > 0) {
+        // Last match loser = BRONZE (because winner will compete in Round 2)
+        if (!processedBronze.has(loserId)) {
+          leaderboard.bronze.push({
+            name: getParticipantName(loser),
+            dojo: getDojoName(loser),
+            id: loserId
+          });
+          processedBronze.add(loserId);
+          console.log(`   🥉 Last Match Loser (BRONZE): ${getParticipantName(loser)}`);
+        }
+      } else {
+        // Other matches loser = SILVER
+        if (!processedSilver.has(loserId)) {
+          leaderboard.silver.push({
+            name: getParticipantName(loser),
+            dojo: getDojoName(loser),
+            id: loserId
+          });
+          processedSilver.add(loserId);
+          console.log(`   🥈 Match ${matchIndex + 1} Loser (SILVER): ${getParticipantName(loser)}`);
+        }
       }
     }
   });
 
-  console.log(`📊 PEMULA Leaderboard: ${leaderboard.gold.length} GOLD, ${leaderboard.silver.length} SILVER`);
+  console.log(`\n✅ PEMULA Leaderboard:`);
+  console.log(`   GOLD: ${leaderboard.gold.length}`);
+  console.log(`   SILVER: ${leaderboard.silver.length}`);
+  console.log(`   BRONZE: ${leaderboard.bronze.length}`);
   
   return leaderboard;
 };
@@ -1787,6 +1835,44 @@ const updateMatchResult = async (matchId: number, scoreA: number, scoreB: number
       </div>
     </div>
   )}
+
+  {/* Bronze Medals */}
+{leaderboard && leaderboard.bronze && leaderboard.bronze.length > 0 && (
+  <div>
+    <div className="flex items-center gap-2 mb-3">
+      <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ backgroundColor: '#CD7F32' }}>
+        <span className="text-lg">🥉</span>
+      </div>
+      <h4 className="font-bold text-lg" style={{ color: '#050505' }}>
+        BRONZE MEDALS
+      </h4>
+    </div>
+    <div className="space-y-2">
+      {leaderboard.bronze.map((participant, idx) => (
+        <div key={participant.id} className="p-3 rounded-lg border" style={{ 
+          backgroundColor: 'rgba(205, 127, 50, 0.1)', 
+          borderColor: '#CD7F32' 
+        }}>
+          <div className="flex items-center gap-2">
+            <span className="text-lg font-bold" style={{ color: '#CD7F32' }}>
+              {idx + 1}.
+            </span>
+            <div className="flex-1">
+              <p className="font-bold text-sm" style={{ color: '#050505' }}>
+                {participant.name}
+              </p>
+              <p className="text-xs uppercase" style={{ color: '#050505', opacity: 0.6 }}>
+                {participant.dojo}
+              </p>
+            </div>
+            <Medal size={20} style={{ color: '#CD7F32' }} />
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+)}
+
 
   {/* Empty State */}
   {leaderboard && leaderboard.gold.length === 0 && leaderboard.silver.length === 0 && (
