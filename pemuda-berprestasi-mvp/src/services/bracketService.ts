@@ -50,96 +50,84 @@ static async generateBracket(
     console.log(`   Kompetisi: ${kompetisiId}`);
     console.log(`   Kelas: ${kelasKejuaraanId}`);
     console.log(`   BYE IDs:`, byeParticipantIds);
-      const existingBagan = await prisma.tb_bagan.findFirst({
-        where: {
-          id_kompetisi: kompetisiId,
-          id_kelas_kejuaraan: kelasKejuaraanId
-        }
-      });
 
-      if (existingBagan) {
-        throw new Error('Bagan sudah dibuat untuk kelas kejuaraan ini');
+    const existingBagan = await prisma.tb_bagan.findFirst({
+      where: {
+        id_kompetisi: kompetisiId,
+        id_kelas_kejuaraan: kelasKejuaraanId
       }
+    });
 
-      // Build WHERE clause for participant filtering
-      const participantFilter: any = {
+    if (existingBagan) {
+      throw new Error('Bagan sudah dibuat untuk kelas kejuaraan ini');
+    }
+
+    const registrations = await prisma.tb_peserta_kompetisi.findMany({
+      where: {
         id_kelas_kejuaraan: kelasKejuaraanId,
         status: 'APPROVED'
-      };
-
-      // Get approved participants for this class
-      const registrations = await prisma.tb_peserta_kompetisi.findMany({
-        where: participantFilter,
-        include: {
-          atlet: {
-            include: {
-              dojang: true
-            }
-          },
-          anggota_tim: {
-            include: {
-              atlet: {
-                include: {
-                  dojang: true
-                }
+      },
+      include: {
+        atlet: {
+          include: {
+            dojang: true
+          }
+        },
+        anggota_tim: {
+          include: {
+            atlet: {
+              include: {
+                dojang: true
               }
             }
-          },
-          kelas_kejuaraan: {
-            include: {
-              kompetisi: true,
-              kategori_event: true
-            }
+          }
+        },
+        kelas_kejuaraan: {
+          include: {
+            kompetisi: true,
+            kategori_event: true
           }
         }
-      });
-
-      // Validate participant count
-      if (registrations.length < 2) {
-        throw new Error('Minimal 2 peserta diperlukan untuk membuat bagan');
       }
+    });
 
-      // DETEKSI KATEGORI PEMULA vs PRESTASI
+    if (registrations.length < 2) {
+      throw new Error('Minimal 2 peserta diperlukan untuk membuat bagan');
+    }
+
     const kategori = registrations[0]?.kelas_kejuaraan?.kategori_event?.nama_kategori?.toLowerCase() || '';
     const isPemula = kategori.includes('pemula');
 
     console.log(`📊 Category detected: ${isPemula ? 'PEMULA' : 'PRESTASI'}`);
-    console.log(`   BYE participants to select: ${byeParticipantIds?.length || 0}`);
 
-      // ⭐ ALL participants must be included
-      const participants: Participant[] = registrations.map(reg => {
-        if (reg.is_team && reg.anggota_tim.length > 0) {
-          return {
-            id: reg.id_peserta_kompetisi,
-            name: `Tim ${reg.anggota_tim.map(m => m.atlet.nama_atlet).join(' & ')}`,
-            dojang: reg.anggota_tim[0]?.atlet?.dojang?.nama_dojang,
-            isTeam: true,
-            teamMembers: reg.anggota_tim.map(m => m.atlet.nama_atlet)
-          };
-        } else if (reg.atlet) {
-          return {
-            id: reg.id_peserta_kompetisi,
-            name: reg.atlet.nama_atlet,
-            dojang: reg.atlet.dojang?.nama_dojang,
-            atletId: reg.atlet.id_atlet,
-            isTeam: false
-          };
-        }
-        return null;
-      }).filter(Boolean) as Participant[];
+    const participants: Participant[] = registrations.map(reg => {
+      if (reg.is_team && reg.anggota_tim.length > 0) {
+        return {
+          id: reg.id_peserta_kompetisi,
+          name: `Tim ${reg.anggota_tim.map(m => m.atlet.nama_atlet).join(' & ')}`,
+          dojang: reg.anggota_tim[0]?.atlet?.dojang?.nama_dojang,
+          isTeam: true,
+          teamMembers: reg.anggota_tim.map(m => m.atlet.nama_atlet)
+        };
+      } else if (reg.atlet) {
+        return {
+          id: reg.id_peserta_kompetisi,
+          name: reg.atlet.nama_atlet,
+          dojang: reg.atlet.dojang?.nama_dojang,
+          atletId: reg.atlet.id_atlet,
+          isTeam: false
+        };
+      }
+      return null;
+    }).filter(Boolean) as Participant[];
 
-      // // Shuffle participants for random seeding
-      // const shuffledParticipants = this.shuffleArray([...participants]);
-      
-      // Create bracket (bagan)
-      const bagan = await prisma.tb_bagan.create({
-        data: {
-          id_kompetisi: kompetisiId,
-          id_kelas_kejuaraan: kelasKejuaraanId
-        }
-      });
+    const bagan = await prisma.tb_bagan.create({
+      data: {
+        id_kompetisi: kompetisiId,
+        id_kelas_kejuaraan: kelasKejuaraanId
+      }
+    });
 
-    // ⭐ SEEDING: Buat seed untuk SEMUA participants (belum di-shuffle)
     await Promise.all(
       participants.map((participant, index) =>
         prisma.tb_drawing_seed.create({
@@ -152,10 +140,24 @@ static async generateBracket(
       )
     );
 
-// ⭐ Generate matches - PASS participants asli (belum shuffle)
+    // ⭐ AUTO-GENERATE BYE for Prestasi
+    let finalByeIds = byeParticipantIds;
+    
+    if (!isPemula && !byeParticipantIds) {
+      const structure = this.calculateBracketStructure(participants.length);
+      const byesNeeded = structure.byesRecommended;
+      
+      if (byesNeeded > 0) {
+        // Randomly select BYE participants
+        const shuffled = this.shuffleArray([...participants]);
+        finalByeIds = shuffled.slice(0, byesNeeded).map(p => p.id);
+        console.log(`🎁 Auto-selected ${byesNeeded} BYE participants:`, finalByeIds);
+      }
+    }
+
     const matches = isPemula
-      ? await this.generatePemulaBracket(bagan.id_bagan, participants, byeParticipantIds)
-      : await this.generatePrestasiBracket(bagan.id_bagan, participants, byeParticipantIds);
+      ? await this.generatePemulaBracket(bagan.id_bagan, participants, finalByeIds)
+      : await this.generatePrestasiBracket(bagan.id_bagan, participants, finalByeIds);
     
     return {
       id: bagan.id_bagan,
@@ -163,7 +165,7 @@ static async generateBracket(
       kelasKejuaraanId,
       totalRounds: isPemula ? 1 : this.calculateTotalRounds(participants.length),
       isGenerated: true,
-      participants: participants, // ⭐ Return original order
+      participants: participants,
       matches
     };
   } catch (error: any) {

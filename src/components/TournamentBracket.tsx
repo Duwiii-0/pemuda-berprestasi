@@ -257,16 +257,6 @@ const openParticipantSelection = () => {
     }
   }, [kelasData, selectedKelas]);
 
-  // Shuffle array using Fisher-Yates algorithm
-  const shuffleArray = <T,>(array: T[]): T[] => {
-    const shuffled = [...array];
-    for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-    }
-    return shuffled;
-  };
-
 const generateBracket = async (shuffle: boolean = false) => {
   if (!selectedKelas) return;
   
@@ -299,7 +289,6 @@ const generateBracket = async (shuffle: boolean = false) => {
       },
       body: JSON.stringify({
         kelasKejuaraanId: kelasKejuaraanId,
-        byeParticipantIds: byeIds // ⭐ Kirim array, bukan Set
       })
     });
 
@@ -356,6 +345,61 @@ const shufflePemulaBracket = async () => {
       body: JSON.stringify({
         kelasKejuaraanId: kelasKejuaraanId
         // byeParticipantIds TIDAK perlu karena shuffle pemula
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to shuffle bracket');
+    }
+
+    const result = await response.json();
+    console.log('✅ Bracket shuffled:', result);
+
+    await fetchBracketData(kompetisiId, kelasKejuaraanId);
+    
+    showNotification(
+      'success',
+      'Berhasil!',
+      'Susunan peserta berhasil diacak ulang!',
+      () => setShowModal(false)
+    );
+    
+  } catch (error: any) {
+    console.error('❌ Error shuffling bracket:', error);
+    showNotification(
+      'error',
+      'Gagal Shuffle',
+      error.message || 'Terjadi kesalahan saat shuffle bracket.',
+      () => setShowModal(false)
+    );
+  } finally {
+    setLoading(false);
+  }
+};
+
+const shufflePrestasiBracket = async () => {
+  if (!selectedKelas) return;
+  
+  console.log(`🔀 Shuffling PRESTASI bracket...`);
+  
+  setLoading(true);
+  
+  try {
+    const kompetisiId = selectedKelas.kompetisi.id_kompetisi;
+    const kelasKejuaraanId = selectedKelas.id_kelas_kejuaraan;
+
+    const endpoint = `${apiBaseUrl}/kompetisi/${kompetisiId}/brackets/shuffle`;
+    
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token && { 'Authorization': `Bearer ${token}` })
+      },
+      body: JSON.stringify({
+        kelasKejuaraanId: kelasKejuaraanId
+        // participantIds: TIDAK DIKIRIM - backend akan auto-select BYE
       })
     });
 
@@ -1453,7 +1497,7 @@ const updateMatchResult = async (matchId: number, scoreA: number, scoreB: number
   ) : (
     <>
       <Shuffle size={16} />
-      <span>{isPemula ? 'Shuffle' : 'Edit & Regenerate'}</span>
+      <span>Shuffle</span>
     </>
   )}
 </button>
