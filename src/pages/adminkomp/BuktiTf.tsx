@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Search, Eye, Download, Menu, FileText, Filter, Users, CheckCircle, Loader, X } from 'lucide-react';
 import { useAuth } from '../../context/authContext';
-import { useKompetisi, type PesertaKompetisi } from '../../context/KompetisiContext';
+import { useKompetisi } from '../../context/KompetisiContext';
+import type { PesertaKompetisi } from '../../context/KompetisiContext';
 import NavbarDashboard from '../../components/navbar/navbarDashboard';
 import toast from 'react-hot-toast';
 
@@ -21,42 +22,9 @@ interface BuktiTransfer {
   };
 }
 
-interface PesertaPending {
-  id_peserta_kompetisi: number;
-  is_team: boolean;
-  status: string;
-  atlet?: {
-    id_atlet: number;
-    nama_atlet: string;
-    jenis_kelamin: string;
-    dojang?: {
-      id_dojang: number;
-      nama_dojang: string;
-    };
-  };
-  anggota_tim?: Array<{
-    atlet: {
-      id_atlet: number;
-      nama_atlet: string;
-      dojang?: {
-        id_dojang: number;
-        nama_dojang: string;
-      };
-    };
-  }>;
-  kelas_kejuaraan?: {
-    cabang: string;
-    kategori_event?: {
-      nama_kategori: string;
-    };
-    kelompok?: {
-      nama_kelompok: string;
-    };
-  };
-}
-
 const BuktiTf = () => {
   const { user, token } = useAuth();
+  const { fetchAtletByKompetisi, pesertaList, updatePesertaStatus } = useKompetisi();
   
   const [buktiTransferList, setBuktiTransferList] = useState<BuktiTransfer[]>([]);
   const [filteredBukti, setFilteredBukti] = useState<BuktiTransfer[]>([]);
@@ -69,7 +37,7 @@ const BuktiTf = () => {
   // Modal states
   const [showPendingModal, setShowPendingModal] = useState(false);
   const [selectedDojang, setSelectedDojang] = useState<BuktiTransfer | null>(null);
-  const [pendingPesertas, setPendingPesertas] = useState<PesertaPending[]>([]);
+  const [pendingPesertas, setPendingPesertas] = useState<PesertaKompetisi[]>([]);
   const [loadingPeserta, setLoadingPeserta] = useState(false);
   const [selectedPesertas, setSelectedPesertas] = useState<number[]>([]);
   const [processing, setProcessing] = useState(false);
@@ -111,79 +79,44 @@ const BuktiTf = () => {
     }
   };
 
-  // Fetch peserta pending by dojang
+  // Fetch peserta pending by dojang menggunakan context
   const fetchPendingPesertaByDojang = async (dojangId: number) => {
     setLoadingPeserta(true);
     try {
       const kompetisiId = user?.admin_kompetisi?.id_kompetisi;
       console.log('🔍 Debug - Kompetisi ID:', kompetisiId);
       console.log('🔍 Debug - Dojang ID:', dojangId);
-      console.log('🔍 Debug - User:', user);
       
       if (!kompetisiId) {
         toast.error('ID Kompetisi tidak ditemukan');
+        setPendingPesertas([]);
         return;
       }
 
-      const url = `${API_BASE_URL}/api/peserta-kompetisi/kompetisi/${kompetisiId}`;
-      console.log('🔍 Debug - Fetching URL:', url);
-
-      const response = await fetch(url, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      console.log('🔍 Debug - Response status:', response.status);
-
-      if (response.ok) {
-        const result = await response.json();
-        console.log('🔍 Debug - API Response:', result);
-        const allPeserta = result.data || [];
-        console.log('🔍 Debug - Total peserta:', allPeserta.length);
-        
-        // Log sample peserta untuk cek struktur
-        if (allPeserta.length > 0) {
-          console.log('🔍 Debug - Sample peserta:', allPeserta[0]);
-        }
-        
-        // Filter pending peserta by dojang
-        const pendingByDojang = allPeserta.filter((peserta: PesertaPending) => {
-          const isPending = peserta.status === 'PENDING';
-          
-          const pesertaDojangId = peserta.is_team
-            ? peserta.anggota_tim?.[0]?.atlet?.dojang?.id_dojang
-            : peserta.atlet?.dojang?.id_dojang;
-          
-          console.log('🔍 Debug - Peserta:', {
-            id: peserta.id_peserta_kompetisi,
-            status: peserta.status,
-            isPending,
-            pesertaDojangId,
-            targetDojangId: dojangId,
-            match: pesertaDojangId === dojangId
-          });
-          
-          return isPending && pesertaDojangId === dojangId;
-        });
-
-        console.log('🔍 Debug - Filtered pending by dojang:', pendingByDojang.length);
-        console.log('🔍 Debug - Pending pesertas:', pendingByDojang);
-        
-        setPendingPesertas(pendingByDojang);
-      } else {
-        const errorText = await response.text();
-        console.error('🔍 Debug - Error response:', errorText);
-        toast.error('Gagal mengambil data peserta');
-      }
+      // Menggunakan fetchAtletByKompetisi dari context dengan filter dojang
+      await fetchAtletByKompetisi(kompetisiId, undefined, dojangId);
     } catch (error) {
       console.error('🔍 Debug - Error fetching pending peserta:', error);
       toast.error('Gagal mengambil data peserta pending');
+      setPendingPesertas([]);
     } finally {
       setLoadingPeserta(false);
     }
   };
+
+  // Update pending pesertas when pesertaList changes
+  useEffect(() => {
+    if (showPendingModal && pesertaList.length >= 0) {
+      // Filter hanya yang status PENDING
+      const pendingOnly = pesertaList.filter((peserta: PesertaKompetisi) => {
+        return peserta.status === 'PENDING';
+      });
+
+      console.log('🔍 Debug - Total peserta from context:', pesertaList.length);
+      console.log('🔍 Debug - Filtered pending pesertas:', pendingOnly.length);
+      setPendingPesertas(pendingOnly);
+    }
+  }, [pesertaList, showPendingModal]);
 
   // Handle open modal
   const handleOpenPendingModal = (bukti: BuktiTransfer) => {
@@ -211,7 +144,7 @@ const BuktiTf = () => {
     }
   };
 
-  // Handle approve selected
+  // Handle approve selected menggunakan context
   const handleApproveSelected = async () => {
     if (selectedPesertas.length === 0) {
       toast.error('Pilih minimal satu peserta');
@@ -226,18 +159,9 @@ const BuktiTf = () => {
         return;
       }
 
-      const promises = selectedPesertas.map(id =>
-        fetch(
-          `${API_BASE_URL}/api/peserta-kompetisi/${kompetisiId}/${id}/status`,
-          {
-            method: 'PATCH',
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ status: 'APPROVED' })
-          }
-        )
+      // Menggunakan updatePesertaStatus dari context
+      const promises = selectedPesertas.map(participantId =>
+        updatePesertaStatus(kompetisiId, participantId, 'APPROVED')
       );
 
       await Promise.all(promises);
