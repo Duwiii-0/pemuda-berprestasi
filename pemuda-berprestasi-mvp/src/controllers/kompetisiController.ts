@@ -525,7 +525,7 @@ static async getBracketByClass(req: Request, res: Response) {
 static async shuffleBrackets(req: Request, res: Response) {
   try {
     const { id } = req.params;
-    const { kelasKejuaraanId, participantIds } = req.body;
+    const { kelasKejuaraanId, isPemula } = req.body; // ⭐ TAMBAH isPemula
 
     const kompetisiId = parseInt(id);
     const kelasId = parseInt(kelasKejuaraanId);
@@ -540,7 +540,6 @@ static async shuffleBrackets(req: Request, res: Response) {
       return sendError(res, 'User tidak ditemukan', 401);
     }
 
-    // Verify competition exists and user has access
     const kompetisi = await prisma.tb_kompetisi.findUnique({
       where: { id_kompetisi: kompetisiId },
       include: {
@@ -574,43 +573,38 @@ static async shuffleBrackets(req: Request, res: Response) {
       return sendError(res, 'Tidak memiliki akses untuk mengacak bagan', 403);
     }
 
-    // ⭐ DETECT CATEGORY: PEMULA vs PRESTASI
+    // ⭐ DETECT category from flag or database
     const kategori = kompetisi.kelas_kejuaraan[0]?.kategori_event?.nama_kategori?.toLowerCase() || '';
-    const isPemula = kategori.includes('pemula');
+    const isPemulaCategory = isPemula ?? kategori.includes('pemula');
 
-    console.log(`\n🔀 Shuffle request for: ${isPemula ? 'PEMULA' : 'PRESTASI'}`);
+    console.log(`\n🔀 Shuffle request for: ${isPemulaCategory ? 'PEMULA' : 'PRESTASI'}`);
+
+    // Check if any matches have been played
+    const existingBagan = await prisma.tb_bagan.findFirst({
+      where: {
+        id_kompetisi: kompetisiId,
+        id_kelas_kejuaraan: kelasId
+      },
+      include: {
+        match: true
+      }
+    });
+
+    if (existingBagan) {
+      const playedMatches = existingBagan.match.some(match => match.skor_a > 0 || match.skor_b > 0);
+      if (playedMatches) {
+        return sendError(res, 'Tidak dapat mengacak bagan karena ada pertandingan yang sudah dimulai', 400);
+      }
+    }
 
     let bracket;
 
-    if (isPemula) {
-      // ⭐ PEMULA: Use special shuffle (no delete, just re-arrange)
+    if (isPemulaCategory) {
+      // PEMULA: Use special shuffle (re-assign only)
       bracket = await BracketService.shufflePemulaBracket(kompetisiId, kelasId);
     } else {
-      // PRESTASI: Use original shuffle (delete + regenerate)
-      // Validate participantIds
-      if (participantIds && (!Array.isArray(participantIds) || participantIds.length < 2)) {
-        return sendError(res, 'Minimal 2 peserta harus dipilih', 400);
-      }
-
-      // Check if any matches have been played
-      const existingBagan = await prisma.tb_bagan.findFirst({
-        where: {
-          id_kompetisi: kompetisiId,
-          id_kelas_kejuaraan: kelasId
-        },
-        include: {
-          match: true
-        }
-      });
-
-      if (existingBagan) {
-        const playedMatches = existingBagan.match.some(match => match.skor_a > 0 || match.skor_b > 0);
-        if (playedMatches) {
-          return sendError(res, 'Tidak dapat mengacak bagan karena ada pertandingan yang sudah dimulai', 400);
-        }
-      }
-
-      bracket = await BracketService.shuffleBracket(kompetisiId, kelasId, participantIds);
+      // PRESTASI: Delete + regenerate with new BYE
+      bracket = await BracketService.shuffleBracket(kompetisiId, kelasId);
     }
 
     return sendSuccess(res, bracket, 'Bagan turnamen berhasil diacak ulang');
