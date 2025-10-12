@@ -539,9 +539,14 @@ const BuktiTf = () => {
                             className="w-5 h-5 text-red focus:ring-red rounded mt-1"
                           />
                           <div className="flex-1">
-                            <h4 className="font-plex font-semibold text-black/80 mb-1">
-                              {namaPeserta}
-                            </h4>
+                            <div className="flex items-center justify-between mb-1">
+                              <h4 className="font-plex font-semibold text-black/80">
+                                {namaPeserta}
+                              </h4>
+                              <span className="px-2 py-1 bg-yellow-100 text-yellow-700 text-xs font-plex font-medium rounded">
+                                {peserta.status}
+                              </span>
+                            </div>
                             <div className="flex flex-wrap gap-2 text-xs font-plex text-black/60">
                               <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded">
                                 {kategori}
