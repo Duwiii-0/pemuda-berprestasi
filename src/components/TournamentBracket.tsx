@@ -351,17 +351,57 @@ const shufflePrestasiBracket = async () => {
       },
       body: JSON.stringify({
         kelasKejuaraanId: kelasKejuaraanId,
-        isPemula: false // ⭐ FLAG untuk backend
+        isPemula: false
       })
     });
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to shuffle bracket');
+      
+      // ⭐ HANDLE SPECIFIC ERROR
+      if (errorData.message?.includes('Bagan sudah dibuat')) {
+        console.log('⚠️ Bracket exists - deleting first...');
+        
+        // Delete bracket first
+        const deleteResponse = await fetch(
+          `${apiBaseUrl}/kompetisi/${kompetisiId}/brackets/${kelasKejuaraanId}`,
+          {
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(token && { 'Authorization': `Bearer ${token}` })
+            }
+          }
+        );
+        
+        if (!deleteResponse.ok) {
+          throw new Error('Failed to delete existing bracket');
+        }
+        
+        // Retry generate
+        console.log('🔄 Retrying generation...');
+        const retryResponse = await fetch(
+          `${apiBaseUrl}/kompetisi/${kompetisiId}/brackets/generate`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(token && { 'Authorization': `Bearer ${token}` })
+            },
+            body: JSON.stringify({
+              kelasKejuaraanId: kelasKejuaraanId
+            })
+          }
+        );
+        
+        if (!retryResponse.ok) {
+          throw new Error('Failed to regenerate bracket');
+        }
+        
+      } else {
+        throw new Error(errorData.message || 'Failed to shuffle bracket');
+      }
     }
-
-    const result = await response.json();
-    console.log('✅ Bracket shuffled:', result);
 
     await fetchBracketData(kompetisiId, kelasKejuaraanId);
     
