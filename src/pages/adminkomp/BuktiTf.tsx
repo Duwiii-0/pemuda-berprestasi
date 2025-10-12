@@ -47,10 +47,48 @@ const BuktiTf = () => {
 
   const API_BASE_URL = 'https://cjvmanagementevent.com';
 
-  // Fetch bukti transfer saat component mount
+  // Fetch bukti transfer dan peserta pending saat component mount
   useEffect(() => {
     fetchBuktiTransfer();
+    fetchAllPendingPeserta(); // Fetch pending peserta di background
   }, []);
+
+  // Fetch all pending peserta saat page load (background fetch)
+  const fetchAllPendingPeserta = async () => {
+    try {
+      const kompetisiId = user?.admin_kompetisi?.id_kompetisi;
+      
+      if (!kompetisiId) {
+        console.log('⚠️ No kompetisi ID found');
+        return;
+      }
+
+      console.log('🚀 Background fetch - Loading all pending peserta...');
+      const url = `${API_BASE_URL}/api/kompetisi/${kompetisiId}/atlet?limit=1000&status=PENDING`;
+      console.time('⏱️ Background Fetch Time');
+
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      console.timeEnd('⏱️ Background Fetch Time');
+
+      if (response.ok) {
+        const result = await response.json();
+        const allPeserta = Array.isArray(result) ? result : (result.data || []);
+        
+        setPesertaCache(allPeserta);
+        console.log('✅ Pre-loaded', allPeserta.length, 'pending peserta');
+      } else {
+        console.error('❌ Background fetch failed:', response.status);
+      }
+    } catch (error) {
+      console.error('❌ Background fetch error:', error);
+    }
+  };
 
   const fetchBuktiTransfer = async () => {
     setLoading(true);
