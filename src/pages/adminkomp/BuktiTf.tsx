@@ -34,6 +34,9 @@ const BuktiTf = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   
+  // Cache untuk peserta (agar tidak fetch ulang)
+  const [pesertaCache, setPesertaCache] = useState<PesertaKompetisi[]>([]);
+  
   // Modal states
   const [showPendingModal, setShowPendingModal] = useState(false);
   const [selectedDojang, setSelectedDojang] = useState<BuktiTransfer | null>(null);
@@ -79,7 +82,7 @@ const BuktiTf = () => {
     }
   };
 
-  // Fetch peserta pending by dojang - fetch langsung tanpa context global state
+  // Fetch peserta pending by dojang - with caching and status filter
   const fetchPendingPesertaByDojang = async (dojangId: number) => {
     setLoadingPeserta(true);
     try {
@@ -93,75 +96,64 @@ const BuktiTf = () => {
         return;
       }
 
-      // Fetch semua peserta (backend sepertinya tidak filter by dojang)
-      const url = `${API_BASE_URL}/api/kompetisi/${kompetisiId}/atlet`;
-      console.log('🔍 Debug - Fetching URL:', url);
+      let allPeserta = pesertaCache;
 
-      const response = await fetch(url, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      console.log('🔍 Debug - Response status:', response.status);
-
-      if (response.ok) {
-        const result = await response.json();
-        console.log('🔍 Debug - API Response:', result);
+      // Jika belum ada cache, fetch dari API
+      if (pesertaCache.length === 0) {
+        console.log('💾 Cache MISS - Fetching from API...');
         
-        // Handle response format (could be array or object with data property)
-        const allPeserta = Array.isArray(result) ? result : (result.data || []);
-        console.log('🔍 Debug - Total peserta from API:', allPeserta.length);
-        
-        // Filter by PENDING AND by dojang ID
-        const filteredPeserta = allPeserta.filter((peserta: PesertaKompetisi) => {
-          const isPending = peserta.status === 'PENDING';
-          
-          // Get dojang ID from peserta (handle both team and individual)
-          const pesertaDojangId = peserta.is_team
-            ? peserta.anggota_tim?.[0]?.atlet?.dojang?.id_dojang
-            : peserta.atlet?.dojang?.id_dojang;
-          
-          const isDojangMatch = pesertaDojangId === dojangId;
-          
-          // Debug log untuk beberapa peserta pertama
-          if (allPeserta.indexOf(peserta) < 5) {
-            console.log('🔍 Debug - Peserta:', {
-              id: peserta.id_peserta_kompetisi,
-              nama: peserta.atlet?.nama_atlet || 'Team',
-              status: peserta.status,
-              pesertaDojangId,
-              targetDojangId: dojangId,
-              isPending,
-              isDojangMatch,
-              willShow: isPending && isDojangMatch
-            });
+        // Tambahkan filter status=PENDING di URL untuk mengurangi payload
+        const url = `${API_BASE_URL}/api/kompetisi/${kompetisiId}/atlet?limit=1000&status=PENDING`;
+        console.log('📡 Fetching URL:', url);
+        console.time('⏱️ Fetch Time');
+
+        const response = await fetch(url, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
           }
-          
-          return isPending && isDojangMatch;
         });
 
-        console.log('🔍 Debug - Filtered PENDING + Dojang pesertas:', filteredPeserta.length);
-        
-        if (filteredPeserta.length > 0) {
-          console.log('🔍 Debug - Sample filtered peserta:', {
-            nama: filteredPeserta[0].atlet?.nama_atlet || 'Team',
-            dojang: filteredPeserta[0].atlet?.dojang?.nama_dojang || filteredPeserta[0].anggota_tim?.[0]?.atlet?.dojang?.nama_dojang,
-            dojangId: filteredPeserta[0].atlet?.dojang?.id_dojang || filteredPeserta[0].anggota_tim?.[0]?.atlet?.dojang?.id_dojang,
-            status: filteredPeserta[0].status
-          });
+        console.timeEnd('⏱️ Fetch Time');
+        console.log('📊 Response status:', response.status);
+
+        if (response.ok) {
+          const result = await response.json();
+          allPeserta = Array.isArray(result) ? result : (result.data || []);
+          
+          console.log('📥 Received', allPeserta.length, 'peserta from API');
+          
+          // Simpan ke cache
+          setPesertaCache(allPeserta);
+          console.log('💾 Cached', allPeserta.length, 'peserta');
+        } else {
+          const errorText = await response.text();
+          console.error('❌ Error response:', errorText);
+          toast.error('Gagal mengambil data peserta');
+          setPendingPesertas([]);
+          return;
         }
-        
-        setPendingPesertas(filteredPeserta);
       } else {
-        const errorText = await response.text();
-        console.error('🔍 Debug - Error response:', errorText);
-        toast.error('Gagal mengambil data peserta');
-        setPendingPesertas([]);
+        console.log('💾 Cache HIT - Using cached data:', allPeserta.length, 'peserta');
       }
+
+      console.time('⏱️ Filter Time');
+      
+      // Filter by dojang ID (data sudah PENDING dari API)
+      const filteredPeserta = allPeserta.filter((peserta: PesertaKompetisi) => {
+        const pesertaDojangId = peserta.is_team
+          ? peserta.anggota_tim?.[0]?.atlet?.dojang?.id_dojang
+          : peserta.atlet?.dojang?.id_dojang;
+        
+        return pesertaDojangId === dojangId;
+      });
+
+      console.timeEnd('⏱️ Filter Time');
+      console.log('✅ Filtered Result:', filteredPeserta.length, 'peserta for dojang', dojangId);
+      
+      setPendingPesertas(filteredPeserta);
     } catch (error) {
-      console.error('🔍 Debug - Error fetching pending peserta:', error);
+      console.error('❌ Error:', error);
       toast.error('Gagal mengambil data peserta pending');
       setPendingPesertas([]);
     } finally {
@@ -218,6 +210,10 @@ const BuktiTf = () => {
       await Promise.all(promises);
       
       toast.success(`${selectedPesertas.length} peserta berhasil di-approve`);
+      
+      // Clear cache agar data fresh
+      setPesertaCache([]);
+      console.log('💾 Cache cleared - Will fetch fresh data on next open');
       
       // Refresh list
       await fetchPendingPesertaByDojang(selectedDojang!.id_dojang);
