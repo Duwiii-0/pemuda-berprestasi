@@ -344,16 +344,18 @@ const shufflePemulaBracket = async () => {
     const kompetisiId = selectedKelas.kompetisi.id_kompetisi;
     const kelasKejuaraanId = selectedKelas.id_kelas_kejuaraan;
 
+    // ⭐ FIX: Gunakan endpoint yang benar
     const endpoint = `${apiBaseUrl}/kompetisi/${kompetisiId}/brackets/shuffle`;
     
     const response = await fetch(endpoint, {
-      method: 'POST',
+      method: 'POST', // ⭐ UBAH KE POST
       headers: {
         'Content-Type': 'application/json',
         ...(token && { 'Authorization': `Bearer ${token}` })
       },
       body: JSON.stringify({
         kelasKejuaraanId: kelasKejuaraanId
+        // byeParticipantIds TIDAK perlu karena shuffle pemula
       })
     });
 

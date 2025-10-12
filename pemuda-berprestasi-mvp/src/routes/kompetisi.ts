@@ -65,7 +65,7 @@ router.post('/:id/brackets/generate',
 );
 
 // 2. Shuffle bracket (no kelasKejuaraanId in path)
-router.put('/:id/brackets/shuffle', 
+router.post('/:id/brackets/shuffle', 
   KompetisiController.shuffleBrackets
 );
 
