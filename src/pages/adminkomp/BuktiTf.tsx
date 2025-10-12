@@ -80,6 +80,61 @@ const BuktiTf = () => {
         const result = await response.json();
         const allPeserta = Array.isArray(result) ? result : (result.data || []);
         
+        console.log('📥 Received', allPeserta.length, 'peserta from API');
+        
+        // Filter PENDING di frontend (fallback jika backend tidak filter)
+        const pendingOnly = allPeserta.filter((peserta: PesertaKompetisi) => {
+          return peserta.status === 'PENDING';
+        });
+        
+        console.log('🔍 After frontend filter:', pendingOnly.length, 'PENDING peserta');
+        
+        // Cek apakah backend sudah filter atau belum
+        if (allPeserta.length !== pendingOnly.length) {
+          console.warn('⚠️ Backend does NOT support status=PENDING filter!');
+          console.warn(`   Received ${allPeserta.length} peserta, but only ${pendingOnly.length} are PENDING`);
+          console.warn('   Consider asking backend developer to add status filter support');
+        } else {
+          console.log('✅ Backend supports status filter');
+        }
+        
+        setPesertaCache(pendingOnly);
+        console.log('✅ Cached', pendingOnly.length, 'PENDING peserta');
+      } else {
+        console.error('❌ Background fetch failed:', response.status);
+      }
+    } catch (error) {
+      console.error('❌ Background fetch error:', error);
+    }
+  };
+
+  // Fetch all pending peserta saat page load (background fetch)
+  const fetchAllPendingPeserta = async () => {
+    try {
+      const kompetisiId = user?.admin_kompetisi?.id_kompetisi;
+      
+      if (!kompetisiId) {
+        console.log('⚠️ No kompetisi ID found');
+        return;
+      }
+
+      console.log('🚀 Background fetch - Loading all pending peserta...');
+      const url = `${API_BASE_URL}/api/kompetisi/${kompetisiId}/atlet?limit=1000&status=PENDING`;
+      console.time('⏱️ Background Fetch Time');
+
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      console.timeEnd('⏱️ Background Fetch Time');
+
+      if (response.ok) {
+        const result = await response.json();
+        const allPeserta = Array.isArray(result) ? result : (result.data || []);
+        
         setPesertaCache(allPeserta);
         console.log('✅ Pre-loaded', allPeserta.length, 'pending peserta');
       } else {
@@ -120,65 +175,22 @@ const BuktiTf = () => {
     }
   };
 
-  // Fetch peserta pending by dojang - with caching and status filter
+  // Fetch peserta pending by dojang - INSTANT karena data sudah di-cache
   const fetchPendingPesertaByDojang = async (dojangId: number) => {
     setLoadingPeserta(true);
     try {
-      const kompetisiId = user?.admin_kompetisi?.id_kompetisi;
-      console.log('🔍 Debug - Kompetisi ID:', kompetisiId);
-      console.log('🔍 Debug - Dojang ID:', dojangId);
+      console.log('🔍 Filtering peserta for Dojang ID:', dojangId);
       
-      if (!kompetisiId) {
-        toast.error('ID Kompetisi tidak ditemukan');
-        setPendingPesertas([]);
-        return;
-      }
-
-      let allPeserta = pesertaCache;
-
-      // Jika belum ada cache, fetch dari API
+      // Jika cache kosong, fetch dulu
       if (pesertaCache.length === 0) {
-        console.log('💾 Cache MISS - Fetching from API...');
-        
-        // Tambahkan filter status=PENDING di URL untuk mengurangi payload
-        const url = `${API_BASE_URL}/api/kompetisi/${kompetisiId}/atlet?limit=1000&status=PENDING`;
-        console.log('📡 Fetching URL:', url);
-        console.time('⏱️ Fetch Time');
-
-        const response = await fetch(url, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-
-        console.timeEnd('⏱️ Fetch Time');
-        console.log('📊 Response status:', response.status);
-
-        if (response.ok) {
-          const result = await response.json();
-          allPeserta = Array.isArray(result) ? result : (result.data || []);
-          
-          console.log('📥 Received', allPeserta.length, 'peserta from API');
-          
-          // Simpan ke cache
-          setPesertaCache(allPeserta);
-          console.log('💾 Cached', allPeserta.length, 'peserta');
-        } else {
-          const errorText = await response.text();
-          console.error('❌ Error response:', errorText);
-          toast.error('Gagal mengambil data peserta');
-          setPendingPesertas([]);
-          return;
-        }
-      } else {
-        console.log('💾 Cache HIT - Using cached data:', allPeserta.length, 'peserta');
+        console.log('⚠️ Cache empty, fetching...');
+        await fetchAllPendingPeserta();
       }
 
       console.time('⏱️ Filter Time');
       
-      // Filter by dojang ID (data sudah PENDING dari API)
-      const filteredPeserta = allPeserta.filter((peserta: PesertaKompetisi) => {
+      // Filter by dojang ID dari cache (INSTANT!)
+      const filteredPeserta = pesertaCache.filter((peserta: PesertaKompetisi) => {
         const pesertaDojangId = peserta.is_team
           ? peserta.anggota_tim?.[0]?.atlet?.dojang?.id_dojang
           : peserta.atlet?.dojang?.id_dojang;
@@ -187,7 +199,7 @@ const BuktiTf = () => {
       });
 
       console.timeEnd('⏱️ Filter Time');
-      console.log('✅ Filtered Result:', filteredPeserta.length, 'peserta for dojang', dojangId);
+      console.log('✅ Found', filteredPeserta.length, 'peserta for dojang', dojangId);
       
       setPendingPesertas(filteredPeserta);
     } catch (error) {
