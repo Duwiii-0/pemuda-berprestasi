@@ -419,7 +419,7 @@ const handleRejection = async (id: number) => {
     
     {/* HEADER - Diperbaiki untuk mobile */}
     <div className="mb-6 sm:mb-8">
-      <h1 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-bold text-black mb-4 font-bebas">
+      <h1 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-bold text-black mb-4 font-bebas leading-wider">
         Validasi Peserta Kompetisi
       </h1>
       
