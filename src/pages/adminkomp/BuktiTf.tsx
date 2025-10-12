@@ -93,8 +93,8 @@ const BuktiTf = () => {
         return;
       }
 
-      // Fetch langsung dengan filter dojang
-      const url = `${API_BASE_URL}/api/kompetisi/${kompetisiId}/atlet?id_dojang=${dojangId}`;
+      // Fetch semua peserta (backend sepertinya tidak filter by dojang)
+      const url = `${API_BASE_URL}/api/kompetisi/${kompetisiId}/atlet`;
       console.log('🔍 Debug - Fetching URL:', url);
 
       const response = await fetch(url, {
@@ -114,34 +114,46 @@ const BuktiTf = () => {
         const allPeserta = Array.isArray(result) ? result : (result.data || []);
         console.log('🔍 Debug - Total peserta from API:', allPeserta.length);
         
-        // Log sample untuk cek struktur
-        if (allPeserta.length > 0) {
-          console.log('🔍 Debug - Sample peserta:', allPeserta[0]);
-        }
-        
-        // Filter hanya yang PENDING
-        const pendingOnly = allPeserta.filter((peserta: PesertaKompetisi) => {
+        // Filter by PENDING AND by dojang ID
+        const filteredPeserta = allPeserta.filter((peserta: PesertaKompetisi) => {
           const isPending = peserta.status === 'PENDING';
           
+          // Get dojang ID from peserta (handle both team and individual)
           const pesertaDojangId = peserta.is_team
             ? peserta.anggota_tim?.[0]?.atlet?.dojang?.id_dojang
             : peserta.atlet?.dojang?.id_dojang;
           
-          console.log('🔍 Debug - Peserta:', {
-            id: peserta.id_peserta_kompetisi,
-            nama: peserta.atlet?.nama_atlet || 'Team',
-            status: peserta.status,
-            pesertaDojangId,
-            targetDojangId: dojangId,
-            isPending,
-            match: pesertaDojangId === dojangId
-          });
+          const isDojangMatch = pesertaDojangId === dojangId;
           
-          return isPending;
+          // Debug log untuk beberapa peserta pertama
+          if (allPeserta.indexOf(peserta) < 5) {
+            console.log('🔍 Debug - Peserta:', {
+              id: peserta.id_peserta_kompetisi,
+              nama: peserta.atlet?.nama_atlet || 'Team',
+              status: peserta.status,
+              pesertaDojangId,
+              targetDojangId: dojangId,
+              isPending,
+              isDojangMatch,
+              willShow: isPending && isDojangMatch
+            });
+          }
+          
+          return isPending && isDojangMatch;
         });
 
-        console.log('🔍 Debug - Filtered PENDING pesertas:', pendingOnly.length);
-        setPendingPesertas(pendingOnly);
+        console.log('🔍 Debug - Filtered PENDING + Dojang pesertas:', filteredPeserta.length);
+        
+        if (filteredPeserta.length > 0) {
+          console.log('🔍 Debug - Sample filtered peserta:', {
+            nama: filteredPeserta[0].atlet?.nama_atlet || 'Team',
+            dojang: filteredPeserta[0].atlet?.dojang?.nama_dojang || filteredPeserta[0].anggota_tim?.[0]?.atlet?.dojang?.nama_dojang,
+            dojangId: filteredPeserta[0].atlet?.dojang?.id_dojang || filteredPeserta[0].anggota_tim?.[0]?.atlet?.dojang?.id_dojang,
+            status: filteredPeserta[0].status
+          });
+        }
+        
+        setPendingPesertas(filteredPeserta);
       } else {
         const errorText = await response.text();
         console.error('🔍 Debug - Error response:', errorText);
