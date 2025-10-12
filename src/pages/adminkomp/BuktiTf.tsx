@@ -73,9 +73,18 @@ const BuktiTf = () => {
     new Map(
       buktiTransferList
         .filter(bukti => bukti.tb_dojang?.nama_dojang)
-        .map(bukti => [bukti.id_dojang, bukti.tb_dojang])
+        .map(bukti => [bukti.id_dojang, { id_dojang: bukti.id_dojang, ...bukti.tb_dojang }])
     ).values()
   );
+
+  // Debug: Log data untuk cek struktur
+  useEffect(() => {
+    if (buktiTransferList.length > 0) {
+      console.log('🔍 Debug - Sample bukti:', buktiTransferList[0]);
+      console.log('🔍 Debug - id_dojang type:', typeof buktiTransferList[0].id_dojang);
+      console.log('🔍 Debug - Unique dojang:', uniqueDojang);
+    }
+  }, [buktiTransferList]);
 
   // Filter berdasarkan search dan dojang
   useEffect(() => {
@@ -92,9 +101,14 @@ const BuktiTf = () => {
 
     // Filter by dojang
     if (filterDojang !== 'ALL') {
-      filtered = filtered.filter(bukti => 
-        bukti.id_dojang.toString() === filterDojang
-      );
+      console.log('🔍 Filtering by dojang:', filterDojang);
+      filtered = filtered.filter(bukti => {
+        const dojangId = String(bukti.id_dojang);
+        const filterValue = String(filterDojang);
+        console.log('🔍 Comparing:', dojangId, '===', filterValue, '?', dojangId === filterValue);
+        return dojangId === filterValue;
+      });
+      console.log('🔍 Filtered result count:', filtered.length);
     }
 
     setFilteredBukti(filtered);
@@ -209,8 +223,8 @@ const BuktiTf = () => {
                   >
                     <option value="ALL">Semua Dojang</option>
                     {uniqueDojang.map((dojang: any) => (
-                      <option key={dojang.id_dojang} value={dojang.id_dojang}>
-                        {dojang?.nama_dojang} - {dojang?.kota}
+                      <option key={dojang.id_dojang} value={String(dojang.id_dojang)}>
+                        {dojang?.nama_dojang} {dojang?.kota && `- ${dojang.kota}`}
                       </option>
                     ))}
                   </select>
