@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Eye, Download, Menu, FileText, Filter } from 'lucide-react';
+import { Search, Eye, Download, Menu, FileText, Filter, Users, CheckCircle, Loader, X } from 'lucide-react';
 import { useAuth } from '../../context/authContext';
 import NavbarDashboard from '../../components/navbar/navbarDashboard';
 import toast from 'react-hot-toast';
@@ -20,6 +20,40 @@ interface BuktiTransfer {
   };
 }
 
+interface PesertaPending {
+  id_peserta_kompetisi: number;
+  is_team: boolean;
+  status: string;
+  atlet?: {
+    id_atlet: number;
+    nama_atlet: string;
+    jenis_kelamin: string;
+    dojang?: {
+      id_dojang: number;
+      nama_dojang: string;
+    };
+  };
+  anggota_tim?: Array<{
+    atlet: {
+      id_atlet: number;
+      nama_atlet: string;
+      dojang?: {
+        id_dojang: number;
+        nama_dojang: string;
+      };
+    };
+  }>;
+  kelas_kejuaraan?: {
+    cabang: string;
+    kategori_event?: {
+      nama_kategori: string;
+    };
+    kelompok?: {
+      nama_kelompok: string;
+    };
+  };
+}
+
 const BuktiTf = () => {
   const { user, token } = useAuth();
   
@@ -30,6 +64,14 @@ const BuktiTf = () => {
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  
+  // Modal states
+  const [showPendingModal, setShowPendingModal] = useState(false);
+  const [selectedDojang, setSelectedDojang] = useState<BuktiTransfer | null>(null);
+  const [pendingPesertas, setPendingPesertas] = useState<PesertaPending[]>([]);
+  const [loadingPeserta, setLoadingPeserta] = useState(false);
+  const [selectedPesertas, setSelectedPesertas] = useState<number[]>([]);
+  const [processing, setProcessing] = useState(false);
 
   const API_BASE_URL = 'https://cjvmanagementevent.com';
 
@@ -68,6 +110,121 @@ const BuktiTf = () => {
     }
   };
 
+  // Fetch peserta pending by dojang
+  const fetchPendingPesertaByDojang = async (dojangId: number) => {
+    setLoadingPeserta(true);
+    try {
+      const kompetisiId = user?.admin_kompetisi?.id_kompetisi;
+      if (!kompetisiId) {
+        toast.error('ID Kompetisi tidak ditemukan');
+        return;
+      }
+
+      const response = await fetch(
+        `${API_BASE_URL}/api/peserta-kompetisi/kompetisi/${kompetisiId}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      if (response.ok) {
+        const result = await response.json();
+        const allPeserta = result.data || [];
+        
+        // Filter pending peserta by dojang
+        const pendingByDojang = allPeserta.filter((peserta: PesertaPending) => {
+          if (peserta.status !== 'PENDING') return false;
+          
+          const pesertaDojangId = peserta.is_team
+            ? peserta.anggota_tim?.[0]?.atlet?.dojang?.id_dojang
+            : peserta.atlet?.dojang?.id_dojang;
+          
+          return pesertaDojangId === dojangId;
+        });
+
+        setPendingPesertas(pendingByDojang);
+      }
+    } catch (error) {
+      console.error('Error fetching pending peserta:', error);
+      toast.error('Gagal mengambil data peserta pending');
+    } finally {
+      setLoadingPeserta(false);
+    }
+  };
+
+  // Handle open modal
+  const handleOpenPendingModal = (bukti: BuktiTransfer) => {
+    setSelectedDojang(bukti);
+    setShowPendingModal(true);
+    setSelectedPesertas([]);
+    fetchPendingPesertaByDojang(bukti.id_dojang);
+  };
+
+  // Handle checkbox toggle
+  const handleTogglePeserta = (id: number) => {
+    setSelectedPesertas(prev => 
+      prev.includes(id) 
+        ? prev.filter(item => item !== id)
+        : [...prev, id]
+    );
+  };
+
+  // Handle select all
+  const handleSelectAll = () => {
+    if (selectedPesertas.length === pendingPesertas.length) {
+      setSelectedPesertas([]);
+    } else {
+      setSelectedPesertas(pendingPesertas.map(p => p.id_peserta_kompetisi));
+    }
+  };
+
+  // Handle approve selected
+  const handleApproveSelected = async () => {
+    if (selectedPesertas.length === 0) {
+      toast.error('Pilih minimal satu peserta');
+      return;
+    }
+
+    setProcessing(true);
+    try {
+      const kompetisiId = user?.admin_kompetisi?.id_kompetisi;
+      if (!kompetisiId) {
+        toast.error('ID Kompetisi tidak ditemukan');
+        return;
+      }
+
+      const promises = selectedPesertas.map(id =>
+        fetch(
+          `${API_BASE_URL}/api/peserta-kompetisi/${kompetisiId}/${id}/status`,
+          {
+            method: 'PATCH',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ status: 'APPROVED' })
+          }
+        )
+      );
+
+      await Promise.all(promises);
+      
+      toast.success(`${selectedPesertas.length} peserta berhasil di-approve`);
+      
+      // Refresh list
+      await fetchPendingPesertaByDojang(selectedDojang!.id_dojang);
+      setSelectedPesertas([]);
+    } catch (error) {
+      console.error('Error approving peserta:', error);
+      toast.error('Gagal approve peserta');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
   // Get unique dojang list for filter dropdown
   const uniqueDojang = Array.from(
     new Map(
@@ -76,15 +233,6 @@ const BuktiTf = () => {
         .map(bukti => [bukti.id_dojang, { id_dojang: bukti.id_dojang, ...bukti.tb_dojang }])
     ).values()
   );
-
-  // Debug: Log data untuk cek struktur
-  useEffect(() => {
-    if (buktiTransferList.length > 0) {
-      console.log('🔍 Debug - Sample bukti:', buktiTransferList[0]);
-      console.log('🔍 Debug - id_dojang type:', typeof buktiTransferList[0].id_dojang);
-      console.log('🔍 Debug - Unique dojang:', uniqueDojang);
-    }
-  }, [buktiTransferList]);
 
   // Filter berdasarkan search dan dojang
   useEffect(() => {
@@ -101,14 +249,11 @@ const BuktiTf = () => {
 
     // Filter by dojang
     if (filterDojang !== 'ALL') {
-      console.log('🔍 Filtering by dojang:', filterDojang);
       filtered = filtered.filter(bukti => {
         const dojangId = String(bukti.id_dojang);
         const filterValue = String(filterDojang);
-        console.log('🔍 Comparing:', dojangId, '===', filterValue, '?', dojangId === filterValue);
         return dojangId === filterValue;
       });
-      console.log('🔍 Filtered result count:', filtered.length);
     }
 
     setFilteredBukti(filtered);
@@ -248,7 +393,7 @@ const BuktiTf = () => {
                       )}
                       {filterDojang !== 'ALL' && (
                         <span className="inline-flex items-center gap-1 px-3 py-1 bg-red/10 text-red rounded-full text-sm font-plex">
-                          Dojang: {uniqueDojang.find((d: any) => d.id_dojang?.toString() === filterDojang)?.nama_dojang}
+                          Dojang: {uniqueDojang.find((d: any) => String(d.id_dojang) === filterDojang)?.nama_dojang}
                           <button
                             onClick={() => setFilterDojang('ALL')}
                             className="hover:text-red/80 font-bold"
@@ -304,20 +449,31 @@ const BuktiTf = () => {
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="flex gap-2">
+                    <div className="space-y-2">
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => window.open(getPreviewUrl(bukti.bukti_transfer_path), '_blank')}
+                          className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-plex"
+                        >
+                          <Eye size={16} />
+                          Lihat
+                        </button>
+                        <button
+                          onClick={() => handleDownload(bukti.bukti_transfer_path)}
+                          className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-plex"
+                        >
+                          <Download size={16} />
+                          Download
+                        </button>
+                      </div>
+                      
+                      {/* New Button: View Pending Peserta */}
                       <button
-                        onClick={() => window.open(getPreviewUrl(bukti.bukti_transfer_path), '_blank')}
-                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-plex"
+                        onClick={() => handleOpenPendingModal(bukti)}
+                        className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors font-plex"
                       >
-                        <Eye size={16} />
-                        Lihat
-                      </button>
-                      <button
-                        onClick={() => handleDownload(bukti.bukti_transfer_path)}
-                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-plex"
-                      >
-                        <Download size={16} />
-                        Download
+                        <Users size={16} />
+                        Lihat Peserta Pending
                       </button>
                     </div>
                   </div>
@@ -348,6 +504,153 @@ const BuktiTf = () => {
           )}
         </div>
       </div>
+
+      {/* Pending Peserta Modal */}
+      {showPendingModal && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+            {/* Modal Header */}
+            <div className="p-6 border-b border-red/20">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h2 className="font-bebas text-2xl text-black/80 tracking-wide">
+                    PESERTA PENDING - {selectedDojang?.tb_dojang?.nama_dojang}
+                  </h2>
+                  <p className="font-plex text-sm text-black/60 mt-1">
+                    {selectedDojang?.tb_dojang?.kota}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowPendingModal(false)}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <X size={20} className="text-black/60" />
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Content */}
+            <div className="flex-1 overflow-y-auto p-6">
+              {loadingPeserta ? (
+                <div className="text-center py-12">
+                  <Loader className="animate-spin mx-auto text-red mb-2" size={32} />
+                  <p className="font-plex text-black/60">Loading peserta...</p>
+                </div>
+              ) : pendingPesertas.length === 0 ? (
+                <div className="text-center py-12">
+                  <Users className="mx-auto text-red/40 mb-4" size={48} />
+                  <p className="font-plex text-black/60">
+                    Tidak ada peserta pending untuk dojang ini
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {/* Select All */}
+                  <div className="flex items-center gap-3 p-4 bg-red/5 rounded-lg border border-red/20">
+                    <input
+                      type="checkbox"
+                      checked={selectedPesertas.length === pendingPesertas.length && pendingPesertas.length > 0}
+                      onChange={handleSelectAll}
+                      className="w-5 h-5 text-red focus:ring-red rounded"
+                    />
+                    <span className="font-plex font-medium text-black/80">
+                      Pilih Semua ({pendingPesertas.length} peserta)
+                    </span>
+                  </div>
+
+                  {/* Peserta List */}
+                  {pendingPesertas.map((peserta) => {
+                    const namaPeserta = peserta.is_team
+                      ? peserta.anggota_tim?.map(a => a.atlet.nama_atlet).join(', ')
+                      : peserta.atlet?.nama_atlet || '-';
+                    
+                    const kategori = peserta.kelas_kejuaraan?.cabang || '-';
+                    const level = peserta.kelas_kejuaraan?.kategori_event?.nama_kategori || '-';
+                    const kelompok = peserta.kelas_kejuaraan?.kelompok?.nama_kelompok || '-';
+
+                    return (
+                      <div
+                        key={peserta.id_peserta_kompetisi}
+                        className={`p-4 rounded-lg border-2 transition-all ${
+                          selectedPesertas.includes(peserta.id_peserta_kompetisi)
+                            ? 'border-red bg-red/5'
+                            : 'border-gray-200 hover:border-red/40'
+                        }`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <input
+                            type="checkbox"
+                            checked={selectedPesertas.includes(peserta.id_peserta_kompetisi)}
+                            onChange={() => handleTogglePeserta(peserta.id_peserta_kompetisi)}
+                            className="w-5 h-5 text-red focus:ring-red rounded mt-1"
+                          />
+                          <div className="flex-1">
+                            <h4 className="font-plex font-semibold text-black/80 mb-1">
+                              {namaPeserta}
+                            </h4>
+                            <div className="flex flex-wrap gap-2 text-xs font-plex text-black/60">
+                              <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded">
+                                {kategori}
+                              </span>
+                              <span className="px-2 py-1 bg-green-100 text-green-700 rounded">
+                                {level}
+                              </span>
+                              <span className="px-2 py-1 bg-purple-100 text-purple-700 rounded">
+                                {kelompok}
+                              </span>
+                              {peserta.is_team && (
+                                <span className="px-2 py-1 bg-orange-100 text-orange-700 rounded">
+                                  Team
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            {pendingPesertas.length > 0 && (
+              <div className="p-6 border-t border-red/20 bg-gray-50">
+                <div className="flex items-center justify-between gap-4">
+                  <p className="font-plex text-sm text-black/60">
+                    {selectedPesertas.length} peserta dipilih
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setShowPendingModal(false)}
+                      className="px-6 py-2 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors font-plex"
+                    >
+                      Batal
+                    </button>
+                    <button
+                      onClick={handleApproveSelected}
+                      disabled={selectedPesertas.length === 0 || processing}
+                      className="px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-plex flex items-center gap-2"
+                    >
+                      {processing ? (
+                        <>
+                          <Loader size={16} className="animate-spin" />
+                          Processing...
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle size={16} />
+                          Approve ({selectedPesertas.length})
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Mobile Sidebar */}
       {sidebarOpen && (
