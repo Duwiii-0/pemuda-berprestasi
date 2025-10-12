@@ -605,18 +605,13 @@ static async getBracketByClass(req: Request, res: Response) {
 static async shuffleBrackets(req: Request, res: Response) {
   try {
     const { id } = req.params;
-    const { kelasKejuaraanId, participantIds } = req.body; // ⭐ TAMBAH participantIds
+    const { kelasKejuaraanId, participantIds } = req.body;
 
     const kompetisiId = parseInt(id);
     const kelasId = parseInt(kelasKejuaraanId);
 
     if (isNaN(kompetisiId) || isNaN(kelasId)) {
       return sendError(res, 'Parameter tidak valid', 400);
-    }
-
-    // ⭐ VALIDASI participantIds
-    if (participantIds && (!Array.isArray(participantIds) || participantIds.length < 2)) {
-      return sendError(res, 'Minimal 2 peserta harus dipilih', 400);
     }
 
     // Check authorization
@@ -629,12 +624,22 @@ static async shuffleBrackets(req: Request, res: Response) {
     const kompetisi = await prisma.tb_kompetisi.findUnique({
       where: { id_kompetisi: kompetisiId },
       include: {
-        admin: true
+        admin: true,
+        kelas_kejuaraan: {
+          where: { id_kelas_kejuaraan: kelasId },
+          include: {
+            kategori_event: true
+          }
+        }
       }
     });
 
     if (!kompetisi) {
       return sendError(res, 'Kompetisi tidak ditemukan', 404);
+    }
+
+    if (kompetisi.kelas_kejuaraan.length === 0) {
+      return sendError(res, 'Kelas kejuaraan tidak ditemukan', 404);
     }
 
     // Authorization check
@@ -649,30 +654,44 @@ static async shuffleBrackets(req: Request, res: Response) {
       return sendError(res, 'Tidak memiliki akses untuk mengacak bagan', 403);
     }
 
-    // Check if any matches have been played
-    const existingBagan = await prisma.tb_bagan.findFirst({
-      where: {
-        id_kompetisi: kompetisiId,
-        id_kelas_kejuaraan: kelasId
-      },
-      include: {
-        match: true
-      }
-    });
+    // ⭐ DETECT CATEGORY: PEMULA vs PRESTASI
+    const kategori = kompetisi.kelas_kejuaraan[0]?.kategori_event?.nama_kategori?.toLowerCase() || '';
+    const isPemula = kategori.includes('pemula');
 
-    if (existingBagan) {
-      const playedMatches = existingBagan.match.some(match => match.skor_a > 0 || match.skor_b > 0);
-      if (playedMatches) {
-        return sendError(res, 'Tidak dapat mengacak bagan karena ada pertandingan yang sudah dimulai', 400);
+    console.log(`\n🔀 Shuffle request for: ${isPemula ? 'PEMULA' : 'PRESTASI'}`);
+
+    let bracket;
+
+    if (isPemula) {
+      // ⭐ PEMULA: Use special shuffle (no delete, just re-arrange)
+      bracket = await BracketService.shufflePemulaBracket(kompetisiId, kelasId);
+    } else {
+      // PRESTASI: Use original shuffle (delete + regenerate)
+      // Validate participantIds
+      if (participantIds && (!Array.isArray(participantIds) || participantIds.length < 2)) {
+        return sendError(res, 'Minimal 2 peserta harus dipilih', 400);
       }
+
+      // Check if any matches have been played
+      const existingBagan = await prisma.tb_bagan.findFirst({
+        where: {
+          id_kompetisi: kompetisiId,
+          id_kelas_kejuaraan: kelasId
+        },
+        include: {
+          match: true
+        }
+      });
+
+      if (existingBagan) {
+        const playedMatches = existingBagan.match.some(match => match.skor_a > 0 || match.skor_b > 0);
+        if (playedMatches) {
+          return sendError(res, 'Tidak dapat mengacak bagan karena ada pertandingan yang sudah dimulai', 400);
+        }
+      }
+
+      bracket = await BracketService.shuffleBracket(kompetisiId, kelasId, participantIds);
     }
-
-// ⭐ Regenerate bracket dengan participantIds (untuk shuffle)
-const bracket = await BracketService.shuffleBracket(
-  kompetisiId, 
-  kelasId,
-  participantIds // Menggunakan participantIds, bukan finalByeIds
-);
 
     return sendSuccess(res, bracket, 'Bagan turnamen berhasil diacak ulang');
   } catch (error: any) {

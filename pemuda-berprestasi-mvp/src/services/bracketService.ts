@@ -1126,6 +1126,152 @@ static async advanceWinnerToNextRound(match: any, winnerId: number): Promise<voi
     }
   }
 
+/**
+ * ⭐ NEW: Shuffle PEMULA bracket (re-arrange participants only)
+ * Does NOT delete bracket - just re-assigns participants to matches
+ */
+static async shufflePemulaBracket(
+  kompetisiId: number,
+  kelasKejuaraanId: number
+): Promise<Bracket> {
+  try {
+    console.log(`\n🔀 === SHUFFLING PEMULA BRACKET ===`);
+    console.log(`   Kompetisi: ${kompetisiId}, Kelas: ${kelasKejuaraanId}`);
+
+    // Get existing bracket
+    const bagan = await prisma.tb_bagan.findFirst({
+      where: {
+        id_kompetisi: kompetisiId,
+        id_kelas_kejuaraan: kelasKejuaraanId
+      },
+      include: {
+        match: {
+          include: {
+            peserta_a: true,
+            peserta_b: true
+          }
+        },
+        drawing_seed: {
+          include: {
+            peserta_kompetisi: {
+              include: {
+                atlet: {
+                  include: {
+                    dojang: true
+                  }
+                },
+                anggota_tim: {
+                  include: {
+                    atlet: {
+                      include: {
+                        dojang: true
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    });
+
+    if (!bagan) {
+      throw new Error('Bagan tidak ditemukan');
+    }
+
+    // ⭐ CHECK: Any match has scores?
+    const hasScores = bagan.match.some(m => m.skor_a > 0 || m.skor_b > 0);
+    if (hasScores) {
+      throw new Error('Tidak dapat shuffle! Ada pertandingan yang sudah memiliki skor. Silakan Clear Results terlebih dahulu.');
+    }
+
+    // Get all participants from drawing_seed
+    const participants: Participant[] = bagan.drawing_seed.map(seed => {
+      const reg = seed.peserta_kompetisi;
+      if (reg.is_team && reg.anggota_tim.length > 0) {
+        return {
+          id: reg.id_peserta_kompetisi,
+          name: `Tim ${reg.anggota_tim.map(m => m.atlet.nama_atlet).join(' & ')}`,
+          dojang: reg.anggota_tim[0]?.atlet?.dojang?.nama_dojang,
+          isTeam: true,
+          teamMembers: reg.anggota_tim.map(m => m.atlet.nama_atlet)
+        };
+      } else if (reg.atlet) {
+        return {
+          id: reg.id_peserta_kompetisi,
+          name: reg.atlet.nama_atlet,
+          dojang: reg.atlet.dojang?.nama_dojang,
+          atletId: reg.atlet.id_atlet,
+          isTeam: false
+        };
+      }
+      return null;
+    }).filter(Boolean) as Participant[];
+
+    console.log(`   Total participants: ${participants.length}`);
+
+    // ⭐ SHUFFLE participants
+    const shuffled = this.shuffleArray([...participants]);
+    console.log(`   🔀 Shuffled order:`, shuffled.map(p => p.name));
+
+    // ⭐ RE-ASSIGN participants to existing matches
+    const round1Matches = bagan.match.filter(m => m.ronde === 1).sort((a, b) => a.id_match - b.id_match);
+    const round2Matches = bagan.match.filter(m => m.ronde === 2).sort((a, b) => a.id_match - b.id_match);
+
+    const normalMatchCount = Math.floor(shuffled.length / 2);
+    const hasBye = shuffled.length % 2 === 1;
+
+    console.log(`\n   📝 Re-assigning participants to matches...`);
+
+    // Update Round 1 matches
+    for (let i = 0; i < normalMatchCount; i++) {
+      const match = round1Matches[i];
+      const participant1 = shuffled[i * 2];
+      const participant2 = shuffled[i * 2 + 1];
+
+      await prisma.tb_match.update({
+        where: { id_match: match.id_match },
+        data: {
+          id_peserta_a: participant1.id,
+          id_peserta_b: participant2.id,
+          skor_a: 0,
+          skor_b: 0
+        }
+      });
+
+      console.log(`      Match ${match.id_match}: ${participant1.name} vs ${participant2.name}`);
+    }
+
+    // Update Round 2 (additional match) if exists
+    if (hasBye && round2Matches.length > 0) {
+      const byeParticipant = shuffled[shuffled.length - 1];
+      const additionalMatch = round2Matches[0];
+
+      await prisma.tb_match.update({
+        where: { id_match: additionalMatch.id_match },
+        data: {
+          id_peserta_a: byeParticipant.id,
+          id_peserta_b: null, // TBD - will be filled after last match
+          skor_a: 0,
+          skor_b: 0
+        }
+      });
+
+      console.log(`      Additional Match ${additionalMatch.id_match}: ${byeParticipant.name} vs TBD`);
+    }
+
+    console.log(`\n   ✅ Shuffle complete!`);
+
+    // Return updated bracket
+    return await this.getBracket(kompetisiId, kelasKejuaraanId) as Bracket;
+
+  } catch (error: any) {
+    console.error('❌ Error shuffling PEMULA bracket:', error);
+    throw new Error(error.message || 'Gagal shuffle bracket');
+  }
+}
+
   /**
    * Advance bye winners to next round automatically
    */

@@ -333,6 +333,60 @@ const generateBracket = async (shuffle: boolean = false) => {
   }
 };
 
+const shufflePemulaBracket = async () => {
+  if (!selectedKelas) return;
+  
+  console.log(`🔀 Shuffling PEMULA bracket...`);
+  
+  setLoading(true);
+  
+  try {
+    const kompetisiId = selectedKelas.kompetisi.id_kompetisi;
+    const kelasKejuaraanId = selectedKelas.id_kelas_kejuaraan;
+
+    const endpoint = `${apiBaseUrl}/kompetisi/${kompetisiId}/brackets/shuffle`;
+    
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token && { 'Authorization': `Bearer ${token}` })
+      },
+      body: JSON.stringify({
+        kelasKejuaraanId: kelasKejuaraanId
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to shuffle bracket');
+    }
+
+    const result = await response.json();
+    console.log('✅ Bracket shuffled:', result);
+
+    await fetchBracketData(kompetisiId, kelasKejuaraanId);
+    
+    showNotification(
+      'success',
+      'Berhasil!',
+      'Susunan peserta berhasil diacak ulang!',
+      () => setShowModal(false)
+    );
+    
+  } catch (error: any) {
+    console.error('❌ Error shuffling bracket:', error);
+    showNotification(
+      'error',
+      'Gagal Shuffle',
+      error.message || 'Terjadi kesalahan saat shuffle bracket.',
+      () => setShowModal(false)
+    );
+  } finally {
+    setLoading(false);
+  }
+};
+
   const fetchBracketData = async (kompetisiId: number, kelasKejuaraanId: number) => {
   try {
     setLoading(true);
@@ -1382,9 +1436,10 @@ const updateMatchResult = async (matchId: number, scoreA: number, scoreB: number
 
             <div className="flex gap-3">
 
+{/* ⭐ PEMULA: Shuffle Button | PRESTASI: Edit & Regenerate */}
 <button
-  onClick={openParticipantSelection}
-  disabled={loading || approvedParticipants.length < 2}
+  onClick={isPemula ? shufflePemulaBracket : openParticipantSelection}
+  disabled={loading || approvedParticipants.length < 2 || !bracketGenerated}
   className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50"
   style={{ backgroundColor: '#6366F1', color: '#F5FBEF' }}
 >
@@ -1396,15 +1451,7 @@ const updateMatchResult = async (matchId: number, scoreA: number, scoreB: number
   ) : (
     <>
       <Shuffle size={16} />
-      {/* ⭐ PERUBAHAN: Ganti text berdasarkan kategori */}
-      <span>
-        {bracketGenerated 
-          ? 'Edit & Regenerate' 
-          : isPemula 
-            ? 'Generate (Auto)' 
-            : 'Select & Generate'
-        }
-      </span>
+      <span>{isPemula ? 'Shuffle' : 'Edit & Regenerate'}</span>
     </>
   )}
 </button>
