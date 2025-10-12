@@ -24,7 +24,7 @@ interface BuktiTransfer {
 
 const BuktiTf = () => {
   const { user, token } = useAuth();
-  const { fetchAtletByKompetisi, pesertaList, updatePesertaStatus } = useKompetisi();
+  const { updatePesertaStatus } = useKompetisi();
   
   const [buktiTransferList, setBuktiTransferList] = useState<BuktiTransfer[]>([]);
   const [filteredBukti, setFilteredBukti] = useState<BuktiTransfer[]>([]);
@@ -79,7 +79,7 @@ const BuktiTf = () => {
     }
   };
 
-  // Fetch peserta pending by dojang menggunakan context
+  // Fetch peserta pending by dojang - fetch langsung tanpa context global state
   const fetchPendingPesertaByDojang = async (dojangId: number) => {
     setLoadingPeserta(true);
     try {
@@ -93,11 +93,61 @@ const BuktiTf = () => {
         return;
       }
 
-      // Menggunakan fetchAtletByKompetisi dari context dengan filter dojang
-      // Backend akan return peserta yang sudah difilter by dojang
-      await fetchAtletByKompetisi(kompetisiId, undefined, dojangId);
-      
-      // pesertaList akan di-update oleh context, lalu useEffect akan memfilter PENDING
+      // Fetch langsung dengan filter dojang
+      const url = `${API_BASE_URL}/api/kompetisi/${kompetisiId}/atlet?id_dojang=${dojangId}`;
+      console.log('🔍 Debug - Fetching URL:', url);
+
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      console.log('🔍 Debug - Response status:', response.status);
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('🔍 Debug - API Response:', result);
+        
+        // Handle response format (could be array or object with data property)
+        const allPeserta = Array.isArray(result) ? result : (result.data || []);
+        console.log('🔍 Debug - Total peserta from API:', allPeserta.length);
+        
+        // Log sample untuk cek struktur
+        if (allPeserta.length > 0) {
+          console.log('🔍 Debug - Sample peserta:', allPeserta[0]);
+        }
+        
+        // Filter hanya yang PENDING
+        const pendingOnly = allPeserta.filter((peserta: PesertaKompetisi) => {
+          const isPending = peserta.status === 'PENDING';
+          
+          const pesertaDojangId = peserta.is_team
+            ? peserta.anggota_tim?.[0]?.atlet?.dojang?.id_dojang
+            : peserta.atlet?.dojang?.id_dojang;
+          
+          console.log('🔍 Debug - Peserta:', {
+            id: peserta.id_peserta_kompetisi,
+            nama: peserta.atlet?.nama_atlet || 'Team',
+            status: peserta.status,
+            pesertaDojangId,
+            targetDojangId: dojangId,
+            isPending,
+            match: pesertaDojangId === dojangId
+          });
+          
+          return isPending;
+        });
+
+        console.log('🔍 Debug - Filtered PENDING pesertas:', pendingOnly.length);
+        setPendingPesertas(pendingOnly);
+      } else {
+        const errorText = await response.text();
+        console.error('🔍 Debug - Error response:', errorText);
+        toast.error('Gagal mengambil data peserta');
+        setPendingPesertas([]);
+      }
     } catch (error) {
       console.error('🔍 Debug - Error fetching pending peserta:', error);
       toast.error('Gagal mengambil data peserta pending');
@@ -106,32 +156,6 @@ const BuktiTf = () => {
       setLoadingPeserta(false);
     }
   };
-
-  // Update pending pesertas when pesertaList changes
-  useEffect(() => {
-    if (showPendingModal && selectedDojang) {
-      // Filter hanya yang status PENDING
-      // Backend sudah memfilter by dojang, jadi kita tinggal filter by status
-      const pendingOnly = pesertaList.filter((peserta: PesertaKompetisi) => {
-        return peserta.status === 'PENDING';
-      });
-
-      console.log('🔍 Debug - Total peserta from context:', pesertaList.length);
-      console.log('🔍 Debug - Selected Dojang:', selectedDojang.tb_dojang?.nama_dojang);
-      console.log('🔍 Debug - Filtered pending pesertas:', pendingOnly.length);
-      
-      // Debug: Log sample peserta untuk verifikasi
-      if (pendingOnly.length > 0) {
-        console.log('🔍 Debug - Sample pending peserta:', {
-          nama: pendingOnly[0].atlet?.nama_atlet || 'Team',
-          dojang: pendingOnly[0].atlet?.dojang?.nama_dojang || pendingOnly[0].anggota_tim?.[0]?.atlet?.dojang?.nama_dojang,
-          status: pendingOnly[0].status
-        });
-      }
-      
-      setPendingPesertas(pendingOnly);
-    }
-  }, [pesertaList, showPendingModal, selectedDojang]);
 
   // Handle open modal
   const handleOpenPendingModal = (bukti: BuktiTransfer) => {
