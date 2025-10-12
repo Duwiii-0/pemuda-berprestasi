@@ -226,7 +226,7 @@ const BuktiTf = () => {
       await Promise.all(promises);
       
       toast.success(`${selectedPesertas.length} peserta berhasil di-approve`);
-      
+
       // Clear cache agar data fresh
       setPesertaCache([]);
       console.log('💾 Cache cleared - Will fetch fresh data on next open');
@@ -234,6 +234,10 @@ const BuktiTf = () => {
       // Refresh list
       await fetchPendingPesertaByDojang(selectedDojang!.id_dojang);
       setSelectedPesertas([]);
+      
+      setShowPendingModal(false);
+
+
     } catch (error) {
       console.error('Error approving peserta:', error);
       toast.error('Gagal approve peserta');
