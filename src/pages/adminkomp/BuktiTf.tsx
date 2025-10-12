@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Search, Eye, Download, Menu, FileText, Filter, Users, CheckCircle, Loader, X } from 'lucide-react';
 import { useAuth } from '../../context/authContext';
+import { useKompetisi, type PesertaKompetisi } from '../../context/KompetisiContext';
 import NavbarDashboard from '../../components/navbar/navbarDashboard';
 import toast from 'react-hot-toast';
 
@@ -115,40 +116,69 @@ const BuktiTf = () => {
     setLoadingPeserta(true);
     try {
       const kompetisiId = user?.admin_kompetisi?.id_kompetisi;
+      console.log('🔍 Debug - Kompetisi ID:', kompetisiId);
+      console.log('🔍 Debug - Dojang ID:', dojangId);
+      console.log('🔍 Debug - User:', user);
+      
       if (!kompetisiId) {
         toast.error('ID Kompetisi tidak ditemukan');
         return;
       }
 
-      const response = await fetch(
-        `${API_BASE_URL}/api/peserta-kompetisi/kompetisi/${kompetisiId}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
+      const url = `${API_BASE_URL}/api/peserta-kompetisi/kompetisi/${kompetisiId}`;
+      console.log('🔍 Debug - Fetching URL:', url);
+
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
-      );
+      });
+
+      console.log('🔍 Debug - Response status:', response.status);
 
       if (response.ok) {
         const result = await response.json();
+        console.log('🔍 Debug - API Response:', result);
         const allPeserta = result.data || [];
+        console.log('🔍 Debug - Total peserta:', allPeserta.length);
+        
+        // Log sample peserta untuk cek struktur
+        if (allPeserta.length > 0) {
+          console.log('🔍 Debug - Sample peserta:', allPeserta[0]);
+        }
         
         // Filter pending peserta by dojang
         const pendingByDojang = allPeserta.filter((peserta: PesertaPending) => {
-          if (peserta.status !== 'PENDING') return false;
+          const isPending = peserta.status === 'PENDING';
           
           const pesertaDojangId = peserta.is_team
             ? peserta.anggota_tim?.[0]?.atlet?.dojang?.id_dojang
             : peserta.atlet?.dojang?.id_dojang;
           
-          return pesertaDojangId === dojangId;
+          console.log('🔍 Debug - Peserta:', {
+            id: peserta.id_peserta_kompetisi,
+            status: peserta.status,
+            isPending,
+            pesertaDojangId,
+            targetDojangId: dojangId,
+            match: pesertaDojangId === dojangId
+          });
+          
+          return isPending && pesertaDojangId === dojangId;
         });
 
+        console.log('🔍 Debug - Filtered pending by dojang:', pendingByDojang.length);
+        console.log('🔍 Debug - Pending pesertas:', pendingByDojang);
+        
         setPendingPesertas(pendingByDojang);
+      } else {
+        const errorText = await response.text();
+        console.error('🔍 Debug - Error response:', errorText);
+        toast.error('Gagal mengambil data peserta');
       }
     } catch (error) {
-      console.error('Error fetching pending peserta:', error);
+      console.error('🔍 Debug - Error fetching pending peserta:', error);
       toast.error('Gagal mengambil data peserta pending');
     } finally {
       setLoadingPeserta(false);
