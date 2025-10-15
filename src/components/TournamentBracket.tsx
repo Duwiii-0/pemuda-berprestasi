@@ -172,7 +172,7 @@ const handleSelectParticipant = (participantId: number) => {
 
 const openParticipantSelection = () => {
   // ⭐ BOTH CATEGORIES: Skip modal, langsung auto-generate
-  generateBracket();
+  generateBracket(false);
   return;
 };
 
@@ -210,7 +210,7 @@ const openParticipantSelection = () => {
     }
   }, [kelasData, selectedKelas]);
 
-const generateBracket = async () => {
+const generateBracket = async (shuffle: boolean = false) => {
   if (!selectedKelas) return;
   
   // ⭐ NO VALIDATION - allow any BYE count for both categories
@@ -275,11 +275,10 @@ const generateBracket = async () => {
   }
 };
 
-// ⭐ UNIFIED SHUFFLE FUNCTION
-const shuffleBracket = async () => {
+const shufflePemulaBracket = async () => {
   if (!selectedKelas) return;
   
-  console.log(`🔀 Shuffling ${isPemula ? 'PEMULA' : 'PRESTASI'} bracket...`);
+  console.log(`🔀 Shuffling PEMULA bracket...`);
   
   setLoading(true);
   
@@ -297,7 +296,7 @@ const shuffleBracket = async () => {
       },
       body: JSON.stringify({
         kelasKejuaraanId: kelasKejuaraanId,
-        isPemula: isPemula // ⭐ Send category flag
+        isPemula: true // ⭐ FLAG untuk backend
       })
     });
 
@@ -314,9 +313,102 @@ const shuffleBracket = async () => {
     showNotification(
       'success',
       'Berhasil!',
-      isPemula 
-        ? 'Susunan peserta berhasil diacak ulang!' 
-        : 'Bracket berhasil diacak ulang dengan BYE baru!',
+      'Susunan peserta berhasil diacak ulang!',
+      () => setShowModal(false)
+    );
+    
+  } catch (error: any) {
+    console.error('❌ Error shuffling bracket:', error);
+    showNotification(
+      'error',
+      'Gagal Shuffle',
+      error.message || 'Terjadi kesalahan saat shuffle bracket.',
+      () => setShowModal(false)
+    );
+  } finally {
+    setLoading(false);
+  }
+};
+
+const shufflePrestasiBracket = async () => {
+  if (!selectedKelas) return;
+  
+  console.log(`🔀 Shuffling PRESTASI bracket...`);
+  
+  setLoading(true);
+  
+  try {
+    const kompetisiId = selectedKelas.kompetisi.id_kompetisi;
+    const kelasKejuaraanId = selectedKelas.id_kelas_kejuaraan;
+
+    const endpoint = `${apiBaseUrl}/kompetisi/${kompetisiId}/brackets/shuffle`;
+    
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token && { 'Authorization': `Bearer ${token}` })
+      },
+      body: JSON.stringify({
+        kelasKejuaraanId: kelasKejuaraanId,
+        isPemula: false
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      
+      // ⭐ HANDLE SPECIFIC ERROR
+      if (errorData.message?.includes('Bagan sudah dibuat')) {
+        console.log('⚠️ Bracket exists - deleting first...');
+        
+        // Delete bracket first
+        const deleteResponse = await fetch(
+          `${apiBaseUrl}/kompetisi/${kompetisiId}/brackets/${kelasKejuaraanId}`,
+          {
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(token && { 'Authorization': `Bearer ${token}` })
+            }
+          }
+        );
+        
+        if (!deleteResponse.ok) {
+          throw new Error('Failed to delete existing bracket');
+        }
+        
+        // Retry generate
+        console.log('🔄 Retrying generation...');
+        const retryResponse = await fetch(
+          `${apiBaseUrl}/kompetisi/${kompetisiId}/brackets/generate`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(token && { 'Authorization': `Bearer ${token}` })
+            },
+            body: JSON.stringify({
+              kelasKejuaraanId: kelasKejuaraanId
+            })
+          }
+        );
+        
+        if (!retryResponse.ok) {
+          throw new Error('Failed to regenerate bracket');
+        }
+        
+      } else {
+        throw new Error(errorData.message || 'Failed to shuffle bracket');
+      }
+    }
+
+    await fetchBracketData(kompetisiId, kelasKejuaraanId);
+    
+    showNotification(
+      'success',
+      'Berhasil!',
+      'Bracket berhasil diacak ulang dengan BYE baru!',
       () => setShowModal(false)
     );
     
@@ -1384,7 +1476,7 @@ const updateMatchResult = async (matchId: number, scoreA: number, scoreB: number
 
 {/* ⭐ PEMULA: Shuffle Button | PRESTASI: Edit & Regenerate */}
 <button
-  onClick={isPemula ? shuffleBracket : openParticipantSelection}
+  onClick={isPemula ? shufflePemulaBracket : openParticipantSelection}
   disabled={loading || approvedParticipants.length < 2 || !bracketGenerated}
   className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50"
   style={{ backgroundColor: '#6366F1', color: '#F5FBEF' }}
@@ -1403,7 +1495,7 @@ const updateMatchResult = async (matchId: number, scoreA: number, scoreB: number
 </button>
 
   <button
-    onClick={() => generateBracket()}
+    onClick={() => generateBracket(false)}
     disabled={loading || approvedParticipants.length < 2}
     className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50"
     style={{ backgroundColor: '#F5B700', color: '#F5FBEF' }}
