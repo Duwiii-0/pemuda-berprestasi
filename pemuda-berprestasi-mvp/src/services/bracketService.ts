@@ -421,10 +421,12 @@ static async generatePrestasiBracket(
   console.log(`\n🏆 === GENERATING PRESTASI BRACKET ===`);
   console.log(`Total Participants: ${participantCount}`);
   
+  // ⭐ VALIDATE minimal participants
   if (participantCount < 4) {
     throw new Error('Minimal 4 peserta diperlukan untuk bracket prestasi');
   }
 
+  // ⭐ CALCULATE BRACKET STRUCTURE using new method
   const structure = this.calculateBracketStructure(participantCount);
   const totalRounds = structure.totalRounds;
   const round1Target = structure.round1Target;
@@ -434,7 +436,8 @@ static async generatePrestasiBracket(
   console.log(`   Total Rounds: ${totalRounds}`);
   console.log(`   Round 1 Target: ${round1Target}`);
   console.log(`   BYE Recommended: ${byesRecommended}`);
-
+  
+  // ⭐ VALIDATE BYE count if provided
   if (byeParticipantIds && byeParticipantIds.length > 0) {
     const validation = this.validateAndAdjustBye(
       participantCount,
@@ -448,11 +451,14 @@ static async generatePrestasiBracket(
       throw new Error(validation.message);
     }
     
+    // ⭐ AUTO-ADJUST if needed (hybrid approach)
     if (validation.adjustedByeCount !== null) {
       console.log(`   ⚠️ BYE auto-adjusted from ${byeParticipantIds.length} to ${validation.adjustedByeCount}`);
+      // Randomly select subset if user selected too many
       if (byeParticipantIds.length > validation.adjustedByeCount) {
         const shuffled = this.shuffleArray([...byeParticipantIds]);
         byeParticipantIds = shuffled.slice(0, validation.adjustedByeCount);
+        console.log(`   → Selected BYE IDs: ${byeParticipantIds}`);
       }
     }
   }
@@ -477,90 +483,75 @@ static async generatePrestasiBracket(
   }
 
   // ========================================
-  // ⭐ STEP 2: STRATEGIC BYE DISTRIBUTION
+  // STEP 2: ROUND 1 - Create ALL matches (including BYE matches)
   // ========================================
-  const strategicByePlacement = this.calculateStrategicByePositions(
-    fightingParticipants.length,
-    byeParticipants.length
-  );
-
-  console.log(`\n🎯 Strategic BYE Placement:`, strategicByePlacement);
-
-  // ========================================
-  // STEP 3: CREATE ROUND 1 MATCHES
-  // ========================================
-  console.log(`\n📝 Creating Round 1 matches with strategic BYE placement...`);
+  console.log(`\n📝 Creating Round 1 matches...`);
   
-  // Shuffle fighting participants
+  // Shuffle fighting participants for random seeding
   const shuffledFighters = this.shuffleArray([...fightingParticipants]);
   
-  // Create interleaved list: fighters + BYEs at strategic positions
-  const round1Participants: (Participant | null)[] = [];
-  
-  let fighterIndex = 0;
-  let byeIndex = 0;
-  
-  // Calculate total Round 1 slots
-  const totalRound1Slots = shuffledFighters.length + byeParticipants.length;
-  
-  for (let i = 0; i < totalRound1Slots; i++) {
-    if (strategicByePlacement.includes(i) && byeIndex < byeParticipants.length) {
-      // Place BYE at strategic position
-      round1Participants.push(byeParticipants[byeIndex]);
-      byeIndex++;
-      console.log(`   Position ${i}: BYE (${byeParticipants[byeIndex - 1].name})`);
-    } else if (fighterIndex < shuffledFighters.length) {
-      // Place fighter
-      round1Participants.push(shuffledFighters[fighterIndex]);
-      fighterIndex++;
-    }
-  }
-
-  console.log(`\n✅ Round 1 Participant Order:`, round1Participants.map(p => p?.name || 'NULL'));
-
-  // ========================================
-  // STEP 4: CREATE MATCHES FROM ORDERED LIST
-  // ========================================
-  for (let i = 0; i < round1Participants.length; i += 2) {
-    const participant1 = round1Participants[i];
-    const participant2 = round1Participants[i + 1] || null;
-    
-    // Skip if both are null (shouldn't happen)
-    if (!participant1 && !participant2) continue;
+  // Create FIGHTING matches (pair up fighters)
+  for (let i = 0; i < shuffledFighters.length; i += 2) {
+    const participant1 = shuffledFighters[i];
+    const participant2 = shuffledFighters[i + 1] || null;
     
     const match = await prisma.tb_match.create({
       data: {
         id_bagan: baganId,
         ronde: 1,
-        id_peserta_a: participant1?.id || null,
+        id_peserta_a: participant1.id,
         id_peserta_b: participant2?.id || null,
         skor_a: 0,
         skor_b: 0
       }
     });
 
-    const isByeMatch = !participant2 || !participant1;
+    matches.push({
+      id: match.id_match,
+      round: 1,
+      position: matches.length,
+      participant1,
+      participant2: participant2 || null,
+      status: participant2 ? 'pending' : 'bye',
+      scoreA: 0,
+      scoreB: 0
+    });
+    
+    console.log(`  Match ${match.id_match}: ${participant1.name} vs ${participant2?.name || 'BYE (odd)'}`);
+  }
+
+  // Create BYE matches (user-selected BYE participants)
+  for (const byeParticipant of byeParticipants) {
+    const match = await prisma.tb_match.create({
+      data: {
+        id_bagan: baganId,
+        ronde: 1,
+        id_peserta_a: byeParticipant.id,
+        id_peserta_b: null, // ✅ NULL = BYE (auto-win)
+        skor_a: 0,
+        skor_b: 0
+      }
+    });
     
     matches.push({
       id: match.id_match,
       round: 1,
       position: matches.length,
-      participant1: participant1 || null,
-      participant2: participant2 || null,
-      status: isByeMatch ? 'bye' : 'pending',
+      participant1: byeParticipant,
+      participant2: null,
+      status: 'bye',
       scoreA: 0,
       scoreB: 0
     });
     
-    const p1Name = participant1?.name || 'NULL';
-    const p2Name = participant2?.name || 'BYE';
-    console.log(`  Match ${match.id_match}: ${p1Name} vs ${p2Name}`);
+    console.log(`  Match ${match.id_match}: ${byeParticipant.name} vs BYE (auto-win)`);
   }
 
   // ========================================
-  // STEP 5: CREATE EMPTY MATCHES FOR ROUND 2+
+  // STEP 3: ROUND 2+ - Create EMPTY placeholder matches
   // ========================================
   for (let round = 2; round <= totalRounds; round++) {
+    // Calculate matches in this round (each round has half the participants of previous)
     const participantsInRound = Math.pow(2, totalRounds - round + 1);
     const matchesInRound = participantsInRound / 2;
     
@@ -571,8 +562,8 @@ static async generatePrestasiBracket(
         data: {
           id_bagan: baganId,
           ronde: round,
-          id_peserta_a: null,
-          id_peserta_b: null,
+          id_peserta_a: null, // ✅ TBD - Will be filled by advanceWinner
+          id_peserta_b: null, // ✅ TBD - Will be filled by advanceWinner
           skor_a: 0,
           skor_b: 0
         }
@@ -591,81 +582,32 @@ static async generatePrestasiBracket(
     }
   }
 
-  // ========================================
-  // STEP 6: AUTO-ADVANCE BYE WINNERS
-  // ========================================
-  console.log(`\n🎯 Auto-advancing BYE winners to next round...`);
-  const round1Matches = matches.filter(m => m.round === 1);
+// ⭐ ADVANCE BYE WINNERS AUTOMATICALLY
+console.log(`\n🎯 Auto-advancing BYE winners to next round...`);
+const round1Matches = matches.filter(m => m.round === 1);
 
-  for (const match of round1Matches) {
-    if (match.participant1 && !match.participant2 && match.id) {
-      console.log(`   🎁 BYE detected: ${match.participant1.name} (Match ${match.id})`);
-      
-      const mockMatch = await prisma.tb_match.findUnique({
-        where: { id_match: match.id },
-        include: { bagan: true }
-      });
-      
-      if (mockMatch) {
-        await this.advanceWinnerToNextRound(mockMatch, match.participant1.id);
-        console.log(`   ✅ Advanced ${match.participant1.name} to Round 2`);
+for (const match of round1Matches) {
+  // Check if this is a BYE match (participant A exists, no participant B)
+  if (match.participant1 && !match.participant2 && match.id) {
+    console.log(`   🎁 BYE detected: ${match.participant1.name} (Match ${match.id})`);
+    
+    // Create a mock match object for advanceWinnerToNextRound
+    const mockMatch = await prisma.tb_match.findUnique({
+      where: { id_match: match.id },
+      include: {
+        bagan: true
       }
+    });
+    
+    if (mockMatch) {
+      // Advance the BYE winner to next round
+      await this.advanceWinnerToNextRound(mockMatch, match.participant1.id);
+      console.log(`   ✅ Advanced ${match.participant1.name} to Round 2`);
     }
   }
-
-  console.log(`\n✅ PRESTASI bracket complete: ${matches.length} matches\n`);
-  
-  return matches;
 }
 
-/**
- * ⭐ NEW: Calculate strategic BYE positions
- * Pattern: Top → Bottom → Middle → Quarters
- */
-static calculateStrategicByePositions(
-  fighterCount: number,
-  byeCount: number
-): number[] {
-  if (byeCount === 0) return [];
-  
-  const totalSlots = fighterCount + byeCount;
-  const positions: number[] = [];
-  
-  console.log(`\n🎯 Calculating strategic positions for ${byeCount} BYEs in ${totalSlots} slots...`);
-  
-  // PATTERN: Top, Bottom, Middle, then distribute
-  const strategies = [
-    0,                    // 1st BYE → Top
-    totalSlots - 1,      // 2nd BYE → Bottom
-    Math.floor(totalSlots / 2), // 3rd BYE → Middle
-  ];
-  
-  // If more than 3 BYEs, distribute in quarters
-  if (byeCount > 3) {
-    const quarter = Math.floor(totalSlots / 4);
-    strategies.push(
-      quarter,              // 4th BYE → First quarter
-      totalSlots - quarter  // 5th BYE → Last quarter
-    );
-  }
-  
-  // If even more BYEs, distribute evenly
-  if (byeCount > 5) {
-    const spacing = Math.floor(totalSlots / (byeCount - 5));
-    for (let i = 6; i <= byeCount; i++) {
-      strategies.push(spacing * (i - 5));
-    }
-  }
-  
-  // Take only what we need and ensure uniqueness
-  const uniquePositions = [...new Set(strategies.slice(0, byeCount))];
-  
-  // Sort positions
-  positions.push(...uniquePositions.sort((a, b) => a - b));
-  
-  console.log(`   Strategic positions:`, positions);
-  
-  return positions;
+return matches;
 }
 
 static getMatchesByRound(matches: Match[], round: number): Match[] {
