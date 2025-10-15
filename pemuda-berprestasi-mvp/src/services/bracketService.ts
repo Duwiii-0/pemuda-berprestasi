@@ -141,17 +141,23 @@ static async generateBracket(
     );
 
     // ⭐ AUTO-GENERATE BYE for Prestasi
+// ⭐ AUTO-GENERATE BYE for Prestasi (only if needed)
     let finalByeIds = byeParticipantIds;
     
     if (!isPemula && !byeParticipantIds) {
       const structure = this.calculateBracketStructure(participants.length);
       const byesNeeded = structure.byesRecommended;
       
+      console.log(`📊 BYE calculation: ${participants.length} participants → ${byesNeeded} BYEs needed`);
+      
       if (byesNeeded > 0) {
         // Randomly select BYE participants
         const shuffled = this.shuffleArray([...participants]);
         finalByeIds = shuffled.slice(0, byesNeeded).map(p => p.id);
         console.log(`🎁 Auto-selected ${byesNeeded} BYE participants:`, finalByeIds);
+      } else {
+        console.log(`✅ Perfect bracket! No BYE needed (power of 2)`);
+        finalByeIds = []; // Explicitly set to empty array
       }
     }
 
@@ -473,7 +479,7 @@ static async generatePrestasiBracket(
     console.log(`⚔️ FIGHTING (${fightingParticipants.length}):`, fightingParticipants.map(p => p.name));
   } else {
     fightingParticipants = [...participants];
-    console.log(`⚔️ ALL FIGHTING (no BYE): ${fightingParticipants.length}`);
+    console.log(`⚔️ ALL FIGHTING (no BYE): ${fightingParticipants.length} participants`);
   }
 
   // ========================================
@@ -626,7 +632,11 @@ static calculateStrategicByePositions(
   fighterCount: number,
   byeCount: number
 ): number[] {
-  if (byeCount === 0) return [];
+  // ⭐ NO BYE NEEDED
+  if (byeCount === 0) {
+    console.log(`   ✅ No BYE positions needed`);
+    return [];
+  }
   
   const totalSlots = fighterCount + byeCount;
   const positions: number[] = [];
@@ -1195,7 +1205,7 @@ static async shuffleBracket(
     }
 
     // ⭐ STEP 2: GENERATE NEW BRACKET (auto BYE selection)
-    console.log(`   🎲 Generating new bracket with random BYE...`);
+    console.log(`   🎲 Generating new bracket with random participants at fixed BYE positions...`);
     const newBracket = await this.generateBracket(kompetisiId, kelasKejuaraanId);
     
     console.log(`   ✅ New bracket generated with ${newBracket.matches.length} matches`);
