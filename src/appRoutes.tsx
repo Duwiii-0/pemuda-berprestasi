@@ -36,7 +36,7 @@ import AdminUsers from "./pages/admin/AdminUsers";
 import AdminStats from "./pages/admin/AdminStats";
 import Reports from "./pages/admin/Reports";
 import AdminSettings from "./pages/admin/Settings";
-import JadwalTanding from "./pages/adminkomp/JadwalTanding";
+import JadwalPertandingan from "./pages/adminkomp/JadwalTanding";
 import StatistikAdminKomp from "./pages/adminkomp/Statistik";
 
 // data atlit
@@ -180,7 +180,7 @@ export default function AppRoutes() {
           <Route path="statistik" element={<StatistikAdminKomp />} />
           <Route path="bukti-pembayaran" element={<BuktiTfkomp />} />
           <Route path="drawing-bagan" element={<DrawingBagan />} />
-          <Route path="jadwal-tanding" element={<JadwalTanding />} />
+          <Route path="jadwal-tanding" element={<JadwalPertandingan />} />
         </Route>
 
         {/* Admin routes - protected for ADMIN role only */}
