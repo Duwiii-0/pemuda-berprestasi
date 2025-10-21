@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Calendar, Plus, Trash2, Loader } from "lucide-react";
-import { useKompetisi } from "@/context/kompetisiContext";
+import { useKompetisi } from "../../context/KompetisiContext";
 
 interface JadwalLapangan {
   id: string;
