@@ -6,7 +6,7 @@ import { useAuth } from "./context/authContext";
 import LandingLayout from "./layouts/layout";
 import DashboardLayout from "./layouts/dashboardLayout";
 import LombaLayout from "./layouts/lombaLayout";
-import AdminKompetisiLayout from "./layouts/adminKompLayout"; 
+import AdminKompetisiLayout from "./layouts/adminKompLayout";
 
 // Auth page
 import Login from "./pages/auth/login";
@@ -36,6 +36,7 @@ import AdminUsers from "./pages/admin/AdminUsers";
 import AdminStats from "./pages/admin/AdminStats";
 import Reports from "./pages/admin/Reports";
 import AdminSettings from "./pages/admin/Settings";
+import JadwalTanding from "./pages/adminkomp/JadwalTanding";
 import StatistikAdminKomp from "./pages/adminkomp/Statistik";
 
 // data atlit
@@ -58,10 +59,13 @@ import DrawingBagan from "./pages/adminkomp/DrawingBagan";
 // Protected Route Component
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  requiredRole?: 'ADMIN' | 'PELATIH' | 'ADMIN_KOMPETISI';
+  requiredRole?: "ADMIN" | "PELATIH" | "ADMIN_KOMPETISI";
 }
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole }) => {
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
+  children,
+  requiredRole,
+}) => {
   const { isAuthenticated, user, loading } = useAuth();
 
   // Show loading while checking authentication
@@ -87,17 +91,33 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole 
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center p-8 bg-white rounded-lg shadow-md max-w-md mx-auto">
           <div className="text-red-500 mb-4">
-            <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 18.5c-.77.833.192 2.5 1.732 2.5z" />
+            <svg
+              className="w-16 h-16 mx-auto"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 18.5c-.77.833.192 2.5 1.732 2.5z"
+              />
             </svg>
           </div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">Access Denied</h2>
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">
+            Access Denied
+          </h2>
           <p className="text-gray-600 mb-4">
             You don't have permission to access this page.
           </p>
           <div className="text-sm text-gray-500 bg-gray-50 p-3 rounded">
-            <p><strong>Required:</strong> {requiredRole}</p>
-            <p><strong>Your role:</strong> {user?.role}</p>
+            <p>
+              <strong>Required:</strong> {requiredRole}
+            </p>
+            <p>
+              <strong>Your role:</strong> {user?.role}
+            </p>
           </div>
         </div>
       </div>
@@ -121,13 +141,13 @@ const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   // Redirect based on user role if already authenticated
   if (isAuthenticated && user) {
-    if (user.role === 'ADMIN') {
+    if (user.role === "ADMIN") {
       return <Navigate to="/admin" replace />;
-    } else if (user.role === 'PELATIH') {
+    } else if (user.role === "PELATIH") {
       return <Navigate to="/dashboard" replace />;
-    } else if (user.role === 'ADMIN_KOMPETISI') {
+    } else if (user.role === "ADMIN_KOMPETISI") {
       return <Navigate to="/admin-kompetisi" replace />;
-    }else {
+    } else {
       return <Navigate to="/" replace />;
     }
   }
@@ -141,26 +161,41 @@ export default function AppRoutes() {
       <Toaster position="top-right" reverseOrder={false} />
       <Routes>
         {/* Admin Kompetisi routes */}
-          <Route path="/admin-kompetisi" element={
+        <Route
+          path="/admin-kompetisi"
+          element={
             <ProtectedRoute requiredRole="ADMIN_KOMPETISI">
               <AdminKompetisiLayout />
             </ProtectedRoute>
-          }>
-            <Route index element={<Navigate to="/admin-kompetisi/validasi-peserta" replace />} />
-            <Route path="validasi-peserta" element={<AllPeserta />} />
-            <Route path="validasi-dojang" element={<ValidasiDojangAdminKomp />} />
-            <Route path="statistik" element={<StatistikAdminKomp />} />
-            <Route path="bukti-pembayaran" element={<BuktiTfkomp />} />
-            <Route path="drawing-bagan" element={<DrawingBagan />} />
-          </Route>
+          }
+        >
+          <Route
+            index
+            element={
+              <Navigate to="/admin-kompetisi/validasi-peserta" replace />
+            }
+          />
+          <Route path="validasi-peserta" element={<AllPeserta />} />
+          <Route path="validasi-dojang" element={<ValidasiDojangAdminKomp />} />
+          <Route path="statistik" element={<StatistikAdminKomp />} />
+          <Route path="bukti-pembayaran" element={<BuktiTfkomp />} />
+          <Route path="drawing-bagan" element={<DrawingBagan />} />
+          <Route path="jadwal-tanding" element={<JadwalTanding />} />
+        </Route>
 
         {/* Admin routes - protected for ADMIN role only */}
-        <Route path="/admin" element={
-          <ProtectedRoute requiredRole="ADMIN">
-            <AdminLayout />
-          </ProtectedRoute>
-        }>
-          <Route index element={<Navigate to="/admin/validasi-peserta" replace />} />
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute requiredRole="ADMIN">
+              <AdminLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route
+            index
+            element={<Navigate to="/admin/validasi-peserta" replace />}
+          />
           <Route path="validasi-peserta" element={<ValidasiPeserta />} />
           <Route path="validasi-dojang" element={<ValidasiDojang />} />
           <Route path="atlets" element={<AllAtlets />} />
@@ -172,81 +207,105 @@ export default function AppRoutes() {
         </Route>
 
         {/* Auth routes - only accessible when not logged in */}
-        <Route path="/login" element={
-          <PublicRoute>
-            <Login />
-          </PublicRoute>
-        } />
-        
-        <Route path="/register" element={
-          <PublicRoute>
-            <Register />
-          </PublicRoute>
-        } />
-        
-        <Route path="/resetpassword" element={
-          <PublicRoute>
-            <ResetPassword />
-          </PublicRoute>
-        } />
+        <Route
+          path="/login"
+          element={
+            <PublicRoute>
+              <Login />
+            </PublicRoute>
+          }
+        />
+
+        <Route
+          path="/register"
+          element={
+            <PublicRoute>
+              <Register />
+            </PublicRoute>
+          }
+        />
+
+        <Route
+          path="/resetpassword"
+          element={
+            <PublicRoute>
+              <ResetPassword />
+            </PublicRoute>
+          }
+        />
 
         {/* Register Dojang - only for authenticated PELATIH */}
-        <Route path="/registerdojang" element={
-          <PublicRoute>
-            <RegisterDojang />
-          </PublicRoute>
-        } />
+        <Route
+          path="/registerdojang"
+          element={
+            <PublicRoute>
+              <RegisterDojang />
+            </PublicRoute>
+          }
+        />
 
         {/* Landing pages - accessible to everyone */}
         <Route element={<LandingLayout />}>
           <Route index element={<Home />} />
           <Route path="events" element={<Event />} />
-          <Route path="tutorial" element={<TutorialPage/>}/>
+          <Route path="tutorial" element={<TutorialPage />} />
         </Route>
 
         {/* Settings - protected route */}
-        <Route path="/settings" element={
-          <ProtectedRoute requiredRole="PELATIH">
-            <Settings />
-          </ProtectedRoute>
-        } />
+        <Route
+          path="/settings"
+          element={
+            <ProtectedRoute requiredRole="PELATIH">
+              <Settings />
+            </ProtectedRoute>
+          }
+        />
 
         {/* Dashboard - protected routes */}
-        <Route path="/dashboard" element={
-          <ProtectedRoute>
-            <DashboardLayout />
-          </ProtectedRoute>
-        }>
-
-          {/* Dojang management - only for PELATIH */}
-          <Route index element={
-            <Navigate to="/dashboard/dojang" replace />
-          } />
-
-          {/* Dojang management - only for PELATIH */}
-          <Route path="dojang" element={
-            <ProtectedRoute requiredRole="PELATIH">
-              <Dojang />
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <DashboardLayout />
             </ProtectedRoute>
-          } />
+          }
+        >
+          {/* Dojang management - only for PELATIH */}
+          <Route index element={<Navigate to="/dashboard/dojang" replace />} />
+
+          {/* Dojang management - only for PELATIH */}
+          <Route
+            path="dojang"
+            element={
+              <ProtectedRoute requiredRole="PELATIH">
+                <Dojang />
+              </ProtectedRoute>
+            }
+          />
 
           {/* Atlet management */}
           <Route path="atlit" element={<DataAtlit />} />
           <Route path="atlit/:id" element={<Profile />} />
 
           {/* Add athlete - only for PELATIH */}
-          <Route path="TambahAtlit" element={
-            <ProtectedRoute requiredRole="PELATIH">
-              <TambahAtlit />
-            </ProtectedRoute>
-          } />
+          <Route
+            path="TambahAtlit"
+            element={
+              <ProtectedRoute requiredRole="PELATIH">
+                <TambahAtlit />
+              </ProtectedRoute>
+            }
+          />
 
           {/* Competition data */}
-          <Route path="dataKompetisi" element={            
-            <ProtectedRoute requiredRole="PELATIH">
-              <DataKompetisi />
-            </ProtectedRoute>
-          } />
+          <Route
+            path="dataKompetisi"
+            element={
+              <ProtectedRoute requiredRole="PELATIH">
+                <DataKompetisi />
+              </ProtectedRoute>
+            }
+          />
         </Route>
 
         {/* Lomba pages */}
