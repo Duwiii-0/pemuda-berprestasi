@@ -131,39 +131,37 @@ export const kelasService = {
     }
   },
 
-  async getKelasKejuaraanByKompetisi(kompetisiId: number) {
+  async getKelasKejuaraanByKompetisi(idKompetisi: number) {
     try {
-      console.log("📦 Querying kelas kejuaraan for kompetisi ID:", kompetisiId);
+      console.log(
+        "📦 Querying tb_kelas_kejuaraan for kompetisi ID:",
+        idKompetisi
+      );
 
       const kelasList = await prisma.tb_kelas_kejuaraan.findMany({
         where: {
-          id_kompetisi: kompetisiId,
+          id_kompetisi: idKompetisi,
         },
         include: {
+          kompetisi: {
+            select: {
+              id_kompetisi: true,
+              nama_kompetisi: true,
+            },
+          },
           cabang: true,
           kategori_event: true,
           kelompok: true,
           kelas_berat: true,
           poomsae: true,
-          peserta: {
-            where: { status: "APPROVED" }, // ✅ hanya peserta yang sudah approve
-            select: {
-              id_peserta: true,
-              nama_peserta: true,
-              status: true,
-            },
-          },
+        },
+        orderBy: {
+          id_kelas_kejuaraan: "asc",
         },
       });
 
-      // Tambahkan jumlah peserta di setiap kelas
-      const result = kelasList.map((kelas) => ({
-        ...kelas,
-        peserta_count: kelas.peserta.length,
-      }));
-
-      console.log("✅ Found", result.length, "kelas kejuaraan");
-      return result;
+      console.log(`✅ Ditemukan ${kelasList.length} kelas kejuaraan`);
+      return kelasList;
     } catch (error) {
       console.error(
         "❌ Error in kompetisiService.getKelasKejuaraanByKompetisi:",

@@ -123,35 +123,29 @@ export const kelasController = {
     try {
       const { id } = req.params;
 
-      if (!id || isNaN(Number(id))) {
-        return res
-          .status(400)
-          .json({ message: "Invalid or missing kompetisi ID" });
+      if (!id) {
+        return res.status(400).json({ message: "ID kompetisi diperlukan" });
       }
-
-      console.log("🔹 Fetching kelas kejuaraan for kompetisi ID:", id);
 
       const kelasList = await kelasService.getKelasKejuaraanByKompetisi(
         Number(id)
       );
 
-      if (!kelasList || kelasList.length === 0) {
+      if (kelasList.length === 0) {
         return res
           .status(404)
-          .json({ message: "No kelas kejuaraan found for this kompetisi" });
+          .json({ message: "Tidak ada kelas kejuaraan untuk kompetisi ini" });
       }
 
-      res.json({
-        success: true,
-        message: "Kelas kejuaraan fetched successfully",
-        data: kelasList,
-      });
-    } catch (err) {
-      console.error("❌ Error in getKelasKejuaraanByKompetisi:", err);
+      res.status(200).json(kelasList);
+    } catch (error) {
+      console.error(
+        "❌ Error di KompetisiController.getKelasKejuaraanByKompetisi:",
+        error
+      );
       res.status(500).json({
-        success: false,
-        message: "Error fetching kelas kejuaraan",
-        error: err instanceof Error ? err.message : err,
+        message: "Gagal mengambil data kelas kejuaraan",
+        error: error instanceof Error ? error.message : "Unknown error",
       });
     }
   },
