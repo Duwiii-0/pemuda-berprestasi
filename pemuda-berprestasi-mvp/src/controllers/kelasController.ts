@@ -131,7 +131,7 @@ export const kelasController = {
 
       console.log("🔹 Fetching kelas kejuaraan for kompetisi ID:", id);
 
-      const kelasList = await kompetisiService.getKelasKejuaraanByKompetisi(
+      const kelasList = await kelasService.getKelasKejuaraanByKompetisi(
         Number(id)
       );
 
