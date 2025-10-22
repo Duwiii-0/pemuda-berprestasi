@@ -26,98 +26,150 @@ export const kelasService = {
     });
   },
 
-getKelasKejuaraan: async (kompetisiId: number, filter: {
-  styleType: Cabang,
-  gender?: JenisKelamin, // ✅ MADE OPTIONAL
-  categoryType?: string,
-  kelompokId?: number,
-  kelasBeratId?: number,
-  poomsaeId?: number,
-}) => {
-  try {
-    console.log("🔍 Backend filter received:", filter);
-
-    // Base condition
-    let whereCondition: any = {
-      id_kompetisi: kompetisiId,
-      cabang: filter.styleType,
-    };
-
-    // Kategori event condition
-    if (filter.categoryType) {
-      const kategoriEventId = filter.categoryType === "prestasi" ? 2 : 1;
-      whereCondition.id_kategori_event = kategoriEventId;
+  getKelasKejuaraan: async (
+    kompetisiId: number,
+    filter: {
+      styleType: Cabang;
+      gender?: JenisKelamin; // ✅ MADE OPTIONAL
+      categoryType?: string;
+      kelompokId?: number;
+      kelasBeratId?: number;
+      poomsaeId?: number;
     }
+  ) => {
+    try {
+      console.log("🔍 Backend filter received:", filter);
 
-    // Handle different category types
-    if (filter.categoryType === "prestasi") {
-  if (filter.kelompokId) {
-    whereCondition.id_kelompok = filter.kelompokId;
-  }
-
-  if (filter.styleType === "KYORUGI" && filter.kelasBeratId) {
-    whereCondition.id_kelas_berat = filter.kelasBeratId;
-  }
-
-  if (filter.styleType === "POOMSAE" && filter.poomsaeId) {
-    whereCondition.id_poomsae = filter.poomsaeId;
-  }
-} else if (filter.categoryType === "pemula") {
-  if (filter.styleType === "POOMSAE") {
-    // POOMSAE pemula: cukup filter poomsae jika ada
-    if (filter.poomsaeId) {
-      whereCondition.id_poomsae = filter.poomsaeId;
-    }
-    // Jangan tambahkan OR array atau field lain
-  } else {
-    // Untuk KYORUGI pemula tetap OR array atau aturan lain
-    const orConditions: any[] = [
-      { id_kelompok: null, id_kelas_berat: null, id_poomsae: null } // fallback
-    ];
-    if (filter.kelompokId) orConditions.push({ id_kelompok: filter.kelompokId });
-    if (filter.styleType === "KYORUGI" && filter.kelasBeratId) orConditions.push({ id_kelas_berat: filter.kelasBeratId });
-    whereCondition.OR = orConditions;
-  }
-}
-
-
-    // ✅ NEW: Handle gender filtering for kelas_berat
-    // For KYORUGI, we need to filter kelas_berat by gender
-    // For team POOMSAE, we skip gender filtering to get mixed gender class
-    if (filter.styleType === "KYORUGI" && filter.gender && filter.kelasBeratId) {
-      // Add gender constraint through kelas_berat relation
-      whereCondition.kelas_berat = {
-        id_kelas_berat: filter.kelasBeratId,
-        jenis_kelamin: filter.gender
+      // Base condition
+      let whereCondition: any = {
+        id_kompetisi: kompetisiId,
+        cabang: filter.styleType,
       };
-      // Remove the direct id_kelas_berat since we're using relation
-      delete whereCondition.id_kelas_berat;
+
+      // Kategori event condition
+      if (filter.categoryType) {
+        const kategoriEventId = filter.categoryType === "prestasi" ? 2 : 1;
+        whereCondition.id_kategori_event = kategoriEventId;
+      }
+
+      // Handle different category types
+      if (filter.categoryType === "prestasi") {
+        if (filter.kelompokId) {
+          whereCondition.id_kelompok = filter.kelompokId;
+        }
+
+        if (filter.styleType === "KYORUGI" && filter.kelasBeratId) {
+          whereCondition.id_kelas_berat = filter.kelasBeratId;
+        }
+
+        if (filter.styleType === "POOMSAE" && filter.poomsaeId) {
+          whereCondition.id_poomsae = filter.poomsaeId;
+        }
+      } else if (filter.categoryType === "pemula") {
+        if (filter.styleType === "POOMSAE") {
+          // POOMSAE pemula: cukup filter poomsae jika ada
+          if (filter.poomsaeId) {
+            whereCondition.id_poomsae = filter.poomsaeId;
+          }
+          // Jangan tambahkan OR array atau field lain
+        } else {
+          // Untuk KYORUGI pemula tetap OR array atau aturan lain
+          const orConditions: any[] = [
+            { id_kelompok: null, id_kelas_berat: null, id_poomsae: null }, // fallback
+          ];
+          if (filter.kelompokId)
+            orConditions.push({ id_kelompok: filter.kelompokId });
+          if (filter.styleType === "KYORUGI" && filter.kelasBeratId)
+            orConditions.push({ id_kelas_berat: filter.kelasBeratId });
+          whereCondition.OR = orConditions;
+        }
+      }
+
+      // ✅ NEW: Handle gender filtering for kelas_berat
+      // For KYORUGI, we need to filter kelas_berat by gender
+      // For team POOMSAE, we skip gender filtering to get mixed gender class
+      if (
+        filter.styleType === "KYORUGI" &&
+        filter.gender &&
+        filter.kelasBeratId
+      ) {
+        // Add gender constraint through kelas_berat relation
+        whereCondition.kelas_berat = {
+          id_kelas_berat: filter.kelasBeratId,
+          jenis_kelamin: filter.gender,
+        };
+        // Remove the direct id_kelas_berat since we're using relation
+        delete whereCondition.id_kelas_berat;
+      }
+
+      console.log(
+        "🔍 Final Prisma where condition:",
+        JSON.stringify(whereCondition, null, 2)
+      );
+
+      const kelas = await prisma.tb_kelas_kejuaraan.findMany({
+        where: whereCondition,
+        include: {
+          kelompok: true,
+          kelas_berat: true,
+          poomsae: true,
+          kategori_event: true,
+        },
+      });
+
+      console.log("✅ Query berhasil, hasil:", kelas);
+
+      if (kelas.length > 0) {
+        return { id_kelas_kejuaraan: kelas[0].id_kelas_kejuaraan };
+      }
+
+      return null;
+    } catch (err: any) {
+      console.error("❌ Prisma error:", err);
+      if (err instanceof Error) console.error("Stack:", err.stack);
+      throw err;
     }
+  },
 
-    console.log("🔍 Final Prisma where condition:", JSON.stringify(whereCondition, null, 2));
+  async getKelasKejuaraanByKompetisi(kompetisiId: number) {
+    try {
+      console.log("📦 Querying kelas kejuaraan for kompetisi ID:", kompetisiId);
 
-    const kelas = await prisma.tb_kelas_kejuaraan.findMany({
-      where: whereCondition,
-      include: {
-        kelompok: true,
-        kelas_berat: true,
-        poomsae: true,
-        kategori_event: true,
-      },
-    });
+      const kelasList = await prisma.kelasKejuaraan.findMany({
+        where: {
+          id_kompetisi: kompetisiId,
+        },
+        include: {
+          cabang: true,
+          kategori_event: true,
+          kelompok: true,
+          kelas_berat: true,
+          poomsae: true,
+          peserta: {
+            where: { status: "APPROVED" }, // ✅ hanya peserta yang sudah approve
+            select: {
+              id_peserta: true,
+              nama_peserta: true,
+              status: true,
+            },
+          },
+        },
+      });
 
-    console.log("✅ Query berhasil, hasil:", kelas);
-    
-    if (kelas.length > 0) {
-      return { id_kelas_kejuaraan: kelas[0].id_kelas_kejuaraan };
+      // Tambahkan jumlah peserta di setiap kelas
+      const result = kelasList.map((kelas) => ({
+        ...kelas,
+        peserta_count: kelas.peserta.length,
+      }));
+
+      console.log("✅ Found", result.length, "kelas kejuaraan");
+      return result;
+    } catch (error) {
+      console.error(
+        "❌ Error in kompetisiService.getKelasKejuaraanByKompetisi:",
+        error
+      );
+      throw error;
     }
-    
-    return null;
-  } catch (err: any) {
-    console.error("❌ Prisma error:", err);
-    if (err instanceof Error) console.error("Stack:", err.stack);
-    throw err;
-  }
-},
-
+  },
 };
