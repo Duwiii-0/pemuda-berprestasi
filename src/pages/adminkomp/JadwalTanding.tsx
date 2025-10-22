@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Calendar, Plus, Trash2, Loader } from "lucide-react";
 import { useKompetisi } from "../../context/KompetisiContext";
+import { useAuth } from "../../context/authContext";
 
 interface JadwalLapangan {
   id: string;
@@ -20,6 +21,7 @@ const JadwalPertandingan: React.FC<{ idKompetisi: number }> = ({
   const { kompetisiDetail, fetchKompetisiById, loadingKompetisi } =
     useKompetisi();
 
+  const { user } = useAuth(); // 🔹 Ambil data user login
   const [hariList, setHariList] = useState<HariPertandingan[]>([
     { id: "1", namaHari: "Hari ke-1", lapangan: [] },
   ]);
@@ -31,6 +33,11 @@ const JadwalPertandingan: React.FC<{ idKompetisi: number }> = ({
 
   // Fetch kompetisi
   useEffect(() => {
+    if (!idKompetisi) {
+      console.warn("⚠️ ID Kompetisi belum tersedia di user context");
+      return;
+    }
+
     fetchKompetisiById(idKompetisi);
   }, [idKompetisi]);
 
