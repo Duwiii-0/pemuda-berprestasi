@@ -44,6 +44,13 @@ const CARD_WIDTH = 65;
 const CARD_HEIGHT = 42;
 const ROUND_GAP = 30;
 
+// ==================== HELPER: Parse Nomor Partai ====================
+const parseNomor = (nomor?: string | number): number => {
+  if (nomor == null) return 0;
+  const n = typeof nomor === 'number' ? nomor : parseInt(nomor.replace(/\D/g, ''), 10);
+  return isNaN(n) ? 0 : n;
+};
+
 // ==================== COLOR HELPERS ====================
 const hexToRgb = (hex: string): [number, number, number] => {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
@@ -295,41 +302,40 @@ const drawMatchCard = (
   }
 };
 
-// ==================== DRAW CONNECTION LINES (IMPROVED) ====================
+// ==================== DRAW CONNECTION LINES (UPDATED) ====================
 const drawConnectionLines = (
   doc: jsPDF,
   startX: number,
   startY: number,
   endX: number,
-  endY: number
+  endY: number,
+  gap: number
 ) => {
   doc.setDrawColor(...PRIMARY);
   doc.setLineWidth(0.5);
 
-  // Horizontal extension from card
-  const midX = startX + 8;
+  const midX = startX + Math.max(6, gap / 2);
 
-  // Line from card
   doc.line(startX, startY, midX, startY);
   
-  // Vertical line (if needed)
-  if (Math.abs(startY - endY) > 0.5) {
+  if (Math.abs(startY - endY) > 1) {
     doc.line(midX, startY, midX, endY);
   }
   
-  // Line to next card
   doc.line(midX, endY, endX, endY);
 };
 
-// ==================== CALCULATE GRID POSITION (NEW - GRID BASED) ====================
+// ==================== CALCULATE GRID POSITION (UPDATED) ====================
 const calculateGridPosition = (
   matchIndex: number,
   totalMatchesInRound: number,
-  baseY: number = 40
+  baseY: number,
+  usableHeightForCards: number
 ): number => {
-  // Simple grid: each match has fixed spacing
-  const MATCH_SPACING = 48; // Gap between matches (top to bottom)
-  return baseY + (matchIndex * MATCH_SPACING);
+  const MATCH_SPACING = 48; // 42mm card + 6mm gap
+  const totalHeight = totalMatchesInRound * MATCH_SPACING;
+  const startY = baseY + Math.max(0, (usableHeightForCards - totalHeight) / 2);
+  return startY + (matchIndex * MATCH_SPACING);
 };
 
 // ==================== GET ROUND NAME ====================
@@ -344,7 +350,7 @@ const getRoundName = (round: number, totalRounds: number): string => {
   }
 };
 
-// ==================== DRAW BRACKET PAGE (COMPLETELY REWRITTEN) ====================
+// ==================== DRAW BRACKET PAGE (UPDATED) ====================
 const drawBracketPage = (
   doc: jsPDF,
   matches: MatchData[],
@@ -366,16 +372,13 @@ const drawBracketPage = (
   doc.setTextColor(255, 255, 255);
   doc.text('TOURNAMENT BRACKET', PAGE_WIDTH / 2, 8, { align: 'center' });
 
-  // Calculate max matches in any round for this page
-  let maxMatchesInPage = 0;
-  for (let round = startRound; round <= endRound; round++) {
-    const roundMatches = matches.filter(m => m.round === round);
-    maxMatchesInPage = Math.max(maxMatchesInPage, roundMatches.length);
-  }
+  // Calculate usable area
+  const topOffset = 28;
+  const bottomOffset = 22;
+  const usableHeightForCards = PAGE_HEIGHT - topOffset - bottomOffset;
 
-  // Adjust ROUND_GAP dynamically based on number of rounds on page
   const roundsOnPage = endRound - startRound + 1;
-  const ADJUSTED_ROUND_GAP = roundsOnPage >= 3 ? 22 : 28;
+  const ADJUSTED_ROUND_GAP = roundsOnPage >= 4 ? 20 : 28;
 
   // Round headers
   let headerX = MARGIN;
@@ -409,24 +412,21 @@ const drawBracketPage = (
     headerX += CARD_WIDTH + ADJUSTED_ROUND_GAP;
   }
 
-  // Draw matches in grid layout
-  const baseY = 32; // Starting Y position for cards
-  let currentX = MARGIN;
-
   // Store card positions for connection lines
   const cardPositions: Map<number, { x: number; y: number; round: number }> = new Map();
 
+  // Draw matches with sorting
+  let currentX = MARGIN;
+
   for (let round = startRound; round <= endRound; round++) {
-    const roundMatches = matches.filter(m => m.round === round);
+    const roundMatches = matches
+      .filter(m => m.round === round)
+      .sort((a, b) => parseNomor(a.nomorPartai) - parseNomor(b.nomorPartai) || a.id - b.id);
 
     roundMatches.forEach((match, matchIndex) => {
-      // Grid position: simple top-to-bottom layout
-      const y = calculateGridPosition(matchIndex, roundMatches.length, baseY);
+      const y = calculateGridPosition(matchIndex, roundMatches.length, topOffset, usableHeightForCards);
 
-      // Store position for this match
       cardPositions.set(match.id, { x: currentX, y: y, round: round });
-
-      // Draw match card
       drawMatchCard(doc, currentX, y, match, matchIndex);
     });
 
@@ -435,31 +435,31 @@ const drawBracketPage = (
 
   // Draw connection lines AFTER all cards are drawn
   for (let round = startRound; round < endRound; round++) {
-    const roundMatches = matches.filter(m => m.round === round);
+    const roundMatches = matches
+      .filter(m => m.round === round)
+      .sort((a, b) => parseNomor(a.nomorPartai) - parseNomor(b.nomorPartai) || a.id - b.id);
+
+    const nextRoundMatches = matches
+      .filter(m => m.round === round + 1)
+      .sort((a, b) => parseNomor(a.nomorPartai) - parseNomor(b.nomorPartai) || a.id - b.id);
 
     roundMatches.forEach((match, matchIndex) => {
       const currentPos = cardPositions.get(match.id);
       if (!currentPos) return;
 
-      // Find next round match (every 2 matches connect to 1 match in next round)
       const nextMatchIndex = Math.floor(matchIndex / 2);
-      const nextRoundMatches = matches.filter(m => m.round === round + 1);
-      
-      if (nextMatchIndex < nextRoundMatches.length) {
-        const nextMatch = nextRoundMatches[nextMatchIndex];
-        const nextPos = cardPositions.get(nextMatch.id);
+      if (nextMatchIndex >= nextRoundMatches.length) return;
 
-        if (nextPos) {
-          // Calculate connection points
-          const startX = currentPos.x + CARD_WIDTH;
-          const startY = currentPos.y + (CARD_HEIGHT / 2);
-          const endX = nextPos.x;
-          const endY = nextPos.y + (CARD_HEIGHT / 2);
+      const nextMatch = nextRoundMatches[nextMatchIndex];
+      const nextPos = cardPositions.get(nextMatch.id);
+      if (!nextPos) return;
 
-          // Draw connection with better logic
-          drawConnectionLines(doc, startX, startY, endX, endY);
-        }
-      }
+      const startX = currentPos.x + CARD_WIDTH;
+      const startY = currentPos.y + (CARD_HEIGHT / 2);
+      const endX = nextPos.x;
+      const endY = nextPos.y + (CARD_HEIGHT / 2);
+
+      drawConnectionLines(doc, startX, startY, endX, endY, ADJUSTED_ROUND_GAP);
     });
   }
 
@@ -662,9 +662,9 @@ export const exportBracketToPDF = async (config: ExportConfig): Promise<void> =>
     const totalRounds = config.totalRounds;
 
     // ===== SMART PAGE CALCULATION =====
-    // Calculate pages based on content height, not fixed rounds
-    const MAX_CARDS_PER_PAGE = 3.5; // Maximum cards that fit vertically (with spacing)
-    const MATCH_HEIGHT_WITH_GAP = 48; // 42mm card + 6mm gap
+    const MATCH_HEIGHT_WITH_GAP = 48;
+    const usableHeight = PAGE_HEIGHT - 60;
+    const maxMatchesPerPage = Math.max(1, Math.floor(usableHeight / MATCH_HEIGHT_WITH_GAP));
     
     const roundsData = [];
     for (let round = 1; round <= totalRounds; round++) {
@@ -675,16 +675,14 @@ export const exportBracketToPDF = async (config: ExportConfig): Promise<void> =>
       });
     }
 
-    // Group rounds into pages based on max matches per page
     const pages: Array<{ startRound: number; endRound: number }> = [];
     let currentPageRounds: number[] = [];
     let currentPageMaxMatches = 0;
 
     roundsData.forEach(({ round, matchCount }) => {
-      const newMaxMatches = Math.max(currentPageMaxMatches, matchCount);
+      const newMax = Math.max(currentPageMaxMatches, matchCount);
       
-      // If adding this round would exceed page capacity, start new page
-      if (newMaxMatches > MAX_CARDS_PER_PAGE && currentPageRounds.length > 0) {
+      if (newMax > maxMatchesPerPage && currentPageRounds.length > 0) {
         pages.push({
           startRound: currentPageRounds[0],
           endRound: currentPageRounds[currentPageRounds.length - 1]
@@ -693,11 +691,10 @@ export const exportBracketToPDF = async (config: ExportConfig): Promise<void> =>
         currentPageMaxMatches = matchCount;
       } else {
         currentPageRounds.push(round);
-        currentPageMaxMatches = newMaxMatches;
+        currentPageMaxMatches = newMax;
       }
     });
 
-    // Add last page
     if (currentPageRounds.length > 0) {
       pages.push({
         startRound: currentPageRounds[0],
