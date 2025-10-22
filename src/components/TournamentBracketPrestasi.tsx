@@ -1312,7 +1312,7 @@ const generateBracket = async () => {
         {showParticipantPreview && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto">
-            <div className="p-6 border-b sticky top-0 bg-white" style={{ borderColor: '#990D35' }}>
+            <div className="p-6 border-b sticky top-0 bg-white z-10" style={{ borderColor: '#990D35' }}>
                 <h3 className="text-xl font-bold" style={{ color: '#050505' }}>
                 Preview Peserta Tournament
                 </h3>
@@ -1322,48 +1322,54 @@ const generateBracket = async () => {
             </div>
             
             <div className="p-6">
-                <div className="space-y-2">
+                <div className="space-y-3">
                 {approvedParticipants.map((peserta, index) => (
                     <div
                     key={peserta.id_peserta_kompetisi}
                     className="p-4 rounded-lg border-2"
                     style={{ borderColor: '#990D35', backgroundColor: 'rgba(153, 13, 53, 0.05)' }}
                     >
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
+                    <div className="flex items-start gap-3">
                         <div 
-                            className="w-10 h-10 rounded-full flex items-center justify-center font-bold"
-                            style={{ backgroundColor: '#990D35', color: 'white' }}
+                        className="w-10 h-10 rounded-full flex items-center justify-center font-bold flex-shrink-0"
+                        style={{ backgroundColor: '#990D35', color: 'white' }}
                         >
-                            {index + 1}
+                        {index + 1}
                         </div>
-                        <div className="flex-1">
-                            <p className="font-bold" style={{ color: '#050505' }}>
+                        <div className="flex-1 min-w-0">
+                        <p className="font-bold text-base mb-1 break-words" style={{ color: '#050505' }}>
                             {getParticipantName(peserta)}
-                            </p>
-                            <p className="text-sm" style={{ color: '#050505', opacity: 0.6 }}>
-                            {getDojoName(peserta)}
-                            </p>
+                        </p>
+                        <p 
+                            className="text-sm break-words" 
+                            style={{ 
+                            color: '#050505', 
+                            opacity: 0.6,
+                            wordBreak: 'break-word',
+                            overflowWrap: 'break-word'
+                            }}
+                        >
+                            🏛️ {getDojoName(peserta)}
+                        </p>
                         </div>
-                        </div>
-                        <CheckCircle size={24} className="text-green-600" />
+                        <CheckCircle size={24} className="text-green-600 flex-shrink-0" />
                     </div>
                     </div>
                 ))}
                 </div>
             </div>
             
-            <div className="p-6 border-t flex gap-3 sticky bottom-0 bg-white" style={{ borderColor: '#990D35' }}>
+            <div className="p-6 border-t flex gap-3 sticky bottom-0 bg-white z-10" style={{ borderColor: '#990D35' }}>
                 <button
                 onClick={() => setShowParticipantPreview(false)}
-                className="flex-1 py-3 px-4 rounded-lg border font-medium"
+                className="flex-1 py-3 px-4 rounded-lg border-2 font-medium transition-all hover:bg-gray-50"
                 style={{ borderColor: '#990D35', color: '#990D35' }}
                 >
                 Batal
                 </button>
                 <button
                 onClick={generateBracket}
-                className="flex-1 py-3 px-4 rounded-lg font-medium"
+                className="flex-1 py-3 px-4 rounded-lg font-medium transition-all hover:opacity-90 shadow-lg"
                 style={{ backgroundColor: '#990D35', color: '#F5FBEF' }}
                 >
                 Generate Bracket Otomatis
