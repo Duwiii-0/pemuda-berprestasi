@@ -295,7 +295,7 @@ const drawMatchCard = (
   }
 };
 
-// ==================== DRAW CONNECTION LINES ====================
+// ==================== DRAW CONNECTION LINES (IMPROVED) ====================
 const drawConnectionLines = (
   doc: jsPDF,
   startX: number,
@@ -306,25 +306,30 @@ const drawConnectionLines = (
   doc.setDrawColor(...PRIMARY);
   doc.setLineWidth(0.5);
 
-  const midX = startX + 5;
+  // Horizontal extension from card
+  const midX = startX + 8;
+
+  // Line from card
   doc.line(startX, startY, midX, startY);
-  doc.line(midX, startY, midX, endY);
+  
+  // Vertical line (if needed)
+  if (Math.abs(startY - endY) > 0.5) {
+    doc.line(midX, startY, midX, endY);
+  }
+  
+  // Line to next card
   doc.line(midX, endY, endX, endY);
 };
 
-// ==================== CALCULATE VERTICAL POSITION ====================
-const calculateVerticalPosition = (
-  roundIndex: number,
+// ==================== CALCULATE GRID POSITION (NEW - GRID BASED) ====================
+const calculateGridPosition = (
   matchIndex: number,
   totalMatchesInRound: number,
-  baseY: number = 50
+  baseY: number = 40
 ): number => {
-  const baseSpacing = 40;
-  const spacingMultiplier = Math.pow(2, roundIndex);
-  const spacing = baseSpacing * spacingMultiplier;
-  const totalHeight = (totalMatchesInRound - 1) * spacing;
-  const startOffset = -totalHeight / 2;
-  return baseY + startOffset + (matchIndex * spacing);
+  // Simple grid: each match has fixed spacing
+  const MATCH_SPACING = 48; // Gap between matches (top to bottom)
+  return baseY + (matchIndex * MATCH_SPACING);
 };
 
 // ==================== GET ROUND NAME ====================
@@ -339,7 +344,7 @@ const getRoundName = (round: number, totalRounds: number): string => {
   }
 };
 
-// ==================== DRAW BRACKET PAGE ====================
+// ==================== DRAW BRACKET PAGE (COMPLETELY REWRITTEN) ====================
 const drawBracketPage = (
   doc: jsPDF,
   matches: MatchData[],
@@ -349,9 +354,11 @@ const drawBracketPage = (
   pageNum: number,
   totalPages: number
 ) => {
+  // Background
   doc.setFillColor(...BG_LIGHT);
   doc.rect(0, 0, PAGE_WIDTH, PAGE_HEIGHT, 'F');
 
+  // Title bar
   doc.setFillColor(...PRIMARY);
   doc.rect(0, 0, PAGE_WIDTH, 12, 'F');
   doc.setFontSize(10);
@@ -359,21 +366,36 @@ const drawBracketPage = (
   doc.setTextColor(255, 255, 255);
   doc.text('TOURNAMENT BRACKET', PAGE_WIDTH / 2, 8, { align: 'center' });
 
+  // Calculate max matches in any round for this page
+  let maxMatchesInPage = 0;
+  for (let round = startRound; round <= endRound; round++) {
+    const roundMatches = matches.filter(m => m.round === round);
+    maxMatchesInPage = Math.max(maxMatchesInPage, roundMatches.length);
+  }
+
+  // Adjust ROUND_GAP dynamically based on number of rounds on page
+  const roundsOnPage = endRound - startRound + 1;
+  const ADJUSTED_ROUND_GAP = roundsOnPage >= 3 ? 22 : 28;
+
+  // Round headers
   let headerX = MARGIN;
-  const headerY = 20;
+  const headerY = 18;
 
   for (let round = startRound; round <= endRound; round++) {
     const roundName = getRoundName(round, totalRounds);
     const roundMatches = matches.filter(m => m.round === round);
 
+    // Header background
     doc.setFillColor(...PRIMARY);
     doc.roundedRect(headerX, headerY, CARD_WIDTH, 8, 2, 2, 'F');
 
+    // Header text
     doc.setFontSize(8);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(255, 255, 255);
     doc.text(roundName, headerX + CARD_WIDTH / 2, headerY + 5.5, { align: 'center' });
 
+    // Match count
     doc.setFontSize(6);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(100, 100, 100);
@@ -384,46 +406,64 @@ const drawBracketPage = (
       { align: 'center' }
     );
 
-    headerX += CARD_WIDTH + ROUND_GAP;
+    headerX += CARD_WIDTH + ADJUSTED_ROUND_GAP;
   }
 
-  const baseY = 70;
+  // Draw matches in grid layout
+  const baseY = 32; // Starting Y position for cards
   let currentX = MARGIN;
+
+  // Store card positions for connection lines
+  const cardPositions: Map<number, { x: number; y: number; round: number }> = new Map();
 
   for (let round = startRound; round <= endRound; round++) {
     const roundMatches = matches.filter(m => m.round === round);
-    const roundIndex = round - 1;
 
     roundMatches.forEach((match, matchIndex) => {
-      const y = calculateVerticalPosition(roundIndex, matchIndex, roundMatches.length, baseY);
+      // Grid position: simple top-to-bottom layout
+      const y = calculateGridPosition(matchIndex, roundMatches.length, baseY);
+
+      // Store position for this match
+      cardPositions.set(match.id, { x: currentX, y: y, round: round });
+
+      // Draw match card
       drawMatchCard(doc, currentX, y, match, matchIndex);
+    });
 
-      if (round < endRound) {
-        const nextRoundMatches = matches.filter(m => m.round === round + 1);
-        const nextMatchIndex = Math.floor(matchIndex / 2);
-        
-        if (nextMatchIndex < nextRoundMatches.length) {
-          const nextY = calculateVerticalPosition(
-            roundIndex + 1,
-            nextMatchIndex,
-            nextRoundMatches.length,
-            baseY
-          );
+    currentX += CARD_WIDTH + ADJUSTED_ROUND_GAP;
+  }
 
-          drawConnectionLines(
-            doc,
-            currentX + CARD_WIDTH,
-            y + CARD_HEIGHT / 2,
-            currentX + CARD_WIDTH + ROUND_GAP,
-            nextY + CARD_HEIGHT / 2
-          );
+  // Draw connection lines AFTER all cards are drawn
+  for (let round = startRound; round < endRound; round++) {
+    const roundMatches = matches.filter(m => m.round === round);
+
+    roundMatches.forEach((match, matchIndex) => {
+      const currentPos = cardPositions.get(match.id);
+      if (!currentPos) return;
+
+      // Find next round match (every 2 matches connect to 1 match in next round)
+      const nextMatchIndex = Math.floor(matchIndex / 2);
+      const nextRoundMatches = matches.filter(m => m.round === round + 1);
+      
+      if (nextMatchIndex < nextRoundMatches.length) {
+        const nextMatch = nextRoundMatches[nextMatchIndex];
+        const nextPos = cardPositions.get(nextMatch.id);
+
+        if (nextPos) {
+          // Calculate connection points
+          const startX = currentPos.x + CARD_WIDTH;
+          const startY = currentPos.y + (CARD_HEIGHT / 2);
+          const endX = nextPos.x;
+          const endY = nextPos.y + (CARD_HEIGHT / 2);
+
+          // Draw connection with better logic
+          drawConnectionLines(doc, startX, startY, endX, endY);
         }
       }
     });
-
-    currentX += CARD_WIDTH + ROUND_GAP;
   }
 
+  // Page continuation indicator
   if (endRound < totalRounds) {
     doc.setFontSize(9);
     doc.setFont('helvetica', 'italic');
