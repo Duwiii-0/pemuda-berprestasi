@@ -300,10 +300,10 @@ export const KompetisiProvider = ({ children }: { children: ReactNode }) => {
     setErrorKelasKejuaraan(null);
     try {
       const res = await apiClient.get(`/kelas/${id_kompetisi}/kelas-kejuaraan`);
-      console.log("📥 Response:", res.data);
+      const kelasData = res.data?.data || res.data || [];
+      setKelasKejuaraanList(Array.isArray(kelasData) ? kelasData : []);
 
       // Handle different response structures
-      const kelasData = res.data?.data || res.data || [];
       setKelasKejuaraanList(Array.isArray(kelasData) ? kelasData : []);
 
       console.log(

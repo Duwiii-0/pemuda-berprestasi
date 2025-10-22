@@ -122,6 +122,7 @@ export const kelasController = {
   async getKelasKejuaraanByKompetisi(req: Request, res: Response) {
     try {
       const { id } = req.params;
+      console.log("🎯 Controller received ID:", id);
 
       if (!id) {
         return res.status(400).json({ message: "ID kompetisi diperlukan" });
@@ -131,19 +132,21 @@ export const kelasController = {
         Number(id)
       );
 
+      console.log("🎯 Service returned:", kelasList);
+      console.log("🎯 Array length:", kelasList.length);
+
       if (kelasList.length === 0) {
-        return res
-          .status(404)
-          .json({ message: "Tidak ada kelas kejuaraan untuk kompetisi ini" });
+        console.log("⚠️ Sending 404 - No data found");
+        return res.status(404).json({
+          message: "Tidak ada kelas kejuaraan untuk kompetisi ini",
+        });
       }
 
-      res.status(200).json(kelasList);
+      console.log("✅ Sending 200 with data");
+      return res.status(200).json(kelasList); // ⚠️ PASTIKAN ADA RETURN!
     } catch (error) {
-      console.error(
-        "❌ Error di KompetisiController.getKelasKejuaraanByKompetisi:",
-        error
-      );
-      res.status(500).json({
+      console.error("❌ Error:", error);
+      return res.status(500).json({
         message: "Gagal mengambil data kelas kejuaraan",
         error: error instanceof Error ? error.message : "Unknown error",
       });
