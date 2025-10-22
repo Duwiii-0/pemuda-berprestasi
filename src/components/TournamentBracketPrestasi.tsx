@@ -985,19 +985,22 @@ const generateBracket = async () => {
                                 style={{ borderColor: 'rgba(0, 0, 0, 0.05)', minHeight: '85px' }}
                               >
                                 {match.peserta_a ? (
-                                  <>
-                                    <div className="flex-1 min-w-0">
-                                      <div className="flex items-center gap-2 mb-1">
-                                        <span 
-                                          className="text-xs font-bold px-2 py-0.5 rounded shadow-sm"
-                                          style={{ backgroundColor: '#3B82F6', color: 'white' }}
-                                        >
-                                          B/{match.peserta_a.id_peserta_kompetisi}
-                                        </span>
-                                        {match.skor_a > match.skor_b && hasScores && (
-                                          <CheckCircle size={14} className="text-green-600 flex-shrink-0" />
-                                        )}
-                                      </div>
+                                    <>
+                                        <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            {/* Hanya tampilkan badge jika nomor_partai sudah diisi */}
+                                            {match.nomor_partai && (
+                                            <span 
+                                                className="text-xs font-bold px-2 py-0.5 rounded shadow-sm"
+                                                style={{ backgroundColor: '#3B82F6', color: 'white' }}
+                                            >
+                                                {match.nomor_partai}
+                                            </span>
+                                            )}
+                                            {match.skor_a > match.skor_b && hasScores && (
+                                            <CheckCircle size={14} className="text-green-600 flex-shrink-0" />
+                                            )}
+                                        </div>
                                       <p 
                                         className="font-bold text-sm leading-tight break-words"
                                         style={{ 
@@ -1043,19 +1046,22 @@ const generateBracket = async () => {
                                 style={{ minHeight: '85px' }}
                               >
                                 {match.peserta_b ? (
-                                  <>
-                                    <div className="flex-1 min-w-0">
-                                      <div className="flex items-center gap-2 mb-1">
-                                        <span 
-                                          className="text-xs font-bold px-2 py-0.5 rounded shadow-sm"
-                                          style={{ backgroundColor: '#EF4444', color: 'white' }}
-                                        >
-                                          R/{match.peserta_b.id_peserta_kompetisi}
-                                        </span>
-                                        {match.skor_b > match.skor_a && hasScores && (
-                                          <CheckCircle size={14} className="text-green-600 flex-shrink-0" />
-                                        )}
-                                      </div>
+                                    <>
+                                        <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            {/* Hanya tampilkan badge jika nomor_partai sudah diisi */}
+                                            {match.nomor_partai && (
+                                            <span 
+                                                className="text-xs font-bold px-2 py-0.5 rounded shadow-sm"
+                                                style={{ backgroundColor: '#EF4444', color: 'white' }}
+                                            >
+                                                {match.nomor_partai}
+                                            </span>
+                                            )}
+                                            {match.skor_b > match.skor_a && hasScores && (
+                                            <CheckCircle size={14} className="text-green-600 flex-shrink-0" />
+                                            )}
+                                        </div>
                                       <p 
                                         className="font-bold text-sm leading-tight break-words"
                                         style={{ 

@@ -324,213 +324,312 @@ const DrawingBagan: React.FC = () => {
     <div className="min-h-screen" style={{ backgroundColor: '#F5FBEF' }}>
       <div className="p-4 sm:p-6 lg:p-8 max-w-full">
         
-        {/* HEADER */}
-        <div className="mb-6">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
-            <GitBranch 
-              size={28} 
-              className="sm:w-8 sm:h-8 lg:w-10 lg:h-10 flex-shrink-0" 
-              style={{ color: '#990D35' }}
+    {/* HEADER */}
+    <div className="mb-8">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
+        <div 
+          className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center shadow-lg"
+          style={{ 
+            background: 'linear-gradient(135deg, #990D35 0%, #7A0A2B 100%)'
+          }}
+        >
+          <GitBranch 
+            size={32} 
+            className="sm:w-8 sm:h-8" 
+            style={{ color: 'white' }}
+          />
+        </div>
+        <div className="flex-1 min-w-0">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bebas leading-tight mb-1" style={{ color: '#050505' }}>
+            DRAWING BAGAN TOURNAMENT
+          </h1>
+          <p className="text-sm sm:text-base" style={{ color: '#050505', opacity: 0.6 }}>
+            Kelola bracket tournament untuk setiap kelas kejuaraan
+          </p>
+        </div>
+      </div>
+    </div>
+
+    {/* STATISTICS CARDS */}
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+      <div 
+        className="rounded-2xl shadow-md border p-5 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1" 
+        style={{ 
+          backgroundColor: '#F5FBEF', 
+          borderColor: 'rgba(153, 13, 53, 0.1)',
+          background: 'linear-gradient(135deg, #F5FBEF 0%, rgba(153, 13, 53, 0.02) 100%)'
+        }}
+      >
+        <div className="flex flex-col gap-3">
+          <div 
+            className="w-12 h-12 rounded-xl flex items-center justify-center shadow-sm"
+            style={{ background: 'linear-gradient(135deg, #990D35 0%, #7A0A2B 100%)' }}
+          >
+            <Trophy size={24} style={{ color: 'white' }} />
+          </div>
+          <div>
+            <p className="text-2xl font-bold mb-1" style={{ color: '#050505' }}>
+              {kelasKejuaraan.length}
+            </p>
+            <p className="text-xs font-medium" style={{ color: '#050505', opacity: 0.6 }}>
+              Total Kelas
+            </p>
+          </div>
+        </div>
+      </div>
+      
+      <div 
+        className="rounded-2xl shadow-md border p-5 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1" 
+        style={{ 
+          backgroundColor: '#F5FBEF', 
+          borderColor: 'rgba(245, 183, 0, 0.2)',
+          background: 'linear-gradient(135deg, #F5FBEF 0%, rgba(245, 183, 0, 0.03) 100%)'
+        }}
+      >
+        <div className="flex flex-col gap-3">
+          <div 
+            className="w-12 h-12 rounded-xl flex items-center justify-center shadow-sm"
+            style={{ background: 'linear-gradient(135deg, #F5B700 0%, #F59E0B 100%)' }}
+          >
+            <GitBranch size={24} style={{ color: 'white' }} />
+          </div>
+          <div>
+            <p className="text-2xl font-bold mb-1" style={{ color: '#050505' }}>
+              {kelasKejuaraan.filter(k => k.bracket_status === 'created').length}
+            </p>
+            <p className="text-xs font-medium" style={{ color: '#050505', opacity: 0.6 }}>
+              Bracket Dibuat
+            </p>
+          </div>
+        </div>
+      </div>
+      
+      <div 
+        className="rounded-2xl shadow-md border p-5 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1" 
+        style={{ 
+          backgroundColor: '#F5FBEF', 
+          borderColor: 'rgba(34, 197, 94, 0.2)',
+          background: 'linear-gradient(135deg, #F5FBEF 0%, rgba(34, 197, 94, 0.03) 100%)'
+        }}
+      >
+        <div className="flex flex-col gap-3">
+          <div 
+            className="w-12 h-12 rounded-xl flex items-center justify-center shadow-sm"
+            style={{ background: 'linear-gradient(135deg, #22c55e 0%, #10b981 100%)' }}
+          >
+            <Medal size={24} style={{ color: 'white' }} />
+          </div>
+          <div>
+            <p className="text-2xl font-bold mb-1" style={{ color: '#050505' }}>
+              {kelasKejuaraan.filter(k => k.bracket_status === 'in_progress').length}
+            </p>
+            <p className="text-xs font-medium" style={{ color: '#050505', opacity: 0.6 }}>
+              Berlangsung
+            </p>
+          </div>
+        </div>
+      </div>
+      
+      <div 
+        className="rounded-2xl shadow-md border p-5 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1" 
+        style={{ 
+          backgroundColor: '#F5FBEF', 
+          borderColor: 'rgba(153, 13, 53, 0.1)',
+          background: 'linear-gradient(135deg, #F5FBEF 0%, rgba(153, 13, 53, 0.02) 100%)'
+        }}
+      >
+        <div className="flex flex-col gap-3">
+          <div 
+            className="w-12 h-12 rounded-xl flex items-center justify-center shadow-sm"
+            style={{ background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)' }}
+          >
+            <Users size={24} style={{ color: 'white' }} />
+          </div>
+          <div>
+            <p className="text-2xl font-bold mb-1" style={{ color: '#050505' }}>
+              {kelasKejuaraan.reduce((sum, k) => sum + k.peserta_count, 0)}
+            </p>
+            <p className="text-xs font-medium" style={{ color: '#050505', opacity: 0.6 }}>
+              Total Peserta
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {/* FILTER + SEARCH */}
+    <div 
+      className="rounded-2xl shadow-md border p-6 sm:p-8 mb-8 hover:shadow-lg transition-all duration-300" 
+      style={{ 
+        backgroundColor: '#F5FBEF', 
+        borderColor: 'rgba(153, 13, 53, 0.1)',
+        background: 'linear-gradient(135deg, #F5FBEF 0%, rgba(153, 13, 53, 0.01) 100%)'
+      }}
+    >
+      <div className="space-y-5">
+        {/* Search */}
+        <div className="w-full">
+          <div className="relative">
+            <Search
+              className="absolute left-4 top-1/2 -translate-y-1/2"
+              style={{ color: '#990D35', opacity: 0.5 }}
+              size={20}
             />
-            <div className="flex-1 min-w-0">
-              <h1 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-bebas leading-tight" style={{ color: '#050505' }}>
-                DRAWING BAGAN TOURNAMENT
-              </h1>
-              <p className="text-sm sm:text-base mt-1" style={{ color: '#050505', opacity: 0.6 }}>
-                Kelola bracket tournament untuk setiap kelas kejuaraan
-              </p>
-            </div>
+            <input
+              type="text"
+              placeholder="Cari kelas kejuaraan..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-12 pr-4 py-4 rounded-xl border-2 shadow-sm text-sm font-medium focus:outline-none focus:ring-2 transition-all"
+              style={{ 
+                borderColor: 'rgba(153, 13, 53, 0.2)', 
+                backgroundColor: 'white',
+                color: '#050505'
+              }}
+            />
           </div>
         </div>
 
-        {/* STATISTICS CARDS */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-          <div className="rounded-xl shadow-sm border p-4" style={{ backgroundColor: '#F5FBEF', borderColor: '#990D35' }}>
-            <div className="flex items-center gap-3">
-              <Trophy size={20} style={{ color: '#990D35' }} />
-              <div>
-                <p className="text-lg font-bold" style={{ color: '#050505' }}>
-                  {kelasKejuaraan.length}
-                </p>
-                <p className="text-xs" style={{ color: '#050505', opacity: 0.6 }}>
-                  Total Kelas
-                </p>
+        {/* Filters */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+          <div>
+            <label className="block text-xs mb-2 font-bold" style={{ color: '#050505', opacity: 0.7 }}>
+              Cabang
+            </label>
+            <div className="relative">
+              <select
+                value={filterCabang}
+                onChange={(e) => setFilterCabang(e.target.value as any)}
+                className="w-full px-4 py-3 rounded-xl border-2 shadow-sm text-sm font-medium focus:outline-none focus:ring-2 transition-all appearance-none cursor-pointer"
+                style={{ 
+                  borderColor: 'rgba(153, 13, 53, 0.2)', 
+                  backgroundColor: 'white',
+                  color: '#050505'
+                }}
+              >
+                <option value="ALL">Semua Cabang</option>
+                <option value="KYORUGI">KYORUGI</option>
+                <option value="POOMSAE">POOMSAE</option>
+              </select>
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+                  <path d="M5 7.5L10 12.5L15 7.5" stroke="#990D35" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
               </div>
             </div>
           </div>
-          
-          <div className="rounded-xl shadow-sm border p-4" style={{ backgroundColor: '#F5FBEF', borderColor: '#990D35' }}>
-            <div className="flex items-center gap-3">
-              <GitBranch size={20} style={{ color: '#F5B700' }} />
-              <div>
-                <p className="text-lg font-bold" style={{ color: '#050505' }}>
-                  {kelasKejuaraan.filter(k => k.bracket_status === 'created').length}
-                </p>
-                <p className="text-xs" style={{ color: '#050505', opacity: 0.6 }}>
-                  Bracket Dibuat
-                </p>
+
+          <div>
+            <label className="block text-xs mb-2 font-bold" style={{ color: '#050505', opacity: 0.7 }}>
+              Level
+            </label>
+            <div className="relative">
+              <select
+                value={filterLevel}
+                onChange={(e) => setFilterLevel(e.target.value as any)}
+                className="w-full px-4 py-3 rounded-xl border-2 shadow-sm text-sm font-medium focus:outline-none focus:ring-2 transition-all appearance-none cursor-pointer"
+                style={{ 
+                  borderColor: 'rgba(153, 13, 53, 0.2)', 
+                  backgroundColor: 'white',
+                  color: '#050505'
+                }}
+              >
+                <option value="ALL">Semua Level</option>
+                <option value="pemula">Pemula</option>
+                <option value="prestasi">Prestasi</option>
+              </select>
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+                  <path d="M5 7.5L10 12.5L15 7.5" stroke="#990D35" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
               </div>
             </div>
           </div>
-          
-          <div className="rounded-xl shadow-sm border p-4" style={{ backgroundColor: '#F5FBEF', borderColor: '#990D35' }}>
-            <div className="flex items-center gap-3">
-              <Medal size={20} style={{ color: '#22c55e' }} />
-              <div>
-                <p className="text-lg font-bold" style={{ color: '#050505' }}>
-                  {kelasKejuaraan.filter(k => k.bracket_status === 'in_progress').length}
-                </p>
-                <p className="text-xs" style={{ color: '#050505', opacity: 0.6 }}>
-                  Berlangsung
-                </p>
+
+          <div>
+            <label className="block text-xs mb-2 font-bold" style={{ color: '#050505', opacity: 0.7 }}>
+              Status
+            </label>
+            <div className="relative">
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value as any)}
+                className="w-full px-4 py-3 rounded-xl border-2 shadow-sm text-sm font-medium focus:outline-none focus:ring-2 transition-all appearance-none cursor-pointer"
+                style={{ 
+                  borderColor: 'rgba(153, 13, 53, 0.2)', 
+                  backgroundColor: 'white',
+                  color: '#050505'
+                }}
+              >
+                <option value="ALL">Semua Status</option>
+                <option value="not_created">Belum Dibuat</option>
+                <option value="created">Sudah Dibuat</option>
+                <option value="in_progress">Berlangsung</option>
+                <option value="completed">Selesai</option>
+              </select>
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+                  <path d="M5 7.5L10 12.5L15 7.5" stroke="#990D35" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
               </div>
             </div>
           </div>
-          
-          <div className="rounded-xl shadow-sm border p-4" style={{ backgroundColor: '#F5FBEF', borderColor: '#990D35' }}>
-            <div className="flex items-center gap-3">
-              <Users size={20} style={{ color: '#990D35' }} />
-              <div>
-                <p className="text-lg font-bold" style={{ color: '#050505' }}>
-                  {kelasKejuaraan.reduce((sum, k) => sum + k.peserta_count, 0)}
-                </p>
-                <p className="text-xs" style={{ color: '#050505', opacity: 0.6 }}>
-                  Total Peserta
-                </p>
+
+          <div>
+            <label className="block text-xs mb-2 font-bold" style={{ color: '#050505', opacity: 0.7 }}>
+              Gender
+            </label>
+            <div className="relative">
+              <select
+                value={filterGender}
+                onChange={(e) => setFilterGender(e.target.value as any)}
+                className="w-full px-4 py-3 rounded-xl border-2 shadow-sm text-sm font-medium focus:outline-none focus:ring-2 transition-all appearance-none cursor-pointer"
+                style={{ 
+                  borderColor: 'rgba(153, 13, 53, 0.2)', 
+                  backgroundColor: 'white',
+                  color: '#050505'
+                }}
+              >
+                <option value="ALL">Semua</option>
+                <option value="LAKI_LAKI">Putra</option>
+                <option value="PEREMPUAN">Putri</option>
+              </select>
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+                  <path d="M5 7.5L10 12.5L15 7.5" stroke="#990D35" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* FILTER + SEARCH */}
-        <div className="rounded-xl shadow-sm border p-4 sm:p-6 mb-6" style={{ backgroundColor: '#F5FBEF', borderColor: '#990D35' }}>
-          <div className="space-y-4">
-            {/* Search */}
-            <div className="w-full">
-              <div className="relative">
-                <Search
-                  className="absolute left-3 top-1/2 -translate-y-1/2"
-                  style={{ color: '#050505', opacity: 0.4 }}
-                  size={18}
-                />
-                <input
-                  type="text"
-                  placeholder="Cari kelas kejuaraan..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 rounded-xl border shadow-sm text-sm"
-                  style={{ 
-                    borderColor: '#990D35', 
-                    backgroundColor: '#F5FBEF',
-                    color: '#050505'
-                  }}
-                />
-              </div>
-            </div>
-
-            {/* Filters */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
-              <div>
-                <label className="block text-xs mb-2 font-medium" style={{ color: '#050505', opacity: 0.6 }}>Cabang</label>
-                <select
-                  value={filterCabang}
-                  onChange={(e) => setFilterCabang(e.target.value as any)}
-                  className="w-full px-3 py-2.5 rounded-xl border shadow-sm text-sm"
-                  style={{ 
-                    borderColor: '#990D35', 
-                    backgroundColor: '#F5FBEF',
-                    color: '#050505'
-                  }}
-                >
-                  <option value="ALL">Semua Cabang</option>
-                  <option value="KYORUGI">KYORUGI</option>
-                  <option value="POOMSAE">POOMSAE</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs mb-2 font-medium" style={{ color: '#050505', opacity: 0.6 }}>Level</label>
-                <select
-                  value={filterLevel}
-                  onChange={(e) => setFilterLevel(e.target.value as any)}
-                  className="w-full px-3 py-2.5 rounded-xl border shadow-sm text-sm"
-                  style={{ 
-                    borderColor: '#990D35', 
-                    backgroundColor: '#F5FBEF',
-                    color: '#050505'
-                  }}
-                >
-                  <option value="ALL">Semua Level</option>
-                  <option value="pemula">Pemula</option>
-                  <option value="prestasi">Prestasi</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs mb-2 font-medium" style={{ color: '#050505', opacity: 0.6 }}>Status</label>
-                <select
-                  value={filterStatus}
-                  onChange={(e) => setFilterStatus(e.target.value as any)}
-                  className="w-full px-3 py-2.5 rounded-xl border shadow-sm text-sm"
-                  style={{ 
-                    borderColor: '#990D35', 
-                    backgroundColor: '#F5FBEF',
-                    color: '#050505'
-                  }}
-                >
-                  <option value="ALL">Semua Status</option>
-                  <option value="not_created">Belum Dibuat</option>
-                  <option value="created">Sudah Dibuat</option>
-                  <option value="in_progress">Berlangsung</option>
-                  <option value="completed">Selesai</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs mb-2 font-medium" style={{ color: '#050505', opacity: 0.6 }}>Gender</label>
-                <select
-                  value={filterGender}
-                  onChange={(e) => setFilterGender(e.target.value as any)}
-                  className="w-full px-3 py-2.5 rounded-xl border shadow-sm text-sm"
-                  style={{ 
-                    borderColor: '#990D35', 
-                    backgroundColor: '#F5FBEF',
-                    color: '#050505'
-                  }}
-                >
-                  <option value="ALL">Semua</option>
-                  <option value="LAKI_LAKI">Putra</option>
-                  <option value="PEREMPUAN">Putri</option>
-                </select>
-              </div>
-
-              <div className="flex items-end">
-                <button
-                  onClick={() => {
-                    setSearchTerm("");
-                    setFilterCabang("ALL");
-                    setFilterLevel("ALL");
-                    setFilterStatus("ALL");
-                    setFilterGender("ALL");
-                  }}
-                  className="w-full px-3 py-2.5 rounded-xl border font-medium text-sm"
-                  style={{ 
-                    borderColor: '#990D35', 
-                    color: '#990D35'
-                  }}
-                >
-                  Reset Filter
-                </button>
-              </div>
-            </div>
-
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 pt-2 border-t" style={{ borderColor: 'rgba(153, 13, 53, 0.2)' }}>
-              <p className="text-sm" style={{ color: '#050505', opacity: 0.6 }}>
-                Menampilkan <span className="font-semibold">{filteredKelas.length}</span> dari <span className="font-semibold">{kelasKejuaraan.length}</span> kelas
-              </p>
-            </div>
+          <div className="flex items-end">
+            <button
+              onClick={() => {
+                setSearchTerm("");
+                setFilterCabang("ALL");
+                setFilterLevel("ALL");
+                setFilterStatus("ALL");
+                setFilterGender("ALL");
+              }}
+              className="w-full px-4 py-3 rounded-xl border-2 font-bold text-sm shadow-sm hover:shadow-md transition-all transform hover:scale-[1.02]"
+              style={{ 
+                borderColor: '#990D35', 
+                color: '#990D35',
+                backgroundColor: 'white'
+              }}
+            >
+              Reset Filter
+            </button>
           </div>
         </div>
+
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 pt-4 border-t" style={{ borderColor: 'rgba(153, 13, 53, 0.1)' }}>
+          <p className="text-sm font-medium" style={{ color: '#050505', opacity: 0.6 }}>
+            Menampilkan <span className="font-bold" style={{ color: '#990D35' }}>{filteredKelas.length}</span> dari <span className="font-bold" style={{ color: '#990D35' }}>{kelasKejuaraan.length}</span> kelas
+          </p>
+        </div>
+      </div>
+    </div>
 
         {/* CONTENT - Kelas Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
