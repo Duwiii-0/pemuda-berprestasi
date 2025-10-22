@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Trophy, Edit3, ArrowLeft, AlertTriangle, RefreshCw, Download, Shuffle, CheckCircle } from 'lucide-react';
+import { exportBracketToPDF, transformBracketDataForPDF } from '../utils/exportBracketPDF';
 import { useAuth } from '../context/authContext';
 
 interface Peserta {
@@ -94,6 +95,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
   const [bracketGenerated, setBracketGenerated] = useState(false);
   const [clearing, setClearing] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [exportingPDF, setExportingPDF] = useState(false);
   const [showParticipantPreview, setShowParticipantPreview] = useState(false);
   const bracketRef = React.useRef<HTMLDivElement>(null);
   
@@ -151,6 +153,47 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
     });
     setShowModal(true);
   };
+
+  const handleExportPDF = async () => {
+  if (!kelasData || matches.length === 0) {
+    showNotification(
+      'warning',
+      'Tidak Dapat Export',
+      'Bracket belum dibuat atau tidak ada data untuk di-export.',
+      () => setShowModal(false)
+    );
+    return;
+  }
+
+  setExportingPDF(true);
+
+  try {
+    const pdfConfig = transformBracketDataForPDF(
+      kelasData,
+      matches,
+      prestasiLeaderboard
+    );
+
+    await exportBracketToPDF(pdfConfig);
+
+    showNotification(
+      'success',
+      'Berhasil!',
+      'PDF bracket berhasil didownload!',
+      () => setShowModal(false)
+    );
+  } catch (error: any) {
+    console.error('❌ Error exporting PDF:', error);
+    showNotification(
+      'error',
+      'Gagal Export PDF',
+      error.message || 'Terjadi kesalahan saat membuat PDF.',
+      () => setShowModal(false)
+    );
+  } finally {
+    setExportingPDF(false);
+  }
+};
 
   const approvedParticipants = kelasData.peserta_kompetisi.filter(p => p.status === 'APPROVED');
 
@@ -816,6 +859,25 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                   <>
                     <AlertTriangle size={16} />
                     <span>Delete Bracket</span>
+                  </>
+                )}
+              </button>
+
+              <button
+                onClick={handleExportPDF}
+                disabled={!bracketGenerated || exportingPDF || matches.length === 0}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50"
+                style={{ backgroundColor: '#10B981', color: '#F5FBEF' }}
+              >
+                {exportingPDF ? (
+                  <>
+                    <RefreshCw size={16} className="animate-spin" />
+                    <span>Generating PDF...</span>
+                  </>
+                ) : (
+                  <>
+                    <Download size={16} />
+                    <span>Download PDF</span>
                   </>
                 )}
               </button>
