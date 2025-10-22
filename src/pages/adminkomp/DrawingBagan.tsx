@@ -496,82 +496,110 @@ const DrawingBagan: React.FC = () => {
             <label className="block text-xs mb-2 font-bold" style={{ color: '#050505', opacity: 0.7 }}>
               Cabang
             </label>
-            <select
-              value={filterCabang}
-              onChange={(e) => setFilterCabang(e.target.value as any)}
-              className="w-full px-4 py-3 rounded-xl border-2 shadow-sm text-sm font-medium focus:outline-none focus:ring-2 transition-all"
-              style={{ 
-                borderColor: 'rgba(153, 13, 53, 0.2)', 
-                backgroundColor: 'white',
-                color: '#050505'
-              }}
-            >
-              <option value="ALL">Semua Cabang</option>
-              <option value="KYORUGI">KYORUGI</option>
-              <option value="POOMSAE">POOMSAE</option>
-            </select>
+            <div className="relative">
+              <select
+                value={filterCabang}
+                onChange={(e) => setFilterCabang(e.target.value as any)}
+                className="w-full px-4 py-3 rounded-xl border-2 shadow-sm text-sm font-medium focus:outline-none focus:ring-2 transition-all appearance-none cursor-pointer"
+                style={{ 
+                  borderColor: 'rgba(153, 13, 53, 0.2)', 
+                  backgroundColor: 'white',
+                  color: '#050505'
+                }}
+              >
+                <option value="ALL">Semua Cabang</option>
+                <option value="KYORUGI">KYORUGI</option>
+                <option value="POOMSAE">POOMSAE</option>
+              </select>
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+                  <path d="M5 7.5L10 12.5L15 7.5" stroke="#990D35" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+            </div>
           </div>
 
           <div>
             <label className="block text-xs mb-2 font-bold" style={{ color: '#050505', opacity: 0.7 }}>
               Level
             </label>
-            <select
-              value={filterLevel}
-              onChange={(e) => setFilterLevel(e.target.value as any)}
-              className="w-full px-4 py-3 rounded-xl border-2 shadow-sm text-sm font-medium focus:outline-none focus:ring-2 transition-all"
-              style={{ 
-                borderColor: 'rgba(153, 13, 53, 0.2)', 
-                backgroundColor: 'white',
-                color: '#050505'
-              }}
-            >
-              <option value="ALL">Semua Level</option>
-              <option value="pemula">Pemula</option>
-              <option value="prestasi">Prestasi</option>
-            </select>
+            <div className="relative">
+              <select
+                value={filterLevel}
+                onChange={(e) => setFilterLevel(e.target.value as any)}
+                className="w-full px-4 py-3 rounded-xl border-2 shadow-sm text-sm font-medium focus:outline-none focus:ring-2 transition-all appearance-none cursor-pointer"
+                style={{ 
+                  borderColor: 'rgba(153, 13, 53, 0.2)', 
+                  backgroundColor: 'white',
+                  color: '#050505'
+                }}
+              >
+                <option value="ALL">Semua Level</option>
+                <option value="pemula">Pemula</option>
+                <option value="prestasi">Prestasi</option>
+              </select>
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+                  <path d="M5 7.5L10 12.5L15 7.5" stroke="#990D35" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+            </div>
           </div>
 
           <div>
             <label className="block text-xs mb-2 font-bold" style={{ color: '#050505', opacity: 0.7 }}>
               Status
             </label>
-            <select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value as any)}
-              className="w-full px-4 py-3 rounded-xl border-2 shadow-sm text-sm font-medium focus:outline-none focus:ring-2 transition-all"
-              style={{ 
-                borderColor: 'rgba(153, 13, 53, 0.2)', 
-                backgroundColor: 'white',
-                color: '#050505'
-              }}
-            >
-              <option value="ALL">Semua Status</option>
-              <option value="not_created">Belum Dibuat</option>
-              <option value="created">Sudah Dibuat</option>
-              <option value="in_progress">Berlangsung</option>
-              <option value="completed">Selesai</option>
-            </select>
+            <div className="relative">
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value as any)}
+                className="w-full px-4 py-3 rounded-xl border-2 shadow-sm text-sm font-medium focus:outline-none focus:ring-2 transition-all appearance-none cursor-pointer"
+                style={{ 
+                  borderColor: 'rgba(153, 13, 53, 0.2)', 
+                  backgroundColor: 'white',
+                  color: '#050505'
+                }}
+              >
+                <option value="ALL">Semua Status</option>
+                <option value="not_created">Belum Dibuat</option>
+                <option value="created">Sudah Dibuat</option>
+                <option value="in_progress">Berlangsung</option>
+                <option value="completed">Selesai</option>
+              </select>
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+                  <path d="M5 7.5L10 12.5L15 7.5" stroke="#990D35" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+            </div>
           </div>
 
           <div>
             <label className="block text-xs mb-2 font-bold" style={{ color: '#050505', opacity: 0.7 }}>
               Gender
             </label>
-            <select
-              value={filterGender}
-              onChange={(e) => setFilterGender(e.target.value as any)}
-              className="w-full px-4 py-3 rounded-xl border-2 shadow-sm text-sm font-medium focus:outline-none focus:ring-2 transition-all"
-              style={{ 
-                borderColor: 'rgba(153, 13, 53, 0.2)', 
-                backgroundColor: 'white',
-                color: '#050505'
-              }}
-            >
-              <option value="ALL">Semua</option>
-              <option value="LAKI_LAKI">Putra</option>
-              <option value="PEREMPUAN">Putri</option>
-            </select>
+            <div className="relative">
+              <select
+                value={filterGender}
+                onChange={(e) => setFilterGender(e.target.value as any)}
+                className="w-full px-4 py-3 rounded-xl border-2 shadow-sm text-sm font-medium focus:outline-none focus:ring-2 transition-all appearance-none cursor-pointer"
+                style={{ 
+                  borderColor: 'rgba(153, 13, 53, 0.2)', 
+                  backgroundColor: 'white',
+                  color: '#050505'
+                }}
+              >
+                <option value="ALL">Semua</option>
+                <option value="LAKI_LAKI">Putra</option>
+                <option value="PEREMPUAN">Putri</option>
+              </select>
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+                  <path d="M5 7.5L10 12.5L15 7.5" stroke="#990D35" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+            </div>
           </div>
 
           <div className="flex items-end">
