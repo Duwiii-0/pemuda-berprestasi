@@ -3,6 +3,7 @@ import { KompetisiController } from "../controllers/kompetisiController";
 import { authenticate } from "../middleware/auth";
 import { validateRequest } from "../middleware/validation";
 import { kompetisiValidation } from "../validations/kompetisiValidation";
+import { kelasController } from "../controllers/kelasController";
 
 const router = Router();
 
@@ -65,11 +66,6 @@ router.delete(
 router.put(
   "/:id/participants/:participantId/class",
   KompetisiController.updateParticipantClass
-);
-// kelas kejuaraan by kompetisi
-router.get(
-  "/:id/kelas-kejuaraan",
-  KompetisiController.getKelasKejuaraanByKompetisi
 );
 
 // ============================================================

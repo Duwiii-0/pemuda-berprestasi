@@ -11,7 +11,15 @@ router.use(authenticate);
 router.get("/kelompok-usia", kelasController.getKelompokUsia);
 router.get("/berat", kelasController.getKelasBerat);
 router.get("/poomsae", kelasController.getKelasPoomsae);
-router.post("/kejuaraan/:kompetisiId/filter", kelasController.getKelasKejuaraan);
+router.post(
+  "/kejuaraan/:kompetisiId/filter",
+  kelasController.getKelasKejuaraan
+);
+
+// kelas kejuaraan by kompetisi
+router.get(
+  "/:id/kelas-kejuaraan",
+  kelasController.getKelasKejuaraanByKompetisi
+);
 
 export default router;
-

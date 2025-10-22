@@ -135,7 +135,7 @@ export const kelasService = {
     try {
       console.log("📦 Querying kelas kejuaraan for kompetisi ID:", kompetisiId);
 
-      const kelasList = await prisma.kelasKejuaraan.findMany({
+      const kelasList = await prisma.tb_kelas_kejuaraan.findMany({
         where: {
           id_kompetisi: kompetisiId,
         },
