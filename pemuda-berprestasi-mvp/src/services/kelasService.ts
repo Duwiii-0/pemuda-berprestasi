@@ -144,27 +144,57 @@ export const kelasService = {
         },
         include: {
           kompetisi: {
-            // pastikan nama relasi sesuai di schema Prisma
             select: {
               id_kompetisi: true,
               nama_event: true,
             },
           },
-          kategori_event: true, // relasi kategori_event
-          kelompok: true, // relasi kelompok
-          kelas_berat: true, // relasi kelas_berat
-          poomsae: true, // relasi poomsae
+          kategori_event: true,
+          kelompok: true,
+          kelas_berat: true,
+          poomsae: true,
         },
         orderBy: {
           id_kelas_kejuaraan: "asc",
         },
       });
 
-      console.log(`✅ Ditemukan ${kelasList.length} kelas kejuaraan`);
-      return kelasList;
+      // ✅ Filter di aplikasi layer
+      const filteredList = kelasList.filter((kelas) => {
+        // KYORUGI: HARUS ada kelas_berat DAN kelompok
+        if (kelas.cabang === "KYORUGI") {
+          return kelas.id_kelas_berat !== null && kelas.id_kelompok !== null;
+        }
+
+        // POOMSAE: HARUS individu (Pemula & Prestasi)
+        if (kelas.cabang === "POOMSAE") {
+          const isIndividu = kelas.poomsae?.nama_kelas
+            ?.toLowerCase()
+            .includes("individu");
+          const kategori = kelas.kategori_event?.nama_kategori;
+
+          // Pemula: HARUS individu
+          if (kategori === "Pemula") {
+            return isIndividu;
+          }
+
+          // Prestasi: HARUS individu
+          if (kategori === "Prestasi") {
+            return isIndividu;
+          }
+        }
+
+        // Default: tampilkan
+        return true;
+      });
+
+      console.log(
+        `✅ Total kelas: ${kelasList.length}, Setelah filter: ${filteredList.length}`
+      );
+      return filteredList;
     } catch (error) {
       console.error(
-        "❌ Error in kompetisiService.getKelasKejuaraanByKompetisi:",
+        "❌ Error in kelasService.getKelasKejuaraanByKompetisi:",
         error
       );
       throw error;
