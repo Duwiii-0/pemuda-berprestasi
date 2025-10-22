@@ -680,7 +680,6 @@ const DrawingBagan: React.FC = () => {
               Reset Filter
             </button>
           </div>
-        </div>
 
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 pt-4 border-t" style={{ borderColor: 'rgba(153, 13, 53, 0.1)' }}>
           <p className="text-sm font-medium" style={{ color: '#050505', opacity: 0.6 }}>
