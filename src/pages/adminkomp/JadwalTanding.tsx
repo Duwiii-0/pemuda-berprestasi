@@ -319,18 +319,16 @@ const JadwalPertandingan: React.FC<{ idKompetisi: number }> = ({}) => {
                               parts.push(kelas.kelompok.nama_kelompok);
                             }
 
-                            if (kelas.kelas_berat?.nama_kelas) {
-                              parts.push(kelas.kelas_berat.nama_kelas);
-                            }
-
                             if (kelas.kelas_berat) {
                               const gender =
                                 kelas.kelas_berat.jenis_kelamin === "LAKI_LAKI"
                                   ? "Putra"
                                   : "Putri";
-                              parts.push(
-                                `${gender} ${kelas.kelas_berat.nama_kelas}`
-                              );
+                              parts.push(`${gender}`);
+                            }
+
+                            if (kelas.kelas_berat?.nama_kelas) {
+                              parts.push(kelas.kelas_berat.nama_kelas);
                             }
 
                             if (kelas.poomsae?.nama_kelas) {
