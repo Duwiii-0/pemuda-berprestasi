@@ -146,7 +146,7 @@ export const kelasService = {
           kompetisi: {
             select: {
               id_kompetisi: true,
-              nama_kompetisi: true,
+              nama_event: true,
             },
           },
           cabang: true,
