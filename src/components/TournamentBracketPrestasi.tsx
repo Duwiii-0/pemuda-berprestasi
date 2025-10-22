@@ -154,7 +154,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
     setShowModal(true);
   };
 
-  const handleExportPDF = async () => {
+const handleExportPDF = async () => {
   if (!kelasData || matches.length === 0) {
     showNotification(
       'warning',
@@ -168,13 +168,22 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
   setExportingPDF(true);
 
   try {
+    // Get DOM elements
+    const bracketElement = bracketRef.current;
+    const leaderboardElement = document.getElementById('prestasi-leaderboard');
+
+    if (!bracketElement) {
+      throw new Error('Bracket element not found');
+    }
+
     const pdfConfig = transformBracketDataForPDF(
       kelasData,
       matches,
       prestasiLeaderboard
     );
 
-    await exportBracketToPDF(pdfConfig);
+    // Pass DOM elements to export function
+    await exportBracketToPDF(pdfConfig, bracketElement, leaderboardElement || undefined);
 
     showNotification(
       'success',
@@ -903,6 +912,17 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
       {/* PRESTASI Layout dengan FIXED POSITIONING */}
       {bracketGenerated && matches.length > 0 ? (
         <div className="p-6" ref={bracketRef}>
+            <div ref={bracketRef} id="bracket-export-area">
+            {/* Title for PDF */}
+            <div className="mb-6 text-center">
+              <h2 className="text-2xl font-bold" style={{ color: '#990D35' }}>
+                Tournament Bracket - {kelasData.kelompok?.nama_kelompok} {kelasData.kelas_berat?.jenis_kelamin === 'LAKI_LAKI' ? 'Male' : 'Female'} {kelasData.kelas_berat?.nama_kelas || kelasData.poomsae?.nama_kelas}
+              </h2>
+              <p className="text-sm mt-2" style={{ color: '#050505', opacity: 0.7 }}>
+                {kelasData.kompetisi.nama_event} • {kelasData.kompetisi.lokasi}
+              </p>
+            </div>
+          </div>
           <div className="overflow-x-auto overflow-y-visible pb-8">
             {/* Round Headers */}
             <div className="flex gap-0 mb-6 px-8 sticky top-0 z-20 bg-white/95 backdrop-blur-sm py-4 shadow-sm">
@@ -1249,7 +1269,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
 
           {/* PRESTASI LEADERBOARD */}
           {prestasiLeaderboard && (
-            <div className="mt-8">
+            <div className="mt-8" id="prestasi-leaderboard">
               <div className="max-w-4xl mx-auto">
                 <div className="bg-white rounded-lg shadow-lg border-2" style={{ borderColor: '#990D35' }}>
                   <div className="p-6 border-b" style={{ backgroundColor: 'rgba(153, 13, 53, 0.05)', borderColor: '#990D35' }}>
