@@ -295,9 +295,7 @@ export const KompetisiProvider = ({ children }: { children: ReactNode }) => {
     setLoadingKelasKejuaraan(true);
     setErrorKelasKejuaraan(null);
     try {
-      const res = await apiClient.get(
-        `/kompetisi/${id_kompetisi}/kelas-kejuaraan`
-      );
+      const res = await apiClient.get(`/kelas/${id_kompetisi}/kelas-kejuaraan`);
 
       // Handle different response structures
       const kelasData = res.data?.data || res.data || [];
