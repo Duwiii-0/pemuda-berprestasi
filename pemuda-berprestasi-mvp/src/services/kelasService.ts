@@ -159,18 +159,17 @@ export const kelasService = {
         },
       });
 
-      // ✅ Filter di aplikasi layer
+      // ✅ BUSINESS LOGIC: Filter kelas yang valid untuk penjadwalan
       const filteredList = kelasList.filter((kelas) => {
         // KYORUGI: HARUS ada kelas_berat DAN kelompok
         if (kelas.cabang === "KYORUGI") {
           return kelas.id_kelas_berat !== null && kelas.id_kelompok !== null;
         }
 
-        // POOMSAE: HARUS individu (Pemula & Prestasi)
+        // POOMSAE: Filter berdasarkan kategori
         if (kelas.cabang === "POOMSAE") {
-          const isIndividu = kelas.poomsae?.nama_kelas
-            ?.toLowerCase()
-            .includes("individu");
+          const namaKelas = kelas.poomsae?.nama_kelas?.toLowerCase() || "";
+          const isIndividu = namaKelas.includes("individu");
           const kategori = kelas.kategori_event?.nama_kategori;
 
           // Pemula: HARUS individu
@@ -178,9 +177,24 @@ export const kelasService = {
             return isIndividu;
           }
 
-          // Prestasi: HARUS individu
+          // Prestasi: HARUS individu DAN TIDAK boleh super-pracadet, pracadet, cadet
           if (kategori === "Prestasi") {
-            return isIndividu;
+            const kelompokNama =
+              kelas.kelompok?.nama_kelompok?.toLowerCase() || "";
+
+            // ❌ Exclude: super-pracadet, pracadet, cadet
+            const excludedKelompok = [
+              "super-pracadet",
+              "super pracadet",
+              "pracadet",
+              "cadet",
+            ];
+
+            const isExcluded = excludedKelompok.some((excluded) =>
+              kelompokNama.includes(excluded)
+            );
+
+            return isIndividu && !isExcluded;
           }
         }
 
@@ -189,8 +203,20 @@ export const kelasService = {
       });
 
       console.log(
-        `✅ Total kelas: ${kelasList.length}, Setelah filter: ${filteredList.length}`
+        `✅ Total kelas: ${kelasList.length}, Valid untuk jadwal: ${filteredList.length}`
       );
+
+      // Debug: Log yang di-exclude
+      const excluded = kelasList.filter((k) => !filteredList.includes(k));
+      if (excluded.length > 0) {
+        console.log(`🚫 Excluded ${excluded.length} kelas:`);
+        excluded.forEach((k) => {
+          console.log(
+            `  - ${k.cabang} ${k.kategori_event?.nama_kategori} ${k.kelompok?.nama_kelompok} ${k.poomsae?.nama_kelas}`
+          );
+        });
+      }
+
       return filteredList;
     } catch (error) {
       console.error(
