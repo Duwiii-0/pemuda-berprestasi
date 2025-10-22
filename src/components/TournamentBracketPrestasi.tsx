@@ -841,9 +841,9 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
       {/* PRESTASI Layout dengan FIXED POSITIONING */}
       {bracketGenerated && matches.length > 0 ? (
         <div className="p-6" ref={bracketRef}>
-          <div className="overflow-x-auto overflow-y-visible pb-8">
+          <div className="overflow-x-auto overflow-y-visible pb-8 pt-24">
             {/* Round Headers */}
-            <div className="flex gap-0 mb-6 px-8 sticky top-0 z-20 bg-white/95 backdrop-blur-sm py-4 shadow-sm">
+            <div className="flex gap-0 mb-6 px-8 sticky top-4 z-20 bg-white/95 backdrop-blur-sm py-4 shadow-sm">
               {Array.from({ length: totalRounds }, (_, roundIndex) => {
                 const round = roundIndex + 1;
                 const roundMatches = getMatchesByRound(round);
@@ -873,7 +873,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
             </div>
 
             {/* Bracket Visual Container - ABSOLUTE POSITIONING */}
-            <div className="relative" style={{ minHeight: '2500px', paddingTop: '1750px' }}>
+            <div className="relative" style={{ minHeight: '2500px', paddingTop: '1900px' }}>
               {/* SVG untuk garis connecting yang konsisten */}
               <svg 
                 className="absolute top-0 left-8 pointer-events-none" 
