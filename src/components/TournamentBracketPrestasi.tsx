@@ -840,7 +840,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
 
       {/* PRESTASI Layout dengan FIXED POSITIONING */}
       {bracketGenerated && matches.length > 0 ? (
-        <div className="p-6" ref={bracketRef}>
+        <div className="p-6 pt-32" ref={bracketRef}>
           <div className="overflow-x-auto overflow-y-visible pb-8 pt-24">
             {/* Round Headers */}
             <div className="flex gap-0 mb-6 px-8 sticky top-4 z-20 bg-white/95 backdrop-blur-sm py-4 shadow-sm">
