@@ -163,10 +163,16 @@ model tb_kompetisi {
   id_kompetisi     Int                  @id @default(autoincrement())
   id_penyelenggara Int
   tanggal_mulai    DateTime
-  lokasi           String
+  lokasi           String               @db.VarChar(255)
   tanggal_selesai  DateTime
   nama_event       String               @db.VarChar(255)
   status           StatusKompetisi
+  
+  deskripsi        String?              @db.Text           // Deskripsi kompetisi
+  website_url      String?              @db.VarChar(500)   // Link ke website registrasi atlet
+  poster_image     String?              @db.VarChar(255)   // Path file poster
+  created_at       DateTime             @default(now())    // Kapan kompetisi dibuat
+  updated_at       DateTime             @updatedAt         // Kapan terakhir diupdate
   
   admin            tb_admin_kompetisi[]   
   penyelenggara    tb_penyelenggara     @relation(fields: [id_penyelenggara], references: [id_penyelenggara])
