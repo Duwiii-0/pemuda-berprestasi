@@ -537,29 +537,42 @@ const DrawingBagan: React.FC = () => {
           {filteredKelas.map((kelas) => (
             <div
               key={kelas.id_kelas_kejuaraan}
-              className="rounded-xl shadow-sm border overflow-hidden hover:shadow-md transition-all cursor-pointer"
-              style={{ backgroundColor: '#F5FBEF', borderColor: '#990D35' }}
+              className="rounded-2xl overflow-hidden hover:shadow-2xl transition-all duration-300 cursor-pointer transform hover:-translate-y-1"
+              style={{ 
+                backgroundColor: '#F5FBEF', 
+                border: '1px solid rgba(153, 13, 53, 0.1)',
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+              }}
             >
               {/* Header */}
               <div 
-                className="p-4 border-b"
+                className="p-5 border-b"
                 style={{ 
-                  backgroundColor: kelas.cabang === 'KYORUGI' ? 'rgba(153, 13, 53, 0.1)' : 'rgba(245, 183, 0, 0.1)',
-                  borderColor: '#990D35'
+                  background: kelas.cabang === 'KYORUGI' 
+                    ? 'linear-gradient(135deg, rgba(153, 13, 53, 0.08) 0%, rgba(153, 13, 53, 0.04) 100%)' 
+                    : 'linear-gradient(135deg, rgba(245, 183, 0, 0.08) 0%, rgba(245, 183, 0, 0.04) 100%)',
+                  borderColor: 'rgba(153, 13, 53, 0.1)'
                 }}
               >
-                <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
-                    {kelas.cabang === 'KYORUGI' ? (
-                      <Medal size={20} style={{ color: '#990D35' }} />
-                    ) : (
-                      <Trophy size={20} style={{ color: '#F5B700' }} />
-                    )}
-                    <span 
-                      className="px-2 py-1 rounded-full text-xs font-medium"
+                    <div 
+                      className="w-10 h-10 rounded-xl flex items-center justify-center shadow-sm"
                       style={{
                         backgroundColor: kelas.cabang === 'KYORUGI' ? '#990D35' : '#F5B700',
-                        color: '#F5FBEF'
+                      }}
+                    >
+                      {kelas.cabang === 'KYORUGI' ? (
+                        <Medal size={20} style={{ color: 'white' }} />
+                      ) : (
+                        <Trophy size={20} style={{ color: 'white' }} />
+                      )}
+                    </div>
+                    <span 
+                      className="px-3 py-1.5 rounded-full text-xs font-bold shadow-sm"
+                      style={{
+                        backgroundColor: kelas.cabang === 'KYORUGI' ? '#990D35' : '#F5B700',
+                        color: 'white'
                       }}
                     >
                       {kelas.cabang}
@@ -573,23 +586,25 @@ const DrawingBagan: React.FC = () => {
                   </div>
                 </div>
                 
-                <h3 className="font-bold text-base leading-tight" style={{ color: '#050505' }}>
+                <h3 className="font-bold text-base leading-tight mb-2" style={{ color: '#050505' }}>
                   {kelas.kategori_event.nama_kategori.toUpperCase()} - {kelas.kelompok.nama_kelompok}
                 </h3>
                 
-                <p className="text-sm mt-1" style={{ color: '#050505', opacity: 0.7 }}>
+                <p className="text-sm" style={{ color: '#050505', opacity: 0.7 }}>
                   {kelas.jenis_kelamin === 'LAKI_LAKI' ? 'Putra' : 'Putri'}
                   {kelas.kelas_berat && ` - ${kelas.kelas_berat.nama_kelas}`}
                   {kelas.poomsae && ` - ${kelas.poomsae.nama_kelas}`}
                 </p>
                 
                 {/* Category Badge */}
-                <div className="mt-2">
+                <div className="mt-3">
                   <span 
-                    className="inline-flex items-center text-xs px-2 py-1 rounded-full font-medium"
+                    className="inline-flex items-center text-xs px-3 py-1.5 rounded-full font-bold shadow-sm"
                     style={{
-                      backgroundColor: isPemula(kelas) ? 'rgba(99, 102, 241, 0.2)' : 'rgba(245, 158, 11, 0.2)',
-                      color: isPemula(kelas) ? '#6366F1' : '#F59E0B'
+                      background: isPemula(kelas) 
+                        ? 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)' 
+                        : 'linear-gradient(135deg, #F59E0B 0%, #EF4444 100%)',
+                      color: 'white'
                     }}
                   >
                     {isPemula(kelas) ? '🥋 PEMULA' : '🏆 PRESTASI'}
@@ -598,39 +613,54 @@ const DrawingBagan: React.FC = () => {
               </div>
 
               {/* Content */}
-              <div className="p-4 space-y-3">
+              <div className="p-5 space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Users size={16} style={{ color: '#050505', opacity: 0.7 }} />
-                    <span className="text-sm font-medium" style={{ color: '#050505' }}>
-                      {kelas.peserta_count} Peserta
-                    </span>
+                    <div 
+                      className="w-10 h-10 rounded-xl flex items-center justify-center shadow-sm"
+                      style={{ backgroundColor: 'rgba(153, 13, 53, 0.1)' }}
+                    >
+                      <Users size={18} style={{ color: '#990D35' }} />
+                    </div>
+                    <div>
+                      <p className="text-xs" style={{ color: '#050505', opacity: 0.5 }}>
+                        Total Peserta
+                      </p>
+                      <p className="text-lg font-bold" style={{ color: '#050505' }}>
+                        {kelas.peserta_count}
+                      </p>
+                    </div>
                   </div>
                   {kelas.peserta_count >= 4 && (
-                    <span className="text-xs px-2 py-1 rounded-full" style={{ 
-                      backgroundColor: 'rgba(34, 197, 94, 0.2)', 
-                      color: '#059669' 
-                    }}>
-                      Siap Tournament
+                    <span 
+                      className="text-xs px-3 py-1.5 rounded-full font-bold shadow-sm" 
+                      style={{ 
+                        background: 'linear-gradient(135deg, #22c55e 0%, #10b981 100%)',
+                        color: 'white'
+                      }}
+                    >
+                      ✓ Siap
                     </span>
                   )}
                 </div>
 
                 {kelas.bracket_status !== 'not_created' && (
-                  <div className="p-3 rounded-lg" style={{ backgroundColor: 'rgba(153, 13, 53, 0.05)' }}>
+                  <div className="p-4 rounded-xl" style={{ backgroundColor: 'rgba(153, 13, 53, 0.04)' }}>
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium" style={{ color: '#050505' }}>
-                        Tournament Progress
+                      <span className="text-sm font-bold" style={{ color: '#050505' }}>
+                        Progress Tournament
                       </span>
-                      <span className="text-xs" style={{ color: '#050505', opacity: 0.6 }}>
+                      <span className="text-xs font-medium" style={{ color: '#050505', opacity: 0.6 }}>
                         {Math.ceil(Math.log2(kelas.peserta_count))} Babak
                       </span>
                     </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
                       <div
-                        className="h-2 rounded-full transition-all"
+                        className="h-2.5 rounded-full transition-all duration-500"
                         style={{ 
-                          backgroundColor: kelas.bracket_status === 'completed' ? '#22c55e' : '#F5B700',
+                          background: kelas.bracket_status === 'completed' 
+                            ? 'linear-gradient(90deg, #22c55e 0%, #10b981 100%)' 
+                            : 'linear-gradient(90deg, #F5B700 0%, #F59E0B 100%)',
                           width: kelas.bracket_status === 'completed' ? '100%' : '45%'
                         }}
                       />
@@ -639,9 +669,15 @@ const DrawingBagan: React.FC = () => {
                 )}
 
                 {kelas.peserta_count < 4 && (
-                  <div className="p-3 rounded-lg flex items-center gap-2" style={{ backgroundColor: 'rgba(245, 183, 0, 0.1)' }}>
-                    <AlertTriangle size={14} style={{ color: '#F5B700' }} />
-                    <span className="text-xs" style={{ color: '#F5B700' }}>
+                  <div 
+                    className="p-3 rounded-xl flex items-center gap-2" 
+                    style={{ 
+                      background: 'linear-gradient(135deg, rgba(245, 183, 0, 0.08) 0%, rgba(245, 183, 0, 0.04) 100%)',
+                      border: '1px solid rgba(245, 183, 0, 0.2)'
+                    }}
+                  >
+                    <AlertTriangle size={16} style={{ color: '#F5B700' }} />
+                    <span className="text-xs font-medium" style={{ color: '#F5B700' }}>
                       Minimal 4 peserta untuk tournament
                     </span>
                   </div>
@@ -649,27 +685,29 @@ const DrawingBagan: React.FC = () => {
               </div>
 
               {/* Actions */}
-              <div className="p-4 pt-0">
+              <div className="p-5 pt-0">
                 <button
                   onClick={() => {
                     setSelectedKelas(kelas);
                     setShowBracket(true);
                   }}
                   disabled={kelas.peserta_count < 4}
-                  className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-medium transition-all disabled:opacity-50"
+                  className="w-full flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg transform hover:scale-[1.02]"
                   style={{ 
-                    backgroundColor: kelas.bracket_status === 'not_created' ? '#F5B700' : '#990D35',
-                    color: '#F5FBEF'
+                    background: kelas.bracket_status === 'not_created' 
+                      ? 'linear-gradient(135deg, #F5B700 0%, #F59E0B 100%)' 
+                      : 'linear-gradient(135deg, #990D35 0%, #7A0A2B 100%)',
+                    color: 'white'
                   }}
                 >
                   {kelas.bracket_status === 'not_created' ? (
                     <>
-                      <GitBranch size={16} />
+                      <GitBranch size={18} />
                       <span>Buat Bracket</span>
                     </>
                   ) : (
                     <>
-                      <Eye size={16} />
+                      <Eye size={18} />
                       <span>Lihat Bracket</span>
                     </>
                   )}
