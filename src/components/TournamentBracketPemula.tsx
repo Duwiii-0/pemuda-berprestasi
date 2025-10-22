@@ -1252,43 +1252,132 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
         </div>
       )}
 
-      {/* Notification Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
-            <div className="p-6 border-b">
-              <h3 className="text-xl font-bold">{modalConfig.title}</h3>
+      {/* Notification Modal - Animated */}
+        {showModal && (
+        <div 
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+            style={{
+            animation: 'fadeIn 0.2s ease-out'
+            }}
+        >
+            <style>
+            {`
+                @keyframes fadeIn {
+                from { opacity: 0; }
+                to { opacity: 1; }
+                }
+                @keyframes slideUp {
+                from { 
+                    opacity: 0;
+                    transform: translateY(20px) scale(0.95);
+                }
+                to { 
+                    opacity: 1;
+                    transform: translateY(0) scale(1);
+                }
+                }
+                @keyframes bounceIn {
+                0% { transform: scale(0.3); opacity: 0; }
+                50% { transform: scale(1.05); }
+                70% { transform: scale(0.9); }
+                100% { transform: scale(1); opacity: 1; }
+                }
+            `}
+            </style>
+            
+            <div 
+            className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden"
+            style={{
+                animation: 'slideUp 0.3s ease-out'
+            }}
+            >
+            {/* Icon Header with Color */}
+            <div 
+                className="p-6 flex flex-col items-center"
+                style={{
+                backgroundColor: modalConfig.type === 'success' ? 'rgba(34, 197, 94, 0.1)' :
+                                modalConfig.type === 'error' ? 'rgba(239, 68, 68, 0.1)' :
+                                modalConfig.type === 'warning' ? 'rgba(245, 183, 0, 0.1)' :
+                                'rgba(153, 13, 53, 0.1)'
+                }}
+            >
+                <div
+                className="w-20 h-20 rounded-full flex items-center justify-center mb-4"
+                style={{
+                    backgroundColor: modalConfig.type === 'success' ? '#22c55e' :
+                                modalConfig.type === 'error' ? '#ef4444' :
+                                modalConfig.type === 'warning' ? '#F5B700' :
+                                '#990D35',
+                    animation: 'bounceIn 0.5s ease-out'
+                }}
+                >
+                {modalConfig.type === 'success' && (
+                    <CheckCircle size={40} style={{ color: 'white' }} />
+                )}
+                {modalConfig.type === 'error' && (
+                    <AlertTriangle size={40} style={{ color: 'white' }} />
+                )}
+                {modalConfig.type === 'warning' && (
+                    <AlertTriangle size={40} style={{ color: 'white' }} />
+                )}
+                {modalConfig.type === 'info' && (
+                    <Trophy size={40} style={{ color: 'white' }} />
+                )}
+                </div>
+                
+                <h3 
+                className="text-2xl font-bold text-center mb-2"
+                style={{ color: '#050505' }}
+                >
+                {modalConfig.title}
+                </h3>
+                
+                <p 
+                className="text-center text-base leading-relaxed"
+                style={{ color: '#050505', opacity: 0.7 }}
+                >
+                {modalConfig.message}
+                </p>
             </div>
-            <div className="p-6">
-              <p>{modalConfig.message}</p>
-            </div>
-            <div className="p-6 border-t flex gap-3">
-              {modalConfig.cancelText && (
+            
+            {/* Action Buttons */}
+            <div className="p-6 bg-gray-50 flex gap-3">
+                {modalConfig.cancelText && (
                 <button
-                  onClick={() => {
+                    onClick={() => {
                     if (modalConfig.onCancel) modalConfig.onCancel();
                     setShowModal(false);
-                  }}
-                  className="flex-1 py-3 px-4 rounded-lg border"
-                  style={{ borderColor: '#990D35', color: '#990D35' }}
+                    }}
+                    className="flex-1 py-3 px-4 rounded-xl font-semibold transition-all hover:bg-white border-2"
+                    style={{ 
+                    borderColor: '#990D35', 
+                    color: '#990D35',
+                    backgroundColor: 'white'
+                    }}
                 >
-                  {modalConfig.cancelText}
+                    {modalConfig.cancelText}
                 </button>
-              )}
-              <button
+                )}
+                <button
                 onClick={() => {
-                  if (modalConfig.onConfirm) modalConfig.onConfirm();
-                  setShowModal(false);
+                    if (modalConfig.onConfirm) modalConfig.onConfirm();
+                    setShowModal(false);
                 }}
-                className="flex-1 py-3 px-4 rounded-lg"
-                style={{ backgroundColor: '#990D35', color: '#F5FBEF' }}
-              >
+                className="flex-1 py-3 px-4 rounded-xl font-semibold transition-all hover:opacity-90 shadow-lg"
+                style={{ 
+                    backgroundColor: modalConfig.type === 'success' ? '#22c55e' :
+                                modalConfig.type === 'error' ? '#ef4444' :
+                                modalConfig.type === 'warning' ? '#F5B700' :
+                                '#990D35',
+                    color: 'white'
+                }}
+                >
                 {modalConfig.confirmText || 'OK'}
-              </button>
+                </button>
             </div>
-          </div>
+            </div>
         </div>
-      )}
+        )}
     </div>
   );
 };
