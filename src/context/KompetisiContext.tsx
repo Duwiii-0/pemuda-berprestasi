@@ -29,7 +29,42 @@ export interface Kompetisi {
   nama_event: string;
   status: "PENDAFTARAN" | "SEDANG_DIMULAI" | "SELESAI";
   lokasi?: string;
-  jumlah_peserta?: number; // Added for participant count tracking
+  jumlah_peserta?: number;
+}
+
+export interface KelasKejuaraan {
+  id_kelas_kejuaraan: number;
+  id_kategori_event: number;
+  id_kelompok?: number;
+  id_kelas_berat?: number;
+  id_poomsae?: number;
+  id_kompetisi: number;
+  cabang: "POOMSAE" | "KYORUGI";
+  nama_kelas?: string;
+  kategori_event: {
+    id_kategori_event: number;
+    nama_kategori: string;
+  };
+  kelompok?: {
+    id_kelompok: number;
+    nama_kelompok: string;
+    usia_min: number;
+    usia_max: number;
+  };
+  kelas_berat?: {
+    id_kelas_berat: number;
+    jenis_kelamin: "LAKI_LAKI" | "PEREMPUAN";
+    batas_min: number;
+    batas_max: number;
+    nama_kelas: string;
+  };
+  poomsae?: {
+    id_poomsae: number;
+    nama_kelas: string;
+  };
+  _count?: {
+    peserta_kompetisi: number;
+  };
 }
 
 export interface KompetisiDetail extends Kompetisi {
@@ -38,20 +73,7 @@ export interface KompetisiDetail extends Kompetisi {
     id_penyelenggara: number;
     nama_penyelenggara: string;
   };
-  kelas_kejuaraan?: {
-    id_kelas: number;
-    nama_kelas: string;
-    kategori_event?: {
-      id: number;
-      nama: string;
-    };
-    kelompok?: any;
-    kelas_berat?: any;
-    poomsae?: any;
-    _count?: {
-      peserta_kompetisi: number;
-    };
-  }[];
+  kelas_kejuaraan?: KelasKejuaraan[];
   _count?: {
     kelas_kejuaraan: number;
   };
@@ -70,7 +92,7 @@ export interface PesertaKompetisi {
   id_kelas_kejuaraan: number;
   is_team: boolean;
   status: "PENDING" | "APPROVED" | "REJECTED";
-  
+
   atlet?: {
     id_atlet: number;
     nama_atlet: string;
@@ -96,7 +118,7 @@ export interface PesertaKompetisi {
       kota?: string;
     };
   };
-  
+
   kelas_kejuaraan: {
     id_kelas_kejuaraan: number;
     id_kategori_event: number;
@@ -127,7 +149,7 @@ export interface PesertaKompetisi {
       nama_kelas: string;
     };
   };
-  
+
   anggota_tim?: {
     id: number;
     id_peserta_kompetisi: number;
@@ -164,20 +186,19 @@ export interface KompetisiContextType {
   kompetisiList: Kompetisi[];
   kompetisiDetail: KompetisiDetail | null;
   pesertaList: PesertaKompetisi[];
+  kelasKejuaraanList: KelasKejuaraan[];
   atletPagination: PaginationMeta;
-  updateParticipantClass: (
-    kompetisiId: number,
-    participantId: number,
-    kelasKejuaraanId: number
-  ) => Promise<any>;
 
   loadingKompetisi: boolean;
   loadingAtlet: boolean;
+  loadingKelasKejuaraan: boolean;
   errorKompetisi: string | null;
   errorAtlet: string | null;
+  errorKelasKejuaraan: string | null;
 
   fetchKompetisiList: () => Promise<void>;
   fetchKompetisiById: (id_kompetisi: number) => Promise<void>;
+  fetchKelasKejuaraanByKompetisi: (id_kompetisi: number) => Promise<void>;
   fetchAtletByKompetisi: (
     id_kompetisi: number,
     cabang?: "kyorugi" | "poomsae",
@@ -196,18 +217,26 @@ export interface KompetisiContextType {
     kompetisiId: number,
     participantId: number
   ) => Promise<any>;
+
+  updateParticipantClass: (
+    kompetisiId: number,
+    participantId: number,
+    kelasKejuaraanId: number
+  ) => Promise<any>;
 }
 
 const KompetisiContext = createContext<KompetisiContextType | undefined>(
   undefined
 );
 
-// Move the provider component to be a named export
 export const KompetisiProvider = ({ children }: { children: ReactNode }) => {
   const [kompetisiList, setKompetisiList] = useState<Kompetisi[]>([]);
   const [kompetisiDetail, setKompetisiDetail] =
     useState<KompetisiDetail | null>(null);
   const [pesertaList, setPesertaList] = useState<PesertaKompetisi[]>([]);
+  const [kelasKejuaraanList, setKelasKejuaraanList] = useState<
+    KelasKejuaraan[]
+  >([]);
   const [atletPagination, setAtletPagination] = useState<PaginationMeta>({
     page: 1,
     limit: 1000,
@@ -217,8 +246,12 @@ export const KompetisiProvider = ({ children }: { children: ReactNode }) => {
 
   const [loadingKompetisi, setLoadingKompetisi] = useState(false);
   const [loadingAtlet, setLoadingAtlet] = useState(false);
+  const [loadingKelasKejuaraan, setLoadingKelasKejuaraan] = useState(false);
   const [errorKompetisi, setErrorKompetisi] = useState<string | null>(null);
   const [errorAtlet, setErrorAtlet] = useState<string | null>(null);
+  const [errorKelasKejuaraan, setErrorKelasKejuaraan] = useState<string | null>(
+    null
+  );
 
   const fetchKompetisiList = async () => {
     setLoadingKompetisi(true);
@@ -245,7 +278,7 @@ export const KompetisiProvider = ({ children }: { children: ReactNode }) => {
       const res = await apiClient.get(`/kompetisi/${id_kompetisi}`);
       setKompetisiDetail(res.data?.data || null);
     } catch (err: any) {
-      console.error("[fetchKompetisiById] error:");
+      console.error("[fetchKompetisiById] error:", err);
       setErrorKompetisi(
         err.response?.data?.message ||
           err.message ||
@@ -254,6 +287,37 @@ export const KompetisiProvider = ({ children }: { children: ReactNode }) => {
     } finally {
       setLoadingKompetisi(false);
       console.log("[fetchKompetisiById] done");
+    }
+  };
+
+  // 🆕 Fetch Kelas Kejuaraan berdasarkan ID Kompetisi
+  const fetchKelasKejuaraanByKompetisi = async (id_kompetisi: number) => {
+    setLoadingKelasKejuaraan(true);
+    setErrorKelasKejuaraan(null);
+    try {
+      const res = await apiClient.get(
+        `/kompetisi/${id_kompetisi}/kelas-kejuaraan`
+      );
+
+      // Handle different response structures
+      const kelasData = res.data?.data || res.data || [];
+      setKelasKejuaraanList(Array.isArray(kelasData) ? kelasData : []);
+
+      console.log(
+        "[fetchKelasKejuaraanByKompetisi] Loaded kelas:",
+        kelasData.length
+      );
+    } catch (err: any) {
+      console.error("[fetchKelasKejuaraanByKompetisi] error:", err);
+      setErrorKelasKejuaraan(
+        err.response?.data?.message ||
+          err.message ||
+          "Gagal mengambil data kelas kejuaraan"
+      );
+      setKelasKejuaraanList([]);
+    } finally {
+      setLoadingKelasKejuaraan(false);
+      console.log("[fetchKelasKejuaraanByKompetisi] done");
     }
   };
 
@@ -267,18 +331,22 @@ export const KompetisiProvider = ({ children }: { children: ReactNode }) => {
     try {
       let url = `/kompetisi/${id_kompetisi}/atlet?page=${atletPagination.page}&limit=${atletPagination.limit}`;
       if (cabang) url += `&cabang=${cabang}`;
-      if (id_dojang) url += `&id_dojang=${id_dojang}`; 
+      if (id_dojang) url += `&id_dojang=${id_dojang}`;
 
       const res = await apiClient.get(url);
 
-      setPesertaList(Array.isArray(res.data) ? res.data as PesertaKompetisi[] : res.data.data as PesertaKompetisi[] ?? []);
+      setPesertaList(
+        Array.isArray(res.data)
+          ? (res.data as PesertaKompetisi[])
+          : (res.data.data as PesertaKompetisi[]) ?? []
+      );
       setAtletPagination((prev) => ({
         ...prev,
         total: res.data?.meta?.total || 0,
         totalPages: res.data?.meta?.totalPages || 0,
       }));
     } catch (err: any) {
-      console.error("[fetchAtletByKompetisi] error:");
+      console.error("[fetchAtletByKompetisi] error:", err);
       setErrorAtlet(
         err.response?.data?.message ||
           err.message ||
@@ -314,7 +382,7 @@ export const KompetisiProvider = ({ children }: { children: ReactNode }) => {
 
       return res.data;
     } catch (err: any) {
-      console.error("[updatePesertaStatus] error:");
+      console.error("[updatePesertaStatus] error:", err);
       throw err;
     }
   };
@@ -323,80 +391,85 @@ export const KompetisiProvider = ({ children }: { children: ReactNode }) => {
     kompetisiId: number,
     participantId: number
   ) => {
-    // Store original data for rollback
     const originalPesertaList = [...pesertaList];
-    
+
     try {
-      console.log(`🗑️ Deleting participant ${participantId} from kompetisi ${kompetisiId}`);
-      
-      // Optimistic update - hapus dari UI dulu
-      setPesertaList(prev => prev.filter(p => p.id_peserta_kompetisi !== participantId));
-      
-      const response = await apiClient.delete(`/kompetisi/${kompetisiId}/participants/${participantId}`);
-      
+      console.log(
+        `🗑️ Deleting participant ${participantId} from kompetisi ${kompetisiId}`
+      );
+
+      setPesertaList((prev) =>
+        prev.filter((p) => p.id_peserta_kompetisi !== participantId)
+      );
+
+      const response = await apiClient.delete(
+        `/kompetisi/${kompetisiId}/participants/${participantId}`
+      );
+
       console.log("✅ Participant deleted successfully:", response.data);
-      
-      // Update kompetisi list jika ada perubahan jumlah peserta
-      setKompetisiList(prev => 
-        prev.map(k => 
-          k.id_kompetisi === kompetisiId 
+
+      setKompetisiList((prev) =>
+        prev.map((k) =>
+          k.id_kompetisi === kompetisiId
             ? { ...k, jumlah_peserta: Math.max((k.jumlah_peserta || 1) - 1, 0) }
             : k
         )
       );
-      
-      // Update pagination total
-      setAtletPagination(prev => ({
+
+      setAtletPagination((prev) => ({
         ...prev,
-        total: Math.max(prev.total - 1, 0)
+        total: Math.max(prev.total - 1, 0),
       }));
-      
+
       console.log("Peserta berhasil dihapus dari kompetisi");
       return response.data;
-      
     } catch (error: any) {
       console.error("❌ Error deleting participant:", error);
-      
-      // Rollback optimistic update
+
       setPesertaList(originalPesertaList);
-      
-      const errorMessage = error.response?.data?.message || error.message || "Gagal menghapus peserta";
+
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        "Gagal menghapus peserta";
       console.error(errorMessage);
-      
+
       throw new Error(errorMessage);
     }
   };
 
   const updateParticipantClass = async (
-  kompetisiId: number,
-  participantId: number,
-  kelasKejuaraanId: number
-) => {
-  try {
-    console.log(`🔄 Updating participant ${participantId} to class ${kelasKejuaraanId} in kompetisi ${kompetisiId}`);
-    
-    const response = await apiClient.put(
-      `/kompetisi/${kompetisiId}/participants/${participantId}/class`,
-      { kelasKejuaraanId }
-    );
-    
-    console.log("✅ Participant class updated successfully:", response.data);
-    
-    // Refresh the participants list after successful update
-    await fetchAtletByKompetisi(kompetisiId);
-    
-    return response.data;
-    
-  } catch (error: any) {
-    console.error("❌ Error updating participant class:", error);
-    
-    const errorMessage = error.response?.data?.message || error.message || "Gagal mengubah kelas peserta";
-    console.error(errorMessage);
-    
-    throw new Error(errorMessage);
-  }
-};
+    kompetisiId: number,
+    participantId: number,
+    kelasKejuaraanId: number
+  ) => {
+    try {
+      console.log(
+        `🔄 Updating participant ${participantId} to class ${kelasKejuaraanId} in kompetisi ${kompetisiId}`
+      );
 
+      const response = await apiClient.put(
+        `/kompetisi/${kompetisiId}/participants/${participantId}/class`,
+        { kelasKejuaraanId }
+      );
+
+      console.log("✅ Participant class updated successfully:", response.data);
+
+      await fetchAtletByKompetisi(kompetisiId);
+
+      return response.data;
+    } catch (error: any) {
+      console.error("❌ Error updating participant class:", error);
+
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        "Gagal mengubah kelas peserta";
+      console.error(errorMessage);
+
+      throw new Error(errorMessage);
+    }
+  };
 
   return (
     <KompetisiContext.Provider
@@ -404,17 +477,21 @@ export const KompetisiProvider = ({ children }: { children: ReactNode }) => {
         kompetisiList,
         kompetisiDetail,
         pesertaList,
+        kelasKejuaraanList,
         atletPagination,
         loadingKompetisi,
         loadingAtlet,
+        loadingKelasKejuaraan,
         errorKompetisi,
         errorAtlet,
-        updateParticipantClass, 
+        errorKelasKejuaraan,
         fetchKompetisiList,
         fetchKompetisiById,
+        fetchKelasKejuaraanByKompetisi,
         fetchAtletByKompetisi,
         updatePesertaStatus,
         deleteParticipant,
+        updateParticipantClass,
         setAtletPage,
         setAtletLimit,
       }}
@@ -424,7 +501,6 @@ export const KompetisiProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-// Make sure the hook is consistently exported
 export function useKompetisi() {
   const context = useContext(KompetisiContext);
   if (!context) {
