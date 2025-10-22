@@ -144,16 +144,17 @@ export const kelasService = {
         },
         include: {
           kompetisi: {
+            // pastikan nama relasi sesuai di schema Prisma
             select: {
               id_kompetisi: true,
               nama_event: true,
             },
           },
-          cabang: true,
-          kategori_event: true,
-          kelompok: true,
-          kelas_berat: true,
-          poomsae: true,
+          cabang: true, // relasi cabang
+          kategori_event: true, // relasi kategori_event
+          kelompok: true, // relasi kelompok
+          kelas_berat: true, // relasi kelas_berat
+          poomsae: true, // relasi poomsae
         },
         orderBy: {
           id_kelas_kejuaraan: "asc",
