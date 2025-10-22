@@ -150,7 +150,6 @@ export const kelasService = {
               nama_event: true,
             },
           },
-          cabang: true, // relasi cabang
           kategori_event: true, // relasi kategori_event
           kelompok: true, // relasi kelompok
           kelas_berat: true, // relasi kelas_berat
