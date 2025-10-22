@@ -873,7 +873,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
             </div>
 
             {/* Bracket Visual Container - ABSOLUTE POSITIONING */}
-            <div className="relative" style={{ minHeight: '1750px', paddingTop: '1750px' }}>
+            <div className="relative" style={{ minHeight: '1750px', paddingTop: '100px' }}>
               {/* SVG untuk garis connecting yang konsisten */}
               <svg 
                 className="absolute top-0 left-8 pointer-events-none" 
@@ -894,11 +894,11 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                     
                     // Posisi kartu saat ini
                     const x1 = roundIndex * (CARD_WIDTH + ROUND_GAP) + CARD_WIDTH;
-                    const y1 = calculateVerticalPosition(roundIndex, matchIndex, roundMatches.length) + 500 + (CARD_HEIGHT / 2);
+                    const y1 = calculateVerticalPosition(roundIndex, matchIndex, roundMatches.length) + 100 + (CARD_HEIGHT / 2);
                     
                     // Posisi kartu tujuan di ronde berikutnya
                     const x2 = (roundIndex + 1) * (CARD_WIDTH + ROUND_GAP);
-                    const y2 = calculateVerticalPosition(roundIndex + 1, nextMatchIndex, nextRoundMatches.length) + 500 + (CARD_HEIGHT / 2);
+                    const y2 = calculateVerticalPosition(roundIndex + 1, nextMatchIndex, nextRoundMatches.length) + 100 + (CARD_HEIGHT / 2);
                     
                     // Titik tengah untuk garis vertikal
                     const midX = x1 + LINE_EXTENSION;
@@ -952,7 +952,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                     : null;
                   
                   const left = roundIndex * (CARD_WIDTH + ROUND_GAP) + 32; // +32 untuk padding kiri
-                  const top = calculateVerticalPosition(roundIndex, matchIndex, roundMatches.length) + 500;
+                  const top = calculateVerticalPosition(roundIndex, matchIndex, roundMatches.length) + 100;
                   
                   return (
                     <div
