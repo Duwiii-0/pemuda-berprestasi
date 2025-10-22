@@ -937,7 +937,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
             {/* Bracket Visual Container - ABSOLUTE POSITIONING */}
             <div className="relative"   style={{ 
               minHeight: '2000px', 
-              marginTop: '200px', 
+              marginTop: '100px', 
               paddingBottom: '200px', 
               position: 'relative',
               overflow: 'visible'
