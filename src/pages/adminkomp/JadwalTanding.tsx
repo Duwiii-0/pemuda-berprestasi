@@ -15,13 +15,12 @@ interface HariPertandingan {
   lapangan: JadwalLapangan[];
 }
 
-const JadwalPertandingan: React.FC<{ idKompetisi: number }> = ({
-  idKompetisi,
-}) => {
+const JadwalPertandingan: React.FC<{ idKompetisi: number }> = ({}) => {
   const { kompetisiDetail, fetchKompetisiById, loadingKompetisi } =
     useKompetisi();
 
   const { user } = useAuth(); // 🔹 Ambil data user login
+  const idKompetisi = user?.admin_kompetisi?.id_kompetisi; // 🔹 Ambil id_kompetisi dari user context
   const [hariList, setHariList] = useState<HariPertandingan[]>([
     { id: "1", namaHari: "Hari ke-1", lapangan: [] },
   ]);
