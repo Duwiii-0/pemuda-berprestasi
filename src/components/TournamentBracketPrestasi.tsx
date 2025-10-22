@@ -873,7 +873,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
             </div>
 
             {/* Bracket Visual Container - ABSOLUTE POSITIONING */}
-            <div className="relative" style={{ minHeight: '1200px', paddingTop: '450px' }}>
+            <div className="relative" style={{ minHeight: '3500px', paddingTop: '1750px' }}>
               {/* SVG untuk garis connecting yang konsisten */}
               <svg 
                 className="absolute top-0 left-8 pointer-events-none" 
