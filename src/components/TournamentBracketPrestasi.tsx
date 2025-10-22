@@ -115,7 +115,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
   // Layout constants - PRESISI UNTUK GAP KONSISTEN
   const CARD_WIDTH = 340;
   const CARD_HEIGHT = 200;
-  const ROUND_GAP = 300;
+  const ROUND_GAP = 200;
   const LINE_EXTENSION = 40;
 
   const showNotification = (
@@ -649,7 +649,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
 
   // Fungsi untuk hitung posisi vertikal yang konsisten
   const calculateVerticalPosition = (roundIndex: number, matchIndex: number, totalMatchesInRound: number): number => {
-    const baseSpacing = 110;
+    const baseSpacing = 250;
     const spacingMultiplier = Math.pow(2, roundIndex);
     const spacing = baseSpacing * spacingMultiplier;
     
