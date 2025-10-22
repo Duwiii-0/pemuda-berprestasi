@@ -491,148 +491,89 @@ const DrawingBagan: React.FC = () => {
         </div>
 
         {/* Filters */}
-        <style>
-          {`
-            /* Custom Select Styling */
-            select.custom-select {
-              background-image: url("data:image/svg+xml,%3Csvg width='16' height='16' viewBox='0 0 20 20' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M5 7.5L10 12.5L15 7.5' stroke='%23990D35' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-              background-repeat: no-repeat;
-              background-position: right 12px center;
-              background-size: 16px;
-            }
-            
-            select.custom-select option {
-              padding: 10px;
-              background-color: white;
-              color: #050505;
-              font-weight: 500;
-              border-radius: 0;
-            }
-            
-            select.custom-select option:hover,
-            select.custom-select option:focus {
-              background: linear-gradient(135deg, rgba(153, 13, 53, 0.1) 0%, rgba(153, 13, 53, 0.05) 100%);
-              color: #990D35;
-            }
-            
-            select.custom-select option:checked,
-            select.custom-select option[selected] {
-              background: linear-gradient(135deg, #990D35 0%, #7A0A2B 100%);
-              color: white;
-              font-weight: 700;
-            }
-            
-            select.custom-select:focus {
-              border-color: #990D35;
-              outline: none;
-              box-shadow: 0 0 0 3px rgba(153, 13, 53, 0.1);
-            }
-          `}
-        </style>
-
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
           <div>
             <label className="block text-xs mb-2 font-bold" style={{ color: '#050505', opacity: 0.7 }}>
               Cabang
             </label>
-            <select
-              value={filterCabang}
-              onChange={(e) => setFilterCabang(e.target.value as any)}
-              className="custom-select w-full px-4 py-3 pr-10 rounded-xl border-2 shadow-sm text-sm font-medium transition-all appearance-none cursor-pointer"
-              style={{ 
-                borderColor: 'rgba(153, 13, 53, 0.2)', 
-                backgroundColor: 'white',
-                color: '#050505'
-              }}
-            >
-              <option value="ALL">Semua Cabang</option>
-              <option value="KYORUGI">KYORUGI</option>
-              <option value="POOMSAE">POOMSAE</option>
-            </select>
+            <div className="relative">
+              <select
+                value={filterCabang}
+                onChange={(e) => setFilterCabang(e.target.value as any)}
+                className="w-full px-4 py-3 rounded-xl border-2 shadow-sm text-sm font-medium focus:outline-none focus:ring-2 transition-all appearance-none cursor-pointer"
+                style={{ 
+                  borderColor: 'rgba(153, 13, 53, 0.2)', 
+                  backgroundColor: 'white',
+                  color: '#050505'
+                }}
+              >
+                <option value="ALL">Semua Cabang</option>
+                <option value="KYORUGI">KYORUGI</option>
+                <option value="POOMSAE">POOMSAE</option>
+              </select>
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+                  <path d="M5 7.5L10 12.5L15 7.5" stroke="#990D35" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+            </div>
           </div>
 
           <div>
             <label className="block text-xs mb-2 font-bold" style={{ color: '#050505', opacity: 0.7 }}>
               Level
             </label>
-            <select
-              value={filterLevel}
-              onChange={(e) => setFilterLevel(e.target.value as any)}
-              className="custom-select w-full px-4 py-3 pr-10 rounded-xl border-2 shadow-sm text-sm font-medium transition-all appearance-none cursor-pointer"
-              style={{ 
-                borderColor: 'rgba(153, 13, 53, 0.2)', 
-                backgroundColor: 'white',
-                color: '#050505'
-              }}
-            >
-              <option value="ALL">Semua Level</option>
-              <option value="pemula">Pemula</option>
-              <option value="prestasi">Prestasi</option>
-            </select>
+            <div className="relative">
+              <select
+                value={filterLevel}
+                onChange={(e) => setFilterLevel(e.target.value as any)}
+                className="w-full px-4 py-3 rounded-xl border-2 shadow-sm text-sm font-medium focus:outline-none focus:ring-2 transition-all appearance-none cursor-pointer"
+                style={{ 
+                  borderColor: 'rgba(153, 13, 53, 0.2)', 
+                  backgroundColor: 'white',
+                  color: '#050505'
+                }}
+              >
+                <option value="ALL">Semua Level</option>
+                <option value="pemula">Pemula</option>
+                <option value="prestasi">Prestasi</option>
+              </select>
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+                  <path d="M5 7.5L10 12.5L15 7.5" stroke="#990D35" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+            </div>
           </div>
 
           <div>
             <label className="block text-xs mb-2 font-bold" style={{ color: '#050505', opacity: 0.7 }}>
               Status
             </label>
-            <select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value as any)}
-              className="custom-select w-full px-4 py-3 pr-10 rounded-xl border-2 shadow-sm text-sm font-medium transition-all appearance-none cursor-pointer"
-              style={{ 
-                borderColor: 'rgba(153, 13, 53, 0.2)', 
-                backgroundColor: 'white',
-                color: '#050505'
-              }}
-            >
-              <option value="ALL">Semua Status</option>
-              <option value="not_created">Belum Dibuat</option>
-              <option value="created">Sudah Dibuat</option>
-              <option value="in_progress">Berlangsung</option>
-              <option value="completed">Selesai</option>
-            </select>
+            <div className="relative">
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value as any)}
+                className="w-full px-4 py-3 rounded-xl border-2 shadow-sm text-sm font-medium focus:outline-none focus:ring-2 transition-all appearance-none cursor-pointer"
+                style={{ 
+                  borderColor: 'rgba(153, 13, 53, 0.2)', 
+                  backgroundColor: 'white',
+                  color: '#050505'
+                }}
+              >
+                <option value="ALL">Semua Status</option>
+                <option value="not_created">Belum Dibuat</option>
+                <option value="created">Sudah Dibuat</option>
+                <option value="in_progress">Berlangsung</option>
+                <option value="completed">Selesai</option>
+              </select>
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+                  <path d="M5 7.5L10 12.5L15 7.5" stroke="#990D35" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+            </div>
           </div>
-
-          <div>
-            <label className="block text-xs mb-2 font-bold" style={{ color: '#050505', opacity: 0.7 }}>
-              Gender
-            </label>
-            <select
-              value={filterGender}
-              onChange={(e) => setFilterGender(e.target.value as any)}
-              className="custom-select w-full px-4 py-3 pr-10 rounded-xl border-2 shadow-sm text-sm font-medium transition-all appearance-none cursor-pointer"
-              style={{ 
-                borderColor: 'rgba(153, 13, 53, 0.2)', 
-                backgroundColor: 'white',
-                color: '#050505'
-              }}
-            >
-              <option value="ALL">Semua</option>
-              <option value="LAKI_LAKI">Putra</option>
-              <option value="PEREMPUAN">Putri</option>
-            </select>
-          </div>
-
-          <div className="flex items-end">
-            <button
-              onClick={() => {
-                setSearchTerm("");
-                setFilterCabang("ALL");
-                setFilterLevel("ALL");
-                setFilterStatus("ALL");
-                setFilterGender("ALL");
-              }}
-              className="w-full px-4 py-3 rounded-xl border-2 font-bold text-sm shadow-sm hover:shadow-md transition-all transform hover:scale-[1.02]"
-              style={{ 
-                borderColor: '#990D35', 
-                color: '#990D35',
-                backgroundColor: 'white'
-              }}
-            >
-              Reset Filter
-            </button>
-          </div>
-        </div>
 
           <div>
             <label className="block text-xs mb-2 font-bold" style={{ color: '#050505', opacity: 0.7 }}>
@@ -680,6 +621,7 @@ const DrawingBagan: React.FC = () => {
               Reset Filter
             </button>
           </div>
+        </div>
 
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 pt-4 border-t" style={{ borderColor: 'rgba(153, 13, 53, 0.1)' }}>
           <p className="text-sm font-medium" style={{ color: '#050505', opacity: 0.6 }}>
