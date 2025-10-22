@@ -292,19 +292,32 @@ export const KompetisiProvider = ({ children }: { children: ReactNode }) => {
 
   // 🆕 Fetch Kelas Kejuaraan berdasarkan ID Kompetisi
   const fetchKelasKejuaraanByKompetisi = async (id_kompetisi: number) => {
-    console.log("🔍 Fetching for kompetisi ID:", id_kompetisi);
-    console.log("🔍 Type:", typeof id_kompetisi);
-    console.log("🔍 URL:", `/kelas/${id_kompetisi}/kelas-kejuaraan`);
-
     setLoadingKelasKejuaraan(true);
     setErrorKelasKejuaraan(null);
     try {
-      const res = await apiClient.get(`/kelas/${id_kompetisi}/kelas-kejuaraan`);
-      const kelasData = res.data?.data || res.data || [];
-      setKelasKejuaraanList(Array.isArray(kelasData) ? kelasData : []);
+      console.log("🔍 Fetching for kompetisi ID:", id_kompetisi);
 
-      // Handle different response structures
-      setKelasKejuaraanList(Array.isArray(kelasData) ? kelasData : []);
+      const res = await apiClient.get(`/kelas/${id_kompetisi}/kelas-kejuaraan`);
+
+      console.log("📥 Full Response:", res);
+      console.log("📥 Response.data type:", typeof res.data);
+      console.log("📥 Response.data is Array:", Array.isArray(res.data));
+      console.log("📥 Response.data:", res.data);
+
+      // ✅ Fix: Check if res.data is already array
+      let kelasData;
+      if (Array.isArray(res.data)) {
+        // Backend return array langsung
+        kelasData = res.data;
+      } else if (res.data?.data && Array.isArray(res.data.data)) {
+        // Backend return { data: [...] }
+        kelasData = res.data.data;
+      } else {
+        // Fallback
+        kelasData = [];
+      }
+
+      setKelasKejuaraanList(kelasData);
 
       console.log(
         "[fetchKelasKejuaraanByKompetisi] Loaded kelas:",
@@ -312,15 +325,21 @@ export const KompetisiProvider = ({ children }: { children: ReactNode }) => {
       );
     } catch (err: any) {
       console.error("[fetchKelasKejuaraanByKompetisi] error:", err);
-      setErrorKelasKejuaraan(
-        err.response?.data?.message ||
-          err.message ||
-          "Gagal mengambil data kelas kejuaraan"
-      );
-      setKelasKejuaraanList([]);
+      console.error("Error response:", err.response);
+
+      if (err.response?.status === 404) {
+        setKelasKejuaraanList([]);
+        setErrorKelasKejuaraan(null);
+      } else {
+        setErrorKelasKejuaraan(
+          err.response?.data?.message ||
+            err.message ||
+            "Gagal mengambil data kelas kejuaraan"
+        );
+        setKelasKejuaraanList([]);
+      }
     } finally {
       setLoadingKelasKejuaraan(false);
-      console.log("[fetchKelasKejuaraanByKompetisi] done");
     }
   };
 
