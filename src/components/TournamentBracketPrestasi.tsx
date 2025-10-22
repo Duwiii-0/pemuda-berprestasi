@@ -115,7 +115,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
   // Layout constants - PRESISI UNTUK GAP KONSISTEN
   const CARD_WIDTH = 340;
   const CARD_HEIGHT = 200;
-  const ROUND_GAP = 200;
+  const ROUND_GAP = 175;
   const LINE_EXTENSION = 40;
 
   const showNotification = (
@@ -875,7 +875,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
             {/* Bracket Visual Container - ABSOLUTE POSITIONING */}
             <div className="relative"   style={{ 
               minHeight: '2000px', 
-              paddingTop: '200px', 
+              paddingTop: '300px', 
               paddingBottom: '200px', 
               position: 'relative',
               overflow: 'visible'
