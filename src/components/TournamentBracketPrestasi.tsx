@@ -94,8 +94,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
   const [bracketGenerated, setBracketGenerated] = useState(false);
   const [clearing, setClearing] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [showParticipantSelection, setShowParticipantSelection] = useState(false);
-  const [selectedParticipants, setSelectedParticipants] = useState<Set<number>>(new Set());
+  const [showParticipantPreview, setShowParticipantPreview] = useState(false);
   const bracketRef = React.useRef<HTMLDivElement>(null);
   
   const [showModal, setShowModal] = useState(false);
@@ -239,81 +238,65 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
     }
   };
 
-  const handleSelectParticipant = (participantId: number) => {
-    setSelectedParticipants(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(participantId)) {
-        newSet.delete(participantId);
-      } else {
-        newSet.add(participantId);
-      }
-      return newSet;
+  const openParticipantPreview = () => {
+  setShowParticipantPreview(true);
+  };
+
+const generateBracket = async () => {
+  if (!kelasData) return;
+  
+  console.log('🏆 PRESTASI: Auto-generating bracket');
+  
+  setLoading(true);
+  setShowParticipantPreview(false);
+  
+  try {
+    const kompetisiId = kelasData.kompetisi.id_kompetisi;
+    const kelasKejuaraanId = kelasData.id_kelas_kejuaraan;
+
+    const endpoint = `${apiBaseUrl}/kompetisi/${kompetisiId}/brackets/generate`;
+    
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token && { 'Authorization': `Bearer ${token}` })
+      },
+      body: JSON.stringify({
+        kelasKejuaraanId: kelasKejuaraanId,
+        byeParticipantIds: [] // Auto-generate
+      })
     });
-  };
 
-  const openParticipantSelection = () => {
-    setShowParticipantSelection(true);
-    setSelectedParticipants(new Set());
-  };
-
-  const generateBracket = async () => {
-    if (!kelasData) return;
-    
-    console.log('🏆 PRESTASI: Generating bracket with BYE selection');
-    console.log(`   Selected BYE participants: ${selectedParticipants.size}`);
-    
-    setLoading(true);
-    setShowParticipantSelection(false);
-    
-    try {
-      const kompetisiId = kelasData.kompetisi.id_kompetisi;
-      const kelasKejuaraanId = kelasData.id_kelas_kejuaraan;
-
-      const byeIds = selectedParticipants.size > 0 ? Array.from(selectedParticipants) : [];
-      
-      const endpoint = `${apiBaseUrl}/kompetisi/${kompetisiId}/brackets/generate`;
-      
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token && { 'Authorization': `Bearer ${token}` })
-        },
-        body: JSON.stringify({
-          kelasKejuaraanId: kelasKejuaraanId,
-          byeParticipantIds: byeIds
-        })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to generate bracket');
-      }
-
-      const result = await response.json();
-      console.log('✅ PRESTASI Bracket generated:', result);
-
-      await fetchBracketData(kompetisiId, kelasKejuaraanId);
-      
-      showNotification(
-        'success',
-        'Berhasil!',
-        `Bracket berhasil dibuat${byeIds.length > 0 ? ` dengan ${byeIds.length} BYE` : ' tanpa BYE'}!`,
-        () => setShowModal(false)
-      );
-      
-    } catch (error: any) {
-      console.error('❌ Error generating PRESTASI bracket:', error);
-      showNotification(
-        'error',
-        'Gagal Membuat Bracket',
-        error.message || 'Terjadi kesalahan saat membuat bracket.',
-        () => setShowModal(false)
-      );
-    } finally {
-      setLoading(false);
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to generate bracket');
     }
-  };
+
+    const result = await response.json();
+    console.log('✅ PRESTASI Bracket generated:', result);
+
+    await fetchBracketData(kompetisiId, kelasKejuaraanId);
+    
+    showNotification(
+      'success',
+      'Berhasil!',
+      'Bracket berhasil dibuat secara otomatis!',
+      () => setShowModal(false)
+    );
+    
+  } catch (error: any) {
+    console.error('❌ Error generating PRESTASI bracket:', error);
+    showNotification(
+      'error',
+      'Gagal Membuat Bracket',
+      error.message || 'Terjadi kesalahan saat membuat bracket.',
+      () => setShowModal(false)
+    );
+  } finally {
+    setLoading(false);
+  }
+};
 
   const shuffleBracket = async () => {
     if (!kelasData) return;
@@ -781,23 +764,23 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
               </button>
 
               <button
-                onClick={openParticipantSelection}
+                onClick={openParticipantPreview}
                 disabled={loading || approvedParticipants.length < 2}
                 className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50"
                 style={{ backgroundColor: '#F5B700', color: '#F5FBEF' }}
-              >
+                >
                 {loading ? (
-                  <>
+                    <>
                     <RefreshCw size={16} className="animate-spin" />
                     <span>Generating...</span>
-                  </>
+                    </>
                 ) : (
-                  <>
+                    <>
                     <RefreshCw size={16} />
-                    <span>{bracketGenerated ? 'Regenerate' : 'Select & Generate'}</span>
-                  </>
+                    <span>{bracketGenerated ? 'Regenerate' : 'Preview & Generate'}</span>
+                    </>
                 )}
-              </button>
+                </button>
               
               <button
                 onClick={clearBracketResults}
@@ -1331,81 +1314,83 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
               }
             </p>
             {approvedParticipants.length >= 2 && (
-              <button
-                onClick={openParticipantSelection}
+                <button
+                onClick={openParticipantPreview}
                 disabled={loading}
                 className="px-6 py-3 rounded-lg font-medium transition-all disabled:opacity-50"
                 style={{ backgroundColor: '#F5B700', color: '#F5FBEF' }}
-              >
-                {loading ? 'Processing...' : 'Select & Generate Bracket'}
-              </button>
+                >
+                {loading ? 'Processing...' : 'Preview & Generate Bracket'}
+                </button>
             )}
           </div>
         </div>
       )}
 
-      {/* Participant Selection Modal */}
-      {showParticipantSelection && (
+      {/* Participant Preview Modal */}
+        {showParticipantPreview && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+            <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto">
             <div className="p-6 border-b sticky top-0 bg-white" style={{ borderColor: '#990D35' }}>
-              <h3 className="text-xl font-bold" style={{ color: '#050505' }}>
-                Pilih Peserta untuk BYE (Opsional)
-              </h3>
-              <p className="text-sm mt-1" style={{ color: '#050505', opacity: 0.6 }}>
-                Peserta yang dipilih akan mendapat BYE di Round 1
-              </p>
+                <h3 className="text-xl font-bold" style={{ color: '#050505' }}>
+                Preview Peserta Tournament
+                </h3>
+                <p className="text-sm mt-1" style={{ color: '#050505', opacity: 0.6 }}>
+                Total {approvedParticipants.length} peserta akan diikutkan dalam bracket
+                </p>
             </div>
             
             <div className="p-6">
-              <div className="space-y-2">
-                {approvedParticipants.map((peserta) => (
-                  <div
+                <div className="space-y-2">
+                {approvedParticipants.map((peserta, index) => (
+                    <div
                     key={peserta.id_peserta_kompetisi}
-                    onClick={() => handleSelectParticipant(peserta.id_peserta_kompetisi)}
-                    className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                      selectedParticipants.has(peserta.id_peserta_kompetisi)
-                        ? 'border-green-500 bg-green-50'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                  >
+                    className="p-4 rounded-lg border-2"
+                    style={{ borderColor: '#990D35', backgroundColor: 'rgba(153, 13, 53, 0.05)' }}
+                    >
                     <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <p className="font-bold" style={{ color: '#050505' }}>
-                          {getParticipantName(peserta)}
-                        </p>
-                        <p className="text-sm" style={{ color: '#050505', opacity: 0.6 }}>
-                          {getDojoName(peserta)}
-                        </p>
-                      </div>
-                      {selectedParticipants.has(peserta.id_peserta_kompetisi) && (
+                        <div className="flex items-center gap-3">
+                        <div 
+                            className="w-10 h-10 rounded-full flex items-center justify-center font-bold"
+                            style={{ backgroundColor: '#990D35', color: 'white' }}
+                        >
+                            {index + 1}
+                        </div>
+                        <div className="flex-1">
+                            <p className="font-bold" style={{ color: '#050505' }}>
+                            {getParticipantName(peserta)}
+                            </p>
+                            <p className="text-sm" style={{ color: '#050505', opacity: 0.6 }}>
+                            {getDojoName(peserta)}
+                            </p>
+                        </div>
+                        </div>
                         <CheckCircle size={24} className="text-green-600" />
-                      )}
                     </div>
-                  </div>
+                    </div>
                 ))}
-              </div>
+                </div>
             </div>
             
             <div className="p-6 border-t flex gap-3 sticky bottom-0 bg-white" style={{ borderColor: '#990D35' }}>
-              <button
-                onClick={() => setShowParticipantSelection(false)}
+                <button
+                onClick={() => setShowParticipantPreview(false)}
                 className="flex-1 py-3 px-4 rounded-lg border font-medium"
                 style={{ borderColor: '#990D35', color: '#990D35' }}
-              >
+                >
                 Batal
-              </button>
-              <button
+                </button>
+                <button
                 onClick={generateBracket}
                 className="flex-1 py-3 px-4 rounded-lg font-medium"
                 style={{ backgroundColor: '#990D35', color: '#F5FBEF' }}
-              >
-                Generate Bracket ({selectedParticipants.size} BYE)
-              </button>
+                >
+                Generate Bracket Otomatis
+                </button>
             </div>
-          </div>
+            </div>
         </div>
-      )}
+        )}
 
       {/* Edit Match Modal */}
       {editingMatch && (
