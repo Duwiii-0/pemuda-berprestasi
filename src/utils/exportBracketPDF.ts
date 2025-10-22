@@ -660,37 +660,75 @@ export const exportBracketToPDF = async (config: ExportConfig): Promise<void> =>
     });
 
     const totalRounds = config.totalRounds;
-    const roundsPerPage = totalRounds <= 3 ? totalRounds : 2;
-    const bracketPages = Math.ceil(totalRounds / roundsPerPage);
-    const totalPages = 1 + bracketPages + (config.leaderboard ? 1 : 0);
 
+    // ===== SMART PAGE CALCULATION =====
+    // Calculate pages based on content height, not fixed rounds
+    const MAX_CARDS_PER_PAGE = 3.5; // Maximum cards that fit vertically (with spacing)
+    const MATCH_HEIGHT_WITH_GAP = 48; // 42mm card + 6mm gap
+    
+    const roundsData = [];
+    for (let round = 1; round <= totalRounds; round++) {
+      const roundMatches = config.matches.filter(m => m.round === round);
+      roundsData.push({
+        round: round,
+        matchCount: roundMatches.length
+      });
+    }
+
+    // Group rounds into pages based on max matches per page
+    const pages: Array<{ startRound: number; endRound: number }> = [];
+    let currentPageRounds: number[] = [];
+    let currentPageMaxMatches = 0;
+
+    roundsData.forEach(({ round, matchCount }) => {
+      const newMaxMatches = Math.max(currentPageMaxMatches, matchCount);
+      
+      // If adding this round would exceed page capacity, start new page
+      if (newMaxMatches > MAX_CARDS_PER_PAGE && currentPageRounds.length > 0) {
+        pages.push({
+          startRound: currentPageRounds[0],
+          endRound: currentPageRounds[currentPageRounds.length - 1]
+        });
+        currentPageRounds = [round];
+        currentPageMaxMatches = matchCount;
+      } else {
+        currentPageRounds.push(round);
+        currentPageMaxMatches = newMaxMatches;
+      }
+    });
+
+    // Add last page
+    if (currentPageRounds.length > 0) {
+      pages.push({
+        startRound: currentPageRounds[0],
+        endRound: currentPageRounds[currentPageRounds.length - 1]
+      });
+    }
+
+    const totalPages = 1 + pages.length + (config.leaderboard ? 1 : 0);
     let currentPage = 1;
 
+    // ===== PAGE 1: COVER PAGE =====
     drawCoverPage(doc, config);
     addPageNumber(doc, currentPage, totalPages);
     
-    let processedRounds = 0;
-    
-    while (processedRounds < totalRounds) {
+    // ===== PAGE 2-N: BRACKET PAGES (DYNAMIC) =====
+    pages.forEach((pageData) => {
       doc.addPage();
       currentPage++;
-      
-      const startRound = processedRounds + 1;
-      const endRound = Math.min(processedRounds + roundsPerPage, totalRounds);
       
       drawBracketPage(
         doc,
         config.matches,
-        startRound,
-        endRound,
+        pageData.startRound,
+        pageData.endRound,
         totalRounds,
         currentPage,
         totalPages
       );
-      
-      processedRounds = endRound;
-    }
+    });
 
+    // ===== LAST PAGE: LEADERBOARD =====
     if (config.leaderboard) {
       doc.addPage();
       currentPage++;
