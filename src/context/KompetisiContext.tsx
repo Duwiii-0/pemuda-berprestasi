@@ -300,34 +300,33 @@ export const KompetisiProvider = ({ children }: { children: ReactNode }) => {
       const res = await apiClient.get(`/kelas/${id_kompetisi}/kelas-kejuaraan`);
 
       console.log("📥 Full Response:", res);
-      console.log("📥 Response.data type:", typeof res.data);
-      console.log("📥 Response.data is Array:", Array.isArray(res.data));
-      console.log("📥 Response.data:", res.data);
+      console.log("📥 Type:", typeof res);
+      console.log("📥 Is Array:", Array.isArray(res));
 
-      // ✅ Fix: Check if res.data is already array
+      // ✅ FIX: res sudah array langsung karena interceptor
       let kelasData;
-      if (Array.isArray(res.data)) {
-        // Backend return array langsung
+      if (Array.isArray(res)) {
+        // Interceptor sudah unwrap response.data
+        kelasData = res;
+      } else if (res?.data && Array.isArray(res.data)) {
+        // Fallback jika tidak ada interceptor
         kelasData = res.data;
-      } else if (res.data?.data && Array.isArray(res.data.data)) {
-        // Backend return { data: [...] }
+      } else if (Array.isArray(res?.data?.data)) {
+        // Fallback jika wrapped in {data: [...]}
         kelasData = res.data.data;
       } else {
-        // Fallback
         kelasData = [];
       }
 
       setKelasKejuaraanList(kelasData);
-
       console.log(
         "[fetchKelasKejuaraanByKompetisi] Loaded kelas:",
         kelasData.length
       );
     } catch (err: any) {
       console.error("[fetchKelasKejuaraanByKompetisi] error:", err);
-      console.error("Error response:", err.response);
 
-      if (err.response?.status === 404) {
+      if (err.response?.status === 404 || err.status === 404) {
         setKelasKejuaraanList([]);
         setErrorKelasKejuaraan(null);
       } else {
