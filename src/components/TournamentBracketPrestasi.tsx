@@ -1349,7 +1349,7 @@ const generateBracket = async () => {
                             overflowWrap: 'break-word'
                             }}
                         >
-                            🏛️ {getDojoName(peserta)}
+                            {getDojoName(peserta)}
                         </p>
                         </div>
                         <CheckCircle size={24} className="text-green-600 flex-shrink-0" />
