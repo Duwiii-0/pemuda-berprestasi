@@ -315,9 +315,6 @@ const JadwalPertandingan: React.FC<{ idKompetisi: number }> = ({}) => {
                               parts.push(kelas.kategori_event.nama_kategori);
                             }
 
-                            if (kelas.kelompok?.nama_kelompok) {
-                              parts.push(kelas.kelompok.nama_kelompok);
-                            }
                             const isPoomsaePemula =
                               kelas.cabang === "POOMSAE" &&
                               kelas.kategori_event?.nama_kategori === "Pemula";
