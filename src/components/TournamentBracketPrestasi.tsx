@@ -762,25 +762,6 @@ const generateBracket = async () => {
                   </>
                 )}
               </button>
-
-              <button
-                onClick={openParticipantPreview}
-                disabled={loading || approvedParticipants.length < 2}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50"
-                style={{ backgroundColor: '#F5B700', color: '#F5FBEF' }}
-                >
-                {loading ? (
-                    <>
-                    <RefreshCw size={16} className="animate-spin" />
-                    <span>Generating...</span>
-                    </>
-                ) : (
-                    <>
-                    <RefreshCw size={16} />
-                    <span>{bracketGenerated ? 'Regenerate' : 'Preview & Generate'}</span>
-                    </>
-                )}
-                </button>
               
               <button
                 onClick={clearBracketResults}
