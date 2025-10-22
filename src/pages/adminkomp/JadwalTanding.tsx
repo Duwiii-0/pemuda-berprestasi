@@ -258,7 +258,7 @@ const JadwalPertandingan: React.FC<{ idKompetisi: number }> = ({}) => {
                 </p>
               )}
 
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="space-y-4">
                 {hari.lapangan.map((lap) => (
                   <div
                     key={lap.id}
@@ -305,14 +305,32 @@ const JadwalPertandingan: React.FC<{ idKompetisi: number }> = ({}) => {
                               ] || [];
 
                             // Generate nama kelas display
+                            const parts = [];
+
+                            if (kelas.cabang) {
+                              parts.push(kelas.cabang);
+                            }
+
+                            if (kelas.kategori_event?.nama_kategori) {
+                              parts.push(kelas.kategori_event.nama_kategori);
+                            }
+
+                            if (kelas.kelompok?.nama_kelompok) {
+                              parts.push(kelas.kelompok.nama_kelompok);
+                            }
+
+                            if (kelas.kelas_berat?.nama_kelas) {
+                              parts.push(kelas.kelas_berat.nama_kelas);
+                            }
+
+                            if (kelas.poomsae?.nama_kelas) {
+                              parts.push(kelas.poomsae.nama_kelas);
+                            }
+
                             const namaKelasDisplay =
-                              kelas.nama_kelas ||
-                              `${kelas.kategori_event?.nama_kategori || ""} - ${
-                                kelas.kelompok?.nama_kelompok ||
-                                kelas.kelas_berat?.nama_kelas ||
-                                kelas.poomsae?.nama_kelas ||
-                                "Unknown"
-                              }`.trim();
+                              parts.length > 0
+                                ? parts.join(" - ")
+                                : "Kelas Tidak Lengkap";
 
                             return (
                               <label
