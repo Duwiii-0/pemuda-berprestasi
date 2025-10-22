@@ -115,7 +115,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
   // Layout constants - PRESISI UNTUK GAP KONSISTEN
   const CARD_WIDTH = 340;
   const CARD_HEIGHT = 200;
-  const ROUND_GAP = 110;
+  const ROUND_GAP = 300;
   const LINE_EXTENSION = 40;
 
   const showNotification = (
@@ -873,7 +873,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
             </div>
 
             {/* Bracket Visual Container - ABSOLUTE POSITIONING */}
-            <div className="relative" style={{ minHeight: '900px', paddingTop: '450px' }}>
+            <div className="relative" style={{ minHeight: '1200px', paddingTop: '450px' }}>
               {/* SVG untuk garis connecting yang konsisten */}
               <svg 
                 className="absolute top-0 left-8 pointer-events-none" 
