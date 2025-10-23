@@ -1090,7 +1090,7 @@ const handleExportPDF = async () => {
                           {match.nomor_partai && (
                             <span 
                               className="text-xs px-2.5 py-1 rounded-full font-bold shadow-sm"
-                              style={{ backgroundColor: '#F5B700', color: 'white' }}
+                              style={{ backgroundColor: '#990D35', color: 'white' }}
                             >
                               No. Partai: {match.nomor_partai}
                             </span>
@@ -1262,22 +1262,6 @@ const handleExportPDF = async () => {
                           )}
                         </div>
                       </div>
-
-                      {/* Match Status Footer */}
-                      {hasScores && (
-                        <div 
-                          className="px-3 py-1.5 text-center border-t flex-shrink-0"
-                          style={{ 
-                            backgroundColor: 'rgba(34, 197, 94, 0.05)',
-                            borderColor: 'rgba(34, 197, 94, 0.2)'
-                          }}
-                        >
-                          <span className="text-xs font-semibold text-green-700 flex items-center justify-center gap-1">
-                            <CheckCircle size={12} />
-                            Completed
-                          </span>
-                        </div>
-                      )}
                     </div>
                   );
                 });

@@ -824,7 +824,7 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
                           {match.nomor_partai && (
                             <span 
                               className="text-xs px-2.5 py-1 rounded-full font-bold shadow-sm"
-                              style={{ backgroundColor: '#F5B700', color: 'white' }}
+                              style={{ backgroundColor: '#990D35', color: 'white' }}
                             >
                               No. Partai:{match.nomor_partai}
                             </span>
