@@ -187,7 +187,10 @@ export interface KompetisiContextType {
   kompetisiDetail: KompetisiDetail | null;
   pesertaList: PesertaKompetisi[];
   kelasKejuaraanList: KelasKejuaraan[];
-  atletPagination: PaginationMeta;
+  totalPeserta: number;
+  totalPages: number;
+  currentPage: number;
+  currentLimit: number;
 
   loadingKompetisi: boolean;
   loadingAtlet: boolean;
@@ -201,8 +204,15 @@ export interface KompetisiContextType {
   fetchKelasKejuaraanByKompetisi: (id_kompetisi: number) => Promise<void>;
   fetchAtletByKompetisi: (
     id_kompetisi: number,
-    cabang?: "kyorugi" | "poomsae",
-    id_dojang?: number
+    page?: number,
+    limit?: number,
+    filters?: {
+      status?: "PENDING" | "APPROVED" | "REJECTED";
+      cabang?: "KYORUGI" | "POOMSAE";
+      id_dojang?: number;
+      id_kelompok?: number;
+      id_kategori_event?: number;
+    }
   ) => Promise<void>;
   setAtletPage: (page: number) => void;
   setAtletLimit: (limit: number) => void;
@@ -231,19 +241,13 @@ const KompetisiContext = createContext<KompetisiContextType | undefined>(
 
 export const KompetisiProvider = ({ children }: { children: ReactNode }) => {
   const [kompetisiList, setKompetisiList] = useState<Kompetisi[]>([]);
-  const [kompetisiDetail, setKompetisiDetail] =
-    useState<KompetisiDetail | null>(null);
+  const [kompetisiDetail, setKompetisiDetail] = useState<KompetisiDetail | null>(null);
   const [pesertaList, setPesertaList] = useState<PesertaKompetisi[]>([]);
-  const [kelasKejuaraanList, setKelasKejuaraanList] = useState<
-    KelasKejuaraan[]
-  >([]);
-  const [atletPagination, setAtletPagination] = useState<PaginationMeta>({
-    page: 1,
-    limit: 1000,
-    total: 0,
-    totalPages: 0,
-  });
-
+  const [kelasKejuaraanList, setKelasKejuaraanList] = useState<KelasKejuaraan[]>([]);  
+  const [totalPeserta, setTotalPeserta] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [currentLimit, setCurrentLimit] = useState(20);
   const [loadingKompetisi, setLoadingKompetisi] = useState(false);
   const [loadingAtlet, setLoadingAtlet] = useState(false);
   const [loadingKelasKejuaraan, setLoadingKelasKejuaraan] = useState(false);
@@ -342,49 +346,64 @@ export const KompetisiProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const fetchAtletByKompetisi = async (
+ const fetchAtletByKompetisi = async (
     id_kompetisi: number,
-    cabang?: "kyorugi" | "poomsae",
-    id_dojang?: number
+    page: number = 1,
+    limit: number = 20,
+    filters?: {
+      status?: "PENDING" | "APPROVED" | "REJECTED";
+      cabang?: "KYORUGI" | "POOMSAE";
+      id_dojang?: number;
+      id_kelompok?: number;
+      id_kategori_event?: number;
+    }
   ) => {
     setLoadingAtlet(true);
     setErrorAtlet(null);
     try {
-      let url = `/kompetisi/${id_kompetisi}/atlet?page=${atletPagination.page}&limit=${atletPagination.limit}`;
-      if (cabang) url += `&cabang=${cabang}`;
-      if (id_dojang) url += `&id_dojang=${id_dojang}`;
+      // 🔥 Build query params
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString(),
+      });
+
+      if (filters?.status) params.append('status', filters.status);
+      if (filters?.cabang) params.append('cabang', filters.cabang);
+      if (filters?.id_dojang) params.append('id_dojang', filters.id_dojang.toString());
+      if (filters?.id_kelompok) params.append('id_kelompok', filters.id_kelompok.toString());
+      if (filters?.id_kategori_event) params.append('id_kategori_event', filters.id_kategori_event.toString());
+
+      const url = `/kompetisi/${id_kompetisi}/atlet?${params.toString()}`;
+      console.log('🔍 Fetching:', url);
 
       const res = await apiClient.get(url);
 
-      setPesertaList(
-        Array.isArray(res.data)
-          ? (res.data as PesertaKompetisi[])
-          : (res.data.data as PesertaKompetisi[]) ?? []
-      );
-      setAtletPagination((prev) => ({
-        ...prev,
-        total: res.data?.meta?.total || 0,
-        totalPages: res.data?.meta?.totalPages || 0,
-      }));
+      // 🔥 Handle response (sesuaikan dengan struktur backend Anda)
+      if (res.data.success) {
+        setPesertaList(res.data.peserta || res.data.data || []);
+        setTotalPeserta(res.data.total || 0);
+        setTotalPages(res.data.totalPages || 0);
+        setCurrentPage(page);
+        setCurrentLimit(limit);
+      } else {
+        // Fallback jika tidak ada success flag
+        setPesertaList(Array.isArray(res.data) ? res.data : res.data.data || []);
+        setTotalPeserta(res.data.total || 0);
+        setTotalPages(res.data.totalPages || 0);
+      }
+
+      console.log(`✅ Loaded ${pesertaList.length} peserta (page ${page}/${totalPages})`);
     } catch (err: any) {
       console.error("[fetchAtletByKompetisi] error:", err);
       setErrorAtlet(
         err.response?.data?.message ||
-          err.message ||
-          "Gagal mengambil data atlet kompetisi"
+        err.message ||
+        "Gagal mengambil data atlet kompetisi"
       );
+      setPesertaList([]);
     } finally {
       setLoadingAtlet(false);
-      console.log("[fetchAtletByKompetisi] done");
     }
-  };
-
-  const setAtletPage = (page: number) => {
-    setAtletPagination((prev) => ({ ...prev, page }));
-  };
-
-  const setAtletLimit = (limit: number) => {
-    setAtletPagination((prev) => ({ ...prev, limit, page: 1 }));
   };
 
   const updatePesertaStatus = async (
@@ -436,11 +455,6 @@ export const KompetisiProvider = ({ children }: { children: ReactNode }) => {
             : k
         )
       );
-
-      setAtletPagination((prev) => ({
-        ...prev,
-        total: Math.max(prev.total - 1, 0),
-      }));
 
       console.log("Peserta berhasil dihapus dari kompetisi");
       return response.data;
@@ -498,23 +512,26 @@ export const KompetisiProvider = ({ children }: { children: ReactNode }) => {
         kompetisiList,
         kompetisiDetail,
         pesertaList,
-        kelasKejuaraanList,
-        atletPagination,
+        kelasKejuaraanList,        
+        totalPeserta,     // NEW
+        totalPages,       // NEW
+        currentPage,      // NEW
+        currentLimit,     // NEW
+        
         loadingKompetisi,
         loadingAtlet,
         loadingKelasKejuaraan,
         errorKompetisi,
         errorAtlet,
         errorKelasKejuaraan,
+        
         fetchKompetisiList,
         fetchKompetisiById,
         fetchKelasKejuaraanByKompetisi,
-        fetchAtletByKompetisi,
+        fetchAtletByKompetisi,  // Updated signature
         updatePesertaStatus,
         deleteParticipant,
         updateParticipantClass,
-        setAtletPage,
-        setAtletLimit,
       }}
     >
       {children}

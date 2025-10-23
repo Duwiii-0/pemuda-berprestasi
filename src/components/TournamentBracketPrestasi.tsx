@@ -118,7 +118,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
 
   // Layout constants - PRESISI UNTUK GAP KONSISTEN
   const CARD_WIDTH = 360;
-  const CARD_HEIGHT = 215;
+  const CARD_HEIGHT = 220;
   const ROUND_GAP = 175;
   const LINE_EXTENSION = 40;
 

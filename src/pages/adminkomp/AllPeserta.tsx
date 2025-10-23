@@ -1,5 +1,5 @@
 // src/pages/adminkomp/AllPeserta.tsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { CheckCircle, XCircle, Loader, Search, Users, AlertTriangle, ChevronLeft, ChevronRight } from "lucide-react";
 import { useAuth } from "../../context/authContext";
 import { useKompetisi } from "../../context/KompetisiContext";
@@ -51,8 +51,25 @@ const AllPeserta: React.FC = () => {
   }, [token]);
 
   useEffect(() => {
-    if (kompetisiId) fetchAtletByKompetisi(kompetisiId);
-  }, [kompetisiId]);
+  if (kompetisiId) {
+        fetchAtletByKompetisi(
+          kompetisiId,
+          currentPage,
+          itemsPerPage,
+          {
+            status: filterStatus !== "ALL" ? filterStatus : undefined,
+            cabang: filterCategory !== "ALL" ? filterCategory : undefined,
+            id_dojang: filterDojang !== "ALL" ? parseInt(filterDojang) : undefined
+          }
+        );
+      }
+    }, [
+      kompetisiId, 
+      currentPage, 
+      filterStatus, 
+      filterCategory, 
+      filterDojang,
+    ]);
 
   if (user?.role !== "ADMIN_KOMPETISI") {
     return (
@@ -101,43 +118,30 @@ const AllPeserta: React.FC = () => {
     }
   };
 
-  const displayedPesertas = pesertaList.filter((peserta: any) => {
-    // Nama peserta (team atau individu)
-    const namaPeserta = peserta.is_team
-      ? peserta.anggota_tim?.map((a: any) => a.atlet.nama_atlet).join(" ") || ""
-      : peserta.atlet?.nama_atlet || "";
+    const displayedPesertas = useMemo(() => {
+    return pesertaList.filter((peserta: any) => {
+      // Hanya filter yang BELUM ada di backend
+      const namaPeserta = peserta.is_team
+        ? peserta.anggota_tim?.map((a: any) => a.atlet.nama_atlet).join(" ") || ""
+        : peserta.atlet?.nama_atlet || "";
 
-    const matchesSearch = namaPeserta.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesSearch = namaPeserta.toLowerCase().includes(searchTerm.toLowerCase());
 
-    // Status
-    const pesertaStatus = peserta.status?.toUpperCase() || "";
-    const matchesStatus = filterStatus === "ALL" || pesertaStatus === filterStatus.toUpperCase();
+      // Filter kelas berat (client-side)
+      const kelasBerat = peserta.kelas_kejuaraan?.kelas_berat?.nama_kelas?.toUpperCase() || "";
+      const matchesKelasBerat = filterKelasBerat === "ALL" || kelasBerat === filterKelasBerat.toUpperCase();
 
-    // Kategori / cabang
-    const kategori = peserta.kelas_kejuaraan?.cabang?.toUpperCase() || "";
-    const matchesCategory = filterCategory === "ALL" || kategori === filterCategory.toUpperCase();
+      // Filter kelas usia (client-side)
+      const kelasUsia = peserta.kelas_kejuaraan?.kelompok?.nama_kelompok?.toUpperCase() || "";
+      const matchesKelasUsia = filterKelasUsia === "ALL" || kelasUsia === filterKelasUsia.toUpperCase();
 
-    // Kelas berat
-    const kelasBerat = peserta.kelas_kejuaraan?.kelas_berat?.nama_kelas?.toUpperCase() || "";
-    const matchesKelasBerat = filterKelasBerat === "ALL" || kelasBerat === filterKelasBerat.toUpperCase();
+      // Filter level (client-side)
+      const level = peserta.kelas_kejuaraan?.kategori_event?.nama_kategori?.toUpperCase() || "";
+      const matchesLevel = !filterLevel || level === filterLevel.toUpperCase();
 
-    // Kelas usia / kelompok
-    const kelasUsia = peserta.kelas_kejuaraan?.kelompok?.nama_kelompok?.toUpperCase() || "";
-    const matchesKelasUsia = filterKelasUsia === "ALL" || kelasUsia === filterKelasUsia.toUpperCase();
-
-    // Level / kategori event
-    const level = peserta.kelas_kejuaraan?.kategori_event?.nama_kategori?.toUpperCase() || "";
-    const matchesLevel = !filterLevel || level === filterLevel.toUpperCase();
-
-    // Dojang
-    const pesertaDojang = peserta.is_team
-      ? peserta.anggota_tim?.[0]?.atlet?.dojang?.id_dojang?.toString() || ""
-      : peserta.atlet?.dojang?.id_dojang?.toString() || "";
-
-    const matchesDojang = filterDojang === "ALL" || pesertaDojang === filterDojang;
-
-    return matchesSearch && matchesStatus && matchesCategory && matchesKelasBerat && matchesKelasUsia && matchesLevel && matchesDojang;
-  });
+      return matchesSearch && matchesKelasBerat && matchesKelasUsia && matchesLevel;
+    });
+  }, [pesertaList, searchTerm, filterKelasBerat, filterKelasUsia, filterLevel]);
 
   // Pagination logic
   const totalPages = Math.ceil(displayedPesertas.length / itemsPerPage);
