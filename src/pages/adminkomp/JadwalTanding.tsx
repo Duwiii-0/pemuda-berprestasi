@@ -1,15 +1,7 @@
 import React, { useEffect, useState } from "react";
-import {
-  Calendar,
-  Plus,
-  Trash2,
-  Loader,
-  ClipboardList,
-  AlertCircle,
-} from "lucide-react";
+import { Calendar, Plus, Trash2, Loader, ClipboardList } from "lucide-react";
 import { useKompetisi } from "../../context/KompetisiContext";
 import { useAuth } from "../../context/authContext";
-import axios from "axios";
 
 interface Lapangan {
   id_lapangan: number;
@@ -57,33 +49,25 @@ const JadwalPertandingan: React.FC = () => {
   const [approvedPesertaByKelas, setApprovedPesertaByKelas] = useState<
     Record<number, any[]>
   >({});
-
-  // Loading & Error states
   const [loadingHari, setLoadingHari] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [isAdding, setIsAdding] = useState(false);
 
-  // Fetch kelas kejuaraan dan peserta
+  // Fetch kelas dan atlet
   useEffect(() => {
-    if (!idKompetisi) {
-      console.warn("⚠️ ID Kompetisi belum tersedia");
-      return;
-    }
-
-    const fetchData = async () => {
+    if (!idKompetisi) return;
+    (async () => {
       try {
         await fetchKelasKejuaraanByKompetisi(idKompetisi);
         await fetchAtletByKompetisi(idKompetisi);
-      } catch (error) {
-        console.error("Error fetching data:", error);
+      } catch (err) {
+        console.error("Error fetching data:", err);
       }
-    };
-
-    fetchData();
+    })();
   }, [idKompetisi]);
 
-  // Fetch hari dan lapangan dari backend
+  // Fetch hari & lapangan
   useEffect(() => {
     if (!idKompetisi) return;
     fetchHariLapangan();
@@ -91,97 +75,35 @@ const JadwalPertandingan: React.FC = () => {
 
   const fetchHariLapangan = async () => {
     if (!idKompetisi) return;
-
     setLoadingHari(true);
     setErrorMessage("");
 
     try {
-      const response = await axios.get(
-        `/api/lapangan/kompetisi/${idKompetisi}`
-      );
+      const res = await fetch(`/api/lapangan/kompetisi/${idKompetisi}`);
+      const data = await res.json();
 
-      if (response.data.success) {
-        const hariData = response.data.data.hari_pertandingan.map(
-          (hari: any) => ({
-            tanggal: hari.tanggal,
-            jumlah_lapangan: hari.jumlah_lapangan,
-            lapangan: hari.lapangan.map((lap: any) => ({
-              ...lap,
-              kelasDipilih: [], // Will be loaded from jadwal_pertandingan table later
-            })),
-          })
-        );
-
+      if (data.success) {
+        const hariData = data.data.hari_pertandingan.map((hari: any) => ({
+          tanggal: hari.tanggal,
+          jumlah_lapangan: hari.jumlah_lapangan,
+          lapangan: hari.lapangan.map((lap: any) => ({
+            ...lap,
+            kelasDipilih: [],
+          })),
+        }));
         setHariList(hariData);
+      } else {
+        throw new Error(data.message || "Gagal memuat data lapangan");
       }
-    } catch (error: any) {
-      console.error("Error fetching hari lapangan:", error);
-      setErrorMessage(
-        error.response?.data?.message || "Gagal memuat data lapangan"
-      );
+    } catch (err: any) {
+      console.error("Error fetching hari lapangan:", err);
+      setErrorMessage(err.message || "Gagal memuat data lapangan");
     } finally {
       setLoadingHari(false);
     }
   };
 
-  // Pisahkan peserta APPROVED berdasarkan kelas
-  useEffect(() => {
-    if (!pesertaList || pesertaList.length === 0) return;
-
-    const map: Record<number, any[]> = {};
-    pesertaList.forEach((peserta) => {
-      if (peserta.status !== "APPROVED") return;
-
-      const idKelas = peserta.kelas_kejuaraan?.id_kelas_kejuaraan;
-      if (!idKelas) return;
-
-      if (!map[idKelas]) map[idKelas] = [];
-
-      const pesertaData = {
-        id_peserta: peserta.id_peserta_kompetisi,
-        nama_peserta: peserta.is_team
-          ? `Tim ${
-              peserta.anggota_tim?.[0]?.atlet?.dojang?.nama_dojang || "Unknown"
-            }`
-          : peserta.atlet?.nama_atlet || "Unknown",
-        is_team: peserta.is_team,
-        dojang: peserta.is_team
-          ? peserta.anggota_tim?.[0]?.atlet?.dojang?.nama_dojang
-          : peserta.atlet?.dojang?.nama_dojang,
-      };
-
-      map[idKelas].push(pesertaData);
-    });
-
-    setApprovedPesertaByKelas(map);
-  }, [pesertaList]);
-
-  // Sync antrian list dengan hari list
-  useEffect(() => {
-    setHariAntrianList((prev) => {
-      return hariList.map((hari) => {
-        const existingHari = prev.find((h) => h.tanggal === hari.tanggal);
-        const lapanganAntrian: Record<number, AntrianLapangan> = {};
-
-        hari.lapangan.forEach((lap) => {
-          lapanganAntrian[lap.id_lapangan] = existingHari?.lapanganAntrian?.[
-            lap.id_lapangan
-          ] || {
-            bertanding: 1,
-            persiapan: 1,
-            pemanasan: 1,
-          };
-        });
-
-        return {
-          tanggal: hari.tanggal,
-          lapanganAntrian,
-        };
-      });
-    });
-  }, [hariList]);
-
-  // Tambah hari baru dengan 3 lapangan (A, B, C)
+  // Tambah hari pertandingan
   const addHari = async () => {
     if (!idKompetisi) return;
 
@@ -190,64 +112,64 @@ const JadwalPertandingan: React.FC = () => {
     setSuccessMessage("");
 
     try {
-      const response = await axios.post("/api/lapangan/tambah-hari", {
-        id_kompetisi: idKompetisi,
-        jumlah_lapangan: 3, // Default 3 lapangan (A, B, C)
+      const res = await fetch("/api/lapangan/tambah-hari", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id_kompetisi: idKompetisi,
+          jumlah_lapangan: 3,
+        }),
       });
 
-      if (response.data.success) {
-        setSuccessMessage(response.data.message);
-        await fetchHariLapangan(); // Refresh data
-
-        // Clear success message after 3 seconds
+      const data = await res.json();
+      if (data.success) {
+        setSuccessMessage(data.message);
+        await fetchHariLapangan();
         setTimeout(() => setSuccessMessage(""), 3000);
+      } else {
+        throw new Error(data.message || "Gagal menambah hari pertandingan");
       }
-    } catch (error: any) {
-      console.error("Error tambah hari:", error);
-      setErrorMessage(
-        error.response?.data?.message || "Gagal menambah hari pertandingan"
-      );
+    } catch (err: any) {
+      console.error("Error tambah hari:", err);
+      setErrorMessage(err.message);
     } finally {
       setIsAdding(false);
     }
   };
 
-  // Hapus hari pertandingan
+  // Hapus hari
   const hapusHari = async (tanggal: string) => {
     if (!idKompetisi) return;
-
     if (
       !confirm(
         `Yakin ingin menghapus semua lapangan pada tanggal ${new Date(
           tanggal
         ).toLocaleDateString("id-ID")}?`
       )
-    ) {
+    )
       return;
-    }
 
     setErrorMessage("");
     setSuccessMessage("");
 
     try {
-      const response = await axios.delete("/api/lapangan/hapus-hari", {
-        data: {
-          id_kompetisi: idKompetisi,
-          tanggal: tanggal,
-        },
+      const res = await fetch("/api/lapangan/hapus-hari", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id_kompetisi: idKompetisi, tanggal }),
       });
 
-      if (response.data.success) {
-        setSuccessMessage(response.data.message);
+      const data = await res.json();
+      if (data.success) {
+        setSuccessMessage(data.message);
         await fetchHariLapangan();
-
         setTimeout(() => setSuccessMessage(""), 3000);
+      } else {
+        throw new Error(data.message || "Gagal menghapus hari pertandingan");
       }
-    } catch (error: any) {
-      console.error("Error hapus hari:", error);
-      setErrorMessage(
-        error.response?.data?.message || "Gagal menghapus hari pertandingan"
-      );
+    } catch (err: any) {
+      console.error("Error hapus hari:", err);
+      setErrorMessage(err.message);
     }
   };
 
