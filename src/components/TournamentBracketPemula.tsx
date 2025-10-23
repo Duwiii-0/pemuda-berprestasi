@@ -829,6 +829,7 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
                               {match.nomor_partai}
                             </span>
                           )}
+                        </div>
                         
                         <div className="flex items-center gap-3">
                           {match.tanggal_pertandingan && (
