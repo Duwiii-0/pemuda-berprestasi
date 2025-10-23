@@ -37,6 +37,8 @@ interface Match {
   };
   tanggal_pertandingan?: string;
   nomor_partai?: string;
+  nomor_antrian?: number;
+  nomor_lapangan?: string;
 }
 
 interface KelasKejuaraan {
@@ -189,19 +191,21 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
       console.log('📊 PEMULA Bracket data fetched:', result);
 
       if (result.data && result.data.matches) {
-        const transformedMatches: Match[] = result.data.matches.map((m: any) => ({
-          id_match: m.id,
-          ronde: m.round,
-          id_peserta_a: m.participant1?.id,
-          id_peserta_b: m.participant2?.id,
-          skor_a: m.scoreA || 0,
-          skor_b: m.scoreB || 0,
-          peserta_a: m.participant1 ? transformParticipantFromAPI(m.participant1) : undefined,
-          peserta_b: m.participant2 ? transformParticipantFromAPI(m.participant2) : undefined,
-          venue: m.venue ? { nama_venue: m.venue } : undefined,
-          tanggal_pertandingan: m.tanggalPertandingan,
-          nomor_partai: m.nomorPartai
-        }));
+      const transformedMatches: Match[] = result.data.matches.map((m: any) => ({
+        id_match: m.id,
+        ronde: m.round,
+        id_peserta_a: m.participant1?.id,
+        id_peserta_b: m.participant2?.id,
+        skor_a: m.scoreA || 0,
+        skor_b: m.scoreB || 0,
+        peserta_a: m.participant1 ? transformParticipantFromAPI(m.participant1) : undefined,
+        peserta_b: m.participant2 ? transformParticipantFromAPI(m.participant2) : undefined,
+        venue: m.venue ? { nama_venue: m.venue } : undefined,
+        tanggal_pertandingan: m.tanggalPertandingan,
+        nomor_partai: m.nomorPartai,        
+        nomor_antrian: m.nomorAntrian,
+        nomor_lapangan: m.nomorLapangan
+      }));
 
         setMatches(transformedMatches);
         setBracketGenerated(true);
@@ -476,71 +480,88 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
     confirmationSteps();
   };
 
-  const updateMatchResult = async (matchId: number, scoreA: number, scoreB: number) => {
-    if (!kelasData) return;
+    const updateMatchResult = async (matchId: number, scoreA: number, scoreB: number) => {
+      if (!kelasData) return;
 
-    try {
-      const kompetisiId = kelasData.kompetisi.id_kompetisi;
-      
-      const match = matches.find(m => m.id_match === matchId);
-      if (!match) {
-        throw new Error('Match not found');
-      }
-
-      const winnerId = scoreA > scoreB 
-        ? match.id_peserta_a 
-        : match.id_peserta_b;
-
-      if (!winnerId) {
-        throw new Error('Cannot determine winner');
-      }
-
-      const tanggalInput = (document.getElementById('tanggalPertandingan') as HTMLInputElement)?.value || null;
-      const nomorPartaiInput = (document.getElementById('nomorPartai') as HTMLInputElement)?.value || null;
-
-      const response = await fetch(
-        `${apiBaseUrl}/kompetisi/${kompetisiId}/brackets/match/${matchId}`,
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token && { 'Authorization': `Bearer ${token}` })
-          },
-          body: JSON.stringify({
-            winnerId: winnerId,
-            scoreA: scoreA,
-            scoreB: scoreB,
-            tanggalPertandingan: tanggalInput,
-            nomorPartai: nomorPartaiInput
-          })
+      try {
+        const kompetisiId = kelasData.kompetisi.id_kompetisi;
+        
+        const match = matches.find(m => m.id_match === matchId);
+        if (!match) {
+          throw new Error('Match not found');
         }
-      );
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to update match result');
+        const winnerId = scoreA > scoreB 
+          ? match.id_peserta_a 
+          : match.id_peserta_b;
+
+        if (!winnerId) {
+          throw new Error('Cannot determine winner');
+        }
+
+        const tanggalInput = (document.getElementById('tanggalPertandingan') as HTMLInputElement)?.value || null;
+        
+        // ⭐ AMBIL VALUE DARI INPUT BARU
+        const nomorAntrianInput = (document.getElementById('nomorAntrian') as HTMLInputElement)?.value || null;
+        const nomorLapanganInput = (document.getElementById('nomorLapangan') as HTMLInputElement)?.value || null;
+
+        // ⭐ VALIDASI: Harus diisi bersamaan
+        if ((nomorAntrianInput && !nomorLapanganInput) || (!nomorAntrianInput && nomorLapanganInput)) {
+          showNotification(
+            'warning',
+            'Input Tidak Lengkap',
+            'Nomor antrian dan nomor lapangan harus diisi bersamaan',
+            () => setShowModal(false)
+          );
+          return;
+        }
+
+        const response = await fetch(
+          `${apiBaseUrl}/kompetisi/${kompetisiId}/brackets/match/${matchId}`,
+          {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(token && { 'Authorization': `Bearer ${token}` })
+            },
+            body: JSON.stringify({
+              winnerId: winnerId,
+              scoreA: scoreA,
+              scoreB: scoreB,
+              tanggalPertandingan: tanggalInput,
+              
+              // ⭐ KIRIM 2 FIELD TERPISAH
+              nomorAntrian: nomorAntrianInput ? parseInt(nomorAntrianInput) : null,
+              nomorLapangan: nomorLapanganInput ? nomorLapanganInput.toUpperCase() : null
+            })
+          }
+        );
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Failed to update match result');
+        }
+
+        await fetchBracketData(kompetisiId, kelasData.id_kelas_kejuaraan);
+
+        setEditingMatch(null);
+        showNotification(
+          'success',
+          'Berhasil!',
+          'Informasi pertandingan berhasil diperbarui!',
+          () => setShowModal(false)
+        );
+        
+      } catch (error: any) {
+        console.error('❌ Error updating match result:', error);
+        showNotification(
+          'error',
+          'Gagal Memperbarui',
+          error.message || 'Gagal memperbarui hasil pertandingan.',
+          () => setShowModal(false)
+        );
       }
-
-      await fetchBracketData(kompetisiId, kelasData.id_kelas_kejuaraan);
-
-      setEditingMatch(null);
-      showNotification(
-        'info',
-        'Informasi',
-        'Informasi Match Berhasil Diperbarui!',
-        () => setShowModal(false)
-      );
-      
-    } catch (error: any) {
-      console.error('❌ Error updating match result:', error);
-      showNotification(
-        'error',
-        'Gagal Memperbarui',
-        error.message || 'Gagal memperbarui hasil pertandingan.',
-        () => setShowModal(false)
-      );
-    }
-  };
+    };
 
   const getParticipantName = (peserta?: Peserta) => {
     if (!peserta) return '';
@@ -791,45 +812,66 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
                     style={{ borderColor: '#990D35' }}
                   >
                     <div 
-                      className="px-4 py-2.5 border-b flex items-center justify-between"
-                      style={{ 
-                        backgroundColor: 'rgba(153, 13, 53, 0.05)',
-                        borderColor: '#990D35'
-                      }}
-                    >
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-semibold" style={{ color: '#050505' }}>
-                          Partai {matchIndex + 1}
-                        </span>
-                        {/* Badge nomor partai dari input - akan muncul setelah disimpan */}
-                        {match.nomor_partai && (
-                          <span 
-                            className="text-xs px-2 py-0.5 rounded-full font-medium"
-                            style={{ backgroundColor: '#F5B700', color: 'white' }}
+                        className="px-4 py-2.5 border-b flex items-center justify-between"
+                        style={{ 
+                          backgroundColor: 'rgba(153, 13, 53, 0.05)',
+                          borderColor: '#990D35'
+                        }}
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-semibold" style={{ color: '#050505' }}>
+                            Partai {matchIndex + 1}
+                          </span>
+                          
+                          {/* ⭐ BADGE: NOMOR PARTAI (Auto-generated dari backend) */}
+                          {match.nomor_partai && (
+                            <span 
+                              className="text-xs px-2.5 py-1 rounded-full font-bold shadow-sm"
+                              style={{ backgroundColor: '#F5B700', color: 'white' }}
+                            >
+                              {match.nomor_partai}
+                            </span>
+                          )}
+                          
+                          {/* ⭐ BADGE TERPISAH: Nomor Antrian (Optional display) */}
+                          {match.nomor_antrian && (
+                            <span 
+                              className="text-xs px-2 py-0.5 rounded-md font-medium"
+                              style={{ backgroundColor: '#3B82F6', color: 'white' }}
+                            >
+                              Q{match.nomor_antrian}
+                            </span>
+                          )}
+                          
+                          {/* ⭐ BADGE TERPISAH: Nomor Lapangan (Optional display) */}
+                          {match.nomor_lapangan && (
+                            <span 
+                              className="text-xs px-2 py-0.5 rounded-md font-medium"
+                              style={{ backgroundColor: '#22c55e', color: 'white' }}
+                            >
+                              Court {match.nomor_lapangan}
+                            </span>
+                          )}
+                        </div>
+                        
+                        <div className="flex items-center gap-3">
+                          {match.tanggal_pertandingan && (
+                            <span className="text-xs flex items-center gap-1" style={{ color: '#050505', opacity: 0.7 }}>
+                              {new Date(match.tanggal_pertandingan).toLocaleDateString('id-ID', {
+                                day: '2-digit',
+                                month: 'short',
+                                year: 'numeric'
+                              })}
+                            </span>
+                          )}
+                          <button
+                            onClick={() => setEditingMatch(match)}
+                            className="p-1.5 rounded-lg hover:bg-black/5 transition-all"
                           >
-                            {match.nomor_partai}
-                          </span>
-                        )}
+                            <Edit3 size={14} style={{ color: '#050505', opacity: 0.6 }} />
+                          </button>
+                        </div>
                       </div>
-                      
-                      <div className="flex items-center gap-3">
-                        {match.tanggal_pertandingan && (
-                          <span className="text-xs flex items-center gap-1" style={{ color: '#050505', opacity: 0.7 }}>
-                            {new Date(match.tanggal_pertandingan).toLocaleDateString('id-ID', {
-                              day: '2-digit',
-                              month: 'short',
-                              year: 'numeric'
-                            })}
-                          </span>
-                        )}
-                        <button
-                          onClick={() => setEditingMatch(match)}
-                          className="p-1.5 rounded-lg hover:bg-black/5 transition-all"
-                        >
-                          <Edit3 size={14} style={{ color: '#050505', opacity: 0.6 }} />
-                        </button>
-                      </div>
-                    </div>
 
                     <div className="p-4 space-y-3">
                       {/* Participant A */}
@@ -1136,67 +1178,116 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
             </div>
             
             <div className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">Tanggal Pertandingan</label>
-                <input
-                  type="date"
-                  className="w-full px-3 py-2 rounded-lg border"
-                  style={{ borderColor: '#990D35' }}
-                  defaultValue={
-                    editingMatch.tanggal_pertandingan 
-                      ? new Date(editingMatch.tanggal_pertandingan).toISOString().split('T')[0] 
-                      : ''
-                  }
-                  id="tanggalPertandingan"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2">Nomor Partai</label>
-                <input
-                  type="text"
-                  placeholder="Contoh: 1A, 2B"
-                  className="w-full px-3 py-2 rounded-lg border"
-                  style={{ borderColor: '#990D35' }}
-                  defaultValue={editingMatch.nomor_partai || ''}
-                  id="nomorPartai"
-                />
-              </div>
-
-              <div className="border-t pt-4">
-                {editingMatch.peserta_a && (
-                  <div className="mb-3">
-                    <label className="block text-sm font-medium mb-2">
-                      🔵 {getParticipantName(editingMatch.peserta_a)}
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      className="w-full px-3 py-2 rounded-lg border"
-                      style={{ borderColor: '#990D35' }}
-                      defaultValue={editingMatch.skor_a}
-                      id="scoreA"
-                    />
-                  </div>
-                )}
-                
-                {editingMatch.peserta_b && (
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      🔴 {getParticipantName(editingMatch.peserta_b)}
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      className="w-full px-3 py-2 rounded-lg border"
-                      style={{ borderColor: '#990D35' }}
-                      defaultValue={editingMatch.skor_b}
-                      id="scoreB"
-                    />
-                  </div>
-                )}
-              </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">Tanggal Pertandingan</label>
+              <input
+                type="date"
+                className="w-full px-3 py-2 rounded-lg border"
+                style={{ borderColor: '#990D35' }}
+                defaultValue={
+                  editingMatch.tanggal_pertandingan 
+                    ? new Date(editingMatch.tanggal_pertandingan).toISOString().split('T')[0] 
+                    : ''
+                }
+                id="tanggalPertandingan"
+              />
             </div>
+
+            {/* ⭐ INPUT BARU: NOMOR ANTRIAN */}
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                Nomor Antrian
+                <span className="text-xs ml-2 opacity-60">(urutan: 1, 2, 3, ...)</span>
+              </label>
+              <input
+                type="number"
+                min="1"
+                placeholder="Contoh: 5"
+                className="w-full px-3 py-2 rounded-lg border focus:ring-2 focus:ring-offset-1"
+                style={{ borderColor: '#990D35' }}
+                defaultValue={editingMatch.nomor_antrian || ''}
+                id="nomorAntrian"
+              />
+            </div>
+
+            {/* ⭐ INPUT BARU: NOMOR LAPANGAN */}
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                Nomor Lapangan
+                <span className="text-xs ml-2 opacity-60">(huruf: A, B, C, ...)</span>
+              </label>
+              <input
+                type="text"
+                placeholder="Contoh: A"
+                maxLength={1}
+                className="w-full px-3 py-2 rounded-lg border uppercase focus:ring-2 focus:ring-offset-1"
+                style={{ borderColor: '#990D35' }}
+                defaultValue={editingMatch.nomor_lapangan || ''}
+                id="nomorLapangan"
+                onInput={(e) => {
+                  const input = e.target as HTMLInputElement;
+                  input.value = input.value.toUpperCase().replace(/[^A-Z]/g, '');
+                }}
+              />
+              <p className="text-xs mt-1 opacity-60">
+                💡 Nomor partai akan otomatis dibuat: {' '}
+                <span className="font-mono font-semibold">[Antrian][Lapangan]</span>
+                {' '}(contoh: 5A, 12B)
+              </p>
+            </div>
+
+            {/* ⭐ DISPLAY AUTO-GENERATED NOMOR PARTAI */}
+            {editingMatch.nomor_partai && (
+              <div className="p-3 rounded-lg border-2" style={{ 
+                backgroundColor: 'rgba(245, 183, 0, 0.1)', 
+                borderColor: '#F5B700' 
+              }}>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">Nomor Partai Tersimpan:</span>
+                  <span 
+                    className="text-base px-3 py-1 rounded-full font-bold"
+                    style={{ backgroundColor: '#F5B700', color: 'white' }}
+                  >
+                    {editingMatch.nomor_partai}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            <div className="border-t pt-4">
+              {editingMatch.peserta_a && (
+                <div className="mb-3">
+                  <label className="block text-sm font-medium mb-2">
+                    🔵 {getParticipantName(editingMatch.peserta_a)}
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    className="w-full px-3 py-2 rounded-lg border"
+                    style={{ borderColor: '#990D35' }}
+                    defaultValue={editingMatch.skor_a}
+                    id="scoreA"
+                  />
+                </div>
+              )}
+              
+              {editingMatch.peserta_b && (
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    🔴 {getParticipantName(editingMatch.peserta_b)}
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    className="w-full px-3 py-2 rounded-lg border"
+                    style={{ borderColor: '#990D35' }}
+                    defaultValue={editingMatch.skor_b}
+                    id="scoreB"
+                  />
+                </div>
+              )}
+            </div>
+          </div>
             
             <div className="p-6 border-t flex gap-3">
               <button
