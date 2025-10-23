@@ -312,8 +312,10 @@ model tb_match {
   skor_a       Int                   @default(0)
   skor_b       Int                   @default(0)
   id_venue     Int?
-  tanggal_pertandingan DateTime?          // Tanggal pertandingan
-  nomor_partai         String?   @db.VarChar(50)  // Nomor partai (misal: "1A", "2B")
+  tanggal_pertandingan DateTime?  
+  nomor_antrian   Int?      // Urutan antrian: 1, 2, 3, ...
+  nomor_lapangan  String?   @db.VarChar(10)  // Kode lapangan: "A", "B", "C"
+  nomor_partai    String?   @db.VarChar(50)  // "5A", "12B" (optional, bisa auto-generate)
 
   bagan        tb_bagan              @relation(fields: [id_bagan], references: [id_bagan])
   peserta_a    tb_peserta_kompetisi? @relation("PesertaA", fields: [id_peserta_a], references: [id_peserta_kompetisi])
@@ -325,6 +327,8 @@ model tb_match {
   @@index([id_peserta_a], map: "tb_match_id_peserta_a_fkey")
   @@index([id_peserta_b], map: "tb_match_id_peserta_b_fkey")
   @@index([id_venue], map: "tb_match_id_venue_fkey")
+  
+  @@index([nomor_antrian, nomor_lapangan])
 }
 
 model tb_match_audit {

@@ -10,20 +10,22 @@ export interface Participant {
   teamMembers?: string[];
 }
 
-export interface Match {
-  id?: number;
-  round: number;
-  position: number;
-  participant1?: Participant | null;
-  participant2?: Participant | null;
-  winner?: Participant | null;
-  scoreA?: number;
-  scoreB?: number;
-  status: 'pending' | 'ongoing' | 'completed' | 'bye';
-  venue?: string;
-  tanggalPertandingan?: Date | null; 
-  nomorPartai?: string | null;       
-}
+  export interface Match {
+    id?: number;
+    round: number;
+    position: number;
+    participant1?: Participant | null;
+    participant2?: Participant | null;
+    winner?: Participant | null;
+    scoreA?: number;
+    scoreB?: number;
+    status: 'pending' | 'ongoing' | 'completed' | 'bye';
+    venue?: string;
+    tanggalPertandingan?: Date | null;
+    nomorPartai?: string | null;  
+    nomorAntrian?: number | null;
+    nomorLapangan?: string | null;
+  }
 
 export interface Bracket {
   id?: number;
@@ -846,7 +848,13 @@ static async generatePemulaBracket(
           status: (hasParticipant1 && !hasParticipant2) || (!hasParticipant1 && hasParticipant2)
             ? 'bye' 
             : this.determineMatchStatus(match),
-          venue: match.venue?.nama_venue
+          venue: match.venue?.nama_venue,
+          tanggalPertandingan: match.tanggal_pertandingan,
+          nomorPartai: match.nomor_partai,
+          
+          // ⭐ TAMBAHAN BARU
+          nomorAntrian: match.nomor_antrian,
+          nomorLapangan: match.nomor_lapangan
         };
       });
 
@@ -866,97 +874,108 @@ static async generatePemulaBracket(
   }
 
   /**
-   * Update match result
+   * Update match result with queue fields
    */
-  /**
- * Update match result with tanggal and nomor partai
- */
-static async updateMatch(
-  matchId: number, 
-  winnerId: number, 
-  scoreA: number, 
-  scoreB: number,
-  tanggalPertandingan?: Date | null,  // ⭐ TAMBAH PARAMETER
-  nomorPartai?: string | null         // ⭐ TAMBAH PARAMETER
-): Promise<Match> {
-  try {
-    const updateData: any = {
-      skor_a: scoreA,
-      skor_b: scoreB
-    };
+  static async updateMatch(
+    matchId: number, 
+    winnerId: number, 
+    scoreA: number, 
+    scoreB: number,
+    tanggalPertandingan?: Date | null,
+    nomorAntrian?: number | null,        // ⭐ NEW PARAMETER
+    nomorLapangan?: string | null        // ⭐ NEW PARAMETER
+  ): Promise<Match> {
+    try {
+      const updateData: any = {
+        skor_a: scoreA,
+        skor_b: scoreB
+      };
 
-    // ⭐ Add optional fields if provided
-    if (tanggalPertandingan !== undefined) {
-      updateData.tanggal_pertandingan = tanggalPertandingan;
-    }
-    if (nomorPartai !== undefined) {
-      updateData.nomor_partai = nomorPartai;
-    }
-
-    const updatedMatch = await prisma.tb_match.update({
-      where: { id_match: matchId },
-      data: updateData,
-      include: {
-        peserta_a: {
-          include: {
-            atlet: {
-              include: {
-                dojang: true
-              }
-            },
-            anggota_tim: {
-              include: {
-                atlet: {
-                  include: {
-                    dojang: true
-                  }
-                }
-              }
-            }
-          }
-        },
-        peserta_b: {
-          include: {
-            atlet: {
-              include: {
-                dojang: true
-              }
-            },
-            anggota_tim: {
-              include: {
-                atlet: {
-                  include: {
-                    dojang: true
-                  }
-                }
-              }
-            }
-          }
-        }
+      // Add optional fields if provided
+      if (tanggalPertandingan !== undefined) {
+        updateData.tanggal_pertandingan = tanggalPertandingan;
       }
-    });
+      
+      // ⭐ NEW: Handle queue fields
+      if (nomorAntrian !== undefined) {
+        updateData.nomor_antrian = nomorAntrian;
+      }
+      
+      if (nomorLapangan !== undefined) {
+        updateData.nomor_lapangan = nomorLapangan;
+      }
+      
+      // ⭐ AUTO-GENERATE nomor_partai if both queue fields provided
+      if (nomorAntrian && nomorLapangan) {
+        updateData.nomor_partai = `${nomorAntrian}${nomorLapangan}`;
+        console.log(`🎯 Auto-generated nomor_partai: ${updateData.nomor_partai}`);
+      }
 
-    // Advance winner to next round
-    await this.advanceWinnerToNextRound(updatedMatch, winnerId);
+      const updatedMatch = await prisma.tb_match.update({
+        where: { id_match: matchId },
+        data: updateData,
+        include: {
+          peserta_a: {
+            include: {
+              atlet: {
+                include: {
+                  dojang: true
+                }
+              },
+              anggota_tim: {
+                include: {
+                  atlet: {
+                    include: {
+                      dojang: true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          peserta_b: {
+            include: {
+              atlet: {
+                include: {
+                  dojang: true
+                }
+              },
+              anggota_tim: {
+                include: {
+                  atlet: {
+                    include: {
+                      dojang: true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          venue: true
+        }
+      });
 
-    return {
-      id: updatedMatch.id_match,
-      round: updatedMatch.ronde,
-      position: 0,
-      participant1: updatedMatch.peserta_a ? this.transformParticipant(updatedMatch.peserta_a) : null,
-      participant2: updatedMatch.peserta_b ? this.transformParticipant(updatedMatch.peserta_b) : null,
-      winner: this.determineWinner(updatedMatch),
-      scoreA: updatedMatch.skor_a,
-      scoreB: updatedMatch.skor_b,
-      status: this.determineMatchStatus(updatedMatch),
-      tanggalPertandingan: updatedMatch.tanggal_pertandingan, // ⭐ RETURN VALUE
-      nomorPartai: updatedMatch.nomor_partai                  // ⭐ RETURN VALUE
-    };
-  } catch (error: any) {
-    console.error('Error updating match:', error);
-    throw new Error('Failed to update match');
+      // Advance winner to next round
+      await this.advanceWinnerToNextRound(updatedMatch, winnerId);
+
+      return {
+        id: updatedMatch.id_match,
+        round: updatedMatch.ronde,
+        position: 0,
+        participant1: updatedMatch.peserta_a ? this.transformParticipant(updatedMatch.peserta_a) : null,
+        participant2: updatedMatch.peserta_b ? this.transformParticipant(updatedMatch.peserta_b) : null,
+        winner: this.determineWinner(updatedMatch),
+        scoreA: updatedMatch.skor_a,
+        scoreB: updatedMatch.skor_b,
+        status: this.determineMatchStatus(updatedMatch),
+        tanggalPertandingan: updatedMatch.tanggal_pertandingan,
+        nomorPartai: updatedMatch.nomor_partai
+      };
+    } catch (error: any) {
+      console.error('Error updating match:', error);
+      throw new Error('Failed to update match');
+    }
   }
-}
 
   /**
    * Advance winner to next round

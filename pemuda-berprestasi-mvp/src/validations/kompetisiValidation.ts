@@ -193,17 +193,63 @@ export const kompetisiValidation = {
         'number.min': 'Skor B tidak boleh negatif',
         'number.max': 'Skor B maksimal 100',
         'any.required': 'Skor B wajib diisi'
+      }),
+    
+    // ⭐ TAMBAHAN BARU - Optional fields
+    tanggalPertandingan: Joi.date()
+      .optional()
+      .allow(null)
+      .messages({
+        'date.base': 'Format tanggal tidak valid'
+      }),
+    
+    nomorAntrian: Joi.number()
+      .integer()
+      .min(1)
+      .optional()
+      .allow(null)
+      .messages({
+        'number.base': 'Nomor antrian harus berupa angka',
+        'number.integer': 'Nomor antrian harus bilangan bulat',
+        'number.min': 'Nomor antrian minimal 1'
+      }),
+    
+    nomorLapangan: Joi.string()
+      .max(10)
+      .uppercase()
+      .pattern(/^[A-Z]$/)
+      .optional()
+      .allow(null)
+      .messages({
+        'string.base': 'Nomor lapangan harus berupa teks',
+        'string.max': 'Nomor lapangan maksimal 10 karakter',
+        'string.pattern.base': 'Nomor lapangan harus huruf kapital tunggal (A-Z)'
+      }),
+    
+    nomorPartai: Joi.string()
+      .max(50)
+      .optional()
+      .allow(null)
+      .messages({
+        'string.max': 'Nomor partai maksimal 50 karakter'
       })
   })
   .custom((value, helpers) => {
-    // ✅ Simple validation: scores must not be equal
+    // Validation: scores must not be equal
     if (value.scoreA === value.scoreB) {
       return helpers.error('custom.tieNotAllowed');
     }
+    
+    // ⭐ VALIDATION BARU: If nomorAntrian OR nomorLapangan provided, both must be provided
+    if ((value.nomorAntrian && !value.nomorLapangan) || (!value.nomorAntrian && value.nomorLapangan)) {
+      return helpers.error('custom.queueFieldsRequired');
+    }
+    
     return value;
   }, 'Match result validation')
   .messages({
-    'custom.tieNotAllowed': 'Pertandingan tidak boleh berakhir seri'
+    'custom.tieNotAllowed': 'Pertandingan tidak boleh berakhir seri',
+    'custom.queueFieldsRequired': 'Nomor antrian dan nomor lapangan harus diisi bersamaan'
   }),
 
   // Validation for shuffle bracket
