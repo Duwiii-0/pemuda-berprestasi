@@ -88,24 +88,7 @@ const AdminLayout: React.FC = () => {
                   ADMIN PANEL
                 </h1>
                 <p className="text-sm font-medium" style={{ color: '#050505', opacity: 0.7 }}>
-                  Management System
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* User Info */}
-          <div className="p-6 border-b" style={{ borderColor: '#990D35' }}>
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center font-bold text-lg shadow-sm" style={{ backgroundColor: '#F5B700', color: '#050505' }}>
-                {displayName.charAt(0).toUpperCase()}
-              </div>
-              <div>
-                <p className="font-semibold text-base" style={{ color: '#050505' }}>
-                  {displayName}
-                </p>
-                <p className="text-sm font-medium" style={{ color: '#990D35' }}>
-                  Administrator
+                  CJV Management System
                 </p>
               </div>
             </div>

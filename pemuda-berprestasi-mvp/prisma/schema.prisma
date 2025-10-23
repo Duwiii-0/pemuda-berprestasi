@@ -156,6 +156,7 @@ model tb_peserta_tim {
 
   @@index([id_peserta_kompetisi])
   @@index([id_atlet])
+  @@unique([id_peserta_kompetisi, id_atlet])  // ← Prevent duplicate members
 }
 
 
@@ -242,25 +243,33 @@ model tb_kelas_kejuaraan {
   bagan              tb_bagan[]
   peserta_kompetisi  tb_peserta_kompetisi[]
 
-  @@index([id_kompetisi], map: "tb_kelas_kejuaraan_id_kompetisi_fkey")
+  @@index([id_kompetisi])
+  @@index([cabang])  // ← Filter KYORUGI/POOMSAE
+  @@index([id_kompetisi, cabang])  // ← Composite index
+  @@index([id_kategori_event])
+  @@index([id_kelompok])
+  @@index([id_kelas_berat])
 }
 
 model tb_peserta_kompetisi {
-id_peserta_kompetisi Int                @id @default(autoincrement())
-id_atlet             Int?               // null jika tim
-id_kelas_kejuaraan   Int
-is_team              Boolean            @default(false)
-status               StatusPendaftaran  @default(PENDING)
+  id_peserta_kompetisi Int                @id @default(autoincrement())
+  id_atlet             Int?
+  id_kelas_kejuaraan   Int
+  is_team              Boolean            @default(false)
+  status               StatusPendaftaran  @default(PENDING)
 
-atlet                tb_atlet?          @relation(fields: [id_atlet], references: [id_atlet])
-kelas_kejuaraan      tb_kelas_kejuaraan @relation(fields: [id_kelas_kejuaraan], references: [id_kelas_kejuaraan])
-anggota_tim          tb_peserta_tim[]   // daftar anggota jika tim
-drawing_seed         tb_drawing_seed[]
-match_a              tb_match[]         @relation("PesertaA")
-match_b              tb_match[]         @relation("PesertaB")
+  atlet                tb_atlet?          @relation(fields: [id_atlet], references: [id_atlet])
+  kelas_kejuaraan      tb_kelas_kejuaraan @relation(fields: [id_kelas_kejuaraan], references: [id_kelas_kejuaraan])
+  anggota_tim          tb_peserta_tim[]
+  drawing_seed         tb_drawing_seed[]
+  match_a              tb_match[]         @relation("PesertaA")
+  match_b              tb_match[]         @relation("PesertaB")
 
-@@index([id_atlet])
-@@index([id_kelas_kejuaraan])
+  @@index([id_atlet])
+  @@index([id_kelas_kejuaraan])
+  @@index([status])  // ← PENTING! Filter by status sering dipakai
+  @@index([id_kelas_kejuaraan, status])  // ← Composite index untuk query kombinasi
+  @@index([is_team])  // ← Filter team/individu
 }
 
 

@@ -119,67 +119,11 @@ const AdminKompetisiLayout: React.FC = () => {
                   className="text-sm font-medium"
                   style={{ color: "#050505", opacity: 0.7 }}
                 >
-                  Competition Management System
+                  Sriwijaya Competition 
                 </p>
               </div>
             </div>
           </div>
-
-          {/* User Info */}
-          <div className="p-6 border-b" style={{ borderColor: "#990D35" }}>
-            <div className="flex items-center gap-3">
-              <div
-                className="w-14 h-14 rounded-xl flex items-center justify-center font-bold text-xl shadow-sm"
-                style={{ backgroundColor: "#F5B700", color: "#050505" }}
-              >
-                {displayName.charAt(0).toUpperCase()}
-              </div>
-              <div className="flex-1">
-                <p
-                  className="font-semibold text-base truncate"
-                  style={{ color: "#050505" }}
-                >
-                  {displayName}
-                </p>
-                <p className="text-sm font-medium" style={{ color: "#990D35" }}>
-                  Competition Administrator
-                </p>
-                <div className="flex items-center gap-1 mt-1">
-                  <div
-                    className="w-2 h-2 rounded-full"
-                    style={{ backgroundColor: "#22c55e" }}
-                  ></div>
-                  <span className="text-xs" style={{ color: "#22c55e" }}>
-                    Online
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* <div className="p-6 border-b" style={{ borderColor: '#990D35' }}> */}
-          {/* <h3 className="text-sm font-semibold mb-3" style={{ color: '#050505', opacity: 0.7 }}> */}
-          {/* QUICK OVERVIEW */}
-          {/* </h3> */}
-          {/* <div className="grid grid-cols-2 gap-3"> */}
-          {/* <div className="p-3 rounded-lg" style={{ backgroundColor: 'rgba(153, 13, 53, 0.1)' }}> */}
-          {/* <div className="text-lg font-bold" style={{ color: '#990D35' }}> */}
-          {/* 128 */}
-          {/* </div> */}
-          {/* <div className="text-xs font-medium" style={{ color: '#050505', opacity: 0.7 }}> */}
-          {/* Total Peserta */}
-          {/* </div> */}
-          {/* </div> */}
-          {/* <div className="p-3 rounded-lg" style={{ backgroundColor: 'rgba(245, 183, 0, 0.1)' }}> */}
-          {/* <div className="text-lg font-bold" style={{ color: '#F5B700' }}> */}
-          {/* 24 */}
-          {/* </div> */}
-          {/* <div className="text-xs font-medium" style={{ color: '#050505', opacity: 0.7 }}> */}
-          {/* Pending Validasi */}
-          {/* </div> */}
-          {/* </div> */}
-          {/* </div> */}
-          {/* </div> */}
 
           {/* Navigation */}
           <nav className="p-6 space-y-2">
