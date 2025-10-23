@@ -283,8 +283,8 @@ const ValidasiDojang: React.FC = () => {
                       className="px-3 py-1.5 rounded-full text-xs font-bold shadow-sm"
                       style={{ 
                         background: (d.jumlah_atlet || 0) >= 25 
-                          ? 'linear-gradient(135deg, #22c55e 0%, #10b981 100%)'
-                          : 'linear-gradient(135deg, #F5B700 0%, #D19B00 100%)',
+                          ? 'linear-gradient(135deg, #990D35 0%, #990D35 100%)'
+                          : 'linear-gradient(135deg, #990D35 0%, #990D35 100%)',
                         color: 'white'
                       }}
                     >
