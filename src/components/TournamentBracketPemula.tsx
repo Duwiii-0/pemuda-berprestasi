@@ -801,6 +801,7 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
                         <span className="text-sm font-semibold" style={{ color: '#050505' }}>
                           Partai {matchIndex + 1}
                         </span>
+                        {/* Badge nomor partai dari input - akan muncul setelah disimpan */}
                         {match.nomor_partai && (
                           <span 
                             className="text-xs px-2 py-0.5 rounded-full font-medium"
@@ -814,7 +815,7 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
                       <div className="flex items-center gap-3">
                         {match.tanggal_pertandingan && (
                           <span className="text-xs flex items-center gap-1" style={{ color: '#050505', opacity: 0.7 }}>
-                            📅 {new Date(match.tanggal_pertandingan).toLocaleDateString('id-ID', {
+                            {new Date(match.tanggal_pertandingan).toLocaleDateString('id-ID', {
                               day: '2-digit',
                               month: 'short',
                               year: 'numeric'
@@ -843,12 +844,6 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
                           <div className="flex items-center gap-3">
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 mb-1.5">
-                                <span 
-                                  className="inline-flex items-center text-xs font-bold px-2.5 py-1 rounded shadow-sm flex-shrink-0"
-                                  style={{ backgroundColor: '#990D35', color: 'white' }}
-                                >
-                                  B/{match.peserta_a.id_peserta_kompetisi}
-                                </span>
                                 <span 
                                   className="font-bold text-base truncate"
                                   style={{ color: '#3B82F6' }}
@@ -906,12 +901,6 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
                           <div className="flex items-center gap-3">
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 mb-1.5">
-                                <span 
-                                  className="inline-flex items-center text-xs font-bold px-2.5 py-1 rounded shadow-sm flex-shrink-0"
-                                  style={{ backgroundColor: '#990D35', color: 'white' }}
-                                >
-                                  R/{match.peserta_b.id_peserta_kompetisi}
-                                </span>
                                 <span 
                                   className="font-bold text-base truncate"
                                   style={{ color: '#EF4444' }}
@@ -1148,7 +1137,7 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
             
             <div className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-2">📅 Tanggal Pertandingan</label>
+                <label className="block text-sm font-medium mb-2">Tanggal Pertandingan</label>
                 <input
                   type="date"
                   className="w-full px-3 py-2 rounded-lg border"
@@ -1163,7 +1152,7 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2">🎯 Nomor Partai</label>
+                <label className="block text-sm font-medium mb-2">Nomor Partai</label>
                 <input
                   type="text"
                   placeholder="Contoh: 1A, 2B"
