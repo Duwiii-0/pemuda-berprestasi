@@ -819,9 +819,6 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
                         }}
                       >
                         <div className="flex items-center gap-2">
-                          <span className="text-sm font-semibold" style={{ color: '#050505' }}>
-                            Partai {matchIndex + 1}
-                          </span>
                           
                           {/* ⭐ BADGE: NOMOR PARTAI (Auto-generated dari backend) */}
                           {match.nomor_partai && (
@@ -832,27 +829,6 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
                               {match.nomor_partai}
                             </span>
                           )}
-                          
-                          {/* ⭐ BADGE TERPISAH: Nomor Antrian (Optional display) */}
-                          {match.nomor_antrian && (
-                            <span 
-                              className="text-xs px-2 py-0.5 rounded-md font-medium"
-                              style={{ backgroundColor: '#3B82F6', color: 'white' }}
-                            >
-                              Q{match.nomor_antrian}
-                            </span>
-                          )}
-                          
-                          {/* ⭐ BADGE TERPISAH: Nomor Lapangan (Optional display) */}
-                          {match.nomor_lapangan && (
-                            <span 
-                              className="text-xs px-2 py-0.5 rounded-md font-medium"
-                              style={{ backgroundColor: '#22c55e', color: 'white' }}
-                            >
-                              Court {match.nomor_lapangan}
-                            </span>
-                          )}
-                        </div>
                         
                         <div className="flex items-center gap-3">
                           {match.tanggal_pertandingan && (
@@ -1197,12 +1173,10 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
             <div>
               <label className="block text-sm font-medium mb-2">
                 Nomor Antrian
-                <span className="text-xs ml-2 opacity-60">(urutan: 1, 2, 3, ...)</span>
               </label>
               <input
                 type="number"
                 min="1"
-                placeholder="Contoh: 5"
                 className="w-full px-3 py-2 rounded-lg border focus:ring-2 focus:ring-offset-1"
                 style={{ borderColor: '#990D35' }}
                 defaultValue={editingMatch.nomor_antrian || ''}
@@ -1214,11 +1188,9 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
             <div>
               <label className="block text-sm font-medium mb-2">
                 Nomor Lapangan
-                <span className="text-xs ml-2 opacity-60">(huruf: A, B, C, ...)</span>
               </label>
               <input
                 type="text"
-                placeholder="Contoh: A"
                 maxLength={1}
                 className="w-full px-3 py-2 rounded-lg border uppercase focus:ring-2 focus:ring-offset-1"
                 style={{ borderColor: '#990D35' }}
@@ -1229,30 +1201,7 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
                   input.value = input.value.toUpperCase().replace(/[^A-Z]/g, '');
                 }}
               />
-              <p className="text-xs mt-1 opacity-60">
-                💡 Nomor partai akan otomatis dibuat: {' '}
-                <span className="font-mono font-semibold">[Antrian][Lapangan]</span>
-                {' '}(contoh: 5A, 12B)
-              </p>
             </div>
-
-            {/* ⭐ DISPLAY AUTO-GENERATED NOMOR PARTAI */}
-            {editingMatch.nomor_partai && (
-              <div className="p-3 rounded-lg border-2" style={{ 
-                backgroundColor: 'rgba(245, 183, 0, 0.1)', 
-                borderColor: '#F5B700' 
-              }}>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Nomor Partai Tersimpan:</span>
-                  <span 
-                    className="text-base px-3 py-1 rounded-full font-bold"
-                    style={{ backgroundColor: '#F5B700', color: 'white' }}
-                  >
-                    {editingMatch.nomor_partai}
-                  </span>
-                </div>
-              </div>
-            )}
 
             <div className="border-t pt-4">
               {editingMatch.peserta_a && (
