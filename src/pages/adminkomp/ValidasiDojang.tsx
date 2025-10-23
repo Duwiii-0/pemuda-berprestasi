@@ -351,10 +351,10 @@ const ValidasiDojang: React.FC = () => {
                     <div
                       className="h-2.5 rounded-full transition-all duration-500"
                       style={{ 
-                        background: (d.jumlah_atlet || 0) >= 25
+                        background: (d.jumlah_atlet || 0) >= 100
                           ? 'linear-gradient(90deg, #22c55e 0%, #10b981 100%)'
                           : 'linear-gradient(90deg, #F5B700 0%, #F59E0B 100%)',
-                        width: `${((d.jumlah_atlet || 0) / 50) * 100}%`
+                        width: `${((d.jumlah_atlet || 0) / 200) * 100}%`
                       }}
                     />
                   </div>
@@ -384,7 +384,7 @@ const ValidasiDojang: React.FC = () => {
                   }}
                   className="px-4 py-3.5 rounded-xl font-bold transition-all shadow-md hover:shadow-lg transform hover:scale-[1.02]"
                   style={{ 
-                    background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
+                    background: 'linear-gradient(135deg, #990D35 0%, #7A0A2B 100%)',
                     color: 'white'
                   }}
                 >
