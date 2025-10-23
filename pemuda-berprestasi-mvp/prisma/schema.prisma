@@ -180,6 +180,7 @@ model tb_kompetisi {
   bagan            tb_bagan[]
   kelas_kejuaraan  tb_kelas_kejuaraan[]
   venue            tb_venue[]
+  lapangan         tb_lapangan[]
 
   @@index([id_penyelenggara], map: "tb_kompetisi_id_penyelenggara_fkey")
 }
@@ -294,6 +295,8 @@ model tb_bagan {
   kelas_kejuaraan    tb_kelas_kejuaraan @relation(fields: [id_kelas_kejuaraan], references: [id_kelas_kejuaraan])
   drawing_seed       tb_drawing_seed[]
   match              tb_match[]
+  jadwal_pertandingan tb_jadwal_pertandingan[] 
+
 
   @@index([id_kompetisi], map: "tb_bagan_id_kompetisi_fkey")
   @@index([id_kelas_kejuaraan], map: "tb_bagan_id_kelas_kejuaraan_fkey")
