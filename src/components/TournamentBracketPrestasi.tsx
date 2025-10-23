@@ -117,8 +117,8 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
   });
 
   // Layout constants - PRESISI UNTUK GAP KONSISTEN
-  const CARD_WIDTH = 340;
-  const CARD_HEIGHT = 220;
+  const CARD_WIDTH = 360;
+  const CARD_HEIGHT = 240;
   const ROUND_GAP = 175;
   const LINE_EXTENSION = 40;
 
@@ -1085,9 +1085,6 @@ const handleExportPDF = async () => {
                         }}
                       >
                         <div className="flex items-center gap-2">
-                          <span className="text-xs font-bold" style={{ color: '#990D35' }}>
-                            Round {match.ronde}
-                          </span>
                           
                           {/* ⭐ TAMBAHKAN BADGE: NOMOR PARTAI */}
                           {match.nomor_partai && (
@@ -1099,22 +1096,13 @@ const handleExportPDF = async () => {
                             </span>
                           )}
 
-                          {/* ⭐ TAMBAHKAN BADGE: NOMOR ANTRIAN & LAPANGAN (jika ada) */}
-                          {match.nomor_antrian && match.nomor_lapangan && (
-                            <span 
-                              className="text-xs px-2.5 py-1 rounded-full font-medium shadow-sm"
-                              style={{ backgroundColor: '#6366F1', color: 'white' }}
-                            >
-                              Antrian: {match.nomor_antrian} • Lapangan: {match.nomor_lapangan}
-                            </span>
-                          )}
                         </div>
                         
                         <div className="flex items-center gap-3">
                           {/* ⭐ TAMBAHKAN DISPLAY TANGGAL */}
                           {match.tanggal_pertandingan && (
                             <span className="text-xs flex items-center gap-1" style={{ color: '#050505', opacity: 0.7 }}>
-                              📅 {new Date(match.tanggal_pertandingan).toLocaleDateString('id-ID', {
+                              {new Date(match.tanggal_pertandingan).toLocaleDateString('id-ID', {
                                 day: '2-digit',
                                 month: 'short',
                                 year: 'numeric'
