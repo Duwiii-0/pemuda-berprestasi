@@ -444,139 +444,75 @@ static async getAvailableClassesForParticipant(
   });
 }
 
+
 static async getAtletsByKompetisi(
-  id_kompetisi: number,
-  page: number = 1,
-  limit: number = 20,
-  id_dojang?: number,
-  filters?: {
-    status?: StatusPendaftaran;
-    cabang?: "KYORUGI" | "POOMSAE";
-    id_kelompok?: number;
-    id_kategori_event?: number;
-  }
+  kompetisiId: number, 
+  page: number, 
+  limit: number, 
+  idDojang?: number // <-- tambahkan optional filter
 ) {
   const skip = (page - 1) * limit;
 
-  const whereCondition: any = {
+  const peserta = await prisma.tb_peserta_kompetisi.findMany({
+  where: {
     kelas_kejuaraan: {
-      id_kompetisi,
-      ...(filters?.cabang && { cabang: filters.cabang }),
-      ...(filters?.id_kelompok && { id_kelompok: filters.id_kelompok }),
-      ...(filters?.id_kategori_event && { id_kategori_event: filters.id_kategori_event })
-    }
-  };
-
-  // Filter by status
-  if (filters?.status) {
-    whereCondition.status = filters.status;
-  }
-
-  // Filter by dojang (untuk role PELATIH)
-  if (id_dojang) {
-    whereCondition.OR = [
-      // Individu: atlet.id_dojang
-      {
-        is_team: false,
-        atlet: { id_dojang }
-      },
-      // Tim: anggota_tim.atlet.id_dojang
-      {
-        is_team: true,
-        anggota_tim: {
-          some: {
-            atlet: { id_dojang }
-          }
-        }
-      }
-    ];
-  }
-
-  // 🔥 OPTIMIZED QUERY - Single query dengan semua relasi
-  const [peserta, total] = await Promise.all([
-    prisma.tb_peserta_kompetisi.findMany({
-      where: whereCondition,
-      skip,
-      take: limit,
-      include: {
-        // Eager load semua relasi yang dibutuhkan frontend
-        atlet: {
-          include: {
-            dojang: {
-              select: {
-                id_dojang: true,
-                nama_dojang: true,
-                kota: true
-              }
-            }
-          }
+      id_kompetisi: kompetisiId,
+    },
+    ...(idDojang && {
+      OR: [
+        // Individu
+        {
+          AND: [
+            { is_team: false },
+            { atlet: { id_dojang: idDojang } }
+          ]
         },
-        kelas_kejuaraan: {
-          include: {
-            kategori_event: {
-              select: {
-                id_kategori_event: true,
-                nama_kategori: true
-              }
-            },
-            kelompok: {
-              select: {
-                id_kelompok: true,
-                nama_kelompok: true,
-                usia_min: true,
-                usia_max: true
-              }
-            },
-            kelas_berat: {
-              select: {
-                id_kelas_berat: true,
-                nama_kelas: true,
-                batas_min: true,
-                batas_max: true
-              }
-            },
-            poomsae: {
-              select: {
-                id_poomsae: true,
-                nama_kelas: true
-              }
-            }
-          }
-        },
-        anggota_tim: {
-          include: {
-            atlet: {
-              include: {
-                dojang: {
-                  select: {
-                    id_dojang: true,
-                    nama_dojang: true
-                  }
-                }
-              }
-            }
-          }
+        // Tim (semua anggota harus dari dojang yg sama)
+        {
+          AND: [
+            { is_team: true },
+            { anggota_tim: { every: { atlet: { id_dojang: idDojang } } } }
+          ]
         }
-      },
-      orderBy: [
-        { status: 'asc' },  // PENDING dulu, baru APPROVED/REJECTED
-        { id_peserta_kompetisi: 'desc' }  // Terbaru dulu
       ]
-    }),
-    
-    // Count total untuk pagination
-    prisma.tb_peserta_kompetisi.count({
-      where: whereCondition
     })
-  ]);
+  },
+  include: {
+    atlet: { include: { dojang: true } },   // <-- tetap include meski null kalau tim
+    anggota_tim: {
+      include: {
+        atlet: { include: { dojang: true } }, // <-- nama atlet tim ada di sini
+      },
+    },
+    kelas_kejuaraan: {
+      include: {
+        kategori_event: true,
+        kelompok: true,
+        kelas_berat: true,
+        poomsae: true,
+      },
+    },
+  },
+  skip,
+  take: limit,
+});
 
-  return {
-    peserta,
-    total,
-    page,
-    limit,
-    totalPages: Math.ceil(total / limit)
-  };
+
+  const total = await prisma.tb_peserta_kompetisi.count({
+    where: {
+      kelas_kejuaraan: {
+        id_kompetisi: kompetisiId,
+      },
+      ...(idDojang ? {
+        OR: [
+          { atlet: { id_dojang: idDojang } },
+          { anggota_tim: { some: { atlet: { id_dojang: idDojang } } } }
+        ]
+      } : {})
+    },
+  });
+
+  return { peserta, total };
 }
 
 static async updateRegistrationStatus(

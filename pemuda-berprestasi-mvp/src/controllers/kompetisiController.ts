@@ -167,65 +167,54 @@ export class KompetisiController {
 }
 
 
-static async getAtletsByKompetisi(req: Request, res: Response) {
-  try {
-    const { id } = req.params;
-    const { 
-      page = "1", 
-      limit = "20", 
-      id_dojang: idDojangQuery,
-      status,
-      cabang,
-      id_kelompok,
-      id_kategori_event
-    } = req.query;
+  static async getAtletsByKompetisi(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const { page = "1", limit = "1000", id_dojang: idDojangQuery } = req.query; // ⬅️ ambil query
+      let idDojang: number | undefined = undefined;
 
-    const kompetisiId = parseInt(id, 10);
-    const pageNum = parseInt(page as string, 10);
-    const limitNum = parseInt(limit as string, 10);
-    let idDojang: number | undefined = undefined;
+      const kompetisiId = parseInt(id, 10);
+      const pageNum = parseInt(page as string, 10);
+      const limitNum = parseInt(limit as string, 10);
+      
+      if (isNaN(kompetisiId)) {
+        return res.status(400).json({ message: "Invalid kompetisiId" });
+      }
+      console.log("Role:", req.user?.role, "idDojang:", idDojang);
 
-    if (isNaN(kompetisiId)) {
-      return res.status(400).json({ message: "Invalid kompetisiId" });
+      // role PELATIH → selalu pakai id_dojang dari token
+      if (req.user?.role === "PELATIH" && req.user.id_dojang) {
+        idDojang = req.user.id_dojang;
+      }
+      // role ADMIN → boleh filter manual lewat query
+      else if (req.user?.role === "ADMIN" && idDojangQuery) {
+        idDojang = parseInt(idDojangQuery as string, 10);
+      }
+
+
+      const result = await KompetisiService.getAtletsByKompetisi(
+        kompetisiId,
+        pageNum,
+        limitNum,
+        idDojang
+      );
+
+      return res.status(200).json({
+        success: true,
+        data: result.peserta,
+        total: result.total,
+        page: pageNum,
+        limit: limitNum,
+      });
+    } catch (error: any) {
+      console.error("Error getAtletsByKompetisi:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Failed to fetch atlet by kompetisi",
+        error: error.message,
+      });
     }
-
-    // Role PELATIH → selalu pakai id_dojang dari token
-    if (req.user?.role === "PELATIH" && req.user.id_dojang) {
-      idDojang = req.user.id_dojang;
-    }
-    // Role ADMIN → boleh filter manual lewat query
-    else if (req.user?.role === "ADMIN" && idDojangQuery) {
-      idDojang = parseInt(idDojangQuery as string, 10);
-    }
-
-    // 🔥 Build filters object
-    const filters: any = {};
-    if (status) filters.status = status as StatusPendaftaran;
-    if (cabang) filters.cabang = cabang as "KYORUGI" | "POOMSAE";
-    if (id_kelompok) filters.id_kelompok = parseInt(id_kelompok as string, 10);
-    if (id_kategori_event) filters.id_kategori_event = parseInt(id_kategori_event as string, 10);
-
-    const result = await KompetisiService.getAtletsByKompetisi(
-      kompetisiId,
-      pageNum,
-      limitNum,
-      idDojang,
-      filters
-    );
-
-    return res.status(200).json({
-      success: true,
-      ...result  // Spread semua: peserta, total, page, limit, totalPages
-    });
-  } catch (error: any) {
-    console.error("Error getAtletsByKompetisi:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Failed to fetch atlet by kompetisi",
-      error: error.message,
-    });
   }
-}
   
   static async updateRegistrationStatus(req: Request, res: Response) {
     try {
