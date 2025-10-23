@@ -11,7 +11,7 @@ const ValidasiDojang: React.FC = () => {
   
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(20);
+  const [itemsPerPage] = useState(21);
 
   useEffect(() => {
     refreshDojang().catch(() => toast.error('Gagal memuat data dojang'));
@@ -344,7 +344,7 @@ const ValidasiDojang: React.FC = () => {
                       Kapasitas Atlet
                     </span>
                     <span className="text-xs font-medium" style={{ color: '#050505', opacity: 0.6 }}>
-                      {d.jumlah_atlet || 0}/50
+                      {d.jumlah_atlet || 0}/200
                     </span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
