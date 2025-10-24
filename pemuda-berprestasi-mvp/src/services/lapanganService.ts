@@ -4,14 +4,19 @@ const prisma = new PrismaClient();
 
 interface TambahHariLapanganDTO {
   id_kompetisi: number;
-  jumlah_lapangan: number;
+}
+
+interface TambahLapanganDTO {
+  id_kompetisi: number;
+  tanggal: string;
 }
 
 export class LapanganService {
   private readonly TANGGAL_MULAI = new Date("2025-11-22");
 
+  // Tambah hari baru dengan 1 lapangan default
   async tambahHariLapangan(data: TambahHariLapanganDTO) {
-    const { id_kompetisi, jumlah_lapangan } = data;
+    const { id_kompetisi } = data;
 
     const kompetisi = await prisma.tb_kompetisi.findUnique({
       where: { id_kompetisi },
@@ -34,40 +39,87 @@ export class LapanganService {
       tanggalBaru = new Date(this.TANGGAL_MULAI);
     }
 
-    const namaLapangan = this.generateNamaLapangan(jumlah_lapangan);
-
-    const lapanganBaru = await prisma.tb_lapangan.createMany({
-      data: namaLapangan.map((nama) => ({
+    // Buat 1 lapangan dengan nama A
+    const lapanganBaru = await prisma.tb_lapangan.create({
+      data: {
         id_kompetisi,
-        nama_lapangan: nama,
+        nama_lapangan: "A",
         tanggal: tanggalBaru,
-      })),
-    });
-
-    const lapanganResult = await prisma.tb_lapangan.findMany({
-      where: { id_kompetisi, tanggal: tanggalBaru },
-      orderBy: { nama_lapangan: "asc" },
+      },
     });
 
     return {
       success: true,
-      message: `Berhasil menambahkan ${jumlah_lapangan} lapangan untuk tanggal ${tanggalBaru.toLocaleDateString(
+      message: `Berhasil menambahkan hari pertandingan untuk tanggal ${tanggalBaru.toLocaleDateString(
         "id-ID"
       )}`,
       data: {
         tanggal: tanggalBaru,
-        jumlah_lapangan: lapanganBaru.count,
-        lapangan: lapanganResult,
+        lapangan: lapanganBaru,
       },
     };
   }
 
-  private generateNamaLapangan(jumlah: number): string[] {
-    const namaLapangan: string[] = [];
-    for (let i = 0; i < jumlah; i++) {
-      namaLapangan.push(this.getColumnName(i));
+  // Tambah 1 lapangan ke hari tertentu
+  async tambahLapanganKeHari(data: TambahLapanganDTO) {
+    const { id_kompetisi, tanggal } = data;
+
+    const targetDate = new Date(tanggal);
+
+    // Cek lapangan yang sudah ada di hari tersebut
+    const lapanganExisting = await prisma.tb_lapangan.findMany({
+      where: {
+        id_kompetisi,
+        tanggal: targetDate,
+      },
+      orderBy: { nama_lapangan: "asc" },
+    });
+
+    if (lapanganExisting.length === 0) {
+      throw new Error("Hari pertandingan tidak ditemukan");
     }
-    return namaLapangan;
+
+    // Hitung nama lapangan berikutnya
+    const jumlahLapangan = lapanganExisting.length;
+    const namaLapanganBaru = this.getColumnName(jumlahLapangan);
+
+    const lapanganBaru = await prisma.tb_lapangan.create({
+      data: {
+        id_kompetisi,
+        nama_lapangan: namaLapanganBaru,
+        tanggal: targetDate,
+      },
+    });
+
+    return {
+      success: true,
+      message: `Berhasil menambahkan lapangan ${namaLapanganBaru}`,
+      data: lapanganBaru,
+    };
+  }
+
+  // Hapus 1 lapangan
+  async hapusLapangan(id_lapangan: number) {
+    // Cek apakah ada jadwal pertandingan di lapangan ini
+    const adaJadwal = await prisma.tb_jadwal_pertandingan.findFirst({
+      where: { id_lapangan },
+    });
+
+    if (adaJadwal) {
+      throw new Error(
+        "Tidak dapat menghapus lapangan karena sudah ada jadwal yang terdaftar"
+      );
+    }
+
+    const deleted = await prisma.tb_lapangan.delete({
+      where: { id_lapangan },
+    });
+
+    return {
+      success: true,
+      message: `Berhasil menghapus lapangan ${deleted.nama_lapangan}`,
+      data: deleted,
+    };
   }
 
   private getColumnName(index: number): string {

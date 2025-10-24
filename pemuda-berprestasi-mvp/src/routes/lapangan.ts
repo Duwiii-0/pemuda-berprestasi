@@ -6,6 +6,15 @@ const router = Router();
 // POST /api/lapangan/tambah-hari
 router.post("/tambah-hari", lapanganController.tambahHariLapangan);
 
+// POST /api/lapangan/tambah-lapangan-ke-hari
+router.post(
+  "/tambah-lapangan-ke-hari",
+  lapanganController.tambahLapanganKeHari
+);
+
+// DELETE /api/lapangan/hapus-lapangan
+router.delete("/hapus-lapangan", lapanganController.hapusLapangan);
+
 // GET /api/lapangan/kompetisi/:id_kompetisi
 router.get(
   "/kompetisi/:id_kompetisi",

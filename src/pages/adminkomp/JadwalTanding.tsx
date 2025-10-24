@@ -49,12 +49,13 @@ const JadwalPertandingan: React.FC = () => {
   const [approvedPesertaByKelas, setApprovedPesertaByKelas] = useState<
     Record<number, any[]>
   >({});
+
   const [loadingHari, setLoadingHari] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [isAdding, setIsAdding] = useState(false);
+  const [addingLapanganTo, setAddingLapanganTo] = useState<string | null>(null);
 
-  // Fetch kelas dan atlet
   useEffect(() => {
     if (!idKompetisi) return;
     (async () => {
@@ -67,7 +68,6 @@ const JadwalPertandingan: React.FC = () => {
     })();
   }, [idKompetisi]);
 
-  // Fetch hari & lapangan
   useEffect(() => {
     if (!idKompetisi) return;
     fetchHariLapangan();
@@ -103,7 +103,61 @@ const JadwalPertandingan: React.FC = () => {
     }
   };
 
-  // Tambah hari pertandingan
+  // Pisahkan peserta approved
+  useEffect(() => {
+    if (!pesertaList || pesertaList.length === 0) return;
+
+    const map: Record<number, any[]> = {};
+    pesertaList.forEach((peserta) => {
+      if (peserta.status !== "APPROVED") return;
+      const idKelas = peserta.kelas_kejuaraan?.id_kelas_kejuaraan;
+      if (!idKelas) return;
+      if (!map[idKelas]) map[idKelas] = [];
+
+      const pesertaData = {
+        id_peserta: peserta.id_peserta_kompetisi,
+        nama_peserta: peserta.is_team
+          ? `Tim ${
+              peserta.anggota_tim?.[0]?.atlet?.dojang?.nama_dojang || "Unknown"
+            }`
+          : peserta.atlet?.nama_atlet || "Unknown",
+        is_team: peserta.is_team,
+        dojang: peserta.is_team
+          ? peserta.anggota_tim?.[0]?.atlet?.dojang?.nama_dojang
+          : peserta.atlet?.dojang?.nama_dojang,
+      };
+
+      map[idKelas].push(pesertaData);
+    });
+
+    setApprovedPesertaByKelas(map);
+  }, [pesertaList]);
+
+  // Sync antrian list
+  useEffect(() => {
+    setHariAntrianList((prev) => {
+      return hariList.map((hari) => {
+        const existingHari = prev.find((h) => h.tanggal === hari.tanggal);
+        const lapanganAntrian: Record<number, AntrianLapangan> = {};
+
+        hari.lapangan.forEach((lap) => {
+          lapanganAntrian[lap.id_lapangan] = existingHari?.lapanganAntrian?.[
+            lap.id_lapangan
+          ] || {
+            bertanding: 1,
+            persiapan: 1,
+            pemanasan: 1,
+          };
+        });
+
+        return {
+          tanggal: hari.tanggal,
+          lapanganAntrian,
+        };
+      });
+    });
+  }, [hariList]);
+
   const addHari = async () => {
     if (!idKompetisi) return;
 
@@ -115,10 +169,7 @@ const JadwalPertandingan: React.FC = () => {
       const res = await fetch("/api/lapangan/tambah-hari", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id_kompetisi: idKompetisi,
-          jumlah_lapangan: 3,
-        }),
+        body: JSON.stringify({ id_kompetisi: idKompetisi }),
       });
 
       const data = await res.json();
@@ -137,7 +188,66 @@ const JadwalPertandingan: React.FC = () => {
     }
   };
 
-  // Hapus hari
+  const addLapanganKeHari = async (tanggal: string) => {
+    if (!idKompetisi) return;
+
+    setAddingLapanganTo(tanggal);
+    setErrorMessage("");
+    setSuccessMessage("");
+
+    try {
+      const res = await fetch("/api/lapangan/tambah-lapangan-ke-hari", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id_kompetisi: idKompetisi,
+          tanggal: tanggal,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        setSuccessMessage(data.message);
+        await fetchHariLapangan();
+        setTimeout(() => setSuccessMessage(""), 3000);
+      } else {
+        throw new Error(data.message || "Gagal menambah lapangan");
+      }
+    } catch (err: any) {
+      console.error("Error tambah lapangan:", err);
+      setErrorMessage(err.message);
+    } finally {
+      setAddingLapanganTo(null);
+    }
+  };
+
+  const hapusLapangan = async (id_lapangan: number) => {
+    if (!confirm("Yakin ingin menghapus lapangan ini?")) return;
+
+    setErrorMessage("");
+    setSuccessMessage("");
+
+    try {
+      const res = await fetch("/api/lapangan/hapus-lapangan", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id_lapangan }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        setSuccessMessage(data.message);
+        await fetchHariLapangan();
+        setTimeout(() => setSuccessMessage(""), 3000);
+      } else {
+        throw new Error(data.message || "Gagal menghapus lapangan");
+      }
+    } catch (err: any) {
+      console.error("Error hapus lapangan:", err);
+      setErrorMessage(err.message);
+    }
+  };
+
   const hapusHari = async (tanggal: string) => {
     if (!idKompetisi) return;
     if (
@@ -173,7 +283,6 @@ const JadwalPertandingan: React.FC = () => {
     }
   };
 
-  // Toggle kelas kejuaraan di lapangan
   const toggleKelas = (
     tanggal: string,
     lapanganId: number,
@@ -200,7 +309,6 @@ const JadwalPertandingan: React.FC = () => {
     );
   };
 
-  // Update antrian
   const updateAntrian = (
     tanggal: string,
     lapanganId: number,
@@ -225,10 +333,8 @@ const JadwalPertandingan: React.FC = () => {
     );
   };
 
-  // Generate nama kelas display
   const generateNamaKelas = (kelas: any) => {
     const parts = [];
-
     if (kelas.cabang) parts.push(kelas.cabang);
     if (kelas.kategori_event?.nama_kategori)
       parts.push(kelas.kategori_event.nama_kategori);
@@ -236,7 +342,6 @@ const JadwalPertandingan: React.FC = () => {
     const isPoomsaePemula =
       kelas.cabang === "POOMSAE" &&
       kelas.kategori_event?.nama_kategori === "Pemula";
-
     if (kelas.kelompok?.nama_kelompok && !isPoomsaePemula) {
       parts.push(kelas.kelompok.nama_kelompok);
     }
@@ -272,7 +377,7 @@ const JadwalPertandingan: React.FC = () => {
           </div>
         </div>
 
-        {/* SUCCESS MESSAGE */}
+        {/* MESSAGES */}
         {successMessage && (
           <div
             className="mb-6 p-4 rounded-lg border-l-4"
@@ -287,7 +392,6 @@ const JadwalPertandingan: React.FC = () => {
           </div>
         )}
 
-        {/* ERROR MESSAGE */}
         {(errorMessage || errorKelasKejuaraan || errorAtlet) && (
           <div
             className="mb-6 p-4 rounded-lg border-l-4"
@@ -359,7 +463,6 @@ const JadwalPertandingan: React.FC = () => {
           !loadingAtlet &&
           !loadingHari && (
             <>
-              {/* TAMBAH HARI */}
               <div className="mb-6">
                 <button
                   onClick={addHari}
@@ -375,7 +478,7 @@ const JadwalPertandingan: React.FC = () => {
                   ) : (
                     <>
                       <Plus size={16} />
-                      Tambah Hari Pertandingan (3 Lapangan)
+                      Tambah Hari Pertandingan (1 Lapangan)
                     </>
                   )}
                 </button>
@@ -419,7 +522,7 @@ const JadwalPertandingan: React.FC = () => {
                     }}
                   >
                     {/* HEADER HARI */}
-                    <div className="flex justify-between items-center mb-4">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
                       <div>
                         <h2
                           className="text-xl font-semibold"
@@ -439,19 +542,42 @@ const JadwalPertandingan: React.FC = () => {
                           })}
                         </p>
                       </div>
-                      <button
-                        onClick={() => hapusHari(hari.tanggal)}
-                        className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium hover:opacity-80 transition-opacity text-red-600"
-                        style={{ backgroundColor: "rgba(220, 38, 38, 0.1)" }}
-                        title="Hapus Hari"
-                      >
-                        <Trash2 size={14} />
-                        Hapus Hari
-                      </button>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => addLapanganKeHari(hari.tanggal)}
+                          disabled={addingLapanganTo === hari.tanggal}
+                          className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium hover:opacity-80 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                          style={{
+                            backgroundColor: "rgba(153, 13, 53, 0.1)",
+                            color: "#990D35",
+                          }}
+                        >
+                          {addingLapanganTo === hari.tanggal ? (
+                            <>
+                              <Loader size={14} className="animate-spin" />
+                              Menambah...
+                            </>
+                          ) : (
+                            <>
+                              <Plus size={14} />
+                              Tambah Lapangan
+                            </>
+                          )}
+                        </button>
+                        <button
+                          onClick={() => hapusHari(hari.tanggal)}
+                          className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium hover:opacity-80 transition-opacity text-red-600"
+                          style={{ backgroundColor: "rgba(220, 38, 38, 0.1)" }}
+                          title="Hapus Hari"
+                        >
+                          <Trash2 size={14} />
+                          Hapus Hari
+                        </button>
+                      </div>
                     </div>
 
-                    {/* LAPANGAN */}
-                    <div className="space-y-4">
+                    {/* LAPANGAN - GRID 3 KOLOM */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                       {hari.lapangan.map((lap) => (
                         <div
                           key={lap.id_lapangan}
@@ -468,6 +594,13 @@ const JadwalPertandingan: React.FC = () => {
                             >
                               Lapangan {lap.nama_lapangan}
                             </h3>
+                            <button
+                              onClick={() => hapusLapangan(lap.id_lapangan)}
+                              className="text-red-600 hover:text-red-800 transition-colors"
+                              title="Hapus Lapangan"
+                            >
+                              <Trash2 size={16} />
+                            </button>
                           </div>
 
                           {/* KELAS KEJUARAAN */}
@@ -517,46 +650,57 @@ const JadwalPertandingan: React.FC = () => {
                                             }
                                             className="accent-[#990D35] cursor-pointer"
                                           />
-                                          <span className="text-sm font-medium text-[#050505]">
+                                          <span className="text-xs font-medium text-[#050505]">
                                             {namaKelasDisplay}
                                           </span>
                                         </div>
                                         <span
-                                          className="text-xs px-2 py-1 rounded-md font-medium"
+                                          className="text-xs px-2 py-1 rounded-md font-medium whitespace-nowrap"
                                           style={{
                                             backgroundColor:
                                               "rgba(153,13,53,0.1)",
                                             color: "#990D35",
                                           }}
                                         >
-                                          {approvedPeserta.length} peserta
+                                          {approvedPeserta.length}
                                         </span>
                                       </div>
 
                                       {/* DAFTAR PESERTA */}
-                                      {approvedPeserta.length > 0 && (
-                                        <ul className="mt-2 ml-6 list-disc text-xs text-[#050505] space-y-1">
-                                          {approvedPeserta.map((p) => (
-                                            <li key={p.id_peserta}>
-                                              <span className="font-medium">
-                                                {p.nama_peserta}
-                                              </span>
-                                              {p.dojang && (
-                                                <span className="text-[#990D35] ml-1">
-                                                  ({p.dojang})
-                                                </span>
-                                              )}
-                                            </li>
-                                          ))}
-                                        </ul>
-                                      )}
+                                      {approvedPeserta.length > 0 &&
+                                        lap.kelasDipilih.includes(
+                                          kelas.id_kelas_kejuaraan
+                                        ) && (
+                                          <ul className="mt-2 ml-6 list-disc text-xs text-[#050505] space-y-1">
+                                            {approvedPeserta
+                                              .slice(0, 3)
+                                              .map((p) => (
+                                                <li key={p.id_peserta}>
+                                                  <span className="font-medium">
+                                                    {p.nama_peserta}
+                                                  </span>
+                                                  {p.dojang && (
+                                                    <span className="text-[#990D35] ml-1">
+                                                      ({p.dojang})
+                                                    </span>
+                                                  )}
+                                                </li>
+                                              ))}
+                                            {approvedPeserta.length > 3 && (
+                                              <li className="text-[#990D35] font-medium">
+                                                +{approvedPeserta.length - 3}{" "}
+                                                lainnya
+                                              </li>
+                                            )}
+                                          </ul>
+                                        )}
                                     </label>
                                   );
                                 })
                               ) : (
                                 <div className="text-center py-8">
                                   <p
-                                    className="text-sm font-medium mb-1"
+                                    className="text-xs font-medium mb-1"
                                     style={{ color: "#050505", opacity: 0.6 }}
                                   >
                                     Tidak ada kelas kejuaraan tersedia
@@ -578,13 +722,13 @@ const JadwalPertandingan: React.FC = () => {
                                 className="text-xs font-medium mb-1"
                                 style={{ color: "#990D35" }}
                               >
-                                Kelas yang dipilih: {lap.kelasDipilih.length}
+                                Kelas: {lap.kelasDipilih.length}
                               </p>
                               <p
                                 className="text-xs"
                                 style={{ color: "#050505", opacity: 0.7 }}
                               >
-                                Total peserta:{" "}
+                                Peserta:{" "}
                                 {lap.kelasDipilih.reduce(
                                   (total, kelasId) =>
                                     total +
@@ -667,7 +811,8 @@ const JadwalPertandingan: React.FC = () => {
                         </p>
                       </div>
 
-                      <div className="space-y-4">
+                      {/* LAPANGAN - GRID 3 KOLOM */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {hariJadwal.lapangan.map((lap) => (
                           <div
                             key={lap.id_lapangan}
@@ -684,11 +829,11 @@ const JadwalPertandingan: React.FC = () => {
                               Lapangan {lap.nama_lapangan}
                             </h3>
 
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div className="space-y-3">
                               {/* Bertanding */}
                               <div>
                                 <label
-                                  className="block text-sm font-medium mb-2"
+                                  className="block text-xs font-medium mb-1"
                                   style={{ color: "#16a34a" }}
                                 >
                                   🟢 Bertanding
@@ -706,7 +851,7 @@ const JadwalPertandingan: React.FC = () => {
                                       parseInt(e.target.value)
                                     )
                                   }
-                                  className="w-full px-3 py-2 rounded-lg border-2 focus:outline-none focus:ring-2"
+                                  className="w-full px-2 py-1.5 text-sm rounded-lg border-2 focus:outline-none focus:ring-2"
                                   style={{
                                     borderColor: "#16a34a",
                                     backgroundColor: "rgba(22, 163, 74, 0.1)",
@@ -715,7 +860,7 @@ const JadwalPertandingan: React.FC = () => {
                                   {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(
                                     (num) => (
                                       <option key={num} value={num}>
-                                        {num} peserta
+                                        {num}
                                       </option>
                                     )
                                   )}
@@ -725,7 +870,7 @@ const JadwalPertandingan: React.FC = () => {
                               {/* Persiapan */}
                               <div>
                                 <label
-                                  className="block text-sm font-medium mb-2"
+                                  className="block text-xs font-medium mb-1"
                                   style={{ color: "#ea580c" }}
                                 >
                                   🟠 Persiapan
@@ -743,7 +888,7 @@ const JadwalPertandingan: React.FC = () => {
                                       parseInt(e.target.value)
                                     )
                                   }
-                                  className="w-full px-3 py-2 rounded-lg border-2 focus:outline-none focus:ring-2"
+                                  className="w-full px-2 py-1.5 text-sm rounded-lg border-2 focus:outline-none focus:ring-2"
                                   style={{
                                     borderColor: "#ea580c",
                                     backgroundColor: "rgba(234, 88, 12, 0.1)",
@@ -752,7 +897,7 @@ const JadwalPertandingan: React.FC = () => {
                                   {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(
                                     (num) => (
                                       <option key={num} value={num}>
-                                        {num} peserta
+                                        {num}
                                       </option>
                                     )
                                   )}
@@ -762,7 +907,7 @@ const JadwalPertandingan: React.FC = () => {
                               {/* Pemanasan */}
                               <div>
                                 <label
-                                  className="block text-sm font-medium mb-2"
+                                  className="block text-xs font-medium mb-1"
                                   style={{ color: "#ca8a04" }}
                                 >
                                   🟡 Pemanasan
@@ -780,7 +925,7 @@ const JadwalPertandingan: React.FC = () => {
                                       parseInt(e.target.value)
                                     )
                                   }
-                                  className="w-full px-3 py-2 rounded-lg border-2 focus:outline-none focus:ring-2"
+                                  className="w-full px-2 py-1.5 text-sm rounded-lg border-2 focus:outline-none focus:ring-2"
                                   style={{
                                     borderColor: "#ca8a04",
                                     backgroundColor: "rgba(202, 138, 4, 0.1)",
@@ -789,7 +934,7 @@ const JadwalPertandingan: React.FC = () => {
                                   {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(
                                     (num) => (
                                       <option key={num} value={num}>
-                                        {num} peserta
+                                        {num}
                                       </option>
                                     )
                                   )}
@@ -800,7 +945,7 @@ const JadwalPertandingan: React.FC = () => {
                             {/* Info Kelas */}
                             {lap.kelasDipilih.length > 0 && (
                               <div
-                                className="mt-4 p-3 rounded-lg"
+                                className="mt-4 p-2 rounded-lg"
                                 style={{
                                   backgroundColor: "rgba(153,13,53,0.05)",
                                 }}
@@ -809,14 +954,13 @@ const JadwalPertandingan: React.FC = () => {
                                   className="text-xs font-medium mb-1"
                                   style={{ color: "#990D35" }}
                                 >
-                                  Kelas yang akan bertanding:{" "}
-                                  {lap.kelasDipilih.length}
+                                  Kelas: {lap.kelasDipilih.length}
                                 </p>
                                 <p
                                   className="text-xs"
                                   style={{ color: "#050505", opacity: 0.7 }}
                                 >
-                                  Total peserta:{" "}
+                                  Peserta:{" "}
                                   {lap.kelasDipilih.reduce(
                                     (total, kelasId) =>
                                       total +
