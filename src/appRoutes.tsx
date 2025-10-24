@@ -19,7 +19,7 @@ import Home from "./pages/landingPage/home";
 import Event from "./pages/landingPage/event";
 import NotFound from "./pages/notFound";
 import TutorialPage from "./pages/landingPage/tutorial";
-import LapanganLiveView from "./pages/landingPage/pertandinan";
+import LapanganLiveView from "./pages/landingPage/pertandingan";
 
 // Dashboard
 import DataAtlit from "./pages/dashboard/dataAtlit";
