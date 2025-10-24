@@ -1,49 +1,131 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 
-interface Lapangan {
-  nama: string;
-  hari: string;
-  kelasKejuaraan: {
-    nama: string;
-    status: "bermain" | "pemanasan" | "bersiap";
-    antrian: number;
-  }[];
+interface KelasKejuaraan {
+  urutan: number;
+  kelas: {
+    id_kelas_kejuaraan: number;
+    nama_kelas: string;
+    kategori_event: { nama_kategori: string };
+    kelompok?: { nama_kelompok: string };
+    kelas_berat?: { nama_kelas_berat: string };
+    poomsae?: { nama_poomsae: string };
+  };
 }
 
-const dataLapangan: Lapangan[] = [
-  {
-    nama: "Lapangan 1",
-    hari: "Jumat, 25 Oktober 2025",
-    kelasKejuaraan: [
-      { nama: "Poomsae Under 17", status: "bermain", antrian: 1 },
-      { nama: "Kyorugi Junior -58kg", status: "pemanasan", antrian: 2 },
-      { nama: "Kyorugi Senior -68kg", status: "bersiap", antrian: 3 },
-    ],
-  },
-  {
-    nama: "Lapangan 2",
-    hari: "Jumat, 25 Oktober 2025",
-    kelasKejuaraan: [
-      { nama: "Poomsae Over 30", status: "bermain", antrian: 1 },
-      { nama: "Kyorugi Cadet -45kg", status: "pemanasan", antrian: 2 },
-    ],
-  },
-];
+interface Lapangan {
+  id_lapangan: number;
+  nama_lapangan: string;
+  tanggal: string;
+  kelas_list: Array<{
+    urutan: number;
+    kelas_kejuaraan: KelasKejuaraan["kelas"];
+  }>;
+}
 
-const getColor = (status: string) => {
-  switch (status) {
-    case "bermain":
-      return "bg-green-500/80";
-    case "pemanasan":
-      return "bg-orange-400/80";
-    case "bersiap":
-      return "bg-yellow-400/80";
-    default:
-      return "bg-gray-300";
-  }
+interface HariPertandingan {
+  tanggal: string;
+  jumlah_lapangan: number;
+  lapangan: Lapangan[];
+}
+
+const API_BASE_URL = "http://localhost:3000/api";
+const ID_KOMPETISI = 1;
+
+const getColor = (urutan: number) => {
+  if (urutan === 1) return "bg-green-500/80";
+  if (urutan === 2) return "bg-orange-400/80";
+  if (urutan === 3) return "bg-yellow-400/80";
+  return "bg-gray-300/80";
+};
+
+const getStatusText = (urutan: number) => {
+  if (urutan === 1) return "bermain";
+  if (urutan === 2) return "pemanasan";
+  if (urutan === 3) return "bersiap";
+  return "menunggu";
+};
+
+const formatTanggal = (dateString: string) => {
+  const date = new Date(dateString);
+  return date.toLocaleDateString("id-ID", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+};
+
+const formatNamaKelas = (kelas: KelasKejuaraan["kelas"]) => {
+  const parts = [kelas.kategori_event.nama_kategori];
+
+  if (kelas.kelompok) parts.push(kelas.kelompok.nama_kelompok);
+  if (kelas.kelas_berat) parts.push(kelas.kelas_berat.nama_kelas_berat);
+  if (kelas.poomsae) parts.push(kelas.poomsae.nama_poomsae);
+
+  return parts.join(" ");
 };
 
 const LapanganLiveView = () => {
+  const [hariPertandingan, setHariPertandingan] = useState<HariPertandingan[]>(
+    []
+  );
+  const [loading, setLoading] = useState(true);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(
+        `${API_BASE_URL}/lapangan/kompetisi/${ID_KOMPETISI}`
+      );
+      const result = await response.json();
+
+      if (result.success) {
+        setHariPertandingan(result.data.hari_pertandingan);
+      }
+    } catch (err) {
+      console.error("Error fetching data:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+    const interval = setInterval(fetchData, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Ambil hari pertama atau semua data
+  const dataLapangan =
+    hariPertandingan.length > 0
+      ? hariPertandingan[0].lapangan.map((lap) => ({
+          nama: `Lapangan ${lap.nama_lapangan}`,
+          hari: formatTanggal(lap.tanggal),
+          kelasKejuaraan: lap.kelas_list.map((kls) => ({
+            nama: formatNamaKelas(kls.kelas_kejuaraan),
+            status: getStatusText(kls.urutan) as
+              | "bermain"
+              | "pemanasan"
+              | "bersiap",
+            antrian: kls.urutan,
+          })),
+        }))
+      : [];
+
+  if (loading && dataLapangan.length === 0) {
+    return (
+      <section className="relative w-full flex flex-col bg-gradient-to-br from-white via-red/[0.02] to-white overflow-hidden py-12 md:py-16">
+        <div className="container mx-auto px-4 relative z-10 py-20">
+          <div className="text-center">
+            <p className="text-black/70 font-plex">
+              Memuat data pertandingan...
+            </p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="relative w-full flex flex-col bg-gradient-to-br from-white via-red/[0.02] to-white overflow-hidden py-12 md:py-16">
       {/* Background animasi */}
@@ -78,27 +160,33 @@ const LapanganLiveView = () => {
               <p className="text-black/60 font-plex text-sm mb-4">{lap.hari}</p>
 
               <div className="space-y-3">
-                {lap.kelasKejuaraan.map((kelas) => (
-                  <div
-                    key={kelas.nama}
-                    className="flex items-center justify-between p-3 rounded-xl bg-white/70 border border-red/[0.05] hover:bg-white/90 transition-all duration-300"
-                  >
-                    <div>
-                      <p className="font-semibold text-black/90">
-                        {kelas.nama}
-                      </p>
-                      <p className="text-sm text-black/60">
-                        Antrian #{kelas.antrian}
-                      </p>
-                    </div>
+                {lap.kelasKejuaraan.length === 0 ? (
+                  <p className="text-black/50 text-center py-4">
+                    Belum ada kelas terjadwal
+                  </p>
+                ) : (
+                  lap.kelasKejuaraan.map((kelas, idx) => (
                     <div
-                      className={`w-3 h-3 rounded-full ${getColor(
-                        kelas.status
-                      )} ring-4 ring-white/60 shadow-md`}
-                      title={kelas.status}
-                    ></div>
-                  </div>
-                ))}
+                      key={idx}
+                      className="flex items-center justify-between p-3 rounded-xl bg-white/70 border border-red/[0.05] hover:bg-white/90 transition-all duration-300"
+                    >
+                      <div>
+                        <p className="font-semibold text-black/90">
+                          {kelas.nama}
+                        </p>
+                        <p className="text-sm text-black/60">
+                          Antrian #{kelas.antrian}
+                        </p>
+                      </div>
+                      <div
+                        className={`w-3 h-3 rounded-full ${getColor(
+                          kelas.antrian
+                        )} ring-4 ring-white/60 shadow-md`}
+                        title={kelas.status}
+                      ></div>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           ))}
