@@ -100,11 +100,7 @@ const JadwalPertandingan: React.FC = () => {
     setErrorMessage("");
 
     try {
-      const res = await fetch(
-        `${
-          import.meta.env.VITE_API_URL || ""
-        }/lapangan/kompetisi/${idKompetisi}`
-      );
+      const res = await fetch(`/lapangan/kompetisi/${idKompetisi}`);
       const data = await res.json();
 
       if (data.success) {
@@ -159,9 +155,7 @@ const JadwalPertandingan: React.FC = () => {
         Array.from(allKelasIds).map(async (kelasId) => {
           try {
             const response = await fetch(
-              `${
-                import.meta.env.VITE_API_URL || "/api"
-              }/kompetisi/${idKompetisi}/brackets/${kelasId}`,
+              `/kompetisi/${idKompetisi}/brackets/${kelasId}`,
               {
                 headers: {
                   Authorization: `Bearer ${token}`,
@@ -283,14 +277,11 @@ const JadwalPertandingan: React.FC = () => {
     setSuccessMessage("");
 
     try {
-      const res = await fetch(
-        `${import.meta.env.VITE_API_URL || ""}/api/lapangan/tambah-hari`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ id_kompetisi: idKompetisi }),
-        }
-      );
+      const res = await fetch("/lapangan/tambah-hari", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id_kompetisi: idKompetisi }),
+      });
 
       const data = await res.json();
       if (data.success) {
@@ -316,19 +307,14 @@ const JadwalPertandingan: React.FC = () => {
     setSuccessMessage("");
 
     try {
-      const res = await fetch(
-        `${
-          import.meta.env.VITE_API_URL || ""
-        }/api/lapangan/tambah-lapangan-ke-hari`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            id_kompetisi: idKompetisi,
-            tanggal: tanggal,
-          }),
-        }
-      );
+      const res = await fetch(`/lapangan/tambah-lapangan-ke-hari`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id_kompetisi: idKompetisi,
+          tanggal: tanggal,
+        }),
+      });
 
       const data = await res.json();
       if (data.success) {
@@ -353,14 +339,11 @@ const JadwalPertandingan: React.FC = () => {
     setSuccessMessage("");
 
     try {
-      const res = await fetch(
-        `${import.meta.env.VITE_API_URL || ""}/api/lapangan/hapus-lapangan`,
-        {
-          method: "DELETE",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ id_lapangan }),
-        }
-      );
+      const res = await fetch(`/lapangan/hapus-lapangan`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id_lapangan }),
+      });
 
       const data = await res.json();
       if (data.success) {
@@ -391,14 +374,11 @@ const JadwalPertandingan: React.FC = () => {
     setSuccessMessage("");
 
     try {
-      const res = await fetch(
-        `${import.meta.env.VITE_API_URL || ""}/api/lapangan/hapus-hari`,
-        {
-          method: "DELETE",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ id_kompetisi: idKompetisi, tanggal }),
-        }
-      );
+      const res = await fetch(`/lapangan/hapus-hari`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id_kompetisi: idKompetisi, tanggal }),
+      });
 
       const data = await res.json();
       if (data.success) {
@@ -466,17 +446,14 @@ const JadwalPertandingan: React.FC = () => {
       console.log(`   Lapangan ID: ${lapanganId}`);
       console.log(`   Kelas IDs:`, updatedKelasList);
 
-      const res = await fetch(
-        `${import.meta.env.VITE_API_URL || ""}/api/lapangan/simpan-kelas`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            id_lapangan: lapanganId,
-            kelas_kejuaraan_ids: updatedKelasList,
-          }),
-        }
-      );
+      const res = await fetch(`/lapangan/simpan-kelas`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id_lapangan: lapanganId,
+          kelas_kejuaraan_ids: updatedKelasList,
+        }),
+      });
 
       const data = await res.json();
 
