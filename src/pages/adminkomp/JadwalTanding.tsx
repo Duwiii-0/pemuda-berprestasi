@@ -420,51 +420,55 @@ const JadwalPertandingan: React.FC = () => {
     lapanganId: number,
     kelasId: number
   ) => {
-    // Update UI state dulu (optimistic update)
-    let updatedKelasList: number[] = [];
+    // 1️⃣ DAPATKAN DATA LAPANGAN SAAT INI
+    const currentHari = hariList.find((h) => h.tanggal === tanggal);
+    const currentLapangan = currentHari?.lapangan.find(
+      (l) => l.id_lapangan === lapanganId
+    );
 
+    if (!currentLapangan) {
+      console.error("❌ Lapangan tidak ditemukan!");
+      return;
+    }
+
+    // 2️⃣ HITUNG KELAS BARU SEBELUM UPDATE UI
+    const isCurrentlySelected = currentLapangan.kelasDipilih.includes(kelasId);
+    const updatedKelasList = isCurrentlySelected
+      ? currentLapangan.kelasDipilih.filter((id) => id !== kelasId)
+      : [...currentLapangan.kelasDipilih, kelasId];
+
+    console.log("🔄 Toggle kelas", {
+      kelasId,
+      lapanganId,
+      isCurrentlySelected,
+      before: currentLapangan.kelasDipilih,
+      after: updatedKelasList,
+    });
+
+    // 3️⃣ UPDATE UI (OPTIMISTIC)
     setHariList((prev) =>
       prev.map((hari) =>
         hari.tanggal === tanggal
           ? {
               ...hari,
-              lapangan: hari.lapangan.map((lap) => {
-                if (lap.id_lapangan === lapanganId) {
-                  const isCurrentlySelected =
-                    lap.kelasDipilih.includes(kelasId);
-                  updatedKelasList = isCurrentlySelected
-                    ? lap.kelasDipilih.filter((id) => id !== kelasId)
-                    : [...lap.kelasDipilih, kelasId];
-
-                  console.log(
-                    `🔄 Toggle kelas ${kelasId} di lapangan ${lapanganId}`
-                  );
-                  console.log(
-                    `   Status: ${
-                      isCurrentlySelected ? "UNCHECK ❌" : "CHECK ✅"
-                    }`
-                  );
-                  console.log(`   Kelas terpilih sekarang:`, updatedKelasList);
-
-                  return {
-                    ...lap,
-                    kelasDipilih: updatedKelasList,
-                  };
-                }
-                return lap;
-              }),
+              lapangan: hari.lapangan.map((lap) =>
+                lap.id_lapangan === lapanganId
+                  ? { ...lap, kelasDipilih: updatedKelasList }
+                  : lap
+              ),
             }
           : hari
       )
     );
 
-    // Set loading state
+    // 4️⃣ SET LOADING
     setSavingKelas((prev) => ({ ...prev, [lapanganId]: true }));
 
     try {
-      console.log(`💾 Menyimpan ke database...`);
-      console.log(`   Lapangan ID: ${lapanganId}`);
-      console.log(`   Kelas IDs:`, updatedKelasList);
+      console.log("💾 Saving to API:", {
+        id_lapangan: lapanganId,
+        kelas_kejuaraan_ids: updatedKelasList,
+      });
 
       const res = await fetch(
         `${import.meta.env.VITE_API_URL || ""}/lapangan/simpan-kelas`,
@@ -479,15 +483,13 @@ const JadwalPertandingan: React.FC = () => {
       );
 
       const data = await res.json();
+      console.log("📡 API Response:", data);
 
       if (data.success) {
-        console.log(`✅ Berhasil disimpan ke database!`);
-        console.log(`   Response:`, data);
-
-        // Tampilkan success message singkat
+        console.log("✅ Berhasil disimpan!");
         setSuccessMessage(
           `Kelas berhasil ${
-            updatedKelasList.length > 0 ? "ditambahkan ke" : "dihapus dari"
+            isCurrentlySelected ? "dihapus dari" : "ditambahkan ke"
           } lapangan`
         );
         setTimeout(() => setSuccessMessage(""), 2000);
@@ -495,13 +497,10 @@ const JadwalPertandingan: React.FC = () => {
         throw new Error(data.message || "Gagal menyimpan kelas");
       }
     } catch (err: any) {
-      console.error("❌ Error menyimpan kelas:", err);
-      console.error(`   Lapangan ID: ${lapanganId}`);
-      console.error(`   Error message:`, err.message);
-
+      console.error("❌ Error:", err);
       setErrorMessage(err.message || "Gagal menyimpan kelas");
 
-      // Rollback UI state jika gagal
+      // ROLLBACK UI
       setHariList((prev) =>
         prev.map((hari) =>
           hari.tanggal === tanggal
@@ -509,12 +508,7 @@ const JadwalPertandingan: React.FC = () => {
                 ...hari,
                 lapangan: hari.lapangan.map((lap) =>
                   lap.id_lapangan === lapanganId
-                    ? {
-                        ...lap,
-                        kelasDipilih: lap.kelasDipilih.includes(kelasId)
-                          ? lap.kelasDipilih.filter((id) => id !== kelasId)
-                          : [...lap.kelasDipilih, kelasId],
-                      }
+                    ? { ...lap, kelasDipilih: currentLapangan.kelasDipilih }
                     : lap
                 ),
               }
@@ -525,7 +519,6 @@ const JadwalPertandingan: React.FC = () => {
       setTimeout(() => setErrorMessage(""), 3000);
     } finally {
       setSavingKelas((prev) => ({ ...prev, [lapanganId]: false }));
-      console.log(`🏁 Proses toggle kelas selesai\n`);
     }
   };
 
