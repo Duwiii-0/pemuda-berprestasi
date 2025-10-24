@@ -261,9 +261,9 @@ const JadwalPertandingan: React.FC = () => {
           lapanganAntrian[lap.id_lapangan] = existingHari?.lapanganAntrian?.[
             lap.id_lapangan
           ] || {
-            bertanding: 1,
-            persiapan: 1,
-            pemanasan: 1,
+            bertanding: 0,
+            persiapan: 0,
+            pemanasan: 0,
           };
         });
 
