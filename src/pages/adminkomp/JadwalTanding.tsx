@@ -1,7 +1,16 @@
 import React, { useEffect, useState } from "react";
-import { Calendar, Plus, Trash2, Loader, ClipboardList } from "lucide-react";
+import {
+  Calendar,
+  Plus,
+  Trash2,
+  Loader,
+  ClipboardList,
+  Eye,
+  GitBranch,
+} from "lucide-react";
 import { useKompetisi } from "../../context/KompetisiContext";
 import { useAuth } from "../../context/authContext";
+import { useNavigate } from "react-router-dom";
 
 interface Lapangan {
   id_lapangan: number;
@@ -28,6 +37,12 @@ interface HariAntrian {
   lapanganAntrian: Record<number, AntrianLapangan>;
 }
 
+interface BaganInfo {
+  id_kelas_kejuaraan: number;
+  total_matches: number;
+  nama_kelas: string;
+}
+
 const JadwalPertandingan: React.FC = () => {
   const {
     kelasKejuaraanList,
@@ -40,7 +55,8 @@ const JadwalPertandingan: React.FC = () => {
     errorAtlet,
   } = useKompetisi();
 
-  const { user } = useAuth();
+  const { user, token } = useAuth();
+  const navigate = useNavigate();
   const idKompetisi = user?.admin_kompetisi?.id_kompetisi;
 
   const [activeTab, setActiveTab] = useState<"jadwal" | "antrian">("jadwal");
@@ -49,8 +65,12 @@ const JadwalPertandingan: React.FC = () => {
   const [approvedPesertaByKelas, setApprovedPesertaByKelas] = useState<
     Record<number, any[]>
   >({});
+  const [baganInfoMap, setBaganInfoMap] = useState<Record<number, BaganInfo>>(
+    {}
+  );
 
   const [loadingHari, setLoadingHari] = useState(false);
+  const [loadingBagan, setLoadingBagan] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [isAdding, setIsAdding] = useState(false);
@@ -80,7 +100,11 @@ const JadwalPertandingan: React.FC = () => {
     setErrorMessage("");
 
     try {
-      const res = await fetch(`/api/lapangan/kompetisi/${idKompetisi}`);
+      const res = await fetch(
+        `${
+          import.meta.env.VITE_API_URL || ""
+        }/lapangan/kompetisi/${idKompetisi}`
+      );
       const data = await res.json();
 
       if (data.success) {
@@ -108,6 +132,93 @@ const JadwalPertandingan: React.FC = () => {
       setLoadingHari(false);
     }
   };
+
+  // Fetch bagan info untuk semua kelas yang dipilih
+  useEffect(() => {
+    const fetchBaganInfo = async () => {
+      if (!idKompetisi || hariList.length === 0 || !token) return;
+
+      const allKelasIds = new Set<number>();
+      hariList.forEach((hari) => {
+        hari.lapangan.forEach((lap) => {
+          lap.kelasDipilih.forEach((kelasId) => allKelasIds.add(kelasId));
+        });
+      });
+
+      if (allKelasIds.size === 0) return;
+
+      setLoadingBagan(true);
+      console.log(
+        "🔍 Fetching bagan info untuk kelas:",
+        Array.from(allKelasIds)
+      );
+
+      const baganMap: Record<number, BaganInfo> = {};
+
+      await Promise.all(
+        Array.from(allKelasIds).map(async (kelasId) => {
+          try {
+            const response = await fetch(
+              `${
+                import.meta.env.VITE_API_URL || "/api"
+              }/kompetisi/${idKompetisi}/brackets/${kelasId}`,
+              {
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                },
+              }
+            );
+
+            if (response.ok) {
+              const result = await response.json();
+              const matches = result.data?.matches || [];
+
+              const kelas = kelasKejuaraanList.find(
+                (k) => k.id_kelas_kejuaraan === kelasId
+              );
+              const namaKelas = kelas
+                ? generateNamaKelas(kelas)
+                : `Kelas ${kelasId}`;
+
+              baganMap[kelasId] = {
+                id_kelas_kejuaraan: kelasId,
+                total_matches: matches.length,
+                nama_kelas: namaKelas,
+              };
+
+              console.log(
+                `✅ Bagan kelas ${kelasId}: ${matches.length} matches`
+              );
+            } else if (response.status === 404) {
+              console.log(`ℹ️ Bagan untuk kelas ${kelasId} belum dibuat`);
+              const kelas = kelasKejuaraanList.find(
+                (k) => k.id_kelas_kejuaraan === kelasId
+              );
+              const namaKelas = kelas
+                ? generateNamaKelas(kelas)
+                : `Kelas ${kelasId}`;
+
+              baganMap[kelasId] = {
+                id_kelas_kejuaraan: kelasId,
+                total_matches: 0,
+                nama_kelas: namaKelas,
+              };
+            }
+          } catch (error) {
+            console.error(
+              `❌ Error fetching bagan untuk kelas ${kelasId}:`,
+              error
+            );
+          }
+        })
+      );
+
+      setBaganInfoMap(baganMap);
+      setLoadingBagan(false);
+    };
+
+    fetchBaganInfo();
+  }, [hariList, idKompetisi, token, kelasKejuaraanList]);
 
   // Pisahkan peserta approved
   useEffect(() => {
@@ -172,11 +283,14 @@ const JadwalPertandingan: React.FC = () => {
     setSuccessMessage("");
 
     try {
-      const res = await fetch("/api/lapangan/tambah-hari", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id_kompetisi: idKompetisi }),
-      });
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL || ""}/lapangan/tambah-hari`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id_kompetisi: idKompetisi }),
+        }
+      );
 
       const data = await res.json();
       if (data.success) {
@@ -202,14 +316,19 @@ const JadwalPertandingan: React.FC = () => {
     setSuccessMessage("");
 
     try {
-      const res = await fetch("/api/lapangan/tambah-lapangan-ke-hari", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id_kompetisi: idKompetisi,
-          tanggal: tanggal,
-        }),
-      });
+      const res = await fetch(
+        `${
+          import.meta.env.VITE_API_URL || ""
+        }/lapangan/tambah-lapangan-ke-hari`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id_kompetisi: idKompetisi,
+            tanggal: tanggal,
+          }),
+        }
+      );
 
       const data = await res.json();
       if (data.success) {
@@ -234,11 +353,14 @@ const JadwalPertandingan: React.FC = () => {
     setSuccessMessage("");
 
     try {
-      const res = await fetch("/api/lapangan/hapus-lapangan", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id_lapangan }),
-      });
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL || ""}/lapangan/hapus-lapangan`,
+        {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id_lapangan }),
+        }
+      );
 
       const data = await res.json();
       if (data.success) {
@@ -269,11 +391,14 @@ const JadwalPertandingan: React.FC = () => {
     setSuccessMessage("");
 
     try {
-      const res = await fetch("/api/lapangan/hapus-hari", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id_kompetisi: idKompetisi, tanggal }),
-      });
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL || ""}/lapangan/hapus-hari`,
+        {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id_kompetisi: idKompetisi, tanggal }),
+        }
+      );
 
       const data = await res.json();
       if (data.success) {
@@ -341,14 +466,17 @@ const JadwalPertandingan: React.FC = () => {
       console.log(`   Lapangan ID: ${lapanganId}`);
       console.log(`   Kelas IDs:`, updatedKelasList);
 
-      const res = await fetch("/api/lapangan/simpan-kelas", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id_lapangan: lapanganId,
-          kelas_kejuaraan_ids: updatedKelasList,
-        }),
-      });
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL || ""}/lapangan/simpan-kelas`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id_lapangan: lapanganId,
+            kelas_kejuaraan_ids: updatedKelasList,
+          }),
+        }
+      );
 
       const data = await res.json();
 
@@ -448,6 +576,11 @@ const JadwalPertandingan: React.FC = () => {
     if (kelas.poomsae?.nama_kelas) parts.push(kelas.poomsae.nama_kelas);
 
     return parts.length > 0 ? parts.join(" - ") : "Kelas Tidak Lengkap";
+  };
+
+  const handleLihatBagan = (kelasId: number) => {
+    console.log(`🔗 Navigating to drawing bagan for kelas ${kelasId}`);
+    navigate("/admin/drawing-bagan");
   };
 
   return (
@@ -952,7 +1085,10 @@ const JadwalPertandingan: React.FC = () => {
                                 >
                                   🟢 Bertanding
                                 </label>
-                                <select
+                                <input
+                                  type="number"
+                                  min="1"
+                                  max="10"
                                   value={
                                     hari.lapanganAntrian[lap.id_lapangan]
                                       ?.bertanding || 1
@@ -962,23 +1098,15 @@ const JadwalPertandingan: React.FC = () => {
                                       hari.tanggal,
                                       lap.id_lapangan,
                                       "bertanding",
-                                      parseInt(e.target.value)
+                                      parseInt(e.target.value) || 1
                                     )
                                   }
-                                  className="w-full px-2 py-1.5 text-sm rounded-lg border-2 focus:outline-none focus:ring-2"
+                                  className="w-full px-3 py-2 text-sm rounded-lg border-2 focus:outline-none focus:ring-2"
                                   style={{
                                     borderColor: "#16a34a",
                                     backgroundColor: "rgba(22, 163, 74, 0.1)",
                                   }}
-                                >
-                                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(
-                                    (num) => (
-                                      <option key={num} value={num}>
-                                        {num}
-                                      </option>
-                                    )
-                                  )}
-                                </select>
+                                />
                               </div>
 
                               {/* Persiapan */}
@@ -989,7 +1117,10 @@ const JadwalPertandingan: React.FC = () => {
                                 >
                                   🟠 Persiapan
                                 </label>
-                                <select
+                                <input
+                                  type="number"
+                                  min="1"
+                                  max="10"
                                   value={
                                     hari.lapanganAntrian[lap.id_lapangan]
                                       ?.persiapan || 1
@@ -999,23 +1130,15 @@ const JadwalPertandingan: React.FC = () => {
                                       hari.tanggal,
                                       lap.id_lapangan,
                                       "persiapan",
-                                      parseInt(e.target.value)
+                                      parseInt(e.target.value) || 1
                                     )
                                   }
-                                  className="w-full px-2 py-1.5 text-sm rounded-lg border-2 focus:outline-none focus:ring-2"
+                                  className="w-full px-3 py-2 text-sm rounded-lg border-2 focus:outline-none focus:ring-2"
                                   style={{
                                     borderColor: "#ea580c",
                                     backgroundColor: "rgba(234, 88, 12, 0.1)",
                                   }}
-                                >
-                                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(
-                                    (num) => (
-                                      <option key={num} value={num}>
-                                        {num}
-                                      </option>
-                                    )
-                                  )}
-                                </select>
+                                />
                               </div>
 
                               {/* Pemanasan */}
@@ -1026,7 +1149,10 @@ const JadwalPertandingan: React.FC = () => {
                                 >
                                   🟡 Pemanasan
                                 </label>
-                                <select
+                                <input
+                                  type="number"
+                                  min="1"
+                                  max="10"
                                   value={
                                     hari.lapanganAntrian[lap.id_lapangan]
                                       ?.pemanasan || 1
@@ -1036,53 +1162,145 @@ const JadwalPertandingan: React.FC = () => {
                                       hari.tanggal,
                                       lap.id_lapangan,
                                       "pemanasan",
-                                      parseInt(e.target.value)
+                                      parseInt(e.target.value) || 1
                                     )
                                   }
-                                  className="w-full px-2 py-1.5 text-sm rounded-lg border-2 focus:outline-none focus:ring-2"
+                                  className="w-full px-3 py-2 text-sm rounded-lg border-2 focus:outline-none focus:ring-2"
                                   style={{
                                     borderColor: "#ca8a04",
                                     backgroundColor: "rgba(202, 138, 4, 0.1)",
                                   }}
-                                >
-                                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(
-                                    (num) => (
-                                      <option key={num} value={num}>
-                                        {num}
-                                      </option>
-                                    )
-                                  )}
-                                </select>
+                                />
                               </div>
                             </div>
 
-                            {/* Info Kelas */}
+                            {/* Info Kelas & Bagan */}
                             {lap.kelasDipilih.length > 0 && (
-                              <div
-                                className="mt-4 p-2 rounded-lg"
-                                style={{
-                                  backgroundColor: "rgba(153,13,53,0.05)",
-                                }}
-                              >
-                                <p
-                                  className="text-xs font-medium mb-1"
-                                  style={{ color: "#990D35" }}
+                              <div className="mt-4 space-y-3">
+                                <div
+                                  className="p-3 rounded-lg"
+                                  style={{
+                                    backgroundColor: "rgba(153,13,53,0.05)",
+                                  }}
                                 >
-                                  Kelas: {lap.kelasDipilih.length}
-                                </p>
-                                <p
-                                  className="text-xs"
-                                  style={{ color: "#050505", opacity: 0.7 }}
-                                >
-                                  Peserta:{" "}
-                                  {lap.kelasDipilih.reduce(
-                                    (total, kelasId) =>
-                                      total +
-                                      (approvedPesertaByKelas[kelasId]
-                                        ?.length || 0),
-                                    0
-                                  )}
-                                </p>
+                                  <p
+                                    className="text-xs font-medium mb-1"
+                                    style={{ color: "#990D35" }}
+                                  >
+                                    Kelas: {lap.kelasDipilih.length}
+                                  </p>
+                                  <p
+                                    className="text-xs"
+                                    style={{ color: "#050505", opacity: 0.7 }}
+                                  >
+                                    Peserta:{" "}
+                                    {lap.kelasDipilih.reduce(
+                                      (total, kelasId) =>
+                                        total +
+                                        (approvedPesertaByKelas[kelasId]
+                                          ?.length || 0),
+                                      0
+                                    )}
+                                  </p>
+                                </div>
+
+                                {/* Bagan Info per Kelas */}
+                                {loadingBagan ? (
+                                  <div className="flex items-center justify-center py-4">
+                                    <Loader
+                                      size={16}
+                                      className="animate-spin"
+                                      style={{ color: "#990D35" }}
+                                    />
+                                    <span
+                                      className="text-xs ml-2"
+                                      style={{ color: "#990D35" }}
+                                    >
+                                      Memuat info bagan...
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <div className="space-y-2">
+                                    {lap.kelasDipilih.map((kelasId) => {
+                                      const baganInfo = baganInfoMap[kelasId];
+                                      if (!baganInfo) return null;
+
+                                      return (
+                                        <div
+                                          key={kelasId}
+                                          className="p-3 rounded-lg border"
+                                          style={{
+                                            backgroundColor: "#F5FBEF",
+                                            borderColor: "rgba(153,13,53,0.2)",
+                                          }}
+                                        >
+                                          <div className="flex items-start justify-between gap-2 mb-2">
+                                            <p
+                                              className="text-xs font-medium flex-1"
+                                              style={{ color: "#050505" }}
+                                            >
+                                              {baganInfo.nama_kelas}
+                                            </p>
+                                            {baganInfo.total_matches > 0 ? (
+                                              <span
+                                                className="text-xs px-2 py-0.5 rounded-full font-bold whitespace-nowrap"
+                                                style={{
+                                                  backgroundColor:
+                                                    "rgba(34, 197, 94, 0.2)",
+                                                  color: "#22c55e",
+                                                }}
+                                              >
+                                                ✓ Siap
+                                              </span>
+                                            ) : (
+                                              <span
+                                                className="text-xs px-2 py-0.5 rounded-full font-bold whitespace-nowrap"
+                                                style={{
+                                                  backgroundColor:
+                                                    "rgba(245, 183, 0, 0.2)",
+                                                  color: "#F5B700",
+                                                }}
+                                              >
+                                                Belum dibuat
+                                              </span>
+                                            )}
+                                          </div>
+
+                                          <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-2">
+                                              <GitBranch
+                                                size={14}
+                                                style={{ color: "#990D35" }}
+                                              />
+                                              <span
+                                                className="text-xs font-medium"
+                                                style={{ color: "#990D35" }}
+                                              >
+                                                {baganInfo.total_matches > 0
+                                                  ? `${baganInfo.total_matches} Match`
+                                                  : "0 Match"}
+                                              </span>
+                                            </div>
+
+                                            <button
+                                              onClick={() =>
+                                                handleLihatBagan(kelasId)
+                                              }
+                                              className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium transition-all hover:opacity-80"
+                                              style={{
+                                                backgroundColor: "#990D35",
+                                                color: "white",
+                                              }}
+                                            >
+                                              <Eye size={12} />
+                                              Lihat
+                                            </button>
+                                          </div>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                )}
                               </div>
                             )}
                           </div>
