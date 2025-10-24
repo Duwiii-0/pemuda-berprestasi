@@ -19,6 +19,7 @@ import Home from "./pages/landingPage/home";
 import Event from "./pages/landingPage/event";
 import NotFound from "./pages/notFound";
 import TutorialPage from "./pages/landingPage/tutorial";
+import LapanganLiveView from "./pages/landingPage/pertandinan";
 
 // Dashboard
 import DataAtlit from "./pages/dashboard/dataAtlit";
@@ -249,6 +250,7 @@ export default function AppRoutes() {
           <Route index element={<Home />} />
           <Route path="events" element={<Event />} />
           <Route path="tutorial" element={<TutorialPage />} />
+          <Route path="pertandingan" element={<LapanganLiveView />} />
         </Route>
 
         {/* Settings - protected route */}
