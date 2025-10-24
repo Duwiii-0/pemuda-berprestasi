@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import lapanganService from "../services/lapangan.service";
+import lapanganService from "../services/lapanganService";
 
 export class LapanganController {
   async tambahHariLapangan(req: Request, res: Response) {
