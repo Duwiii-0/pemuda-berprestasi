@@ -87,8 +87,11 @@ const JadwalPertandingan: React.FC = () => {
           tanggal: hari.tanggal,
           jumlah_lapangan: hari.jumlah_lapangan,
           lapangan: hari.lapangan.map((lap: any) => ({
-            ...lap,
-            kelasDipilih: [],
+            id_lapangan: lap.id_lapangan,
+            id_kompetisi: lap.id_kompetisi,
+            nama_lapangan: lap.nama_lapangan,
+            tanggal: lap.tanggal,
+            kelasDipilih: lap.kelasDipilih || [], // Dari backend
           })),
         }));
         setHariList(hariData);
