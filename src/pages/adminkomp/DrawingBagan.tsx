@@ -103,7 +103,7 @@ const JadwalPertandingan: React.FC = () => {
       const res = await fetch(
         `${
           import.meta.env.VITE_API_URL || ""
-        }/api/lapangan/kompetisi/${idKompetisi}`
+        }/lapangan/kompetisi/${idKompetisi}`
       );
       const data = await res.json();
 
@@ -160,7 +160,7 @@ const JadwalPertandingan: React.FC = () => {
           try {
             const response = await fetch(
               `${
-                import.meta.env.VITE_API_URL || "/api"
+                import.meta.env.VITE_API_URL
               }/kompetisi/${idKompetisi}/brackets/${kelasId}`,
               {
                 headers: {
@@ -283,7 +283,7 @@ const JadwalPertandingan: React.FC = () => {
     setSuccessMessage("");
 
     try {
-      const res = await fetch("/api/lapangan/tambah-hari", {
+      const res = await fetch("/lapangan/tambah-hari", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id_kompetisi: idKompetisi }),
@@ -313,7 +313,7 @@ const JadwalPertandingan: React.FC = () => {
     setSuccessMessage("");
 
     try {
-      const res = await fetch("/api/lapangan/tambah-lapangan-ke-hari", {
+      const res = await fetch("/lapangan/tambah-lapangan-ke-hari", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -345,7 +345,7 @@ const JadwalPertandingan: React.FC = () => {
     setSuccessMessage("");
 
     try {
-      const res = await fetch("/api/lapangan/hapus-lapangan", {
+      const res = await fetch("/lapangan/hapus-lapangan", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id_lapangan }),
@@ -380,7 +380,7 @@ const JadwalPertandingan: React.FC = () => {
     setSuccessMessage("");
 
     try {
-      const res = await fetch("/api/lapangan/hapus-hari", {
+      const res = await fetch("/lapangan/hapus-hari", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id_kompetisi: idKompetisi, tanggal }),
@@ -453,7 +453,7 @@ const JadwalPertandingan: React.FC = () => {
       console.log(`   Kelas IDs:`, updatedKelasList);
 
       const res = await fetch(
-        `${import.meta.env.VITE_API_URL || ""}/api/lapangan/simpan-kelas`,
+        `${import.meta.env.VITE_API_URL || ""}/lapangan/simpan-kelas`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
