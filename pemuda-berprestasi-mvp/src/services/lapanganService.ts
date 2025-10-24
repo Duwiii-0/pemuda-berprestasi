@@ -11,10 +11,14 @@ interface TambahLapanganDTO {
   tanggal: string;
 }
 
+interface SimpanKelasLapanganDTO {
+  id_lapangan: number;
+  kelas_kejuaraan_ids: number[];
+}
+
 export class LapanganService {
   private readonly TANGGAL_MULAI = new Date("2025-11-22");
 
-  // Tambah hari baru dengan 1 lapangan default
   async tambahHariLapangan(data: TambahHariLapanganDTO) {
     const { id_kompetisi } = data;
 
@@ -39,7 +43,6 @@ export class LapanganService {
       tanggalBaru = new Date(this.TANGGAL_MULAI);
     }
 
-    // Buat 1 lapangan dengan nama A
     const lapanganBaru = await prisma.tb_lapangan.create({
       data: {
         id_kompetisi,
@@ -60,13 +63,10 @@ export class LapanganService {
     };
   }
 
-  // Tambah 1 lapangan ke hari tertentu
   async tambahLapanganKeHari(data: TambahLapanganDTO) {
     const { id_kompetisi, tanggal } = data;
-
     const targetDate = new Date(tanggal);
 
-    // Cek lapangan yang sudah ada di hari tersebut
     const lapanganExisting = await prisma.tb_lapangan.findMany({
       where: {
         id_kompetisi,
@@ -79,7 +79,6 @@ export class LapanganService {
       throw new Error("Hari pertandingan tidak ditemukan");
     }
 
-    // Hitung nama lapangan berikutnya
     const jumlahLapangan = lapanganExisting.length;
     const namaLapanganBaru = this.getColumnName(jumlahLapangan);
 
@@ -98,9 +97,48 @@ export class LapanganService {
     };
   }
 
-  // Hapus 1 lapangan
+  // Simpan kelas kejuaraan yang dipilih untuk lapangan
+  async simpanKelasLapangan(data: SimpanKelasLapanganDTO) {
+    const { id_lapangan, kelas_kejuaraan_ids } = data;
+
+    // Cek apakah lapangan exist
+    const lapangan = await prisma.tb_lapangan.findUnique({
+      where: { id_lapangan },
+    });
+
+    if (!lapangan) {
+      throw new Error("Lapangan tidak ditemukan");
+    }
+
+    // Hapus semua relasi lama
+    await prisma.tb_lapangan_kelas.deleteMany({
+      where: { id_lapangan },
+    });
+
+    // Buat relasi baru dengan urutan
+    if (kelas_kejuaraan_ids.length > 0) {
+      const createData = kelas_kejuaraan_ids.map((id_kelas, index) => ({
+        id_lapangan,
+        id_kelas_kejuaraan: id_kelas,
+        urutan: index + 1,
+      }));
+
+      await prisma.tb_lapangan_kelas.createMany({
+        data: createData,
+      });
+    }
+
+    return {
+      success: true,
+      message: `Berhasil menyimpan ${kelas_kejuaraan_ids.length} kelas kejuaraan untuk lapangan ${lapangan.nama_lapangan}`,
+      data: {
+        id_lapangan,
+        jumlah_kelas: kelas_kejuaraan_ids.length,
+      },
+    };
+  }
+
   async hapusLapangan(id_lapangan: number) {
-    // Cek apakah ada jadwal pertandingan di lapangan ini
     const adaJadwal = await prisma.tb_jadwal_pertandingan.findFirst({
       where: { id_lapangan },
     });
@@ -111,6 +149,7 @@ export class LapanganService {
       );
     }
 
+    // Delete cascade akan otomatis hapus tb_lapangan_kelas
     const deleted = await prisma.tb_lapangan.delete({
       where: { id_lapangan },
     });
@@ -136,6 +175,14 @@ export class LapanganService {
   async getHariLapanganByKompetisi(id_kompetisi: number) {
     const lapangan = await prisma.tb_lapangan.findMany({
       where: { id_kompetisi },
+      include: {
+        kelas_list: {
+          orderBy: { urutan: "asc" },
+          include: {
+            kelas_kejuaraan: true,
+          },
+        },
+      },
       orderBy: [{ tanggal: "asc" }, { nama_lapangan: "asc" }],
     });
 
@@ -184,6 +231,7 @@ export class LapanganService {
       );
     }
 
+    // Delete cascade akan otomatis hapus tb_lapangan_kelas
     const deleted = await prisma.tb_lapangan.deleteMany({
       where: { id_kompetisi, tanggal: targetDate },
     });
@@ -196,6 +244,37 @@ export class LapanganService {
       data: { jumlah_dihapus: deleted.count },
     };
   }
+
+  // Get kelas kejuaraan per lapangan (untuk antrian/bagan)
+  async getKelasKejuaraanByLapangan(id_lapangan: number) {
+    const lapanganKelas = await prisma.tb_lapangan_kelas.findMany({
+      where: { id_lapangan },
+      include: {
+        kelas_kejuaraan: {
+          include: {
+            kategori_event: true,
+            kelompok: true,
+            kelas_berat: true,
+            poomsae: true,
+          },
+        },
+      },
+      orderBy: { urutan: "asc" },
+    });
+
+    return {
+      success: true,
+      data: {
+        id_lapangan,
+        jumlah_kelas: lapanganKelas.length,
+        kelas_list: lapanganKelas.map((lk) => ({
+          urutan: lk.urutan,
+          kelas: lk.kelas_kejuaraan,
+        })),
+      },
+    };
+  }
 }
 
 export default new LapanganService();
+y;

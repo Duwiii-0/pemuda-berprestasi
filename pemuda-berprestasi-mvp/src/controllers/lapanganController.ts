@@ -54,6 +54,33 @@ export class LapanganController {
     }
   }
 
+  async simpanKelasLapangan(req: Request, res: Response) {
+    try {
+      const { id_lapangan, kelas_kejuaraan_ids } = req.body;
+
+      if (!id_lapangan || !Array.isArray(kelas_kejuaraan_ids)) {
+        return res.status(400).json({
+          success: false,
+          message: "id_lapangan dan kelas_kejuaraan_ids (array) harus diisi",
+        });
+      }
+
+      const result = await lapanganService.simpanKelasLapangan({
+        id_lapangan: parseInt(id_lapangan),
+        kelas_kejuaraan_ids: kelas_kejuaraan_ids.map((id: any) => parseInt(id)),
+      });
+
+      return res.status(200).json(result);
+    } catch (error: any) {
+      console.error("Error simpan kelas lapangan:", error);
+      return res.status(500).json({
+        success: false,
+        message:
+          error.message || "Terjadi kesalahan saat menyimpan kelas lapangan",
+      });
+    }
+  }
+
   async hapusLapangan(req: Request, res: Response) {
     try {
       const { id_lapangan } = req.body;
@@ -126,6 +153,32 @@ export class LapanganController {
         success: false,
         message:
           error.message || "Terjadi kesalahan saat menghapus hari lapangan",
+      });
+    }
+  }
+
+  async getKelasKejuaraanByLapangan(req: Request, res: Response) {
+    try {
+      const { id_lapangan } = req.params;
+
+      if (!id_lapangan) {
+        return res.status(400).json({
+          success: false,
+          message: "id_lapangan harus diisi",
+        });
+      }
+
+      const result = await lapanganService.getKelasKejuaraanByLapangan(
+        parseInt(id_lapangan)
+      );
+
+      return res.status(200).json(result);
+    } catch (error: any) {
+      console.error("Error get kelas kejuaraan by lapangan:", error);
+      return res.status(500).json({
+        success: false,
+        message:
+          error.message || "Terjadi kesalahan saat mengambil kelas kejuaraan",
       });
     }
   }
