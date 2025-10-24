@@ -1163,15 +1163,7 @@ const handleExportPDF = async () => {
                               )}
                             </>
                           ) : (
-                                <span 
-                                  className="text-xs px-3 py-1.5 rounded-full font-medium"
-                                  style={{ 
-                                    backgroundColor: 'rgba(192, 192, 192, 0.15)',
-                                    color: '#6b7280'
-                                  }}
-                                >
-                                  TBD
-                                </span>
+                            <span className="text-sm text-gray-400 w-full text-center font-medium">TBD</span>
                           )}
                         </div>
 
@@ -1230,7 +1222,6 @@ const handleExportPDF = async () => {
                                   BYE
                                 </span>
                               ) : (
-                              <div className="w-full flex justify-center">
                                 <span 
                                   className="text-xs px-3 py-1.5 rounded-full font-medium"
                                   style={{ 
@@ -1240,7 +1231,6 @@ const handleExportPDF = async () => {
                                 >
                                   TBD
                                 </span>
-                              </div>
                               )}
                             </div>
                           )}
