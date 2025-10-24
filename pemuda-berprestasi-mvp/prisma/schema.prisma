@@ -369,13 +369,13 @@ model tb_audit_log {
 model tb_jadwal_pertandingan {
   id_jadwal     Int          @id @default(autoincrement())
   id_lapangan   Int
-  id_bagan      Int
+  id_kelas_kejuaraan      Int
   antrean       Int?
   waktu_mulai   DateTime?
   waktu_selesai DateTime?
 
   lapangan      tb_lapangan  @relation(fields: [id_lapangan], references: [id_lapangan])
-  bagan         tb_bagan     @relation(fields: [id_bagan], references: [id_bagan])
+  bagan         tb_kelas_kejuaraan     @relation(fields: [id_kelas_kejuaraan], references: [id_kelas_kejuaraan])
 
   @@index([id_lapangan])
   @@index([id_bagan])
