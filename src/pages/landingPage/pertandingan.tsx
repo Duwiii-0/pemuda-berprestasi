@@ -53,12 +53,14 @@ const LapanganLiveView = () => {
         <div className="absolute top-1/2 left-1/2 w-2 h-2 bg-red/30 rounded-full animate-bounce"></div>
       </div>
 
-      <div className="container mx-auto px-4 relative z-10">
+      <div className="container mx-auto px-4 relative z-10 py-20">
         {/* Judul */}
-        <div className="text-center mb-12">
-          <h2 className="text-4xl md:text-5xl font-bebas text-transparent bg-gradient-to-r from-red via-red/80 to-red/60 bg-clip-text tracking-wide">
-            LIVE ARENA STATUS
-          </h2>
+        <div className="text-center mb-12 pt-10">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-judul font-bebas text-red leading-none tracking-wide mb-8">
+            <span className="bg-gradient-to-r from-red via-red/90 to-red/80 bg-clip-text text-transparent">
+              Live Pertandingan
+            </span>
+          </h1>
           <p className="text-black/70 font-plex text-base md:text-lg mt-2">
             Pantau aktivitas setiap lapangan — dari pemanasan hingga
             pertandingan berlangsung.
