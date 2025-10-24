@@ -295,8 +295,7 @@ model tb_bagan {
   kelas_kejuaraan    tb_kelas_kejuaraan @relation(fields: [id_kelas_kejuaraan], references: [id_kelas_kejuaraan])
   drawing_seed       tb_drawing_seed[]
   match              tb_match[]
-  jadwal_pertandingan tb_jadwal_pertandingan[] 
-
+  jadwal_pertandingan tb_jadwal_pertandingan[] @relation("BaganJadwal") // ✅ relasi diberi nama unik
 
   @@index([id_kompetisi], map: "tb_bagan_id_kompetisi_fkey")
   @@index([id_kelas_kejuaraan], map: "tb_bagan_id_kelas_kejuaraan_fkey")
@@ -369,17 +368,18 @@ model tb_audit_log {
 model tb_jadwal_pertandingan {
   id_jadwal     Int          @id @default(autoincrement())
   id_lapangan   Int
-  id_kelas_kejuaraan      Int
+  id_bagan      Int           
   antrean       Int?
   waktu_mulai   DateTime?
   waktu_selesai DateTime?
 
   lapangan      tb_lapangan  @relation(fields: [id_lapangan], references: [id_lapangan])
-  bagan         tb_kelas_kejuaraan     @relation(fields: [id_kelas_kejuaraan], references: [id_kelas_kejuaraan])
+  bagan         tb_bagan     @relation("BaganJadwal", fields: [id_bagan], references: [id_bagan]) 
 
   @@index([id_lapangan])
-  @@index([id_kelas_kejuaraan])
+  @@index([id_bagan])
 }
+
 
 model tb_lapangan {
   id_lapangan     Int               @id @default(autoincrement())
