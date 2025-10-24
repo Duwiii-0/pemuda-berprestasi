@@ -1230,6 +1230,7 @@ const handleExportPDF = async () => {
                                   BYE
                                 </span>
                               ) : (
+                              <div className="w-full flex justify-center">
                                 <span 
                                   className="text-xs px-3 py-1.5 rounded-full font-medium"
                                   style={{ 
@@ -1239,6 +1240,7 @@ const handleExportPDF = async () => {
                                 >
                                   TBD
                                 </span>
+                              </div>
                               )}
                             </div>
                           )}
