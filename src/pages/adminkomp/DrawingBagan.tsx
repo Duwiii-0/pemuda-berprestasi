@@ -100,7 +100,11 @@ const JadwalPertandingan: React.FC = () => {
     setErrorMessage("");
 
     try {
-      const res = await fetch(`/api/lapangan/kompetisi/${idKompetisi}`);
+      const res = await fetch(
+        `${
+          import.meta.env.VITE_API_URL || ""
+        }/api/lapangan/kompetisi/${idKompetisi}`
+      );
       const data = await res.json();
 
       if (data.success) {
@@ -448,14 +452,17 @@ const JadwalPertandingan: React.FC = () => {
       console.log(`   Lapangan ID: ${lapanganId}`);
       console.log(`   Kelas IDs:`, updatedKelasList);
 
-      const res = await fetch("/api/lapangan/simpan-kelas", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id_lapangan: lapanganId,
-          kelas_kejuaraan_ids: updatedKelasList,
-        }),
-      });
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL || ""}/api/lapangan/simpan-kelas`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id_lapangan: lapanganId,
+            kelas_kejuaraan_ids: updatedKelasList,
+          }),
+        }
+      );
 
       const data = await res.json();
 
