@@ -97,7 +97,7 @@ const NavbarLanding = ({
     { to: "/", label: "Beranda" },
     { to: "/events", label: "Event" },
     { to: "/tutorial", label: "Tutorial" },
-    { to: "/pertandingan", label: "Pertandingan" },
+    // { to: "/pertandingan", label: "Pertandingan" },
   ];
 
   const getDashboardLink = () => {
