@@ -378,7 +378,7 @@ model tb_jadwal_pertandingan {
   bagan         tb_kelas_kejuaraan     @relation(fields: [id_kelas_kejuaraan], references: [id_kelas_kejuaraan])
 
   @@index([id_lapangan])
-  @@index([id_bagan])
+  @@index([id_kelas_kejuaraan])
 }
 
 model tb_lapangan {
