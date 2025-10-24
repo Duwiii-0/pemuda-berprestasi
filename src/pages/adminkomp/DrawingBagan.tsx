@@ -139,11 +139,12 @@ const DrawingBagan: React.FC = () => {
               if (response.ok) {
                 const result = await response.json();
                 const matches = result.data?.matches || [];
+
                 let status:
                   | "not_created"
                   | "created"
                   | "in_progress"
-                  | "completed" = "created";
+                  | "completed" = "not_created";
 
                 if (matches.length > 0) {
                   const hasScores = matches.some(
@@ -159,17 +160,13 @@ const DrawingBagan: React.FC = () => {
                         !m.participant1 ||
                         !m.participant2
                     );
-
                     status = allCompleted ? "completed" : "in_progress";
                   } else {
                     status = "created";
                   }
                 }
 
-                return {
-                  ...kelas,
-                  bracket_status: status,
-                };
+                return { ...kelas, bracket_status: status };
               } else if (response.status === 404) {
                 return {
                   ...kelas,
@@ -473,6 +470,7 @@ const DrawingBagan: React.FC = () => {
 
         {/* STATISTICS CARDS */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+          {/* Card 1 - Total Kelas (MERAH) */}
           <div
             className="rounded-2xl shadow-md border p-5 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1"
             style={{
@@ -509,6 +507,7 @@ const DrawingBagan: React.FC = () => {
             </div>
           </div>
 
+          {/* Card 2 - Bracket Dibuat (KUNING) */}
           <div
             className="rounded-2xl shadow-md border p-5 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1"
             style={{
@@ -523,7 +522,7 @@ const DrawingBagan: React.FC = () => {
                 className="w-12 h-12 rounded-xl flex items-center justify-center shadow-sm"
                 style={{
                   background:
-                    "linear-gradient(135deg, #F5B700 0%, #F59E0B 100%)",
+                    "linear-gradient(135deg, #F5B700 0%, #D19B00 100%)",
                 }}
               >
                 <GitBranch size={24} style={{ color: "white" }} />
@@ -548,13 +547,14 @@ const DrawingBagan: React.FC = () => {
             </div>
           </div>
 
+          {/* Card 3 - Berlangsung (KUNING) */}
           <div
             className="rounded-2xl shadow-md border p-5 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1"
             style={{
               backgroundColor: "#F5FBEF",
-              borderColor: "rgba(34, 197, 94, 0.2)",
+              borderColor: "rgba(245, 183, 0, 0.2)",
               background:
-                "linear-gradient(135deg, #F5FBEF 0%, rgba(34, 197, 94, 0.03) 100%)",
+                "linear-gradient(135deg, #F5FBEF 0%, rgba(245, 183, 0, 0.03) 100%)",
             }}
           >
             <div className="flex flex-col gap-3">
@@ -562,7 +562,7 @@ const DrawingBagan: React.FC = () => {
                 className="w-12 h-12 rounded-xl flex items-center justify-center shadow-sm"
                 style={{
                   background:
-                    "linear-gradient(135deg, #22c55e 0%, #10b981 100%)",
+                    "linear-gradient(135deg, #F5B700 0%, #D19B00 100%)",
                 }}
               >
                 <Medal size={24} style={{ color: "white" }} />
@@ -588,6 +588,7 @@ const DrawingBagan: React.FC = () => {
             </div>
           </div>
 
+          {/* Card 4 - Total Peserta (MERAH) */}
           <div
             className="rounded-2xl shadow-md border p-5 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1"
             style={{
@@ -602,7 +603,7 @@ const DrawingBagan: React.FC = () => {
                 className="w-12 h-12 rounded-xl flex items-center justify-center shadow-sm"
                 style={{
                   background:
-                    "linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)",
+                    "linear-gradient(135deg, #990D35 0%, #7A0A2B 100%)",
                 }}
               >
                 <Users size={24} style={{ color: "white" }} />
@@ -868,9 +869,7 @@ const DrawingBagan: React.FC = () => {
                 className="p-5 border-b"
                 style={{
                   background:
-                    kelas.cabang === "KYORUGI"
-                      ? "linear-gradient(135deg, rgba(153, 13, 53, 0.08) 0%, rgba(153, 13, 53, 0.04) 100%)"
-                      : "linear-gradient(135deg, rgba(245, 183, 0, 0.08) 0%, rgba(245, 183, 0, 0.04) 100%)",
+                    "linear-gradient(135deg, rgba(153, 13, 53, 0.08) 0%, rgba(153, 13, 53, 0.04) 100%)",
                   borderColor: "rgba(153, 13, 53, 0.1)",
                 }}
               >
@@ -879,8 +878,7 @@ const DrawingBagan: React.FC = () => {
                     <div
                       className="w-10 h-10 rounded-xl flex items-center justify-center shadow-sm"
                       style={{
-                        backgroundColor:
-                          kelas.cabang === "KYORUGI" ? "#990D35" : "#F5B700",
+                        backgroundColor: "#990D35",
                       }}
                     >
                       {kelas.cabang === "KYORUGI" ? (
@@ -892,8 +890,7 @@ const DrawingBagan: React.FC = () => {
                     <span
                       className="px-3 py-1.5 rounded-full text-xs font-bold shadow-sm"
                       style={{
-                        backgroundColor:
-                          kelas.cabang === "KYORUGI" ? "#990D35" : "#F5B700",
+                        backgroundColor: "#990D35",
                         color: "white",
                       }}
                     >
@@ -929,14 +926,13 @@ const DrawingBagan: React.FC = () => {
                   {kelas.poomsae && ` - ${kelas.poomsae.nama_kelas}`}
                 </p>
 
-                {/* Category Badge */}
+                {/* Category Badge - PEMULA & PRESTASI SAMA-SAMA MERAH */}
                 <div className="mt-3">
                   <span
                     className="inline-flex items-center text-xs px-3 py-1.5 rounded-full font-bold shadow-sm"
                     style={{
-                      background: isPemula(kelas)
-                        ? "linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)"
-                        : "linear-gradient(135deg, #F59E0B 0%, #EF4444 100%)",
+                      background:
+                        "linear-gradient(135deg, #990D35 0%, #7A0A2B 100%)",
                       color: "white",
                     }}
                   >
@@ -984,6 +980,7 @@ const DrawingBagan: React.FC = () => {
                   )}
                 </div>
 
+                {/* Progress Tournament - KUNING ke HIJAU */}
                 {kelas.bracket_status !== "not_created" && (
                   <div
                     className="p-4 rounded-xl"
@@ -1021,6 +1018,7 @@ const DrawingBagan: React.FC = () => {
                   </div>
                 )}
 
+                {/* Warning minimal peserta */}
                 {kelas.peserta_count < 4 && (
                   <div
                     className="p-3 rounded-xl flex items-center gap-2"
@@ -1053,7 +1051,7 @@ const DrawingBagan: React.FC = () => {
                   style={{
                     background:
                       kelas.bracket_status === "not_created"
-                        ? "linear-gradient(135deg, #F5B700 0%, #F59E0B 100%)"
+                        ? "linear-gradient(135deg, #F5B700 0%, #D19B00 100%)"
                         : "linear-gradient(135deg, #990D35 0%, #7A0A2B 100%)",
                     color: "white",
                   }}
