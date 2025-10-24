@@ -277,4 +277,3 @@ export class LapanganService {
 }
 
 export default new LapanganService();
-y;
