@@ -28,21 +28,30 @@ interface HariPertandingan {
   lapangan: Lapangan[];
 }
 
+interface LapanganDisplay {
+  nama: string;
+  hari: string;
+  kelasKejuaraan: {
+    nama: string;
+    status: "bermain" | "pemanasan" | "bersiap";
+    antrian: number;
+  }[];
+}
+
 const API_BASE_URL = "http://localhost:3000/api";
 const ID_KOMPETISI = 1;
 
-const getColor = (urutan: number) => {
-  if (urutan === 1) return "bg-green-500/80";
-  if (urutan === 2) return "bg-orange-400/80";
-  if (urutan === 3) return "bg-yellow-400/80";
-  return "bg-gray-300/80";
-};
-
-const getStatusText = (urutan: number) => {
-  if (urutan === 1) return "bermain";
-  if (urutan === 2) return "pemanasan";
-  if (urutan === 3) return "bersiap";
-  return "menunggu";
+const getColor = (status: string) => {
+  switch (status) {
+    case "bermain":
+      return "bg-green-500/80";
+    case "pemanasan":
+      return "bg-orange-400/80";
+    case "bersiap":
+      return "bg-yellow-400/80";
+    default:
+      return "bg-gray-300";
+  }
 };
 
 const formatTanggal = (dateString: string) => {
@@ -65,27 +74,39 @@ const formatNamaKelas = (kelas: KelasKejuaraan["kelas"]) => {
   return parts.join(" ");
 };
 
+const getStatusText = (urutan: number): "bermain" | "pemanasan" | "bersiap" => {
+  if (urutan === 1) return "bermain";
+  if (urutan === 2) return "pemanasan";
+  return "bersiap";
+};
+
 const LapanganLiveView = () => {
-  const [hariPertandingan, setHariPertandingan] = useState<HariPertandingan[]>(
-    []
-  );
-  const [loading, setLoading] = useState(true);
+  const [dataLapangan, setDataLapangan] = useState<LapanganDisplay[]>([]);
 
   const fetchData = async () => {
     try {
-      setLoading(true);
       const response = await fetch(
         `${API_BASE_URL}/lapangan/kompetisi/${ID_KOMPETISI}`
       );
       const result = await response.json();
 
-      if (result.success) {
-        setHariPertandingan(result.data.hari_pertandingan);
+      if (result.success && result.data.hari_pertandingan) {
+        const allLapangan: LapanganDisplay[] =
+          result.data.hari_pertandingan.flatMap((hari: HariPertandingan) =>
+            hari.lapangan.map((lap: Lapangan) => ({
+              nama: `Lapangan ${lap.nama_lapangan}`,
+              hari: formatTanggal(lap.tanggal),
+              kelasKejuaraan: lap.kelas_list.map((kls) => ({
+                nama: formatNamaKelas(kls.kelas_kejuaraan),
+                status: getStatusText(kls.urutan),
+                antrian: kls.urutan,
+              })),
+            }))
+          );
+        setDataLapangan(allLapangan);
       }
     } catch (err) {
       console.error("Error fetching data:", err);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -94,37 +115,6 @@ const LapanganLiveView = () => {
     const interval = setInterval(fetchData, 30000);
     return () => clearInterval(interval);
   }, []);
-
-  // Ambil hari pertama atau semua data
-  const dataLapangan =
-    hariPertandingan.length > 0
-      ? hariPertandingan[0].lapangan.map((lap) => ({
-          nama: `Lapangan ${lap.nama_lapangan}`,
-          hari: formatTanggal(lap.tanggal),
-          kelasKejuaraan: lap.kelas_list.map((kls) => ({
-            nama: formatNamaKelas(kls.kelas_kejuaraan),
-            status: getStatusText(kls.urutan) as
-              | "bermain"
-              | "pemanasan"
-              | "bersiap",
-            antrian: kls.urutan,
-          })),
-        }))
-      : [];
-
-  if (loading && dataLapangan.length === 0) {
-    return (
-      <section className="relative w-full flex flex-col bg-gradient-to-br from-white via-red/[0.02] to-white overflow-hidden py-12 md:py-16">
-        <div className="container mx-auto px-4 relative z-10 py-20">
-          <div className="text-center">
-            <p className="text-black/70 font-plex">
-              Memuat data pertandingan...
-            </p>
-          </div>
-        </div>
-      </section>
-    );
-  }
 
   return (
     <section className="relative w-full flex flex-col bg-gradient-to-br from-white via-red/[0.02] to-white overflow-hidden py-12 md:py-16">
@@ -160,33 +150,27 @@ const LapanganLiveView = () => {
               <p className="text-black/60 font-plex text-sm mb-4">{lap.hari}</p>
 
               <div className="space-y-3">
-                {lap.kelasKejuaraan.length === 0 ? (
-                  <p className="text-black/50 text-center py-4">
-                    Belum ada kelas terjadwal
-                  </p>
-                ) : (
-                  lap.kelasKejuaraan.map((kelas, idx) => (
-                    <div
-                      key={idx}
-                      className="flex items-center justify-between p-3 rounded-xl bg-white/70 border border-red/[0.05] hover:bg-white/90 transition-all duration-300"
-                    >
-                      <div>
-                        <p className="font-semibold text-black/90">
-                          {kelas.nama}
-                        </p>
-                        <p className="text-sm text-black/60">
-                          Antrian #{kelas.antrian}
-                        </p>
-                      </div>
-                      <div
-                        className={`w-3 h-3 rounded-full ${getColor(
-                          kelas.antrian
-                        )} ring-4 ring-white/60 shadow-md`}
-                        title={kelas.status}
-                      ></div>
+                {lap.kelasKejuaraan.map((kelas) => (
+                  <div
+                    key={kelas.nama}
+                    className="flex items-center justify-between p-3 rounded-xl bg-white/70 border border-red/[0.05] hover:bg-white/90 transition-all duration-300"
+                  >
+                    <div>
+                      <p className="font-semibold text-black/90">
+                        {kelas.nama}
+                      </p>
+                      <p className="text-sm text-black/60">
+                        Antrian #{kelas.antrian}
+                      </p>
                     </div>
-                  ))
-                )}
+                    <div
+                      className={`w-3 h-3 rounded-full ${getColor(
+                        kelas.status
+                      )} ring-4 ring-white/60 shadow-md`}
+                      title={kelas.status}
+                    ></div>
+                  </div>
+                ))}
               </div>
             </div>
           ))}
