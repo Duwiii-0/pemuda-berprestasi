@@ -1,839 +1,1299 @@
 import React, { useEffect, useState } from "react";
-import { GitBranch, Users, Filter, Search, Trophy, Medal, AlertTriangle, Loader, Eye } from "lucide-react";
-import { useAuth } from "../../context/authContext";
+import {
+  Calendar,
+  Plus,
+  Trash2,
+  Loader,
+  ClipboardList,
+  Eye,
+  GitBranch,
+} from "lucide-react";
 import { useKompetisi } from "../../context/KompetisiContext";
-import TournamentBracketPemula from "../../components/TournamentBracketPemula";
-import TournamentBracketPrestasi from "../../components/TournamentBracketPrestasi";
+import { useAuth } from "../../context/authContext";
+import { useNavigate } from "react-router-dom";
 
-interface KelasKejuaraan {
-  id_kelas_kejuaraan: string;
-  cabang: 'KYORUGI' | 'POOMSAE';
-  kategori_event: {
-    nama_kategori: string;
-  };
-  kelompok: {
-    id_kelompok: number;
-    nama_kelompok: string;
-    usia_min: number;
-    usia_max: number;
-  };
-  kelas_berat?: {
-    nama_kelas: string;
-  };
-  poomsae?: {
-    nama_kelas: string;
-  };
-  jenis_kelamin: 'LAKI_LAKI' | 'PEREMPUAN';
-  peserta_count: number;
-  bracket_status: 'not_created' | 'created' | 'in_progress' | 'completed';
+interface Lapangan {
+  id_lapangan: number;
+  id_kompetisi: number;
+  nama_lapangan: string;
+  tanggal: string;
+  kelasDipilih: number[];
 }
 
-const DrawingBagan: React.FC = () => {
-  const { token, user } = useAuth();
-  const { pesertaList, fetchAtletByKompetisi, loadingAtlet } = useKompetisi();
-  
-  const [kelasKejuaraan, setKelasKejuaraan] = useState<KelasKejuaraan[]>([]);
-  const [filteredKelas, setFilteredKelas] = useState<KelasKejuaraan[]>([]);
-  const [selectedKelas, setSelectedKelas] = useState<KelasKejuaraan | null>(null);
-  const [showBracket, setShowBracket] = useState(false);
-  const [loadingBracketStatus, setLoadingBracketStatus] = useState(false);
-  
-  // Filter states
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filterCabang, setFilterCabang] = useState<"ALL" | "KYORUGI" | "POOMSAE">("ALL");
-  const [filterLevel, setFilterLevel] = useState<"ALL" | "pemula" | "prestasi">("ALL");
-  const [filterStatus, setFilterStatus] = useState<"ALL" | "not_created" | "created" | "in_progress" | "completed">("ALL");
-  const [filterGender, setFilterGender] = useState<"ALL" | "LAKI_LAKI" | "PEREMPUAN">("ALL");
+interface HariPertandingan {
+  tanggal: string;
+  jumlah_lapangan: number;
+  lapangan: Lapangan[];
+}
 
-  const kompetisiId = user?.role === "ADMIN_KOMPETISI" ? user?.admin_kompetisi?.id_kompetisi : null;
+interface AntrianLapangan {
+  bertanding: number;
+  persiapan: number;
+  pemanasan: number;
+}
+
+interface HariAntrian {
+  tanggal: string;
+  lapanganAntrian: Record<number, AntrianLapangan>;
+}
+
+interface BaganInfo {
+  id_kelas_kejuaraan: number;
+  total_matches: number;
+  nama_kelas: string;
+}
+
+const JadwalPertandingan: React.FC = () => {
+  const {
+    kelasKejuaraanList,
+    fetchKelasKejuaraanByKompetisi,
+    pesertaList,
+    fetchAtletByKompetisi,
+    loadingKelasKejuaraan,
+    loadingAtlet,
+    errorKelasKejuaraan,
+    errorAtlet,
+  } = useKompetisi();
+
+  const { user, token } = useAuth();
+  const navigate = useNavigate();
+  const idKompetisi = user?.admin_kompetisi?.id_kompetisi;
+
+  const [activeTab, setActiveTab] = useState<"jadwal" | "antrian">("jadwal");
+  const [hariList, setHariList] = useState<HariPertandingan[]>([]);
+  const [hariAntrianList, setHariAntrianList] = useState<HariAntrian[]>([]);
+  const [approvedPesertaByKelas, setApprovedPesertaByKelas] = useState<
+    Record<number, any[]>
+  >({});
+  const [baganInfoMap, setBaganInfoMap] = useState<Record<number, BaganInfo>>(
+    {}
+  );
+
+  const [loadingHari, setLoadingHari] = useState(false);
+  const [loadingBagan, setLoadingBagan] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+  const [isAdding, setIsAdding] = useState(false);
+  const [addingLapanganTo, setAddingLapanganTo] = useState<string | null>(null);
+  const [savingKelas, setSavingKelas] = useState<Record<number, boolean>>({});
 
   useEffect(() => {
-    if (kompetisiId) {
-      fetchAtletByKompetisi(kompetisiId);
+    if (!idKompetisi) return;
+    (async () => {
+      try {
+        await fetchKelasKejuaraanByKompetisi(idKompetisi);
+        await fetchAtletByKompetisi(idKompetisi);
+      } catch (err) {
+        console.error("Error fetching data:", err);
+      }
+    })();
+  }, [idKompetisi]);
+
+  useEffect(() => {
+    if (!idKompetisi) return;
+    fetchHariLapangan();
+  }, [idKompetisi]);
+
+  const fetchHariLapangan = async () => {
+    if (!idKompetisi) return;
+    setLoadingHari(true);
+    setErrorMessage("");
+
+    try {
+      const res = await fetch(`/api/lapangan/kompetisi/${idKompetisi}`);
+      const data = await res.json();
+
+      if (data.success) {
+        const hariData = data.data.hari_pertandingan.map((hari: any) => ({
+          tanggal: hari.tanggal,
+          jumlah_lapangan: hari.jumlah_lapangan,
+          lapangan: hari.lapangan.map((lap: any) => ({
+            id_lapangan: lap.id_lapangan,
+            id_kompetisi: lap.id_kompetisi,
+            nama_lapangan: lap.nama_lapangan,
+            tanggal: lap.tanggal,
+            kelasDipilih:
+              lap.kelas_list?.map((kl: any) => kl.id_kelas_kejuaraan) || [],
+          })),
+        }));
+        setHariList(hariData);
+        console.log("✅ Data lapangan berhasil dimuat:", hariData);
+      } else {
+        throw new Error(data.message || "Gagal memuat data lapangan");
+      }
+    } catch (err: any) {
+      console.error("❌ Error fetching hari lapangan:", err);
+      setErrorMessage(err.message || "Gagal memuat data lapangan");
+    } finally {
+      setLoadingHari(false);
     }
-  }, [kompetisiId]);
+  };
 
-  // Process peserta data
+  // Fetch bagan info untuk semua kelas yang dipilih
   useEffect(() => {
-    if (pesertaList.length > 0) {
-      const kelasMap = new Map<string, KelasKejuaraan>();
-      
-      pesertaList
-        .filter(peserta => peserta.status === 'APPROVED')
-        .forEach(peserta => {
-          const kelas = peserta.kelas_kejuaraan;
-          if (!kelas) return;
-          
-          const key = `${kelas.id_kelas_kejuaraan}`;
-          
-          if (kelasMap.has(key)) {
-            const existing = kelasMap.get(key)!;
-            existing.peserta_count += 1;
-          } else {
-            kelasMap.set(key, {
-              id_kelas_kejuaraan: kelas.id_kelas_kejuaraan,
-              cabang: kelas.cabang,
-              kategori_event: kelas.kategori_event,
-              kelompok: kelas.kelompok,
-              kelas_berat: kelas.kelas_berat,
-              poomsae: kelas.poomsae,
-              jenis_kelamin: kelas.jenis_kelamin,
-              peserta_count: 1,
-              bracket_status: 'not_created'
-            });
-          }
+    const fetchBaganInfo = async () => {
+      if (!idKompetisi || hariList.length === 0 || !token) return;
+
+      const allKelasIds = new Set<number>();
+      hariList.forEach((hari) => {
+        hari.lapangan.forEach((lap) => {
+          lap.kelasDipilih.forEach((kelasId) => allKelasIds.add(kelasId));
         });
-      
-      const kelasArray = Array.from(kelasMap.values());
-      setKelasKejuaraan(kelasArray);
-    }
+      });
+
+      if (allKelasIds.size === 0) return;
+
+      setLoadingBagan(true);
+      console.log(
+        "🔍 Fetching bagan info untuk kelas:",
+        Array.from(allKelasIds)
+      );
+
+      const baganMap: Record<number, BaganInfo> = {};
+
+      await Promise.all(
+        Array.from(allKelasIds).map(async (kelasId) => {
+          try {
+            const response = await fetch(
+              `${
+                import.meta.env.VITE_API_URL || "/api"
+              }/kompetisi/${idKompetisi}/brackets/${kelasId}`,
+              {
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                },
+              }
+            );
+
+            if (response.ok) {
+              const result = await response.json();
+              const matches = result.data?.matches || [];
+
+              const kelas = kelasKejuaraanList.find(
+                (k) => k.id_kelas_kejuaraan === kelasId
+              );
+              const namaKelas = kelas
+                ? generateNamaKelas(kelas)
+                : `Kelas ${kelasId}`;
+
+              baganMap[kelasId] = {
+                id_kelas_kejuaraan: kelasId,
+                total_matches: matches.length,
+                nama_kelas: namaKelas,
+              };
+
+              console.log(
+                `✅ Bagan kelas ${kelasId}: ${matches.length} matches`
+              );
+            } else if (response.status === 404) {
+              console.log(`ℹ️ Bagan untuk kelas ${kelasId} belum dibuat`);
+              const kelas = kelasKejuaraanList.find(
+                (k) => k.id_kelas_kejuaraan === kelasId
+              );
+              const namaKelas = kelas
+                ? generateNamaKelas(kelas)
+                : `Kelas ${kelasId}`;
+
+              baganMap[kelasId] = {
+                id_kelas_kejuaraan: kelasId,
+                total_matches: 0,
+                nama_kelas: namaKelas,
+              };
+            }
+          } catch (error) {
+            console.error(
+              `❌ Error fetching bagan untuk kelas ${kelasId}:`,
+              error
+            );
+          }
+        })
+      );
+
+      setBaganInfoMap(baganMap);
+      setLoadingBagan(false);
+    };
+
+    fetchBaganInfo();
+  }, [hariList, idKompetisi, token, kelasKejuaraanList]);
+
+  // Pisahkan peserta approved
+  useEffect(() => {
+    if (!pesertaList || pesertaList.length === 0) return;
+
+    const map: Record<number, any[]> = {};
+    pesertaList.forEach((peserta) => {
+      if (peserta.status !== "APPROVED") return;
+      const idKelas = peserta.kelas_kejuaraan?.id_kelas_kejuaraan;
+      if (!idKelas) return;
+      if (!map[idKelas]) map[idKelas] = [];
+
+      const pesertaData = {
+        id_peserta: peserta.id_peserta_kompetisi,
+        nama_peserta: peserta.is_team
+          ? `Tim ${
+              peserta.anggota_tim?.[0]?.atlet?.dojang?.nama_dojang || "Unknown"
+            }`
+          : peserta.atlet?.nama_atlet || "Unknown",
+        is_team: peserta.is_team,
+        dojang: peserta.is_team
+          ? peserta.anggota_tim?.[0]?.atlet?.dojang?.nama_dojang
+          : peserta.atlet?.dojang?.nama_dojang,
+      };
+
+      map[idKelas].push(pesertaData);
+    });
+
+    setApprovedPesertaByKelas(map);
   }, [pesertaList]);
 
-  // Fetch bracket status
+  // Sync antrian list
   useEffect(() => {
-    const fetchBracketStatus = async () => {
-      if (kelasKejuaraan.length === 0 || !kompetisiId) return;
-      
-      setLoadingBracketStatus(true);
-      
-      try {
-        const updatedKelas = await Promise.all(
-          kelasKejuaraan.map(async (kelas) => {
-            try {
-              const response = await fetch(
-                `${import.meta.env.VITE_API_URL || '/api'}/kompetisi/${kompetisiId}/brackets/${kelas.id_kelas_kejuaraan}`,
-                {
-                  headers: {
-                    'Authorization': `Bearer ${token}`
-                  }
-                }
-              );
+    setHariAntrianList((prev) => {
+      return hariList.map((hari) => {
+        const existingHari = prev.find((h) => h.tanggal === hari.tanggal);
+        const lapanganAntrian: Record<number, AntrianLapangan> = {};
 
-              if (response.ok) {
-                const result = await response.json();
-                const matches = result.data?.matches || [];
-                let status: 'not_created' | 'created' | 'in_progress' | 'completed' = 'created';
-                
-                if (matches.length > 0) {
-                  const hasScores = matches.some((m: any) => m.scoreA > 0 || m.scoreB > 0);
-                  
-                  if (hasScores) {
-                    const allCompleted = matches.every((m: any) => 
-                      (m.participant1 && m.participant2 && (m.scoreA > 0 || m.scoreB > 0)) ||
-                      (!m.participant1 || !m.participant2)
-                    );
-                    
-                    status = allCompleted ? 'completed' : 'in_progress';
-                  } else {
-                    status = 'created';
-                  }
-                }
-                
-                return {
-                  ...kelas,
-                  bracket_status: status
-                };
-              } else if (response.status === 404) {
-                return {
-                  ...kelas,
-                  bracket_status: 'not_created' as const
-                };
-              } else {
-                return kelas;
-              }
-            } catch (error) {
-              console.error(`❌ Error fetching bracket for kelas ${kelas.id_kelas_kejuaraan}:`, error);
-              return kelas;
-            }
-          })
-        );
-        
-        setKelasKejuaraan(updatedKelas);
-        
-      } catch (error) {
-        console.error('❌ Error fetching bracket status:', error);
-      } finally {
-        setLoadingBracketStatus(false);
-      }
-    };
+        hari.lapangan.forEach((lap) => {
+          lapanganAntrian[lap.id_lapangan] = existingHari?.lapanganAntrian?.[
+            lap.id_lapangan
+          ] || {
+            bertanding: 1,
+            persiapan: 1,
+            pemanasan: 1,
+          };
+        });
 
-    fetchBracketStatus();
-  }, [kelasKejuaraan.length, kompetisiId]);
-
-  // Apply filters
-  useEffect(() => {
-    let filtered = kelasKejuaraan;
-    
-    if (searchTerm) {
-      filtered = filtered.filter(kelas => {
-        const searchString = `${kelas.cabang} ${kelas.kategori_event.nama_kategori} ${kelas.kelompok.nama_kelompok}`;
-        return searchString.toLowerCase().includes(searchTerm.toLowerCase());
+        return {
+          tanggal: hari.tanggal,
+          lapanganAntrian,
+        };
       });
-    }
-    
-    if (filterCabang !== "ALL") {
-      filtered = filtered.filter(kelas => kelas.cabang === filterCabang);
-    }
-    
-    if (filterLevel !== "ALL") {
-      filtered = filtered.filter(kelas => kelas.kategori_event.nama_kategori.toLowerCase() === filterLevel);
-    }
-    
-    if (filterStatus !== "ALL") {
-      filtered = filtered.filter(kelas => kelas.bracket_status === filterStatus);
-    }
-    
-    if (filterGender !== "ALL") {
-      filtered = filtered.filter(kelas => kelas.jenis_kelamin === filterGender);
-    }
-    
-    setFilteredKelas(filtered);
-  }, [kelasKejuaraan, searchTerm, filterCabang, filterLevel, filterStatus, filterGender]);
+    });
+  }, [hariList]);
 
-  const getStatusBadge = (status: KelasKejuaraan['bracket_status']) => {
-    const statusConfig = {
-      not_created: { bg: 'rgba(156, 163, 175, 0.2)', text: '#6b7280', label: 'Belum Dibuat' },
-      created: { bg: 'rgba(245, 183, 0, 0.2)', text: '#F5B700', label: 'Sudah Dibuat' },
-      in_progress: { bg: 'rgba(34, 197, 94, 0.2)', text: '#22c55e', label: 'Berlangsung' },
-      completed: { bg: 'rgba(34, 197, 94, 0.2)', text: '#059669', label: 'Selesai' }
-    };
-    
-    const config = statusConfig[status];
-    return (
-      <span
-        className="px-2 py-1 rounded-full text-xs font-medium"
-        style={{ backgroundColor: config.bg, color: config.text }}
-      >
-        {config.label}
-      </span>
-    );
-  };
+  const addHari = async () => {
+    if (!idKompetisi) return;
 
-  // Check if kelas is Pemula or Prestasi
-  const isPemula = (kelas: KelasKejuaraan) => {
-    return kelas.kategori_event.nama_kategori.toLowerCase().includes('pemula');
-  };
+    setIsAdding(true);
+    setErrorMessage("");
+    setSuccessMessage("");
 
-  if (user?.role !== "ADMIN_KOMPETISI") {
-    return (
-      <div className="min-h-screen flex items-center justify-center px-4" style={{ backgroundColor: '#F5FBEF' }}>
-        <div className="rounded-xl shadow-sm border p-6 max-w-md w-full" style={{ backgroundColor: 'rgba(153, 13, 53, 0.05)', borderColor: 'rgba(153, 13, 53, 0.2)' }}>
-          <div className="flex items-start gap-3">
-            <AlertTriangle size={20} className="flex-shrink-0 mt-0.5" style={{ color: '#990D35' }} />
-            <p className="text-sm sm:text-base" style={{ color: '#990D35' }}>
-              Akses ditolak. Hanya Admin Kompetisi yang dapat mengelola drawing bagan.
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+    try {
+      const res = await fetch("/api/lapangan/tambah-hari", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id_kompetisi: idKompetisi }),
+      });
 
-  if (!kompetisiId) {
-    return (
-      <div className="min-h-screen flex items-center justify-center px-4" style={{ backgroundColor: '#F5FBEF' }}>
-        <div className="rounded-xl shadow-sm border p-6 max-w-md w-full" style={{ backgroundColor: '#F5FBEF', borderColor: '#990D35' }}>
-          <p className="text-sm sm:text-base" style={{ color: '#050505', opacity: 0.6 }}>
-            Tidak ada kompetisi terkait akun ini.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  // Show appropriate bracket component
-  if (showBracket && selectedKelas) {
-    const kelasDataForBracket = {
-      ...selectedKelas,
-      id_kelas_kejuaraan: parseInt(selectedKelas.id_kelas_kejuaraan),
-      kompetisi: {
-        id_kompetisi: kompetisiId!,
-        nama_event: pesertaList[0]?.kelas_kejuaraan?.kompetisi?.nama_event || 'Competition',
-        tanggal_mulai: pesertaList[0]?.kelas_kejuaraan?.kompetisi?.tanggal_mulai || new Date().toISOString(),
-        tanggal_selesai: pesertaList[0]?.kelas_kejuaraan?.kompetisi?.tanggal_selesai || new Date().toISOString(),
-        lokasi: pesertaList[0]?.kelas_kejuaraan?.kompetisi?.lokasi || 'Location',
-        status: pesertaList[0]?.kelas_kejuaraan?.kompetisi?.status || 'PENDAFTARAN'
-      },
-      peserta_kompetisi: pesertaList
-        .filter(p => p.status === 'APPROVED' && p.kelas_kejuaraan?.id_kelas_kejuaraan === selectedKelas.id_kelas_kejuaraan)
-        .map(p => ({
-          id_peserta_kompetisi: p.id_peserta_kompetisi,
-          id_atlet: p.atlet?.id_atlet,
-          is_team: p.is_team,
-          status: p.status,
-          atlet: p.atlet ? {
-            id_atlet: p.atlet.id_atlet,
-            nama_atlet: p.atlet.nama_atlet,
-            dojang: {
-              nama_dojang: p.atlet.dojang?.nama_dojang || ''
-            }
-          } : undefined,
-          anggota_tim: p.anggota_tim?.map(at => ({
-            atlet: {
-              nama_atlet: at.atlet.nama_atlet
-            }
-          }))
-        })),
-      bagan: []
-    };
-
-    const handleBackFromBracket = () => {
-      console.log('🔙 Back to drawing bagan list');
-      setShowBracket(false);
-      setSelectedKelas(null);
-      
-      if (kompetisiId) {
-        fetchAtletByKompetisi(kompetisiId);
+      const data = await res.json();
+      if (data.success) {
+        setSuccessMessage(data.message);
+        await fetchHariLapangan();
+        setTimeout(() => setSuccessMessage(""), 3000);
+      } else {
+        throw new Error(data.message || "Gagal menambah hari pertandingan");
       }
-    };
-
-    // Render PEMULA or PRESTASI component based on kategori
-    if (isPemula(selectedKelas)) {
-      return (
-        <TournamentBracketPemula 
-          kelasData={kelasDataForBracket}
-          onBack={handleBackFromBracket}
-          apiBaseUrl={import.meta.env.VITE_API_URL || '/api'}
-        />
-      );
-    } else {
-      return (
-        <TournamentBracketPrestasi 
-          kelasData={kelasDataForBracket}
-          onBack={handleBackFromBracket}
-          apiBaseUrl={import.meta.env.VITE_API_URL || '/api'}
-        />
-      );
+    } catch (err: any) {
+      console.error("Error tambah hari:", err);
+      setErrorMessage(err.message);
+    } finally {
+      setIsAdding(false);
     }
-  }
+  };
 
-  if (loadingAtlet || loadingBracketStatus) {
-    return (
-      <div className="min-h-screen flex items-center justify-center px-4" style={{ backgroundColor: '#F5FBEF' }}>
-        <div className="flex flex-col items-center gap-3">
-          <Loader className="animate-spin" style={{ color: '#990D35' }} size={32} />
-          <p style={{ color: '#050505', opacity: 0.6 }}>
-            {loadingAtlet ? 'Memuat data kelas kejuaraan...' : 'Memeriksa status bracket...'}
-          </p>
-        </div>
-      </div>
+  const addLapanganKeHari = async (tanggal: string) => {
+    if (!idKompetisi) return;
+
+    setAddingLapanganTo(tanggal);
+    setErrorMessage("");
+    setSuccessMessage("");
+
+    try {
+      const res = await fetch("/api/lapangan/tambah-lapangan-ke-hari", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id_kompetisi: idKompetisi,
+          tanggal: tanggal,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        setSuccessMessage(data.message);
+        await fetchHariLapangan();
+        setTimeout(() => setSuccessMessage(""), 3000);
+      } else {
+        throw new Error(data.message || "Gagal menambah lapangan");
+      }
+    } catch (err: any) {
+      console.error("Error tambah lapangan:", err);
+      setErrorMessage(err.message);
+    } finally {
+      setAddingLapanganTo(null);
+    }
+  };
+
+  const hapusLapangan = async (id_lapangan: number) => {
+    if (!confirm("Yakin ingin menghapus lapangan ini?")) return;
+
+    setErrorMessage("");
+    setSuccessMessage("");
+
+    try {
+      const res = await fetch("/api/lapangan/hapus-lapangan", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id_lapangan }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        setSuccessMessage(data.message);
+        await fetchHariLapangan();
+        setTimeout(() => setSuccessMessage(""), 3000);
+      } else {
+        throw new Error(data.message || "Gagal menghapus lapangan");
+      }
+    } catch (err: any) {
+      console.error("Error hapus lapangan:", err);
+      setErrorMessage(err.message);
+    }
+  };
+
+  const hapusHari = async (tanggal: string) => {
+    if (!idKompetisi) return;
+    if (
+      !confirm(
+        `Yakin ingin menghapus semua lapangan pada tanggal ${new Date(
+          tanggal
+        ).toLocaleDateString("id-ID")}?`
+      )
+    )
+      return;
+
+    setErrorMessage("");
+    setSuccessMessage("");
+
+    try {
+      const res = await fetch("/api/lapangan/hapus-hari", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id_kompetisi: idKompetisi, tanggal }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        setSuccessMessage(data.message);
+        await fetchHariLapangan();
+        setTimeout(() => setSuccessMessage(""), 3000);
+      } else {
+        throw new Error(data.message || "Gagal menghapus hari pertandingan");
+      }
+    } catch (err: any) {
+      console.error("Error hapus hari:", err);
+      setErrorMessage(err.message);
+    }
+  };
+
+  // FUNGSI BARU: Auto-save saat toggle kelas
+  const toggleKelasAndSave = async (
+    tanggal: string,
+    lapanganId: number,
+    kelasId: number
+  ) => {
+    // Update UI state dulu (optimistic update)
+    let updatedKelasList: number[] = [];
+
+    setHariList((prev) =>
+      prev.map((hari) =>
+        hari.tanggal === tanggal
+          ? {
+              ...hari,
+              lapangan: hari.lapangan.map((lap) => {
+                if (lap.id_lapangan === lapanganId) {
+                  const isCurrentlySelected =
+                    lap.kelasDipilih.includes(kelasId);
+                  updatedKelasList = isCurrentlySelected
+                    ? lap.kelasDipilih.filter((id) => id !== kelasId)
+                    : [...lap.kelasDipilih, kelasId];
+
+                  console.log(
+                    `🔄 Toggle kelas ${kelasId} di lapangan ${lapanganId}`
+                  );
+                  console.log(
+                    `   Status: ${
+                      isCurrentlySelected ? "UNCHECK ❌" : "CHECK ✅"
+                    }`
+                  );
+                  console.log(`   Kelas terpilih sekarang:`, updatedKelasList);
+
+                  return {
+                    ...lap,
+                    kelasDipilih: updatedKelasList,
+                  };
+                }
+                return lap;
+              }),
+            }
+          : hari
+      )
     );
-  }
+
+    // Set loading state
+    setSavingKelas((prev) => ({ ...prev, [lapanganId]: true }));
+
+    try {
+      console.log(`💾 Menyimpan ke database...`);
+      console.log(`   Lapangan ID: ${lapanganId}`);
+      console.log(`   Kelas IDs:`, updatedKelasList);
+
+      const res = await fetch("/api/lapangan/simpan-kelas", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id_lapangan: lapanganId,
+          kelas_kejuaraan_ids: updatedKelasList,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        console.log(`✅ Berhasil disimpan ke database!`);
+        console.log(`   Response:`, data);
+
+        // Tampilkan success message singkat
+        setSuccessMessage(
+          `Kelas berhasil ${
+            updatedKelasList.length > 0 ? "ditambahkan ke" : "dihapus dari"
+          } lapangan`
+        );
+        setTimeout(() => setSuccessMessage(""), 2000);
+      } else {
+        throw new Error(data.message || "Gagal menyimpan kelas");
+      }
+    } catch (err: any) {
+      console.error("❌ Error menyimpan kelas:", err);
+      console.error(`   Lapangan ID: ${lapanganId}`);
+      console.error(`   Error message:`, err.message);
+
+      setErrorMessage(err.message || "Gagal menyimpan kelas");
+
+      // Rollback UI state jika gagal
+      setHariList((prev) =>
+        prev.map((hari) =>
+          hari.tanggal === tanggal
+            ? {
+                ...hari,
+                lapangan: hari.lapangan.map((lap) =>
+                  lap.id_lapangan === lapanganId
+                    ? {
+                        ...lap,
+                        kelasDipilih: lap.kelasDipilih.includes(kelasId)
+                          ? lap.kelasDipilih.filter((id) => id !== kelasId)
+                          : [...lap.kelasDipilih, kelasId],
+                      }
+                    : lap
+                ),
+              }
+            : hari
+        )
+      );
+
+      setTimeout(() => setErrorMessage(""), 3000);
+    } finally {
+      setSavingKelas((prev) => ({ ...prev, [lapanganId]: false }));
+      console.log(`🏁 Proses toggle kelas selesai\n`);
+    }
+  };
+
+  const updateAntrian = (
+    tanggal: string,
+    lapanganId: number,
+    field: "bertanding" | "persiapan" | "pemanasan",
+    value: number
+  ) => {
+    setHariAntrianList((prev) =>
+      prev.map((hari) =>
+        hari.tanggal === tanggal
+          ? {
+              ...hari,
+              lapanganAntrian: {
+                ...hari.lapanganAntrian,
+                [lapanganId]: {
+                  ...hari.lapanganAntrian[lapanganId],
+                  [field]: value,
+                },
+              },
+            }
+          : hari
+      )
+    );
+  };
+
+  const generateNamaKelas = (kelas: any) => {
+    const parts = [];
+    if (kelas.cabang) parts.push(kelas.cabang);
+    if (kelas.kategori_event?.nama_kategori)
+      parts.push(kelas.kategori_event.nama_kategori);
+
+    const isPoomsaePemula =
+      kelas.cabang === "POOMSAE" &&
+      kelas.kategori_event?.nama_kategori === "Pemula";
+    if (kelas.kelompok?.nama_kelompok && !isPoomsaePemula) {
+      parts.push(kelas.kelompok.nama_kelompok);
+    }
+
+    if (kelas.kelas_berat) {
+      const gender =
+        kelas.kelas_berat.jenis_kelamin === "LAKI_LAKI" ? "Putra" : "Putri";
+      parts.push(gender);
+    }
+
+    if (kelas.kelas_berat?.nama_kelas) parts.push(kelas.kelas_berat.nama_kelas);
+    if (kelas.poomsae?.nama_kelas) parts.push(kelas.poomsae.nama_kelas);
+
+    return parts.length > 0 ? parts.join(" - ") : "Kelas Tidak Lengkap";
+  };
+
+  const handleLihatBagan = (kelasId: number) => {
+    console.log(`🔗 Navigating to drawing bagan for kelas ${kelasId}`);
+    navigate("/admin/drawing-bagan");
+  };
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#F5FBEF' }}>
+    <div className="min-h-screen" style={{ backgroundColor: "#F5FBEF" }}>
       <div className="p-4 sm:p-6 lg:p-8 max-w-full">
-        
-    {/* HEADER */}
-    <div className="mb-8">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
-        <div 
-          className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center shadow-lg"
-          style={{ 
-            background: 'linear-gradient(135deg, #990D35 0%, #7A0A2B 100%)'
-          }}
+        {/* HEADER */}
+        <div className="mb-6 flex items-center gap-3">
+          <Calendar size={32} style={{ color: "#990D35" }} />
+          <div>
+            <h1
+              className="text-2xl sm:text-3xl font-bebas"
+              style={{ color: "#050505" }}
+            >
+              PENJADWALAN PERTANDINGAN
+            </h1>
+            <p className="text-sm" style={{ color: "#050505", opacity: 0.6 }}>
+              Kelola jadwal dan antrian pertandingan
+            </p>
+          </div>
+        </div>
+
+        {/* MESSAGES */}
+        {successMessage && (
+          <div
+            className="mb-6 p-4 rounded-lg border-l-4"
+            style={{
+              backgroundColor: "rgba(34, 197, 94, 0.1)",
+              borderColor: "#22c55e",
+            }}
+          >
+            <p className="text-sm font-medium text-green-600">
+              {successMessage}
+            </p>
+          </div>
+        )}
+
+        {(errorMessage || errorKelasKejuaraan || errorAtlet) && (
+          <div
+            className="mb-6 p-4 rounded-lg border-l-4"
+            style={{
+              backgroundColor: "rgba(220, 38, 38, 0.1)",
+              borderColor: "#dc2626",
+            }}
+          >
+            <p className="text-sm font-medium text-red-600">
+              {errorMessage || errorKelasKejuaraan || errorAtlet}
+            </p>
+          </div>
+        )}
+
+        {/* TABS */}
+        <div
+          className="mb-6 flex gap-2 border-b"
+          style={{ borderColor: "rgba(153,13,53,0.2)" }}
         >
-          <GitBranch 
-            size={32} 
-            className="sm:w-8 sm:h-8" 
-            style={{ color: 'white' }}
-          />
+          <button
+            onClick={() => setActiveTab("jadwal")}
+            className={`flex items-center gap-2 px-4 py-3 font-medium transition-all ${
+              activeTab === "jadwal"
+                ? "border-b-2"
+                : "opacity-60 hover:opacity-100"
+            }`}
+            style={{
+              borderColor: activeTab === "jadwal" ? "#990D35" : "transparent",
+              color: "#990D35",
+            }}
+          >
+            <Calendar size={18} />
+            Setup Jadwal
+          </button>
+          <button
+            onClick={() => setActiveTab("antrian")}
+            className={`flex items-center gap-2 px-4 py-3 font-medium transition-all ${
+              activeTab === "antrian"
+                ? "border-b-2"
+                : "opacity-60 hover:opacity-100"
+            }`}
+            style={{
+              borderColor: activeTab === "antrian" ? "#990D35" : "transparent",
+              color: "#990D35",
+            }}
+          >
+            <ClipboardList size={18} />
+            Pengaturan Antrian
+          </button>
         </div>
-        <div className="flex-1 min-w-0">
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bebas leading-tight mb-1" style={{ color: '#050505' }}>
-            DRAWING BAGAN TOURNAMENT
-          </h1>
-          <p className="text-sm sm:text-base" style={{ color: '#050505', opacity: 0.6 }}>
-            Kelola bracket tournament untuk setiap kelas kejuaraan
-          </p>
-        </div>
-      </div>
-    </div>
 
-    {/* STATISTICS CARDS */}
-    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-      {/* Card 1 - Total Kelas (MERAH) */}
-      <div 
-        className="rounded-2xl shadow-md border p-5 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1" 
-        style={{ 
-          backgroundColor: '#F5FBEF', 
-          borderColor: 'rgba(153, 13, 53, 0.1)',
-          background: 'linear-gradient(135deg, #F5FBEF 0%, rgba(153, 13, 53, 0.02) 100%)'
-        }}
-      >
-        <div className="flex flex-col gap-3">
-          <div 
-            className="w-12 h-12 rounded-xl flex items-center justify-center shadow-sm"
-            style={{ background: 'linear-gradient(135deg, #990D35 0%, #7A0A2B 100%)' }}
-          >
-            <Trophy size={24} style={{ color: 'white' }} />
-          </div>
-          <div>
-            <p className="text-2xl font-bold mb-1" style={{ color: '#050505' }}>
-              {kelasKejuaraan.length}
-            </p>
-            <p className="text-xs font-medium" style={{ color: '#050505', opacity: 0.6 }}>
-              Total Kelas
-            </p>
-          </div>
-        </div>
-      </div>
-      
-      {/* Card 2 - Bracket Dibuat (KUNING) */}
-      <div 
-        className="rounded-2xl shadow-md border p-5 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1" 
-        style={{ 
-          backgroundColor: '#F5FBEF', 
-          borderColor: 'rgba(245, 183, 0, 0.2)',
-          background: 'linear-gradient(135deg, #F5FBEF 0%, rgba(245, 183, 0, 0.03) 100%)'
-        }}
-      >
-        <div className="flex flex-col gap-3">
-          <div 
-            className="w-12 h-12 rounded-xl flex items-center justify-center shadow-sm"
-            style={{ background: 'linear-gradient(135deg, #F5B700 0%, #D19B00 100%)' }}
-          >
-            <GitBranch size={24} style={{ color: 'white' }} />
-          </div>
-          <div>
-            <p className="text-2xl font-bold mb-1" style={{ color: '#050505' }}>
-              {kelasKejuaraan.filter(k => k.bracket_status === 'created').length}
-            </p>
-            <p className="text-xs font-medium" style={{ color: '#050505', opacity: 0.6 }}>
-              Bracket Dibuat
-            </p>
-          </div>
-        </div>
-      </div>
-      
-      {/* Card 3 - Berlangsung (KUNING) */}
-      <div 
-        className="rounded-2xl shadow-md border p-5 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1" 
-        style={{ 
-          backgroundColor: '#F5FBEF', 
-          borderColor: 'rgba(245, 183, 0, 0.2)',
-          background: 'linear-gradient(135deg, #F5FBEF 0%, rgba(245, 183, 0, 0.03) 100%)'
-        }}
-      >
-        <div className="flex flex-col gap-3">
-          <div 
-            className="w-12 h-12 rounded-xl flex items-center justify-center shadow-sm"
-            style={{ background: 'linear-gradient(135deg, #F5B700 0%, #D19B00 100%)' }}
-          >
-            <Medal size={24} style={{ color: 'white' }} />
-          </div>
-          <div>
-            <p className="text-2xl font-bold mb-1" style={{ color: '#050505' }}>
-              {kelasKejuaraan.filter(k => k.bracket_status === 'in_progress').length}
-            </p>
-            <p className="text-xs font-medium" style={{ color: '#050505', opacity: 0.6 }}>
-              Berlangsung
-            </p>
-          </div>
-        </div>
-      </div>
-      
-      {/* Card 4 - Total Peserta (MERAH) */}
-      <div 
-        className="rounded-2xl shadow-md border p-5 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1" 
-        style={{ 
-          backgroundColor: '#F5FBEF', 
-          borderColor: 'rgba(153, 13, 53, 0.1)',
-          background: 'linear-gradient(135deg, #F5FBEF 0%, rgba(153, 13, 53, 0.02) 100%)'
-        }}
-      >
-        <div className="flex flex-col gap-3">
-          <div 
-            className="w-12 h-12 rounded-xl flex items-center justify-center shadow-sm"
-            style={{ background: 'linear-gradient(135deg, #990D35 0%, #7A0A2B 100%)' }}
-          >
-            <Users size={24} style={{ color: 'white' }} />
-          </div>
-          <div>
-            <p className="text-2xl font-bold mb-1" style={{ color: '#050505' }}>
-              {kelasKejuaraan.reduce((sum, k) => sum + k.peserta_count, 0)}
-            </p>
-            <p className="text-xs font-medium" style={{ color: '#050505', opacity: 0.6 }}>
-              Total Peserta
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    {/* FILTER + SEARCH */}
-    <div 
-      className="rounded-2xl shadow-md border p-6 sm:p-8 mb-8 hover:shadow-lg transition-all duration-300" 
-      style={{ 
-        backgroundColor: '#F5FBEF', 
-        borderColor: 'rgba(153, 13, 53, 0.1)',
-        background: 'linear-gradient(135deg, #F5FBEF 0%, rgba(153, 13, 53, 0.01) 100%)'
-      }}
-    >
-      <div className="space-y-5">
-        {/* Search */}
-        <div className="w-full">
-          <div className="relative">
-            <Search
-              className="absolute left-4 top-1/2 -translate-y-1/2"
-              style={{ color: '#990D35', opacity: 0.5 }}
-              size={20}
+        {/* LOADING */}
+        {(loadingKelasKejuaraan || loadingAtlet || loadingHari) && (
+          <div className="flex flex-col justify-center items-center py-10">
+            <Loader
+              className="animate-spin mb-3"
+              size={40}
+              style={{ color: "#990D35" }}
             />
-            <input
-              type="text"
-              placeholder="Cari kelas kejuaraan..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-12 pr-4 py-4 rounded-xl border-2 shadow-sm text-sm font-medium focus:outline-none focus:ring-2 transition-all"
-              style={{ 
-                borderColor: 'rgba(153, 13, 53, 0.2)', 
-                backgroundColor: 'white',
-                color: '#050505'
-              }}
-            />
+            <span className="text-sm font-medium" style={{ color: "#990D35" }}>
+              Memuat data...
+            </span>
           </div>
-        </div>
+        )}
 
-        {/* Filters */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-          <div>
-            <label className="block text-xs mb-2 font-bold" style={{ color: '#050505', opacity: 0.7 }}>
-              Cabang
-            </label>
-            <div className="relative">
-              <select
-                value={filterCabang}
-                onChange={(e) => setFilterCabang(e.target.value as any)}
-                className="w-full px-4 py-3 rounded-xl border-2 shadow-sm text-sm font-medium focus:outline-none focus:ring-2 transition-all appearance-none cursor-pointer"
-                style={{ 
-                  borderColor: 'rgba(153, 13, 53, 0.2)', 
-                  backgroundColor: 'white',
-                  color: '#050505'
-                }}
-              >
-                <option value="ALL">Semua Cabang</option>
-                <option value="KYORUGI">KYORUGI</option>
-                <option value="POOMSAE">POOMSAE</option>
-              </select>
-              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
-                  <path d="M5 7.5L10 12.5L15 7.5" stroke="#990D35" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs mb-2 font-bold" style={{ color: '#050505', opacity: 0.7 }}>
-              Level
-            </label>
-            <div className="relative">
-              <select
-                value={filterLevel}
-                onChange={(e) => setFilterLevel(e.target.value as any)}
-                className="w-full px-4 py-3 rounded-xl border-2 shadow-sm text-sm font-medium focus:outline-none focus:ring-2 transition-all appearance-none cursor-pointer"
-                style={{ 
-                  borderColor: 'rgba(153, 13, 53, 0.2)', 
-                  backgroundColor: 'white',
-                  color: '#050505'
-                }}
-              >
-                <option value="ALL">Semua Level</option>
-                <option value="pemula">Pemula</option>
-                <option value="prestasi">Prestasi</option>
-              </select>
-              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
-                  <path d="M5 7.5L10 12.5L15 7.5" stroke="#990D35" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs mb-2 font-bold" style={{ color: '#050505', opacity: 0.7 }}>
-              Status
-            </label>
-            <div className="relative">
-              <select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value as any)}
-                className="w-full px-4 py-3 rounded-xl border-2 shadow-sm text-sm font-medium focus:outline-none focus:ring-2 transition-all appearance-none cursor-pointer"
-                style={{ 
-                  borderColor: 'rgba(153, 13, 53, 0.2)', 
-                  backgroundColor: 'white',
-                  color: '#050505'
-                }}
-              >
-                <option value="ALL">Semua Status</option>
-                <option value="not_created">Belum Dibuat</option>
-                <option value="created">Sudah Dibuat</option>
-                <option value="in_progress">Berlangsung</option>
-                <option value="completed">Selesai</option>
-              </select>
-              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
-                  <path d="M5 7.5L10 12.5L15 7.5" stroke="#990D35" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs mb-2 font-bold" style={{ color: '#050505', opacity: 0.7 }}>
-              Gender
-            </label>
-            <div className="relative">
-              <select
-                value={filterGender}
-                onChange={(e) => setFilterGender(e.target.value as any)}
-                className="w-full px-4 py-3 rounded-xl border-2 shadow-sm text-sm font-medium focus:outline-none focus:ring-2 transition-all appearance-none cursor-pointer"
-                style={{ 
-                  borderColor: 'rgba(153, 13, 53, 0.2)', 
-                  backgroundColor: 'white',
-                  color: '#050505'
-                }}
-              >
-                <option value="ALL">Semua</option>
-                <option value="LAKI_LAKI">Putra</option>
-                <option value="PEREMPUAN">Putri</option>
-              </select>
-              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
-                  <path d="M5 7.5L10 12.5L15 7.5" stroke="#990D35" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-end">
-            <button
-              onClick={() => {
-                setSearchTerm("");
-                setFilterCabang("ALL");
-                setFilterLevel("ALL");
-                setFilterStatus("ALL");
-                setFilterGender("ALL");
-              }}
-              className="w-full px-4 py-3 rounded-xl border-2 font-bold text-sm shadow-sm hover:shadow-md transition-all transform hover:scale-[1.02]"
-              style={{ 
-                borderColor: '#990D35', 
-                color: '#990D35',
-                backgroundColor: 'white'
-              }}
-            >
-              Reset Filter
-            </button>
-          </div>
-        </div>
-
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 pt-4 border-t" style={{ borderColor: 'rgba(153, 13, 53, 0.1)' }}>
-          <p className="text-sm font-medium" style={{ color: '#050505', opacity: 0.6 }}>
-            Menampilkan <span className="font-bold" style={{ color: '#990D35' }}>{filteredKelas.length}</span> dari <span className="font-bold" style={{ color: '#990D35' }}>{kelasKejuaraan.length}</span> kelas
-          </p>
-        </div>
-      </div>
-    </div>
-
-        {/* CONTENT - Kelas Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredKelas.map((kelas) => (
-            <div
-              key={kelas.id_kelas_kejuaraan}
-              className="rounded-2xl overflow-hidden hover:shadow-2xl transition-all duration-300 cursor-pointer transform hover:-translate-y-1"
-              style={{ 
-                backgroundColor: '#F5FBEF', 
-                border: '1px solid rgba(153, 13, 53, 0.1)',
-                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
-              }}
-            >
-              {/* Header */}
-              <div 
-                className="p-5 border-b"
-                style={{ 
-                  background: 'linear-gradient(135deg, rgba(153, 13, 53, 0.08) 0%, rgba(153, 13, 53, 0.04) 100%)',
-                  borderColor: 'rgba(153, 13, 53, 0.1)'
-                }}
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <div 
-                      className="w-10 h-10 rounded-xl flex items-center justify-center shadow-sm"
-                      style={{
-                        backgroundColor: '#990D35',
-                      }}
-                    >
-                      {kelas.cabang === 'KYORUGI' ? (
-                        <Medal size={20} style={{ color: 'white' }} />
-                      ) : (
-                        <Trophy size={20} style={{ color: 'white' }} />
-                      )}
-                    </div>
-                    <span 
-                      className="px-3 py-1.5 rounded-full text-xs font-bold shadow-sm"
-                      style={{
-                        backgroundColor: '#990D35',
-                        color: 'white'
-                      }}
-                    >
-                      {kelas.cabang}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {loadingBracketStatus && (
-                      <Loader size={14} className="animate-spin" style={{ color: '#6b7280' }} />
-                    )}
-                    {getStatusBadge(kelas.bracket_status)}
-                  </div>
-                </div>
-                
-                <h3 className="font-bold text-base leading-tight mb-2" style={{ color: '#050505' }}>
-                  {kelas.kategori_event.nama_kategori.toUpperCase()} - {kelas.kelompok.nama_kelompok}
-                </h3>
-                
-                <p className="text-sm" style={{ color: '#050505', opacity: 0.7 }}>
-                  {kelas.jenis_kelamin === 'LAKI_LAKI' ? 'Putra' : 'Putri'}
-                  {kelas.kelas_berat && ` - ${kelas.kelas_berat.nama_kelas}`}
-                  {kelas.poomsae && ` - ${kelas.poomsae.nama_kelas}`}
-                </p>
-                
-                {/* Category Badge - PEMULA & PRESTASI SAMA-SAMA MERAH */}
-                <div className="mt-3">
-                  <span 
-                    className="inline-flex items-center text-xs px-3 py-1.5 rounded-full font-bold shadow-sm"
-                    style={{
-                      background: 'linear-gradient(135deg, #990D35 0%, #7A0A2B 100%)',
-                      color: 'white'
-                    }}
-                  >
-                    {isPemula(kelas) ? '🥋 PEMULA' : '🏆 PRESTASI'}
-                  </span>
-                </div>
-              </div>
-
-{/* Content */}
-<div className="p-5 space-y-4">
-  <div className="flex items-center justify-between">
-    <div className="flex items-center gap-2">
-      <div 
-        className="w-10 h-10 rounded-xl flex items-center justify-center shadow-sm"
-        style={{ backgroundColor: 'rgba(153, 13, 53, 0.1)' }}
-      >
-        <Users size={18} style={{ color: '#990D35' }} />
-      </div>
-      <div>
-        <p className="text-xs" style={{ color: '#050505', opacity: 0.5 }}>
-          Total Peserta
-        </p>
-        <p className="text-lg font-bold" style={{ color: '#050505' }}>
-          {kelas.peserta_count}
-        </p>
-      </div>
-    </div>
-    {kelas.peserta_count >= 4 && (
-      <span 
-        className="text-xs px-3 py-1.5 rounded-full font-bold shadow-sm" 
-        style={{ 
-          background: 'linear-gradient(135deg, #22c55e 0%, #10b981 100%)',
-          color: 'white'
-        }}
-      >
-        ✓ Siap
-      </span>
-    )}
-  </div>
-
-              {/* Progress Tournament - KUNING ke HIJAU */}
-              {kelas.bracket_status !== 'not_created' && (
-                <div className="p-4 rounded-xl" style={{ backgroundColor: 'rgba(153, 13, 53, 0.04)' }}>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-bold" style={{ color: '#050505' }}>
-                      Progress Tournament
-                    </span>
-                    <span className="text-xs font-medium" style={{ color: '#050505', opacity: 0.6 }}>
-                      {Math.ceil(Math.log2(kelas.peserta_count))} Babak
-                    </span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
-                    <div
-                      className="h-2.5 rounded-full transition-all duration-500"
-                      style={{ 
-                        background: kelas.bracket_status === 'completed' 
-                          ? 'linear-gradient(90deg, #22c55e 0%, #10b981 100%)' 
-                          : 'linear-gradient(90deg, #F5B700 0%, #F59E0B 100%)',
-                        width: kelas.bracket_status === 'completed' ? '100%' : '45%'
-                      }}
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* Warning minimal peserta */}
-              {kelas.peserta_count < 4 && (
-                <div 
-                  className="p-3 rounded-xl flex items-center gap-2" 
-                  style={{ 
-                    background: 'linear-gradient(135deg, rgba(245, 183, 0, 0.08) 0%, rgba(245, 183, 0, 0.04) 100%)',
-                    border: '1px solid rgba(245, 183, 0, 0.2)'
-                  }}
-                >
-                  <AlertTriangle size={16} style={{ color: '#F5B700' }} />
-                  <span className="text-xs font-medium" style={{ color: '#F5B700' }}>
-                    Minimal 4 peserta untuk tournament
-                  </span>
-                </div>
-              )}
-              </div>
-
-              {/* Actions */}
-              <div className="p-5 pt-0">
+        {/* TAB JADWAL */}
+        {activeTab === "jadwal" &&
+          !loadingKelasKejuaraan &&
+          !loadingAtlet &&
+          !loadingHari && (
+            <>
+              <div className="mb-6">
                 <button
-                  onClick={() => {
-                    setSelectedKelas(kelas);
-                    setShowBracket(true);
-                  }}
-                  disabled={kelas.peserta_count < 4}
-                  className="w-full flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg transform hover:scale-[1.02]"
-                  style={{ 
-                    background: kelas.bracket_status === 'not_created' 
-                      ? 'linear-gradient(135deg, #F5B700 0%, #D19B00 100%)' 
-                      : 'linear-gradient(135deg, #990D35 0%, #7A0A2B 100%)',
-                    color: 'white'
-                  }}
+                  onClick={addHari}
+                  disabled={isAdding}
+                  className="flex items-center gap-2 px-4 py-3 rounded-xl font-medium transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{ backgroundColor: "#990D35", color: "#F5FBEF" }}
                 >
-                  {kelas.bracket_status === 'not_created' ? (
+                  {isAdding ? (
                     <>
-                      <GitBranch size={18} />
-                      <span>Buat Bracket</span>
+                      <Loader size={16} className="animate-spin" />
+                      Menambahkan...
                     </>
                   ) : (
                     <>
-                      <Eye size={18} />
-                      <span>Lihat Bracket</span>
+                      <Plus size={16} />
+                      Tambah Hari Pertandingan (1 Lapangan)
                     </>
                   )}
                 </button>
               </div>
-            </div>
-          ))}
-        </div>
 
-        {/* Empty State */}
-        {filteredKelas.length === 0 && (
-          <div className="text-center py-16" style={{ color: '#050505', opacity: 0.4 }}>
-            <GitBranch size={64} className="mx-auto mb-4" />
-            <h3 className="text-xl font-semibold mb-2">Tidak ada kelas kejuaraan ditemukan</h3>
-            <p className="text-base">
-              {kelasKejuaraan.length === 0 
-                ? "Belum ada peserta yang disetujui"
-                : "Coba ubah filter pencarian"
-              }
-            </p>
-          </div>
-        )}
+              {/* DAFTAR HARI */}
+              {hariList.length === 0 ? (
+                <div
+                  className="text-center py-12 rounded-xl border"
+                  style={{
+                    borderColor: "rgba(153,13,53,0.2)",
+                    backgroundColor: "#FFFFFF",
+                  }}
+                >
+                  <Calendar
+                    size={48}
+                    className="mx-auto mb-3"
+                    style={{ color: "#990D35", opacity: 0.5 }}
+                  />
+                  <p
+                    className="text-sm font-medium mb-2"
+                    style={{ color: "#050505", opacity: 0.6 }}
+                  >
+                    Belum ada hari pertandingan
+                  </p>
+                  <p
+                    className="text-xs"
+                    style={{ color: "#050505", opacity: 0.5 }}
+                  >
+                    Klik tombol "Tambah Hari Pertandingan" untuk memulai
+                  </p>
+                </div>
+              ) : (
+                hariList.map((hari, idx) => (
+                  <div
+                    key={hari.tanggal}
+                    className="rounded-xl shadow-sm border p-6 mb-6"
+                    style={{
+                      borderColor: "#990D35",
+                      backgroundColor: "#F5FBEF",
+                    }}
+                  >
+                    {/* HEADER HARI */}
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+                      <div>
+                        <h2
+                          className="text-xl font-semibold"
+                          style={{ color: "#990D35" }}
+                        >
+                          Hari ke-{idx + 1}
+                        </h2>
+                        <p
+                          className="text-sm"
+                          style={{ color: "#050505", opacity: 0.6 }}
+                        >
+                          {new Date(hari.tanggal).toLocaleDateString("id-ID", {
+                            weekday: "long",
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                          })}
+                        </p>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => addLapanganKeHari(hari.tanggal)}
+                          disabled={addingLapanganTo === hari.tanggal}
+                          className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium hover:opacity-80 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                          style={{
+                            backgroundColor: "rgba(153, 13, 53, 0.1)",
+                            color: "#990D35",
+                          }}
+                        >
+                          {addingLapanganTo === hari.tanggal ? (
+                            <>
+                              <Loader size={14} className="animate-spin" />
+                              Menambah...
+                            </>
+                          ) : (
+                            <>
+                              <Plus size={14} />
+                              Tambah Lapangan
+                            </>
+                          )}
+                        </button>
+                        <button
+                          onClick={() => hapusHari(hari.tanggal)}
+                          className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium hover:opacity-80 transition-opacity text-red-600"
+                          style={{ backgroundColor: "rgba(220, 38, 38, 0.1)" }}
+                          title="Hapus Hari"
+                        >
+                          <Trash2 size={14} />
+                          Hapus Hari
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* LAPANGAN - GRID 3 KOLOM */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {hari.lapangan.map((lap) => (
+                        <div
+                          key={lap.id_lapangan}
+                          className="rounded-xl border p-4 space-y-4 relative"
+                          style={{
+                            borderColor: "#990D35",
+                            backgroundColor: "#FFFFFF",
+                          }}
+                        >
+                          {/* Loading Overlay */}
+                          {savingKelas[lap.id_lapangan] && (
+                            <div className="absolute inset-0 bg-white bg-opacity-70 flex items-center justify-center rounded-xl z-10">
+                              <div className="flex flex-col items-center gap-2">
+                                <Loader
+                                  className="animate-spin"
+                                  size={24}
+                                  style={{ color: "#990D35" }}
+                                />
+                                <span
+                                  className="text-xs font-medium"
+                                  style={{ color: "#990D35" }}
+                                >
+                                  Menyimpan...
+                                </span>
+                              </div>
+                            </div>
+                          )}
+
+                          <div className="flex justify-between items-center">
+                            <h3
+                              className="font-semibold"
+                              style={{ color: "#050505" }}
+                            >
+                              Lapangan {lap.nama_lapangan}
+                            </h3>
+                            <button
+                              onClick={() => hapusLapangan(lap.id_lapangan)}
+                              className="text-red-600 hover:text-red-800 transition-colors"
+                              title="Hapus Lapangan"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+
+                          {/* KELAS KEJUARAAN */}
+                          <div>
+                            <p
+                              className="text-sm font-medium mb-2"
+                              style={{ color: "#990D35" }}
+                            >
+                              Pilih Kelas Kejuaraan:
+                            </p>
+
+                            <div
+                              className="max-h-64 overflow-y-auto space-y-2 border p-3 rounded-lg"
+                              style={{ backgroundColor: "#F5FBEF" }}
+                            >
+                              {kelasKejuaraanList &&
+                              kelasKejuaraanList.length > 0 ? (
+                                kelasKejuaraanList.map((kelas) => {
+                                  const approvedPeserta =
+                                    approvedPesertaByKelas[
+                                      kelas.id_kelas_kejuaraan
+                                    ] || [];
+                                  const namaKelasDisplay =
+                                    generateNamaKelas(kelas);
+
+                                  return (
+                                    <label
+                                      key={kelas.id_kelas_kejuaraan}
+                                      className="flex flex-col border rounded-md p-2 hover:bg-white cursor-pointer transition-colors"
+                                      style={{
+                                        borderColor: "rgba(153,13,53,0.3)",
+                                      }}
+                                    >
+                                      <div className="flex justify-between items-center">
+                                        <div className="flex items-center gap-2">
+                                          <input
+                                            type="checkbox"
+                                            checked={lap.kelasDipilih.includes(
+                                              kelas.id_kelas_kejuaraan
+                                            )}
+                                            onChange={() =>
+                                              toggleKelasAndSave(
+                                                hari.tanggal,
+                                                lap.id_lapangan,
+                                                kelas.id_kelas_kejuaraan
+                                              )
+                                            }
+                                            disabled={
+                                              savingKelas[lap.id_lapangan]
+                                            }
+                                            className="accent-[#990D35] cursor-pointer disabled:opacity-50"
+                                          />
+                                          <span className="text-xs font-medium text-[#050505]">
+                                            {namaKelasDisplay}
+                                          </span>
+                                        </div>
+                                        <span
+                                          className="text-xs px-2 py-1 rounded-md font-medium whitespace-nowrap"
+                                          style={{
+                                            backgroundColor:
+                                              "rgba(153,13,53,0.1)",
+                                            color: "#990D35",
+                                          }}
+                                        >
+                                          {approvedPeserta.length}
+                                        </span>
+                                      </div>
+
+                                      {/* DAFTAR PESERTA */}
+                                      {approvedPeserta.length > 0 &&
+                                        lap.kelasDipilih.includes(
+                                          kelas.id_kelas_kejuaraan
+                                        ) && (
+                                          <ul className="mt-2 ml-6 list-disc text-xs text-[#050505] space-y-1">
+                                            {approvedPeserta
+                                              .slice(0, 3)
+                                              .map((p) => (
+                                                <li key={p.id_peserta}>
+                                                  <span className="font-medium">
+                                                    {p.nama_peserta}
+                                                  </span>
+                                                  {p.dojang && (
+                                                    <span className="text-[#990D35] ml-1">
+                                                      ({p.dojang})
+                                                    </span>
+                                                  )}
+                                                </li>
+                                              ))}
+                                            {approvedPeserta.length > 3 && (
+                                              <li className="text-[#990D35] font-medium">
+                                                +{approvedPeserta.length - 3}{" "}
+                                                lainnya
+                                              </li>
+                                            )}
+                                          </ul>
+                                        )}
+                                    </label>
+                                  );
+                                })
+                              ) : (
+                                <div className="text-center py-8">
+                                  <p
+                                    className="text-xs font-medium mb-1"
+                                    style={{ color: "#050505", opacity: 0.6 }}
+                                  >
+                                    Tidak ada kelas kejuaraan tersedia
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* INFO KELAS TERPILIH */}
+                          {lap.kelasDipilih.length > 0 && (
+                            <div
+                              className="mt-3 p-2 rounded-md"
+                              style={{
+                                backgroundColor: "rgba(153,13,53,0.05)",
+                              }}
+                            >
+                              <p
+                                className="text-xs font-medium mb-1"
+                                style={{ color: "#990D35" }}
+                              >
+                                Kelas: {lap.kelasDipilih.length}
+                              </p>
+                              <p
+                                className="text-xs"
+                                style={{ color: "#050505", opacity: 0.7 }}
+                              >
+                                Peserta:{" "}
+                                {lap.kelasDipilih.reduce(
+                                  (total, kelasId) =>
+                                    total +
+                                    (approvedPesertaByKelas[kelasId]?.length ||
+                                      0),
+                                  0
+                                )}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))
+              )}
+            </>
+          )}
+
+        {/* TAB ANTRIAN */}
+        {activeTab === "antrian" &&
+          !loadingKelasKejuaraan &&
+          !loadingAtlet &&
+          !loadingHari && (
+            <>
+              {hariAntrianList.length === 0 ? (
+                <div className="text-center py-12">
+                  <ClipboardList
+                    size={48}
+                    className="mx-auto mb-3"
+                    style={{ color: "#990D35", opacity: 0.5 }}
+                  />
+                  <p
+                    className="text-sm font-medium mb-2"
+                    style={{ color: "#050505", opacity: 0.6 }}
+                  >
+                    Belum ada jadwal yang dibuat
+                  </p>
+                  <p
+                    className="text-xs"
+                    style={{ color: "#050505", opacity: 0.5 }}
+                  >
+                    Silakan buat jadwal terlebih dahulu di tab "Setup Jadwal"
+                  </p>
+                </div>
+              ) : (
+                hariAntrianList.map((hari, idx) => {
+                  const hariJadwal = hariList.find(
+                    (h) => h.tanggal === hari.tanggal
+                  );
+                  if (!hariJadwal || hariJadwal.lapangan.length === 0)
+                    return null;
+
+                  return (
+                    <div
+                      key={hari.tanggal}
+                      className="rounded-xl shadow-sm border p-6 mb-6"
+                      style={{
+                        borderColor: "#990D35",
+                        backgroundColor: "#F5FBEF",
+                      }}
+                    >
+                      <div className="mb-4">
+                        <h2
+                          className="text-xl font-semibold"
+                          style={{ color: "#990D35" }}
+                        >
+                          Hari ke-{idx + 1}
+                        </h2>
+                        <p
+                          className="text-sm"
+                          style={{ color: "#050505", opacity: 0.6 }}
+                        >
+                          {new Date(hari.tanggal).toLocaleDateString("id-ID", {
+                            weekday: "long",
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                          })}
+                        </p>
+                      </div>
+
+                      {/* LAPANGAN - GRID 3 KOLOM */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {hariJadwal.lapangan.map((lap) => (
+                          <div
+                            key={lap.id_lapangan}
+                            className="rounded-xl border p-4"
+                            style={{
+                              borderColor: "#990D35",
+                              backgroundColor: "#FFFFFF",
+                            }}
+                          >
+                            <h3
+                              className="font-semibold mb-4"
+                              style={{ color: "#050505" }}
+                            >
+                              Lapangan {lap.nama_lapangan}
+                            </h3>
+
+                            <div className="space-y-3">
+                              {/* Bertanding */}
+                              <div>
+                                <label
+                                  className="block text-xs font-medium mb-1"
+                                  style={{ color: "#16a34a" }}
+                                >
+                                  🟢 Bertanding
+                                </label>
+                                <input
+                                  type="number"
+                                  min="1"
+                                  max="10"
+                                  value={
+                                    hari.lapanganAntrian[lap.id_lapangan]
+                                      ?.bertanding || 1
+                                  }
+                                  onChange={(e) =>
+                                    updateAntrian(
+                                      hari.tanggal,
+                                      lap.id_lapangan,
+                                      "bertanding",
+                                      parseInt(e.target.value) || 1
+                                    )
+                                  }
+                                  className="w-full px-3 py-2 text-sm rounded-lg border-2 focus:outline-none focus:ring-2"
+                                  style={{
+                                    borderColor: "#16a34a",
+                                    backgroundColor: "rgba(22, 163, 74, 0.1)",
+                                  }}
+                                />
+                              </div>
+
+                              {/* Persiapan */}
+                              <div>
+                                <label
+                                  className="block text-xs font-medium mb-1"
+                                  style={{ color: "#ea580c" }}
+                                >
+                                  🟠 Persiapan
+                                </label>
+                                <input
+                                  type="number"
+                                  min="1"
+                                  max="10"
+                                  value={
+                                    hari.lapanganAntrian[lap.id_lapangan]
+                                      ?.persiapan || 1
+                                  }
+                                  onChange={(e) =>
+                                    updateAntrian(
+                                      hari.tanggal,
+                                      lap.id_lapangan,
+                                      "persiapan",
+                                      parseInt(e.target.value) || 1
+                                    )
+                                  }
+                                  className="w-full px-3 py-2 text-sm rounded-lg border-2 focus:outline-none focus:ring-2"
+                                  style={{
+                                    borderColor: "#ea580c",
+                                    backgroundColor: "rgba(234, 88, 12, 0.1)",
+                                  }}
+                                />
+                              </div>
+
+                              {/* Pemanasan */}
+                              <div>
+                                <label
+                                  className="block text-xs font-medium mb-1"
+                                  style={{ color: "#ca8a04" }}
+                                >
+                                  🟡 Pemanasan
+                                </label>
+                                <input
+                                  type="number"
+                                  min="1"
+                                  max="10"
+                                  value={
+                                    hari.lapanganAntrian[lap.id_lapangan]
+                                      ?.pemanasan || 1
+                                  }
+                                  onChange={(e) =>
+                                    updateAntrian(
+                                      hari.tanggal,
+                                      lap.id_lapangan,
+                                      "pemanasan",
+                                      parseInt(e.target.value) || 1
+                                    )
+                                  }
+                                  className="w-full px-3 py-2 text-sm rounded-lg border-2 focus:outline-none focus:ring-2"
+                                  style={{
+                                    borderColor: "#ca8a04",
+                                    backgroundColor: "rgba(202, 138, 4, 0.1)",
+                                  }}
+                                />
+                              </div>
+                            </div>
+
+                            {/* Info Kelas & Bagan */}
+                            {lap.kelasDipilih.length > 0 && (
+                              <div className="mt-4 space-y-3">
+                                <div
+                                  className="p-3 rounded-lg"
+                                  style={{
+                                    backgroundColor: "rgba(153,13,53,0.05)",
+                                  }}
+                                >
+                                  <p
+                                    className="text-xs font-medium mb-1"
+                                    style={{ color: "#990D35" }}
+                                  >
+                                    Kelas: {lap.kelasDipilih.length}
+                                  </p>
+                                  <p
+                                    className="text-xs"
+                                    style={{ color: "#050505", opacity: 0.7 }}
+                                  >
+                                    Peserta:{" "}
+                                    {lap.kelasDipilih.reduce(
+                                      (total, kelasId) =>
+                                        total +
+                                        (approvedPesertaByKelas[kelasId]
+                                          ?.length || 0),
+                                      0
+                                    )}
+                                  </p>
+                                </div>
+
+                                {/* Bagan Info per Kelas */}
+                                {loadingBagan ? (
+                                  <div className="flex items-center justify-center py-4">
+                                    <Loader
+                                      size={16}
+                                      className="animate-spin"
+                                      style={{ color: "#990D35" }}
+                                    />
+                                    <span
+                                      className="text-xs ml-2"
+                                      style={{ color: "#990D35" }}
+                                    >
+                                      Memuat info bagan...
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <div className="space-y-2">
+                                    {lap.kelasDipilih.map((kelasId) => {
+                                      const baganInfo = baganInfoMap[kelasId];
+                                      if (!baganInfo) return null;
+
+                                      return (
+                                        <div
+                                          key={kelasId}
+                                          className="p-3 rounded-lg border"
+                                          style={{
+                                            backgroundColor: "#F5FBEF",
+                                            borderColor: "rgba(153,13,53,0.2)",
+                                          }}
+                                        >
+                                          <div className="flex items-start justify-between gap-2 mb-2">
+                                            <p
+                                              className="text-xs font-medium flex-1"
+                                              style={{ color: "#050505" }}
+                                            >
+                                              {baganInfo.nama_kelas}
+                                            </p>
+                                            {baganInfo.total_matches > 0 ? (
+                                              <span
+                                                className="text-xs px-2 py-0.5 rounded-full font-bold whitespace-nowrap"
+                                                style={{
+                                                  backgroundColor:
+                                                    "rgba(34, 197, 94, 0.2)",
+                                                  color: "#22c55e",
+                                                }}
+                                              >
+                                                ✓ Siap
+                                              </span>
+                                            ) : (
+                                              <span
+                                                className="text-xs px-2 py-0.5 rounded-full font-bold whitespace-nowrap"
+                                                style={{
+                                                  backgroundColor:
+                                                    "rgba(245, 183, 0, 0.2)",
+                                                  color: "#F5B700",
+                                                }}
+                                              >
+                                                Belum dibuat
+                                              </span>
+                                            )}
+                                          </div>
+
+                                          <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-2">
+                                              <GitBranch
+                                                size={14}
+                                                style={{ color: "#990D35" }}
+                                              />
+                                              <span
+                                                className="text-xs font-medium"
+                                                style={{ color: "#990D35" }}
+                                              >
+                                                {baganInfo.total_matches > 0
+                                                  ? `${baganInfo.total_matches} Match`
+                                                  : "0 Match"}
+                                              </span>
+                                            </div>
+
+                                            <button
+                                              onClick={() =>
+                                                handleLihatBagan(kelasId)
+                                              }
+                                              className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium transition-all hover:opacity-80"
+                                              style={{
+                                                backgroundColor: "#990D35",
+                                                color: "white",
+                                              }}
+                                            >
+                                              <Eye size={12} />
+                                              Lihat
+                                            </button>
+                                          </div>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </>
+          )}
       </div>
     </div>
   );
 };
 
-export default DrawingBagan;
+export default JadwalPertandingan;
