@@ -1068,7 +1068,6 @@ const JadwalPertandingan: React.FC = () => {
                             >
                               Lapangan {lap.nama_lapangan}
                             </h3>
-
                             <div className="space-y-3">
                               {/* Bertanding */}
                               <div>
@@ -1080,20 +1079,22 @@ const JadwalPertandingan: React.FC = () => {
                                 </label>
                                 <input
                                   type="number"
-                                  min="1"
-                                  max="10"
                                   value={
                                     hari.lapanganAntrian[lap.id_lapangan]
-                                      ?.bertanding || 1
+                                      ?.bertanding || ""
                                   }
-                                  onChange={(e) =>
-                                    updateAntrian(
-                                      hari.tanggal,
-                                      lap.id_lapangan,
-                                      "bertanding",
-                                      parseInt(e.target.value) || 1
-                                    )
-                                  }
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    if (val === "" || /^\d+$/.test(val)) {
+                                      updateAntrian(
+                                        hari.tanggal,
+                                        lap.id_lapangan,
+                                        "bertanding",
+                                        val === "" ? 0 : parseInt(val)
+                                      );
+                                    }
+                                  }}
+                                  placeholder="Masukkan jumlah"
                                   className="w-full px-3 py-2 text-sm rounded-lg border-2 focus:outline-none focus:ring-2"
                                   style={{
                                     borderColor: "#16a34a",
@@ -1112,20 +1113,22 @@ const JadwalPertandingan: React.FC = () => {
                                 </label>
                                 <input
                                   type="number"
-                                  min="1"
-                                  max="10"
                                   value={
                                     hari.lapanganAntrian[lap.id_lapangan]
-                                      ?.persiapan || 1
+                                      ?.persiapan || ""
                                   }
-                                  onChange={(e) =>
-                                    updateAntrian(
-                                      hari.tanggal,
-                                      lap.id_lapangan,
-                                      "persiapan",
-                                      parseInt(e.target.value) || 1
-                                    )
-                                  }
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    if (val === "" || /^\d+$/.test(val)) {
+                                      updateAntrian(
+                                        hari.tanggal,
+                                        lap.id_lapangan,
+                                        "persiapan",
+                                        val === "" ? 0 : parseInt(val)
+                                      );
+                                    }
+                                  }}
+                                  placeholder="Masukkan jumlah"
                                   className="w-full px-3 py-2 text-sm rounded-lg border-2 focus:outline-none focus:ring-2"
                                   style={{
                                     borderColor: "#ea580c",
@@ -1144,20 +1147,22 @@ const JadwalPertandingan: React.FC = () => {
                                 </label>
                                 <input
                                   type="number"
-                                  min="1"
-                                  max="10"
                                   value={
                                     hari.lapanganAntrian[lap.id_lapangan]
-                                      ?.pemanasan || 1
+                                      ?.pemanasan || ""
                                   }
-                                  onChange={(e) =>
-                                    updateAntrian(
-                                      hari.tanggal,
-                                      lap.id_lapangan,
-                                      "pemanasan",
-                                      parseInt(e.target.value) || 1
-                                    )
-                                  }
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    if (val === "" || /^\d+$/.test(val)) {
+                                      updateAntrian(
+                                        hari.tanggal,
+                                        lap.id_lapangan,
+                                        "pemanasan",
+                                        val === "" ? 0 : parseInt(val)
+                                      );
+                                    }
+                                  }}
+                                  placeholder="Masukkan jumlah"
                                   className="w-full px-3 py-2 text-sm rounded-lg border-2 focus:outline-none focus:ring-2"
                                   style={{
                                     borderColor: "#ca8a04",
