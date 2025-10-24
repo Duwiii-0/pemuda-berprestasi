@@ -655,31 +655,47 @@ static async updateMatch(req: Request, res: Response) {
       scoreA, 
       scoreB, 
       tanggalPertandingan, 
-      nomorAntrian,     // ⭐ NEW FIELD
-      nomorLapangan,    // ⭐ NEW FIELD
-      nomorPartai       // Keep for backward compatibility
+      nomorAntrian,
+      nomorLapangan,
+      nomorPartai
     } = req.body;
 
     const kompetisiId = parseInt(id);
     const matchIdInt = parseInt(matchId);
-    const winnerIdInt = parseInt(winnerId);
-    const scoreAInt = parseInt(scoreA);
-    const scoreBInt = parseInt(scoreB);
 
-    if (isNaN(kompetisiId) || isNaN(matchIdInt) || isNaN(winnerIdInt)) {
+    if (isNaN(kompetisiId) || isNaN(matchIdInt)) {
       return sendError(res, 'Parameter tidak valid', 400);
     }
 
-    if (isNaN(scoreAInt) || isNaN(scoreBInt)) {
-      return sendError(res, 'Skor tidak valid', 400);
-    }
+    // ⭐ DETECT UPDATE MODE
+    const isResultUpdate = winnerId !== undefined && winnerId !== null;
+    const isScheduleUpdate = nomorAntrian !== undefined || nomorLapangan !== undefined || tanggalPertandingan !== undefined;
+    
+    console.log(`\n📝 Update Match Request:`);
+    console.log(`   Match ID: ${matchIdInt}`);
+    console.log(`   Mode: ${isResultUpdate ? 'RESULT' : 'SCHEDULE'} update`);
 
-    if (scoreAInt < 0 || scoreBInt < 0) {
-      return sendError(res, 'Skor tidak boleh negatif', 400);
-    }
+    // ⭐ VALIDATION FOR RESULT UPDATE MODE
+    if (isResultUpdate) {
+      const winnerIdInt = parseInt(winnerId);
+      const scoreAInt = parseInt(scoreA);
+      const scoreBInt = parseInt(scoreB);
 
-    if (scoreAInt === scoreBInt) {
-      return sendError(res, 'Pertandingan tidak boleh berakhir seri', 400);
+      if (isNaN(winnerIdInt)) {
+        return sendError(res, 'Winner ID tidak valid', 400);
+      }
+
+      if (isNaN(scoreAInt) || isNaN(scoreBInt)) {
+        return sendError(res, 'Skor tidak valid', 400);
+      }
+
+      if (scoreAInt < 0 || scoreBInt < 0) {
+        return sendError(res, 'Skor tidak boleh negatif', 400);
+      }
+
+      if (scoreAInt === scoreBInt) {
+        return sendError(res, 'Pertandingan tidak boleh berakhir seri', 400);
+      }
     }
 
     // Parse tanggal if provided
@@ -691,7 +707,7 @@ static async updateMatch(req: Request, res: Response) {
       }
     }
     
-    // ⭐ Parse queue fields
+    // Parse queue fields
     let parsedAntrian: number | null = null;
     let parsedLapangan: string | null = null;
     
@@ -704,7 +720,6 @@ static async updateMatch(req: Request, res: Response) {
     
     if (nomorLapangan !== undefined && nomorLapangan !== null) {
       parsedLapangan = String(nomorLapangan).toUpperCase().trim();
-      // Validate format (single uppercase letter)
       if (!/^[A-Z]$/.test(parsedLapangan)) {
         return sendError(res, 'Nomor lapangan harus huruf kapital tunggal (A-Z)', 400);
       }
@@ -717,7 +732,7 @@ static async updateMatch(req: Request, res: Response) {
     }
 
     if (user.role !== 'ADMIN' && user.role !== 'ADMIN_KOMPETISI') {
-      return sendError(res, 'Tidak memiliki akses untuk mengupdate hasil pertandingan', 403);
+      return sendError(res, 'Tidak memiliki akses untuk mengupdate pertandingan', 403);
     }
 
     // Verify match exists and belongs to the competition
@@ -738,37 +753,58 @@ static async updateMatch(req: Request, res: Response) {
       return sendError(res, 'Pertandingan tidak ditemukan', 404);
     }
 
-    if (!match.peserta_a || !match.peserta_b) {
-      return sendError(res, 'Pertandingan belum lengkap (peserta kurang)', 400);
+    // ⭐ ONLY validate participants if result update
+    if (isResultUpdate) {
+      if (!match.peserta_a || !match.peserta_b) {
+        return sendError(res, 'Pertandingan belum lengkap (peserta kurang)', 400);
+      }
+
+      const winnerIdInt = parseInt(winnerId);
+      const scoreAInt = parseInt(scoreA);
+      const scoreBInt = parseInt(scoreB);
+
+      // Validate winner
+      const validWinnerIds = [match.id_peserta_a, match.id_peserta_b].filter(Boolean);
+      if (!validWinnerIds.includes(winnerIdInt)) {
+        return sendError(res, 'Winner ID tidak valid untuk pertandingan ini', 400);
+      }
+
+      // Validate score matches winner
+      const isWinnerA = winnerIdInt === match.id_peserta_a;
+      if ((isWinnerA && scoreAInt <= scoreBInt) || (!isWinnerA && scoreBInt <= scoreAInt)) {
+        return sendError(res, 'Skor tidak sesuai dengan pemenang', 400);
+      }
+
+      // Update with result
+      const updatedMatch = await BracketService.updateMatch(
+        matchIdInt, 
+        winnerIdInt, 
+        scoreAInt, 
+        scoreBInt,
+        parsedTanggal,
+        parsedAntrian,
+        parsedLapangan
+      );
+
+      return sendSuccess(res, updatedMatch, 'Hasil pertandingan berhasil diupdate');
+    } else {
+      // ⭐ SCHEDULE UPDATE - No winner/scores
+      const updatedMatch = await BracketService.updateMatch(
+        matchIdInt,
+        null,              // No winner
+        null,              // No scoreA
+        null,              // No scoreB
+        parsedTanggal,
+        parsedAntrian,
+        parsedLapangan
+      );
+
+      return sendSuccess(res, updatedMatch, 'Jadwal pertandingan berhasil diupdate');
     }
 
-    // Validate winner
-    const validWinnerIds = [match.id_peserta_a, match.id_peserta_b].filter(Boolean);
-    if (!validWinnerIds.includes(winnerIdInt)) {
-      return sendError(res, 'Winner ID tidak valid untuk pertandingan ini', 400);
-    }
-
-    // Validate score matches winner
-    const isWinnerA = winnerIdInt === match.id_peserta_a;
-    if ((isWinnerA && scoreAInt <= scoreBInt) || (!isWinnerA && scoreBInt <= scoreAInt)) {
-      return sendError(res, 'Skor tidak sesuai dengan pemenang', 400);
-    }
-
-    // ⭐ Update match with new queue fields
-    const updatedMatch = await BracketService.updateMatch(
-      matchIdInt, 
-      winnerIdInt, 
-      scoreAInt, 
-      scoreBInt,
-      parsedTanggal,
-      parsedAntrian,     // ⭐ NEW
-      parsedLapangan     // ⭐ NEW
-    );
-
-    return sendSuccess(res, updatedMatch, 'Hasil pertandingan berhasil diupdate');
   } catch (error: any) {
     console.error('Controller - Error updating match:', error);
-    return sendError(res, error.message || 'Gagal mengupdate hasil pertandingan', 400);
+    return sendError(res, error.message || 'Gagal mengupdate pertandingan', 400);
   }
 }
 

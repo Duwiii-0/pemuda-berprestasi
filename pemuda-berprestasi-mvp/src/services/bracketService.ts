@@ -876,106 +876,125 @@ static async generatePemulaBracket(
   /**
    * Update match result with queue fields
    */
-  static async updateMatch(
-    matchId: number, 
-    winnerId: number, 
-    scoreA: number, 
-    scoreB: number,
-    tanggalPertandingan?: Date | null,
-    nomorAntrian?: number | null,        // ⭐ NEW PARAMETER
-    nomorLapangan?: string | null        // ⭐ NEW PARAMETER
-  ): Promise<Match> {
-    try {
-      const updateData: any = {
-        skor_a: scoreA,
-        skor_b: scoreB
-      };
+static async updateMatch(
+  matchId: number, 
+  winnerId?: number | null,             // ⭐ NOW OPTIONAL
+  scoreA?: number | null,               // ⭐ NOW OPTIONAL
+  scoreB?: number | null,               // ⭐ NOW OPTIONAL
+  tanggalPertandingan?: Date | null,
+  nomorAntrian?: number | null,
+  nomorLapangan?: string | null
+): Promise<Match> {
+  try {
+    const updateData: any = {};
+    
+    // ⭐ MODE DETECTION
+    const isResultUpdate = winnerId !== undefined && winnerId !== null;
+    const isScheduleUpdate = nomorAntrian !== undefined || nomorLapangan !== undefined || tanggalPertandingan !== undefined;
+    
+    console.log(`🔄 Update mode: ${isResultUpdate ? 'RESULT' : 'SCHEDULE'}`);
 
-      // Add optional fields if provided
-      if (tanggalPertandingan !== undefined) {
-        updateData.tanggal_pertandingan = tanggalPertandingan;
-      }
+    // ⭐ RESULT UPDATE - Update scores & advance winner
+    if (isResultUpdate) {
+      updateData.skor_a = scoreA;
+      updateData.skor_b = scoreB;
       
-      // ⭐ NEW: Handle queue fields
-      if (nomorAntrian !== undefined) {
-        updateData.nomor_antrian = nomorAntrian;
-      }
-      
-      if (nomorLapangan !== undefined) {
-        updateData.nomor_lapangan = nomorLapangan;
-      }
-      
-      // ⭐ AUTO-GENERATE nomor_partai if both queue fields provided
-      if (nomorAntrian && nomorLapangan) {
-        updateData.nomor_partai = `${nomorAntrian}${nomorLapangan}`;
-        console.log(`🎯 Auto-generated nomor_partai: ${updateData.nomor_partai}`);
-      }
-
-      const updatedMatch = await prisma.tb_match.update({
-        where: { id_match: matchId },
-        data: updateData,
-        include: {
-          peserta_a: {
-            include: {
-              atlet: {
-                include: {
-                  dojang: true
-                }
-              },
-              anggota_tim: {
-                include: {
-                  atlet: {
-                    include: {
-                      dojang: true
-                    }
-                  }
-                }
-              }
-            }
-          },
-          peserta_b: {
-            include: {
-              atlet: {
-                include: {
-                  dojang: true
-                }
-              },
-              anggota_tim: {
-                include: {
-                  atlet: {
-                    include: {
-                      dojang: true
-                    }
-                  }
-                }
-              }
-            }
-          },
-          venue: true
-        }
-      });
-
-      // Advance winner to next round
-      await this.advanceWinnerToNextRound(updatedMatch, winnerId);
-
-      return {
-        id: updatedMatch.id_match,
-        round: updatedMatch.ronde,
-        position: 0,
-        participant1: updatedMatch.peserta_a ? this.transformParticipant(updatedMatch.peserta_a) : null,
-        participant2: updatedMatch.peserta_b ? this.transformParticipant(updatedMatch.peserta_b) : null,
-        winner: this.determineWinner(updatedMatch),
-        scoreA: updatedMatch.skor_a,
-        scoreB: updatedMatch.skor_b,
-        status: this.determineMatchStatus(updatedMatch),
-        tanggalPertandingan: updatedMatch.tanggal_pertandingan,
-        nomorPartai: updatedMatch.nomor_partai
-      };
-    } catch (error: any) {
-      console.error('Error updating match:', error);
-      throw new Error('Failed to update match');
+      console.log(`   📊 Updating scores: ${scoreA} - ${scoreB}, Winner: ${winnerId}`);
     }
+
+    // ⭐ SCHEDULING UPDATE - Update queue fields
+    if (tanggalPertandingan !== undefined) {
+      updateData.tanggal_pertandingan = tanggalPertandingan;
+      console.log(`   📅 Updating tanggal: ${tanggalPertandingan}`);
+    }
+    
+    if (nomorAntrian !== undefined) {
+      updateData.nomor_antrian = nomorAntrian;
+      console.log(`   🔢 Updating nomor antrian: ${nomorAntrian}`);
+    }
+    
+    if (nomorLapangan !== undefined) {
+      updateData.nomor_lapangan = nomorLapangan;
+      console.log(`   🏟️ Updating nomor lapangan: ${nomorLapangan}`);
+    }
+    
+    // ⭐ AUTO-GENERATE nomor_partai if both queue fields exist
+    if (nomorAntrian && nomorLapangan) {
+      updateData.nomor_partai = `${nomorAntrian}${nomorLapangan}`;
+      console.log(`   🎯 Auto-generated nomor_partai: ${updateData.nomor_partai}`);
+    }
+
+    // Execute update
+    const updatedMatch = await prisma.tb_match.update({
+      where: { id_match: matchId },
+      data: updateData,
+      include: {
+        peserta_a: {
+          include: {
+            atlet: {
+              include: {
+                dojang: true
+              }
+            },
+            anggota_tim: {
+              include: {
+                atlet: {
+                  include: {
+                    dojang: true
+                  }
+                }
+              }
+            }
+          }
+        },
+        peserta_b: {
+          include: {
+            atlet: {
+              include: {
+                dojang: true
+              }
+            },
+            anggota_tim: {
+              include: {
+                atlet: {
+                  include: {
+                    dojang: true
+                  }
+                }
+              }
+            }
+          }
+        },
+        venue: true
+      }
+    });
+
+    // ⭐ ONLY advance winner if result update mode
+    if (isResultUpdate && winnerId) {
+      console.log(`   ➡️ Advancing winner to next round...`);
+      await this.advanceWinnerToNextRound(updatedMatch, winnerId);
+    }
+
+    return {
+      id: updatedMatch.id_match,
+      round: updatedMatch.ronde,
+      position: 0,
+      participant1: updatedMatch.peserta_a ? this.transformParticipant(updatedMatch.peserta_a) : null,
+      participant2: updatedMatch.peserta_b ? this.transformParticipant(updatedMatch.peserta_b) : null,
+      winner: this.determineWinner(updatedMatch),
+      scoreA: updatedMatch.skor_a,
+      scoreB: updatedMatch.skor_b,
+      status: this.determineMatchStatus(updatedMatch),
+      tanggalPertandingan: updatedMatch.tanggal_pertandingan,
+      nomorPartai: updatedMatch.nomor_partai,
+      nomorAntrian: updatedMatch.nomor_antrian,
+      nomorLapangan: updatedMatch.nomor_lapangan
+    };
+  } catch (error: any) {
+    console.error('❌ Error updating match:', error);
+    throw new Error('Failed to update match');
   }
+}
 
   /**
    * Advance winner to next round

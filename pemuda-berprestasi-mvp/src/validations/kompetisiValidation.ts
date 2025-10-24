@@ -157,100 +157,112 @@ export const kompetisiValidation = {
       })
   }),
 
-  updateMatch: Joi.object({
-    winnerId: Joi.number()
-      .integer()
-      .positive()
-      .required()
-      .messages({
-        'number.base': 'ID pemenang harus berupa angka',
-        'number.integer': 'ID pemenang harus berupa bilangan bulat',
-        'number.positive': 'ID pemenang harus positif',
-        'any.required': 'ID pemenang wajib diisi'
-      }),
-    
-    scoreA: Joi.number()
-      .integer()
-      .min(0)
-      .max(100)
-      .required()
-      .messages({
-        'number.base': 'Skor A harus berupa angka',
-        'number.integer': 'Skor A harus berupa bilangan bulat',
-        'number.min': 'Skor A tidak boleh negatif',
-        'number.max': 'Skor A maksimal 100',
-        'any.required': 'Skor A wajib diisi'
-      }),
-    
-    scoreB: Joi.number()
-      .integer()
-      .min(0)
-      .max(100)
-      .required()
-      .messages({
-        'number.base': 'Skor B harus berupa angka',
-        'number.integer': 'Skor B harus berupa bilangan bulat',
-        'number.min': 'Skor B tidak boleh negatif',
-        'number.max': 'Skor B maksimal 100',
-        'any.required': 'Skor B wajib diisi'
-      }),
-    
-    // ⭐ TAMBAHAN BARU - Optional fields
-    tanggalPertandingan: Joi.date()
-      .optional()
-      .allow(null)
-      .messages({
-        'date.base': 'Format tanggal tidak valid'
-      }),
-    
-    nomorAntrian: Joi.number()
-      .integer()
-      .min(1)
-      .optional()
-      .allow(null)
-      .messages({
-        'number.base': 'Nomor antrian harus berupa angka',
-        'number.integer': 'Nomor antrian harus bilangan bulat',
-        'number.min': 'Nomor antrian minimal 1'
-      }),
-    
-    nomorLapangan: Joi.string()
-      .max(10)
-      .uppercase()
-      .pattern(/^[A-Z]$/)
-      .optional()
-      .allow(null)
-      .messages({
-        'string.base': 'Nomor lapangan harus berupa teks',
-        'string.max': 'Nomor lapangan maksimal 10 karakter',
-        'string.pattern.base': 'Nomor lapangan harus huruf kapital tunggal (A-Z)'
-      }),
-    
-    nomorPartai: Joi.string()
-      .max(50)
-      .optional()
-      .allow(null)
-      .messages({
-        'string.max': 'Nomor partai maksimal 50 karakter'
-      })
-  })
+updateMatch: Joi.object({
+  // ⭐ Winner & Scores - OPTIONAL (required only when updating results)
+  winnerId: Joi.number()
+    .integer()
+    .positive()
+    .optional()
+    .messages({
+      'number.base': 'ID pemenang harus berupa angka',
+      'number.integer': 'ID pemenang harus berupa bilangan bulat',
+      'number.positive': 'ID pemenang harus positif'
+    }),
+  
+  scoreA: Joi.number()
+    .integer()
+    .min(0)
+    .max(100)
+    .optional()
+    .messages({
+      'number.base': 'Skor A harus berupa angka',
+      'number.integer': 'Skor A harus berupa bilangan bulat',
+      'number.min': 'Skor A tidak boleh negatif',
+      'number.max': 'Skor A maksimal 100'
+    }),
+  
+  scoreB: Joi.number()
+    .integer()
+    .min(0)
+    .max(100)
+    .optional()
+    .messages({
+      'number.base': 'Skor B harus berupa angka',
+      'number.integer': 'Skor B harus berupa bilangan bulat',
+      'number.min': 'Skor B tidak boleh negatif',
+      'number.max': 'Skor B maksimal 100'
+    }),
+  
+  // Scheduling fields - OPTIONAL
+  tanggalPertandingan: Joi.date()
+    .optional()
+    .allow(null)
+    .messages({
+      'date.base': 'Format tanggal tidak valid'
+    }),
+  
+  nomorAntrian: Joi.number()
+    .integer()
+    .min(1)
+    .optional()
+    .allow(null)
+    .messages({
+      'number.base': 'Nomor antrian harus berupa angka',
+      'number.integer': 'Nomor antrian harus bilangan bulat',
+      'number.min': 'Nomor antrian minimal 1'
+    }),
+  
+  nomorLapangan: Joi.string()
+    .max(10)
+    .uppercase()
+    .pattern(/^[A-Z]$/)
+    .optional()
+    .allow(null)
+    .messages({
+      'string.base': 'Nomor lapangan harus berupa teks',
+      'string.max': 'Nomor lapangan maksimal 10 karakter',
+      'string.pattern.base': 'Nomor lapangan harus huruf kapital tunggal (A-Z)'
+    }),
+  
+  nomorPartai: Joi.string()
+    .max(50)
+    .optional()
+    .allow(null)
+    .messages({
+      'string.max': 'Nomor partai maksimal 50 karakter'
+    })
+})
   .custom((value, helpers) => {
-    // Validation: scores must not be equal
+  const hasScores = value.scoreA !== undefined || value.scoreB !== undefined;
+  const hasWinner = value.winnerId !== undefined;
+  
+  // ⭐ MODE 1: RESULT UPDATE (with scores)
+  if (hasScores || hasWinner) {
+    // If updating scores, all 3 fields required
+    if (!value.winnerId || value.scoreA === undefined || value.scoreB === undefined) {
+      return helpers.error('custom.scoresIncomplete');
+    }
+    
+    // Scores must not be equal
     if (value.scoreA === value.scoreB) {
       return helpers.error('custom.tieNotAllowed');
     }
-    
-    // ⭐ VALIDATION BARU: If nomorAntrian OR nomorLapangan provided, both must be provided
-    if ((value.nomorAntrian && !value.nomorLapangan) || (!value.nomorAntrian && value.nomorLapangan)) {
-      return helpers.error('custom.queueFieldsRequired');
-    }
-    
-    return value;
-  }, 'Match result validation')
-  .messages({
-    'custom.tieNotAllowed': 'Pertandingan tidak boleh berakhir seri',
-    'custom.queueFieldsRequired': 'Nomor antrian dan nomor lapangan harus diisi bersamaan'
-  }),
+  }
+  
+  // ⭐ MODE 2: SCHEDULING UPDATE (without scores) - Always allow
+  
+  // ⭐ VALIDATION: If nomorAntrian OR nomorLapangan provided, both must be provided
+  if ((value.nomorAntrian && !value.nomorLapangan) || (!value.nomorAntrian && value.nomorLapangan)) {
+    return helpers.error('custom.queueFieldsRequired');
+  }
+  
+  return value;
+}, 'Match update validation')
+.messages({
+  'custom.tieNotAllowed': 'Pertandingan tidak boleh berakhir seri',
+  'custom.queueFieldsRequired': 'Nomor antrian dan nomor lapangan harus diisi bersamaan',
+  'custom.scoresIncomplete': 'Jika mengisi skor, winnerId, scoreA, dan scoreB harus diisi semua'
+}),
 
   // Validation for shuffle bracket
   shuffleBracket: Joi.object({
