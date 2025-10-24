@@ -55,6 +55,7 @@ const JadwalPertandingan: React.FC = () => {
   const [successMessage, setSuccessMessage] = useState("");
   const [isAdding, setIsAdding] = useState(false);
   const [addingLapanganTo, setAddingLapanganTo] = useState<string | null>(null);
+  const [savingKelas, setSavingKelas] = useState<Record<number, boolean>>({});
 
   useEffect(() => {
     if (!idKompetisi) return;
@@ -91,15 +92,17 @@ const JadwalPertandingan: React.FC = () => {
             id_kompetisi: lap.id_kompetisi,
             nama_lapangan: lap.nama_lapangan,
             tanggal: lap.tanggal,
-            kelasDipilih: lap.kelasDipilih || [], // Dari backend
+            kelasDipilih:
+              lap.kelas_list?.map((kl: any) => kl.id_kelas_kejuaraan) || [],
           })),
         }));
         setHariList(hariData);
+        console.log("✅ Data lapangan berhasil dimuat:", hariData);
       } else {
         throw new Error(data.message || "Gagal memuat data lapangan");
       }
     } catch (err: any) {
-      console.error("Error fetching hari lapangan:", err);
+      console.error("❌ Error fetching hari lapangan:", err);
       setErrorMessage(err.message || "Gagal memuat data lapangan");
     } finally {
       setLoadingHari(false);
@@ -286,30 +289,116 @@ const JadwalPertandingan: React.FC = () => {
     }
   };
 
-  const toggleKelas = (
+  // FUNGSI BARU: Auto-save saat toggle kelas
+  const toggleKelasAndSave = async (
     tanggal: string,
     lapanganId: number,
     kelasId: number
   ) => {
+    // Update UI state dulu (optimistic update)
+    let updatedKelasList: number[] = [];
+
     setHariList((prev) =>
       prev.map((hari) =>
         hari.tanggal === tanggal
           ? {
               ...hari,
-              lapangan: hari.lapangan.map((lap) =>
-                lap.id_lapangan === lapanganId
-                  ? {
-                      ...lap,
-                      kelasDipilih: lap.kelasDipilih.includes(kelasId)
-                        ? lap.kelasDipilih.filter((id) => id !== kelasId)
-                        : [...lap.kelasDipilih, kelasId],
-                    }
-                  : lap
-              ),
+              lapangan: hari.lapangan.map((lap) => {
+                if (lap.id_lapangan === lapanganId) {
+                  const isCurrentlySelected =
+                    lap.kelasDipilih.includes(kelasId);
+                  updatedKelasList = isCurrentlySelected
+                    ? lap.kelasDipilih.filter((id) => id !== kelasId)
+                    : [...lap.kelasDipilih, kelasId];
+
+                  console.log(
+                    `🔄 Toggle kelas ${kelasId} di lapangan ${lapanganId}`
+                  );
+                  console.log(
+                    `   Status: ${
+                      isCurrentlySelected ? "UNCHECK ❌" : "CHECK ✅"
+                    }`
+                  );
+                  console.log(`   Kelas terpilih sekarang:`, updatedKelasList);
+
+                  return {
+                    ...lap,
+                    kelasDipilih: updatedKelasList,
+                  };
+                }
+                return lap;
+              }),
             }
           : hari
       )
     );
+
+    // Set loading state
+    setSavingKelas((prev) => ({ ...prev, [lapanganId]: true }));
+
+    try {
+      console.log(`💾 Menyimpan ke database...`);
+      console.log(`   Lapangan ID: ${lapanganId}`);
+      console.log(`   Kelas IDs:`, updatedKelasList);
+
+      const res = await fetch("/api/lapangan/simpan-kelas", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id_lapangan: lapanganId,
+          kelas_kejuaraan_ids: updatedKelasList,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        console.log(`✅ Berhasil disimpan ke database!`);
+        console.log(`   Response:`, data);
+
+        // Tampilkan success message singkat
+        setSuccessMessage(
+          `Kelas berhasil ${
+            updatedKelasList.length > 0 ? "ditambahkan ke" : "dihapus dari"
+          } lapangan`
+        );
+        setTimeout(() => setSuccessMessage(""), 2000);
+      } else {
+        throw new Error(data.message || "Gagal menyimpan kelas");
+      }
+    } catch (err: any) {
+      console.error("❌ Error menyimpan kelas:", err);
+      console.error(`   Lapangan ID: ${lapanganId}`);
+      console.error(`   Error message:`, err.message);
+
+      setErrorMessage(err.message || "Gagal menyimpan kelas");
+
+      // Rollback UI state jika gagal
+      setHariList((prev) =>
+        prev.map((hari) =>
+          hari.tanggal === tanggal
+            ? {
+                ...hari,
+                lapangan: hari.lapangan.map((lap) =>
+                  lap.id_lapangan === lapanganId
+                    ? {
+                        ...lap,
+                        kelasDipilih: lap.kelasDipilih.includes(kelasId)
+                          ? lap.kelasDipilih.filter((id) => id !== kelasId)
+                          : [...lap.kelasDipilih, kelasId],
+                      }
+                    : lap
+                ),
+              }
+            : hari
+        )
+      );
+
+      setTimeout(() => setErrorMessage(""), 3000);
+    } finally {
+      setSavingKelas((prev) => ({ ...prev, [lapanganId]: false }));
+      console.log(`🏁 Proses toggle kelas selesai\n`);
+    }
   };
 
   const updateAntrian = (
@@ -584,12 +673,31 @@ const JadwalPertandingan: React.FC = () => {
                       {hari.lapangan.map((lap) => (
                         <div
                           key={lap.id_lapangan}
-                          className="rounded-xl border p-4 space-y-4"
+                          className="rounded-xl border p-4 space-y-4 relative"
                           style={{
                             borderColor: "#990D35",
                             backgroundColor: "#FFFFFF",
                           }}
                         >
+                          {/* Loading Overlay */}
+                          {savingKelas[lap.id_lapangan] && (
+                            <div className="absolute inset-0 bg-white bg-opacity-70 flex items-center justify-center rounded-xl z-10">
+                              <div className="flex flex-col items-center gap-2">
+                                <Loader
+                                  className="animate-spin"
+                                  size={24}
+                                  style={{ color: "#990D35" }}
+                                />
+                                <span
+                                  className="text-xs font-medium"
+                                  style={{ color: "#990D35" }}
+                                >
+                                  Menyimpan...
+                                </span>
+                              </div>
+                            </div>
+                          )}
+
                           <div className="flex justify-between items-center">
                             <h3
                               className="font-semibold"
@@ -645,13 +753,16 @@ const JadwalPertandingan: React.FC = () => {
                                               kelas.id_kelas_kejuaraan
                                             )}
                                             onChange={() =>
-                                              toggleKelas(
+                                              toggleKelasAndSave(
                                                 hari.tanggal,
                                                 lap.id_lapangan,
                                                 kelas.id_kelas_kejuaraan
                                               )
                                             }
-                                            className="accent-[#990D35] cursor-pointer"
+                                            disabled={
+                                              savingKelas[lap.id_lapangan]
+                                            }
+                                            className="accent-[#990D35] cursor-pointer disabled:opacity-50"
                                           />
                                           <span className="text-xs font-medium text-[#050505]">
                                             {namaKelasDisplay}
