@@ -9,6 +9,7 @@ import {
   Loader,
   Eye,
 } from "lucide-react";
+import { kelasBeratOptionsMap } from "../../dummy/beratOptions";
 
 interface KelasKejuaraan {
   id_kelas_kejuaraan: string;
@@ -33,119 +34,8 @@ interface KelasKejuaraan {
   bracket_status: "not_created" | "created" | "in_progress" | "completed";
 }
 
-// Mock data untuk demo
-const mockKelasKejuaraan: KelasKejuaraan[] = [
-  {
-    id_kelas_kejuaraan: "1",
-    cabang: "KYORUGI",
-    kategori_event: { nama_kategori: "Pemula" },
-    kelompok: { id_kelompok: 1, nama_kelompok: "Cadet", usia_min: 11, usia_max: 13 },
-    kelas_berat: { nama_kelas: "Fin -33 kg" },
-    jenis_kelamin: "LAKI_LAKI",
-    peserta_count: 8,
-    bracket_status: "created"
-  },
-  {
-    id_kelas_kejuaraan: "2",
-    cabang: "KYORUGI",
-    kategori_event: { nama_kategori: "Prestasi" },
-    kelompok: { id_kelompok: 2, nama_kelompok: "Junior", usia_min: 14, usia_max: 17 },
-    kelas_berat: { nama_kelas: "Fly -46 kg" },
-    jenis_kelamin: "PEREMPUAN",
-    peserta_count: 12,
-    bracket_status: "in_progress"
-  },
-  {
-    id_kelas_kejuaraan: "3",
-    cabang: "POOMSAE",
-    kategori_event: { nama_kategori: "Pemula" },
-    kelompok: { id_kelompok: 3, nama_kelompok: "Senior", usia_min: 18, usia_max: 99 },
-    poomsae: { nama_kelas: "Individual" },
-    jenis_kelamin: "LAKI_LAKI",
-    peserta_count: 6,
-    bracket_status: "not_created"
-  },
-  {
-    id_kelas_kejuaraan: "4",
-    cabang: "KYORUGI",
-    kategori_event: { nama_kategori: "Pemula" },
-    kelompok: { id_kelompok: 4, nama_kelompok: "Pracadet", usia_min: 8, usia_max: 10 },
-    kelas_berat: { nama_kelas: "Bantam -27 kg" },
-    jenis_kelamin: "PEREMPUAN",
-    peserta_count: 4,
-    bracket_status: "completed"
-  },
-];
-
-// Kelas berat options berdasarkan kelompok usia
-const kelasBeratOptionsMap: Record<string, Array<{ value: string; label: string }>> = {
-  "ALL": [{ value: "ALL", label: "Semua Kelas Berat" }],
-  "Super Pra-cadet": [
-    { value: "ALL", label: "Semua Kelas Berat" },
-    { value: "FIN -15 KG", label: "Fin -15 kg" },
-    { value: "FLY -17 KG", label: "Fly -17 kg" },
-    { value: "BANTAM -19 KG", label: "Bantam -19 kg" },
-    { value: "FEATHER -21 KG", label: "Feather -21 kg" },
-    { value: "LIGHT -23 KG", label: "Light -23 kg" },
-    { value: "WELTER -25 KG", label: "Welter -25 kg" },
-    { value: "LIGHT MIDDLE -27 KG", label: "Light Middle -27 kg" },
-    { value: "MIDDLE -29 KG", label: "Middle -29 kg" },
-    { value: "LIGHT HEAVY +29 KG", label: "Light Heavy +29 kg" },
-  ],
-  "Pracadet": [
-    { value: "ALL", label: "Semua Kelas Berat" },
-    { value: "FIN -21 KG", label: "Fin -21 kg" },
-    { value: "FLY -24 KG", label: "Fly -24 kg" },
-    { value: "BANTAM -27 KG", label: "Bantam -27 kg" },
-    { value: "FEATHER -30 KG", label: "Feather -30 kg" },
-    { value: "LIGHT -33 KG", label: "Light -33 kg" },
-    { value: "WELTER -37 KG", label: "Welter -37 kg" },
-    { value: "LIGHT MIDDLE -41 KG", label: "Light Middle -41 kg" },
-    { value: "MIDDLE -45 KG", label: "Middle -45 kg" },
-    { value: "LIGHT HEAVY +45 KG", label: "Light Heavy +45 kg" },
-  ],
-  "Cadet": [
-    { value: "ALL", label: "Semua Kelas Berat" },
-    { value: "FIN -33 KG", label: "Fin -33 kg" },
-    { value: "FLY -37 KG", label: "Fly -37 kg" },
-    { value: "BANTAM -41 KG", label: "Bantam -41 kg" },
-    { value: "FEATHER -45 KG", label: "Feather -45 kg" },
-    { value: "LIGHT -49 KG", label: "Light -49 kg" },
-    { value: "WELTER -53 KG", label: "Welter -53 kg" },
-    { value: "LIGHT MIDDLE -57 KG", label: "Light Middle -57 kg" },
-    { value: "MIDDLE -61 KG", label: "Middle -61 kg" },
-    { value: "LIGHT HEAVY -65 KG", label: "Light Heavy -65 kg" },
-    { value: "HEAVY +65 KG", label: "Heavy +65 kg" },
-  ],
-  "Junior": [
-    { value: "ALL", label: "Semua Kelas Berat" },
-    { value: "FIN -42 KG", label: "Fin -42 kg" },
-    { value: "FLY -46 KG", label: "Fly -46 kg" },
-    { value: "BANTAM -50 KG", label: "Bantam -50 kg" },
-    { value: "FEATHER -55 KG", label: "Feather -55 kg" },
-    { value: "LIGHT -60 KG", label: "Light -60 kg" },
-    { value: "WELTER -65 KG", label: "Welter -65 kg" },
-    { value: "LIGHT MIDDLE -70 KG", label: "Light Middle -70 kg" },
-    { value: "MIDDLE -75 KG", label: "Middle -75 kg" },
-    { value: "LIGHT HEAVY -80 KG", label: "Light Heavy -80 kg" },
-    { value: "HEAVY +80 KG", label: "Heavy +80 kg" },
-  ],
-  "Senior": [
-    { value: "ALL", label: "Semua Kelas Berat" },
-    { value: "FIN -50 KG", label: "Fin -50 kg" },
-    { value: "FLY -54 KG", label: "Fly -54 kg" },
-    { value: "BANTAM -58 KG", label: "Bantam -58 kg" },
-    { value: "FEATHER -63 KG", label: "Feather -63 kg" },
-    { value: "LIGHT -68 KG", label: "Light -68 kg" },
-    { value: "WELTER -74 KG", label: "Welter -74 kg" },
-    { value: "LIGHT MIDDLE -80 KG", label: "Light Middle -80 kg" },
-    { value: "MIDDLE -87 KG", label: "Middle -87 kg" },
-    { value: "LIGHT HEAVY +87 KG", label: "Light Heavy +87 kg" },
-  ],
-};
-
 const DrawingBagan: React.FC = () => {
-  const [kelasKejuaraan, setKelasKejuaraan] = useState<KelasKejuaraan[]>(mockKelasKejuaraan);
+  const [kelasKejuaraan, setKelasKejuaraan] = useState<KelasKejuaraan[]>([]);
   const [filteredKelas, setFilteredKelas] = useState<KelasKejuaraan[]>([]);
   const [loadingBracketStatus, setLoadingBracketStatus] = useState(false);
 
@@ -154,63 +44,71 @@ const DrawingBagan: React.FC = () => {
   const [filterCabang, setFilterCabang] = useState<"ALL" | "KYORUGI" | "POOMSAE">("ALL");
   const [filterLevel, setFilterLevel] = useState<"ALL" | "pemula" | "prestasi">("ALL");
   const [filterGender, setFilterGender] = useState<"ALL" | "LAKI_LAKI" | "PEREMPUAN">("ALL");
-  const [filterKelasUsia, setFilterKelasUsia] = useState<"ALL" | "Super Pra-cadet" | "Pracadet" | "Cadet" | "Junior" | "Senior">("ALL");
-  const [filterKelasBerat, setFilterKelasBerat] = useState<string>("ALL");
+const [filterKelasUsia, setFilterKelasUsia] = useState<
+  "ALL" | "Super pracadet" | "Pracadet" | "Cadet" | "Junior" | "Senior"
+>("ALL");
+const [filterKelasBerat, setFilterKelasBerat] = useState<string>("ALL");
   const [filterStatus, setFilterStatus] = useState<"ALL" | "not_created" | "created" | "in_progress" | "completed">("ALL");
 
-  // Apply filters
-  useEffect(() => {
-    let filtered = kelasKejuaraan;
+useEffect(() => {
+  let filtered = kelasKejuaraan;
 
-    if (searchTerm) {
-      filtered = filtered.filter((kelas) => {
-        const searchString = `${kelas.cabang} ${kelas.kategori_event.nama_kategori} ${kelas.kelompok.nama_kelompok}`;
-        return searchString.toLowerCase().includes(searchTerm.toLowerCase());
-      });
-    }
+  if (searchTerm) {
+    filtered = filtered.filter((kelas) => {
+      const searchString = `${kelas.cabang} ${kelas.kategori_event.nama_kategori} ${kelas.kelompok.nama_kelompok}`;
+      return searchString.toLowerCase().includes(searchTerm.toLowerCase());
+    });
+  }
 
-    if (filterCabang !== "ALL") {
-      filtered = filtered.filter((kelas) => kelas.cabang === filterCabang);
-    }
+  if (filterCabang !== "ALL") {
+    filtered = filtered.filter((kelas) => kelas.cabang === filterCabang);
+  }
 
-    if (filterLevel !== "ALL") {
-      filtered = filtered.filter(
-        (kelas) => kelas.kategori_event.nama_kategori.toLowerCase() === filterLevel
-      );
-    }
+  if (filterLevel !== "ALL") {
+    filtered = filtered.filter(
+      (kelas) =>
+        kelas.kategori_event.nama_kategori.toLowerCase() === filterLevel
+    );
+  }
 
-    if (filterGender !== "ALL") {
-      filtered = filtered.filter((kelas) => kelas.jenis_kelamin === filterGender);
-    }
+  if (filterGender !== "ALL") {
+    filtered = filtered.filter(
+      (kelas) => kelas.jenis_kelamin === filterGender
+    );
+  }
 
-    if (filterKelasUsia !== "ALL") {
-      filtered = filtered.filter(
-        (kelas) => kelas.kelompok.nama_kelompok === filterKelasUsia
-      );
-    }
+  // TAMBAHAN BARU: Filter Kelompok Usia
+  if (filterKelasUsia !== "ALL") {
+    filtered = filtered.filter(
+      (kelas) => kelas.kelompok.nama_kelompok === filterKelasUsia
+    );
+  }
 
-    if (filterKelasBerat !== "ALL") {
-      filtered = filtered.filter((kelas) => {
-        const kelasBerat = kelas.kelas_berat?.nama_kelas?.toUpperCase() || "";
-        return kelasBerat === filterKelasBerat.toUpperCase();
-      });
-    }
+  // TAMBAHAN BARU: Filter Kelas Berat
+  if (filterKelasBerat !== "ALL") {
+    filtered = filtered.filter((kelas) => {
+      const kelasBerat = kelas.kelas_berat?.nama_kelas?.toUpperCase() || "";
+      return kelasBerat === filterKelasBerat.toUpperCase();
+    });
+  }
 
-    if (filterStatus !== "ALL") {
-      filtered = filtered.filter((kelas) => kelas.bracket_status === filterStatus);
-    }
+  if (filterStatus !== "ALL") {
+    filtered = filtered.filter(
+      (kelas) => kelas.bracket_status === filterStatus
+    );
+  }
 
-    setFilteredKelas(filtered);
-  }, [
-    kelasKejuaraan,
-    searchTerm,
-    filterCabang,
-    filterLevel,
-    filterGender,
-    filterKelasUsia,
-    filterKelasBerat,
-    filterStatus,
-  ]);
+  setFilteredKelas(filtered);
+}, [
+  kelasKejuaraan,
+  searchTerm,
+  filterCabang,
+  filterLevel,
+  filterGender,
+  filterKelasUsia, // TAMBAHKAN ini
+  filterKelasBerat, // TAMBAHKAN ini
+  filterStatus,
+]);
 
   const getStatusBadge = (status: KelasKejuaraan["bracket_status"]) => {
     const statusConfig = {
@@ -251,15 +149,14 @@ const DrawingBagan: React.FC = () => {
     return kelas.kategori_event.nama_kategori.toLowerCase().includes("pemula");
   };
 
-  const ageOptions = [
-    { value: "ALL", label: "Semua Kelompok Umur" },
-    { value: "Super Pra-cadet", label: "Super Pra-Cadet" },
-    { value: "Pracadet", label: "Pracadet" },
-    { value: "Cadet", label: "Cadet" },
-    { value: "Junior", label: "Junior" },
-    { value: "Senior", label: "Senior" },
-  ];
-
+const ageOptions = [
+  { value: "ALL", label: "Semua Kelompok Umur" },
+  { value: "Super pracadet", label: "Super Pra-Cadet" },
+  { value: "Pracadet", label: "Pracadet" },
+  { value: "Cadet", label: "Cadet" },
+  { value: "Junior", label: "Junior" },
+  { value: "Senior", label: "Senior" },
+];
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#F5FBEF" }}>
       <div className="p-4 sm:p-6 lg:p-8 max-w-full">
@@ -444,270 +341,270 @@ const DrawingBagan: React.FC = () => {
             </div>
 
             {/* Filters - Urutan diubah, Status di paling kanan */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-              {/* Filter Cabang */}
-              <div>
-                <label
-                  className="block text-xs mb-2 font-bold"
-                  style={{ color: "#050505", opacity: 0.7 }}
-                >
-                  Cabang
-                </label>
-                <div className="relative">
-                  <select
-                    value={filterCabang}
-                    onChange={(e) => setFilterCabang(e.target.value as any)}
-                    className="w-full px-4 py-3 rounded-xl border-2 shadow-sm text-sm font-medium focus:outline-none focus:ring-2 transition-all appearance-none cursor-pointer"
-                    style={{
-                      borderColor: "rgba(153, 13, 53, 0.2)",
-                      backgroundColor: "white",
-                      color: "#050505",
-                    }}
-                  >
-                    <option value="ALL">Semua Cabang</option>
-                    <option value="KYORUGI">KYORUGI</option>
-                    <option value="POOMSAE">POOMSAE</option>
-                  </select>
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                    <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
-                      <path
-                        d="M5 7.5L10 12.5L15 7.5"
-                        stroke="#990D35"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </div>
-                </div>
-              </div>
+<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+  {/* Filter Cabang */}
+  <div>
+    <label
+      className="block text-xs mb-2 font-bold"
+      style={{ color: "#050505", opacity: 0.7 }}
+    >
+      Cabang
+    </label>
+    <div className="relative">
+      <select
+        value={filterCabang}
+        onChange={(e) => setFilterCabang(e.target.value as any)}
+        className="w-full px-4 py-3 rounded-xl border-2 shadow-sm text-sm font-medium focus:outline-none focus:ring-2 transition-all appearance-none cursor-pointer"
+        style={{
+          borderColor: "rgba(153, 13, 53, 0.2)",
+          backgroundColor: "white",
+          color: "#050505",
+        }}
+      >
+        <option value="ALL">Semua Cabang</option>
+        <option value="KYORUGI">KYORUGI</option>
+        <option value="POOMSAE">POOMSAE</option>
+      </select>
+      <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+        <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+          <path
+            d="M5 7.5L10 12.5L15 7.5"
+            stroke="#990D35"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </div>
+    </div>
+  </div>
 
-              {/* Filter Level */}
-              <div>
-                <label
-                  className="block text-xs mb-2 font-bold"
-                  style={{ color: "#050505", opacity: 0.7 }}
-                >
-                  Level
-                </label>
-                <div className="relative">
-                  <select
-                    value={filterLevel}
-                    onChange={(e) => setFilterLevel(e.target.value as any)}
-                    className="w-full px-4 py-3 rounded-xl border-2 shadow-sm text-sm font-medium focus:outline-none focus:ring-2 transition-all appearance-none cursor-pointer"
-                    style={{
-                      borderColor: "rgba(153, 13, 53, 0.2)",
-                      backgroundColor: "white",
-                      color: "#050505",
-                    }}
-                  >
-                    <option value="ALL">Semua Level</option>
-                    <option value="pemula">Pemula</option>
-                    <option value="prestasi">Prestasi</option>
-                  </select>
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                    <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
-                      <path
-                        d="M5 7.5L10 12.5L15 7.5"
-                        stroke="#990D35"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </div>
-                </div>
-              </div>
+  {/* Filter Level */}
+  <div>
+    <label
+      className="block text-xs mb-2 font-bold"
+      style={{ color: "#050505", opacity: 0.7 }}
+    >
+      Level
+    </label>
+    <div className="relative">
+      <select
+        value={filterLevel}
+        onChange={(e) => setFilterLevel(e.target.value as any)}
+        className="w-full px-4 py-3 rounded-xl border-2 shadow-sm text-sm font-medium focus:outline-none focus:ring-2 transition-all appearance-none cursor-pointer"
+        style={{
+          borderColor: "rgba(153, 13, 53, 0.2)",
+          backgroundColor: "white",
+          color: "#050505",
+        }}
+      >
+        <option value="ALL">Semua Level</option>
+        <option value="pemula">Pemula</option>
+        <option value="prestasi">Prestasi</option>
+      </select>
+      <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+        <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+          <path
+            d="M5 7.5L10 12.5L15 7.5"
+            stroke="#990D35"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </div>
+    </div>
+  </div>
 
-              {/* Filter Gender */}
-              <div>
-                <label
-                  className="block text-xs mb-2 font-bold"
-                  style={{ color: "#050505", opacity: 0.7 }}
-                >
-                  Gender
-                </label>
-                <div className="relative">
-                  <select
-                    value={filterGender}
-                    onChange={(e) => setFilterGender(e.target.value as any)}
-                    className="w-full px-4 py-3 rounded-xl border-2 shadow-sm text-sm font-medium focus:outline-none focus:ring-2 transition-all appearance-none cursor-pointer"
-                    style={{
-                      borderColor: "rgba(153, 13, 53, 0.2)",
-                      backgroundColor: "white",
-                      color: "#050505",
-                    }}
-                  >
-                    <option value="ALL">Semua</option>
-                    <option value="LAKI_LAKI">Putra</option>
-                    <option value="PEREMPUAN">Putri</option>
-                  </select>
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                    <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
-                      <path
-                        d="M5 7.5L10 12.5L15 7.5"
-                        stroke="#990D35"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </div>
-                </div>
-              </div>
+  {/* Filter Gender */}
+  <div>
+    <label
+      className="block text-xs mb-2 font-bold"
+      style={{ color: "#050505", opacity: 0.7 }}
+    >
+      Gender
+    </label>
+    <div className="relative">
+      <select
+        value={filterGender}
+        onChange={(e) => setFilterGender(e.target.value as any)}
+        className="w-full px-4 py-3 rounded-xl border-2 shadow-sm text-sm font-medium focus:outline-none focus:ring-2 transition-all appearance-none cursor-pointer"
+        style={{
+          borderColor: "rgba(153, 13, 53, 0.2)",
+          backgroundColor: "white",
+          color: "#050505",
+        }}
+      >
+        <option value="ALL">Semua</option>
+        <option value="LAKI_LAKI">Putra</option>
+        <option value="PEREMPUAN">Putri</option>
+      </select>
+      <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+        <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+          <path
+            d="M5 7.5L10 12.5L15 7.5"
+            stroke="#990D35"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </div>
+    </div>
+  </div>
 
-              {/* Filter Kelompok Usia */}
-              <div>
-                <label
-                  className="block text-xs mb-2 font-bold"
-                  style={{ color: "#050505", opacity: 0.7 }}
-                >
-                  Usia
-                </label>
-                <div className="relative">
-                  <select
-                    value={filterKelasUsia}
-                    onChange={(e) => setFilterKelasUsia(e.target.value as any)}
-                    className="w-full px-4 py-3 rounded-xl border-2 shadow-sm text-sm font-medium focus:outline-none focus:ring-2 transition-all appearance-none cursor-pointer"
-                    style={{
-                      borderColor: "rgba(153, 13, 53, 0.2)",
-                      backgroundColor: "white",
-                      color: "#050505",
-                    }}
-                  >
-                    {ageOptions.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                    <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
-                      <path
-                        d="M5 7.5L10 12.5L15 7.5"
-                        stroke="#990D35"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </div>
-                </div>
-              </div>
+  {/* Filter Kelompok Usia - BARU */}
+  <div>
+    <label
+      className="block text-xs mb-2 font-bold"
+      style={{ color: "#050505", opacity: 0.7 }}
+    >
+      Usia
+    </label>
+    <div className="relative">
+      <select
+        value={filterKelasUsia}
+        onChange={(e) => setFilterKelasUsia(e.target.value as any)}
+        className="w-full px-4 py-3 rounded-xl border-2 shadow-sm text-sm font-medium focus:outline-none focus:ring-2 transition-all appearance-none cursor-pointer"
+        style={{
+          borderColor: "rgba(153, 13, 53, 0.2)",
+          backgroundColor: "white",
+          color: "#050505",
+        }}
+      >
+        {ageOptions.map((opt) => (
+          <option key={opt.value} value={opt.value}>
+            {opt.label}
+          </option>
+        ))}
+      </select>
+      <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+        <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+          <path
+            d="M5 7.5L10 12.5L15 7.5"
+            stroke="#990D35"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </div>
+    </div>
+  </div>
 
-              {/* Filter Kelas Berat */}
-              <div>
-                <label
-                  className="block text-xs mb-2 font-bold"
-                  style={{ color: "#050505", opacity: 0.7 }}
-                >
-                  Kelas Berat
-                </label>
-                <div className="relative">
-                  <select
-                    value={filterKelasBerat}
-                    onChange={(e) => setFilterKelasBerat(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl border-2 shadow-sm text-sm font-medium focus:outline-none focus:ring-2 transition-all appearance-none cursor-pointer"
-                    style={{
-                      borderColor: "rgba(153, 13, 53, 0.2)",
-                      backgroundColor: "white",
-                      color: "#050505",
-                    }}
-                  >
-                    {kelasBeratOptionsMap[filterKelasUsia || "ALL"].map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                    <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
-                      <path
-                        d="M5 7.5L10 12.5L15 7.5"
-                        stroke="#990D35"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </div>
-                </div>
-              </div>
+  {/* Filter Kelas Berat */}
+<div>
+  <label
+    className="block text-xs mb-2 font-bold"
+    style={{ color: "#050505", opacity: 0.7 }}
+  >
+    Kelas Berat
+  </label>
+  <div className="relative">
+    <select
+      value={filterKelasBerat}
+      onChange={(e) => setFilterKelasBerat(e.target.value)}
+      className="w-full px-4 py-3 rounded-xl border-2 shadow-sm text-sm font-medium focus:outline-none focus:ring-2 transition-all appearance-none cursor-pointer"
+      style={{
+        borderColor: "rgba(153, 13, 53, 0.2)",
+        backgroundColor: "white",
+        color: "#050505",
+      }}
+    >
+      {(kelasBeratOptionsMap[filterKelasUsia || "ALL"] || kelasBeratOptionsMap["ALL"]).map((opt: { value: string; label: string }) => (
+        <option key={opt.value} value={opt.value}>
+          {opt.label}
+        </option>
+      ))}
+    </select>
+    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+      <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+        <path
+          d="M5 7.5L10 12.5L15 7.5"
+          stroke="#990D35"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    </div>
+  </div>
+</div>
 
-              {/* Filter Status - Dipindahkan ke paling kanan */}
-              <div>
-                <label
-                  className="block text-xs mb-2 font-bold"
-                  style={{ color: "#050505", opacity: 0.7 }}
-                >
-                  Status
-                </label>
-                <div className="relative">
-                  <select
-                    value={filterStatus}
-                    onChange={(e) => setFilterStatus(e.target.value as any)}
-                    className="w-full px-4 py-3 rounded-xl border-2 shadow-sm text-sm font-medium focus:outline-none focus:ring-2 transition-all appearance-none cursor-pointer"
-                    style={{
-                      borderColor: "rgba(153, 13, 53, 0.2)",
-                      backgroundColor: "white",
-                      color: "#050505",
-                    }}
-                  >
-                    <option value="ALL">Semua Status</option>
-                    <option value="not_created">Belum Dibuat</option>
-                    <option value="created">Sudah Dibuat</option>
-                    <option value="in_progress">Berlangsung</option>
-                    <option value="completed">Selesai</option>
-                  </select>
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                    <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
-                      <path
-                        d="M5 7.5L10 12.5L15 7.5"
-                        stroke="#990D35"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </div>
-                </div>
-              </div>
-            </div>
+  {/* Filter Status - DIPINDAH KE PALING KANAN */}
+  <div>
+    <label
+      className="block text-xs mb-2 font-bold"
+      style={{ color: "#050505", opacity: 0.7 }}
+    >
+      Status
+    </label>
+    <div className="relative">
+      <select
+        value={filterStatus}
+        onChange={(e) => setFilterStatus(e.target.value as any)}
+        className="w-full px-4 py-3 rounded-xl border-2 shadow-sm text-sm font-medium focus:outline-none focus:ring-2 transition-all appearance-none cursor-pointer"
+        style={{
+          borderColor: "rgba(153, 13, 53, 0.2)",
+          backgroundColor: "white",
+          color: "#050505",
+        }}
+      >
+        <option value="ALL">Semua Status</option>
+        <option value="not_created">Belum Dibuat</option>
+        <option value="created">Sudah Dibuat</option>
+        <option value="in_progress">Berlangsung</option>
+        <option value="completed">Selesai</option>
+      </select>
+      <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+        <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+          <path
+            d="M5 7.5L10 12.5L15 7.5"
+            stroke="#990D35"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </div>
+    </div>
+  </div>
+</div>
 
             {/* Reset Button dan Info */}
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 pt-4 border-t" style={{ borderColor: "rgba(153, 13, 53, 0.1)" }}>
-              <p className="text-sm font-medium" style={{ color: "#050505", opacity: 0.6 }}>
-                Menampilkan{" "}
-                <span className="font-bold" style={{ color: "#990D35" }}>
-                  {filteredKelas.length}
-                </span>{" "}
-                dari{" "}
-                <span className="font-bold" style={{ color: "#990D35" }}>
-                  {kelasKejuaraan.length}
-                </span>{" "}
-                kelas
-              </p>
-              
-              <button
-                onClick={() => {
-                  setSearchTerm("");
-                  setFilterCabang("ALL");
-                  setFilterLevel("ALL");
-                  setFilterGender("ALL");
-                  setFilterKelasUsia("ALL");
-                  setFilterKelasBerat("ALL");
-                  setFilterStatus("ALL");
-                }}
-                className="px-6 py-3 rounded-xl border-2 font-bold text-sm shadow-sm hover:shadow-md transition-all transform hover:scale-[1.02]"
-                style={{
-                  borderColor: "#990D35",
-                  color: "#990D35",
-                  backgroundColor: "white",
-                }}
-              >
-                Reset Filter
-              </button>
-            </div>
+<div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 pt-4 border-t" style={{ borderColor: "rgba(153, 13, 53, 0.1)" }}>
+  <p className="text-sm font-medium" style={{ color: "#050505", opacity: 0.6 }}>
+    Menampilkan{" "}
+    <span className="font-bold" style={{ color: "#990D35" }}>
+      {filteredKelas.length}
+    </span>{" "}
+    dari{" "}
+    <span className="font-bold" style={{ color: "#990D35" }}>
+      {kelasKejuaraan.length}
+    </span>{" "}
+    kelas
+  </p>
+  
+  <button
+    onClick={() => {
+      setSearchTerm("");
+      setFilterCabang("ALL");
+      setFilterLevel("ALL");
+      setFilterGender("ALL");
+      setFilterKelasUsia("ALL");
+      setFilterKelasBerat("ALL");
+      setFilterStatus("ALL");
+    }}
+    className="px-6 py-3 rounded-xl border-2 font-bold text-sm shadow-sm hover:shadow-md transition-all transform hover:scale-[1.02]"
+    style={{
+      borderColor: "#990D35",
+      color: "#990D35",
+      backgroundColor: "white",
+    }}
+  >
+    Reset Filter
+  </button>
+</div>
           </div>
         </div>
 
