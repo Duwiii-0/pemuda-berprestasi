@@ -78,22 +78,27 @@ useEffect(() => {
       .filter((peserta) => peserta.status === "APPROVED")
       .forEach((peserta) => {
         const kelas = peserta.kelas_kejuaraan;
-        if (!kelas || !kelas.kelompok) return; // ← TAMBAHKAN check kelompok
+        if (!kelas || !kelas.kelompok) return;
 
         const key = `${kelas.id_kelas_kejuaraan}`;
+
+        // ← AMBIL jenis_kelamin dari peserta/atlet
+        const jenisKelamin = peserta.is_team 
+          ? peserta.anggota_tim?.[0]?.atlet?.jenis_kelamin 
+          : peserta.atlet?.jenis_kelamin;
 
         if (kelasMap.has(key)) {
           const existing = kelasMap.get(key)!;
           existing.peserta_count += 1;
         } else {
           kelasMap.set(key, {
-            id_kelas_kejuaraan: String(kelas.id_kelas_kejuaraan), // ← CONVERT ke string
+            id_kelas_kejuaraan: String(kelas.id_kelas_kejuaraan),
             cabang: kelas.cabang,
             kategori_event: kelas.kategori_event,
-            kelompok: kelas.kelompok, // ← Sekarang sudah pasti ada karena di-check di atas
+            kelompok: kelas.kelompok,
             kelas_berat: kelas.kelas_berat,
             poomsae: kelas.poomsae,
-            jenis_kelamin: kelas.jenis_kelamin,
+            jenis_kelamin: jenisKelamin || "LAKI_LAKI", // ← GUNAKAN jenis_kelamin dari atlet, default LAKI_LAKI
             peserta_count: 1,
             bracket_status: "not_created",
           });
@@ -216,12 +221,26 @@ useEffect(() => {
     );
   }
 
-  // TAMBAHAN BARU: Filter Kelompok Usia
-  if (filterKelasUsia !== "ALL") {
-    filtered = filtered.filter(
-      (kelas) => kelas.kelompok.nama_kelompok === filterKelasUsia
-    );
-  }
+// TAMBAHAN BARU: Filter Kelompok Usia
+if (filterKelasUsia !== "ALL") {
+  filtered = filtered.filter(
+    (kelas) => {
+      const namaKelompok = kelas.kelompok.nama_kelompok?.trim();
+      const filterValue = filterKelasUsia.trim();
+      
+      // Coba exact match dulu
+      if (namaKelompok === filterValue) return true;
+      
+      // Coba case insensitive
+      if (namaKelompok?.toLowerCase() === filterValue.toLowerCase()) return true;
+      
+      // Coba tanpa spasi
+      if (namaKelompok?.replace(/\s+/g, '').toLowerCase() === filterValue.replace(/\s+/g, '').toLowerCase()) return true;
+      
+      return false;
+    }
+  );
+}
 
   // TAMBAHAN BARU: Filter Kelas Berat
   if (filterKelasBerat !== "ALL") {
