@@ -9,6 +9,8 @@ import {
   Loader,
   Eye,
 } from "lucide-react";
+import { useAuth } from "../../context/authContext";
+import { useKompetisi } from "../../context/KompetisiContext";
 import { kelasBeratOptionsMap } from "../../dummy/beratOptions";
 
 interface KelasKejuaraan {
@@ -35,6 +37,10 @@ interface KelasKejuaraan {
 }
 
 const DrawingBagan: React.FC = () => {
+  const { token, user } = useAuth();
+  const { pesertaList, fetchAtletByKompetisi, loadingAtlet } = useKompetisi();
+  const [selectedKelas, setSelectedKelas] = useState<KelasKejuaraan | null>(null);
+  const [showBracket, setShowBracket] = useState(false);
   const [kelasKejuaraan, setKelasKejuaraan] = useState<KelasKejuaraan[]>([]);
   const [filteredKelas, setFilteredKelas] = useState<KelasKejuaraan[]>([]);
   const [loadingBracketStatus, setLoadingBracketStatus] = useState(false);
@@ -49,6 +55,139 @@ const [filterKelasUsia, setFilterKelasUsia] = useState<
 >("ALL");
 const [filterKelasBerat, setFilterKelasBerat] = useState<string>("ALL");
   const [filterStatus, setFilterStatus] = useState<"ALL" | "not_created" | "created" | "in_progress" | "completed">("ALL");
+
+  // ← TAMBAHKAN DI SINI
+  const kompetisiId =
+    user?.role === "ADMIN_KOMPETISI"
+      ? user?.admin_kompetisi?.id_kompetisi
+      : null;
+
+  // useEffect 1: Fetch atlet by kompetisi
+  useEffect(() => {
+    if (kompetisiId) {
+      fetchAtletByKompetisi(kompetisiId);
+    }
+  }, [kompetisiId]);
+
+// useEffect 2: Process peserta data
+useEffect(() => {
+  if (pesertaList.length > 0) {
+    const kelasMap = new Map<string, KelasKejuaraan>();
+
+    pesertaList
+      .filter((peserta) => peserta.status === "APPROVED")
+      .forEach((peserta) => {
+        const kelas = peserta.kelas_kejuaraan;
+        if (!kelas || !kelas.kelompok) return; // ← TAMBAHKAN check kelompok
+
+        const key = `${kelas.id_kelas_kejuaraan}`;
+
+        if (kelasMap.has(key)) {
+          const existing = kelasMap.get(key)!;
+          existing.peserta_count += 1;
+        } else {
+          kelasMap.set(key, {
+            id_kelas_kejuaraan: String(kelas.id_kelas_kejuaraan), // ← CONVERT ke string
+            cabang: kelas.cabang,
+            kategori_event: kelas.kategori_event,
+            kelompok: kelas.kelompok, // ← Sekarang sudah pasti ada karena di-check di atas
+            kelas_berat: kelas.kelas_berat,
+            poomsae: kelas.poomsae,
+            jenis_kelamin: kelas.jenis_kelamin,
+            peserta_count: 1,
+            bracket_status: "not_created",
+          });
+        }
+      });
+
+    const kelasArray = Array.from(kelasMap.values());
+    setKelasKejuaraan(kelasArray);
+  }
+}, [pesertaList]);
+
+  // useEffect 3: Fetch bracket status
+  useEffect(() => {
+    const fetchBracketStatus = async () => {
+      if (kelasKejuaraan.length === 0 || !kompetisiId) return;
+
+      setLoadingBracketStatus(true);
+
+      try {
+        const updatedKelas = await Promise.all(
+          kelasKejuaraan.map(async (kelas) => {
+            try {
+              const response = await fetch(
+                `${
+                  import.meta.env.VITE_API_URL || "/api"
+                }/kompetisi/${kompetisiId}/brackets/${
+                  kelas.id_kelas_kejuaraan
+                }`,
+                {
+                  headers: {
+                    Authorization: `Bearer ${token}`,
+                  },
+                }
+              );
+
+              if (response.ok) {
+                const result = await response.json();
+                const matches = result.data?.matches || [];
+
+                let status:
+                  | "not_created"
+                  | "created"
+                  | "in_progress"
+                  | "completed" = "not_created";
+
+                if (matches.length > 0) {
+                  const hasScores = matches.some(
+                    (m: any) => m.scoreA > 0 || m.scoreB > 0
+                  );
+
+                  if (hasScores) {
+                    const allCompleted = matches.every(
+                      (m: any) =>
+                        (m.participant1 &&
+                          m.participant2 &&
+                          (m.scoreA > 0 || m.scoreB > 0)) ||
+                        !m.participant1 ||
+                        !m.participant2
+                    );
+                    status = allCompleted ? "completed" : "in_progress";
+                  } else {
+                    status = "created";
+                  }
+                }
+
+                return { ...kelas, bracket_status: status };
+              } else if (response.status === 404) {
+                return {
+                  ...kelas,
+                  bracket_status: "not_created" as const,
+                };
+              } else {
+                return kelas;
+              }
+            } catch (error) {
+              console.error(
+                `❌ Error fetching bracket for kelas ${kelas.id_kelas_kejuaraan}:`,
+                error
+              );
+              return kelas;
+            }
+          })
+        );
+
+        setKelasKejuaraan(updatedKelas);
+      } catch (error) {
+        console.error("❌ Error fetching bracket status:", error);
+      } finally {
+        setLoadingBracketStatus(false);
+      }
+    };
+
+    fetchBracketStatus();
+  }, [kelasKejuaraan.length, kompetisiId, token]);
 
 useEffect(() => {
   let filtered = kelasKejuaraan;
@@ -148,6 +287,46 @@ useEffect(() => {
   const isPemula = (kelas: KelasKejuaraan) => {
     return kelas.kategori_event.nama_kategori.toLowerCase().includes("pemula");
   };
+
+    if (user?.role !== "ADMIN_KOMPETISI") {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4" style={{ backgroundColor: '#F5FBEF' }}>
+        <div className="rounded-xl shadow-sm border p-6 max-w-md w-full" style={{ backgroundColor: 'rgba(153, 13, 53, 0.05)', borderColor: 'rgba(153, 13, 53, 0.2)' }}>
+          <div className="flex items-start gap-3">
+            <AlertTriangle size={20} className="flex-shrink-0 mt-0.5" style={{ color: '#990D35' }} />
+            <p className="text-sm sm:text-base" style={{ color: '#990D35' }}>
+              Akses ditolak. Hanya Admin Kompetisi yang dapat mengelola drawing bagan.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!kompetisiId) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4" style={{ backgroundColor: '#F5FBEF' }}>
+        <div className="rounded-xl shadow-sm border p-6 max-w-md w-full" style={{ backgroundColor: '#F5FBEF', borderColor: '#990D35' }}>
+          <p className="text-sm sm:text-base" style={{ color: '#050505', opacity: 0.6 }}>
+            Tidak ada kompetisi terkait akun ini.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (loadingAtlet || loadingBracketStatus) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4" style={{ backgroundColor: '#F5FBEF' }}>
+        <div className="flex flex-col items-center gap-3">
+          <Loader className="animate-spin" style={{ color: '#990D35' }} size={32} />
+          <p style={{ color: '#050505', opacity: 0.6 }}>
+            {loadingAtlet ? "Memuat data kelas kejuaraan..." : "Memeriksa status bracket..."}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
 const ageOptions = [
   { value: "ALL", label: "Semua Kelompok Umur" },
