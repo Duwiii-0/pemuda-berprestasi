@@ -434,15 +434,11 @@ const JadwalPertandingan: React.FC = () => {
     }
 
     // 2️⃣ HITUNG KELAS BARU SEBELUM UPDATE UI
-    const isCurrentlySelected = currentLapangan.kelasDipilih.includes(kelasId);
-    const updatedKelasList = isCurrentlySelected
-      ? currentLapangan.kelasDipilih.filter((id) => id !== kelasId)
-      : [...currentLapangan.kelasDipilih, kelasId];
+    const updatedKelasList = [kelasId];
 
     console.log("🔄 Toggle kelas", {
       kelasId,
       lapanganId,
-      isCurrentlySelected,
       before: currentLapangan.kelasDipilih,
       after: updatedKelasList,
     });
@@ -490,9 +486,7 @@ const JadwalPertandingan: React.FC = () => {
       if (data.success) {
         console.log("✅ Berhasil disimpan!");
         setSuccessMessage(
-          `Kelas berhasil ${
-            isCurrentlySelected ? "dihapus dari" : "ditambahkan ke"
-          } lapangan`
+          `Kelas berhasil ditambahkan ke lapangan`
         );
         setTimeout(() => setSuccessMessage(""), 2000);
       } else {
@@ -925,7 +919,8 @@ const JadwalPertandingan: React.FC = () => {
                                       <div className="flex justify-between items-center">
                                         <div className="flex items-center gap-2">
                                           <input
-                                            type="checkbox"
+                                            type="radio"
+                                            name={`kelas-lapangan-${lap.id_lapangan}`}
                                             checked={lap.kelasDipilih.includes(
                                               kelas.id_kelas_kejuaraan
                                             )}

@@ -293,20 +293,27 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
                       className="text-lg font-semibold mb-2"
                       style={{ color: "#050505" }}
                     >
-                      Sedang Bertanding: {bertandingClass.nama_kelas}
+                      Sedang Bertanding: <br />
+                      {bertandingClass.nama_kelas}
                     </p>
                   )}
 
                   {lap.antrian && (
                     <div className="mb-4 space-y-2">
-                      <div className="flex items-center gap-2">
-                        <span className="text-lg font-medium text-green-700 bg-green-100 px-3 py-1 rounded-md">Bertanding: {lap.antrian.bertanding}</span>
+                      <div className="flex justify-center items-center gap-2">
+                        <span className="text-lg font-medium text-green-700 bg-green-100 px-3 py-3 rounded-md">
+                          Bertanding: {lap.antrian.bertanding}
+                        </span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-lg font-medium text-orange-700 bg-orange-100 px-3 py-1 rounded-md">Persiapan: {lap.antrian.persiapan}</span>
+                        <span className="text-lg font-medium text-orange-700 bg-orange-100 px-3 py-1 rounded-md">
+                          Persiapan: {lap.antrian.persiapan}
+                        </span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-lg font-medium text-yellow-700 bg-yellow-100 px-3 py-1 rounded-md">Pemanasan: {lap.antrian.pemanasan}</span>
+                        <span className="text-lg font-medium text-yellow-700 bg-yellow-100 px-3 py-1 rounded-md">
+                          Pemanasan: {lap.antrian.pemanasan}
+                        </span>
                       </div>
                     </div>
                   )}
@@ -359,7 +366,11 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
                               className="text-xs whitespace-nowrap"
                               style={{ color: "#050505", opacity: 0.7 }}
                             >
-                              {getStatusLabel(kelas.status_antrian).split(" ")[1]}
+                              {
+                                getStatusLabel(kelas.status_antrian).split(
+                                  " "
+                                )[1]
+                              }
                             </span>
                           </div>
                         </div>
