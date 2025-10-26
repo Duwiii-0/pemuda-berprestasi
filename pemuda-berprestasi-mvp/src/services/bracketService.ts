@@ -447,7 +447,7 @@ static async generatePrestasiBracket(
 
   // 3️⃣ Hitung total match Round 1 dan posisi BYE
   const totalMatchesR1 = targetSize / 2;
-  const byePositions = this.calculateByePositions(participantCount, targetSize);
+  const byePositions = this.calculateByePositions(participantCount, targetSize).slice(0, byesNeeded);
   console.log(`   BYE positions (zigzag):`, byePositions);
 
   // 4️⃣ Shuffle peserta aktif
@@ -533,6 +533,33 @@ static async generatePrestasiBracket(
 
     console.log(`   🩹 Added leftover participant as BYE: ${leftover.name}`);
   }
+
+  // 🩹 PATCH #3 — kalau masih ada bye participants belum terpakai, masukkan ke R1
+  while (byeIndex < byeParticipants.length) {
+    const extraBye = byeParticipants[byeIndex++];
+    const created = await prisma.tb_match.create({
+      data: {
+        id_bagan: baganId,
+        ronde: 1,
+        id_peserta_a: extraBye.id,
+        id_peserta_b: null,
+        skor_a: 0,
+        skor_b: 0
+      }
+    });
+    matches.push({
+      id: created.id_match,
+      round: 1,
+      position: matches.filter(m => m.round === 1).length, // urutan terakhir R1
+      participant1: extraBye,
+      participant2: null,
+      status: "bye",
+      scoreA: 0,
+      scoreB: 0
+    });
+    console.log(`   🩹 Extra BYE assigned: ${extraBye.name}`);
+  }
+
 
   // 6️⃣ Buat placeholder untuk ronde berikutnya (Quarter, Semi, Final)
   const totalRounds = Math.log2(targetSize);
