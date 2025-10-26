@@ -529,23 +529,33 @@ const JadwalPertandingan: React.FC = () => {
     value: number
   ) => {
     setHariAntrianList((prev) =>
-      prev.map((hari) =>
-        hari.tanggal === tanggal
-          ? {
-              ...hari,
-              lapanganAntrian: {
-                ...hari.lapanganAntrian,
-                [lapanganId]: {
-                  ...hari.lapanganAntrian[lapanganId],
-                  [field]: value,
-                },
-              },
-            }
-          : hari
-      )
+      prev.map((hari) => {
+        if (hari.tanggal !== tanggal) return hari;
+
+        const currentAntrian = hari.lapanganAntrian[lapanganId] || {
+          bertanding: 0,
+          persiapan: 0,
+          pemanasan: 0,
+        };
+
+        let updatedAntrian = { ...currentAntrian, [field]: value };
+
+        // Auto-increment jika field adalah "bertanding"
+        if (field === "bertanding") {
+          updatedAntrian.persiapan = value + 1;
+          updatedAntrian.pemanasan = value + 2;
+        }
+
+        return {
+          ...hari,
+          lapanganAntrian: {
+            ...hari.lapanganAntrian,
+            [lapanganId]: updatedAntrian,
+          },
+        };
+      })
     );
   };
-
   const generateNamaKelas = (kelas: any) => {
     const parts = [];
     if (kelas.cabang) parts.push(kelas.cabang);
@@ -573,7 +583,7 @@ const JadwalPertandingan: React.FC = () => {
 
   const handleLihatBagan = (kelasId: number) => {
     console.log(`🔗 Navigating to drawing bagan for kelas ${kelasId}`);
-    navigate("/admin/drawing-bagan");
+    navigate("/admin-kompetisi/drawing-bagan");
   };
 
   return (
@@ -1075,7 +1085,7 @@ const JadwalPertandingan: React.FC = () => {
                                   className="block text-xs font-medium mb-1"
                                   style={{ color: "#16a34a" }}
                                 >
-                                  🟢 Bertanding
+                                  🟢 Bertanding - Nomor Pertandingan
                                 </label>
                                 <input
                                   type="number"
@@ -1094,7 +1104,7 @@ const JadwalPertandingan: React.FC = () => {
                                       );
                                     }
                                   }}
-                                  placeholder="Masukkan jumlah"
+                                  placeholder="Nomor pertandingan"
                                   className="w-full px-3 py-2 text-sm rounded-lg border-2 focus:outline-none focus:ring-2"
                                   style={{
                                     borderColor: "#16a34a",
@@ -1109,7 +1119,7 @@ const JadwalPertandingan: React.FC = () => {
                                   className="block text-xs font-medium mb-1"
                                   style={{ color: "#ea580c" }}
                                 >
-                                  🟠 Persiapan
+                                  🟠 Persiapan - Nomor Pertandingan
                                 </label>
                                 <input
                                   type="number"
@@ -1128,7 +1138,7 @@ const JadwalPertandingan: React.FC = () => {
                                       );
                                     }
                                   }}
-                                  placeholder="Masukkan jumlah"
+                                  placeholder="Nomor pertandingan"
                                   className="w-full px-3 py-2 text-sm rounded-lg border-2 focus:outline-none focus:ring-2"
                                   style={{
                                     borderColor: "#ea580c",
@@ -1143,7 +1153,7 @@ const JadwalPertandingan: React.FC = () => {
                                   className="block text-xs font-medium mb-1"
                                   style={{ color: "#ca8a04" }}
                                 >
-                                  🟡 Pemanasan
+                                  🟡 Pemanasan - Nomor Pertandingan
                                 </label>
                                 <input
                                   type="number"
@@ -1162,7 +1172,7 @@ const JadwalPertandingan: React.FC = () => {
                                       );
                                     }
                                   }}
-                                  placeholder="Masukkan jumlah"
+                                  placeholder="Nomor pertandingan"
                                   className="w-full px-3 py-2 text-sm rounded-lg border-2 focus:outline-none focus:ring-2"
                                   style={{
                                     borderColor: "#ca8a04",
