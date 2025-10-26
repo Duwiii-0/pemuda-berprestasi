@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useParams } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { useAuth } from "./context/authContext";
 
@@ -20,6 +20,12 @@ import Event from "./pages/landingPage/event";
 import NotFound from "./pages/notFound";
 import TutorialPage from "./pages/landingPage/tutorial";
 import LapanganLiveView from "./pages/landingPage/pertandingan";
+
+const LapanganLiveViewWrapper = () => {
+  const { idKompetisi } = useParams<{ idKompetisi: string }>();
+  const id = idKompetisi ? parseInt(idKompetisi, 10) : undefined;
+  return <LapanganLiveView idKompetisi={id} />;
+};
 
 // Dashboard
 import DataAtlit from "./pages/dashboard/dataAtlit";
@@ -250,7 +256,7 @@ export default function AppRoutes() {
           <Route index element={<Home />} />
           <Route path="events" element={<Event />} />
           <Route path="tutorial" element={<TutorialPage />} />
-          <Route path="pertandingan" element={<LapanganLiveView />} />
+          <Route path="pertandingan/:idKompetisi" element={<LapanganLiveViewWrapper />} />
         </Route>
 
         {/* Settings - protected route */}
