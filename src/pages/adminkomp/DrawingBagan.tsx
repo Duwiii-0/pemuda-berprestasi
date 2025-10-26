@@ -1038,3 +1038,5 @@ const ageOptions = [
     </div>
   );
 };
+
+export default DrawingBagan;
