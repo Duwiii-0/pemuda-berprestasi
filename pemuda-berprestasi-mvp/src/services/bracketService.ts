@@ -484,54 +484,55 @@ static async generatePrestasiBracket(
     console.log(`⚔️ ALL FIGHTING (no BYE): ${fightingParticipants.length}`);
   }
 
+   // ========================================
+  // STEP 2: ROUND 1 - Create matches with PROPER BYE DISTRIBUTION
   // ========================================
-  // STEP 2: ROUND 1 - Create ALL matches (including BYE matches)
-  // ========================================
-  console.log(`\n📝 Creating Round 1 matches...`);
+  console.log(`\n📝 Creating Round 1 matches with zigzag BYE layout...`);
   
-// ========================================
-  // STEP 2: ROUND 1 - Create matches with ZIGZAG BYE positioning
-  // ========================================
-  console.log(`\n📝 Creating Round 1 matches with ZIGZAG BYE layout...`);
-  
-  // Calculate BYE positions (ZIGZAG pattern)
+  // Calculate optimal BYE positions (zigzag pattern)
   const byePositions = this.calculateByePositions(participantCount, round1Target);
   const totalMatchesR1 = round1Target / 2;
   
-  // Shuffle participants
+  console.log(`\n🎲 Shuffling participants...`);
+  
+  // Shuffle participants for random seeding
   const shuffledFighters = this.shuffleArray([...fightingParticipants]);
   const shuffledByes = this.shuffleArray([...byeParticipants]);
   
   console.log(`   ⚔️ Fighters (${shuffledFighters.length}):`, shuffledFighters.map(p => p.name));
-  console.log(`   🎁 BYE (${shuffledByes.length}):`, shuffledByes.map(p => p.name));
+  console.log(`   🎁 BYE participants (${shuffledByes.length}):`, shuffledByes.map(p => p.name));
   
   let fighterIndex = 0;
   let byeIndex = 0;
   
-  // Create matches POSITION BY POSITION (sequential!)
+  console.log(`\n🏗️ Building Round 1 matches...`);
+  
+  // Create matches position by position
   for (let matchPosition = 0; matchPosition < totalMatchesR1; matchPosition++) {
     let participant1: Participant | null = null;
     let participant2: Participant | null = null;
     let isByeMatch = false;
     
-    // Check if THIS POSITION should have BYE
+    // Check if this position should have a BYE
     if (byePositions.includes(matchPosition) && byeIndex < shuffledByes.length) {
-      // BYE match
+      // This position gets a BYE participant
       participant1 = shuffledByes[byeIndex];
-      participant2 = null;
+      participant2 = null; // BYE
       isByeMatch = true;
       byeIndex++;
-      console.log(`  ✅ Pos ${matchPosition}: ${participant1.name} vs BYE 🎁`);
+      
+      console.log(`  ✅ Match ${matchPosition}: ${participant1.name} vs BYE 🎁`);
     } else {
-      // FIGHT match
+      // This position gets FIGHTERS
       participant1 = shuffledFighters[fighterIndex];
       participant2 = shuffledFighters[fighterIndex + 1] || null;
       
       if (!participant2 && fighterIndex + 1 >= shuffledFighters.length) {
+        // Odd fighter gets BYE
+        console.log(`  ✅ Match ${matchPosition}: ${participant1?.name || 'N/A'} vs BYE (odd fighter) 🎁`);
         isByeMatch = true;
-        console.log(`  ✅ Pos ${matchPosition}: ${participant1?.name} vs BYE (odd) 🎁`);
       } else {
-        console.log(`  ✅ Pos ${matchPosition}: ${participant1?.name} vs ${participant2?.name} ⚔️`);
+        console.log(`  ✅ Match ${matchPosition}: ${participant1?.name || 'N/A'} vs ${participant2?.name || 'N/A'} ⚔️`);
       }
       
       fighterIndex += 2;
@@ -553,7 +554,7 @@ static async generatePrestasiBracket(
       matches.push({
         id: match.id_match,
         round: 1,
-        position: matchPosition,  // ⭐ PAKAI matchPosition, BUKAN matches.length!
+        position: matchPosition,
         participant1,
         participant2,
         status: isByeMatch || !participant2 ? 'bye' : 'pending',
@@ -562,6 +563,10 @@ static async generatePrestasiBracket(
       });
     }
   }
+
+  console.log(`\n✅ Round 1 complete: Created ${matches.length} matches`);
+  console.log(`   📊 BYE matches: ${matches.filter(m => m.status === 'bye').length}`);
+  console.log(`   ⚔️ Fight matches: ${matches.filter(m => m.status === 'pending').length}`);
 
   // ========================================
   // STEP 3: ROUND 2+ - Create EMPTY placeholder matches
@@ -633,47 +638,63 @@ static getMatchesByRound(matches: Match[], round: number): Match[] {
   /**
    * ⭐ NEW: Calculate optimal BYE positions to spread them evenly
    */
-static calculateByePositions(participantCount: number, targetSize: number): number[] {
-  const byesNeeded = targetSize - participantCount;
-  
-  if (byesNeeded <= 0) return [];
-  
-  const totalMatchPositions = targetSize / 2; // Total matches in Round 1
-  const positions: number[] = [];
-  
-  console.log(`\n🎯 Calculating BYE positions (ZIGZAG):`);
-  console.log(`   Participants: ${participantCount}, Target: ${targetSize}, BYEs: ${byesNeeded}, Matches: ${totalMatchPositions}`);
-  
-  if (byesNeeded === 1) {
-    positions.push(0);
-    console.log(`   📍 BYE #1 → Position 0 (TOP)`);
-  } else if (byesNeeded === 2) {
-    positions.push(0);
-    positions.push(totalMatchPositions - 1);
-    console.log(`   📍 BYE #1 → Position 0 (TOP)`);
-    console.log(`   📍 BYE #2 → Position ${totalMatchPositions - 1} (BOTTOM)`);
-  } else {
-    // Multiple BYEs: TOP → BOTTOM → Fill middle evenly
-    positions.push(0);
-    positions.push(totalMatchPositions - 1);
+  static calculateByePositions(participantCount: number, targetSize: number): number[] {
+    const byesNeeded = targetSize - participantCount;
     
-    console.log(`   📍 BYE #1 → Position 0 (TOP)`);
-    console.log(`   📍 BYE #2 → Position ${totalMatchPositions - 1} (BOTTOM)`);
+    if (byesNeeded <= 0) return [];
     
-    const remainingByes = byesNeeded - 2;
-    const gap = (totalMatchPositions - 2) / (remainingByes + 1);
+    const totalMatchPositions = targetSize / 2; // Total matches in Round 1
+    const positions: number[] = [];
     
-    for (let i = 0; i < remainingByes; i++) {
-      const position = Math.round((i + 1) * gap);
-      if (position > 0 && position < totalMatchPositions - 1 && !positions.includes(position)) {
-        positions.push(position);
-        console.log(`   📍 BYE #${i + 3} → Position ${position} (MIDDLE)`);
+    console.log(`\n🎯 Calculating BYE positions (ZIGZAG pattern):`);
+    console.log(`   Total participants: ${participantCount}`);
+    console.log(`   Target bracket size: ${targetSize}`);
+    console.log(`   BYEs needed: ${byesNeeded}`);
+    console.log(`   Total R1 matches: ${totalMatchPositions}`);
+    
+    if (byesNeeded === 1) {
+      // Single BYE: place at TOP
+      positions.push(0);
+      console.log(`   📍 Single BYE → Position 0 (TOP)`);
+    } else if (byesNeeded === 2) {
+      // Two BYEs: TOP and BOTTOM
+      positions.push(0);
+      positions.push(totalMatchPositions - 1);
+      console.log(`   📍 Two BYEs → Position 0 (TOP), ${totalMatchPositions - 1} (BOTTOM)`);
+    } else {
+      // Multiple BYEs: Zigzag pattern
+      positions.push(0); // First BYE at TOP
+      positions.push(totalMatchPositions - 1); // Second BYE at BOTTOM
+      
+      console.log(`   📍 BYE #1 → Position 0 (TOP)`);
+      console.log(`   📍 BYE #2 → Position ${totalMatchPositions - 1} (BOTTOM)`);
+      
+      // Remaining BYEs: Fill gaps evenly
+      const remainingByes = byesNeeded - 2;
+      
+      if (remainingByes > 0) {
+        // Calculate gap between BYE positions
+        const gap = (totalMatchPositions - 2) / (remainingByes + 1);
+        
+        for (let i = 0; i < remainingByes; i++) {
+          const position = Math.round((i + 1) * gap);
+          
+          // Ensure position is valid and not duplicate
+          if (position > 0 && position < totalMatchPositions - 1 && !positions.includes(position)) {
+            positions.push(position);
+            console.log(`   📍 BYE #${i + 3} → Position ${position} (MIDDLE)`);
+          }
+        }
       }
     }
+    
+    // Sort ascending for easier processing
+    const sorted = positions.sort((a, b) => a - b);
+    console.log(`   ✅ Final BYE positions:`, sorted);
+    console.log(`   📊 Distribution: ${sorted.map(p => `Match ${p}`).join(', ')}\n`);
+    
+    return sorted;
   }
-  
-  return positions.sort((a, b) => a - b);
-}
 
   /**
    * Generate PEMULA bracket (single round, all matches)
@@ -920,9 +941,9 @@ static async generatePemulaBracket(
    */
 static async updateMatch(
   matchId: number, 
-  winnerId?: number | null,             // ⭐ NOW OPTIONAL
-  scoreA?: number | null,               // ⭐ NOW OPTIONAL
-  scoreB?: number | null,               // ⭐ NOW OPTIONAL
+  winnerId?: number | null,             
+  scoreA?: number | null,               
+  scoreB?: number | null,               
   tanggalPertandingan?: Date | null,
   nomorAntrian?: number | null,
   nomorLapangan?: string | null
@@ -960,10 +981,15 @@ static async updateMatch(
       console.log(`   🏟️ Updating nomor lapangan: ${nomorLapangan}`);
     }
     
-    // ⭐ AUTO-GENERATE nomor_partai if both queue fields exist
-    if (nomorAntrian && nomorLapangan) {
+    // ⭐ AUTO-GENERATE nomor_partai HANYA jika KEDUA field diisi
+    if (nomorAntrian !== null && nomorAntrian !== undefined && 
+        nomorLapangan !== null && nomorLapangan !== undefined) {
       updateData.nomor_partai = `${nomorAntrian}${nomorLapangan}`;
       console.log(`   🎯 Auto-generated nomor_partai: ${updateData.nomor_partai}`);
+    } else if (nomorAntrian === null && nomorLapangan === null) {
+      // ⭐ CLEAR nomor_partai jika kedua field di-clear
+      updateData.nomor_partai = null;
+      console.log(`   🗑️ Clearing nomor_partai`);
     }
 
     // Execute update

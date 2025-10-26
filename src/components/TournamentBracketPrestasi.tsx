@@ -732,7 +732,7 @@ const handleExportPDF = async () => {
 
   // Fungsi untuk hitung posisi vertikal yang konsisten
   const calculateVerticalPosition = (roundIndex: number, matchIndex: number, totalMatchesInRound: number): number => {
-    const baseSpacing = 250;
+    const baseSpacing = 280;
     const spacingMultiplier = Math.pow(2, roundIndex);
     const spacing = baseSpacing * spacingMultiplier;
     
