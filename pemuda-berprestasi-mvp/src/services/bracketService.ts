@@ -437,28 +437,32 @@ static async generatePrestasiBracket(
   if (byeParticipantIds && byeParticipantIds.length > 0) {
     byeParticipants = participants.filter(p => byeParticipantIds.includes(p.id));
     activeParticipants = participants.filter(p => !byeParticipantIds.includes(p.id));
+    console.log("   Using provided BYE IDs:", byeParticipantIds);
   } else if (byesNeeded > 0) {
     const shuffled = this.shuffleArray([...participants]);
     byeParticipants = shuffled.slice(0, byesNeeded);
     activeParticipants = shuffled.slice(byesNeeded);
+    console.log("   Auto-selected BYE participants:", byeParticipants.map(p => p.name));
   }
 
-  // 3️⃣ Buat semua match Round 1 (termasuk slot BYE)
+  // 3️⃣ Hitung total match Round 1 dan posisi BYE
   const totalMatchesR1 = targetSize / 2;
   const byePositions = this.calculateByePositions(participantCount, targetSize);
   console.log(`   BYE positions (zigzag):`, byePositions);
 
+  // 4️⃣ Shuffle peserta aktif
   const shuffledParticipants = this.shuffleArray([...activeParticipants]);
   let pIndex = 0;
   let byeIndex = 0;
 
+  // 5️⃣ Buat semua match Round 1 (termasuk slot BYE)
   for (let i = 0; i < totalMatchesR1; i++) {
     let p1: Participant | null = null;
     let p2: Participant | null = null;
     let status: Match["status"] = "pending";
 
+    // Jika posisi ini BYE — isi satu peserta bye dan kosongkan lawannya
     if (byePositions.includes(i) && byeIndex < byeParticipants.length) {
-      // Posisi ini BYE — isi satu peserta bye dan kosongkan lawannya
       p1 = byeParticipants[byeIndex++];
       p2 = null;
       status = "bye";
@@ -499,7 +503,7 @@ static async generatePrestasiBracket(
       scoreB: 0
     });
 
-    console.log(`   R1 match ${i}: ${p1 ? p1.name : "BYE"} vs ${p2 ? p2.name : "BYE"}`);
+    console.log(`   🎮 R1 match ${i}: ${p1 ? p1.name : "BYE"} vs ${p2 ? p2.name : "BYE"}`);
   }
 
   // 🩹 PATCH #2 — kalau masih ada peserta tersisa setelah loop (missing 1 kasus)
@@ -527,10 +531,10 @@ static async generatePrestasiBracket(
       scoreB: 0
     });
 
-    console.log(`   Added leftover participant as BYE: ${leftover.name}`);
+    console.log(`   🩹 Added leftover participant as BYE: ${leftover.name}`);
   }
 
-  // 4️⃣ Buat placeholder untuk ronde berikutnya (Quarter, Semi, Final)
+  // 6️⃣ Buat placeholder untuk ronde berikutnya (Quarter, Semi, Final)
   const totalRounds = Math.log2(targetSize);
   for (let round = 2; round <= totalRounds; round++) {
     const matchesInRound = Math.pow(2, totalRounds - round);
@@ -559,7 +563,7 @@ static async generatePrestasiBracket(
     }
   }
 
-  // 5️⃣ Auto-advance peserta yang BYE dari Ronde 1 ke ronde berikutnya
+  // 7️⃣ Auto-advance peserta yang BYE dari Ronde 1 ke ronde berikutnya
   const createdR1Matches = matches.filter(m => m.round === 1);
   for (const m of createdR1Matches) {
     if (m.participant1 && !m.participant2) {
@@ -567,45 +571,46 @@ static async generatePrestasiBracket(
         { id_bagan: baganId, ronde: 1, id_match: m.id },
         m.participant1.id
       );
-      console.log(`   Auto-advanced BYE winner ${m.participant1.name}`);
+      console.log(`   ⚡ Auto-advanced BYE winner ${m.participant1.name}`);
     }
   }
 
-  // 🔎 Debug akhir
-console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-console.log("🔍 FINAL DEBUG SUMMARY FOR BRACKET");
-console.log(`🎯 Total peserta: ${participantCount}`);
-console.log(`📦 Total targetSize: ${targetSize}`);
-console.log(`💤 Total BYE needed: ${byesNeeded}`);
-console.log(`🙋‍♂️ Active participants count: ${activeParticipants.length}`);
-console.log(`😴 Bye participants count: ${byeParticipants.length}`);
-console.log(`📍 Bye slot positions (R1): ${byePositions.join(", ")}`);
+  // 8️⃣ Debug summary akhir
+  console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+  console.log("🔍 FINAL DEBUG SUMMARY FOR BRACKET");
+  console.log(`🎯 Total peserta: ${participantCount}`);
+  console.log(`📦 Total targetSize: ${targetSize}`);
+  console.log(`💤 Total BYE needed: ${byesNeeded}`);
+  console.log(`🙋‍♂️ Active participants count: ${activeParticipants.length}`);
+  console.log(`😴 Bye participants count: ${byeParticipants.length}`);
+  console.log(`📍 Bye slot positions (R1): ${byePositions.join(", ")}`);
 
-const allUsed = matches
-  .filter(m => m.round === 1)
-  .flatMap(m => [m.participant1, m.participant2])
-  .filter(Boolean)
-  .map(p => (p as Participant).name);
+  const allUsed = matches
+    .filter(m => m.round === 1)
+    .flatMap(m => [m.participant1, m.participant2])
+    .filter(Boolean)
+    .map(p => (p as Participant).name);
 
-const allNames = participants.map(p => p.name);
-const missing = allNames.filter(n => !allUsed.includes(n));
+  const allNames = participants.map(p => p.name);
+  const missing = allNames.filter(n => !allUsed.includes(n));
 
-console.log("👥 Semua peserta:", allNames);
-console.log("✅ Yang masuk ke R1:", allUsed);
-if (missing.length > 0) {
-  console.log("⚠️ MISSING PESERTA:", missing);
-} else {
-  console.log("🎉 Semua peserta terpakai di R1");
-}
+  console.log("👥 Semua peserta:", allNames);
+  console.log("✅ Yang masuk ke R1:", allUsed);
+  if (missing.length > 0) {
+    console.log("⚠️ MISSING PESERTA:", missing);
+  } else {
+    console.log("🎉 Semua peserta terpakai di R1");
+  }
 
-const byeCountR1 = matches.filter(
-  m => m.round === 1 && (m.status === "bye" || !m.participant2)
-).length;
-console.log(`🟡 Total BYE matches di R1: ${byeCountR1}`);
-console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+  const byeCountR1 = matches.filter(
+    m => m.round === 1 && (m.status === "bye" || !m.participant2)
+  ).length;
+  console.log(`🟡 Total BYE matches di R1: ${byeCountR1}`);
+  console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
   return matches;
 }
+
 
 static getMatchesByRound(matches: Match[], round: number): Match[] {
   return matches.filter(m => m.round === round);
