@@ -154,7 +154,7 @@ const LandingPage = () => {
                 </svg>
               </button>
               <Link
-                to="/pertandingan/1" // Assuming competition ID 1 for now
+                to="/event/pertandingan/1" // Assuming competition ID 1 for now
                 className="group relative inline-flex items-center gap-3 px-8 md:px-12 py-4 md:py-5 text-base md:text-lg lg:text-xl font-plex font-semibold bg-red text-white hover:bg-red/90 transition-all duration-300 rounded-xl hover:scale-105 hover:shadow-2xl hover:shadow-red/30"
               >
                 <Eye className="w-5 h-5 md:w-6 md:h-6 group-hover:translate-x-1 transition-transform duration-300" />
