@@ -425,60 +425,57 @@ static async generatePrestasiBracket(
     throw new Error('Minimal 4 peserta diperlukan untuk bracket prestasi');
   }
 
-  // 1) Hitung struktur dasar
+  // 1️⃣ Hitung struktur dasar
   const targetSize = Math.pow(2, Math.ceil(Math.log2(participantCount)));
   const byesNeeded = targetSize - participantCount;
   console.log(`📊 PRESTASI: participants=${participantCount}, targetSize=${targetSize}, byesNeeded=${byesNeeded}`);
 
-  // 2) Jika backend/param memberikan byeParticipantIds, prioritaskan itu
+  // 2️⃣ Tentukan siapa peserta BYE (jika belum ditentukan)
   let byeParticipants: Participant[] = [];
-  let fightingParticipants: Participant[] = [...participants];
+  let activeParticipants: Participant[] = [...participants];
 
   if (byeParticipantIds && byeParticipantIds.length > 0) {
     byeParticipants = participants.filter(p => byeParticipantIds.includes(p.id));
-    fightingParticipants = participants.filter(p => !byeParticipantIds.includes(p.id));
-    console.log(`   Using provided BYE IDs:`, byeParticipantIds);
+    activeParticipants = participants.filter(p => !byeParticipantIds.includes(p.id));
+    console.log('   Using provided BYE IDs:', byeParticipantIds);
+  } else if (byesNeeded > 0) {
+    const shuffled = this.shuffleArray([...participants]);
+    byeParticipants = shuffled.slice(0, byesNeeded);
+    activeParticipants = shuffled.slice(byesNeeded);
+    console.log('   Auto-selected BYE participants:', byeParticipants.map(p => p.name));
   }
 
-  // 3) Jika tidak ada byeParticipantIds, auto-select (ambil random)
-  if ((!byeParticipantIds || byeParticipantIds.length === 0) && !Array.isArray(byeParticipantIds)) {
-    if (byesNeeded > 0) {
-      const shuffledAll = this.shuffleArray([...participants]);
-      byeParticipants = shuffledAll.slice(0, byesNeeded);
-      fightingParticipants = shuffledAll.slice(byesNeeded);
-      console.log(`   Auto-selected BYE participants:`, byeParticipants.map(p => p.name));
+  // 3️⃣ Buat semua match Round 1 (termasuk slot BYE)
+  const totalMatchesR1 = targetSize / 2;
+  const byePositions = this.calculateByePositions(participantCount, targetSize);
+  console.log(`   BYE positions (zigzag):`, byePositions);
+
+  // Gabungkan semua peserta (BYE diacak posisinya)
+  const shuffledParticipants = this.shuffleArray([...activeParticipants]);
+  let pIndex = 0;
+  let byeIndex = 0;
+
+  for (let i = 0; i < totalMatchesR1; i++) {
+    let p1: Participant | null = null;
+    let p2: Participant | null = null;
+    let status: Match['status'] = 'pending';
+
+    if (byePositions.includes(i) && byeIndex < byeParticipants.length) {
+      // Isi satu sisi dengan peserta BYE, sisi lain kosong
+      p1 = byeParticipants[byeIndex++];
+      p2 = null;
+      status = 'bye';
     } else {
-      fightingParticipants = [...participants];
-      byeParticipants = [];
+      p1 = shuffledParticipants[pIndex++] || null;
+      p2 = shuffledParticipants[pIndex++] || null;
+      if (!p2) status = 'bye';
     }
-  }
-
-  // 4) Tentukan positions BYE pada round 1 match slot (zigzag top-bottom-mid pattern)
-  const round1Target = (targetSize >= 8) ? 8 : (targetSize >= 4 ? 4 : 2); // keep basic targets
-  const totalMatchesR1Slots = round1Target / 2; // how many R1 match *slots* in full bracket
-  const byePositions = this.calculateByePositions(participantCount, round1Target); // gunakan fungsi yang sudah ada
-  console.log(`   Bye positions (slot index in R1 slots):`, byePositions);
-
-  // 5) Determine how many actual fights we must create in Round 1:
-  //    activeRound1Players = participants - byesNeeded
-  const activeRound1Players = participantCount - byeParticipants.length;
-  const totalMatchesRound1 = Math.floor(activeRound1Players / 2);
-  console.log(`   Active Round1 players: ${activeRound1Players}, creating ${totalMatchesRound1} R1 matches`);
-
-  // Shuffle fighting participants for seeding randomness
-  const shuffledFighters = this.shuffleArray([...fightingParticipants]);
-
-  // Build R1 matches — only the real matches needed
-  let fighterIndex = 0;
-  for (let pos = 0; pos < totalMatchesRound1; pos++) {
-    const p1 = shuffledFighters[fighterIndex++];
-    const p2 = shuffledFighters[fighterIndex++] || null;
 
     const created = await prisma.tb_match.create({
       data: {
         id_bagan: baganId,
         ronde: 1,
-        id_peserta_a: p1.id,
+        id_peserta_a: p1 ? p1.id : null,
         id_peserta_b: p2 ? p2.id : null,
         skor_a: 0,
         skor_b: 0
@@ -488,72 +485,20 @@ static async generatePrestasiBracket(
     matches.push({
       id: created.id_match,
       round: 1,
-      position: pos,
+      position: i,
       participant1: p1,
       participant2: p2,
-      status: (!p2) ? 'bye' : 'pending',
+      status,
       scoreA: 0,
       scoreB: 0
     });
 
-    console.log(`   R1 match created: ${p1.name} vs ${p2 ? p2.name : 'BYE'}`);
+    console.log(`   R1 match ${i}: ${p1 ? p1.name : 'TBD'} vs ${p2 ? p2.name : 'BYE'}`);
   }
 
-  // 6) If there are leftover fighters (odd one out) — they act as BYE effectively.
-  //    (But above logic already sets p2=null if odd.)
-  // 7) Now create Round 2 placeholders (full bracket slots), but fill BYE participants into appropriate slots using zigzag top-bottom pattern
-  const round2TotalMatches = targetSize / 4; // because Round2 participants = targetSize/2 -> matches = (targetSize/2)/2
-  // Actually easier: Round 2 match count = targetSize / 4? Wait: targetSize=16 => round2TotalMatches should be 8 (quarter) => calculation below:
-  const round2MatchesCount = targetSize / 4; // for targetSize 16 => 4 (but we want Quarter = 8 participants -> 4 matches) -> correct
-
-  console.log(`\n   Creating ${round2MatchesCount} Round2 (quarter) placeholders and filling BYE participants...`);
-
-  // We'll place byeParticipants into Round2 matches aiming "top-bottom-top-bottom" filling.
-  // Create empty placeholders for round 2 and fill participants into A/B alternately from byeParticipants and R1 winners slot will be null for now.
-  let byeIndex = 0;
-  for (let i = 0; i < round2MatchesCount; i++) {
-    // Decide slot filling strategy: alternate A/B to spread BYEs
-    let participantA: Participant | null = null;
-    let participantB: Participant | null = null;
-
-    // strategy: fill participantA first for even index, else participantB first for odd index (to alternate top/bot)
-    if (byeIndex < byeParticipants.length) {
-      if (i % 2 === 0) {
-        participantA = byeParticipants[byeIndex++];
-      } else {
-        participantB = byeParticipants[byeIndex++];
-      }
-    }
-
-    const created = await prisma.tb_match.create({
-      data: {
-        id_bagan: baganId,
-        ronde: 2,
-        id_peserta_a: participantA ? participantA.id : null,
-        id_peserta_b: participantB ? participantB.id : null,
-        skor_a: 0,
-        skor_b: 0
-      }
-    });
-
-    matches.push({
-      id: created.id_match,
-      round: 2,
-      position: i,
-      participant1: participantA,
-      participant2: participantB,
-      status: (!participantA || !participantB) ? 'bye' : 'pending',
-      scoreA: 0,
-      scoreB: 0
-    });
-
-    console.log(`   R2 match ${i} created: A=${participantA ? participantA.name : 'TBD'}, B=${participantB ? participantB.name : 'TBD'}`);
-  }
-
-  // 8) Create remaining rounds placeholders (semifinal/final) unfilled
+  // 4️⃣ Buat placeholder untuk ronde berikutnya (Quarter, Semi, Final)
   const totalRounds = Math.log2(targetSize);
-  // We already created rounds 1 and 2. Create rounds 3..totalRounds
-  for (let round = 3; round <= totalRounds; round++) {
+  for (let round = 2; round <= totalRounds; round++) {
     const matchesInRound = Math.pow(2, totalRounds - round);
     for (let i = 0; i < matchesInRound; i++) {
       const created = await prisma.tb_match.create({
@@ -580,12 +525,10 @@ static async generatePrestasiBracket(
     }
   }
 
-  // 9) Auto-advance any BYE matches created in R1 (participant vs null) to next round
-  // (You already have advanceWinnerToNextRound; but we can trigger it here by reading back created R1 matches)
+  // 5️⃣ Auto-advance peserta yang BYE dari Ronde 1 ke ronde berikutnya
   const createdR1Matches = matches.filter(m => m.round === 1);
   for (const m of createdR1Matches) {
     if (m.participant1 && !m.participant2) {
-      // mark as bye and advance
       await this.advanceWinnerToNextRound(
         { id_bagan: baganId, ronde: 1, id_match: m.id },
         m.participant1.id
@@ -596,8 +539,6 @@ static async generatePrestasiBracket(
 
   return matches;
 }
-
-
 
 static getMatchesByRound(matches: Match[], round: number): Match[] {
   return matches.filter(m => m.round === round);
@@ -613,25 +554,24 @@ static calculateByePositions(participantCount: number, targetSize: number): numb
   const totalMatches = targetSize / 2;
   const positions: number[] = [];
 
-  // Generate candidate slots from top-bottom alternately
-  let top = 0;
-  let bottom = totalMatches - 1;
-  let toggle = true; // true = top, false = bottom
+  // Zigzag pattern (top → bottom → mid-top → mid-bottom)
+  const pattern = [
+    0,
+    totalMatches - 1,
+    Math.floor(totalMatches / 4),
+    Math.floor((totalMatches * 3) / 4),
+  ];
 
-  while (positions.length < byesNeeded && top <= bottom) {
-    if (toggle) {
-      positions.push(top);
-      top++;
-    } else {
-      positions.push(bottom);
-      bottom--;
-    }
-    toggle = !toggle;
+  for (let i = 0; i < byesNeeded; i++) {
+    const pos = pattern[i] !== undefined
+      ? pattern[i]
+      : Math.floor((i / byesNeeded) * totalMatches);
+    if (pos < totalMatches && !positions.includes(pos)) positions.push(pos);
   }
 
-  // Sort ascending to make bracket rendering consistent top→bottom
   return positions.sort((a, b) => a - b);
 }
+
 
   /**
    * Generate PEMULA bracket (single round, all matches)
