@@ -12,6 +12,8 @@ import {
 import { useAuth } from "../../context/authContext";
 import { useKompetisi } from "../../context/KompetisiContext";
 import { kelasBeratOptionsMap } from "../../dummy/beratOptions";
+import TournamentBracketPemula from '../../components/TournamentBracketPemula';
+import TournamentBracketPrestasi from '../../components/TournamentBracketPrestasi';
 
 interface KelasKejuaraan {
   id_kelas_kejuaraan: string;
@@ -953,6 +955,10 @@ const ageOptions = [
               <div className="p-5 pt-0">
                 <button
                   disabled={kelas.peserta_count < 4}
+                      onClick={() => {
+                      setSelectedKelas(kelas);
+                      setShowBracket(true);
+                    }}
                   className="w-full flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg transform hover:scale-[1.02]"
                   style={{
                     background:
@@ -992,8 +998,43 @@ const ageOptions = [
           </div>
         )}
       </div>
+      {/* Bracket Viewer Modal/Component */}
+      {showBracket && selectedKelas && (
+        <div className="fixed inset-0 bg-black/50 z-50 overflow-auto">
+          <div className="min-h-screen p-4">
+            <div className="max-w-7xl mx-auto">
+              {/* Render komponen bracket sesuai tipe (Pemula/Prestasi) */}
+              {isPemula(selectedKelas) ? (
+                <TournamentBracketPemula
+                  kelasData={selectedKelas}
+                  onBack={() => {
+                    setShowBracket(false);
+                    setSelectedKelas(null);
+                    // ⭐ Refresh data setelah kembali
+                    if (kompetisiId) {
+                      fetchAtletByKompetisi(kompetisiId);
+                    }
+                  }}
+                  apiBaseUrl={import.meta.env.VITE_API_URL || "/api"}
+                />
+              ) : (
+                <TournamentBracketPrestasi
+                  kelasData={selectedKelas}
+                  onBack={() => {
+                    setShowBracket(false);
+                    setSelectedKelas(null);
+                    // ⭐ Refresh data setelah kembali
+                    if (kompetisiId) {
+                      fetchAtletByKompetisi(kompetisiId);
+                    }
+                  }}
+                  apiBaseUrl={import.meta.env.VITE_API_URL || "/api"}
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
-
-export default DrawingBagan;
