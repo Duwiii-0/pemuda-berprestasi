@@ -640,59 +640,50 @@ static getMatchesByRound(matches: Match[], round: number): Match[] {
    */
   static calculateByePositions(participantCount: number, targetSize: number): number[] {
     const byesNeeded = targetSize - participantCount;
-    
     if (byesNeeded <= 0) return [];
-    
-    const totalMatchPositions = targetSize / 2; // Total matches in Round 1
+
+    const totalMatches = targetSize / 2;
     const positions: number[] = [];
-    
-    console.log(`\n🎯 Calculating BYE positions (ZIGZAG pattern):`);
-    console.log(`   Total participants: ${participantCount}`);
-    console.log(`   Target bracket size: ${targetSize}`);
+
+    console.log(`\n🎯 Distributing BYEs (zigzag top–bottom–center pattern)`);
+    console.log(`   Participants: ${participantCount}`);
+    console.log(`   Target size: ${targetSize}`);
+    console.log(`   Total matches: ${totalMatches}`);
     console.log(`   BYEs needed: ${byesNeeded}`);
-    console.log(`   Total R1 matches: ${totalMatchPositions}`);
-    
+
+    // Helper to map from relative (-1, 1, 0) sequence to index
+    const pushSafe = (pos: number) => {
+      const valid = Math.max(0, Math.min(Math.floor(pos), totalMatches - 1));
+      if (!positions.includes(valid)) positions.push(valid);
+    };
+
     if (byesNeeded === 1) {
-      // Single BYE: place at TOP
-      positions.push(0);
-      console.log(`   📍 Single BYE → Position 0 (TOP)`);
+      pushSafe(0); // top
     } else if (byesNeeded === 2) {
-      // Two BYEs: TOP and BOTTOM
-      positions.push(0);
-      positions.push(totalMatchPositions - 1);
-      console.log(`   📍 Two BYEs → Position 0 (TOP), ${totalMatchPositions - 1} (BOTTOM)`);
+      pushSafe(0); // top
+      pushSafe(totalMatches - 1); // bottom
     } else {
-      // Multiple BYEs: Zigzag pattern
-      positions.push(0); // First BYE at TOP
-      positions.push(totalMatchPositions - 1); // Second BYE at BOTTOM
-      
-      console.log(`   📍 BYE #1 → Position 0 (TOP)`);
-      console.log(`   📍 BYE #2 → Position ${totalMatchPositions - 1} (BOTTOM)`);
-      
-      // Remaining BYEs: Fill gaps evenly
-      const remainingByes = byesNeeded - 2;
-      
-      if (remainingByes > 0) {
-        // Calculate gap between BYE positions
-        const gap = (totalMatchPositions - 2) / (remainingByes + 1);
-        
-        for (let i = 0; i < remainingByes; i++) {
-          const position = Math.round((i + 1) * gap);
-          
-          // Ensure position is valid and not duplicate
-          if (position > 0 && position < totalMatchPositions - 1 && !positions.includes(position)) {
-            positions.push(position);
-            console.log(`   📍 BYE #${i + 3} → Position ${position} (MIDDLE)`);
-          }
-        }
+      // zigzag pattern indices: [top, bottom, mid-top, mid-bottom, near-top, near-bottom, ...]
+      const slotPattern = [
+        0,
+        totalMatches - 1,
+        Math.floor(totalMatches / 4),
+        Math.floor((totalMatches * 3) / 4),
+        Math.floor(totalMatches / 8),
+        Math.floor((totalMatches * 7) / 8)
+      ];
+
+      let i = 0;
+      while (positions.length < byesNeeded) {
+        const pos = slotPattern[i % slotPattern.length] ?? Math.floor((totalMatches / byesNeeded) * i);
+        pushSafe(pos);
+        i++;
       }
     }
-    
-    // Sort ascending for easier processing
+
     const sorted = positions.sort((a, b) => a - b);
-    console.log(`   ✅ Final BYE positions:`, sorted);
-    console.log(`   📊 Distribution: ${sorted.map(p => `Match ${p}`).join(', ')}\n`);
-    
+
+    console.log(`   ✅ Final BYE positions: [${sorted.join(', ')}]`);
     return sorted;
   }
 
