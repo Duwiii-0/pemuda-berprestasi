@@ -264,7 +264,7 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
 
         {/* Grid Lapangan */}
         {currentHari && currentHari.lapangan.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16 w-full">
             {currentHari.lapangan.map((lap) => {
               const bertandingClass = lap.kelas_kejuaraan.find(
                 (kelas) => kelas.status_antrian === "bertanding"
@@ -272,7 +272,7 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
               return (
                 <div
                   key={lap.id_lapangan}
-                  className="relative p-6 rounded-2xl shadow-xl border transition-all duration-500 hover:shadow-2xl"
+                  className="relative p-6 rounded-2xl shadow-xl border transition-all duration-500 hover:shadow-2xl w-full"
                   style={{
                     backgroundColor: "rgba(255, 255, 255, 0.9)",
                     borderColor: "rgba(153, 13, 53, 0.1)",
