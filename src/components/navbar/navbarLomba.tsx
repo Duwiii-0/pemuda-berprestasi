@@ -65,7 +65,7 @@ const NavbarLomba = ({ onLogoutRequest }: { onLogoutRequest: () => void }) => {
     { to: "/event/home", label: "Beranda" },
     { to: "/event/timeline", label: "Timeline" },
     { to: "/event/faq", label: "FAQ" },
-    { to: "/pertandingan", label: "Pertandingan" },
+    { to: "/pertandingan/1", label: "Pertandingan" },
   ];
 
   const getDashboardLink = () => {
