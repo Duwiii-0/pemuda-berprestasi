@@ -445,7 +445,7 @@ static async generatePrestasiBracket(
 
   // 2️⃣ Buat “kursi” untuk Round 1
   const totalSeats = targetSize; // misal 16
-  const byePositions = this.calculateByePositions(participantCount, targetSize);
+  const byePositions = this.calculateByePositionsZigzag(participantCount, targetSize);
   console.log(`   BYE positions:`, byePositions);
 
   const seats: (Participant | null)[] = Array(totalSeats).fill(null);
@@ -583,6 +583,29 @@ static calculateByePositions(participantCount: number, targetSize: number): numb
 
   return positions.sort((a, b) => a - b);
 }
+
+static calculateByePositionsZigzag(participantCount: number, targetSize: number): number[] {
+  const byesNeeded = targetSize - participantCount;
+  const totalSlots = targetSize;
+  if (byesNeeded <= 0) return [];
+
+  // Zigzag index pattern: top, bottom, mid-top, mid-bottom, etc.
+  const basePattern = [
+    0,
+    totalSlots - 1,
+    Math.floor(totalSlots / 4),
+    totalSlots - 1 - Math.floor(totalSlots / 4),
+    Math.floor(totalSlots / 8),
+    totalSlots - 1 - Math.floor(totalSlots / 8),
+    Math.floor(totalSlots / 2) - 1,
+    Math.floor(totalSlots / 2)
+  ];
+
+  const result = basePattern.slice(0, byesNeeded).sort((a, b) => a - b);
+  console.log('🎯 Zigzag BYE index pattern:', result);
+  return result;
+}
+
 
   /**
    * Generate PEMULA bracket (single round, all matches)
