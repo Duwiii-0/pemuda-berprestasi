@@ -448,16 +448,26 @@ static async generatePrestasiBracket(
   // 3️⃣ Tentukan total match Round 1 (selalu targetSize / 2)
   const totalMatchesR1 = targetSize / 2;
 
-    // 4️⃣ Tentukan urutan zigzag posisi BYE (atas-bawah)
+  // 4️⃣ Tentukan urutan zigzag posisi BYE (atas-bawah elegan)
   const byePositions: number[] = [];
   for (let i = 0; i < byesNeeded; i++) {
+    // Even index → dari atas
+    // Odd index → dari bawah
     if (i % 2 === 0) {
-      byePositions.push(i / 2); // atas
+      byePositions.push(Math.floor(i / 2));
     } else {
-      byePositions.push(totalMatchesR1 - Math.ceil(i / 2)); // bawah
+      byePositions.push(totalMatchesR1 - Math.ceil(i / 2));
     }
   }
-  console.log(`   🎯 Zigzag BYE positions:`, byePositions);
+
+  // ✨ Pastikan match terakhir selalu BYE kalau belum kebagian
+  if (!byePositions.includes(totalMatchesR1 - 1) && byePositions.length < totalMatchesR1) {
+    byePositions.push(totalMatchesR1 - 1);
+  }
+
+  // Urutkan biar tetap naik
+  byePositions.sort((a, b) => a - b);
+  console.log(`   🎯 Zigzag BYE positions (finalized):`, byePositions);
 
   // 4️⃣ Gabungkan semua peserta (BYE + aktif) dan acak
   const allParticipants = this.shuffleArray([...byeParticipants, ...activeParticipants]);
