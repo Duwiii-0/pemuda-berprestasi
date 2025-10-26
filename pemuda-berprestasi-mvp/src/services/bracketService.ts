@@ -535,30 +535,44 @@ static async generatePrestasiBracket(
   }
 
   // 🩹 PATCH #3 — kalau masih ada bye participants belum terpakai, masukkan ke R1
-  while (byeIndex < byeParticipants.length) {
-    const extraBye = byeParticipants[byeIndex++];
-    const created = await prisma.tb_match.create({
-      data: {
-        id_bagan: baganId,
-        ronde: 1,
-        id_peserta_a: extraBye.id,
-        id_peserta_b: null,
-        skor_a: 0,
-        skor_b: 0
-      }
-    });
-    matches.push({
-      id: created.id_match,
-      round: 1,
-      position: matches.filter(m => m.round === 1).length, // urutan terakhir R1
-      participant1: extraBye,
-      participant2: null,
-      status: "bye",
-      scoreA: 0,
-      scoreB: 0
-    });
-    console.log(`   🩹 Extra BYE assigned: ${extraBye.name}`);
-  }
+while (byeIndex < byeParticipants.length) {
+  const extraBye = byeParticipants[byeIndex++];
+
+  // ✅ Cek apakah peserta ini sudah muncul di Round 1
+  const alreadyUsed = matches.some(
+    m => m.round === 1 && (
+      m.participant1?.id === extraBye.id ||
+      m.participant2?.id === extraBye.id
+    )
+  );
+
+  if (alreadyUsed) continue; // skip, jangan ditambah lagi
+
+  const created = await prisma.tb_match.create({
+    data: {
+      id_bagan: baganId,
+      ronde: 1,
+      id_peserta_a: extraBye.id,
+      id_peserta_b: null,
+      skor_a: 0,
+      skor_b: 0
+    }
+  });
+
+  matches.push({
+    id: created.id_match,
+    round: 1,
+    position: matches.filter(m => m.round === 1).length,
+    participant1: extraBye,
+    participant2: null,
+    status: "bye",
+    scoreA: 0,
+    scoreB: 0
+  });
+
+  console.log(`   🩹 Extra BYE assigned safely: ${extraBye.name}`);
+}
+
 
 
   // 6️⃣ Buat placeholder untuk ronde berikutnya (Quarter, Semi, Final)
