@@ -19,7 +19,7 @@ import Home from "./pages/landingPage/home";
 import Event from "./pages/landingPage/event";
 import NotFound from "./pages/notFound";
 import TutorialPage from "./pages/landingPage/tutorial";
-import LapanganLiveView from "./pages/landingPage/pertandingan";
+import LapanganLiveView from "./lombaLayout/pertandingan";
 
 const LapanganLiveViewWrapper = () => {
   const { idKompetisi } = useParams<{ idKompetisi: string }>();
@@ -256,7 +256,10 @@ export default function AppRoutes() {
           <Route index element={<Home />} />
           <Route path="events" element={<Event />} />
           <Route path="tutorial" element={<TutorialPage />} />
-          <Route path="pertandingan/:idKompetisi" element={<LapanganLiveViewWrapper />} />
+          <Route
+            path="pertandingan/:idKompetisi"
+            element={<LapanganLiveViewWrapper />}
+          />
         </Route>
 
         {/* Settings - protected route */}

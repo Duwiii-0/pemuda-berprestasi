@@ -29,6 +29,31 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
   const [error, setError] = useState("");
   const [selectedHari, setSelectedHari] = useState<string | null>(null);
 
+  const generateNamaKelas = (kelas: any) => {
+    const parts = [];
+    if (kelas.cabang) parts.push(kelas.cabang);
+    if (kelas.kategori_event?.nama_kategori)
+      parts.push(kelas.kategori_event.nama_kategori);
+
+    const isPoomsaePemula =
+      kelas.cabang === "POOMSAE" &&
+      kelas.kategori_event?.nama_kategori === "Pemula";
+    if (kelas.kelompok?.nama_kelompok && !isPoomsaePemula) {
+      parts.push(kelas.kelompok.nama_kelompok);
+    }
+
+    if (kelas.kelas_berat) {
+      const gender =
+        kelas.kelas_berat.jenis_kelamin === "LAKI_LAKI" ? "Putra" : "Putri";
+      parts.push(gender);
+    }
+
+    if (kelas.kelas_berat?.nama_kelas) parts.push(kelas.kelas_berat.nama_kelas);
+    if (kelas.poomsae?.nama_kelas) parts.push(kelas.poomsae.nama_kelas);
+
+    return parts.length > 0 ? parts.join(" - ") : "Kelas Tidak Lengkap";
+  };
+
   useEffect(() => {
     if (!idKompetisi) return;
     fetchLiveData();
