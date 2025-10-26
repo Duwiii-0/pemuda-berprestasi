@@ -5,6 +5,7 @@ interface KelasLapangan {
   id_kelas_kejuaraan: number;
   nama_kelas: string;
   jumlah_peserta: number;
+  status_antrian: "bertanding" | "persiapan" | "pemanasan" | "menunggu";
   nomor_antrian: number;
 }
 
@@ -113,6 +114,32 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "bertanding":
+        return "bg-green-500/80";
+      case "persiapan":
+        return "bg-orange-400/80";
+      case "pemanasan":
+        return "bg-yellow-400/80";
+      default:
+        return "bg-gray-300/80";
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case "bertanding":
+        return "🟢 Sedang Bertanding";
+      case "persiapan":
+        return "🟠 Persiapan";
+      case "pemanasan":
+        return "🟡 Pemanasan";
+      default:
+        return "⚪ Menunggu";
     }
   };
 
@@ -238,85 +265,119 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
         {/* Grid Lapangan */}
         {currentHari && currentHari.lapangan.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
-            {currentHari.lapangan.map((lap) => (
-              <div
-                key={lap.id_lapangan}
-                className="relative p-6 rounded-2xl shadow-xl border transition-all duration-500 hover:shadow-2xl"
-                style={{
-                  backgroundColor: "rgba(255, 255, 255, 0.9)",
-                  borderColor: "rgba(153, 13, 53, 0.1)",
-                }}
-              >
-                <div className="flex items-center justify-between mb-4">
-                  <h3
-                    className="text-2xl font-bebas"
-                    style={{ color: "#990D35" }}
-                  >
-                    Lapangan {lap.nama_lapangan}
-                  </h3>
-                  <div className="w-3 h-3 rounded-full bg-red-500 animate-pulse"></div>
-                </div>
-
-                {lap.antrian && (
-                  <div className="mb-4 text-center">
-                    <p className="text-sm font-medium text-gray-600">Bertanding: {lap.antrian.bertanding}</p>
-                    <p className="text-sm font-medium text-gray-600">Persiapan: {lap.antrian.persiapan}</p>
-                    <p className="text-sm font-medium text-gray-600">Pemanasan: {lap.antrian.pemanasan}</p>
-                  </div>
-                )}
-
-                <p
-                  className="text-sm mb-4"
-                  style={{ color: "#050505", opacity: 0.6 }}
+            {currentHari.lapangan.map((lap) => {
+              const bertandingClass = lap.kelas_kejuaraan.find(
+                (kelas) => kelas.status_antrian === "bertanding"
+              );
+              return (
+                <div
+                  key={lap.id_lapangan}
+                  className="relative p-6 rounded-2xl shadow-xl border transition-all duration-500 hover:shadow-2xl"
+                  style={{
+                    backgroundColor: "rgba(255, 255, 255, 0.9)",
+                    borderColor: "rgba(153, 13, 53, 0.1)",
+                  }}
                 >
-                  {new Date(lap.tanggal).toLocaleDateString("id-ID", {
-                    weekday: "long",
-                    day: "numeric",
-                    month: "long",
-                    year: "numeric",
-                  })}
-                </p>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3
+                      className="text-2xl font-bebas"
+                      style={{ color: "#990D35" }}
+                    >
+                      Lapangan {lap.nama_lapangan}
+                    </h3>
+                    <div className="w-3 h-3 rounded-full bg-red-500 animate-pulse"></div>
+                  </div>
 
-                <div className="space-y-3">
-                  {lap.kelas_kejuaraan.length > 0 ? (
-                    lap.kelas_kejuaraan.map((kelas) => (
-                      <div
-                        key={kelas.id_kelas_kejuaraan}
-                        className="flex items-center justify-between p-3 rounded-xl border transition-all duration-300 hover:bg-white"
-                        style={{
-                          backgroundColor: "rgba(255, 255, 255, 0.7)",
-                          borderColor: "rgba(153, 13, 53, 0.05)",
-                        }}
-                      >
-                        <div className="flex-1">
-                          <p
-                            className="font-semibold text-sm"
-                            style={{ color: "#050505" }}
-                          >
-                            {kelas.nama_kelas}
-                          </p>
-                          <p
-                            className="text-xs mt-1"
-                            style={{ color: "#990D35" }}
-                          >
-                            kelas {kelas.nomor_antrian}
-                          </p>
-                        </div>
+                  {bertandingClass && (
+                    <p
+                      className="text-lg font-semibold mb-2"
+                      style={{ color: "#050505" }}
+                    >
+                      Sedang Bertanding: {bertandingClass.nama_kelas}
+                    </p>
+                  )}
+
+                  {lap.antrian && (
+                    <div className="mb-4 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg font-medium text-green-700 bg-green-100 px-3 py-1 rounded-md">Bertanding: {lap.antrian.bertanding}</span>
                       </div>
-                    ))
-                  ) : (
-                    <div className="text-center py-8">
-                      <p
-                        className="text-sm"
-                        style={{ color: "#050505", opacity: 0.5 }}
-                      >
-                        Belum ada kelas terjadwal
-                      </p>
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg font-medium text-orange-700 bg-orange-100 px-3 py-1 rounded-md">Persiapan: {lap.antrian.persiapan}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg font-medium text-yellow-700 bg-yellow-100 px-3 py-1 rounded-md">Pemanasan: {lap.antrian.pemanasan}</span>
+                      </div>
                     </div>
                   )}
+
+                  <p
+                    className="text-sm mb-4"
+                    style={{ color: "#050505", opacity: 0.6 }}
+                  >
+                    {new Date(lap.tanggal).toLocaleDateString("id-ID", {
+                      weekday: "long",
+                      day: "numeric",
+                      month: "long",
+                      year: "numeric",
+                    })}
+                  </p>
+
+                  <div className="space-y-3">
+                    {lap.kelas_kejuaraan.length > 0 ? (
+                      lap.kelas_kejuaraan.map((kelas) => (
+                        <div
+                          key={kelas.id_kelas_kejuaraan}
+                          className="flex items-center justify-between p-3 rounded-xl border transition-all duration-300 hover:bg-white"
+                          style={{
+                            backgroundColor: "rgba(255, 255, 255, 0.7)",
+                            borderColor: "rgba(153, 13, 53, 0.05)",
+                          }}
+                        >
+                          <div className="flex-1">
+                            <p
+                              className="font-semibold text-sm"
+                              style={{ color: "#050505" }}
+                            >
+                              {kelas.nama_kelas}
+                            </p>
+                            <p
+                              className="text-xs mt-1"
+                              style={{ color: "#990D35" }}
+                            >
+                              Antrian #{kelas.nomor_antrian}
+                            </p>
+                          </div>
+                          <div className="flex flex-col items-end gap-1">
+                            <div
+                              className={`w-3 h-3 rounded-full ${getStatusColor(
+                                kelas.status_antrian
+                              )} ring-4 ring-white/60 shadow-md`}
+                              title={kelas.status_antrian}
+                            ></div>
+                            <span
+                              className="text-xs whitespace-nowrap"
+                              style={{ color: "#050505", opacity: 0.7 }}
+                            >
+                              {getStatusLabel(kelas.status_antrian).split(" ")[1]}
+                            </span>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-center py-8">
+                        <p
+                          className="text-sm"
+                          style={{ color: "#050505", opacity: 0.5 }}
+                        >
+                          Belum ada kelas terjadwal
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         ) : (
           <div className="text-center py-12">
