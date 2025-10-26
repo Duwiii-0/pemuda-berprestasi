@@ -571,6 +571,39 @@ static async generatePrestasiBracket(
     }
   }
 
+  // 🔎 Debug akhir
+console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+console.log("🔍 FINAL DEBUG SUMMARY FOR BRACKET");
+console.log(`🎯 Total peserta: ${participantCount}`);
+console.log(`📦 Total targetSize: ${targetSize}`);
+console.log(`💤 Total BYE needed: ${byesNeeded}`);
+console.log(`🙋‍♂️ Active participants count: ${activeParticipants.length}`);
+console.log(`😴 Bye participants count: ${byeParticipants.length}`);
+console.log(`📍 Bye slot positions (R1): ${byePositions.join(", ")}`);
+
+const allUsed = matches
+  .filter(m => m.round === 1)
+  .flatMap(m => [m.participant1, m.participant2])
+  .filter(Boolean)
+  .map(p => (p as Participant).name);
+
+const allNames = participants.map(p => p.name);
+const missing = allNames.filter(n => !allUsed.includes(n));
+
+console.log("👥 Semua peserta:", allNames);
+console.log("✅ Yang masuk ke R1:", allUsed);
+if (missing.length > 0) {
+  console.log("⚠️ MISSING PESERTA:", missing);
+} else {
+  console.log("🎉 Semua peserta terpakai di R1");
+}
+
+const byeCountR1 = matches.filter(
+  m => m.round === 1 && (m.status === "bye" || !m.participant2)
+).length;
+console.log(`🟡 Total BYE matches di R1: ${byeCountR1}`);
+console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+
   return matches;
 }
 
