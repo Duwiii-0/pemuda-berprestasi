@@ -325,6 +325,10 @@ export default function AppRoutes() {
           <Route path="home" element={<LandingPage />} />
           <Route path="faq" element={<FAQ />} />
           <Route path="timeline" element={<Timeline />} />
+          <Route
+            path="pertandingan/:idKompetisi"
+            element={<LapanganLiveViewWrapper />}
+          />
         </Route>
 
         {/* Root redirect */}
