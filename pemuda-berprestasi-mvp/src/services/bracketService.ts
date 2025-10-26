@@ -414,155 +414,161 @@ static calculateBracketStructure(
 }
 
 static async generatePrestasiBracket(
-  baganId: number, 
+  baganId: number,
   participants: Participant[],
   byeParticipantIds?: number[]
 ): Promise<Match[]> {
+  const matches: Match[] = [];
+
   const participantCount = participants.length;
-  
-  console.log(`\n🏆 === GENERATING PRESTASI BRACKET ===`);
-  console.log(`Total Participants: ${participantCount}`);
-  
-  // ⭐ VALIDATE minimal participants
   if (participantCount < 4) {
     throw new Error('Minimal 4 peserta diperlukan untuk bracket prestasi');
   }
 
-  // ⭐ CALCULATE BRACKET STRUCTURE using new method
-  const structure = this.calculateBracketStructure(participantCount);
-  const totalRounds = structure.totalRounds;
-  const round1Target = structure.round1Target;
-  const byesRecommended = structure.byesRecommended;
-  
-  console.log(`📊 Bracket Structure:`);
-  console.log(`   Total Rounds: ${totalRounds}`);
-  console.log(`   Round 1 Target: ${round1Target}`);
-  console.log(`   BYE Recommended: ${byesRecommended}`);
-  
-  // ⭐ VALIDATE BYE count if provided
-  if (byeParticipantIds && byeParticipantIds.length > 0) {
-    const validation = this.validateAndAdjustBye(
-      participantCount,
-      byeParticipantIds.length,
-      round1Target
-    );
-    
-    console.log(`   BYE Validation: ${validation.message}`);
-    
-    if (!validation.isValid) {
-      throw new Error(validation.message);
-    }
-    
-    // ⭐ AUTO-ADJUST if needed (hybrid approach)
-    if (validation.adjustedByeCount !== null) {
-      console.log(`   ⚠️ BYE auto-adjusted from ${byeParticipantIds.length} to ${validation.adjustedByeCount}`);
-      // Randomly select subset if user selected too many
-      if (byeParticipantIds.length > validation.adjustedByeCount) {
-        const shuffled = this.shuffleArray([...byeParticipantIds]);
-        byeParticipantIds = shuffled.slice(0, validation.adjustedByeCount);
-        console.log(`   → Selected BYE IDs: ${byeParticipantIds}`);
-      }
-    }
-  }
+  // 1) Hitung struktur dasar
+  const targetSize = Math.pow(2, Math.ceil(Math.log2(participantCount)));
+  const byesNeeded = targetSize - participantCount;
+  console.log(`📊 PRESTASI: participants=${participantCount}, targetSize=${targetSize}, byesNeeded=${byesNeeded}`);
 
-  const matches: Match[] = [];
-
-  // ========================================
-  // STEP 1: Separate BYE vs FIGHTING
-  // ========================================
+  // 2) Jika backend/param memberikan byeParticipantIds, prioritaskan itu
   let byeParticipants: Participant[] = [];
-  let fightingParticipants: Participant[] = [];
+  let fightingParticipants: Participant[] = [...participants];
 
   if (byeParticipantIds && byeParticipantIds.length > 0) {
     byeParticipants = participants.filter(p => byeParticipantIds.includes(p.id));
     fightingParticipants = participants.filter(p => !byeParticipantIds.includes(p.id));
-    
-    console.log(`🎁 BYE (${byeParticipants.length}):`, byeParticipants.map(p => p.name));
-    console.log(`⚔️ FIGHTING (${fightingParticipants.length}):`, fightingParticipants.map(p => p.name));
-  } else {
-    fightingParticipants = [...participants];
-    console.log(`⚔️ ALL FIGHTING (no BYE): ${fightingParticipants.length}`);
+    console.log(`   Using provided BYE IDs:`, byeParticipantIds);
   }
 
-// ========================================
-// STEP 2: ROUND 1 - Create matches with proper BYE placement (no match removed)
-// ========================================
-console.log(`\n📝 Creating Round 1 matches with BYE distribution pattern...`);
-
-const byePositions = this.calculateByePositions(participantCount, round1Target);
-const totalMatchesR1 = round1Target / 2;
-
-// Shuffle for fairness
-const shuffledParticipants = this.shuffleArray([...participants]);
-let participantIndex = 0;
-
-for (let matchPosition = 0; matchPosition < totalMatchesR1; matchPosition++) {
-  let participant1: Participant | null = null;
-  let participant2: Participant | null = null;
-  let isByeMatch = false;
-
-  if (byePositions.includes(matchPosition)) {
-    // this match gets BYE → only one participant
-    participant1 = shuffledParticipants[participantIndex++];
-    participant2 = null;
-    isByeMatch = true;
-  } else {
-    participant1 = shuffledParticipants[participantIndex++];
-    participant2 = shuffledParticipants[participantIndex++] || null;
-    if (!participant2) isByeMatch = true;
-  }
-
-  const match = await prisma.tb_match.create({
-    data: {
-      id_bagan: baganId,
-      ronde: 1,
-      id_peserta_a: participant1?.id || null,
-      id_peserta_b: participant2?.id || null,
-      skor_a: 0,
-      skor_b: 0
+  // 3) Jika tidak ada byeParticipantIds, auto-select (ambil random)
+  if ((!byeParticipantIds || byeParticipantIds.length === 0) && !Array.isArray(byeParticipantIds)) {
+    if (byesNeeded > 0) {
+      const shuffledAll = this.shuffleArray([...participants]);
+      byeParticipants = shuffledAll.slice(0, byesNeeded);
+      fightingParticipants = shuffledAll.slice(byesNeeded);
+      console.log(`   Auto-selected BYE participants:`, byeParticipants.map(p => p.name));
+    } else {
+      fightingParticipants = [...participants];
+      byeParticipants = [];
     }
-  });
+  }
 
-  matches.push({
-    id: match.id_match,
-    round: 1,
-    position: matchPosition,
-    participant1,
-    participant2,
-    status: isByeMatch ? 'bye' : 'pending',
-    scoreA: 0,
-    scoreB: 0
-  });
-}
+  // 4) Tentukan positions BYE pada round 1 match slot (zigzag top-bottom-mid pattern)
+  const round1Target = (targetSize >= 8) ? 8 : (targetSize >= 4 ? 4 : 2); // keep basic targets
+  const totalMatchesR1Slots = round1Target / 2; // how many R1 match *slots* in full bracket
+  const byePositions = this.calculateByePositions(participantCount, round1Target); // gunakan fungsi yang sudah ada
+  console.log(`   Bye positions (slot index in R1 slots):`, byePositions);
 
-console.log(`\n✅ Round 1 complete: ${matches.length} matches created`);
-console.log(`   🎁 BYE positions: [${byePositions.join(', ')}]`);
+  // 5) Determine how many actual fights we must create in Round 1:
+  //    activeRound1Players = participants - byesNeeded
+  const activeRound1Players = participantCount - byeParticipants.length;
+  const totalMatchesRound1 = Math.floor(activeRound1Players / 2);
+  console.log(`   Active Round1 players: ${activeRound1Players}, creating ${totalMatchesRound1} R1 matches`);
 
+  // Shuffle fighting participants for seeding randomness
+  const shuffledFighters = this.shuffleArray([...fightingParticipants]);
 
-  // ========================================
-  // STEP 3: ROUND 2+ - Create EMPTY placeholder matches
-  // ========================================
-  for (let round = 2; round <= totalRounds; round++) {
-    // Calculate matches in this round (each round has half the participants of previous)
-    const participantsInRound = Math.pow(2, totalRounds - round + 1);
-    const matchesInRound = participantsInRound / 2;
-    
-    console.log(`\n   Round ${round}: Creating ${matchesInRound} placeholder matches`);
-    
+  // Build R1 matches — only the real matches needed
+  let fighterIndex = 0;
+  for (let pos = 0; pos < totalMatchesRound1; pos++) {
+    const p1 = shuffledFighters[fighterIndex++];
+    const p2 = shuffledFighters[fighterIndex++] || null;
+
+    const created = await prisma.tb_match.create({
+      data: {
+        id_bagan: baganId,
+        ronde: 1,
+        id_peserta_a: p1.id,
+        id_peserta_b: p2 ? p2.id : null,
+        skor_a: 0,
+        skor_b: 0
+      }
+    });
+
+    matches.push({
+      id: created.id_match,
+      round: 1,
+      position: pos,
+      participant1: p1,
+      participant2: p2,
+      status: (!p2) ? 'bye' : 'pending',
+      scoreA: 0,
+      scoreB: 0
+    });
+
+    console.log(`   R1 match created: ${p1.name} vs ${p2 ? p2.name : 'BYE'}`);
+  }
+
+  // 6) If there are leftover fighters (odd one out) — they act as BYE effectively.
+  //    (But above logic already sets p2=null if odd.)
+  // 7) Now create Round 2 placeholders (full bracket slots), but fill BYE participants into appropriate slots using zigzag top-bottom pattern
+  const round2TotalMatches = targetSize / 4; // because Round2 participants = targetSize/2 -> matches = (targetSize/2)/2
+  // Actually easier: Round 2 match count = targetSize / 4? Wait: targetSize=16 => round2TotalMatches should be 8 (quarter) => calculation below:
+  const round2MatchesCount = targetSize / 4; // for targetSize 16 => 4 (but we want Quarter = 8 participants -> 4 matches) -> correct
+
+  console.log(`\n   Creating ${round2MatchesCount} Round2 (quarter) placeholders and filling BYE participants...`);
+
+  // We'll place byeParticipants into Round2 matches aiming "top-bottom-top-bottom" filling.
+  // Create empty placeholders for round 2 and fill participants into A/B alternately from byeParticipants and R1 winners slot will be null for now.
+  let byeIndex = 0;
+  for (let i = 0; i < round2MatchesCount; i++) {
+    // Decide slot filling strategy: alternate A/B to spread BYEs
+    let participantA: Participant | null = null;
+    let participantB: Participant | null = null;
+
+    // strategy: fill participantA first for even index, else participantB first for odd index (to alternate top/bot)
+    if (byeIndex < byeParticipants.length) {
+      if (i % 2 === 0) {
+        participantA = byeParticipants[byeIndex++];
+      } else {
+        participantB = byeParticipants[byeIndex++];
+      }
+    }
+
+    const created = await prisma.tb_match.create({
+      data: {
+        id_bagan: baganId,
+        ronde: 2,
+        id_peserta_a: participantA ? participantA.id : null,
+        id_peserta_b: participantB ? participantB.id : null,
+        skor_a: 0,
+        skor_b: 0
+      }
+    });
+
+    matches.push({
+      id: created.id_match,
+      round: 2,
+      position: i,
+      participant1: participantA,
+      participant2: participantB,
+      status: (!participantA || !participantB) ? 'bye' : 'pending',
+      scoreA: 0,
+      scoreB: 0
+    });
+
+    console.log(`   R2 match ${i} created: A=${participantA ? participantA.name : 'TBD'}, B=${participantB ? participantB.name : 'TBD'}`);
+  }
+
+  // 8) Create remaining rounds placeholders (semifinal/final) unfilled
+  const totalRounds = Math.log2(targetSize);
+  // We already created rounds 1 and 2. Create rounds 3..totalRounds
+  for (let round = 3; round <= totalRounds; round++) {
+    const matchesInRound = Math.pow(2, totalRounds - round);
     for (let i = 0; i < matchesInRound; i++) {
-      const match = await prisma.tb_match.create({
+      const created = await prisma.tb_match.create({
         data: {
           id_bagan: baganId,
           ronde: round,
-          id_peserta_a: null, // ✅ TBD - Will be filled by advanceWinner
-          id_peserta_b: null, // ✅ TBD - Will be filled by advanceWinner
+          id_peserta_a: null,
+          id_peserta_b: null,
           skor_a: 0,
           skor_b: 0
         }
       });
 
       matches.push({
-        id: match.id_match,
+        id: created.id_match,
         round,
         position: i,
         participant1: null,
@@ -574,33 +580,24 @@ console.log(`   🎁 BYE positions: [${byePositions.join(', ')}]`);
     }
   }
 
-// ⭐ ADVANCE BYE WINNERS AUTOMATICALLY
-console.log(`\n🎯 Auto-advancing BYE winners to next round...`);
-const round1Matches = matches.filter(m => m.round === 1);
-
-for (const match of round1Matches) {
-  // Check if this is a BYE match (participant A exists, no participant B)
-  if (match.participant1 && !match.participant2 && match.id) {
-    console.log(`   🎁 BYE detected: ${match.participant1.name} (Match ${match.id})`);
-    
-    // Create a mock match object for advanceWinnerToNextRound
-    const mockMatch = await prisma.tb_match.findUnique({
-      where: { id_match: match.id },
-      include: {
-        bagan: true
-      }
-    });
-    
-    if (mockMatch) {
-      // Advance the BYE winner to next round
-      await this.advanceWinnerToNextRound(mockMatch, match.participant1.id);
-      console.log(`   ✅ Advanced ${match.participant1.name} to Round 2`);
+  // 9) Auto-advance any BYE matches created in R1 (participant vs null) to next round
+  // (You already have advanceWinnerToNextRound; but we can trigger it here by reading back created R1 matches)
+  const createdR1Matches = matches.filter(m => m.round === 1);
+  for (const m of createdR1Matches) {
+    if (m.participant1 && !m.participant2) {
+      // mark as bye and advance
+      await this.advanceWinnerToNextRound(
+        { id_bagan: baganId, ronde: 1, id_match: m.id },
+        m.participant1.id
+      );
+      console.log(`   Auto-advanced BYE winner ${m.participant1.name}`);
     }
   }
+
+  return matches;
 }
 
-return matches;
-}
+
 
 static getMatchesByRound(matches: Match[], round: number): Match[] {
   return matches.filter(m => m.round === round);
@@ -609,25 +606,30 @@ static getMatchesByRound(matches: Match[], round: number): Match[] {
   /**
    * ⭐ NEW: Calculate optimal BYE positions to spread them evenly
    */
- static calculateByePositions(participantCount: number, targetSize: number): number[] {
+static calculateByePositions(participantCount: number, targetSize: number): number[] {
   const byesNeeded = targetSize - participantCount;
   if (byesNeeded <= 0) return [];
 
   const totalMatches = targetSize / 2;
   const positions: number[] = [];
 
-  // Pattern top, bottom, mid-top, mid-bottom, ...
-  if (byesNeeded === 1) positions.push(0);
-  else if (byesNeeded === 2) positions.push(0, totalMatches - 1);
-  else {
-    positions.push(0, totalMatches - 1);
-    const remaining = byesNeeded - 2;
-    const gap = (totalMatches - 2) / (remaining + 1);
-    for (let i = 0; i < remaining; i++) {
-      positions.push(Math.round((i + 1) * gap));
+  // Generate candidate slots from top-bottom alternately
+  let top = 0;
+  let bottom = totalMatches - 1;
+  let toggle = true; // true = top, false = bottom
+
+  while (positions.length < byesNeeded && top <= bottom) {
+    if (toggle) {
+      positions.push(top);
+      top++;
+    } else {
+      positions.push(bottom);
+      bottom--;
     }
+    toggle = !toggle;
   }
 
+  // Sort ascending to make bracket rendering consistent top→bottom
   return positions.sort((a, b) => a - b);
 }
 
