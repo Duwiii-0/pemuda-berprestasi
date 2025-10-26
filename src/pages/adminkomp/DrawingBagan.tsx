@@ -998,43 +998,131 @@ const ageOptions = [
           </div>
         )}
       </div>
-      {/* Bracket Viewer Modal/Component */}
-      {showBracket && selectedKelas && (
-        <div className="fixed inset-0 bg-black/50 z-50 overflow-auto">
-          <div className="min-h-screen p-4">
-            <div className="max-w-7xl mx-auto">
-              {/* Render komponen bracket sesuai tipe (Pemula/Prestasi) */}
-              {isPemula(selectedKelas) ? (
-                <TournamentBracketPemula
-                  kelasData={selectedKelas}
-                  onBack={() => {
-                    setShowBracket(false);
-                    setSelectedKelas(null);
-                    // ⭐ Refresh data setelah kembali
-                    if (kompetisiId) {
-                      fetchAtletByKompetisi(kompetisiId);
-                    }
-                  }}
-                  apiBaseUrl={import.meta.env.VITE_API_URL || "/api"}
-                />
-              ) : (
-                <TournamentBracketPrestasi
-                  kelasData={selectedKelas}
-                  onBack={() => {
-                    setShowBracket(false);
-                    setSelectedKelas(null);
-                    // ⭐ Refresh data setelah kembali
-                    if (kompetisiId) {
-                      fetchAtletByKompetisi(kompetisiId);
-                    }
-                  }}
-                  apiBaseUrl={import.meta.env.VITE_API_URL || "/api"}
-                />
-              )}
-            </div>
+{/* Bracket Viewer Modal/Component */}
+{showBracket && selectedKelas && (() => {
+  // ⭐ DEBUG: Log selected kelas
+  console.log('📊 Selected Kelas:', selectedKelas);
+  console.log('📊 Peserta List:', pesertaList);
+
+  // ⭐ Transform data dengan proper type handling
+  const kelasDataForBracket = {
+    id_kelas_kejuaraan: parseInt(selectedKelas.id_kelas_kejuaraan), // ✅ Parse to number
+    cabang: selectedKelas.cabang,
+    kategori_event: selectedKelas.kategori_event,
+    kelompok: selectedKelas.kelompok,
+    kelas_berat: selectedKelas.kelas_berat,
+    poomsae: selectedKelas.poomsae,
+    kompetisi: {
+      id_kompetisi: kompetisiId!,
+      nama_event:
+        pesertaList[0]?.kelas_kejuaraan?.kompetisi?.nama_event ||
+        "Competition",
+      tanggal_mulai:
+        pesertaList[0]?.kelas_kejuaraan?.kompetisi?.tanggal_mulai ||
+        new Date().toISOString(),
+      tanggal_selesai:
+        pesertaList[0]?.kelas_kejuaraan?.kompetisi?.tanggal_selesai ||
+        new Date().toISOString(),
+      lokasi:
+        pesertaList[0]?.kelas_kejuaraan?.kompetisi?.lokasi || "Location",
+      status:
+        pesertaList[0]?.kelas_kejuaraan?.kompetisi?.status || "PENDAFTARAN",
+    },
+    peserta_kompetisi: pesertaList
+      .filter(
+        (p) =>
+          p.status === "APPROVED" &&
+          String(p.kelas_kejuaraan?.id_kelas_kejuaraan) === selectedKelas.id_kelas_kejuaraan // ⭐ COMPARE as string
+      )
+      .map((p) => ({
+        id_peserta_kompetisi: p.id_peserta_kompetisi,
+        id_atlet: p.atlet?.id_atlet,
+        is_team: p.is_team,
+        status: p.status,
+        atlet: p.atlet
+          ? {
+              id_atlet: p.atlet.id_atlet,
+              nama_atlet: p.atlet.nama_atlet,
+              dojang: {
+                nama_dojang: p.atlet.dojang?.nama_dojang || "",
+              },
+            }
+          : undefined,
+        anggota_tim: p.anggota_tim?.map((at) => ({
+          atlet: {
+            nama_atlet: at.atlet.nama_atlet,
+          },
+        })),
+      })),
+    bagan: [],
+  };
+
+  // ⭐ DEBUG: Verify transformed data
+  console.log('✅ Transformed kelasDataForBracket:', kelasDataForBracket);
+  console.log('✅ Peserta count:', kelasDataForBracket.peserta_kompetisi.length);
+
+  // ⭐ SAFETY CHECK: Pastikan ada peserta
+  if (!kelasDataForBracket.peserta_kompetisi || kelasDataForBracket.peserta_kompetisi.length === 0) {
+    return (
+      <div className="fixed inset-0 bg-black/50 z-50 overflow-auto">
+        <div className="min-h-screen flex items-center justify-center p-4">
+          <div className="rounded-2xl shadow-xl border p-8 max-w-md w-full text-center" style={{ backgroundColor: '#F5FBEF', borderColor: 'rgba(153, 13, 53, 0.2)' }}>
+            <AlertTriangle size={64} style={{ color: '#990D35', opacity: 0.4 }} className="mx-auto mb-4" />
+            <h3 className="text-xl font-bold mb-2" style={{ color: '#050505' }}>
+              Tidak Ada Peserta
+            </h3>
+            <p className="text-sm mb-6" style={{ color: '#050505', opacity: 0.6 }}>
+              Tidak ada peserta approved untuk kelas ini
+            </p>
+            <button
+              onClick={() => {
+                setShowBracket(false);
+                setSelectedKelas(null);
+              }}
+              className="px-6 py-3 rounded-xl font-bold shadow-md hover:shadow-lg transition-all"
+              style={{ background: 'linear-gradient(135deg, #990D35 0%, #7A0A2B 100%)', color: 'white' }}
+            >
+              Kembali
+            </button>
           </div>
         </div>
-      )}
+      </div>
+    );
+  }
+
+  const handleBackFromBracket = () => {
+    console.log("🔙 Back to drawing bagan list");
+    setShowBracket(false);
+    setSelectedKelas(null);
+
+    if (kompetisiId) {
+      fetchAtletByKompetisi(kompetisiId);
+    }
+  };
+
+  // Render bracket component
+  return (
+    <div className="fixed inset-0 bg-black/50 z-50 overflow-auto">
+      <div className="min-h-screen p-4">
+        <div className="max-w-7xl mx-auto">
+          {isPemula(selectedKelas) ? (
+            <TournamentBracketPemula
+              kelasData={kelasDataForBracket}
+              onBack={handleBackFromBracket}
+              apiBaseUrl={import.meta.env.VITE_API_URL || "/api"}
+            />
+          ) : (
+            <TournamentBracketPrestasi
+              kelasData={kelasDataForBracket}
+              onBack={handleBackFromBracket}
+              apiBaseUrl={import.meta.env.VITE_API_URL || "/api"}
+            />
+          )}
+        </div>
+      </div>
+    </div>
+  );
+})()}
     </div>
   );
 };
