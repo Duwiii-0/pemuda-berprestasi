@@ -183,7 +183,7 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
 
   return (
     <section
-      className="relative w-full min-h-screen overflow-hidden py-12 md:py-16"
+      className="relative w-full min-h-screen overflow-hidden py-12 md:py- pt-24 sm:pt-28 md:pt-32 lg:pt-36"
       style={{ backgroundColor: "#F5FBEF" }}
     >
       {/* Background animasi */}
@@ -299,19 +299,19 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
                   )}
 
                   {lap.antrian && (
-                    <div className="mb-4 space-y-2">
+                    <div className="mb-4 space-y-2 w-full">
                       <div className="flex w-full justify-center items-center gap-2">
                         <span className="text-lg font-medium text-green-700 bg-green-100 px-3 py-3 rounded-md">
                           Bertanding: {lap.antrian.bertanding}
                         </span>
                       </div>
                       <div className="flex w-full justify-center items-center gap-2">
-                        <span className="text-lg font-medium text-orange-700 bg-orange-100 px-3 py-1 rounded-md">
+                        <span className="text-lg font-medium text-orange-700 bg-orange-100 px-3 py-3 rounded-md">
                           Persiapan: {lap.antrian.persiapan}
                         </span>
                       </div>
                       <div className="flex w-full justify-center items-center gap-2">
-                        <span className="text-lg font-medium text-yellow-700 bg-yellow-100 px-3 py-1 rounded-md">
+                        <span className="text-lg font-medium text-yellow-700 bg-yellow-100 px-3 py-3 rounded-md">
                           Pemanasan: {lap.antrian.pemanasan}
                         </span>
                       </div>

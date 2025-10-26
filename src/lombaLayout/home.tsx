@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../context/authContext";
 import toast from "react-hot-toast";
 import ketua from "../assets/photos/ketua.png";
+import { Link } from "react-router-dom";
 
 const LandingPage = () => {
   const [isRegistrationOpen, setIsRegistrationOpen] = useState(false);
@@ -152,15 +153,13 @@ const LandingPage = () => {
                   />
                 </svg>
               </button>
-              <button
-                onClick={() => {
-                  "event/pertandingan/1";
-                }}
-                className="group relative inline-flex items-center gap-3 px-8 md:px-12 py-4 md:py-5 text-base md:text-lg lg:text-xl font-plex font-semibold bg-red text-white hover:bg-red/90 transition-all duration-300 rounded-xl hover:scale-105 hover:shadow-2xl hover:shadow-yellow/30"
+              <Link
+                to="/pertandingan/1" // Assuming competition ID 1 for now
+                className="group relative inline-flex items-center gap-3 px-8 md:px-12 py-4 md:py-5 text-base md:text-lg lg:text-xl font-plex font-semibold bg-red text-white hover:bg-red/90 transition-all duration-300 rounded-xl hover:scale-105 hover:shadow-2xl hover:shadow-red/30"
               >
                 <Eye className="w-5 h-5 md:w-6 md:h-6 group-hover:translate-x-1 transition-transform duration-300" />
-                <span className="relative z-10">Lihat Antrian</span>
-              </button>
+                <span className="relative z-10">Lihat Antrean</span>
+              </Link>
             </div>
           </div>
         </div>
