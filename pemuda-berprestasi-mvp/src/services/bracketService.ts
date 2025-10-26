@@ -455,14 +455,14 @@ static async generatePrestasiBracket(
   let activeIndex = 0;
   let byeIndex = 0;
 
-  for (let i = 0; i < totalMatchesR1; i++) {
+for (let i = 0; i < totalMatchesR1; i++) {
   let p1: Participant | null = null;
   let p2: Participant | null = null;
   let status: Match["status"] = "pending";
 
-  // 🎯 Jika slot ini BYE (berdasarkan pola zigzag)
+  // 🎯 Slot ini termasuk BYE?
   if (byePositions.includes(i) && byeIndex < shuffledBye.length) {
-    // Selang-seling atas–bawah
+    // Atas-bawah zigzag
     if (i % 2 === 0) {
       p1 = shuffledBye[byeIndex++];
       p2 = null;
@@ -471,26 +471,26 @@ static async generatePrestasiBracket(
       p2 = shuffledBye[byeIndex++];
     }
     status = "bye";
-  } 
-  else {
+  } else {
     // ⚔️ Slot normal
     if (activeIndex < shuffledActive.length) p1 = shuffledActive[activeIndex++];
     if (activeIndex < shuffledActive.length) p2 = shuffledActive[activeIndex++];
 
-    // Jika salah satu kosong, status harus 'bye'
-    if ((p1 && !p2) || (!p1 && p2)) {
+    // Jika peserta habis — paksa jadi BYE
+    if (!p2 && p1) {
+      status = "bye";
+    }
+    if (!p1 && p2) {
       status = "bye";
     }
 
-    // Jika dua-duanya kosong (karena kehabisan peserta), skip loop ini
+    // Jika dua-duanya kosong (peserta sudah habis total)
     if (!p1 && !p2) {
-      p1 = null;
-      p2 = null;
-      status = "pending"; // biar tetap dibuat tapi dianggap kosong
+      status = "bye";
     }
   }
 
-  // 🧱 Buat match-nya
+  // 🧱 Simpan ke DB
   const created = await prisma.tb_match.create({
     data: {
       id_bagan: baganId,
@@ -513,7 +513,9 @@ static async generatePrestasiBracket(
     scoreB: 0,
   });
 
-  console.log(`   R1 match ${i}: ${p1 ? p1.name : "BYE"} vs ${p2 ? p2.name : "BYE"} (${status})`);
+  console.log(
+    `R1 #${i + 1}: ${p1 ? p1.name : "BYE"} vs ${p2 ? p2.name : "BYE"} (${status})`
+  );
 }
 
   // 4️⃣ Tambah peserta ganjil yang tersisa (jika masih ada)
