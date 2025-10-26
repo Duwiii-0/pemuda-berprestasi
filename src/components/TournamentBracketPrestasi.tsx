@@ -731,59 +731,17 @@ const handleExportPDF = async () => {
   };
 
   // Fungsi untuk hitung posisi vertikal yang konsisten
-  const calculateVerticalPosition = (
-    roundIndex: number, 
-    matchIndex: number, 
-    totalMatchesInRound: number
-  ): number => {
-    // Base spacing for first round (closest matches)
-    const BASE_SPACING = 280; // Match height (220) + minimum gap (60)
-    
+  const calculateVerticalPosition = (roundIndex: number, matchIndex: number, totalMatchesInRound: number): number => {
+    const baseSpacing = 250;
     const spacingMultiplier = Math.pow(2, roundIndex);
-    const spacing = BASE_SPACING * spacingMultiplier;
+    const spacing = baseSpacing * spacingMultiplier;
     
-    console.log(`📐 Position Calc - Round ${roundIndex + 1}, Match ${matchIndex}:`);
-    console.log(`   Spacing: ${spacing}px (base ${BASE_SPACING} × ${spacingMultiplier})`);
-    
-    // Calculate total height needed for this round
+    // Center alignment untuk ronde
     const totalHeight = (totalMatchesInRound - 1) * spacing;
+    const startOffset = -totalHeight / 2;
     
-    // Center the round vertically (offset from viewport center)
-    const centerOffset = -totalHeight / 2;
-    
-    // Position this specific match
-    const position = centerOffset + (matchIndex * spacing);
-    
-    console.log(`   Total Height: ${totalHeight}px`);
-    console.log(`   Center Offset: ${centerOffset}px`);
-    console.log(`   Final Position: ${position}px`);
-    
-    return position;
+    return startOffset + (matchIndex * spacing);
   };
-
-  const verifyParentChildAlignment = (
-  parentRound: number,
-  parentMatch: number,
-  childRound: number,
-  child1Match: number,
-  child2Match: number
-) => {
-  const parentY = calculateVerticalPosition(parentRound, parentMatch, 1);
-  const child1Y = calculateVerticalPosition(childRound, child1Match, 2);
-  const child2Y = calculateVerticalPosition(childRound, child2Match, 2);
-  
-  const childMidpoint = (child1Y + child2Y) / 2;
-  const isAligned = Math.abs(parentY - childMidpoint) < 5; // 5px tolerance
-  
-  console.log(`🔍 Alignment Check:`);
-  console.log(`   Parent Y: ${parentY}px`);
-  console.log(`   Child 1 Y: ${child1Y}px`);
-  console.log(`   Child 2 Y: ${child2Y}px`);
-  console.log(`   Child Midpoint: ${childMidpoint}px`);
-  console.log(`   Aligned: ${isAligned ? '✅' : '❌'}`);
-  
-  return isAligned;
-};
 
   const generatePrestasiLeaderboard = () => {
     if (matches.length === 0) return null;
@@ -1040,110 +998,60 @@ const handleExportPDF = async () => {
                 className="absolute top-0 left-8 pointer-events-none" 
                 style={{ 
                   width: `${totalRounds * (CARD_WIDTH + ROUND_GAP)}px`,
-                  height: '100%',
-                  overflow: 'visible'
+                  height: '100%'
                 }}
               >
                 {Array.from({ length: totalRounds }, (_, roundIndex) => {
                   const round = roundIndex + 1;
                   const roundMatches = getMatchesByRound(round);
                   
-                  // Skip if this is the last round (no connections needed)
                   if (roundIndex >= totalRounds - 1) return null;
                   
-                  const nextRoundMatches = getMatchesByRound(round + 1);
-                  
                   return roundMatches.map((match, matchIndex) => {
-                    // ⭐ Binary pairing: matches 0,1 → 0; matches 2,3 → 1; etc.
+                    const nextRoundMatches = getMatchesByRound(round + 1);
                     const nextMatchIndex = Math.floor(matchIndex / 2);
-                    const nextMatch = nextRoundMatches[nextMatchIndex];
                     
-                    if (!nextMatch) return null;
+                    // Posisi kartu saat ini
+                    const x1 = roundIndex * (CARD_WIDTH + ROUND_GAP) + CARD_WIDTH;
+                    const y1 = calculateVerticalPosition(roundIndex, matchIndex, roundMatches.length) + 800 + (CARD_HEIGHT / 2);
                     
-                    // ========================================
-                    // CALCULATE COORDINATES
-                    // ========================================
+                    // Posisi kartu tujuan di ronde berikutnya
+                    const x2 = (roundIndex + 1) * (CARD_WIDTH + ROUND_GAP);
+                    const y2 = calculateVerticalPosition(roundIndex + 1, nextMatchIndex, nextRoundMatches.length) + 800 + (CARD_HEIGHT / 2);
                     
-                    // Current match position (exit point - right edge of card)
-                    const currentX = roundIndex * (CARD_WIDTH + ROUND_GAP) + CARD_WIDTH;
-                    const currentY = calculateVerticalPosition(roundIndex, matchIndex, roundMatches.length) + 800 + (CARD_HEIGHT / 2);
-                    
-                    // Next match position (entry point - left edge of card)
-                    const nextX = (roundIndex + 1) * (CARD_WIDTH + ROUND_GAP);
-                    const nextY = calculateVerticalPosition(roundIndex + 1, nextMatchIndex, nextRoundMatches.length) + 800 + (CARD_HEIGHT / 2);
-                    
-                    // ⭐ CRITICAL: Calculate proper horizontal extension
-                    // Must reach midpoint between current and next round
-                    const horizontalGap = nextX - currentX;
-                    const extensionPoint = currentX + (horizontalGap / 2);
-                    
-                    // ========================================
-                    // RENDER CONNECTION PATH
-                    // ========================================
-                    // Path: Current → Extension → Vertical → Next
+                    // Titik tengah untuk garis vertikal
+                    const midX = x1 + LINE_EXTENSION;
                     
                     return (
-                      <g key={`connection-${match.id_match}`}>
-                        {/* Horizontal line from current match */}
+                      <g key={`line-${match.id_match}`}>
+                        {/* Garis horizontal keluar dari kartu */}
                         <line
-                          x1={currentX}
-                          y1={currentY}
-                          x2={extensionPoint}
-                          y2={currentY}
+                          x1={x1}
+                          y1={y1}
+                          x2={midX}
+                          y2={y1}
                           stroke="#990D35"
-                          strokeWidth="3"
-                          strokeLinecap="round"
+                          strokeWidth="2"
                         />
                         
-                        {/* Vertical line connecting to next match level */}
+                        {/* Garis vertikal menuju titik tengah */}
                         <line
-                          x1={extensionPoint}
-                          y1={currentY}
-                          x2={extensionPoint}
-                          y2={nextY}
+                          x1={midX}
+                          y1={y1}
+                          x2={midX}
+                          y2={y2}
                           stroke="#990D35"
-                          strokeWidth="3"
-                          strokeLinecap="round"
+                          strokeWidth="2"
                         />
                         
-                        {/* Horizontal line into next match */}
+                        {/* Garis horizontal masuk ke kartu berikutnya */}
                         <line
-                          x1={extensionPoint}
-                          y1={nextY}
-                          x2={nextX}
-                          y2={nextY}
+                          x1={midX}
+                          y1={y2}
+                          x2={x2}
+                          y2={y2}
                           stroke="#990D35"
-                          strokeWidth="3"
-                          strokeLinecap="round"
-                        />
-                        
-                        {/* ⭐ OPTIONAL: Add connection point indicators */}
-                        <circle
-                          cx={currentX}
-                          cy={currentY}
-                          r="5"
-                          fill="#990D35"
-                        />
-                        
-                        <circle
-                          cx={nextX}
-                          cy={nextY}
-                          r="5"
-                          fill="#990D35"
-                        />
-                        
-                        {/* ⭐ OPTIONAL: Add extension point indicator for debugging */}
-                        <circle
-                          cx={extensionPoint}
-                          cy={currentY}
-                          r="3"
-                          fill="rgba(153, 13, 53, 0.3)"
-                        />
-                        <circle
-                          cx={extensionPoint}
-                          cy={nextY}
-                          r="3"
-                          fill="rgba(153, 13, 53, 0.3)"
+                          strokeWidth="2"
                         />
                       </g>
                     );
