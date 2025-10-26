@@ -445,44 +445,59 @@ static async generatePrestasiBracket(
     console.log("   Auto-selected BYE participants:", byeParticipants.map(p => p.name));
   }
 
-  // 3️⃣ Tentukan total match Round 1 (selalu targetSize / 2)
+  // 3️⃣ Tentukan posisi BYE secara zigzag atas-bawah
   const totalMatchesR1 = targetSize / 2;
-
   const byePositions: number[] = [];
   let top = 0;
   let bottom = totalMatchesR1 - 1;
 
   for (let i = 0; i < byesNeeded; i++) {
     if (i % 2 === 0) {
-      byePositions.push(top++);       // even → dari atas
+      byePositions.push(top++); // even → dari atas
     } else {
-      byePositions.push(bottom--);    // odd → dari bawah
+      byePositions.push(bottom--); // odd → dari bawah
     }
   }
 
   console.log(`   🧩 Zigzag BYE positions (top-bottom):`, byePositions);
 
-  // 4️⃣ Gabungkan semua peserta (BYE + aktif) dan acak
-  const allParticipants = this.shuffleArray([...byeParticipants, ...activeParticipants]);
+  // 4️⃣ Urutan posisi match (campur bye dan aktif zigzag)
+  const activePositions = Array.from({ length: totalMatchesR1 }, (_, i) => i).filter(i => !byePositions.includes(i));
 
-  console.log(`   🎲 All shuffled participants:`, allParticipants.map(p => p.name));
+  const orderedPositions: number[] = []; // ✅ tambahkan tipe eksplisit
 
-  // 5️⃣ Distribusi peserta ke match
-  let index = 0;
-
+  let b = 0, a = 0;
   for (let i = 0; i < totalMatchesR1; i++) {
+    if (i % 2 === 0 && b < byePositions.length) {
+      orderedPositions.push(byePositions[b++]);
+    } else if (a < activePositions.length) {
+      orderedPositions.push(activePositions[a++]);
+    } else if (b < byePositions.length) {
+      orderedPositions.push(byePositions[b++]);
+    }
+  }
+
+
+  console.log(`   🎯 Ordered R1 positions (zigzag logic):`, orderedPositions);
+
+  // 5️⃣ Shuffle peserta aktif
+  const shuffledActive = this.shuffleArray([...activeParticipants]);
+  let pIndex = 0;
+  let byeIndex = 0;
+
+  // 6️⃣ Isi match R1 berdasarkan orderedPositions
+  for (const i of orderedPositions) {
     let p1: Participant | null = null;
     let p2: Participant | null = null;
     let status: Match["status"] = "pending";
 
-    // Jika masih ada bye tersisa
-    if (byesNeeded > 0 && i < byesNeeded) {
-      p1 = allParticipants[index++];
+    if (byePositions.includes(i) && byeIndex < byeParticipants.length) {
+      p1 = byeParticipants[byeIndex++];
       p2 = null;
       status = "bye";
     } else {
-      p1 = allParticipants[index++] || null;
-      p2 = allParticipants[index++] || null;
+      p1 = shuffledActive[pIndex++] || null;
+      p2 = shuffledActive[pIndex++] || null;
       if (p1 && !p2) status = "bye";
     }
 
@@ -507,11 +522,13 @@ static async generatePrestasiBracket(
       scoreA: 0,
       scoreB: 0,
     });
+
+    console.log(`   🎮 R1 match ${i}: ${p1 ? p1.name : "BYE"} vs ${p2 ? p2.name : "BYE"} (${status})`);
   }
 
-  // 6️⃣ Pastikan tidak ada peserta tersisa
-  while (index < allParticipants.length) {
-    const leftover = allParticipants[index++];
+  // 7️⃣ Pastikan tidak ada peserta tersisa
+  while (pIndex < shuffledActive.length) {
+    const leftover = shuffledActive[pIndex++];
     const created = await prisma.tb_match.create({
       data: {
         id_bagan: baganId,
@@ -537,7 +554,7 @@ static async generatePrestasiBracket(
     console.log(`   🩹 Added leftover participant as BYE: ${leftover.name}`);
   }
 
-  // 7️⃣ Buat placeholder ronde berikutnya
+  // 8️⃣ Buat placeholder ronde berikutnya
   const totalRounds = Math.log2(targetSize);
   for (let round = 2; round <= totalRounds; round++) {
     const matchesInRound = Math.pow(2, totalRounds - round);
@@ -566,7 +583,7 @@ static async generatePrestasiBracket(
     }
   }
 
-  // 8️⃣ Auto-advance peserta yang BYE
+  // 9️⃣ Auto-advance peserta yang BYE
   const createdR1Matches = matches.filter(m => m.round === 1);
   for (const m of createdR1Matches) {
     if (m.participant1 && !m.participant2) {
@@ -578,7 +595,7 @@ static async generatePrestasiBracket(
     }
   }
 
-  // 9️⃣ Debug summary akhir
+  // 🔟 Debug summary akhir
   console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
   console.log("🔍 FINAL DEBUG SUMMARY FOR BRACKET");
   console.log(`🎯 Total peserta: ${participantCount}`);
@@ -612,7 +629,6 @@ static async generatePrestasiBracket(
 
   return matches;
 }
-
 
 static getMatchesByRound(matches: Match[], round: number): Match[] {
   return matches.filter(m => m.round === round);
