@@ -456,51 +456,64 @@ static async generatePrestasiBracket(
   let byeIndex = 0;
 
   for (let i = 0; i < totalMatchesR1; i++) {
-    let p1: Participant | null = null;
-    let p2: Participant | null = null;
-    let status: Match["status"] = "pending";
+  let p1: Participant | null = null;
+  let p2: Participant | null = null;
+  let status: Match["status"] = "pending";
 
-    if (byePositions.includes(i) && byeIndex < shuffledBye.length) {
-      // 💡 Slot ini BYE — isi satu peserta bye di sisi bergantian (atas/bawah)
-      if (i % 2 === 0) {
-        p1 = shuffledBye[byeIndex++];
-        p2 = null;
-      } else {
-        p1 = null;
-        p2 = shuffledBye[byeIndex++];
-      }
-      status = "bye";
+  // 🎯 Jika slot ini BYE (berdasarkan pola zigzag)
+  if (byePositions.includes(i) && byeIndex < shuffledBye.length) {
+    // Selang-seling atas–bawah
+    if (i % 2 === 0) {
+      p1 = shuffledBye[byeIndex++];
+      p2 = null;
     } else {
-      // Slot normal
-      p1 = shuffledActive[activeIndex++] || null;
-      p2 = shuffledActive[activeIndex++] || null;
-      if (p1 && !p2) status = "bye";
+      p1 = null;
+      p2 = shuffledBye[byeIndex++];
+    }
+    status = "bye";
+  } 
+  else {
+    // ⚔️ Slot normal
+    if (activeIndex < shuffledActive.length) p1 = shuffledActive[activeIndex++];
+    if (activeIndex < shuffledActive.length) p2 = shuffledActive[activeIndex++];
+
+    // Jika salah satu kosong, status harus 'bye'
+    if ((p1 && !p2) || (!p1 && p2)) {
+      status = "bye";
     }
 
-    const created = await prisma.tb_match.create({
-      data: {
-        id_bagan: baganId,
-        ronde: 1,
-        id_peserta_a: p1 ? p1.id : null,
-        id_peserta_b: p2 ? p2.id : null,
-        skor_a: 0,
-        skor_b: 0,
-      },
-    });
-
-    matches.push({
-      id: created.id_match,
-      round: 1,
-      position: i,
-      participant1: p1,
-      participant2: p2,
-      status,
-      scoreA: 0,
-      scoreB: 0,
-    });
-
-    console.log(`   R1 match ${i}: ${p1 ? p1.name : "BYE"} vs ${p2 ? p2.name : "BYE"} (${status})`);
+    // Jika dua-duanya kosong (karena kehabisan peserta), skip loop ini
+    if (!p1 && !p2) {
+      console.log(`   [SKIP] Slot ${i} kosong sepenuhnya — tidak dibuat`);
+      continue;
+    }
   }
+
+  // 🧱 Buat match-nya
+  const created = await prisma.tb_match.create({
+    data: {
+      id_bagan: baganId,
+      ronde: 1,
+      id_peserta_a: p1 ? p1.id : null,
+      id_peserta_b: p2 ? p2.id : null,
+      skor_a: 0,
+      skor_b: 0,
+    },
+  });
+
+  matches.push({
+    id: created.id_match,
+    round: 1,
+    position: i,
+    participant1: p1,
+    participant2: p2,
+    status,
+    scoreA: 0,
+    scoreB: 0,
+  });
+
+  console.log(`   R1 match ${i}: ${p1 ? p1.name : "BYE"} vs ${p2 ? p2.name : "BYE"} (${status})`);
+}
 
   // 4️⃣ Tambah peserta ganjil yang tersisa (jika masih ada)
   if (activeIndex < shuffledActive.length) {
