@@ -446,55 +446,85 @@ static async generatePrestasiBracket(
   }
 
   // 3️⃣ Buat semua match Round 1 (termasuk slot BYE)
-  const totalMatchesR1 = targetSize / 2;
-  const byePositions = this.calculateByePositions(participantCount, targetSize);
-  console.log(`   BYE positions (zigzag):`, byePositions);
+const totalMatchesR1 = targetSize / 2;
+const byePositions = this.calculateByePositions(participantCount, targetSize);
+console.log(`   BYE positions (zigzag):`, byePositions);
 
-  // Gabungkan semua peserta (BYE diacak posisinya)
-  const shuffledParticipants = this.shuffleArray([...activeParticipants]);
-  let pIndex = 0;
-  let byeIndex = 0;
+const shuffledParticipants = this.shuffleArray([...activeParticipants]);
+let pIndex = 0;
+let byeIndex = 0;
 
-  for (let i = 0; i < totalMatchesR1; i++) {
-    let p1: Participant | null = null;
-    let p2: Participant | null = null;
-    let status: Match['status'] = 'pending';
+for (let i = 0; i < totalMatchesR1; i++) {
+  let p1: Participant | null = null;
+  let p2: Participant | null = null;
+  let status: Match['status'] = 'pending';
 
-    if (byePositions.includes(i) && byeIndex < byeParticipants.length) {
-      // Isi satu sisi dengan peserta BYE, sisi lain kosong
-      p1 = byeParticipants[byeIndex++];
-      p2 = null;
-      status = 'bye';
-    } else {
-      p1 = shuffledParticipants[pIndex++] || null;
-      p2 = shuffledParticipants[pIndex++] || null;
-      if (!p2) status = 'bye';
-    }
+  if (byePositions.includes(i) && byeIndex < byeParticipants.length) {
+    // Posisi ini BYE — isi satu peserta bye dan kosongkan lawannya
+    p1 = byeParticipants[byeIndex++];
+    p2 = null;
+    status = 'bye';
+  } else {
+    // Ambil dua peserta aktif jika tersedia
+    p1 = shuffledParticipants[pIndex++] || null;
+    p2 = shuffledParticipants[pIndex++] || null;
 
-    const created = await prisma.tb_match.create({
-      data: {
-        id_bagan: baganId,
-        ronde: 1,
-        id_peserta_a: p1 ? p1.id : null,
-        id_peserta_b: p2 ? p2.id : null,
-        skor_a: 0,
-        skor_b: 0
-      }
-    });
-
-    matches.push({
-      id: created.id_match,
-      round: 1,
-      position: i,
-      participant1: p1,
-      participant2: p2,
-      status,
-      scoreA: 0,
-      scoreB: 0
-    });
-
-    console.log(`   R1 match ${i}: ${p1 ? p1.name : 'TBD'} vs ${p2 ? p2.name : 'BYE'}`);
+    // Jika cuma satu yang tersisa, tandai sebagai bye
+    if (p1 && !p2) status = 'bye';
   }
+
+  const created = await prisma.tb_match.create({
+    data: {
+      id_bagan: baganId,
+      ronde: 1,
+      id_peserta_a: p1 ? p1.id : null,
+      id_peserta_b: p2 ? p2.id : null,
+      skor_a: 0,
+      skor_b: 0
+    }
+  });
+
+  matches.push({
+    id: created.id_match,
+    round: 1,
+    position: i,
+    participant1: p1,
+    participant2: p2,
+    status,
+    scoreA: 0,
+    scoreB: 0
+  });
+
+  console.log(`   R1 match ${i}: ${p1 ? p1.name : 'TBD'} vs ${p2 ? p2.name : 'BYE'}`);
+}
+
+// 🩹 FIX: jika masih ada peserta tersisa setelah loop (peserta ganjil)
+if (pIndex < shuffledParticipants.length) {
+  const last = shuffledParticipants[pIndex];
+  const created = await prisma.tb_match.create({
+    data: {
+      id_bagan: baganId,
+      ronde: 1,
+      id_peserta_a: last.id,
+      id_peserta_b: null,
+      skor_a: 0,
+      skor_b: 0
+    }
+  });
+
+  matches.push({
+    id: created.id_match,
+    round: 1,
+    position: totalMatchesR1, // ditaruh paling bawah
+    participant1: last,
+    participant2: null,
+    status: 'bye',
+    scoreA: 0,
+    scoreB: 0
+  });
+
+  console.log(`   Added leftover participant as BYE: ${last.name}`);
+}
 
   // 4️⃣ Buat placeholder untuk ronde berikutnya (Quarter, Semi, Final)
   const totalRounds = Math.log2(targetSize);
