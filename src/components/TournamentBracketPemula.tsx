@@ -592,7 +592,7 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
     return peserta.atlet?.dojang.nama_dojang || '';
   };
 
-  const generateLeaderboard = () => {
+const generateLeaderboard = () => {
     if (matches.length === 0) return null;
 
     const leaderboard: {
@@ -609,74 +609,44 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
     const processedSilver = new Set<number>();
     const processedBronze = new Set<number>();
 
+    // ⭐ DETECT: Ada Round 2 (Additional Match)?
     const round1Matches = matches.filter(m => m.ronde === 1);
     const round2Matches = matches.filter(m => m.ronde === 2);
+    const hasAdditionalMatch = round2Matches.length > 0;
 
-    // Process Round 2 first
-    if (round2Matches.length > 0) {
-      const additionalMatch = round2Matches[0];
-      const hasScore = additionalMatch.skor_a > 0 || additionalMatch.skor_b > 0;
-      
-      if (hasScore && additionalMatch.peserta_a && additionalMatch.peserta_b) {
-        const winner = additionalMatch.skor_a > additionalMatch.skor_b 
-          ? additionalMatch.peserta_a 
-          : additionalMatch.peserta_b;
-        const loser = additionalMatch.skor_a > additionalMatch.skor_b 
-          ? additionalMatch.peserta_b 
-          : additionalMatch.peserta_a;
-        
-        if (!processedGold.has(winner.id_peserta_kompetisi)) {
-          leaderboard.gold.push({
-            name: getParticipantName(winner),
-            dojo: getDojoName(winner),
-            id: winner.id_peserta_kompetisi
-          });
-          processedGold.add(winner.id_peserta_kompetisi);
-        }
-        
-        if (!processedSilver.has(loser.id_peserta_kompetisi)) {
-          leaderboard.silver.push({
-            name: getParticipantName(loser),
-            dojo: getDojoName(loser),
-            id: loser.id_peserta_kompetisi
-          });
-          processedSilver.add(loser.id_peserta_kompetisi);
-        }
-      }
-    }
+    console.log(`\n🏅 Generating PEMULA Leaderboard:`);
+    console.log(`   Round 1 matches: ${round1Matches.length}`);
+    console.log(`   Round 2 matches: ${round2Matches.length}`);
+    console.log(`   Has Additional Match: ${hasAdditionalMatch}`);
 
-    // Process Round 1 matches
-    const lastMatchIndex = round1Matches.length - 1;
-    
-    round1Matches.forEach((match, matchIndex) => {
-      const hasScore = match.skor_a > 0 || match.skor_b > 0;
+    // ========================================
+    // SCENARIO 1: GENAP (No Additional Match)
+    // ========================================
+    if (!hasAdditionalMatch) {
+      console.log(`   📊 GENAP Scenario`);
       
-      if (hasScore && match.peserta_a && match.peserta_b) {
-        const winner = match.skor_a > match.skor_b ? match.peserta_a : match.peserta_b;
-        const loser = match.skor_a > match.skor_b ? match.peserta_b : match.peserta_a;
+      round1Matches.forEach((match, index) => {
+        const hasScore = match.skor_a > 0 || match.skor_b > 0;
         
-        const winnerId = winner.id_peserta_kompetisi;
-        const loserId = loser.id_peserta_kompetisi;
-        
-        if (!processedGold.has(winnerId) && !processedSilver.has(winnerId)) {
-          leaderboard.gold.push({
-            name: getParticipantName(winner),
-            dojo: getDojoName(winner),
-            id: winnerId
-          });
-          processedGold.add(winnerId);
-        }
-        
-        if (matchIndex === lastMatchIndex && round2Matches.length > 0) {
-          if (!processedBronze.has(loserId)) {
-            leaderboard.bronze.push({
-              name: getParticipantName(loser),
-              dojo: getDojoName(loser),
-              id: loserId
+        if (hasScore && match.peserta_a && match.peserta_b) {
+          const winner = match.skor_a > match.skor_b ? match.peserta_a : match.peserta_b;
+          const loser = match.skor_a > match.skor_b ? match.peserta_b : match.peserta_a;
+          
+          const winnerId = winner.id_peserta_kompetisi;
+          const loserId = loser.id_peserta_kompetisi;
+          
+          // Winner → GOLD
+          if (!processedGold.has(winnerId)) {
+            leaderboard.gold.push({
+              name: getParticipantName(winner),
+              dojo: getDojoName(winner),
+              id: winnerId
             });
-            processedBronze.add(loserId);
+            processedGold.add(winnerId);
+            console.log(`      Match ${index + 1} Winner → GOLD: ${getParticipantName(winner)}`);
           }
-        } else {
+          
+          // Loser → SILVER
           if (!processedSilver.has(loserId)) {
             leaderboard.silver.push({
               name: getParticipantName(loser),
@@ -684,10 +654,99 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
               id: loserId
             });
             processedSilver.add(loserId);
+            console.log(`      Match ${index + 1} Loser → SILVER: ${getParticipantName(loser)}`);
           }
         }
+      });
+    }
+    // ========================================
+    // SCENARIO 2: GANJIL (Ada Additional Match)
+    // ========================================
+    else {
+      console.log(`   📊 GANJIL Scenario (Additional Match exists)`);
+      
+      const additionalMatch = round2Matches[0];
+      const lastRound1Match = round1Matches[round1Matches.length - 1];
+      
+      // ⭐ STEP 1: Process Additional Match (Round 2)
+      if (additionalMatch && (additionalMatch.skor_a > 0 || additionalMatch.skor_b > 0)) {
+        const winner = additionalMatch.skor_a > additionalMatch.skor_b 
+          ? additionalMatch.peserta_a 
+          : additionalMatch.peserta_b;
+        const loser = additionalMatch.skor_a > additionalMatch.skor_b 
+          ? additionalMatch.peserta_b 
+          : additionalMatch.peserta_a;
+        
+        // Additional Match Winner → GOLD
+        if (winner) {
+          leaderboard.gold.push({
+            name: getParticipantName(winner),
+            dojo: getDojoName(winner),
+            id: winner.id_peserta_kompetisi
+          });
+          processedGold.add(winner.id_peserta_kompetisi);
+          console.log(`      Additional Match Winner → GOLD: ${getParticipantName(winner)}`);
+        }
+        
+        // Additional Match Loser → SILVER
+        if (loser) {
+          leaderboard.silver.push({
+            name: getParticipantName(loser),
+            dojo: getDojoName(loser),
+            id: loser.id_peserta_kompetisi
+          });
+          processedSilver.add(loser.id_peserta_kompetisi);
+          console.log(`      Additional Match Loser → SILVER: ${getParticipantName(loser)}`);
+        }
       }
-    });
+      
+      // ⭐ STEP 2: Process Round 1 Matches
+      round1Matches.forEach((match, index) => {
+        const hasScore = match.skor_a > 0 || match.skor_b > 0;
+        const isLastMatch = match.id_match === lastRound1Match?.id_match;
+        
+        if (hasScore && match.peserta_a && match.peserta_b) {
+          const winner = match.skor_a > match.skor_b ? match.peserta_a : match.peserta_b;
+          const loser = match.skor_a > match.skor_b ? match.peserta_b : match.peserta_a;
+          
+          const winnerId = winner.id_peserta_kompetisi;
+          const loserId = loser.id_peserta_kompetisi;
+          
+          // Winner → GOLD (if not already processed in Additional Match)
+          if (!processedGold.has(winnerId)) {
+            leaderboard.gold.push({
+              name: getParticipantName(winner),
+              dojo: getDojoName(winner),
+              id: winnerId
+            });
+            processedGold.add(winnerId);
+            console.log(`      Match ${index + 1} Winner → GOLD: ${getParticipantName(winner)}`);
+          }
+          
+          // Loser handling:
+          if (isLastMatch) {
+            // Last match loser goes to Additional Match (already processed above or will be)
+            console.log(`      Match ${index + 1} Loser → Goes to Additional Match: ${getParticipantName(loser)}`);
+          } else {
+            // Other match losers → BRONZE
+            if (!processedBronze.has(loserId)) {
+              leaderboard.bronze.push({
+                name: getParticipantName(loser),
+                dojo: getDojoName(loser),
+                id: loserId
+              });
+              processedBronze.add(loserId);
+              console.log(`      Match ${index + 1} Loser → BRONZE: ${getParticipantName(loser)}`);
+            }
+          }
+        }
+      });
+    }
+
+    console.log(`\n   ✅ Final Leaderboard:`);
+    console.log(`      GOLD: ${leaderboard.gold.length}`);
+    console.log(`      SILVER: ${leaderboard.silver.length}`);
+    console.log(`      BRONZE: ${leaderboard.bronze.length}\n`);
     
     return leaderboard;
   };
@@ -806,22 +865,9 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* LEFT: All Matches */}
             <div>
-              <div className="mb-6">
-                <div 
-                  className="rounded-lg p-4 shadow-sm"
-                  style={{ backgroundColor: 'rgba(153, 13, 53, 0.05)' }}
-                >
-                  <h3 className="text-2xl font-bold text-center" style={{ color: '#990D35' }}>
-                    🥋 PARTAI PERTANDINGAN
-                  </h3>
-                  <p className="text-center text-sm mt-2" style={{ color: '#050505', opacity: 0.6 }}>
-                    Semua pertandingan dalam 1 babak
-                  </p>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                {matches.map((match, matchIndex) => (
+<div className="space-y-4">
+                {/* ⭐ ROUND 1 MATCHES */}
+                {matches.filter(m => m.ronde === 1).map((match, matchIndex) => (
                   <div
                     key={match.id_match}
                     className="bg-white rounded-xl shadow-md border-2 overflow-hidden"
@@ -842,7 +888,7 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
                               className="text-xs px-2.5 py-1 rounded-full font-bold shadow-sm"
                               style={{ backgroundColor: '#990D35', color: 'white' }}
                             >
-                              No. Partai:{match.nomor_partai}
+                              No. Partai: {match.nomor_partai}
                             </span>
                           )}
                         </div>
@@ -998,6 +1044,252 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
                     </div>
                   </div>
                 ))}
+
+                {/* ⭐ ADDITIONAL MATCH (Round 2 - Bagan 3) */}
+                {(() => {
+                  const round2Matches = matches.filter(m => m.ronde === 2);
+                  const round1Matches = matches.filter(m => m.ronde === 1);
+                  
+                  if (round2Matches.length === 0) return null;
+                  
+                  const additionalMatch = round2Matches[0];
+                  const lastRound1Match = round1Matches[round1Matches.length - 1];
+                  
+                  return (
+                    <div className="mt-8 pt-8 border-t-4 border-dashed" style={{ borderColor: '#F5B700' }}>
+                      {/* Header Additional Match */}
+                      <div className="mb-4">
+                        <div 
+                          className="rounded-lg p-4 shadow-sm flex items-center justify-between"
+                          style={{ backgroundColor: 'rgba(245, 183, 0, 0.1)', border: '2px solid #F5B700' }}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div 
+                              className="w-12 h-12 rounded-full flex items-center justify-center shadow-md"
+                              style={{ backgroundColor: '#F5B700' }}
+                            >
+                              <span className="text-2xl">⭐</span>
+                            </div>
+                            <div>
+                              <h4 className="text-lg font-bold" style={{ color: '#F5B700' }}>
+                                ADDITIONAL MATCH (Bagan 3)
+                              </h4>
+                              <p className="text-xs" style={{ color: '#050505', opacity: 0.6 }}>
+                                Pertandingan tambahan untuk peserta BYE
+                              </p>
+                            </div>
+                          </div>
+                          
+                          {/* Indicator: Connected from last match */}
+                          <div className="flex items-center gap-2 text-xs font-medium" style={{ color: '#F5B700' }}>
+                            <span>↑</span>
+                            <span>From Match {round1Matches.length}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Additional Match Card */}
+                      <div
+                        className="bg-white rounded-xl shadow-md border-2 overflow-hidden"
+                        style={{ borderColor: '#F5B700' }}
+                      >
+                        <div 
+                          className="px-4 py-2.5 border-b flex items-center justify-between"
+                          style={{ 
+                            backgroundColor: 'rgba(245, 183, 0, 0.1)',
+                            borderColor: '#F5B700'
+                          }}
+                        >
+                          <div className="flex items-center gap-2">
+                            {additionalMatch.nomor_partai && (
+                              <span 
+                                className="text-xs px-2.5 py-1 rounded-full font-bold shadow-sm"
+                                style={{ backgroundColor: '#F5B700', color: 'white' }}
+                              >
+                                No. Partai: {additionalMatch.nomor_partai}
+                              </span>
+                            )}
+                            <span 
+                              className="text-xs px-2.5 py-1 rounded-full font-bold"
+                              style={{ backgroundColor: '#990D35', color: 'white' }}
+                            >
+                              ROUND 2
+                            </span>
+                          </div>
+                          
+                          <div className="flex items-center gap-3">
+                            {additionalMatch.tanggal_pertandingan && (
+                              <span className="text-xs flex items-center gap-1" style={{ color: '#050505', opacity: 0.7 }}>
+                                {new Date(additionalMatch.tanggal_pertandingan).toLocaleDateString('id-ID', {
+                                  day: '2-digit',
+                                  month: 'short',
+                                  year: 'numeric'
+                                })}
+                              </span>
+                            )}
+                            <button
+                              onClick={() => setEditingMatch(additionalMatch)}
+                              className="p-1.5 rounded-lg hover:bg-black/5 transition-all"
+                            >
+                              <Edit3 size={14} style={{ color: '#050505', opacity: 0.6 }} />
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="p-4 space-y-3">
+                          {/* Participant A (BYE Participant) */}
+                          <div 
+                            className={`relative rounded-lg border-2 p-3 transition-all ${
+                              additionalMatch.skor_a > additionalMatch.skor_b && (additionalMatch.skor_a > 0 || additionalMatch.skor_b > 0)
+                                ? 'border-yellow-400 bg-yellow-50/50' 
+                                : 'border-gray-200 bg-white'
+                            }`}
+                          >
+                            {additionalMatch.peserta_a ? (
+                              <div className="flex items-center gap-3">
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 mb-1.5">
+                                    <span 
+                                      className="font-bold text-base truncate"
+                                      style={{ color: '#3B82F6' }}
+                                    >
+                                      {getParticipantName(additionalMatch.peserta_a)}
+                                    </span>
+                                    <span 
+                                      className="text-xs px-2 py-0.5 rounded-full font-bold"
+                                      style={{ backgroundColor: '#F5B700', color: 'white' }}
+                                    >
+                                      BYE
+                                    </span>
+                                  </div>
+                                  <p className="text-xs uppercase truncate pl-0.5" style={{ color: '#3B82F6', opacity: 0.7 }}>
+                                    {getDojoName(additionalMatch.peserta_a)}
+                                  </p>
+                                </div>
+
+                                <div className="flex items-center gap-2 flex-shrink-0">
+                                  {additionalMatch.skor_a > additionalMatch.skor_b && (additionalMatch.skor_a > 0 || additionalMatch.skor_b > 0) && (
+                                    <span 
+                                      className="inline-flex items-center text-xs font-semibold px-3 py-1 rounded-full shadow-sm"
+                                      style={{ backgroundColor: '#F5B700', color: 'white' }}
+                                    >
+                                      🏆 GOLD
+                                    </span>
+                                  )}
+                                  {additionalMatch.skor_a < additionalMatch.skor_b && (additionalMatch.skor_a > 0 || additionalMatch.skor_b > 0) && (
+                                    <span 
+                                      className="inline-flex items-center text-xs font-semibold px-3 py-1 rounded-full shadow-sm"
+                                      style={{ backgroundColor: '#C0C0C0', color: 'white' }}
+                                    >
+                                      🥈 SILVER
+                                    </span>
+                                  )}
+                                  {(additionalMatch.skor_a > 0 || additionalMatch.skor_b > 0) && (
+                                    <div 
+                                      className="w-12 h-12 rounded-lg flex items-center justify-center font-bold text-xl shadow-sm"
+                                      style={{ 
+                                        backgroundColor: additionalMatch.skor_a > additionalMatch.skor_b ? '#22c55e' : '#e5e7eb',
+                                        color: additionalMatch.skor_a > additionalMatch.skor_b ? 'white' : '#6b7280'
+                                      }}
+                                    >
+                                      {additionalMatch.skor_a}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="text-center py-4">
+                                <span className="text-sm font-medium" style={{ color: '#050505', opacity: 0.4 }}>
+                                  TBD
+                                </span>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Participant B (Loser from Last Match) */}
+                          <div 
+                            className={`relative rounded-lg border-2 p-3 transition-all ${
+                              additionalMatch.skor_b > additionalMatch.skor_a && (additionalMatch.skor_a > 0 || additionalMatch.skor_b > 0)
+                                ? 'border-yellow-400 bg-yellow-50/50' 
+                                : additionalMatch.skor_a > 0 || additionalMatch.skor_b > 0
+                                ? 'border-gray-300 bg-gray-50/30'
+                                : 'border-gray-200 bg-white'
+                            }`}
+                          >
+                            {additionalMatch.peserta_b ? (
+                              <div className="flex items-center gap-3">
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 mb-1.5">
+                                    <span 
+                                      className="font-bold text-base truncate"
+                                      style={{ color: '#EF4444' }}
+                                    >
+                                      {getParticipantName(additionalMatch.peserta_b)}
+                                    </span>
+                                    <span 
+                                      className="text-xs px-2 py-0.5 rounded-full font-medium"
+                                      style={{ backgroundColor: '#EF4444', color: 'white' }}
+                                    >
+                                      from Match {round1Matches.length}
+                                    </span>
+                                  </div>
+                                  <p className="text-xs uppercase truncate pl-0.5" style={{ color: '#EF4444', opacity: 0.7 }}>
+                                    {getDojoName(additionalMatch.peserta_b)}
+                                  </p>
+                                </div>
+
+                                <div className="flex items-center gap-2 flex-shrink-0">
+                                  {additionalMatch.skor_b > additionalMatch.skor_a && (additionalMatch.skor_a > 0 || additionalMatch.skor_b > 0) && (
+                                    <span 
+                                      className="inline-flex items-center text-xs font-semibold px-3 py-1 rounded-full shadow-sm"
+                                      style={{ backgroundColor: '#F5B700', color: 'white' }}
+                                    >
+                                      🏆 GOLD
+                                    </span>
+                                  )}
+                                  {additionalMatch.skor_b < additionalMatch.skor_a && (additionalMatch.skor_a > 0 || additionalMatch.skor_b > 0) && (
+                                    <span 
+                                      className="inline-flex items-center text-xs font-semibold px-3 py-1 rounded-full shadow-sm"
+                                      style={{ backgroundColor: '#C0C0C0', color: 'white' }}
+                                    >
+                                      🥈 SILVER
+                                    </span>
+                                  )}
+                                  {(additionalMatch.skor_a > 0 || additionalMatch.skor_b > 0) && (
+                                    <div 
+                                      className="w-12 h-12 rounded-lg flex items-center justify-center font-bold text-xl shadow-sm"
+                                      style={{ 
+                                        backgroundColor: additionalMatch.skor_b > additionalMatch.skor_a ? '#22c55e' : '#e5e7eb',
+                                        color: additionalMatch.skor_b > additionalMatch.skor_a ? 'white' : '#6b7280'
+                                      }}
+                                    >
+                                      {additionalMatch.skor_b}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="text-center py-3 px-4 rounded-lg border-2" style={{ 
+                                backgroundColor: 'rgba(245, 183, 0, 0.1)',
+                                borderColor: '#F5B700'
+                              }}>
+                                <span 
+                                  className="inline-flex items-center text-xs font-medium px-3 py-1.5 rounded-full"
+                                  style={{ 
+                                    backgroundColor: '#F5B700', 
+                                    color: 'white' 
+                                  }}
+                                >
+                                  ⏳ Waiting for Match {round1Matches.length} Result
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
 
@@ -1272,7 +1564,6 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
                       style={{ borderColor: '#990D35' }}
                       defaultValue={editingMatch.nomor_antrian || ''}
                       id="nomorAntrian"
-                      placeholder="1, 2, 3..."
                     />
                   </div>
 
@@ -1287,7 +1578,6 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
                       style={{ borderColor: '#990D35' }}
                       defaultValue={editingMatch.nomor_lapangan || ''}
                       id="nomorLapangan"
-                      placeholder="A, B, C..."
                       onInput={(e) => {
                         const input = e.target as HTMLInputElement;
                         input.value = input.value.toUpperCase().replace(/[^A-Z]/g, '');
@@ -1295,28 +1585,14 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
                     />
                   </div>
                 </div>
-
-                <div 
-                  className="text-xs p-2 rounded-lg flex items-start gap-2"
-                  style={{ backgroundColor: 'rgba(99, 102, 241, 0.1)', color: '#6366F1' }}
-                >
-                  <span>💡</span>
-                  <span>Antrian & lapangan harus diisi bersamaan. Bisa disimpan tanpa skor.</span>
-                </div>
               </div>
 
               {/* SCORE SECTION - OPTIONAL */}
               <div className="pt-2">
                 <div className="flex items-center justify-between mb-3">
                   <label className="text-sm font-bold" style={{ color: '#050505' }}>
-                    ⚔️ Hasil Pertandingan (Opsional)
+                    Hasil Pertandingan 
                   </label>
-                  <span 
-                    className="text-xs px-2 py-1 rounded-full"
-                    style={{ backgroundColor: 'rgba(245, 183, 0, 0.2)', color: '#F5B700' }}
-                  >
-                    Bisa diisi nanti
-                  </span>
                 </div>
 
                 {editingMatch.peserta_a && (

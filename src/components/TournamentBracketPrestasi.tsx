@@ -1535,7 +1535,6 @@ const handleExportPDF = async () => {
                       style={{ borderColor: '#990D35' }}
                       defaultValue={editingMatch.nomor_antrian || ''}
                       id="nomorAntrian"
-                      placeholder="1, 2, 3..."
                     />
                   </div>
 
@@ -1550,7 +1549,6 @@ const handleExportPDF = async () => {
                       style={{ borderColor: '#990D35' }}
                       defaultValue={editingMatch.nomor_lapangan || ''}
                       id="nomorLapangan"
-                      placeholder="A, B, C..."
                       onInput={(e) => {
                         const input = e.target as HTMLInputElement;
                         input.value = input.value.toUpperCase().replace(/[^A-Z]/g, '');
@@ -1558,28 +1556,14 @@ const handleExportPDF = async () => {
                     />
                   </div>
                 </div>
-
-                <div 
-                  className="text-xs p-2 rounded-lg flex items-start gap-2"
-                  style={{ backgroundColor: 'rgba(99, 102, 241, 0.1)', color: '#6366F1' }}
-                >
-                  <span>💡</span>
-                  <span>Antrian & lapangan harus diisi bersamaan. Bisa disimpan tanpa skor.</span>
-                </div>
               </div>
 
               {/* SCORE SECTION - OPTIONAL */}
               <div className="pt-2">
                 <div className="flex items-center justify-between mb-3">
                   <label className="text-sm font-bold" style={{ color: '#050505' }}>
-                    ⚔️ Hasil Pertandingan (Opsional)
+                    Hasil Pertandingan
                   </label>
-                  <span 
-                    className="text-xs px-2 py-1 rounded-full"
-                    style={{ backgroundColor: 'rgba(245, 183, 0, 0.2)', color: '#F5B700' }}
-                  >
-                    Bisa diisi nanti
-                  </span>
                 </div>
 
                 {editingMatch.peserta_a && (
