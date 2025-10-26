@@ -489,64 +489,78 @@ static async generatePrestasiBracket(
   // ========================================
   console.log(`\n📝 Creating Round 1 matches...`);
   
-  // Shuffle fighting participants for random seeding
-  const shuffledFighters = this.shuffleArray([...fightingParticipants]);
+// ========================================
+  // STEP 2: ROUND 1 - Create matches with ZIGZAG BYE positioning
+  // ========================================
+  console.log(`\n📝 Creating Round 1 matches with ZIGZAG BYE layout...`);
   
-  // Create FIGHTING matches (pair up fighters)
-  for (let i = 0; i < shuffledFighters.length; i += 2) {
-    const participant1 = shuffledFighters[i];
-    const participant2 = shuffledFighters[i + 1] || null;
+  // Calculate BYE positions (ZIGZAG pattern)
+  const byePositions = this.calculateByePositions(participantCount, round1Target);
+  const totalMatchesR1 = round1Target / 2;
+  
+  // Shuffle participants
+  const shuffledFighters = this.shuffleArray([...fightingParticipants]);
+  const shuffledByes = this.shuffleArray([...byeParticipants]);
+  
+  console.log(`   ⚔️ Fighters (${shuffledFighters.length}):`, shuffledFighters.map(p => p.name));
+  console.log(`   🎁 BYE (${shuffledByes.length}):`, shuffledByes.map(p => p.name));
+  
+  let fighterIndex = 0;
+  let byeIndex = 0;
+  
+  // Create matches POSITION BY POSITION (sequential!)
+  for (let matchPosition = 0; matchPosition < totalMatchesR1; matchPosition++) {
+    let participant1: Participant | null = null;
+    let participant2: Participant | null = null;
+    let isByeMatch = false;
     
-    const match = await prisma.tb_match.create({
-      data: {
-        id_bagan: baganId,
-        ronde: 1,
-        id_peserta_a: participant1.id,
-        id_peserta_b: participant2?.id || null,
-        skor_a: 0,
-        skor_b: 0
+    // Check if THIS POSITION should have BYE
+    if (byePositions.includes(matchPosition) && byeIndex < shuffledByes.length) {
+      // BYE match
+      participant1 = shuffledByes[byeIndex];
+      participant2 = null;
+      isByeMatch = true;
+      byeIndex++;
+      console.log(`  ✅ Pos ${matchPosition}: ${participant1.name} vs BYE 🎁`);
+    } else {
+      // FIGHT match
+      participant1 = shuffledFighters[fighterIndex];
+      participant2 = shuffledFighters[fighterIndex + 1] || null;
+      
+      if (!participant2 && fighterIndex + 1 >= shuffledFighters.length) {
+        isByeMatch = true;
+        console.log(`  ✅ Pos ${matchPosition}: ${participant1?.name} vs BYE (odd) 🎁`);
+      } else {
+        console.log(`  ✅ Pos ${matchPosition}: ${participant1?.name} vs ${participant2?.name} ⚔️`);
       }
-    });
+      
+      fighterIndex += 2;
+    }
+    
+    // Create match in database
+    if (participant1) {
+      const match = await prisma.tb_match.create({
+        data: {
+          id_bagan: baganId,
+          ronde: 1,
+          id_peserta_a: participant1.id,
+          id_peserta_b: participant2?.id || null,
+          skor_a: 0,
+          skor_b: 0
+        }
+      });
 
-    matches.push({
-      id: match.id_match,
-      round: 1,
-      position: matches.length,
-      participant1,
-      participant2: participant2 || null,
-      status: participant2 ? 'pending' : 'bye',
-      scoreA: 0,
-      scoreB: 0
-    });
-    
-    console.log(`  Match ${match.id_match}: ${participant1.name} vs ${participant2?.name || 'BYE (odd)'}`);
-  }
-
-  // Create BYE matches (user-selected BYE participants)
-  for (const byeParticipant of byeParticipants) {
-    const match = await prisma.tb_match.create({
-      data: {
-        id_bagan: baganId,
-        ronde: 1,
-        id_peserta_a: byeParticipant.id,
-        id_peserta_b: null, // ✅ NULL = BYE (auto-win)
-        skor_a: 0,
-        skor_b: 0
-      }
-    });
-    
-    matches.push({
-      id: match.id_match,
-      round: 1,
-      position: matches.length,
-      participant1: byeParticipant,
-      participant2: null,
-      status: 'bye',
-      scoreA: 0,
-      scoreB: 0
-    });
-    
-    console.log(`  Match ${match.id_match}: ${byeParticipant.name} vs BYE (auto-win)`);
+      matches.push({
+        id: match.id_match,
+        round: 1,
+        position: matchPosition,  // ⭐ PAKAI matchPosition, BUKAN matches.length!
+        participant1,
+        participant2,
+        status: isByeMatch || !participant2 ? 'bye' : 'pending',
+        scoreA: 0,
+        scoreB: 0
+      });
+    }
   }
 
   // ========================================
@@ -619,19 +633,47 @@ static getMatchesByRound(matches: Match[], round: number): Match[] {
   /**
    * ⭐ NEW: Calculate optimal BYE positions to spread them evenly
    */
-  static calculateByePositions(participantCount: number, targetSize: number): number[] {
-    const byesNeeded = targetSize - participantCount;
-    const positions: number[] = [];
+static calculateByePositions(participantCount: number, targetSize: number): number[] {
+  const byesNeeded = targetSize - participantCount;
+  
+  if (byesNeeded <= 0) return [];
+  
+  const totalMatchPositions = targetSize / 2; // Total matches in Round 1
+  const positions: number[] = [];
+  
+  console.log(`\n🎯 Calculating BYE positions (ZIGZAG):`);
+  console.log(`   Participants: ${participantCount}, Target: ${targetSize}, BYEs: ${byesNeeded}, Matches: ${totalMatchPositions}`);
+  
+  if (byesNeeded === 1) {
+    positions.push(0);
+    console.log(`   📍 BYE #1 → Position 0 (TOP)`);
+  } else if (byesNeeded === 2) {
+    positions.push(0);
+    positions.push(totalMatchPositions - 1);
+    console.log(`   📍 BYE #1 → Position 0 (TOP)`);
+    console.log(`   📍 BYE #2 → Position ${totalMatchPositions - 1} (BOTTOM)`);
+  } else {
+    // Multiple BYEs: TOP → BOTTOM → Fill middle evenly
+    positions.push(0);
+    positions.push(totalMatchPositions - 1);
     
-    // Spread byes evenly throughout the bracket
-    const spacing = Math.floor(targetSize / byesNeeded);
+    console.log(`   📍 BYE #1 → Position 0 (TOP)`);
+    console.log(`   📍 BYE #2 → Position ${totalMatchPositions - 1} (BOTTOM)`);
     
-    for (let i = 0; i < byesNeeded; i++) {
-      positions.push(spacing * i + Math.floor(spacing / 2));
+    const remainingByes = byesNeeded - 2;
+    const gap = (totalMatchPositions - 2) / (remainingByes + 1);
+    
+    for (let i = 0; i < remainingByes; i++) {
+      const position = Math.round((i + 1) * gap);
+      if (position > 0 && position < totalMatchPositions - 1 && !positions.includes(position)) {
+        positions.push(position);
+        console.log(`   📍 BYE #${i + 3} → Position ${position} (MIDDLE)`);
+      }
     }
-    
-    return positions.sort((a, b) => b - a); // Reverse order for insertion
   }
+  
+  return positions.sort((a, b) => a - b);
+}
 
   /**
    * Generate PEMULA bracket (single round, all matches)
