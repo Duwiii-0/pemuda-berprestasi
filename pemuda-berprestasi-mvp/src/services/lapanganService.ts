@@ -179,7 +179,14 @@ export class LapanganService {
         kelas_list: {
           orderBy: { urutan: "asc" },
           include: {
-            kelas_kejuaraan: true,
+            kelas_kejuaraan: {
+              include: {
+                kategori_event: true,
+                kelompok: true,
+                kelas_berat: true,
+                poomsae: true,
+              },
+            },
           },
         },
       },

@@ -5,7 +5,6 @@ interface KelasLapangan {
   id_kelas_kejuaraan: number;
   nama_kelas: string;
   jumlah_peserta: number;
-  status_antrian: "bertanding" | "persiapan" | "pemanasan" | "menunggu";
   nomor_antrian: number;
 }
 
@@ -108,32 +107,6 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
       setError(err.message);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "bertanding":
-        return "bg-green-500/80";
-      case "persiapan":
-        return "bg-orange-400/80";
-      case "pemanasan":
-        return "bg-yellow-400/80";
-      default:
-        return "bg-gray-300/80";
-    }
-  };
-
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case "bertanding":
-        return "🟢 Sedang Bertanding";
-      case "persiapan":
-        return "🟠 Persiapan";
-      case "pemanasan":
-        return "🟡 Pemanasan";
-      default:
-        return "⚪ Menunggu";
     }
   };
 
@@ -314,20 +287,6 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
                           >
                             Antrian #{kelas.nomor_antrian}
                           </p>
-                        </div>
-                        <div className="flex flex-col items-end gap-1">
-                          <div
-                            className={`w-3 h-3 rounded-full ${getStatusColor(
-                              kelas.status_antrian
-                            )} ring-4 ring-white/60 shadow-md`}
-                            title={kelas.status_antrian}
-                          ></div>
-                          <span
-                            className="text-xs whitespace-nowrap"
-                            style={{ color: "#050505", opacity: 0.7 }}
-                          >
-                            {getStatusLabel(kelas.status_antrian).split(" ")[1]}
-                          </span>
                         </div>
                       </div>
                     ))
