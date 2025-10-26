@@ -189,6 +189,7 @@ export class LapanganService {
             },
           },
         },
+        antrian: true,
       },
       orderBy: [{ tanggal: "asc" }, { nama_lapangan: "asc" }],
     });
@@ -217,6 +218,22 @@ export class LapanganService {
           })
         ),
       },
+    };
+  }
+
+  async simpanAntrian(data: { id_lapangan: number; bertanding: number; persiapan: number; pemanasan: number }) {
+    const { id_lapangan, bertanding, persiapan, pemanasan } = data;
+
+    const antrian = await prisma.tb_antrian.upsert({
+        where: { id_lapangan },
+        update: { bertanding, persiapan, pemanasan },
+        create: { id_lapangan, bertanding, persiapan, pemanasan },
+    });
+
+    return {
+        success: true,
+        message: "Antrian berhasil disimpan",
+        data: antrian,
     };
   }
 

@@ -7,6 +7,7 @@ import {
   ClipboardList,
   Eye,
   GitBranch,
+  Save
 } from "lucide-react";
 import { useKompetisi } from "../../context/KompetisiContext";
 import { useAuth } from "../../context/authContext";
@@ -76,6 +77,7 @@ const JadwalPertandingan: React.FC = () => {
   const [isAdding, setIsAdding] = useState(false);
   const [addingLapanganTo, setAddingLapanganTo] = useState<string | null>(null);
   const [savingKelas, setSavingKelas] = useState<Record<number, boolean>>({});
+  const [isSavingAntrian, setIsSavingAntrian] = useState(false);
 
   useEffect(() => {
     if (!idKompetisi) return;
@@ -556,6 +558,45 @@ const JadwalPertandingan: React.FC = () => {
       })
     );
   };
+
+  const saveAllAntrian = async () => {
+    setIsSavingAntrian(true);
+    setErrorMessage("");
+    setSuccessMessage("");
+
+    try {
+      const promises = hariAntrianList.flatMap((hari) =>
+        Object.entries(hari.lapanganAntrian).map(([lapanganId, antrian]) =>
+          fetch(`${import.meta.env.VITE_API_URL || ""}/lapangan/antrian`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              id_lapangan: parseInt(lapanganId),
+              ...antrian,
+            }),
+          })
+        )
+      );
+
+      const results = await Promise.all(promises);
+
+      for (const res of results) {
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.message || "Gagal menyimpan salah satu antrian");
+        }
+      }
+
+      setSuccessMessage("Semua antrian berhasil disimpan!");
+      setTimeout(() => setSuccessMessage(""), 3000);
+    } catch (err: any) {
+      console.error("Error simpan semua antrian:", err);
+      setErrorMessage(err.message);
+    } finally {
+      setIsSavingAntrian(false);
+    }
+  };
+
   const generateNamaKelas = (kelas: any) => {
     const parts = [];
     if (kelas.cabang) parts.push(kelas.cabang);
@@ -1004,6 +1045,26 @@ const JadwalPertandingan: React.FC = () => {
           !loadingAtlet &&
           !loadingHari && (
             <>
+              <div className="mb-6">
+                <button
+                  onClick={saveAllAntrian}
+                  disabled={isSavingAntrian}
+                  className="flex items-center gap-2 px-4 py-3 rounded-xl font-medium transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{ backgroundColor: "#16a34a", color: "#F5FBEF" }}
+                >
+                  {isSavingAntrian ? (
+                    <>
+                      <Loader size={16} className="animate-spin" />
+                      Menyimpan...
+                    </>
+                  ) : (
+                    <>
+                      <Save size={16} />
+                      Simpan Semua Antrian
+                    </>
+                  )}
+                </button>
+              </div>
               {hariAntrianList.length === 0 ? (
                 <div className="text-center py-12">
                   <ClipboardList

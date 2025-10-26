@@ -13,6 +13,11 @@ interface LapanganData {
   nama_lapangan: string;
   tanggal: string;
   kelas_kejuaraan: KelasLapangan[];
+  antrian: {
+    bertanding: number;
+    persiapan: number;
+    pemanasan: number;
+  } | null;
 }
 
 interface HariData {
@@ -76,6 +81,7 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
             id_lapangan: lap.id_lapangan,
             nama_lapangan: lap.nama_lapangan,
             tanggal: lap.tanggal,
+            antrian: lap.antrian,
             kelas_kejuaraan: (lap.kelas_list || []).map(
               (kelasItem: any, index: number) => ({
                 id_kelas_kejuaraan: kelasItem.id_kelas_kejuaraan,
@@ -251,6 +257,14 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
                   <div className="w-3 h-3 rounded-full bg-red-500 animate-pulse"></div>
                 </div>
 
+                {lap.antrian && (
+                  <div className="mb-4 text-center">
+                    <p className="text-sm font-medium text-gray-600">Bertanding: {lap.antrian.bertanding}</p>
+                    <p className="text-sm font-medium text-gray-600">Persiapan: {lap.antrian.persiapan}</p>
+                    <p className="text-sm font-medium text-gray-600">Pemanasan: {lap.antrian.pemanasan}</p>
+                  </div>
+                )}
+
                 <p
                   className="text-sm mb-4"
                   style={{ color: "#050505", opacity: 0.6 }}
@@ -285,7 +299,7 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
                             className="text-xs mt-1"
                             style={{ color: "#990D35" }}
                           >
-                            Antrian #{kelas.nomor_antrian}
+                            kelas {kelas.nomor_antrian}
                           </p>
                         </div>
                       </div>
