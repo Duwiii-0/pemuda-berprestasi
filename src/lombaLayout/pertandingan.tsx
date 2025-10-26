@@ -329,63 +329,6 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
                       year: "numeric",
                     })}
                   </p>
-
-                  <div className="space-y-3">
-                    {lap.kelas_kejuaraan.length > 0 ? (
-                      lap.kelas_kejuaraan.map((kelas) => (
-                        <div
-                          key={kelas.id_kelas_kejuaraan}
-                          className="flex items-center justify-between p-3 rounded-xl border transition-all duration-300 hover:bg-white"
-                          style={{
-                            backgroundColor: "rgba(255, 255, 255, 0.7)",
-                            borderColor: "rgba(153, 13, 53, 0.05)",
-                          }}
-                        >
-                          <div className="flex-1">
-                            <p
-                              className="font-semibold text-sm"
-                              style={{ color: "#050505" }}
-                            >
-                              {kelas.nama_kelas}
-                            </p>
-                            <p
-                              className="text-xs mt-1"
-                              style={{ color: "#990D35" }}
-                            >
-                              Antrian #{kelas.nomor_antrian}
-                            </p>
-                          </div>
-                          <div className="flex flex-col items-end gap-1">
-                            <div
-                              className={`w-3 h-3 rounded-full ${getStatusColor(
-                                kelas.status_antrian
-                              )} ring-4 ring-white/60 shadow-md`}
-                              title={kelas.status_antrian}
-                            ></div>
-                            <span
-                              className="text-xs whitespace-nowrap"
-                              style={{ color: "#050505", opacity: 0.7 }}
-                            >
-                              {
-                                getStatusLabel(kelas.status_antrian).split(
-                                  " "
-                                )[1]
-                              }
-                            </span>
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="text-center py-8">
-                        <p
-                          className="text-sm"
-                          style={{ color: "#050505", opacity: 0.5 }}
-                        >
-                          Belum ada kelas terjadwal
-                        </p>
-                      </div>
-                    )}
-                  </div>
                 </div>
               );
             })}
