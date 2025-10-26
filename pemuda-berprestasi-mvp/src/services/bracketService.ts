@@ -440,6 +440,7 @@ static generateByeOrder(bracketSize: number): number[] {
 /**
  * ⭐ FIXED: Generate bracket with PROPER bye placement algorithm
  */
+
 static async generatePrestasiBracket(
   baganId: number, 
   participants: Participant[],
@@ -447,52 +448,46 @@ static async generatePrestasiBracket(
 ): Promise<Match[]> {
   const participantCount = participants.length;
   
-  console.log(`\n🏆 === GENERATING PRESTASI BRACKET (FIXED ALGORITHM) ===`);
+  console.log(`\n🏆 === GENERATING PRESTASI BRACKET ===`);
   console.log(`Total Participants: ${participantCount}`);
   
-  // ⭐ VALIDATE
   if (participantCount < 4) {
     throw new Error('Minimal 4 peserta diperlukan untuk bracket prestasi');
   }
 
-  // ⭐ CALCULATE STRUCTURE
   const structure = this.calculateBracketStructure(participantCount);
   const totalRounds = structure.totalRounds;
-  const round1Target = structure.round1Target;
-  const byesRecommended = structure.byesRecommended;
   
   console.log(`📊 Bracket Structure:`);
   console.log(`   Total Rounds: ${totalRounds}`);
-  console.log(`   Round 1 Target: ${round1Target}`);
-  console.log(`   BYE Recommended: ${byesRecommended}`);
 
   // ========================================
-  // STEP 1: POWER-OF-TWO NORMALIZATION
-  // ========================================
-  const bracketSize = round1Target; // Already next power of 2
-  const totalByes = bracketSize - participantCount;
-
-  console.log(`\n📐 Power-of-2 Normalization:`);
-  console.log(`   Bracket Size: ${bracketSize}`);
-  console.log(`   Participants: ${participantCount}`);
-  console.log(`   Total BYEs: ${totalByes}`);
-
-  // ========================================
-  // STEP 2: GENERATE BALANCED BYE POSITIONS
-  // ========================================
-  const byePositions = this.generateByeOrder(bracketSize);
-  const selectedByePositions = byePositions.slice(0, totalByes);
-
-  console.log(`\n🎯 Selected BYE positions:`, selectedByePositions);
-  console.log(`   Pattern: ${selectedByePositions.map(p => `Slot ${p}`).join(', ')}`);
-
-  // ========================================
-  // STEP 3: SHUFFLE ALL PARTICIPANTS
+  // STEP 1: SHUFFLE PARTICIPANTS
   // ========================================
   const shuffledParticipants = this.shuffleArray([...participants]);
+  
+  console.log(`\n🔀 Shuffled participants:`, shuffledParticipants.map(p => p.name));
 
   // ========================================
-  // STEP 4: CREATE SLOT ARRAY
+  // STEP 2: CALCULATE BYE NEEDS (for balanced distribution only)
+  // ========================================
+  const nextPowerOf2 = Math.pow(2, Math.ceil(Math.log2(participantCount)));
+  const totalByesNeeded = nextPowerOf2 - participantCount;
+  
+  console.log(`\n📐 BYE Calculation:`);
+  console.log(`   Next Power of 2: ${nextPowerOf2}`);
+  console.log(`   Total BYEs Needed: ${totalByesNeeded}`);
+
+  // ========================================
+  // STEP 3: GENERATE BALANCED BYE POSITIONS
+  // ========================================
+  const byePositions = this.generateByeOrder(nextPowerOf2);
+  const selectedByePositions = byePositions.slice(0, totalByesNeeded);
+  
+  console.log(`\n🎯 BYE Positions (balanced):`, selectedByePositions);
+
+  // ========================================
+  // STEP 4: CREATE SLOTS with BYE distribution
   // ========================================
   interface Slot {
     position: number;
@@ -500,30 +495,26 @@ static async generatePrestasiBracket(
     isBye: boolean;
   }
 
-  const slots: Slot[] = Array.from({ length: bracketSize }, (_, i) => ({
+  const slots: Slot[] = Array.from({ length: nextPowerOf2 }, (_, i) => ({
     position: i,
     participant: null,
     isBye: false
   }));
 
-  // ========================================
-  // STEP 5: MARK BYE SLOTS
-  // ========================================
+  // Mark BYE positions
   selectedByePositions.forEach(pos => {
     slots[pos].isBye = true;
   });
 
-  // ========================================
-  // STEP 6: FILL NON-BYE SLOTS WITH PARTICIPANTS
-  // ========================================
+  // Fill non-BYE slots with shuffled participants
   let participantIndex = 0;
-  for (let i = 0; i < bracketSize; i++) {
+  for (let i = 0; i < nextPowerOf2; i++) {
     if (!slots[i].isBye) {
       slots[i].participant = shuffledParticipants[participantIndex++];
     }
   }
 
-  console.log(`\n📋 Slot Assignment (Balanced BYE Placement):`);
+  console.log(`\n📋 Slot Distribution:`);
   slots.forEach((slot, idx) => {
     if (slot.isBye) {
       console.log(`   Slot ${idx}: ⭐ BYE`);
@@ -533,20 +524,20 @@ static async generatePrestasiBracket(
   });
 
   // ========================================
-  // STEP 7: CREATE ROUND 1 MATCHES FROM PAIRED SLOTS
+  // STEP 5: CREATE ROUND 1 MATCHES (Paired Slots)
   // ========================================
-  const matches: Match[] = []; // ⭐ DECLARE MATCHES HERE
-  const totalMatchesRound1 = bracketSize / 2;
+  const matches: Match[] = [];
+  const round1MatchCount = nextPowerOf2 / 2;
 
-  console.log(`\n📝 Creating Round 1 matches from paired slots...`);
+  console.log(`\n📝 Creating ${round1MatchCount} Round 1 matches...`);
 
-  for (let i = 0; i < totalMatchesRound1; i++) {
+  for (let i = 0; i < round1MatchCount; i++) {
     const slotA = slots[i * 2];
     const slotB = slots[i * 2 + 1];
-    
-    // Skip if both are BYE (shouldn't happen with proper algorithm)
+
+    // Skip if both are BYE (shouldn't happen)
     if (slotA.isBye && slotB.isBye) {
-      console.warn(`   ⚠️ Both slots ${i*2} and ${i*2+1} are BYE - skipping`);
+      console.warn(`   ⚠️ Both slots BYE - skipping match ${i}`);
       continue;
     }
 
@@ -578,7 +569,7 @@ static async generatePrestasiBracket(
   }
 
   // ========================================
-  // STEP 8: CREATE EMPTY MATCHES FOR SUBSEQUENT ROUNDS
+  // STEP 6: CREATE PLACEHOLDER MATCHES (Round 2+)
   // ========================================
   for (let round = 2; round <= totalRounds; round++) {
     const participantsInRound = Math.pow(2, totalRounds - round + 1);
@@ -612,32 +603,31 @@ static async generatePrestasiBracket(
   }
 
   // ========================================
-  // STEP 9: AUTO-ADVANCE BYE WINNERS
+  // STEP 7: AUTO-ADVANCE BYE WINNERS
   // ========================================
-  console.log(`\n🎯 Auto-advancing BYE winners to next round...`);
+  console.log(`\n🎯 Auto-advancing BYE winners...`);
   const round1Matches = matches.filter(m => m.round === 1);
 
   for (const match of round1Matches) {
     if (match.status === 'bye' && match.id) {
-      // Determine which participant should advance (the non-BYE one)
       const winner = match.participant1 || match.participant2;
       
       if (winner) {
-        console.log(`   🎁 BYE Winner: ${winner.name} (Match ${match.id})`);
+        console.log(`   🎁 BYE Winner: ${winner.name}`);
         
-        const mockMatch = await prisma.tb_match.findUnique({
+        const dbMatch = await prisma.tb_match.findUnique({
           where: { id_match: match.id },
           include: { bagan: true }
         });
         
-        if (mockMatch) {
-          await this.advanceWinnerToNextRound(mockMatch, winner.id);
-          console.log(`   ✅ Advanced ${winner.name} to Round 2`);
+        if (dbMatch) {
+          await this.advanceWinnerToNextRound(dbMatch, winner.id);
         }
       }
     }
   }
 
+  console.log(`\n✅ Generated ${matches.length} total matches`);
   return matches;
 }
 
