@@ -878,9 +878,9 @@ static async generatePemulaBracket(
    */
 static async updateMatch(
   matchId: number, 
-  winnerId?: number | null,             // ⭐ NOW OPTIONAL
-  scoreA?: number | null,               // ⭐ NOW OPTIONAL
-  scoreB?: number | null,               // ⭐ NOW OPTIONAL
+  winnerId?: number | null,             
+  scoreA?: number | null,               
+  scoreB?: number | null,               
   tanggalPertandingan?: Date | null,
   nomorAntrian?: number | null,
   nomorLapangan?: string | null
@@ -918,10 +918,15 @@ static async updateMatch(
       console.log(`   🏟️ Updating nomor lapangan: ${nomorLapangan}`);
     }
     
-    // ⭐ AUTO-GENERATE nomor_partai if both queue fields exist
-    if (nomorAntrian && nomorLapangan) {
+    // ⭐ AUTO-GENERATE nomor_partai HANYA jika KEDUA field diisi
+    if (nomorAntrian !== null && nomorAntrian !== undefined && 
+        nomorLapangan !== null && nomorLapangan !== undefined) {
       updateData.nomor_partai = `${nomorAntrian}${nomorLapangan}`;
       console.log(`   🎯 Auto-generated nomor_partai: ${updateData.nomor_partai}`);
+    } else if (nomorAntrian === null && nomorLapangan === null) {
+      // ⭐ CLEAR nomor_partai jika kedua field di-clear
+      updateData.nomor_partai = null;
+      console.log(`   🗑️ Clearing nomor_partai`);
     }
 
     // Execute update

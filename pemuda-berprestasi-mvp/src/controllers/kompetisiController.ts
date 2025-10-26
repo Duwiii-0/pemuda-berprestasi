@@ -675,7 +675,7 @@ static async updateMatch(req: Request, res: Response) {
     console.log(`   Match ID: ${matchIdInt}`);
     console.log(`   Mode: ${isResultUpdate ? 'RESULT' : 'SCHEDULE'} update`);
 
-    // ⭐ VALIDATION FOR RESULT UPDATE MODE
+    // ⭐ VALIDATION HANYA UNTUK RESULT UPDATE MODE
     if (isResultUpdate) {
       const winnerIdInt = parseInt(winnerId);
       const scoreAInt = parseInt(scoreA);
@@ -696,9 +696,43 @@ static async updateMatch(req: Request, res: Response) {
       if (scoreAInt === scoreBInt) {
         return sendError(res, 'Pertandingan tidak boleh berakhir seri', 400);
       }
+      
+      // ⭐ VALIDASI WINNER vs SCORE (hanya jika result update)
+      const match = await prisma.tb_match.findFirst({
+        where: {
+          id_match: matchIdInt,
+          bagan: {
+            id_kompetisi: kompetisiId
+          }
+        },
+        include: {
+          peserta_a: true,
+          peserta_b: true
+        }
+      });
+
+      if (!match) {
+        return sendError(res, 'Pertandingan tidak ditemukan', 404);
+      }
+
+      if (!match.peserta_a || !match.peserta_b) {
+        return sendError(res, 'Pertandingan belum lengkap (peserta kurang)', 400);
+      }
+
+      // Validate winner
+      const validWinnerIds = [match.id_peserta_a, match.id_peserta_b].filter(Boolean);
+      if (!validWinnerIds.includes(winnerIdInt)) {
+        return sendError(res, 'Winner ID tidak valid untuk pertandingan ini', 400);
+      }
+
+      // Validate score matches winner
+      const isWinnerA = winnerIdInt === match.id_peserta_a;
+      if ((isWinnerA && scoreAInt <= scoreBInt) || (!isWinnerA && scoreBInt <= scoreAInt)) {
+        return sendError(res, 'Skor tidak sesuai dengan pemenang', 400);
+      }
     }
 
-    // Parse tanggal if provided
+    // ⭐ PARSE FIELDS (validation minimal untuk schedule)
     let parsedTanggal: Date | null = null;
     if (tanggalPertandingan) {
       parsedTanggal = new Date(tanggalPertandingan);
@@ -707,7 +741,6 @@ static async updateMatch(req: Request, res: Response) {
       }
     }
     
-    // Parse queue fields
     let parsedAntrian: number | null = null;
     let parsedLapangan: string | null = null;
     
@@ -725,7 +758,7 @@ static async updateMatch(req: Request, res: Response) {
       }
     }
 
-    // Check authorization
+    // ⭐ CHECK AUTHORIZATION (untuk semua mode)
     const user = req.user;
     if (!user) {
       return sendError(res, 'User tidak ditemukan', 401);
@@ -735,47 +768,12 @@ static async updateMatch(req: Request, res: Response) {
       return sendError(res, 'Tidak memiliki akses untuk mengupdate pertandingan', 403);
     }
 
-    // Verify match exists and belongs to the competition
-    const match = await prisma.tb_match.findFirst({
-      where: {
-        id_match: matchIdInt,
-        bagan: {
-          id_kompetisi: kompetisiId
-        }
-      },
-      include: {
-        peserta_a: true,
-        peserta_b: true
-      }
-    });
-
-    if (!match) {
-      return sendError(res, 'Pertandingan tidak ditemukan', 404);
-    }
-
-    // ⭐ ONLY validate participants if result update
+    // ⭐ CALL SERVICE dengan parameter yang sesuai mode
     if (isResultUpdate) {
-      if (!match.peserta_a || !match.peserta_b) {
-        return sendError(res, 'Pertandingan belum lengkap (peserta kurang)', 400);
-      }
-
       const winnerIdInt = parseInt(winnerId);
       const scoreAInt = parseInt(scoreA);
       const scoreBInt = parseInt(scoreB);
 
-      // Validate winner
-      const validWinnerIds = [match.id_peserta_a, match.id_peserta_b].filter(Boolean);
-      if (!validWinnerIds.includes(winnerIdInt)) {
-        return sendError(res, 'Winner ID tidak valid untuk pertandingan ini', 400);
-      }
-
-      // Validate score matches winner
-      const isWinnerA = winnerIdInt === match.id_peserta_a;
-      if ((isWinnerA && scoreAInt <= scoreBInt) || (!isWinnerA && scoreBInt <= scoreAInt)) {
-        return sendError(res, 'Skor tidak sesuai dengan pemenang', 400);
-      }
-
-      // Update with result
       const updatedMatch = await BracketService.updateMatch(
         matchIdInt, 
         winnerIdInt, 
@@ -788,7 +786,7 @@ static async updateMatch(req: Request, res: Response) {
 
       return sendSuccess(res, updatedMatch, 'Hasil pertandingan berhasil diupdate');
     } else {
-      // ⭐ SCHEDULE UPDATE - No winner/scores
+      // ⭐ SCHEDULE-ONLY UPDATE - No winner/scores
       const updatedMatch = await BracketService.updateMatch(
         matchIdInt,
         null,              // No winner
@@ -807,7 +805,6 @@ static async updateMatch(req: Request, res: Response) {
     return sendError(res, error.message || 'Gagal mengupdate pertandingan', 400);
   }
 }
-
 /**
  * Export bracket to PDF
  */
