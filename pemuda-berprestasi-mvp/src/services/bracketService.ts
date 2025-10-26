@@ -448,6 +448,17 @@ static async generatePrestasiBracket(
   // 3️⃣ Tentukan total match Round 1 (selalu targetSize / 2)
   const totalMatchesR1 = targetSize / 2;
 
+    // 4️⃣ Tentukan urutan zigzag posisi BYE (atas-bawah)
+  const byePositions: number[] = [];
+  for (let i = 0; i < byesNeeded; i++) {
+    if (i % 2 === 0) {
+      byePositions.push(i / 2); // atas
+    } else {
+      byePositions.push(totalMatchesR1 - Math.ceil(i / 2)); // bawah
+    }
+  }
+  console.log(`   🎯 Zigzag BYE positions:`, byePositions);
+
   // 4️⃣ Gabungkan semua peserta (BYE + aktif) dan acak
   const allParticipants = this.shuffleArray([...byeParticipants, ...activeParticipants]);
 
