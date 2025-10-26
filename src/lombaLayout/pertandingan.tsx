@@ -77,11 +77,11 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
             id_lapangan: lap.id_lapangan,
             nama_lapangan: lap.nama_lapangan,
             tanggal: lap.tanggal,
-            kelas_kejuaraan: (lap.kelasDipilih || []).map(
-              (kelasId: number, index: number) => ({
-                id_kelas_kejuaraan: kelasId,
-                nama_kelas: `Kelas ${kelasId}`, // Nanti bisa di-populate dari API terpisah
-                jumlah_peserta: 0,
+            kelas_kejuaraan: (lap.kelas_list || []).map(
+              (kelasItem: any, index: number) => ({
+                id_kelas_kejuaraan: kelasItem.id_kelas_kejuaraan,
+                nama_kelas: generateNamaKelas(kelasItem.kelas_kejuaraan),
+                jumlah_peserta: 0, // This can be populated if the API provides it
                 status_antrian:
                   index === 0
                     ? "bertanding"
