@@ -256,10 +256,6 @@ export default function AppRoutes() {
           <Route index element={<Home />} />
           <Route path="events" element={<Event />} />
           <Route path="tutorial" element={<TutorialPage />} />
-          <Route
-            path="pertandingan/:idKompetisi"
-            element={<LapanganLiveViewWrapper />}
-          />
         </Route>
 
         {/* Settings - protected route */}
