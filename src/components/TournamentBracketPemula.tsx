@@ -100,6 +100,7 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
   const [exporting, setExporting] = useState(false);
   const [clearing, setClearing] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [showParticipantPreview, setShowParticipantPreview] = useState(false);
   const bracketRef = React.useRef<HTMLDivElement>(null);
   const leaderboardRef = React.useRef<HTMLDivElement>(null);
   
@@ -246,12 +247,17 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
     }
   };
 
+  const openParticipantPreview = () => {
+      setShowParticipantPreview(true);
+    };
+
   const generateBracket = async () => {
     if (!kelasData) return;
     
     console.log('🥋 PEMULA: Generating bracket (auto, no BYE selection)');
     
     setLoading(true);
+    setShowParticipantPreview(false); // ⭐ CLOSE PREVIEW SAAT GENERATE
     
     try {
       const kompetisiId = kelasData.kompetisi.id_kompetisi;
@@ -1140,16 +1146,87 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
                 : 'Click "Generate" to create the tournament bracket'
               }
             </p>
-            {approvedParticipants.length >= 2 && (
+               {approvedParticipants.length >= 2 && (
               <button
-                onClick={generateBracket}
+                onClick={openParticipantPreview}
                 disabled={loading}
                 className="px-6 py-3 rounded-lg font-medium transition-all disabled:opacity-50"
                 style={{ backgroundColor: '#F5B700', color: '#F5FBEF' }}
               >
-                {loading ? 'Generating...' : 'Generate Bracket (Auto)'}
+                {loading ? 'Processing...' : 'Preview & Generate Bracket'}
               </button>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Participant Preview Modal */}
+      {showParticipantPreview && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+            <div className="p-6 border-b sticky top-0 bg-white z-10" style={{ borderColor: '#990D35' }}>
+              <h3 className="text-xl font-bold" style={{ color: '#050505' }}>
+                Preview Peserta Tournament
+              </h3>
+              <p className="text-sm mt-1" style={{ color: '#050505', opacity: 0.6 }}>
+                Total {approvedParticipants.length} peserta akan diikutkan dalam bracket
+              </p>
+            </div>
+            
+            <div className="p-6">
+              <div className="space-y-3">
+                {approvedParticipants.map((peserta, index) => (
+                  <div
+                    key={peserta.id_peserta_kompetisi}
+                    className="p-4 rounded-lg border-2"
+                    style={{ borderColor: '#990D35', backgroundColor: 'rgba(153, 13, 53, 0.05)' }}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div 
+                        className="w-10 h-10 rounded-full flex items-center justify-center font-bold flex-shrink-0"
+                        style={{ backgroundColor: '#990D35', color: 'white' }}
+                      >
+                        {index + 1}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-base mb-1 break-words" style={{ color: '#050505' }}>
+                          {getParticipantName(peserta)}
+                        </p>
+                        <p 
+                          className="text-sm break-words" 
+                          style={{ 
+                            color: '#050505', 
+                            opacity: 0.6,
+                            wordBreak: 'break-word',
+                            overflowWrap: 'break-word'
+                          }}
+                        >
+                          {getDojoName(peserta)}
+                        </p>
+                      </div>
+                      <CheckCircle size={24} className="text-green-600 flex-shrink-0" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            <div className="p-6 border-t flex gap-3 sticky bottom-0 bg-white z-10" style={{ borderColor: '#990D35' }}>
+              <button
+                onClick={() => setShowParticipantPreview(false)}
+                className="flex-1 py-3 px-4 rounded-lg border-2 font-medium transition-all hover:bg-gray-50"
+                style={{ borderColor: '#990D35', color: '#990D35' }}
+              >
+                Batal
+              </button>
+              <button
+                onClick={generateBracket}
+                className="flex-1 py-3 px-4 rounded-lg font-medium transition-all hover:opacity-90 shadow-lg"
+                style={{ backgroundColor: '#990D35', color: '#F5FBEF' }}
+              >
+                Generate Bracket Otomatis
+              </button>
+            </div>
           </div>
         </div>
       )}
