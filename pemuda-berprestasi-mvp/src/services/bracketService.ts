@@ -484,8 +484,9 @@ static async generatePrestasiBracket(
 
     // Jika dua-duanya kosong (karena kehabisan peserta), skip loop ini
     if (!p1 && !p2) {
-      console.log(`   [SKIP] Slot ${i} kosong sepenuhnya — tidak dibuat`);
-      continue;
+      p1 = null;
+      p2 = null;
+      status = "pending"; // biar tetap dibuat tapi dianggap kosong
     }
   }
 
