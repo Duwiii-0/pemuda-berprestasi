@@ -1,11 +1,9 @@
 import { Router } from "express";
 import lapanganController from "../controllers/lapanganController";
-import { authenticate, requireAdmin } from "../middleware/auth";
 
 const router = Router();
 
 // Rute ini memerlukan autentikasi dan role ADMIN
-router.use(authenticate, requireAdmin);
 
 // POST /api/lapangan/tambah-hari
 router.post("/tambah-hari", lapanganController.tambahHariLapangan);
@@ -32,7 +30,10 @@ router.get(
 router.delete("/hapus-hari", lapanganController.hapusHariLapangan);
 
 // GET /api/lapangan/:id_lapangan/kelas
-router.get("/:id_lapangan/kelas", lapanganController.getKelasKejuaraanByLapangan);
+router.get(
+  "/:id_lapangan/kelas",
+  lapanganController.getKelasKejuaraanByLapangan
+);
 
 // POST /api/lapangan/antrian
 router.post("/antrian", lapanganController.simpanAntrian);
