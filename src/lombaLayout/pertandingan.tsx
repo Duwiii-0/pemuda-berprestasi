@@ -299,25 +299,33 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
                   )}
 
                   {lap.antrian && (
-                    <div className="mb-4 space-y-2 w-full">
-                      <div className="flex w-full justify-center items-center gap-2">
-                        <span className="text-lg font-medium text-green-700 bg-green-100 px-3 py-3 rounded-md">
-                          Bertanding: {lap.antrian.bertanding}
+                    <div className="mb-4 space-y-3 w-full">
+                      <div className="flex flex-col items-center justify-center w-full text-green-700 bg-green-100 px-4 py-4 rounded-lg">
+                        <span className="text-5xl font-bold mb-2">
+                          {lap.antrian.bertanding}
+                        </span>
+                        <span className="text-2xl font-semibold">
+                          Bertanding
                         </span>
                       </div>
-                      <div className="flex w-full justify-center items-center gap-2">
-                        <span className="text-lg font-medium text-orange-700 bg-orange-100 px-3 py-3 rounded-md">
-                          Persiapan: {lap.antrian.persiapan}
+                      <div className="flex flex-col items-center justify-center w-full text-orange-700 bg-orange-100 px-4 py-4 rounded-lg">
+                        <span className="text-5xl font-bold mb-2">
+                          {lap.antrian.persiapan}
+                        </span>
+                        <span className="text-2xl font-semibold">
+                          Persiapan
                         </span>
                       </div>
-                      <div className="flex w-full justify-center items-center gap-2">
-                        <span className="text-lg font-medium text-yellow-700 bg-yellow-100 px-3 py-3 rounded-md">
-                          Pemanasan: {lap.antrian.pemanasan}
+                      <div className="flex flex-col items-center justify-center w-full text-yellow-700 bg-yellow-100 px-4 py-4 rounded-lg">
+                        <span className="text-5xl font-bold mb-2">
+                          {lap.antrian.pemanasan}
+                        </span>
+                        <span className="text-2xl font-semibold">
+                          Pemanasan
                         </span>
                       </div>
                     </div>
                   )}
-
                   <p
                     className="text-sm mb-4"
                     style={{ color: "#050505", opacity: 0.6 }}
