@@ -421,13 +421,16 @@ static async generatePrestasiBracket(
   const matches: Match[] = [];
 
   const participantCount = participants.length;
-  if (participantCount < 4) throw new Error('Minimal 4 peserta diperlukan');
+  if (participantCount < 4) {
+    throw new Error("Minimal 4 peserta diperlukan untuk bracket prestasi");
+  }
 
+  // 1️⃣ Hitung struktur dasar
   const targetSize = Math.pow(2, Math.ceil(Math.log2(participantCount)));
   const byesNeeded = targetSize - participantCount;
-  console.log(`📊 PRESTASI: ${participantCount} peserta → target ${targetSize} → ${byesNeeded} BYE`);
+  console.log(`📊 PRESTASI: participants=${participantCount}, targetSize=${targetSize}, byesNeeded=${byesNeeded}`);
 
-  // 1️⃣ Tentukan siapa BYE dan siapa aktif
+  // 2️⃣ Tentukan siapa peserta BYE
   let byeParticipants: Participant[] = [];
   let activeParticipants: Participant[] = [...participants];
 
@@ -440,41 +443,45 @@ static async generatePrestasiBracket(
     activeParticipants = shuffled.slice(byesNeeded);
   }
 
-  const shuffledActive = this.shuffleArray([...activeParticipants]);
-  const shuffledBye = this.shuffleArray([...byeParticipants]);
+  // 3️⃣ Buat seat 2^n penuh
+  const totalSlots = targetSize;
+  const seatArray: (Participant | null)[] = new Array(totalSlots).fill(null);
 
-  // 2️⃣ Buat “kursi” untuk Round 1
-  const totalSeats = targetSize; // misal 16
+  // 4️⃣ Tentukan posisi BYE zigzag
   const byePositions = this.calculateByePositionsZigzag(participantCount, targetSize);
-  console.log(`   BYE positions:`, byePositions);
+  console.log("🎯 Zigzag BYE index pattern:", byePositions);
 
-  const seats: (Participant | null)[] = Array(totalSeats).fill(null);
-
-  // Isi kursi BYE dulu
+  // 5️⃣ Isi kursi BYE
   let byeIndex = 0;
   for (const pos of byePositions) {
-    if (byeIndex < shuffledBye.length) {
-      seats[pos] = shuffledBye[byeIndex++];
+    if (byeIndex < byeParticipants.length) {
+      seatArray[pos] = byeParticipants[byeIndex++];
     }
   }
 
-  // Isi kursi kosong dengan peserta aktif
-  let activeIndex = 0;
-  for (let i = 0; i < totalSeats; i++) {
-    if (!seats[i] && activeIndex < shuffledActive.length) {
-      seats[i] = shuffledActive[activeIndex++];
+  // 6️⃣ Isi sisa kursi dengan peserta aktif
+  const shuffledActive = this.shuffleArray([...activeParticipants]);
+  let actIndex = 0;
+  for (let i = 0; i < totalSlots; i++) {
+    if (seatArray[i] === null && actIndex < shuffledActive.length) {
+      seatArray[i] = shuffledActive[actIndex++];
     }
   }
 
-  // 3️⃣ Pairing jadi match Round 1
-  const totalMatchesR1 = totalSeats / 2;
-  for (let i = 0; i < totalMatchesR1; i++) {
-    const p1 = seats[i * 2] || null;
-    const p2 = seats[i * 2 + 1] || null;
+  // 🧠 Cek kalau masih ada active belum terpakai → taruh ke slot kosong terakhir
+  while (actIndex < shuffledActive.length) {
+    const nextEmpty = seatArray.findIndex(s => s === null);
+    if (nextEmpty === -1) break;
+    seatArray[nextEmpty] = shuffledActive[actIndex++];
+  }
 
-    let status: Match['status'] = 'pending';
-    if ((p1 && !p2) || (!p1 && p2)) status = 'bye';
-    if (!p1 && !p2) status = 'pending'; // placeholder kosong
+  console.log("🪑 Seat map:", seatArray.map(p => (p ? p.name : "BYE")));
+
+  // 7️⃣ Pair jadi match Round 1
+  for (let i = 0; i < totalSlots; i += 2) {
+    const p1 = seatArray[i];
+    const p2 = seatArray[i + 1];
+    const status = !p1 || !p2 ? "bye" : "pending";
 
     const created = await prisma.tb_match.create({
       data: {
@@ -490,7 +497,7 @@ static async generatePrestasiBracket(
     matches.push({
       id: created.id_match,
       round: 1,
-      position: i,
+      position: i / 2,
       participant1: p1,
       participant2: p2,
       status,
@@ -498,12 +505,10 @@ static async generatePrestasiBracket(
       scoreB: 0
     });
 
-    console.log(
-      `R1-${i + 1}: ${p1 ? p1.name : 'BYE'} vs ${p2 ? p2.name : 'BYE'} [${status}]`
-    );
+    console.log(`   R1 match ${i / 2}: ${p1 ? p1.name : "BYE"} vs ${p2 ? p2.name : "BYE"}`);
   }
 
-  // 4️⃣ Buat placeholder ronde berikutnya
+  // 8️⃣ Generate placeholders untuk ronde berikutnya
   const totalRounds = Math.log2(targetSize);
   for (let round = 2; round <= totalRounds; round++) {
     const matchesInRound = Math.pow(2, totalRounds - round);
@@ -525,32 +530,33 @@ static async generatePrestasiBracket(
         position: i,
         participant1: null,
         participant2: null,
-        status: 'pending',
+        status: "pending",
         scoreA: 0,
         scoreB: 0
       });
     }
   }
 
-  // 5️⃣ Auto-advance semua BYE di Round 1
-  const r1Matches = matches.filter(m => m.round === 1);
-  for (const m of r1Matches) {
-    if ((m.participant1 && !m.participant2) || (!m.participant1 && m.participant2)) {
-      const winner = m.participant1 || m.participant2;
-      if (winner) {
-        await this.advanceWinnerToNextRound(
-          { id_bagan: baganId, ronde: 1, id_match: m.id },
-          winner.id
-        );
-        console.log(`   ✅ Auto-advance: ${winner.name}`);
-      }
+  // 9️⃣ Auto-advance peserta BYE
+  const createdR1Matches = matches.filter(m => m.round === 1);
+  for (const m of createdR1Matches) {
+    if (m.participant1 && !m.participant2) {
+      await this.advanceWinnerToNextRound(
+        { id_bagan: baganId, ronde: 1, id_match: m.id },
+        m.participant1.id
+      );
+      console.log(`   Auto-advanced BYE winner ${m.participant1.name}`);
+    } else if (!m.participant1 && m.participant2) {
+      await this.advanceWinnerToNextRound(
+        { id_bagan: baganId, ronde: 1, id_match: m.id },
+        m.participant2.id
+      );
+      console.log(`   Auto-advanced BYE winner ${m.participant2.name}`);
     }
   }
 
-  console.log(`✅ PRESTASI bracket done: ${matches.length} matches total`);
   return matches;
 }
-
 
 static getMatchesByRound(matches: Match[], round: number): Match[] {
   return matches.filter(m => m.round === round);
@@ -586,26 +592,24 @@ static calculateByePositions(participantCount: number, targetSize: number): numb
 
 static calculateByePositionsZigzag(participantCount: number, targetSize: number): number[] {
   const byesNeeded = targetSize - participantCount;
-  const totalSlots = targetSize;
   if (byesNeeded <= 0) return [];
 
-  // Zigzag index pattern: top, bottom, mid-top, mid-bottom, etc.
-  const basePattern = [
-    0,
-    totalSlots - 1,
-    Math.floor(totalSlots / 4),
-    totalSlots - 1 - Math.floor(totalSlots / 4),
-    Math.floor(totalSlots / 8),
-    totalSlots - 1 - Math.floor(totalSlots / 8),
-    Math.floor(totalSlots / 2) - 1,
-    Math.floor(totalSlots / 2)
-  ];
+  const positions: number[] = [];
+  const top = 0;
+  const bottom = targetSize - 1;
+  let up = true;
+  let step = Math.floor(targetSize / (byesNeeded + 1));
 
-  const result = basePattern.slice(0, byesNeeded).sort((a, b) => a - b);
-  console.log('🎯 Zigzag BYE index pattern:', result);
-  return result;
+  for (let i = 0; i < byesNeeded; i++) {
+    const pos = up
+      ? Math.floor((i / byesNeeded) * (targetSize / 2))
+      : bottom - Math.floor((i / byesNeeded) * (targetSize / 2));
+    positions.push(Math.max(0, Math.min(targetSize - 1, pos)));
+    up = !up;
+  }
+
+  return [...new Set(positions)].sort((a, b) => a - b);
 }
-
 
   /**
    * Generate PEMULA bracket (single round, all matches)
