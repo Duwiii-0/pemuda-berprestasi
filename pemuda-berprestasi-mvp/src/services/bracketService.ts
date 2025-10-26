@@ -413,6 +413,9 @@ static calculateBracketStructure(
   };
 }
 
+/**
+ * ⭐ FIXED: Generate bracket with PROPER bye placement algorithm
+ */
 static async generatePrestasiBracket(
   baganId: number, 
   participants: Participant[],
@@ -420,15 +423,13 @@ static async generatePrestasiBracket(
 ): Promise<Match[]> {
   const participantCount = participants.length;
   
-  console.log(`\n🏆 === GENERATING PRESTASI BRACKET ===`);
+  console.log(`\n🏆 === GENERATING PRESTASI BRACKET (FIXED ALGORITHM) ===`);
   console.log(`Total Participants: ${participantCount}`);
   
-  // ⭐ VALIDATE minimal participants
   if (participantCount < 4) {
     throw new Error('Minimal 4 peserta diperlukan untuk bracket prestasi');
   }
 
-  // ⭐ CALCULATE BRACKET STRUCTURE using new method
   const structure = this.calculateBracketStructure(participantCount);
   const totalRounds = structure.totalRounds;
   const round1Target = structure.round1Target;
@@ -438,71 +439,87 @@ static async generatePrestasiBracket(
   console.log(`   Total Rounds: ${totalRounds}`);
   console.log(`   Round 1 Target: ${round1Target}`);
   console.log(`   BYE Recommended: ${byesRecommended}`);
+
+  // ========================================
+  // STEP 1: POWER-OF-TWO NORMALIZATION
+  // ========================================
+  const bracketSize = round1Target; // This is already next power of 2
+  const totalByes = bracketSize - participantCount;
   
-  // ⭐ VALIDATE BYE count if provided
-  if (byeParticipantIds && byeParticipantIds.length > 0) {
-    const validation = this.validateAndAdjustBye(
-      participantCount,
-      byeParticipantIds.length,
-      round1Target
-    );
-    
-    console.log(`   BYE Validation: ${validation.message}`);
-    
-    if (!validation.isValid) {
-      throw new Error(validation.message);
-    }
-    
-    // ⭐ AUTO-ADJUST if needed (hybrid approach)
-    if (validation.adjustedByeCount !== null) {
-      console.log(`   ⚠️ BYE auto-adjusted from ${byeParticipantIds.length} to ${validation.adjustedByeCount}`);
-      // Randomly select subset if user selected too many
-      if (byeParticipantIds.length > validation.adjustedByeCount) {
-        const shuffled = this.shuffleArray([...byeParticipantIds]);
-        byeParticipantIds = shuffled.slice(0, validation.adjustedByeCount);
-        console.log(`   → Selected BYE IDs: ${byeParticipantIds}`);
-      }
+  console.log(`\n📐 Power-of-2 Normalization:`);
+  console.log(`   Bracket Size: ${bracketSize}`);
+  console.log(`   Total BYEs needed: ${totalByes}`);
+
+  // ========================================
+  // STEP 2: GENERATE BYE POSITIONS using balanced algorithm
+  // ========================================
+  const byePositions = this.generateByeOrder(bracketSize);
+  const selectedByePositions = byePositions.slice(0, totalByes);
+  
+  console.log(`\n🎯 BYE Positions (balanced):`, selectedByePositions);
+
+  // ========================================
+  // STEP 3: CREATE SLOT ARRAY (bracket representation)
+  // ========================================
+  interface Slot {
+    position: number;
+    participant: Participant | null;
+    isBye: boolean;
+  }
+
+  const slots: Slot[] = Array.from({ length: bracketSize }, (_, i) => ({
+    position: i,
+    participant: null,
+    isBye: false
+  }));
+
+  // ========================================
+  // STEP 4: SHUFFLE PARTICIPANTS for random seeding
+  // ========================================
+  const shuffledParticipants = this.shuffleArray([...participants]);
+  
+  // ========================================
+  // STEP 5: ASSIGN BYEs to balanced positions
+  // ========================================
+  selectedByePositions.forEach(pos => {
+    slots[pos].isBye = true;
+  });
+
+  // ========================================
+  // STEP 6: FILL remaining slots with participants
+  // ========================================
+  let participantIndex = 0;
+  for (let i = 0; i < bracketSize; i++) {
+    if (!slots[i].isBye) {
+      slots[i].participant = shuffledParticipants[participantIndex++];
     }
   }
 
+  console.log(`\n📋 Slot Assignment:`);
+  slots.forEach((slot, idx) => {
+    if (slot.isBye) {
+      console.log(`   Slot ${idx}: BYE`);
+    } else if (slot.participant) {
+      console.log(`   Slot ${idx}: ${slot.participant.name}`);
+    }
+  });
+
+  // ========================================
+  // STEP 7: CREATE MATCHES from paired slots
+  // ========================================
   const matches: Match[] = [];
+  const totalMatchesRound1 = bracketSize / 2;
 
-  // ========================================
-  // STEP 1: Separate BYE vs FIGHTING
-  // ========================================
-  let byeParticipants: Participant[] = [];
-  let fightingParticipants: Participant[] = [];
+  for (let i = 0; i < totalMatchesRound1; i++) {
+    const slotA = slots[i * 2];
+    const slotB = slots[i * 2 + 1];
 
-  if (byeParticipantIds && byeParticipantIds.length > 0) {
-    byeParticipants = participants.filter(p => byeParticipantIds.includes(p.id));
-    fightingParticipants = participants.filter(p => !byeParticipantIds.includes(p.id));
-    
-    console.log(`🎁 BYE (${byeParticipants.length}):`, byeParticipants.map(p => p.name));
-    console.log(`⚔️ FIGHTING (${fightingParticipants.length}):`, fightingParticipants.map(p => p.name));
-  } else {
-    fightingParticipants = [...participants];
-    console.log(`⚔️ ALL FIGHTING (no BYE): ${fightingParticipants.length}`);
-  }
-
-  // ========================================
-  // STEP 2: ROUND 1 - Create ALL matches (including BYE matches)
-  // ========================================
-  console.log(`\n📝 Creating Round 1 matches...`);
-  
-  // Shuffle fighting participants for random seeding
-  const shuffledFighters = this.shuffleArray([...fightingParticipants]);
-  
-  // Create FIGHTING matches (pair up fighters)
-  for (let i = 0; i < shuffledFighters.length; i += 2) {
-    const participant1 = shuffledFighters[i];
-    const participant2 = shuffledFighters[i + 1] || null;
-    
     const match = await prisma.tb_match.create({
       data: {
         id_bagan: baganId,
         ronde: 1,
-        id_peserta_a: participant1.id,
-        id_peserta_b: participant2?.id || null,
+        id_peserta_a: slotA.isBye ? null : slotA.participant?.id || null,
+        id_peserta_b: slotB.isBye ? null : slotB.participant?.id || null,
         skor_a: 0,
         skor_b: 0
       }
@@ -511,49 +528,21 @@ static async generatePrestasiBracket(
     matches.push({
       id: match.id_match,
       round: 1,
-      position: matches.length,
-      participant1,
-      participant2: participant2 || null,
-      status: participant2 ? 'pending' : 'bye',
+      position: i,
+      participant1: slotA.isBye ? null : slotA.participant || null,
+      participant2: slotB.isBye ? null : slotB.participant || null,
+      status: (slotA.isBye || slotB.isBye) ? 'bye' : 'pending',
       scoreA: 0,
       scoreB: 0
     });
-    
-    console.log(`  Match ${match.id_match}: ${participant1.name} vs ${participant2?.name || 'BYE (odd)'}`);
-  }
 
-  // Create BYE matches (user-selected BYE participants)
-  for (const byeParticipant of byeParticipants) {
-    const match = await prisma.tb_match.create({
-      data: {
-        id_bagan: baganId,
-        ronde: 1,
-        id_peserta_a: byeParticipant.id,
-        id_peserta_b: null, // ✅ NULL = BYE (auto-win)
-        skor_a: 0,
-        skor_b: 0
-      }
-    });
-    
-    matches.push({
-      id: match.id_match,
-      round: 1,
-      position: matches.length,
-      participant1: byeParticipant,
-      participant2: null,
-      status: 'bye',
-      scoreA: 0,
-      scoreB: 0
-    });
-    
-    console.log(`  Match ${match.id_match}: ${byeParticipant.name} vs BYE (auto-win)`);
+    console.log(`  Match ${match.id_match}: ${slotA.isBye ? 'BYE' : slotA.participant?.name} vs ${slotB.isBye ? 'BYE' : slotB.participant?.name}`);
   }
 
   // ========================================
-  // STEP 3: ROUND 2+ - Create EMPTY placeholder matches
+  // STEP 8: CREATE EMPTY MATCHES for subsequent rounds
   // ========================================
   for (let round = 2; round <= totalRounds; round++) {
-    // Calculate matches in this round (each round has half the participants of previous)
     const participantsInRound = Math.pow(2, totalRounds - round + 1);
     const matchesInRound = participantsInRound / 2;
     
@@ -564,8 +553,8 @@ static async generatePrestasiBracket(
         data: {
           id_bagan: baganId,
           ronde: round,
-          id_peserta_a: null, // ✅ TBD - Will be filled by advanceWinner
-          id_peserta_b: null, // ✅ TBD - Will be filled by advanceWinner
+          id_peserta_a: null,
+          id_peserta_b: null,
           skor_a: 0,
           skor_b: 0
         }
@@ -584,32 +573,62 @@ static async generatePrestasiBracket(
     }
   }
 
-// ⭐ ADVANCE BYE WINNERS AUTOMATICALLY
-console.log(`\n🎯 Auto-advancing BYE winners to next round...`);
-const round1Matches = matches.filter(m => m.round === 1);
+  // ========================================
+  // STEP 9: AUTO-ADVANCE BYE WINNERS
+  // ========================================
+  console.log(`\n🎯 Auto-advancing BYE winners to next round...`);
+  const round1Matches = matches.filter(m => m.round === 1);
 
-for (const match of round1Matches) {
-  // Check if this is a BYE match (participant A exists, no participant B)
-  if (match.participant1 && !match.participant2 && match.id) {
-    console.log(`   🎁 BYE detected: ${match.participant1.name} (Match ${match.id})`);
-    
-    // Create a mock match object for advanceWinnerToNextRound
-    const mockMatch = await prisma.tb_match.findUnique({
-      where: { id_match: match.id },
-      include: {
-        bagan: true
+  for (const match of round1Matches) {
+    if (match.status === 'bye' && match.id) {
+      // Determine which participant should advance (the non-BYE one)
+      const winner = match.participant1 || match.participant2;
+      
+      if (winner) {
+        console.log(`   🎁 BYE Winner: ${winner.name} (Match ${match.id})`);
+        
+        const mockMatch = await prisma.tb_match.findUnique({
+          where: { id_match: match.id },
+          include: { bagan: true }
+        });
+        
+        if (mockMatch) {
+          await this.advanceWinnerToNextRound(mockMatch, winner.id);
+          console.log(`   ✅ Advanced ${winner.name} to Round 2`);
+        }
       }
-    });
-    
-    if (mockMatch) {
-      // Advance the BYE winner to next round
-      await this.advanceWinnerToNextRound(mockMatch, match.participant1.id);
-      console.log(`   ✅ Advanced ${match.participant1.name} to Round 2`);
     }
   }
+
+  return matches;
 }
 
-return matches;
+/**
+ * ⭐ NEW METHOD: Generate balanced bye order using binary tree logic
+ * This implements the "zig-zag" pattern from documentation
+ */
+static generateByeOrder(bracketSize: number): number[] {
+  const positions: number[] = [];
+  
+  // Recursive function to add positions in balanced order
+  const addBalanced = (start: number, end: number) => {
+    if (start >= end) return;
+    
+    // Add top position
+    positions.push(start);
+    
+    // Add bottom position
+    if (start + 1 < end) {
+      positions.push(end - 1);
+    }
+    
+    // Recursively add middle positions
+    addBalanced(start + 1, end - 1);
+  };
+  
+  addBalanced(0, bracketSize);
+  
+  return positions;
 }
 
 static getMatchesByRound(matches: Match[], round: number): Match[] {
@@ -1010,7 +1029,7 @@ static async advanceWinnerToNextRound(match: any, winnerId: number): Promise<voi
   
   console.log(`🎯 Advancing winner ${winnerId} from Round ${currentRound} to Round ${nextRound}`);
   
-  // ⭐ CHECK: Is this PEMULA category?
+  // Check if PEMULA category (existing logic)
   const bagan = await prisma.tb_bagan.findUnique({
     where: { id_bagan: match.id_bagan },
     include: {
@@ -1024,9 +1043,8 @@ static async advanceWinnerToNextRound(match: any, winnerId: number): Promise<voi
   
   const isPemula = bagan?.kelas_kejuaraan?.kategori_event?.nama_kategori?.toLowerCase().includes('pemula') || false;
   
-  // ⭐ PEMULA LOGIC: Check if this is the LAST match in Round 1
+  // PEMULA logic unchanged
   if (isPemula && currentRound === 1) {
-    // Get all Round 1 matches
     const round1Matches = await prisma.tb_match.findMany({
       where: {
         id_bagan: match.id_bagan,
@@ -1035,7 +1053,6 @@ static async advanceWinnerToNextRound(match: any, winnerId: number): Promise<voi
       orderBy: { id_match: 'asc' }
     });
     
-    // Check if there's a Round 2 match (additional match)
     const round2Match = await prisma.tb_match.findFirst({
       where: {
         id_bagan: match.id_bagan,
@@ -1044,10 +1061,8 @@ static async advanceWinnerToNextRound(match: any, winnerId: number): Promise<voi
     });
     
     if (round2Match) {
-      // Find the last match in Round 1
       const lastMatchInRound1 = round1Matches[round1Matches.length - 1];
       
-      // If this is the last match winner, advance to Round 2 additional match
       if (match.id_match === lastMatchInRound1.id_match) {
         console.log(`   ⭐ PEMULA: Last match winner → Advance to additional match (Round 2)`);
         
@@ -1057,12 +1072,16 @@ static async advanceWinnerToNextRound(match: any, winnerId: number): Promise<voi
         });
         
         console.log(`   ✅ Winner ${winnerId} placed in Round 2 Additional Match (Slot B)`);
-        return; // Exit early
+        return;
       }
     }
   }
   
-  // ⭐ EXISTING LOGIC FOR PRESTASI (continue as normal)
+  // ========================================
+  // ⭐ PRESTASI LOGIC (FIXED)
+  // ========================================
+  
+  // Get all matches in current round, ORDERED BY id_match
   const currentRoundMatches = await prisma.tb_match.findMany({
     where: {
       id_bagan: match.id_bagan,
@@ -1071,6 +1090,7 @@ static async advanceWinnerToNextRound(match: any, winnerId: number): Promise<voi
     orderBy: { id_match: 'asc' }
   });
 
+  // Get all matches in next round, ORDERED BY id_match
   const nextRoundMatches = await prisma.tb_match.findMany({
     where: {
       id_bagan: match.id_bagan,
@@ -1084,6 +1104,7 @@ static async advanceWinnerToNextRound(match: any, winnerId: number): Promise<voi
     return;
   }
 
+  // ⭐ CRITICAL FIX: Find index in ORDERED array
   const currentMatchIndex = currentRoundMatches.findIndex(m => m.id_match === match.id_match);
   
   if (currentMatchIndex === -1) {
@@ -1091,6 +1112,10 @@ static async advanceWinnerToNextRound(match: any, winnerId: number): Promise<voi
     return;
   }
 
+  // ⭐ BINARY TREE PAIRING: Every 2 matches in current round feed 1 match in next round
+  // Match 0,1 → Next Match 0 (slots A, B)
+  // Match 2,3 → Next Match 1 (slots A, B)
+  // Match 4,5 → Next Match 2 (slots A, B)
   const nextMatchIndex = Math.floor(currentMatchIndex / 2);
   const nextMatch = nextRoundMatches[nextMatchIndex];
 
@@ -1099,12 +1124,18 @@ static async advanceWinnerToNextRound(match: any, winnerId: number): Promise<voi
     return;
   }
 
-  const isFirstSlot = currentMatchIndex % 2 === 0;
+  // ⭐ Determine slot: Even index (0,2,4...) → Slot A, Odd index (1,3,5...) → Slot B
+  const isSlotA = currentMatchIndex % 2 === 0;
   
-  if (isFirstSlot) {
+  console.log(`\n   📊 Advancement Details:`);
+  console.log(`      Current Match Index: ${currentMatchIndex}`);
+  console.log(`      Next Match Index: ${nextMatchIndex}`);
+  console.log(`      Target Slot: ${isSlotA ? 'A' : 'B'}`);
+  
+  if (isSlotA) {
+    // Check if slot already occupied
     if (nextMatch.id_peserta_a) {
-      console.log(`   ⚠️ Slot A already occupied - SKIPPING`);
-      return;
+      console.log(`   ⚠️ Slot A already occupied by participant ${nextMatch.id_peserta_a} - OVERWRITING`);
     }
     
     await prisma.tb_match.update({
@@ -1114,9 +1145,9 @@ static async advanceWinnerToNextRound(match: any, winnerId: number): Promise<voi
     
     console.log(`   ✅ Winner ${winnerId} placed in Round ${nextRound} Match ${nextMatch.id_match} (Slot A)`);
   } else {
+    // Check if slot already occupied
     if (nextMatch.id_peserta_b) {
-      console.log(`   ⚠️ Slot B already occupied - SKIPPING`);
-      return;
+      console.log(`   ⚠️ Slot B already occupied by participant ${nextMatch.id_peserta_b} - OVERWRITING`);
     }
     
     await prisma.tb_match.update({
