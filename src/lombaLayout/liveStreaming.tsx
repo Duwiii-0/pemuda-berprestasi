@@ -25,7 +25,10 @@ const LiveStreamingPage = () => {
           <div className="text-center mb-6">
             <div className="flex items-center justify-center gap-3 mb-2">
               <Youtube size={32} style={{ color: "#990D35" }} />
-              <h3 className="text-3xl font-bebas" style={{ color: "#990D35" }}>
+              <h3
+                className="text-4xl sm:text-5xl md:text-6xl font-bebas"
+                style={{ color: "#990D35" }}
+              >
                 LIVE STREAMING ARENA
               </h3>
             </div>

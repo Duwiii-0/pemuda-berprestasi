@@ -189,7 +189,7 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
               className="text-4xl sm:text-5xl md:text-6xl font-bebas"
               style={{ color: "#990D35" }}
             >
-              LIVE PERTANDINGAN
+              LIVE ANTREAN
             </h1>
           </div>
           <p
@@ -315,7 +315,6 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
             </p>
           </div>
         )}
-
       </div>
     </section>
   );
