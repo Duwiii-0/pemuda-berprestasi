@@ -1,20 +1,9 @@
-import { Youtube } from "lucide-react";
+import React from "react";
 
-const LiveStreamingPage = () => {
+const LiveStreaming: React.FC = () => {
   return (
-    <section className="relative w-full flex flex-col justify-center items-center bg-gradient-to-br from-white via-red/[0.02] to-white overflow-hidden pt-24 sm:pt-28 md:pt-32 lg:pt-36 pb-6 sm:pb-8 md:pb-12 lg:pb-16">
-      <div className="absolute inset-0 opacity-[0.02]">
-        <div
-          className="absolute inset-0"
-          style={{
-            backgroundImage:
-              "linear-gradient(rgba(220,38,38,.3) 1px, transparent 1px), linear-gradient(90deg, rgba(220,38,38,.3) 1px, transparent 1px)",
-            backgroundSize: "40px 40px",
-          }}
-        ></div>
-      </div>
-
-      <div className="container mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 relative z-10 w-full max-w-7xl">
+    <div className="bg-gray-50 min-h-screen py-12 sm:py-16 md:py-20">
+      <div className="container mx-auto px-4">
         <div className="text-center space-y-4 sm:space-y-6 md:space-y-8">
           <div className="hidden lg:inline-block group">
             <span className="text-red font-plex font-semibold text-xs sm:text-sm uppercase tracking-[0.2em] border-l-4 border-red pl-3 sm:pl-4 md:pl-6 relative">
@@ -38,30 +27,120 @@ const LiveStreamingPage = () => {
           </p>
         </div>
 
-        <div className="relative max-w-5xl mx-auto mt-16">
-          <div
-            className="relative rounded-2xl overflow-hidden shadow-2xl border"
-            style={{ borderColor: "rgba(153, 13, 53, 0.1)" }}
-          >
-            <iframe
-              className="w-full h-[300px] md:h-[450px] lg:h-[600px]"
-              src="https://www.youtube.com/embed/live_stream?channel=YOUR_CHANNEL_ID"
-              title="Live YouTube Stream"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            ></iframe>
-            <div
-              className="absolute inset-0 pointer-events-none"
-              style={{
-                background:
-                  "linear-gradient(to top, rgba(153, 13, 53, 0.1), transparent)",
-              }}
-            ></div>
+        <div className="mt-12 sm:mt-16 md:mt-20 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+          {/* Video 1: Lapangan A */}
+          <div className="rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-shadow duration-300 ease-in-out transform hover:-translate-y-1 group">
+            <div className="aspect-w-16 aspect-h-9">
+              <iframe
+                className="w-full h-full"
+                src="https://www.youtube.com/embed/dQw4w9WgXcQ"
+                title="YouTube video player - Lapangan A"
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              ></iframe>
+            </div>
+            <div className="p-5 bg-white">
+              <h3 className="font-bebas text-2xl text-gray-800 tracking-wider group-hover:text-red transition-colors duration-300">
+                Lapangan A
+              </h3>
+              <p className="font-plex text-sm text-gray-600 mt-1">
+                Pertandingan Taekwondo
+              </p>
+            </div>
+          </div>
+
+          {/* Video 2: Lapangan B */}
+          <div className="rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-shadow duration-300 ease-in-out transform hover:-translate-y-1 group">
+            <div className="aspect-w-16 aspect-h-9">
+              <iframe
+                className="w-full h-full"
+                src="https://www.youtube.com/embed/3JZ_D3ELwOQ"
+                title="YouTube video player - Lapangan B"
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              ></iframe>
+            </div>
+            <div className="p-5 bg-white">
+              <h3 className="font-bebas text-2xl text-gray-800 tracking-wider group-hover:text-red transition-colors duration-300">
+                Lapangan B
+              </h3>
+              <p className="font-plex text-sm text-gray-600 mt-1">
+                Pertandingan Taekwondo
+              </p>
+            </div>
+          </div>
+
+          {/* Video 3: Lapangan C */}
+          <div className="rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-shadow duration-300 ease-in-out transform hover:-translate-y-1 group">
+            <div className="aspect-w-16 aspect-h-9">
+              <iframe
+                className="w-full h-full"
+                src="https://www.youtube.com/embed/V1Pl8z_c3-g"
+                title="YouTube video player - Lapangan C"
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              ></iframe>
+            </div>
+            <div className="p-5 bg-white">
+              <h3 className="font-bebas text-2xl text-gray-800 tracking-wider group-hover:text-red transition-colors duration-300">
+                Lapangan C
+              </h3>
+              <p className="font-plex text-sm text-gray-600 mt-1">
+                Pertandingan Taekwondo
+              </p>
+            </div>
+          </div>
+
+          {/* Video 4: Lapangan D */}
+          <div className="rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-shadow duration-300 ease-in-out transform hover:-translate-y-1 group">
+            <div className="aspect-w-16 aspect-h-9">
+              <iframe
+                className="w-full h-full"
+                src="https://www.youtube.com/embed/C0DPdy98e4c"
+                title="YouTube video player - Lapangan D"
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              ></iframe>
+            </div>
+            <div className="p-5 bg-white">
+              <h3 className="font-bebas text-2xl text-gray-800 tracking-wider group-hover:text-red transition-colors duration-300">
+                Lapangan D
+              </h3>
+              <p className="font-plex text-sm text-gray-600 mt-1">
+                Pertandingan Taekwondo
+              </p>
+            </div>
+          </div>
+
+          {/* Video 5: Lapangan E */}
+          <div className="rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-shadow duration-300 ease-in-out transform hover:-translate-y-1 group">
+            <div className="aspect-w-16 aspect-h-9">
+              <iframe
+                className="w-full h-full"
+                src="https://www.youtube.com/embed/h6fcK_fRYaI"
+                title="YouTube video player - Lapangan E"
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              ></iframe>
+            </div>
+            <div className="p-5 bg-white">
+              <h3 className="font-bebas text-2xl text-gray-800 tracking-wider group-hover:text-red transition-colors duration-300">
+                Lapangan E
+              </h3>
+              <p className="font-plex text-sm text-gray-600 mt-1">
+                Pertandingan Taekwondo
+              </p>
+            </div>
           </div>
         </div>
       </div>
-    </section>
+    </div>
   );
 };
 
-export default LiveStreamingPage;
+export default LiveStreaming;
