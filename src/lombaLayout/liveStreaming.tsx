@@ -33,7 +33,7 @@ const LiveStreaming: React.FC = () => {
             <div className="aspect-w-16 aspect-h-9">
               <iframe
                 className="w-full h-full"
-                src="https://www.youtube.com/embed/dQw4w9WgXcQ"
+                src="https://www.youtube.com/embed/unavailable"
                 title="YouTube video player - Lapangan A"
                 frameBorder="0"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -55,7 +55,7 @@ const LiveStreaming: React.FC = () => {
             <div className="aspect-w-16 aspect-h-9">
               <iframe
                 className="w-full h-full"
-                src="https://www.youtube.com/embed/3JZ_D3ELwOQ"
+                src="https://www.youtube.com/embed/unavailable"
                 title="YouTube video player - Lapangan B"
                 frameBorder="0"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -77,7 +77,7 @@ const LiveStreaming: React.FC = () => {
             <div className="aspect-w-16 aspect-h-9">
               <iframe
                 className="w-full h-full"
-                src="https://www.youtube.com/embed/V1Pl8z_c3-g"
+                src="https://www.youtube.com/embed/unavailable"
                 title="YouTube video player - Lapangan C"
                 frameBorder="0"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -99,7 +99,7 @@ const LiveStreaming: React.FC = () => {
             <div className="aspect-w-16 aspect-h-9">
               <iframe
                 className="w-full h-full"
-                src="https://www.youtube.com/embed/C0DPdy98e4c"
+                src="https://www.youtube.com/embed/unavailable"
                 title="YouTube video player - Lapangan D"
                 frameBorder="0"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -121,7 +121,7 @@ const LiveStreaming: React.FC = () => {
             <div className="aspect-w-16 aspect-h-9">
               <iframe
                 className="w-full h-full"
-                src="https://www.youtube.com/embed/h6fcK_fRYaI"
+                src="https://www.youtube.com/embed/unavailable"
                 title="YouTube video player - Lapangan E"
                 frameBorder="0"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
