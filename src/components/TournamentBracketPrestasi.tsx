@@ -815,6 +815,28 @@ const handleExportPDF = async () => {
   const prestasiLeaderboard = generatePrestasiLeaderboard();
   const totalRounds = getTotalRounds();
 
+  // Fungsi untuk hitung dinamis minHeight dan centerOffset
+  const calculateBracketDimensions = () => {
+    if (matches.length === 0) return { minHeight: 1000, centerOffset: 500 };
+    
+    const firstRoundMatches = getMatchesByRound(1).length;
+    const baseSpacing = 280;
+    
+    // Hitung tinggi maksimal yang dibutuhkan oleh ronde pertama
+    const firstRoundHeight = (firstRoundMatches - 1) * baseSpacing + CARD_HEIGHT;
+    
+    // Tambahkan padding atas dan bawah
+    const totalHeight = firstRoundHeight + 400; // 200px padding atas + 200px padding bawah
+    const centerOffset = totalHeight / 2;
+    
+    return { 
+      minHeight: Math.max(1000, totalHeight),
+      centerOffset 
+    };
+  };
+
+  const { minHeight, centerOffset } = calculateBracketDimensions();
+
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#F5FBEF' }}>
       {/* Header */}
@@ -985,14 +1007,13 @@ const handleExportPDF = async () => {
               })}
             </div>
 
-            {/* Bracket Visual Container - ABSOLUTE POSITIONING */}
-            <div className="relative"   style={{ 
-              minHeight: '2000px', 
-              marginTop: '100px', 
-              paddingBottom: '200px', 
-              position: 'relative',
-              overflow: 'visible'
-            }}>
+              {/* Bracket Visual Container - DYNAMIC HEIGHT */}
+              <div className="relative" style={{ 
+                minHeight: `${minHeight}px`,  // ✅ CHANGED: Dynamic
+                paddingBottom: '200px', 
+                position: 'relative',
+                overflow: 'visible'
+              }}>
               {/* SVG untuk garis connecting yang konsisten */}
               <svg 
                 className="absolute top-0 left-8 pointer-events-none" 
@@ -1011,13 +1032,13 @@ const handleExportPDF = async () => {
                     const nextRoundMatches = getMatchesByRound(round + 1);
                     const nextMatchIndex = Math.floor(matchIndex / 2);
                     
-                    // Posisi kartu saat ini
-                    const x1 = roundIndex * (CARD_WIDTH + ROUND_GAP) + CARD_WIDTH;
-                    const y1 = calculateVerticalPosition(roundIndex, matchIndex, roundMatches.length) + 800 + (CARD_HEIGHT / 2);
-                    
-                    // Posisi kartu tujuan di ronde berikutnya
-                    const x2 = (roundIndex + 1) * (CARD_WIDTH + ROUND_GAP);
-                    const y2 = calculateVerticalPosition(roundIndex + 1, nextMatchIndex, nextRoundMatches.length) + 800 + (CARD_HEIGHT / 2);
+                  // Posisi kartu saat ini
+                  const x1 = roundIndex * (CARD_WIDTH + ROUND_GAP) + CARD_WIDTH;
+                  const y1 = calculateVerticalPosition(roundIndex, matchIndex, roundMatches.length) + centerOffset + (CARD_HEIGHT / 2);  // ✅ CHANGED
+
+                  // Posisi kartu tujuan di ronde berikutnya
+                  const x2 = (roundIndex + 1) * (CARD_WIDTH + ROUND_GAP);
+                  const y2 = calculateVerticalPosition(roundIndex + 1, nextMatchIndex, nextRoundMatches.length) + centerOffset + (CARD_HEIGHT / 2);  // ✅ CHANGED
                     
                     // Titik tengah untuk garis vertikal
                     const midX = x1 + LINE_EXTENSION;
@@ -1071,7 +1092,7 @@ const handleExportPDF = async () => {
                     : null;
                   
                   const left = roundIndex * (CARD_WIDTH + ROUND_GAP) + 32; // +32 untuk padding kiri
-                  const top = calculateVerticalPosition(roundIndex, matchIndex, roundMatches.length) + 800;
+                  const top = calculateVerticalPosition(roundIndex, matchIndex, roundMatches.length) + centerOffset;
                   
                   return (
                     <div
