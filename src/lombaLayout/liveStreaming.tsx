@@ -23,19 +23,25 @@ const LiveStreamingPage = () => {
       <div className="container mx-auto px-4 relative z-10">
         {/* Header */}
         <div className="text-center mb-12">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <Youtube size={40} style={{ color: "#990D35" }} />
-            <h1
-              className="text-4xl sm:text-5xl md:text-6xl font-bebas"
-              style={{ color: "#990D35" }}
-            >
-              LIVE STREAMING
-            </h1>
+          {/* Section Label */}
+          <div className="hidden lg:inline-block group">
+            <span className="text-red font-plex font-semibold text-xs sm:text-sm uppercase tracking-[0.2em] border-l-4 border-red pl-3 sm:pl-4 md:pl-6 relative">
+              tonton pertandingan
+              <div className="absolute -left-1 top-0 bottom-0 w-1 bg-red/20 group-hover:bg-red/40 transition-colors duration-300"></div>
+            </span>
           </div>
-          <p
-            className="text-base md:text-lg"
-            style={{ color: "#050505", opacity: 0.7 }}
-          >
+
+          {/* Main Title */}
+          <div className="relative">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bebas leading-[0.85] tracking-wide">
+              <Youtube size={40} style={{ color: "#990D35" }} />
+              <span className="bg-gradient-to-r from-red via-red/90 to-red/80 bg-clip-text text-transparent">
+                live streaming
+              </span>
+            </h1>
+            <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-12 sm:w-16 md:w-20 h-0.5 sm:h-1 bg-gradient-to-r from-red to-red/60 rounded-full"></div>
+          </div>
+          <p className="text-sm sm:text-base md:text-lg lg:text-xl font-plex text-black/80 max-w-4xl mx-auto leading-relaxed font-light px-4">
             Saksikan pertandingan langsung dari arena melalui kanal YouTube
             resmi
           </p>
