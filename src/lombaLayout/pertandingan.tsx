@@ -176,156 +176,145 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
         ></div>
       </div>
 
-      <section className="relative w-full flex flex-col justify-center items-center bg-gradient-to-br from-white via-red/[0.02] to-white overflow-hidden pt-24 sm:pt-28 md:pt-32 lg:pt-36 pb-6 sm:pb-8 md:pb-12 lg:pb-16">
-        <div className="absolute inset-0 opacity-[0.02]">
-          <div
-            className="absolute inset-0"
-            style={{
-              backgroundImage:
-                "linear-gradient(rgba(220,38,38,.3) 1px, transparent 1px), linear-gradient(90deg, rgba(220,38,38,.3) 1px, transparent 1px)",
-              backgroundSize: "40px 40px",
-            }}
-          ></div>
-        </div>
-
-        <div className="container mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 relative z-10 w-full max-w-7xl">
-          <div className="text-center space-y-4 sm:space-y-6 md:space-y-8">
-            <div className="hidden lg:inline-block group">
-              <span className="text-red font-plex font-semibold text-xs sm:text-sm uppercase tracking-[0.2em] border-l-4 border-red pl-3 sm:pl-4 md:pl-6 relative">
-                <Radio className="animate-pulse inline-block mr-2" size={16} />
-                Pantau Pertandingan
-                <div className="absolute -left-1 top-0 bottom-0 w-1 bg-red/20 group-hover:bg-red/40 transition-colors duration-300"></div>
-              </span>
-            </div>
-
-            <div className="relative">
-              <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl 2xl:text-9xl font-bebas leading-[0.85] tracking-wide">
-                <span className="bg-gradient-to-r from-red via-red/90 to-red/80 bg-clip-text text-transparent">
-                  Antrean
-                </span>
-                <span className="block bg-gradient-to-r from-red/80 via-red/90 to-red bg-clip-text text-transparent">
-                  Pertandingan
-                </span>
-              </h1>
-              <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-12 sm:w-16 md:w-20 h-0.5 sm:h-1 bg-gradient-to-r from-red to-red/60 rounded-full"></div>
-            </div>
-
-            <p className="text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl font-plex text-black/80 max-w-4xl mx-auto leading-relaxed font-light px-2 sm:px-4">
-              Pantau aktivitas setiap lapangan — dari pemanasan hingga
-              pertandingan berlangsung
-            </p>
+      <div className="container mx-auto px-4 relative z-10">
+        <div className="text-center space-y-4 sm:space-y-6 md:space-y-8">
+          <div className="hidden lg:inline-block group">
+            <span className="text-red font-plex font-semibold text-xs sm:text-sm uppercase tracking-[0.2em] border-l-4 border-red pl-3 sm:pl-4 md:pl-6 relative">
+              antrean pertandingan
+              <div className="absolute -left-1 top-0 bottom-0 w-1 bg-red/20 group-hover:bg-red/40 transition-colors duration-300"></div>
+            </span>
           </div>
-        </div>
-      </section>
 
-      {/* Tabs Hari */}
-      {hariList.length > 1 && (
-        <div className="flex gap-2 mb-8 overflow-x-auto pb-2">
-          {hariList.map((hari, idx) => (
-            <button
-              key={hari.tanggal}
-              onClick={() => setSelectedHari(hari.tanggal)}
-              className={`px-6 py-3 rounded-xl font-medium whitespace-nowrap transition-all ${
-                selectedHari === hari.tanggal
-                  ? "shadow-lg"
-                  : "opacity-60 hover:opacity-100"
-              }`}
-              style={{
-                backgroundColor:
-                  selectedHari === hari.tanggal ? "#990D35" : "#fff",
-                color: selectedHari === hari.tanggal ? "#F5FBEF" : "#990D35",
-                border: `2px solid ${
-                  selectedHari === hari.tanggal
-                    ? "#990D35"
-                    : "rgba(153, 13, 53, 0.2)"
-                }`,
-              }}
-            >
-              Hari ke-{idx + 1}
-              <div className="text-xs opacity-80 mt-1">
-                {new Date(hari.tanggal).toLocaleDateString("id-ID", {
-                  day: "numeric",
-                  month: "short",
-                })}
-              </div>
-            </button>
-          ))}
-        </div>
-      )}
+          <div className="relative">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bebas leading-[0.85] tracking-wide">
+              <span className="bg-gradient-to-r from-red via-red/90 to-red/80 bg-clip-text text-transparent">
+                live Antrean
+              </span>
+            </h1>
+            <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-12 sm:w-16 md:w-20 h-0.5 sm:h-1 bg-gradient-to-r from-red to-red/60 rounded-full"></div>
+          </div>
 
-      {/* Grid Lapangan */}
-      {currentHari && currentHari.lapangan.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16 w-full">
-          {currentHari.lapangan.map((lap) => {
-            const bertandingClass = lap.kelas_kejuaraan.find(
-              (kelas) => kelas.status_antrian === "bertanding"
-            );
-            return (
-              <div
-                key={lap.id_lapangan}
-                className="relative p-6 rounded-2xl shadow-xl border transition-all duration-500 hover:shadow-2xl w-full"
-                style={{
-                  backgroundColor: "rgba(255, 255, 255, 0.9)",
-                  borderColor: "rgba(153, 13, 53, 0.1)",
-                }}
-              >
-                <div className="flex items-center justify-between mb-4">
-                  <h3
-                    className="text-2xl font-bebas"
-                    style={{ color: "#990D35" }}
-                  >
-                    Lapangan {lap.nama_lapangan}
-                  </h3>
-                  <div className="w-3 h-3 rounded-full bg-red-500 animate-pulse"></div>
-                </div>
-
-                {lap.antrian && (
-                  <div className="mb-4 space-y-3 w-full">
-                    <div className="flex flex-col items-center justify-center w-full text-green-700 bg-green-100 px-4 py-4 rounded-lg">
-                      <span className="text-5xl font-bold mb-2">
-                        {lap.antrian.bertanding}
-                      </span>
-                      <span className="text-2xl font-semibold">Bertanding</span>
-                    </div>
-                    <div className="flex flex-col items-center justify-center w-full text-orange-700 bg-orange-100 px-4 py-4 rounded-lg">
-                      <span className="text-5xl font-bold mb-2">
-                        {lap.antrian.persiapan}
-                      </span>
-                      <span className="text-2xl font-semibold">Persiapan</span>
-                    </div>
-                    <div className="flex flex-col items-center justify-center w-full text-yellow-700 bg-yellow-100 px-4 py-4 rounded-lg">
-                      <span className="text-5xl font-bold mb-2">
-                        {lap.antrian.pemanasan}
-                      </span>
-                      <span className="text-2xl font-semibold">Pemanasan</span>
-                    </div>
-                  </div>
-                )}
-                <p
-                  className="text-sm mb-4"
-                  style={{ color: "#050505", opacity: 0.6 }}
-                >
-                  {new Date(lap.tanggal).toLocaleDateString("id-ID", {
-                    weekday: "long",
-                    day: "numeric",
-                    month: "long",
-                    year: "numeric",
-                  })}
-                </p>
-              </div>
-            );
-          })}
-        </div>
-      ) : (
-        <div className="text-center py-12">
-          <p
-            className="text-lg font-medium"
-            style={{ color: "#050505", opacity: 0.6 }}
-          >
-            Belum ada data lapangan untuk hari ini
+          <p className="text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl font-plex text-black/80 max-w-4xl mx-auto leading-relaxed font-light px-2 sm:px-4">
+            Pantau aktivitas setiap lapangan dari pemanasan hingga pertandingan
+            berlangsung
           </p>
         </div>
-      )}
+
+        {/* Tabs Hari */}
+        {hariList.length > 1 && (
+          <div className="flex gap-2 mb-8 overflow-x-auto pb-2">
+            {hariList.map((hari, idx) => (
+              <button
+                key={hari.tanggal}
+                onClick={() => setSelectedHari(hari.tanggal)}
+                className={`px-6 py-3 rounded-xl font-medium whitespace-nowrap transition-all ${
+                  selectedHari === hari.tanggal
+                    ? "shadow-lg"
+                    : "opacity-60 hover:opacity-100"
+                }`}
+                style={{
+                  backgroundColor:
+                    selectedHari === hari.tanggal ? "#990D35" : "#fff",
+                  color: selectedHari === hari.tanggal ? "#F5FBEF" : "#990D35",
+                  border: `2px solid ${
+                    selectedHari === hari.tanggal
+                      ? "#990D35"
+                      : "rgba(153, 13, 53, 0.2)"
+                  }`,
+                }}
+              >
+                Hari ke-{idx + 1}
+                <div className="text-xs opacity-80 mt-1">
+                  {new Date(hari.tanggal).toLocaleDateString("id-ID", {
+                    day: "numeric",
+                    month: "short",
+                  })}
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Grid Lapangan */}
+        {currentHari && currentHari.lapangan.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16 w-full">
+            {currentHari.lapangan.map((lap) => {
+              const bertandingClass = lap.kelas_kejuaraan.find(
+                (kelas) => kelas.status_antrian === "bertanding"
+              );
+              return (
+                <div
+                  key={lap.id_lapangan}
+                  className="relative p-6 rounded-2xl shadow-xl border transition-all duration-500 hover:shadow-2xl w-full"
+                  style={{
+                    backgroundColor: "rgba(255, 255, 255, 0.9)",
+                    borderColor: "rgba(153, 13, 53, 0.1)",
+                  }}
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <h3
+                      className="text-2xl font-bebas"
+                      style={{ color: "#990D35" }}
+                    >
+                      Lapangan {lap.nama_lapangan}
+                    </h3>
+                    <div className="w-3 h-3 rounded-full bg-red-500 animate-pulse"></div>
+                  </div>
+
+                  {lap.antrian && (
+                    <div className="mb-4 space-y-3 w-full">
+                      <div className="flex flex-col items-center justify-center w-full text-green-700 bg-green-100 px-4 py-4 rounded-lg">
+                        <span className="text-5xl font-bold mb-2">
+                          {lap.antrian.bertanding}
+                        </span>
+                        <span className="text-2xl font-semibold">
+                          Bertanding
+                        </span>
+                      </div>
+                      <div className="flex flex-col items-center justify-center w-full text-orange-700 bg-orange-100 px-4 py-4 rounded-lg">
+                        <span className="text-5xl font-bold mb-2">
+                          {lap.antrian.persiapan}
+                        </span>
+                        <span className="text-2xl font-semibold">
+                          Persiapan
+                        </span>
+                      </div>
+                      <div className="flex flex-col items-center justify-center w-full text-yellow-700 bg-yellow-100 px-4 py-4 rounded-lg">
+                        <span className="text-5xl font-bold mb-2">
+                          {lap.antrian.pemanasan}
+                        </span>
+                        <span className="text-2xl font-semibold">
+                          Pemanasan
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                  <p
+                    className="text-sm mb-4"
+                    style={{ color: "#050505", opacity: 0.6 }}
+                  >
+                    {new Date(lap.tanggal).toLocaleDateString("id-ID", {
+                      weekday: "long",
+                      day: "numeric",
+                      month: "long",
+                      year: "numeric",
+                    })}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="text-center py-12">
+            <p
+              className="text-lg font-medium"
+              style={{ color: "#050505", opacity: 0.6 }}
+            >
+              Belum ada data lapangan untuk hari ini
+            </p>
+          </div>
+        )}
+      </div>
     </section>
   );
 };

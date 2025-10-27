@@ -18,14 +18,13 @@ const LiveStreamingPage = () => {
         <div className="text-center space-y-4 sm:space-y-6 md:space-y-8">
           <div className="hidden lg:inline-block group">
             <span className="text-red font-plex font-semibold text-xs sm:text-sm uppercase tracking-[0.2em] border-l-4 border-red pl-3 sm:pl-4 md:pl-6 relative">
-              <Youtube size={16} className="inline-block mr-2" />
               Tonton Pertandingan
               <div className="absolute -left-1 top-0 bottom-0 w-1 bg-red/20 group-hover:bg-red/40 transition-colors duration-300"></div>
             </span>
           </div>
 
           <div className="relative">
-            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl 2xl:text-9xl font-bebas leading-[0.85] tracking-wide">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bebas leading-[0.85] tracking-wide">
               <span className="bg-gradient-to-r from-red via-red/90 to-red/80 bg-clip-text text-transparent">
                 Live Streaming
               </span>
