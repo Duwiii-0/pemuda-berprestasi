@@ -662,86 +662,100 @@ const generateLeaderboard = () => {
     // ========================================
     // SCENARIO 2: GANJIL (Ada Additional Match)
     // ========================================
-    else {
-      console.log(`   📊 GANJIL Scenario (Additional Match exists)`);
+    // ========================================
+// SCENARIO 2: GANJIL (Ada Additional Match)
+// ========================================
+else {
+  console.log(`   📊 GANJIL Scenario (Additional Match exists)`);
+  
+  const additionalMatch = round2Matches[0];
+  const lastRound1Match = round1Matches[round1Matches.length - 1];
+  
+  // ⭐ STEP 1: Process Additional Match (Round 2) FIRST
+  if (additionalMatch && (additionalMatch.skor_a > 0 || additionalMatch.skor_b > 0)) {
+    const winner = additionalMatch.skor_a > additionalMatch.skor_b 
+      ? additionalMatch.peserta_a 
+      : additionalMatch.peserta_b;
+    const loser = additionalMatch.skor_a > additionalMatch.skor_b 
+      ? additionalMatch.peserta_b 
+      : additionalMatch.peserta_a;
+    
+    // Additional Match Winner → GOLD
+    if (winner) {
+      leaderboard.gold.push({
+        name: getParticipantName(winner),
+        dojo: getDojoName(winner),
+        id: winner.id_peserta_kompetisi
+      });
+      processedGold.add(winner.id_peserta_kompetisi);
+      console.log(`      Additional Match Winner → GOLD: ${getParticipantName(winner)}`);
+    }
+    
+    // Additional Match Loser → SILVER
+    if (loser) {
+      leaderboard.silver.push({
+        name: getParticipantName(loser),
+        dojo: getDojoName(loser),
+        id: loser.id_peserta_kompetisi
+      });
+      processedSilver.add(loser.id_peserta_kompetisi);
+      console.log(`      Additional Match Loser → SILVER: ${getParticipantName(loser)}`);
+    }
+  }
+  
+  // ⭐ STEP 2: Process Round 1 Matches
+  round1Matches.forEach((match, index) => {
+    const hasScore = match.skor_a > 0 || match.skor_b > 0;
+    const isLastMatch = match.id_match === lastRound1Match?.id_match;
+    
+    if (hasScore && match.peserta_a && match.peserta_b) {
+      const winner = match.skor_a > match.skor_b ? match.peserta_a : match.peserta_b;
+      const loser = match.skor_a > match.skor_b ? match.peserta_b : match.peserta_a;
       
-      const additionalMatch = round2Matches[0];
-      const lastRound1Match = round1Matches[round1Matches.length - 1];
+      const winnerId = winner.id_peserta_kompetisi;
+      const loserId = loser.id_peserta_kompetisi;
       
-      // ⭐ STEP 1: Process Additional Match (Round 2)
-      if (additionalMatch && (additionalMatch.skor_a > 0 || additionalMatch.skor_b > 0)) {
-        const winner = additionalMatch.skor_a > additionalMatch.skor_b 
-          ? additionalMatch.peserta_a 
-          : additionalMatch.peserta_b;
-        const loser = additionalMatch.skor_a > additionalMatch.skor_b 
-          ? additionalMatch.peserta_b 
-          : additionalMatch.peserta_a;
-        
-        // Additional Match Winner → GOLD
-        if (winner) {
+      if (isLastMatch) {
+        // ⭐ LAST MATCH SPECIAL HANDLING
+        // Winner goes to Additional Match (already processed above or pending)
+        // Loser → BRONZE
+        if (!processedBronze.has(loserId)) {
+          leaderboard.bronze.push({
+            name: getParticipantName(loser),
+            dojo: getDojoName(loser),
+            id: loserId
+          });
+          processedBronze.add(loserId);
+          console.log(`      Match ${index + 1} (Last) Loser → BRONZE: ${getParticipantName(loser)}`);
+        }
+        console.log(`      Match ${index + 1} (Last) Winner → Goes to Additional Match: ${getParticipantName(winner)}`);
+      } else {
+        // ⭐ OTHER MATCHES (Match A, etc.)
+        // Winner → GOLD (if not already processed)
+        if (!processedGold.has(winnerId)) {
           leaderboard.gold.push({
             name: getParticipantName(winner),
             dojo: getDojoName(winner),
-            id: winner.id_peserta_kompetisi
+            id: winnerId
           });
-          processedGold.add(winner.id_peserta_kompetisi);
-          console.log(`      Additional Match Winner → GOLD: ${getParticipantName(winner)}`);
+          processedGold.add(winnerId);
+          console.log(`      Match ${index + 1} Winner → GOLD: ${getParticipantName(winner)}`);
         }
         
-        // Additional Match Loser → SILVER
-        if (loser) {
+        // Loser → SILVER (if not already processed)
+        if (!processedSilver.has(loserId)) {
           leaderboard.silver.push({
             name: getParticipantName(loser),
             dojo: getDojoName(loser),
-            id: loser.id_peserta_kompetisi
+            id: loserId
           });
-          processedSilver.add(loser.id_peserta_kompetisi);
-          console.log(`      Additional Match Loser → SILVER: ${getParticipantName(loser)}`);
+          processedSilver.add(loserId);
+          console.log(`      Match ${index + 1} Loser → SILVER: ${getParticipantName(loser)}`);
         }
       }
-      
-      // ⭐ STEP 2: Process Round 1 Matches
-      round1Matches.forEach((match, index) => {
-        const hasScore = match.skor_a > 0 || match.skor_b > 0;
-        const isLastMatch = match.id_match === lastRound1Match?.id_match;
-        
-        if (hasScore && match.peserta_a && match.peserta_b) {
-          const winner = match.skor_a > match.skor_b ? match.peserta_a : match.peserta_b;
-          const loser = match.skor_a > match.skor_b ? match.peserta_b : match.peserta_a;
-          
-          const winnerId = winner.id_peserta_kompetisi;
-          const loserId = loser.id_peserta_kompetisi;
-          
-          // Winner → GOLD (if not already processed in Additional Match)
-          if (!processedGold.has(winnerId)) {
-            leaderboard.gold.push({
-              name: getParticipantName(winner),
-              dojo: getDojoName(winner),
-              id: winnerId
-            });
-            processedGold.add(winnerId);
-            console.log(`      Match ${index + 1} Winner → GOLD: ${getParticipantName(winner)}`);
-          }
-          
-          // Loser handling:
-          if (isLastMatch) {
-            // Last match loser goes to Additional Match (already processed above or will be)
-            console.log(`      Match ${index + 1} Loser → Goes to Additional Match: ${getParticipantName(loser)}`);
-          } else {
-            // Other match losers → BRONZE
-            if (!processedBronze.has(loserId)) {
-              leaderboard.bronze.push({
-                name: getParticipantName(loser),
-                dojo: getDojoName(loser),
-                id: loserId
-              });
-              processedBronze.add(loserId);
-              console.log(`      Match ${index + 1} Loser → BRONZE: ${getParticipantName(loser)}`);
-            }
-          }
-        }
-      });
     }
+  });
+}
 
     console.log(`\n   ✅ Final Leaderboard:`);
     console.log(`      GOLD: ${leaderboard.gold.length}`);
@@ -1063,22 +1077,6 @@ const generateLeaderboard = () => {
                           className="rounded-lg p-4 shadow-sm flex items-center justify-between"
                           style={{ backgroundColor: 'rgba(245, 183, 0, 0.1)', border: '2px solid #F5B700' }}
                         >
-                          <div className="flex items-center gap-3">
-                            <div 
-                              className="w-12 h-12 rounded-full flex items-center justify-center shadow-md"
-                              style={{ backgroundColor: '#F5B700' }}
-                            >
-                              <span className="text-2xl">⭐</span>
-                            </div>
-                            <div>
-                              <h4 className="text-lg font-bold" style={{ color: '#F5B700' }}>
-                                ADDITIONAL MATCH (Bagan 3)
-                              </h4>
-                              <p className="text-xs" style={{ color: '#050505', opacity: 0.6 }}>
-                                Pertandingan tambahan untuk peserta BYE
-                              </p>
-                            </div>
-                          </div>
                           
                           {/* Indicator: Connected from last match */}
                           <div className="flex items-center gap-2 text-xs font-medium" style={{ color: '#F5B700' }}>
@@ -1109,12 +1107,6 @@ const generateLeaderboard = () => {
                                 No. Partai: {additionalMatch.nomor_partai}
                               </span>
                             )}
-                            <span 
-                              className="text-xs px-2.5 py-1 rounded-full font-bold"
-                              style={{ backgroundColor: '#990D35', color: 'white' }}
-                            >
-                              ROUND 2
-                            </span>
                           </div>
                           
                           <div className="flex items-center gap-3">
@@ -1157,7 +1149,7 @@ const generateLeaderboard = () => {
                                     </span>
                                     <span 
                                       className="text-xs px-2 py-0.5 rounded-full font-bold"
-                                      style={{ backgroundColor: '#F5B700', color: 'white' }}
+                                      style={{ backgroundColor: '#990D35', color: 'white' }}
                                     >
                                       BYE
                                     </span>
@@ -1276,7 +1268,7 @@ const generateLeaderboard = () => {
                                 <span 
                                   className="inline-flex items-center text-xs font-medium px-3 py-1.5 rounded-full"
                                   style={{ 
-                                    backgroundColor: '#F5B700', 
+                                    backgroundColor: '#990D35', 
                                     color: 'white' 
                                   }}
                                 >
