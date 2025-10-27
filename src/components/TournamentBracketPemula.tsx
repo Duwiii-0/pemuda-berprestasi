@@ -1070,39 +1070,33 @@ else {
                   const lastRound1Match = round1Matches[round1Matches.length - 1];
                   
                   return (
-                    <div className="mt-8 pt-8 border-t-4 border-dashed" style={{ borderColor: '#F5B700' }}>
+                    <div className="mt-8 pt-8 border-t-4 border-dashed" style={{ borderColor: '#990D35' }}>
                       {/* Header Additional Match */}
                       <div className="mb-4">
                         <div 
                           className="rounded-lg p-4 shadow-sm flex items-center justify-between"
-                          style={{ backgroundColor: 'rgba(245, 183, 0, 0.1)', border: '2px solid #F5B700' }}
+                          style={{ backgroundColor: 'rgba(153, 13, 53, 0.1)', border: '2px solid #990D35' }}
                         >
-                          
-                          {/* Indicator: Connected from last match */}
-                          <div className="flex items-center gap-2 text-xs font-medium" style={{ color: '#F5B700' }}>
-                            <span>↑</span>
-                            <span>From Match {round1Matches.length}</span>
-                          </div>
                         </div>
                       </div>
 
                       {/* Additional Match Card */}
                       <div
                         className="bg-white rounded-xl shadow-md border-2 overflow-hidden"
-                        style={{ borderColor: '#F5B700' }}
+                        style={{ borderColor: '#990D35' }}
                       >
                         <div 
                           className="px-4 py-2.5 border-b flex items-center justify-between"
                           style={{ 
                             backgroundColor: 'rgba(245, 183, 0, 0.1)',
-                            borderColor: '#F5B700'
+                            borderColor: '#990D35'
                           }}
                         >
                           <div className="flex items-center gap-2">
                             {additionalMatch.nomor_partai && (
                               <span 
                                 className="text-xs px-2.5 py-1 rounded-full font-bold shadow-sm"
-                                style={{ backgroundColor: '#F5B700', color: 'white' }}
+                                style={{ backgroundColor: '#990D35', color: 'white' }}
                               >
                                 No. Partai: {additionalMatch.nomor_partai}
                               </span>
