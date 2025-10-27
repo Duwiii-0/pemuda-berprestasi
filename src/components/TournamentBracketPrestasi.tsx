@@ -1010,7 +1010,6 @@ const handleExportPDF = async () => {
               {/* Bracket Visual Container - DYNAMIC HEIGHT */}
               <div className="relative" style={{ 
                 minHeight: `${minHeight}px`,  // ✅ CHANGED: Dynamic
-                paddingTop: '40px',            // ✅ CHANGED: From marginTop
                 paddingBottom: '200px', 
                 position: 'relative',
                 overflow: 'visible'
