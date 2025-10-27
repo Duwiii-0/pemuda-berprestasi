@@ -30,7 +30,7 @@ const LiveStreaming: React.FC = () => {
         <div className="mt-12 sm:mt-16 md:mt-20 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 lg:gap-8">
           {/* Video 1: Lapangan A */}
           <div className="rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-shadow duration-300 ease-in-out transform hover:-translate-y-1 group">
-            <div className="aspect-w-16 aspect-h-9">
+            <div className="aspect-w-4 aspect-h-3">
               <iframe
                 className="w-full h-full"
                 src="https://www.youtube.com/embed/unavailable"
@@ -52,7 +52,7 @@ const LiveStreaming: React.FC = () => {
 
           {/* Video 2: Lapangan B */}
           <div className="rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-shadow duration-300 ease-in-out transform hover:-translate-y-1 group">
-            <div className="aspect-w-16 aspect-h-9">
+            <div className="aspect-w-4 aspect-h-3">
               <iframe
                 className="w-full h-full"
                 src="https://www.youtube.com/embed/unavailable"
@@ -74,7 +74,7 @@ const LiveStreaming: React.FC = () => {
 
           {/* Video 3: Lapangan C */}
           <div className="rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-shadow duration-300 ease-in-out transform hover:-translate-y-1 group">
-            <div className="aspect-w-16 aspect-h-9">
+            <div className="aspect-w-4 aspect-h-3">
               <iframe
                 className="w-full h-full"
                 src="https://www.youtube.com/embed/unavailable"
@@ -96,7 +96,7 @@ const LiveStreaming: React.FC = () => {
 
           {/* Video 4: Lapangan D */}
           <div className="rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-shadow duration-300 ease-in-out transform hover:-translate-y-1 group lg:col-span-1">
-            <div className="aspect-w-16 aspect-h-9">
+            <div className="aspect-w-4 aspect-h-3">
               <iframe
                 className="w-full h-full"
                 src="https://www.youtube.com/embed/unavailable"
@@ -118,7 +118,7 @@ const LiveStreaming: React.FC = () => {
 
           {/* Video 5: Lapangan E */}
           <div className="rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-shadow duration-300 ease-in-out transform hover:-translate-y-1 group lg:col-span-1">
-            <div className="aspect-w-16 aspect-h-9">
+            <div className="aspect-w-4 aspect-h-3">
               <iframe
                 className="w-full h-full"
                 src="https://www.youtube.com/embed/unavailable"
