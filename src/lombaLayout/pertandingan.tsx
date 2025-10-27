@@ -141,13 +141,10 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
 
   if (error) {
     return (
-      <div
-        className="min-h-screen flex items-center justify-center"
-        style={{ backgroundColor: "#F5FBEF" }}
-      >
+      <div className="min-h-screen flex items-center justify-center">
         <div
           className="text-center p-8 rounded-xl border"
-          style={{ borderColor: "#dc2626", backgroundColor: "#fff" }}
+          style={{ borderColor: "#dc2626" }}
         >
           <p className="text-red-600 font-medium">{error}</p>
         </div>
