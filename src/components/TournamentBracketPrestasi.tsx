@@ -988,7 +988,7 @@ const handleExportPDF = async () => {
             {/* Bracket Visual Container - ABSOLUTE POSITIONING */}
             <div className="relative"   style={{ 
               minHeight: '2000px', 
-              marginTop: '100px', 
+              marginTop: '200px', 
               paddingBottom: '200px', 
               position: 'relative',
               overflow: 'visible'
