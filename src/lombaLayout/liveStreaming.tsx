@@ -3,7 +3,7 @@ import React from "react";
 const LiveStreaming: React.FC = () => {
   return (
     <div className="min-h-screen py-12 sm:py-16 md:py-20 pt-24 sm:pt-28 md:pt-32 lg:pt-36">
-      <div className="container mx-auto px-4">
+      <div className="container mx-auto px-6 lg:px-12">
         <div className="text-center space-y-4 sm:space-y-6 md:space-y-8">
           <div className="hidden lg:inline-block group">
             <span className="text-red font-plex font-semibold text-xs sm:text-sm uppercase tracking-[0.2em] border-l-4 border-red pl-3 sm:pl-4 md:pl-6 relative">
@@ -27,7 +27,7 @@ const LiveStreaming: React.FC = () => {
           </p>
         </div>
 
-        <div className="mt-12 sm:mt-16 md:mt-20 grid grid-cols-1 gap-6 lg:gap-8">
+        <div className="mt-12 sm:mt-16 md:mt-20 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-12">
           {/* Video 1: Lapangan A */}
           <div className="rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-shadow duration-300 ease-in-out transform hover:-translate-y-1 group">
             <div className="aspect-w-4 aspect-h-3">
