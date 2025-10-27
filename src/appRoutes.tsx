@@ -20,6 +20,7 @@ import Event from "./pages/landingPage/event";
 import NotFound from "./pages/notFound";
 import TutorialPage from "./pages/landingPage/tutorial";
 import LapanganLiveView from "./lombaLayout/pertandingan";
+import LiveStreamingPage from "./lombaLayout/liveStreaming";
 
 const LapanganLiveViewWrapper = () => {
   const { idKompetisi } = useParams<{ idKompetisi: string }>();
@@ -321,6 +322,7 @@ export default function AppRoutes() {
           <Route path="home" element={<LandingPage />} />
           <Route path="faq" element={<FAQ />} />
           <Route path="timeline" element={<Timeline />} />
+          <Route path="live-streaming" element={<LiveStreamingPage />} />
           <Route
             path="pertandingan/:idKompetisi"
             element={<LapanganLiveViewWrapper />}

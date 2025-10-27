@@ -316,44 +316,6 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
           </div>
         )}
 
-        {/* YouTube Live Section */}
-        <div className="mt-16 relative max-w-5xl mx-auto">
-          <div className="text-center mb-6">
-            <div className="flex items-center justify-center gap-3 mb-2">
-              <Youtube size={32} style={{ color: "#990D35" }} />
-              <h3 className="text-3xl font-bebas" style={{ color: "#990D35" }}>
-                LIVE STREAMING ARENA
-              </h3>
-            </div>
-            <p
-              className="text-sm md:text-base"
-              style={{ color: "#050505", opacity: 0.7 }}
-            >
-              Saksikan pertandingan langsung dari arena melalui kanal YouTube
-              resmi
-            </p>
-          </div>
-
-          <div
-            className="relative rounded-2xl overflow-hidden shadow-2xl border"
-            style={{ borderColor: "rgba(153, 13, 53, 0.1)" }}
-          >
-            <iframe
-              className="w-full h-[300px] md:h-[450px] lg:h-[600px]"
-              src="https://www.youtube.com/embed/live_stream?channel=YOUR_CHANNEL_ID"
-              title="Live YouTube Stream"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            ></iframe>
-            <div
-              className="absolute inset-0 pointer-events-none"
-              style={{
-                background:
-                  "linear-gradient(to top, rgba(153, 13, 53, 0.1), transparent)",
-              }}
-            ></div>
-          </div>
-        </div>
       </div>
     </section>
   );
