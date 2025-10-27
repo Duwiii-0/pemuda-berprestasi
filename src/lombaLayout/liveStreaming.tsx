@@ -21,26 +21,27 @@ const LiveStreamingPage = () => {
         ></div>
       </div>
       <div className="container mx-auto px-4 relative z-10">
-        <div className="relative max-w-5xl mx-auto">
-          <div className="text-center mb-6">
-            <div className="flex items-center justify-center gap-3 mb-2">
-              <Youtube size={32} style={{ color: "#990D35" }} />
-              <h3
-                className="text-4xl sm:text-5xl md:text-6xl font-bebas"
-                style={{ color: "#990D35" }}
-              >
-                LIVE STREAMING ARENA
-              </h3>
-            </div>
-            <p
-              className="text-sm md:text-base"
-              style={{ color: "#050505", opacity: 0.7 }}
+        {/* Header */}
+        <div className="text-center mb-12">
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <Youtube size={40} style={{ color: "#990D35" }} />
+            <h1
+              className="text-4xl sm:text-5xl md:text-6xl font-bebas"
+              style={{ color: "#990D35" }}
             >
-              Saksikan pertandingan langsung dari arena melalui kanal YouTube
-              resmi
-            </p>
+              LIVE STREAMING
+            </h1>
           </div>
+          <p
+            className="text-base md:text-lg"
+            style={{ color: "#050505", opacity: 0.7 }}
+          >
+            Saksikan pertandingan langsung dari arena melalui kanal YouTube
+            resmi
+          </p>
+        </div>
 
+        <div className="relative max-w-5xl mx-auto">
           <div
             className="relative rounded-2xl overflow-hidden shadow-2xl border"
             style={{ borderColor: "rgba(153, 13, 53, 0.1)" }}
