@@ -156,26 +156,7 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
   }
 
   return (
-    <section
-      className="relative w-full min-h-screen overflow-hidden py-12 md:py- pt-24 sm:pt-28 md:pt-32 lg:pt-36"
-      style={{ backgroundColor: "#F5FBEF" }}
-    >
-      {/* Background animasi */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div
-          className="absolute top-1/3 left-1/4 w-80 h-80 border rounded-full animate-pulse opacity-20"
-          style={{ borderColor: "rgba(153, 13, 53, 0.2)" }}
-        ></div>
-        <div
-          className="absolute bottom-1/4 right-1/4 w-64 h-64 border rounded-full animate-pulse opacity-15"
-          style={{ borderColor: "rgba(153, 13, 53, 0.15)" }}
-        ></div>
-        <div
-          className="absolute top-1/2 left-1/2 w-2 h-2 rounded-full animate-bounce"
-          style={{ backgroundColor: "rgba(153, 13, 53, 0.3)" }}
-        ></div>
-      </div>
-
+    <section className="relative w-full min-h-screen overflow-hidden py-12 md:py- pt-24 sm:pt-28 md:pt-32 lg:pt-36">
       <div className="container mx-auto px-4 relative z-10">
         <div className="text-center space-y-4 sm:space-y-6 md:space-y-8">
           <div className="hidden lg:inline-block group">

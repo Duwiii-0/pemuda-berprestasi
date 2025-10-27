@@ -2,7 +2,7 @@ import React from "react";
 
 const LiveStreaming: React.FC = () => {
   return (
-    <div className="bg-gray-50 min-h-screen py-12 sm:py-16 md:py-20">
+    <div className="min-h-screen py-12 sm:py-16 md:py-20 pt-24 sm:pt-28 md:pt-32 lg:pt-36">
       <div className="container mx-auto px-4">
         <div className="text-center space-y-4 sm:space-y-6 md:space-y-8">
           <div className="hidden lg:inline-block group">
