@@ -117,32 +117,6 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "bertanding":
-        return "bg-green-500/80";
-      case "persiapan":
-        return "bg-orange-400/80";
-      case "pemanasan":
-        return "bg-yellow-400/80";
-      default:
-        return "bg-gray-300/80";
-    }
-  };
-
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case "bertanding":
-        return "🟢 Sedang Bertanding";
-      case "persiapan":
-        return "🟠 Persiapan";
-      case "pemanasan":
-        return "🟡 Pemanasan";
-      default:
-        return "⚪ Menunggu";
-    }
-  };
-
   const currentHari = hariList.find((h) => h.tanggal === selectedHari);
 
   if (loading) {
@@ -287,16 +261,6 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
                     </h3>
                     <div className="w-3 h-3 rounded-full bg-red-500 animate-pulse"></div>
                   </div>
-
-                  {bertandingClass && (
-                    <p
-                      className="text-lg font-semibold mb-2"
-                      style={{ color: "#050505" }}
-                    >
-                      Sedang Bertanding: <br />
-                      {bertandingClass.nama_kelas}
-                    </p>
-                  )}
 
                   {lap.antrian && (
                     <div className="mb-4 space-y-3 w-full">
