@@ -37,11 +37,32 @@ interface ExportConfig {
   totalRounds: number;
 }
 
+// ==================== HELPER: Convert oklab/oklch to RGB ====================
+const convertModernColorsToRGB = (element: HTMLElement) => {
+  const allElements = element.getElementsByTagName('*');
+  
+  for (let i = 0; i < allElements.length; i++) {
+    const el = allElements[i] as HTMLElement;
+    const style = el.style;
+    
+    // Convert inline styles
+    if (style.color && (style.color.includes('oklab') || style.color.includes('oklch'))) {
+      style.color = getComputedStyle(el).color;
+    }
+    if (style.backgroundColor && (style.backgroundColor.includes('oklab') || style.backgroundColor.includes('oklch'))) {
+      style.backgroundColor = getComputedStyle(el).backgroundColor;
+    }
+    if (style.borderColor && (style.borderColor.includes('oklab') || style.borderColor.includes('oklch'))) {
+      style.borderColor = getComputedStyle(el).borderColor;
+    }
+  }
+};
+
 // ==================== MAIN EXPORT FUNCTION ====================
 export const exportBracketToPDF = async (
   config: ExportConfig,
-  bracketElement: HTMLElement, // Pass the bracket DOM element
-  leaderboardElement?: HTMLElement // Optional leaderboard element
+  bracketElement: HTMLElement,
+  leaderboardElement?: HTMLElement
 ): Promise<void> => {
   try {
     const pdf = new jsPDF({
@@ -67,7 +88,6 @@ export const exportBracketToPDF = async (
       if (leaderboardElement) {
         await addDOMPage(pdf, leaderboardElement, pageWidth, pageHeight);
       } else {
-        // Fallback: generate leaderboard manually if no DOM element
         await addGeneratedLeaderboard(pdf, config.leaderboard, config.eventName);
       }
     }
@@ -187,27 +207,29 @@ const addBracketPages = async (
 ) => {
   // Capture the bracket element as canvas
   const canvas = await html2canvas(element, {
-    scale: 2, // Higher quality
+    scale: 2,
     useCORS: true,
     logging: false,
-    backgroundColor: '#F5FBEF'
+    backgroundColor: '#F5FBEF',
+    onclone: (clonedDoc) => {
+      // Find the cloned element
+      const clonedElement = clonedDoc.body;
+      convertModernColorsToRGB(clonedElement);
+    }
   });
 
   const imgData = canvas.toDataURL('image/png');
-  const imgWidth = pageWidth - 20; // margin
+  const imgWidth = pageWidth - 20;
   const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-  // Calculate how many pages needed
-  const pageContentHeight = pageHeight - 20; // margin
+  const pageContentHeight = pageHeight - 20;
   let heightLeft = imgHeight;
-  let position = 10; // top margin
+  let position = 10;
 
-  // Add first page
   doc.addPage();
   doc.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
   heightLeft -= pageContentHeight;
 
-  // Add additional pages if content exceeds one page
   while (heightLeft > 0) {
     position = heightLeft - imgHeight + 10;
     doc.addPage();
@@ -227,7 +249,11 @@ const addDOMPage = async (
     scale: 2,
     useCORS: true,
     logging: false,
-    backgroundColor: '#F5FBEF'
+    backgroundColor: '#F5FBEF',
+    onclone: (clonedDoc) => {
+      const clonedElement = clonedDoc.body;
+      convertModernColorsToRGB(clonedElement);
+    }
   });
 
   const imgData = canvas.toDataURL('image/png');
@@ -299,7 +325,7 @@ const addGeneratedLeaderboard = async (
 
   if (leaderboard.third.length > 0) {
     leaderboard.third.forEach((participant, index) => {
-      if (index >= 2) return; // Max 2 third place shown
+      if (index >= 2) return;
       
       doc.setFillColor(255, 245, 230);
       doc.roundedRect(podiumX, currentY, podiumWidth, 40, 3, 3, 'FD');
@@ -317,7 +343,7 @@ const addGeneratedLeaderboard = async (
   }
 };
 
-// ==================== TRANSFORM HELPER (TETAP SAMA) ====================
+// ==================== TRANSFORM HELPER ====================
 export const transformBracketDataForPDF = (
   kelasData: any,
   matches: any[],
