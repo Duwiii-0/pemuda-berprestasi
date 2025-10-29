@@ -37,16 +37,21 @@ interface ExportConfig {
   totalRounds: number;
 }
 
-// ==================== HELPER: Convert oklab/oklch to RGB ====================
+// ==================== HELPER: Convert oklab/oklch to RGB + Fix Fonts ====================
 const convertModernColorsToRGB = (clonedDoc: Document) => {
-  // Create style element to force RGB colors
+  // Create style element to force RGB colors AND better fonts
   const style = clonedDoc.createElement('style');
   style.textContent = `
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+    
     * {
-      color: rgb(5, 5, 5) !important;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif !important;
+      -webkit-font-smoothing: antialiased !important;
+      -moz-osx-font-smoothing: grayscale !important;
+      text-rendering: optimizeLegibility !important;
     }
     
-    /* Preserve specific backgrounds */
+    /* Force RGB colors */
     body,
     [style*="backgroundColor"][style*="F5FBEF"],
     [style*="background-color: rgb(245, 251, 239)"] { 
@@ -59,55 +64,103 @@ const convertModernColorsToRGB = (clonedDoc: Document) => {
     }
     
     [style*="backgroundColor: '#990D35'"],
-    [style*="990D35"] { 
+    [style*="990D35"],
+    [class*="bg-red"] { 
       background-color: rgb(153, 13, 53) !important; 
     }
     
     [style*="backgroundColor: '#22c55e'"],
-    [style*="22c55e"] { 
+    [style*="22c55e"],
+    [class*="bg-green"] { 
       background-color: rgb(34, 197, 94) !important; 
     }
     
     [style*="backgroundColor: '#e5e7eb'"],
-    [style*="e5e7eb"] { 
+    [style*="e5e7eb"],
+    [class*="bg-gray"] { 
       background-color: rgb(229, 231, 235) !important; 
     }
     
-    [style*="rgba(245, 183, 0, 0.15)"],
+    [style*="rgba(245, 183, 0"],
     [style*="F5B700"] { 
       background-color: rgb(255, 249, 230) !important; 
     }
     
-    [style*="rgba(153, 13, 53, 0.05)"] { 
+    [style*="rgba(153, 13, 53, 0.05)"],
+    [class*="bg-red-50"] { 
       background-color: rgb(253, 242, 245) !important; 
     }
     
-    /* Preserve text colors */
-    [style*="color: '#050505'"] { color: rgb(5, 5, 5) !important; }
-    [style*="color: '#990D35'"] { color: rgb(153, 13, 53) !important; }
-    [style*="color: '#3B82F6'"] { color: rgb(59, 130, 246) !important; }
-    [style*="color: '#EF4444'"] { color: rgb(239, 68, 68) !important; }
-    [style*="color: '#F5B700'"] { color: rgb(245, 183, 0) !important; }
+    /* Gradient backgrounds */
+    .bg-gradient-to-r,
+    [class*="bg-gradient"],
+    [class*="from-green"] { 
+      background: linear-gradient(to right, rgb(240, 253, 244), rgb(220, 252, 231)) !important; 
+    }
+    
+    [class*="from-blue"] { 
+      background: linear-gradient(to right, rgb(239, 246, 255), rgb(219, 234, 254)) !important; 
+    }
+    
+    [class*="from-red"] { 
+      background: linear-gradient(to right, rgb(254, 242, 242), rgb(254, 226, 226)) !important; 
+    }
+    
+    /* Text colors */
+    [style*="color: '#050505'"],
+    [class*="text-gray-900"] { 
+      color: rgb(5, 5, 5) !important; 
+    }
+    
+    [style*="color: '#990D35'"],
+    [class*="text-red"] { 
+      color: rgb(153, 13, 53) !important; 
+    }
+    
+    [style*="color: '#3B82F6'"],
+    [class*="text-blue"] { 
+      color: rgb(59, 130, 246) !important; 
+    }
+    
+    [style*="color: '#EF4444'"] { 
+      color: rgb(239, 68, 68) !important; 
+    }
+    
+    [style*="color: '#F5B700'"],
+    [class*="text-yellow"] { 
+      color: rgb(245, 183, 0) !important; 
+    }
+    
     [style*="color: 'white'"],
     [style*="color: white"],
-    [style*="color: rgb(255, 255, 255)"] { 
+    [style*="color: rgb(255, 255, 255)"],
+    [class*="text-white"] { 
       color: rgb(255, 255, 255) !important; 
+    }
+    
+    [class*="text-gray-400"] {
+      color: rgb(156, 163, 175) !important;
+    }
+    
+    [class*="text-gray-600"] {
+      color: rgb(75, 85, 99) !important;
     }
     
     /* Border colors */
     [style*="borderColor: '#990D35'"],
-    [style*="border-color"][style*="990D35"] { 
+    [style*="border-color"][style*="990D35"],
+    [class*="border-red"] { 
       border-color: rgb(153, 13, 53) !important; 
     }
     
-    [style*="borderColor: '#22c55e'"] { 
+    [style*="borderColor: '#22c55e'"],
+    [class*="border-green"] { 
       border-color: rgb(34, 197, 94) !important; 
     }
     
-    /* Gradients */
-    .bg-gradient-to-r,
-    [class*="bg-gradient"] { 
-      background: linear-gradient(to right, rgb(240, 253, 244), rgb(220, 252, 231)) !important; 
+    [style*="borderColor: 'rgba(0, 0, 0, 0.05)'"],
+    [class*="border-gray-100"] {
+      border-color: rgb(243, 244, 246) !important;
     }
     
     /* Trophy and medal colors */
@@ -129,6 +182,19 @@ const convertModernColorsToRGB = (clonedDoc: Document) => {
     /* Remove any oklch/oklab */
     *:not(svg):not(path):not(line):not(g):not(circle):not(rect) {
       background-image: none !important;
+    }
+    
+    /* Better shadows for PDF */
+    [class*="shadow"] {
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+    }
+    
+    [class*="shadow-lg"] {
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15) !important;
+    }
+    
+    [class*="shadow-xl"] {
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2) !important;
     }
   `;
   clonedDoc.head.appendChild(style);
@@ -168,7 +234,6 @@ const convertModernColorsToRGB = (clonedDoc: Document) => {
       }
     } catch (e) {
       // Ignore errors for elements without computed styles
-      console.warn('Could not process element:', el.tagName, e);
     }
   }
 };
@@ -183,7 +248,8 @@ export const exportBracketToPDF = async (
     const pdf = new jsPDF({
       orientation: 'landscape',
       unit: 'mm',
-      format: 'a4'
+      format: 'a4',
+      compress: true
     });
 
     const pageWidth = 297;
@@ -321,16 +387,24 @@ const addBracketPages = async (
   pageHeight: number
 ) => {
   const canvas = await html2canvas(element, {
-    scale: 2,
+    scale: 3, // ✅ Increased from 2 to 3 for better quality
     useCORS: true,
     logging: false,
     backgroundColor: '#F5FBEF',
+    windowWidth: element.scrollWidth,
+    windowHeight: element.scrollHeight,
     onclone: (clonedDoc) => {
       convertModernColorsToRGB(clonedDoc);
+      
+      // Wait for fonts to load
+      const fontLink = clonedDoc.createElement('link');
+      fontLink.href = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap';
+      fontLink.rel = 'stylesheet';
+      clonedDoc.head.appendChild(fontLink);
     }
   });
 
-  const imgData = canvas.toDataURL('image/png');
+  const imgData = canvas.toDataURL('image/png', 1.0); // ✅ Max quality
   const imgWidth = pageWidth - 20;
   const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
@@ -358,16 +432,22 @@ const addDOMPage = async (
   pageHeight: number
 ) => {
   const canvas = await html2canvas(element, {
-    scale: 2,
+    scale: 3, // ✅ Increased quality
     useCORS: true,
     logging: false,
     backgroundColor: '#F5FBEF',
     onclone: (clonedDoc) => {
       convertModernColorsToRGB(clonedDoc);
+      
+      // Wait for fonts to load
+      const fontLink = clonedDoc.createElement('link');
+      fontLink.href = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap';
+      fontLink.rel = 'stylesheet';
+      clonedDoc.head.appendChild(fontLink);
     }
   });
 
-  const imgData = canvas.toDataURL('image/png');
+  const imgData = canvas.toDataURL('image/png', 1.0); // ✅ Max quality
   const imgWidth = pageWidth - 20;
   const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
