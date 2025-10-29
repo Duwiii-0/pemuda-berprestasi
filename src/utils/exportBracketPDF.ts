@@ -38,22 +38,137 @@ interface ExportConfig {
 }
 
 // ==================== HELPER: Convert oklab/oklch to RGB ====================
-const convertModernColorsToRGB = (element: HTMLElement) => {
-  const allElements = element.getElementsByTagName('*');
+const convertModernColorsToRGB = (clonedDoc: Document) => {
+  // Create style element to force RGB colors
+  const style = clonedDoc.createElement('style');
+  style.textContent = `
+    * {
+      color: rgb(5, 5, 5) !important;
+    }
+    
+    /* Preserve specific backgrounds */
+    body,
+    [style*="backgroundColor"][style*="F5FBEF"],
+    [style*="background-color: rgb(245, 251, 239)"] { 
+      background-color: rgb(245, 251, 239) !important; 
+    }
+    
+    .bg-white,
+    [class*="bg-white"] { 
+      background-color: rgb(255, 255, 255) !important; 
+    }
+    
+    [style*="backgroundColor: '#990D35'"],
+    [style*="990D35"] { 
+      background-color: rgb(153, 13, 53) !important; 
+    }
+    
+    [style*="backgroundColor: '#22c55e'"],
+    [style*="22c55e"] { 
+      background-color: rgb(34, 197, 94) !important; 
+    }
+    
+    [style*="backgroundColor: '#e5e7eb'"],
+    [style*="e5e7eb"] { 
+      background-color: rgb(229, 231, 235) !important; 
+    }
+    
+    [style*="rgba(245, 183, 0, 0.15)"],
+    [style*="F5B700"] { 
+      background-color: rgb(255, 249, 230) !important; 
+    }
+    
+    [style*="rgba(153, 13, 53, 0.05)"] { 
+      background-color: rgb(253, 242, 245) !important; 
+    }
+    
+    /* Preserve text colors */
+    [style*="color: '#050505'"] { color: rgb(5, 5, 5) !important; }
+    [style*="color: '#990D35'"] { color: rgb(153, 13, 53) !important; }
+    [style*="color: '#3B82F6'"] { color: rgb(59, 130, 246) !important; }
+    [style*="color: '#EF4444'"] { color: rgb(239, 68, 68) !important; }
+    [style*="color: '#F5B700'"] { color: rgb(245, 183, 0) !important; }
+    [style*="color: 'white'"],
+    [style*="color: white"],
+    [style*="color: rgb(255, 255, 255)"] { 
+      color: rgb(255, 255, 255) !important; 
+    }
+    
+    /* Border colors */
+    [style*="borderColor: '#990D35'"],
+    [style*="border-color"][style*="990D35"] { 
+      border-color: rgb(153, 13, 53) !important; 
+    }
+    
+    [style*="borderColor: '#22c55e'"] { 
+      border-color: rgb(34, 197, 94) !important; 
+    }
+    
+    /* Gradients */
+    .bg-gradient-to-r,
+    [class*="bg-gradient"] { 
+      background: linear-gradient(to right, rgb(240, 253, 244), rgb(220, 252, 231)) !important; 
+    }
+    
+    /* Trophy and medal colors */
+    [style*="backgroundColor: '#FFD700'"],
+    [style*="FFD700"] { 
+      background-color: rgb(255, 215, 0) !important; 
+    }
+    
+    [style*="backgroundColor: '#C0C0C0'"],
+    [style*="C0C0C0"] { 
+      background-color: rgb(192, 192, 192) !important; 
+    }
+    
+    [style*="backgroundColor: '#CD7F32'"],
+    [style*="CD7F32"] { 
+      background-color: rgb(205, 127, 50) !important; 
+    }
+    
+    /* Remove any oklch/oklab */
+    *:not(svg):not(path):not(line):not(g):not(circle):not(rect) {
+      background-image: none !important;
+    }
+  `;
+  clonedDoc.head.appendChild(style);
   
+  // Force recompute all computed styles
+  const allElements = clonedDoc.body.getElementsByTagName('*');
   for (let i = 0; i < allElements.length; i++) {
     const el = allElements[i] as HTMLElement;
-    const style = el.style;
     
-    // Convert inline styles
-    if (style.color && (style.color.includes('oklab') || style.color.includes('oklch'))) {
-      style.color = getComputedStyle(el).color;
+    // Skip SVG elements
+    if (el.tagName.toLowerCase() === 'svg' || 
+        el.tagName.toLowerCase() === 'path' || 
+        el.tagName.toLowerCase() === 'line' ||
+        el.tagName.toLowerCase() === 'g' ||
+        el.tagName.toLowerCase() === 'circle' ||
+        el.tagName.toLowerCase() === 'rect') {
+      continue;
     }
-    if (style.backgroundColor && (style.backgroundColor.includes('oklab') || style.backgroundColor.includes('oklch'))) {
-      style.backgroundColor = getComputedStyle(el).backgroundColor;
-    }
-    if (style.borderColor && (style.borderColor.includes('oklab') || style.borderColor.includes('oklch'))) {
-      style.borderColor = getComputedStyle(el).borderColor;
+    
+    try {
+      const computed = window.getComputedStyle(el);
+      
+      // Force RGB conversion for inline styles
+      if (el.style.color && (el.style.color.includes('oklab') || el.style.color.includes('oklch'))) {
+        el.style.color = computed.color;
+      }
+      if (el.style.backgroundColor && (el.style.backgroundColor.includes('oklab') || el.style.backgroundColor.includes('oklch'))) {
+        el.style.backgroundColor = computed.backgroundColor;
+      }
+      if (el.style.borderColor && (el.style.borderColor.includes('oklab') || el.style.borderColor.includes('oklch'))) {
+        el.style.borderColor = computed.borderColor;
+      }
+      
+      // Handle border shorthand
+      if (el.style.border && (el.style.border.includes('oklab') || el.style.border.includes('oklch'))) {
+        el.style.border = `${computed.borderWidth} ${computed.borderStyle} ${computed.borderColor}`;
+      }
+    } catch (e) {
+      // Ignore errors for elements without computed styles
+      console.warn('Could not process element:', el.tagName, e);
     }
   }
 };
@@ -205,16 +320,13 @@ const addBracketPages = async (
   pageWidth: number,
   pageHeight: number
 ) => {
-  // Capture the bracket element as canvas
   const canvas = await html2canvas(element, {
     scale: 2,
     useCORS: true,
     logging: false,
     backgroundColor: '#F5FBEF',
     onclone: (clonedDoc) => {
-      // Find the cloned element
-      const clonedElement = clonedDoc.body;
-      convertModernColorsToRGB(clonedElement);
+      convertModernColorsToRGB(clonedDoc);
     }
   });
 
@@ -251,8 +363,7 @@ const addDOMPage = async (
     logging: false,
     backgroundColor: '#F5FBEF',
     onclone: (clonedDoc) => {
-      const clonedElement = clonedDoc.body;
-      convertModernColorsToRGB(clonedElement);
+      convertModernColorsToRGB(clonedDoc);
     }
   });
 
