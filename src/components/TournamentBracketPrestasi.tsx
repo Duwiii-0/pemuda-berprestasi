@@ -181,7 +181,8 @@ const handleExportPDF = async () => {
     const pdfConfig = transformBracketDataForPDF(
       kelasData,
       matches,
-      prestasiLeaderboard
+      prestasiLeaderboard,
+      false
     );
 
     // Pass DOM elements to export function

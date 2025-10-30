@@ -35,207 +35,43 @@ interface ExportConfig {
   matches: MatchData[];
   leaderboard: LeaderboardData | null;
   totalRounds: number;
+  isPemula?: boolean; // ✅ NEW: Flag untuk layout pemula
 }
 
-// ==================== HELPER: Convert oklab/oklch to RGB + Fix Fonts ====================
-const convertModernColorsToRGB = (clonedDoc: Document) => {
-  // Create style element to force RGB colors AND better fonts
+// ==================== HELPER: Simple Color Fix ====================
+const fixColors = (clonedDoc: Document) => {
   const style = clonedDoc.createElement('style');
   style.textContent = `
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-    
     * {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif !important;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
       -webkit-font-smoothing: antialiased !important;
-      -moz-osx-font-smoothing: grayscale !important;
-      text-rendering: optimizeLegibility !important;
     }
     
-    /* Force RGB colors */
-    body,
-    [style*="backgroundColor"][style*="F5FBEF"],
-    [style*="background-color: rgb(245, 251, 239)"] { 
-      background-color: rgb(245, 251, 239) !important; 
-    }
+    /* Force simple RGB colors */
+    * { color: rgb(5, 5, 5) !important; }
     
-    .bg-white,
-    [class*="bg-white"] { 
-      background-color: rgb(255, 255, 255) !important; 
-    }
+    .bg-white, [class*="bg-white"] { background-color: rgb(255, 255, 255) !important; }
+    [style*="F5FBEF"] { background-color: rgb(245, 251, 239) !important; }
+    [style*="990D35"] { background-color: rgb(153, 13, 53) !important; }
+    [style*="22c55e"] { background-color: rgb(34, 197, 94) !important; }
+    [style*="e5e7eb"] { background-color: rgb(229, 231, 235) !important; }
+    [style*="F5B700"] { background-color: rgb(245, 183, 0) !important; }
+    [style*="FFD700"] { background-color: rgb(255, 215, 0) !important; }
     
-    [style*="backgroundColor: '#990D35'"],
-    [style*="990D35"],
-    [class*="bg-red"] { 
-      background-color: rgb(153, 13, 53) !important; 
-    }
+    [class*="text-white"] { color: rgb(255, 255, 255) !important; }
+    [class*="text-blue"] { color: rgb(59, 130, 246) !important; }
+    [class*="text-red"] { color: rgb(239, 68, 68) !important; }
     
-    [style*="backgroundColor: '#22c55e'"],
-    [style*="22c55e"],
-    [class*="bg-green"] { 
-      background-color: rgb(34, 197, 94) !important; 
-    }
+    [class*="border-red"] { border-color: rgb(153, 13, 53) !important; }
+    [class*="border-green"] { border-color: rgb(34, 197, 94) !important; }
     
-    [style*="backgroundColor: '#e5e7eb'"],
-    [style*="e5e7eb"],
-    [class*="bg-gray"] { 
-      background-color: rgb(229, 231, 235) !important; 
-    }
-    
-    [style*="rgba(245, 183, 0"],
-    [style*="F5B700"] { 
-      background-color: rgb(255, 249, 230) !important; 
-    }
-    
-    [style*="rgba(153, 13, 53, 0.05)"],
-    [class*="bg-red-50"] { 
-      background-color: rgb(253, 242, 245) !important; 
-    }
-    
-    /* Gradient backgrounds */
-    .bg-gradient-to-r,
-    [class*="bg-gradient"],
-    [class*="from-green"] { 
-      background: linear-gradient(to right, rgb(240, 253, 244), rgb(220, 252, 231)) !important; 
-    }
-    
-    [class*="from-blue"] { 
-      background: linear-gradient(to right, rgb(239, 246, 255), rgb(219, 234, 254)) !important; 
-    }
-    
-    [class*="from-red"] { 
-      background: linear-gradient(to right, rgb(254, 242, 242), rgb(254, 226, 226)) !important; 
-    }
-    
-    /* Text colors */
-    [style*="color: '#050505'"],
-    [class*="text-gray-900"] { 
-      color: rgb(5, 5, 5) !important; 
-    }
-    
-    [style*="color: '#990D35'"],
-    [class*="text-red"] { 
-      color: rgb(153, 13, 53) !important; 
-    }
-    
-    [style*="color: '#3B82F6'"],
-    [class*="text-blue"] { 
-      color: rgb(59, 130, 246) !important; 
-    }
-    
-    [style*="color: '#EF4444'"] { 
-      color: rgb(239, 68, 68) !important; 
-    }
-    
-    [style*="color: '#F5B700'"],
-    [class*="text-yellow"] { 
-      color: rgb(245, 183, 0) !important; 
-    }
-    
-    [style*="color: 'white'"],
-    [style*="color: white"],
-    [style*="color: rgb(255, 255, 255)"],
-    [class*="text-white"] { 
-      color: rgb(255, 255, 255) !important; 
-    }
-    
-    [class*="text-gray-400"] {
-      color: rgb(156, 163, 175) !important;
-    }
-    
-    [class*="text-gray-600"] {
-      color: rgb(75, 85, 99) !important;
-    }
-    
-    /* Border colors */
-    [style*="borderColor: '#990D35'"],
-    [style*="border-color"][style*="990D35"],
-    [class*="border-red"] { 
-      border-color: rgb(153, 13, 53) !important; 
-    }
-    
-    [style*="borderColor: '#22c55e'"],
-    [class*="border-green"] { 
-      border-color: rgb(34, 197, 94) !important; 
-    }
-    
-    [style*="borderColor: 'rgba(0, 0, 0, 0.05)'"],
-    [class*="border-gray-100"] {
-      border-color: rgb(243, 244, 246) !important;
-    }
-    
-    /* Trophy and medal colors */
-    [style*="backgroundColor: '#FFD700'"],
-    [style*="FFD700"] { 
-      background-color: rgb(255, 215, 0) !important; 
-    }
-    
-    [style*="backgroundColor: '#C0C0C0'"],
-    [style*="C0C0C0"] { 
-      background-color: rgb(192, 192, 192) !important; 
-    }
-    
-    [style*="backgroundColor: '#CD7F32'"],
-    [style*="CD7F32"] { 
-      background-color: rgb(205, 127, 50) !important; 
-    }
-    
-    /* Remove any oklch/oklab */
-    *:not(svg):not(path):not(line):not(g):not(circle):not(rect) {
+    /* Remove gradients */
+    [class*="gradient"] { 
+      background: rgb(240, 253, 244) !important; 
       background-image: none !important;
-    }
-    
-    /* Better shadows for PDF */
-    [class*="shadow"] {
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
-    }
-    
-    [class*="shadow-lg"] {
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15) !important;
-    }
-    
-    [class*="shadow-xl"] {
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2) !important;
     }
   `;
   clonedDoc.head.appendChild(style);
-  
-  // Force recompute all computed styles
-  const allElements = clonedDoc.body.getElementsByTagName('*');
-  for (let i = 0; i < allElements.length; i++) {
-    const el = allElements[i] as HTMLElement;
-    
-    // Skip SVG elements
-    if (el.tagName.toLowerCase() === 'svg' || 
-        el.tagName.toLowerCase() === 'path' || 
-        el.tagName.toLowerCase() === 'line' ||
-        el.tagName.toLowerCase() === 'g' ||
-        el.tagName.toLowerCase() === 'circle' ||
-        el.tagName.toLowerCase() === 'rect') {
-      continue;
-    }
-    
-    try {
-      const computed = window.getComputedStyle(el);
-      
-      // Force RGB conversion for inline styles
-      if (el.style.color && (el.style.color.includes('oklab') || el.style.color.includes('oklch'))) {
-        el.style.color = computed.color;
-      }
-      if (el.style.backgroundColor && (el.style.backgroundColor.includes('oklab') || el.style.backgroundColor.includes('oklch'))) {
-        el.style.backgroundColor = computed.backgroundColor;
-      }
-      if (el.style.borderColor && (el.style.borderColor.includes('oklab') || el.style.borderColor.includes('oklch'))) {
-        el.style.borderColor = computed.borderColor;
-      }
-      
-      // Handle border shorthand
-      if (el.style.border && (el.style.border.includes('oklab') || el.style.border.includes('oklch'))) {
-        el.style.border = `${computed.borderWidth} ${computed.borderStyle} ${computed.borderColor}`;
-      }
-    } catch (e) {
-      // Ignore errors for elements without computed styles
-    }
-  }
 };
 
 // ==================== MAIN EXPORT FUNCTION ====================
@@ -258,19 +94,21 @@ export const exportBracketToPDF = async (
     // ===== PAGE 1: COVER PAGE =====
     await addCoverPage(pdf, config);
 
-    // ===== PAGE 2+: BRACKET PAGES (from DOM) =====
+    // ===== PAGE 2+: BRACKET PAGES =====
     if (bracketElement) {
-      await addBracketPages(pdf, bracketElement, pageWidth, pageHeight);
+      if (config.isPemula) {
+        // Layout Pemula: Capture per section untuk avoid corruption
+        await addPemulaLayout(pdf, bracketElement, pageWidth, pageHeight);
+      } else {
+        // Layout Prestasi: Capture bracket biasa
+        await addPrestasiLayout(pdf, bracketElement, pageWidth, pageHeight);
+      }
     }
 
-    // ===== LAST PAGE: LEADERBOARD (from DOM or generated) =====
-    if (config.leaderboard) {
+    // ===== LAST PAGE: LEADERBOARD =====
+    if (config.leaderboard && leaderboardElement) {
       pdf.addPage();
-      if (leaderboardElement) {
-        await addDOMPage(pdf, leaderboardElement, pageWidth, pageHeight);
-      } else {
-        await addGeneratedLeaderboard(pdf, config.leaderboard, config.eventName);
-      }
+      await addSimplePage(pdf, leaderboardElement, pageWidth, pageHeight);
     }
 
     // Save PDF
@@ -278,7 +116,8 @@ export const exportBracketToPDF = async (
       .replace(/[^a-z0-9]/gi, '_')
       .toLowerCase();
     const dateStr = new Date().toISOString().split('T')[0];
-    const filename = `Bracket_${sanitizedEventName}_${dateStr}.pdf`;
+    const layoutType = config.isPemula ? 'Pemula' : 'Prestasi';
+    const filename = `Bracket_${layoutType}_${sanitizedEventName}_${dateStr}.pdf`;
 
     pdf.save(filename);
 
@@ -289,7 +128,7 @@ export const exportBracketToPDF = async (
   }
 };
 
-// ==================== HELPER: Add Cover Page ====================
+// ==================== HELPER: Cover Page ====================
 const addCoverPage = async (doc: jsPDF, config: ExportConfig) => {
   const pageWidth = 297;
   const pageHeight = 210;
@@ -302,7 +141,7 @@ const addCoverPage = async (doc: jsPDF, config: ExportConfig) => {
   doc.setFillColor(153, 13, 53);
   doc.rect(0, 0, pageWidth, 45, 'F');
 
-  // Trophy circle
+  // Trophy
   doc.setFillColor(245, 183, 0);
   doc.circle(pageWidth / 2, 22, 10, 'F');
   doc.setFillColor(255, 255, 255);
@@ -318,7 +157,8 @@ const addCoverPage = async (doc: jsPDF, config: ExportConfig) => {
   // Category
   doc.setFontSize(16);
   doc.setFont('helvetica', 'normal');
-  doc.text(config.categoryName, pageWidth / 2, 70, { align: 'center' });
+  const categoryLabel = config.isPemula ? 'KATEGORI PEMULA' : 'KATEGORI PRESTASI';
+  doc.text(`${categoryLabel} - ${config.categoryName}`, pageWidth / 2, 70, { align: 'center' });
 
   // Info box
   const boxY = 85;
@@ -327,7 +167,6 @@ const addCoverPage = async (doc: jsPDF, config: ExportConfig) => {
   doc.setLineWidth(0.8);
   doc.roundedRect(pageWidth / 2 - 100, boxY, 200, 75, 3, 3, 'FD');
 
-  // Info content
   doc.setFontSize(11);
   doc.setTextColor(5, 5, 5);
   doc.setFont('helvetica', 'bold');
@@ -353,12 +192,6 @@ const addCoverPage = async (doc: jsPDF, config: ExportConfig) => {
 
   infoY += 12;
   doc.setFont('helvetica', 'bold');
-  doc.text('Total Rounds:', infoX, infoY);
-  doc.setFont('helvetica', 'normal');
-  doc.text(`${config.totalRounds} Rounds`, infoX + 35, infoY);
-
-  infoY += 12;
-  doc.setFont('helvetica', 'bold');
   doc.text('Total Matches:', infoX, infoY);
   doc.setFont('helvetica', 'normal');
   doc.text(`${config.matches.length} Matches`, infoX + 35, infoY);
@@ -379,158 +212,108 @@ const addCoverPage = async (doc: jsPDF, config: ExportConfig) => {
   );
 };
 
-// ==================== HELPER: Add Bracket Pages from DOM ====================
-const addBracketPages = async (
+// ==================== LAYOUT PEMULA: Capture in sections ====================
+const addPemulaLayout = async (
   doc: jsPDF,
   element: HTMLElement,
   pageWidth: number,
   pageHeight: number
 ) => {
+  // Find all match cards in pemula layout
+  const matchCards = element.querySelectorAll('[class*="border-2"]');
+  
+  if (matchCards.length === 0) {
+    // Fallback: capture whole element
+    await addSimplePage(doc, element, pageWidth, pageHeight);
+    return;
+  }
+
+  // Capture title first
+  const titleElement = element.querySelector('h2');
+  if (titleElement) {
+    pdf.addPage();
+    await addSimplePage(doc, titleElement as HTMLElement, pageWidth, pageHeight, true);
+  } else {
+    doc.addPage();
+  }
+
+  // Capture matches in batches (3 per page)
+  const batchSize = 3;
+  for (let i = 0; i < matchCards.length; i += batchSize) {
+    if (i > 0) doc.addPage();
+    
+    const batch = Array.from(matchCards).slice(i, i + batchSize);
+    const container = document.createElement('div');
+    container.style.padding = '20px';
+    container.style.backgroundColor = '#F5FBEF';
+    
+    batch.forEach(card => {
+      const clone = card.cloneNode(true) as HTMLElement;
+      clone.style.marginBottom = '15px';
+      container.appendChild(clone);
+    });
+    
+    document.body.appendChild(container);
+    
+    try {
+      await addSimplePage(doc, container, pageWidth, pageHeight);
+    } finally {
+      document.body.removeChild(container);
+    }
+  }
+};
+
+// ==================== LAYOUT PRESTASI: Normal bracket ====================
+const addPrestasiLayout = async (
+  doc: jsPDF,
+  element: HTMLElement,
+  pageWidth: number,
+  pageHeight: number
+) => {
+  doc.addPage();
+  await addSimplePage(doc, element, pageWidth, pageHeight);
+};
+
+// ==================== HELPER: Simple Page Capture ====================
+const addSimplePage = async (
+  doc: jsPDF,
+  element: HTMLElement,
+  pageWidth: number,
+  pageHeight: number,
+  isTitle: boolean = false
+) => {
   const canvas = await html2canvas(element, {
-    scale: 3, // ✅ Increased from 2 to 3 for better quality
+    scale: 2,
     useCORS: true,
     logging: false,
     backgroundColor: '#F5FBEF',
-    windowWidth: element.scrollWidth,
-    windowHeight: element.scrollHeight,
+    imageTimeout: 0,
     onclone: (clonedDoc) => {
-      convertModernColorsToRGB(clonedDoc);
-      
-      // Wait for fonts to load
-      const fontLink = clonedDoc.createElement('link');
-      fontLink.href = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap';
-      fontLink.rel = 'stylesheet';
-      clonedDoc.head.appendChild(fontLink);
+      fixColors(clonedDoc);
     }
   });
 
-  const imgData = canvas.toDataURL('image/png', 1.0); // ✅ Max quality
+  const imgData = canvas.toDataURL('image/png', 0.95);
   const imgWidth = pageWidth - 20;
   const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-  const pageContentHeight = pageHeight - 20;
-  let heightLeft = imgHeight;
-  let position = 10;
+  if (isTitle) {
+    // Center title at top
+    doc.addImage(imgData, 'PNG', 10, 10, imgWidth, Math.min(imgHeight, 30));
+  } else {
+    const pageContentHeight = pageHeight - 20;
+    let heightLeft = imgHeight;
+    let position = 10;
 
-  doc.addPage();
-  doc.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
-  heightLeft -= pageContentHeight;
-
-  while (heightLeft > 0) {
-    position = heightLeft - imgHeight + 10;
-    doc.addPage();
     doc.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
     heightLeft -= pageContentHeight;
-  }
-};
 
-// ==================== HELPER: Add DOM Element as PDF Page ====================
-const addDOMPage = async (
-  doc: jsPDF,
-  element: HTMLElement,
-  pageWidth: number,
-  pageHeight: number
-) => {
-  const canvas = await html2canvas(element, {
-    scale: 3, // ✅ Increased quality
-    useCORS: true,
-    logging: false,
-    backgroundColor: '#F5FBEF',
-    onclone: (clonedDoc) => {
-      convertModernColorsToRGB(clonedDoc);
-      
-      // Wait for fonts to load
-      const fontLink = clonedDoc.createElement('link');
-      fontLink.href = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap';
-      fontLink.rel = 'stylesheet';
-      clonedDoc.head.appendChild(fontLink);
+    while (heightLeft > 0) {
+      position = heightLeft - imgHeight + 10;
+      doc.addPage();
+      doc.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+      heightLeft -= pageContentHeight;
     }
-  });
-
-  const imgData = canvas.toDataURL('image/png', 1.0); // ✅ Max quality
-  const imgWidth = pageWidth - 20;
-  const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-  doc.addImage(imgData, 'PNG', 10, 10, imgWidth, Math.min(imgHeight, pageHeight - 20));
-};
-
-// ==================== HELPER: Generated Leaderboard (Fallback) ====================
-const addGeneratedLeaderboard = async (
-  doc: jsPDF,
-  leaderboard: LeaderboardData,
-  eventName: string
-) => {
-  const pageWidth = 297;
-  const pageHeight = 210;
-
-  doc.setFillColor(245, 251, 239);
-  doc.rect(0, 0, pageWidth, pageHeight, 'F');
-
-  doc.setFillColor(153, 13, 53);
-  doc.rect(0, 0, pageWidth, 28, 'F');
-
-  doc.setFontSize(20);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(255, 255, 255);
-  doc.text('LEADERBOARD', pageWidth / 2, 18, { align: 'center' });
-
-  let currentY = 48;
-
-  // 1st Place
-  if (leaderboard.first) {
-    doc.setFillColor(255, 249, 230);
-    doc.setDrawColor(255, 215, 0);
-    doc.setLineWidth(2);
-    doc.roundedRect(50, currentY, pageWidth - 100, 35, 3, 3, 'FD');
-
-    doc.setFontSize(16);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(0, 0, 0);
-    doc.text(`🥇 ${leaderboard.first.name}`, pageWidth / 2, currentY + 15, { align: 'center' });
-    
-    doc.setFontSize(11);
-    doc.setFont('helvetica', 'normal');
-    doc.text(leaderboard.first.dojo, pageWidth / 2, currentY + 25, { align: 'center' });
-
-    currentY += 45;
-  }
-
-  // 2nd & 3rd Place side by side
-  const podiumWidth = 120;
-  let podiumX = 30;
-
-  if (leaderboard.second) {
-    doc.setFillColor(245, 245, 245);
-    doc.roundedRect(podiumX, currentY, podiumWidth, 40, 3, 3, 'FD');
-    
-    doc.setFontSize(14);
-    doc.setFont('helvetica', 'bold');
-    doc.text(`🥈 ${leaderboard.second.name}`, podiumX + podiumWidth / 2, currentY + 18, { align: 'center' });
-    
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'normal');
-    doc.text(leaderboard.second.dojo, podiumX + podiumWidth / 2, currentY + 28, { align: 'center' });
-  }
-
-  podiumX += podiumWidth + 17;
-
-  if (leaderboard.third.length > 0) {
-    leaderboard.third.forEach((participant, index) => {
-      if (index >= 2) return;
-      
-      doc.setFillColor(255, 245, 230);
-      doc.roundedRect(podiumX, currentY, podiumWidth, 40, 3, 3, 'FD');
-      
-      doc.setFontSize(14);
-      doc.setFont('helvetica', 'bold');
-      doc.text(`🥉 ${participant.name}`, podiumX + podiumWidth / 2, currentY + 18, { align: 'center' });
-      
-      doc.setFontSize(9);
-      doc.setFont('helvetica', 'normal');
-      doc.text(participant.dojo, podiumX + podiumWidth / 2, currentY + 28, { align: 'center' });
-
-      podiumX += podiumWidth + 17;
-    });
   }
 };
 
@@ -538,7 +321,8 @@ const addGeneratedLeaderboard = async (
 export const transformBracketDataForPDF = (
   kelasData: any,
   matches: any[],
-  leaderboard: any
+  leaderboard: any,
+  isPemula: boolean = false // ✅ NEW parameter
 ): ExportConfig => {
   const transformedMatches: MatchData[] = matches.map(match => ({
     id: match.id_match,
@@ -586,6 +370,7 @@ export const transformBracketDataForPDF = (
     totalParticipants: kelasData.peserta_kompetisi.filter((p: any) => p.status === 'APPROVED').length,
     matches: transformedMatches,
     leaderboard: leaderboard,
-    totalRounds: matches.length > 0 ? Math.max(...matches.map((m: any) => m.ronde)) : 0
+    totalRounds: matches.length > 0 ? Math.max(...matches.map((m: any) => m.ronde)) : 0,
+    isPemula: isPemula // ✅ NEW
   };
 };
