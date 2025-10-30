@@ -138,44 +138,20 @@ const addCoverPage = (doc: jsPDF, config: ExportConfig, totalPages: number) => {
 // =================================================================================================
 
 const convertElementToImage = async (element: HTMLElement): Promise<HTMLImageElement> => {
-  // Clone the node to avoid modifying the live DOM
-  const clone = element.cloneNode(true) as HTMLElement;
-  clone.style.position = 'absolute';
-  clone.style.left = '-9999px';
-  clone.style.top = '0';
-  clone.style.zIndex = '-1';
-  document.body.appendChild(clone);
+  const rect = element.getBoundingClientRect();
+  const dataUrl = await htmlToImage.toJpeg(element, {
+    width: rect.width,
+    height: rect.height,
+    quality: 1,
+    pixelRatio: 2.5,
+    backgroundColor: '#FFFFFF',
+    cacheBust: true,
+  });
 
-  try {
-    // Apply all computed styles from the original to the clone to ensure Tailwind styles are captured
-    const originalElements = [element, ...Array.from(element.querySelectorAll('*'))];
-    const clonedElements = [clone, ...Array.from(clone.querySelectorAll('*'))];
-
-    clonedElements.forEach((clonedEl, i) => {
-      const originalEl = originalElements[i] as HTMLElement;
-      const computedStyle = window.getComputedStyle(originalEl);
-      for (const key of computedStyle) {
-        (clonedEl as HTMLElement).style.setProperty(key, computedStyle.getPropertyValue(key));
-      }
-    });
-
-    // Capture the image from the styled clone
-    const dataUrl = await htmlToImage.toJpeg(clone, {
-      quality: 1,
-      pixelRatio: 2,
-      backgroundColor: '#ffffff',
-      cacheBust: true,
-    });
-
-    const img = new Image();
-    img.src = dataUrl;
-    await new Promise(resolve => (img.onload = resolve));
-    return img;
-
-  } finally {
-    // Clean up by removing the clone
-    document.body.removeChild(clone);
-  }
+  const img = new Image();
+  img.src = dataUrl;
+  await new Promise(resolve => (img.onload = resolve));
+  return img;
 };
 
 // =================================================================================================
@@ -194,17 +170,19 @@ const addImageToPage = (
 
   addHeaderAndFooter(doc, config, pageNumber, totalPages);
 
-  // Maximize image size while maintaining aspect ratio
   const maxWidth = PAGE_WIDTH - 2 * MARGIN_LEFT;
-  const maxHeight = PAGE_HEIGHT - (MARGIN_TOP + HEADER_HEIGHT + FOOTER_HEIGHT + MARGIN_BOTTOM);
+  const maxHeight = PAGE_HEIGHT - (HEADER_HEIGHT + FOOTER_HEIGHT + 20);
 
-  let scale = Math.min(maxWidth / img.width, maxHeight / img.height) * 1.05; // Apply slight zoom
+  // zoom in 10–20% biar tidak kecil
+  let scale = Math.min(maxWidth / img.width, maxHeight / img.height) * 1.2;
+  if (img.height * scale > maxHeight) scale *= 0.95;
 
   const displayWidth = img.width * scale;
   const displayHeight = img.height * scale;
 
+  // pusatkan dan naikkan sedikit (offsetY = -10)
   const x = (PAGE_WIDTH - displayWidth) / 2;
-  const y = HEADER_HEIGHT + MARGIN_TOP + (maxHeight - displayHeight) / 2;
+  const y = HEADER_HEIGHT + 10 + (maxHeight - displayHeight) / 2 - 10;
 
   doc.addImage(img, 'JPEG', x, y, displayWidth, displayHeight);
 };
@@ -227,13 +205,25 @@ export const exportBracketToPDF = async (
     const doc = new jsPDF({
       orientation: 'landscape',
       unit: 'mm',
-      format: 'a4',
+      format: [330, 210], // lebih lebar dari A4
       compress: true,
     });
     doc.deletePage(1); // Remove default blank page
 
     // --- RENDER & PREPARE DATA ---
+    // 1️⃣ Sebelum render, bersihkan elemen non-bracket
+    const tempHidden: HTMLElement[] = [];
+    document.querySelectorAll('.header, .round-labels, .bracket-toolbar').forEach(el => {
+      const htmlEl = el as HTMLElement;
+      htmlEl.style.display = 'none';
+      tempHidden.push(htmlEl);
+    });
+
     const bracketImg = await convertElementToImage(bracketElement);
+
+    // restore visibility
+    tempHidden.forEach(el => (el.style.display = ''));
+
     const totalPages = 2; // Cover (1) + Bracket (1)
 
     // --- PAGE GENERATION ---
