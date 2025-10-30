@@ -47,7 +47,6 @@ const fixColors = (clonedDoc: Document) => {
       -webkit-font-smoothing: antialiased !important;
     }
     
-    /* Force simple RGB colors */
     * { color: rgb(5, 5, 5) !important; }
     
     .bg-white, [class*="bg-white"] { background-color: rgb(255, 255, 255) !important; }
@@ -57,6 +56,8 @@ const fixColors = (clonedDoc: Document) => {
     [style*="e5e7eb"] { background-color: rgb(229, 231, 235) !important; }
     [style*="F5B700"] { background-color: rgb(245, 183, 0) !important; }
     [style*="FFD700"] { background-color: rgb(255, 215, 0) !important; }
+    [style*="C0C0C0"] { background-color: rgb(192, 192, 192) !important; }
+    [style*="CD7F32"] { background-color: rgb(205, 127, 50) !important; }
     
     [class*="text-white"] { color: rgb(255, 255, 255) !important; }
     [class*="text-blue"] { color: rgb(59, 130, 246) !important; }
@@ -64,8 +65,8 @@ const fixColors = (clonedDoc: Document) => {
     
     [class*="border-red"] { border-color: rgb(153, 13, 53) !important; }
     [class*="border-green"] { border-color: rgb(34, 197, 94) !important; }
+    [class*="border-yellow"] { border-color: rgb(250, 204, 21) !important; }
     
-    /* Remove gradients */
     [class*="gradient"] { 
       background: rgb(240, 253, 244) !important; 
       background-image: none !important;
@@ -81,7 +82,7 @@ export const exportBracketToPDF = async (
   leaderboardElement?: HTMLElement
 ): Promise<void> => {
   try {
-    const pdf = new jsPDF({
+    const doc = new jsPDF({
       orientation: 'landscape',
       unit: 'mm',
       format: 'a4',
@@ -92,23 +93,21 @@ export const exportBracketToPDF = async (
     const pageHeight = 210;
 
     // ===== PAGE 1: COVER PAGE =====
-    await addCoverPage(pdf, config);
+    await addCoverPage(doc, config);
 
     // ===== PAGE 2+: BRACKET PAGES =====
     if (bracketElement) {
       if (config.isPemula) {
-        // Layout Pemula: Capture per section
-        await addPemulaLayout(pdf, bracketElement, pageWidth, pageHeight);
+        await addPemulaLayout(doc, bracketElement, pageWidth, pageHeight);
       } else {
-        // Layout Prestasi: Capture bracket biasa
-        await addPrestasiLayout(pdf, bracketElement, pageWidth, pageHeight);
+        await addPrestasiLayout(doc, bracketElement, pageWidth, pageHeight);
       }
     }
 
     // ===== LAST PAGE: LEADERBOARD =====
-    if (config.leaderboard && leaderboardElement) {
-      pdf.addPage();
-      await addSimplePage(pdf, leaderboardElement, pageWidth, pageHeight);
+    if (leaderboardElement) {
+      doc.addPage();
+      await addSimplePage(doc, leaderboardElement, pageWidth, pageHeight);
     }
 
     // Save PDF
@@ -119,7 +118,7 @@ export const exportBracketToPDF = async (
     const layoutType = config.isPemula ? 'Pemula' : 'Prestasi';
     const filename = `Bracket_${layoutType}_${sanitizedEventName}_${dateStr}.pdf`;
 
-    pdf.save(filename);
+    doc.save(filename);
 
     return Promise.resolve();
   } catch (error) {
@@ -133,34 +132,28 @@ const addCoverPage = async (doc: jsPDF, config: ExportConfig) => {
   const pageWidth = 297;
   const pageHeight = 210;
 
-  // Background
   doc.setFillColor(245, 251, 239);
   doc.rect(0, 0, pageWidth, pageHeight, 'F');
 
-  // Header bar
   doc.setFillColor(153, 13, 53);
   doc.rect(0, 0, pageWidth, 45, 'F');
 
-  // Trophy
   doc.setFillColor(245, 183, 0);
   doc.circle(pageWidth / 2, 22, 10, 'F');
   doc.setFillColor(255, 255, 255);
   doc.rect(pageWidth / 2 - 3, 18, 6, 8, 'F');
   doc.rect(pageWidth / 2 - 5, 26, 10, 2, 'F');
 
-  // Event name
   doc.setFontSize(28);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(255, 255, 255);
   doc.text(config.eventName, pageWidth / 2, 60, { align: 'center' });
 
-  // Category
   doc.setFontSize(16);
   doc.setFont('helvetica', 'normal');
   const categoryLabel = config.isPemula ? 'KATEGORI PEMULA' : 'KATEGORI PRESTASI';
   doc.text(`${categoryLabel} - ${config.categoryName}`, pageWidth / 2, 70, { align: 'center' });
 
-  // Info box
   const boxY = 85;
   doc.setFillColor(255, 255, 255);
   doc.setDrawColor(153, 13, 53);
@@ -196,7 +189,6 @@ const addCoverPage = async (doc: jsPDF, config: ExportConfig) => {
   doc.setFont('helvetica', 'normal');
   doc.text(`${config.matches.length} Matches`, infoX + 35, infoY);
 
-  // Footer
   doc.setFontSize(9);
   doc.setTextColor(107, 114, 128);
   doc.setFont('helvetica', 'italic');
@@ -212,51 +204,18 @@ const addCoverPage = async (doc: jsPDF, config: ExportConfig) => {
   );
 };
 
-// ==================== LAYOUT PEMULA: Capture in sections ====================
+// ==================== LAYOUT PEMULA ====================
 const addPemulaLayout = async (
-  doc: jsPDF, // ✅ FIXED: Changed from 'pdf' to 'doc'
+  doc: jsPDF,
   element: HTMLElement,
   pageWidth: number,
   pageHeight: number
 ) => {
-  // Find all match cards
-  const matchCards = element.querySelectorAll('[class*="bg-white rounded-xl shadow-md border-2"]');
-  
-  if (matchCards.length === 0) {
-    // Fallback: capture whole element
-    await addSimplePage(doc, element, pageWidth, pageHeight);
-    return;
-  }
-
   doc.addPage();
-
-  // Capture matches in batches (3 per page)
-  const batchSize = 3;
-  for (let i = 0; i < matchCards.length; i += batchSize) {
-    if (i > 0) doc.addPage();
-    
-    const batch = Array.from(matchCards).slice(i, i + batchSize);
-    const container = document.createElement('div');
-    container.style.padding = '20px';
-    container.style.backgroundColor = '#F5FBEF';
-    
-    batch.forEach(card => {
-      const clone = card.cloneNode(true) as HTMLElement;
-      clone.style.marginBottom = '15px';
-      container.appendChild(clone);
-    });
-    
-    document.body.appendChild(container);
-    
-    try {
-      await addSimplePage(doc, container, pageWidth, pageHeight);
-    } finally {
-      document.body.removeChild(container);
-    }
-  }
+  await addSimplePage(doc, element, pageWidth, pageHeight);
 };
 
-// ==================== LAYOUT PRESTASI: Normal bracket ====================
+// ==================== LAYOUT PRESTASI ====================
 const addPrestasiLayout = async (
   doc: jsPDF,
   element: HTMLElement,
@@ -272,8 +231,7 @@ const addSimplePage = async (
   doc: jsPDF,
   element: HTMLElement,
   pageWidth: number,
-  pageHeight: number,
-  isTitle: boolean = false
+  pageHeight: number
 ) => {
   const canvas = await html2canvas(element, {
     scale: 2,
@@ -290,22 +248,18 @@ const addSimplePage = async (
   const imgWidth = pageWidth - 20;
   const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-  if (isTitle) {
-    doc.addImage(imgData, 'PNG', 10, 10, imgWidth, Math.min(imgHeight, 30));
-  } else {
-    const pageContentHeight = pageHeight - 20;
-    let heightLeft = imgHeight;
-    let position = 10;
+  const pageContentHeight = pageHeight - 20;
+  let heightLeft = imgHeight;
+  let position = 10;
 
+  doc.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+  heightLeft -= pageContentHeight;
+
+  while (heightLeft > 0) {
+    position = heightLeft - imgHeight + 10;
+    doc.addPage();
     doc.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
     heightLeft -= pageContentHeight;
-
-    while (heightLeft > 0) {
-      position = heightLeft - imgHeight + 10;
-      doc.addPage();
-      doc.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
-      heightLeft -= pageContentHeight;
-    }
   }
 };
 
