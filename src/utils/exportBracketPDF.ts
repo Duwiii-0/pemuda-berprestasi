@@ -1,5 +1,4 @@
-
-import jsPDF, { GState } from 'jspdf';
+import jsPDF from 'jspdf';
 import { toPng } from 'html-to-image';
 
 // =================================================================================================
@@ -143,11 +142,8 @@ const addCoverPage = (doc: jsPDF, config: ExportConfig, totalPages: number) => {
   doc.setFillColor(THEME.background);
   doc.rect(0, 0, PAGE_WIDTH, PAGE_HEIGHT, 'F');
 
-  // Header Banner with Gradient
-  const gradient = (doc.internal as any).createLinearGradient(0, 0, PAGE_WIDTH, 40);
-  gradient.addColorStop(0, THEME.primary);
-  gradient.addColorStop(1, THEME.secondary);
-  doc.setFillColor(gradient);
+  // Header Banner
+  doc.setFillColor(THEME.primary);
   doc.rect(0, 0, PAGE_WIDTH, 40, 'F');
 
   // Titles
@@ -197,9 +193,9 @@ const addCoverPage = (doc: jsPDF, config: ExportConfig, totalPages: number) => {
   // Watermark Logo
   if (config.logoUrl) {
     try {
-      doc.setGState(new (doc as any).GState({ opacity: 0.2 }));
+      (doc as any).setGState(new (doc as any).GState({ opacity: 0.2 }));
       doc.addImage(config.logoUrl, 'PNG', PAGE_WIDTH - 60, PAGE_HEIGHT - 50, 40, 40);
-      doc.setGState(new (doc as any).GState({ opacity: 1 }));
+      (doc as any).setGState(new (doc as any).GState({ opacity: 1 }));
     } catch {}
   }
   
