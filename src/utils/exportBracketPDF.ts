@@ -1,4 +1,3 @@
-
 import jsPDF from 'jspdf';
 import * as htmlToImage from 'html-to-image';
 
@@ -137,29 +136,21 @@ const addCoverPage = (doc: jsPDF, config: ExportConfig, totalPages: number) => {
 };
 
 // =================================================================================================
-// 5. PDF HELPER: DOM-TO-IMAGE CONVERSION (WITH CHUNKING)
+// 5. PDF HELPER: DOM-TO-IMAGE CONVERSION (CLONING METHOD)
 // =================================================================================================
 
 const convertElementToImage = async (element: HTMLElement): Promise<HTMLImageElement> => {
-  const allElements = [element, ...Array.from(element.querySelectorAll('*'))] as HTMLElement[];
-  const originalStyles = new Map<HTMLElement, { filter: string; backdropFilter: string; boxShadow: string }>();
-
-  // Remove heavy CSS effects before rendering
-  allElements.forEach(el => {
-    originalStyles.set(el, {
-      filter: el.style.filter,
-      backdropFilter: el.style.backdropFilter,
-      boxShadow: el.style.boxShadow,
-    });
-    el.style.filter = 'none';
-    el.style.backdropFilter = 'none';
-    el.style.boxShadow = 'none';
-  });
+  const clone = element.cloneNode(true) as HTMLElement;
+  // Position the clone off-screen to avoid affecting the user's view
+  clone.style.position = 'absolute';
+  clone.style.top = '-9999px';
+  clone.style.left = '0px';
+  document.body.appendChild(clone);
 
   try {
-    const dataUrl = await htmlToImage.toJpeg(element, {
-      quality: 0.95,
-      pixelRatio: 1.5,
+    const dataUrl = await htmlToImage.toJpeg(clone, {
+      quality: 1,
+      pixelRatio: 2.5,
       backgroundColor: THEME.white,
       cacheBust: true,
     });
@@ -170,20 +161,13 @@ const convertElementToImage = async (element: HTMLElement): Promise<HTMLImageEle
     return img;
 
   } finally {
-    // Restore original styles
-    allElements.forEach(el => {
-      const styles = originalStyles.get(el);
-      if (styles) {
-        el.style.filter = styles.filter;
-        el.style.backdropFilter = styles.backdropFilter;
-        el.style.boxShadow = styles.boxShadow;
-      }
-    });
+    // Clean up by removing the clone from the DOM
+    document.body.removeChild(clone);
   }
 };
 
 // =================================================================================================
-// 6. PDF HELPER: ADD IMAGE CONTENT TO PAGE
+// 6. PDF HELPER: ADD IMAGE CONTENT TO PAGE (FIT-TO-PAGE METHOD)
 // =================================================================================================
 
 const addImageToPage = (
@@ -193,13 +177,22 @@ const addImageToPage = (
   pageNumber: number,
   totalPages: number
 ) => {
-  doc.setFillColor(THEME.background);
+  // Set a pure white background for the page to prevent greenish tint
+  doc.setFillColor(THEME.white);
   doc.rect(0, 0, PAGE_WIDTH, PAGE_HEIGHT, 'F');
 
   addHeaderAndFooter(doc, config, pageNumber, totalPages);
 
-  // Proportional scaling logic
-  const scale = Math.min(CONTENT_WIDTH / img.width, CONTENT_HEIGHT / img.height);
+  // Proportional scaling logic to fit the image within the content area
+  const maxWidth = CONTENT_WIDTH;
+  const maxHeight = CONTENT_HEIGHT - 5; // Extra 5mm margin for safety
+  let scale = Math.min(maxWidth / img.width, maxHeight / img.height);
+
+  // Heuristic to shrink very tall images to ensure they fit comfortably
+  if (img.height * scale > maxHeight) {
+    scale *= 0.9;
+  }
+
   const displayWidth = img.width * scale;
   const displayHeight = img.height * scale;
 
@@ -228,6 +221,7 @@ export const exportBracketToPDF = async (
     doc.deletePage(1); // Remove default blank page
 
     // --- RENDER & PREPARE DATA ---
+    // Use the cloning method to ensure only the bracket is captured
     const bracketImg = await convertElementToImage(bracketElement);
     const totalPages = 2; // Cover (1) + Bracket (1)
 
