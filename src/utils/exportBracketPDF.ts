@@ -177,7 +177,34 @@ const addImageToPage = async (
     return !node.classList?.contains('no-export');
   };
 
-  const dataUrl = await domtoimage.toPng(element, {
+  // Create a clone to manipulate styles without affecting the original element
+  const clonedElement = element.cloneNode(true) as HTMLElement;
+
+  // Append to body to apply computed styles, but keep it invisible
+  clonedElement.style.position = 'absolute';
+  clonedElement.style.left = '-9999px';
+  clonedElement.style.top = '0px';
+  document.body.appendChild(clonedElement);
+
+  // 'Bake' computed styles into inline styles to resolve unsupported color formats like oklch
+  const originalElements = [element, ...Array.from(element.querySelectorAll('*'))];
+  const clonedElements = [clonedElement, ...Array.from(clonedElement.querySelectorAll('*'))];
+
+  clonedElements.forEach((clone, index) => {
+    const original = originalElements[index] as HTMLElement;
+    const style = window.getComputedStyle(original);
+    const htmlClone = clone as HTMLElement;
+
+    htmlClone.style.color = style.color;
+    htmlClone.style.backgroundColor = style.backgroundColor;
+    htmlClone.style.borderColor = style.borderColor;
+    htmlClone.style.borderTopColor = style.borderTopColor;
+    htmlClone.style.borderRightColor = style.borderRightColor;
+    htmlClone.style.borderBottomColor = style.borderBottomColor;
+    htmlClone.style.borderLeftColor = style.borderLeftColor;
+  });
+
+  const dataUrl = await domtoimage.toPng(clonedElement, {
     quality: 1,
     cacheBust: true,
     bgcolor: THEME.background,
@@ -188,6 +215,9 @@ const addImageToPage = async (
       color: THEME.text,
     }
   });
+
+  // Clean up the cloned element from the DOM
+  document.body.removeChild(clonedElement);
 
   const img = new Image();
   img.src = dataUrl;
