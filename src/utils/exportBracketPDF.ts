@@ -1,3 +1,4 @@
+
 import jsPDF from 'jspdf';
 import * as htmlToImage from 'html-to-image';
 
@@ -27,9 +28,6 @@ const MARGIN_RIGHT = 20;
 
 const HEADER_HEIGHT = 18;
 const FOOTER_HEIGHT = 10;
-
-const CONTENT_WIDTH = PAGE_WIDTH - MARGIN_LEFT - MARGIN_RIGHT;
-const CONTENT_HEIGHT = PAGE_HEIGHT - MARGIN_TOP - MARGIN_BOTTOM - HEADER_HEIGHT - FOOTER_HEIGHT;
 
 const THEME = {
   primary: '#990D35',   // Maroon
@@ -136,22 +134,36 @@ const addCoverPage = (doc: jsPDF, config: ExportConfig, totalPages: number) => {
 };
 
 // =================================================================================================
-// 5. PDF HELPER: DOM-TO-IMAGE CONVERSION (CLONING METHOD)
+// 5. PDF HELPER: DOM-TO-IMAGE CONVERSION (COMPUTED-STYLE BAKING)
 // =================================================================================================
 
 const convertElementToImage = async (element: HTMLElement): Promise<HTMLImageElement> => {
+  // Clone the node to avoid modifying the live DOM
   const clone = element.cloneNode(true) as HTMLElement;
-  // Position the clone off-screen to avoid affecting the user's view
   clone.style.position = 'absolute';
-  clone.style.top = '-9999px';
-  clone.style.left = '0px';
+  clone.style.left = '-9999px';
+  clone.style.top = '0';
+  clone.style.zIndex = '-1';
   document.body.appendChild(clone);
 
   try {
+    // Apply all computed styles from the original to the clone to ensure Tailwind styles are captured
+    const originalElements = [element, ...Array.from(element.querySelectorAll('*'))];
+    const clonedElements = [clone, ...Array.from(clone.querySelectorAll('*'))];
+
+    clonedElements.forEach((clonedEl, i) => {
+      const originalEl = originalElements[i] as HTMLElement;
+      const computedStyle = window.getComputedStyle(originalEl);
+      for (const key of computedStyle) {
+        (clonedEl as HTMLElement).style.setProperty(key, computedStyle.getPropertyValue(key));
+      }
+    });
+
+    // Capture the image from the styled clone
     const dataUrl = await htmlToImage.toJpeg(clone, {
       quality: 1,
-      pixelRatio: 2.5,
-      backgroundColor: THEME.white,
+      pixelRatio: 2,
+      backgroundColor: '#ffffff',
       cacheBust: true,
     });
 
@@ -161,7 +173,7 @@ const convertElementToImage = async (element: HTMLElement): Promise<HTMLImageEle
     return img;
 
   } finally {
-    // Clean up by removing the clone from the DOM
+    // Clean up by removing the clone
     document.body.removeChild(clone);
   }
 };
@@ -177,28 +189,22 @@ const addImageToPage = (
   pageNumber: number,
   totalPages: number
 ) => {
-  // Set a pure white background for the page to prevent greenish tint
-  doc.setFillColor(THEME.white);
+  doc.setFillColor('#ffffff');
   doc.rect(0, 0, PAGE_WIDTH, PAGE_HEIGHT, 'F');
 
   addHeaderAndFooter(doc, config, pageNumber, totalPages);
 
-  // Proportional scaling logic to fit the image within the content area
-  const maxWidth = CONTENT_WIDTH;
-  const maxHeight = CONTENT_HEIGHT - 5; // Extra 5mm margin for safety
-  let scale = Math.min(maxWidth / img.width, maxHeight / img.height);
+  // Maximize image size while maintaining aspect ratio
+  const maxWidth = PAGE_WIDTH - 2 * MARGIN_LEFT;
+  const maxHeight = PAGE_HEIGHT - (MARGIN_TOP + HEADER_HEIGHT + FOOTER_HEIGHT + MARGIN_BOTTOM);
 
-  // Heuristic to shrink very tall images to ensure they fit comfortably
-  if (img.height * scale > maxHeight) {
-    scale *= 0.9;
-  }
+  let scale = Math.min(maxWidth / img.width, maxHeight / img.height) * 1.05; // Apply slight zoom
 
   const displayWidth = img.width * scale;
   const displayHeight = img.height * scale;
 
-  // Center the image within the content area
-  const x = MARGIN_LEFT + (CONTENT_WIDTH - displayWidth) / 2;
-  const y = MARGIN_TOP + HEADER_HEIGHT + (CONTENT_HEIGHT - displayHeight) / 2;
+  const x = (PAGE_WIDTH - displayWidth) / 2;
+  const y = HEADER_HEIGHT + MARGIN_TOP + (maxHeight - displayHeight) / 2;
 
   doc.addImage(img, 'JPEG', x, y, displayWidth, displayHeight);
 };
@@ -212,6 +218,12 @@ export const exportBracketToPDF = async (
   bracketElement: HTMLElement,
 ): Promise<void> => {
   try {
+    // Give browser time to finish rendering before we start
+    await new Promise(r => setTimeout(r, 500));
+
+    // Explicitly remove leaderboard elements from the live DOM just in case
+    document.querySelectorAll('.leaderboard, #leaderboard').forEach(el => el.remove());
+
     const doc = new jsPDF({
       orientation: 'landscape',
       unit: 'mm',
@@ -221,7 +233,6 @@ export const exportBracketToPDF = async (
     doc.deletePage(1); // Remove default blank page
 
     // --- RENDER & PREPARE DATA ---
-    // Use the cloning method to ensure only the bracket is captured
     const bracketImg = await convertElementToImage(bracketElement);
     const totalPages = 2; // Cover (1) + Bracket (1)
 
