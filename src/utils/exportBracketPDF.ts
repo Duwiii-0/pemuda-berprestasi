@@ -35,7 +35,7 @@ interface ExportConfig {
   matches: MatchData[];
   leaderboard: LeaderboardData | null;
   totalRounds: number;
-  isPemula?: boolean; // ✅ NEW: Flag untuk layout pemula
+  isPemula?: boolean;
 }
 
 // ==================== HELPER: Simple Color Fix ====================
@@ -97,7 +97,7 @@ export const exportBracketToPDF = async (
     // ===== PAGE 2+: BRACKET PAGES =====
     if (bracketElement) {
       if (config.isPemula) {
-        // Layout Pemula: Capture per section untuk avoid corruption
+        // Layout Pemula: Capture per section
         await addPemulaLayout(pdf, bracketElement, pageWidth, pageHeight);
       } else {
         // Layout Prestasi: Capture bracket biasa
@@ -214,13 +214,13 @@ const addCoverPage = async (doc: jsPDF, config: ExportConfig) => {
 
 // ==================== LAYOUT PEMULA: Capture in sections ====================
 const addPemulaLayout = async (
-  doc: jsPDF,
+  doc: jsPDF, // ✅ FIXED: Changed from 'pdf' to 'doc'
   element: HTMLElement,
   pageWidth: number,
   pageHeight: number
 ) => {
-  // Find all match cards in pemula layout
-  const matchCards = element.querySelectorAll('[class*="border-2"]');
+  // Find all match cards
+  const matchCards = element.querySelectorAll('[class*="bg-white rounded-xl shadow-md border-2"]');
   
   if (matchCards.length === 0) {
     // Fallback: capture whole element
@@ -228,14 +228,7 @@ const addPemulaLayout = async (
     return;
   }
 
-  // Capture title first
-  const titleElement = element.querySelector('h2');
-  if (titleElement) {
-    pdf.addPage();
-    await addSimplePage(doc, titleElement as HTMLElement, pageWidth, pageHeight, true);
-  } else {
-    doc.addPage();
-  }
+  doc.addPage();
 
   // Capture matches in batches (3 per page)
   const batchSize = 3;
@@ -298,7 +291,6 @@ const addSimplePage = async (
   const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
   if (isTitle) {
-    // Center title at top
     doc.addImage(imgData, 'PNG', 10, 10, imgWidth, Math.min(imgHeight, 30));
   } else {
     const pageContentHeight = pageHeight - 20;
@@ -322,7 +314,7 @@ export const transformBracketDataForPDF = (
   kelasData: any,
   matches: any[],
   leaderboard: any,
-  isPemula: boolean = false // ✅ NEW parameter
+  isPemula: boolean = false
 ): ExportConfig => {
   const transformedMatches: MatchData[] = matches.map(match => ({
     id: match.id_match,
@@ -371,6 +363,6 @@ export const transformBracketDataForPDF = (
     matches: transformedMatches,
     leaderboard: leaderboard,
     totalRounds: matches.length > 0 ? Math.max(...matches.map((m: any) => m.ronde)) : 0,
-    isPemula: isPemula // ✅ NEW
+    isPemula: isPemula
   };
 };

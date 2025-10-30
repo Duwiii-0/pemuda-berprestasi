@@ -797,7 +797,7 @@ else {
         kelasData,
         matches,
         pdfLeaderboard,
-        true // ✅ isPemula = true
+        true 
       );
 
       await exportBracketToPDF(pdfConfig, bracketElement, leaderboardElement || undefined);
