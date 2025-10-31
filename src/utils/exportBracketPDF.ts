@@ -134,19 +134,29 @@ const addCoverPage = (doc: jsPDF, config: ExportConfig, totalPages: number) => {
 };
 
 // =================================================================================================
-// 5. PDF HELPER: DOM-TO-IMAGE CONVERSION (COMPUTED-STYLE BAKING)
+// Convert DOM → Image dengan auto height fix
 // =================================================================================================
-
 const convertElementToImage = async (element: HTMLElement): Promise<HTMLImageElement> => {
-  const rect = element.getBoundingClientRect();
-  const dataUrl = await htmlToImage.toJpeg(element, {
+  const clone = element.cloneNode(true) as HTMLElement;
+  clone.style.position = 'absolute';
+  clone.style.top = '-9999px';
+  clone.style.left = '0';
+  clone.style.background = '#FFFFFF';
+  clone.style.padding = '0';
+  document.body.appendChild(clone);
+
+  // Pastikan tinggi penuh (supaya tidak kepotong)
+  const rect = clone.getBoundingClientRect();
+  const dataUrl = await htmlToImage.toPng(clone, {
+    quality: 1,
+    pixelRatio: 2,
     width: rect.width,
     height: rect.height,
-    quality: 1,
-    pixelRatio: 2.5,
     backgroundColor: '#FFFFFF',
     cacheBust: true,
   });
+
+  document.body.removeChild(clone);
 
   const img = new Image();
   img.src = dataUrl;
@@ -155,96 +165,87 @@ const convertElementToImage = async (element: HTMLElement): Promise<HTMLImageEle
 };
 
 // =================================================================================================
-// 6. PDF HELPER: ADD IMAGE CONTENT TO PAGE (FIT-TO-PAGE METHOD)
+// Add image into PDF (split vertically)
 // =================================================================================================
-
 const addImageToPage = (
   doc: jsPDF,
   img: HTMLImageElement,
   config: ExportConfig,
+  yStart: number,
+  scale: number,
   pageNumber: number,
   totalPages: number
 ) => {
-  doc.setFillColor('#ffffff');
-  doc.rect(0, 0, PAGE_WIDTH, PAGE_HEIGHT, 'F');
+  const scaledWidth = img.width * scale;
+  const scaledHeight = img.height * scale;
+  const viewHeight = PAGE_HEIGHT - (HEADER_HEIGHT + FOOTER_HEIGHT + 20);
 
+  // crop (slice) portion
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d')!;
+  canvas.width = img.width;
+  const cropHeight = viewHeight / scale;
+  const cropY = yStart / scale;
+  canvas.height = Math.min(cropHeight, img.height - cropY);
+  ctx.drawImage(img, 0, cropY, img.width, canvas.height, 0, 0, img.width, canvas.height);
+
+  const sliced = canvas.toDataURL('image/jpeg', 1);
+
+  doc.setFillColor('#FFFFFF');
+  doc.rect(0, 0, PAGE_WIDTH, PAGE_HEIGHT, 'F');
   addHeaderAndFooter(doc, config, pageNumber, totalPages);
 
-  const maxWidth = PAGE_WIDTH - 2 * MARGIN_LEFT;
-  const maxHeight = PAGE_HEIGHT - (HEADER_HEIGHT + FOOTER_HEIGHT + 20);
+  // center horizontally
+  const displayWidth = PAGE_WIDTH - 2 * MARGIN_LEFT;
+  const displayHeight = (canvas.height * displayWidth) / img.width;
+  const x = MARGIN_LEFT;
+  const y = HEADER_HEIGHT + 5;
 
-  // zoom in 10–20% biar tidak kecil
-  let scale = Math.min(maxWidth / img.width, maxHeight / img.height) * 1.2;
-  if (img.height * scale > maxHeight) scale *= 0.95;
-
-  const displayWidth = img.width * scale;
-  const displayHeight = img.height * scale;
-
-  // pusatkan dan naikkan sedikit (offsetY = -10)
-  const x = (PAGE_WIDTH - displayWidth) / 2;
-  const y = HEADER_HEIGHT + 10 + (maxHeight - displayHeight) / 2 - 10;
-
-  doc.addImage(img, 'JPEG', x, y, displayWidth, displayHeight);
+  doc.addImage(sliced, 'JPEG', x, y, displayWidth, displayHeight);
 };
 
 // =================================================================================================
-// 7. MAIN EXPORT FUNCTION
+// MAIN EXPORT FUNCTION (auto split if tall)
 // =================================================================================================
-
 export const exportBracketToPDF = async (
   config: ExportConfig,
   bracketElement: HTMLElement,
 ): Promise<void> => {
-  try {
-    // Give browser time to finish rendering before we start
-    await new Promise(r => setTimeout(r, 500));
+  const doc = new jsPDF({
+    orientation: 'landscape',
+    unit: 'mm',
+    format: 'a4',
+    compress: true,
+  });
+  doc.deletePage(1);
 
-    // Explicitly remove leaderboard elements from the live DOM just in case
-    document.querySelectorAll('.leaderboard, #leaderboard').forEach(el => el.remove());
+  const bracketImg = await convertElementToImage(bracketElement);
 
-    const doc = new jsPDF({
-      orientation: 'landscape',
-      unit: 'mm',
-      format: [330, 210], // lebih lebar dari A4
-      compress: true,
-    });
-    doc.deletePage(1); // Remove default blank page
+  // ukuran besar tapi masih aman (tidak crash)
+  const scale = 1.8;
+  const totalHeight = bracketImg.height * scale;
+  const viewHeight = PAGE_HEIGHT - (HEADER_HEIGHT + FOOTER_HEIGHT + 20);
 
-    // --- RENDER & PREPARE DATA ---
-    // 1️⃣ Sebelum render, bersihkan elemen non-bracket
-    const tempHidden: HTMLElement[] = [];
-    document.querySelectorAll('.header, .round-labels, .bracket-toolbar').forEach(el => {
-      const htmlEl = el as HTMLElement;
-      htmlEl.style.display = 'none';
-      tempHidden.push(htmlEl);
-    });
+  const totalSlices = Math.ceil(totalHeight / viewHeight);
+  const totalPages = totalSlices + 1; // +1 cover
 
-    const bracketImg = await convertElementToImage(bracketElement);
+  // page 1: cover
+  doc.addPage();
+  addCoverPage(doc, config, totalPages);
 
-    // restore visibility
-    tempHidden.forEach(el => (el.style.display = ''));
-
-    const totalPages = 2; // Cover (1) + Bracket (1)
-
-    // --- PAGE GENERATION ---
-    // Page 1: Cover
+  // page 2+: split vertically
+  let yStart = 0;
+  for (let i = 0; i < totalSlices; i++) {
     doc.addPage();
-    addCoverPage(doc, config, totalPages);
-
-    // Page 2: Bracket
-    doc.addPage();
-    addImageToPage(doc, bracketImg, config, 2, totalPages);
-
-    // --- SAVE PDF ---
-    const dateStr = new Date().toISOString().split('T')[0];
-    const sanitizedEventName = config.eventName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
-    const filename = `Bracket_${sanitizedEventName}_${config.categoryName.replace(/ /g, '_')}_${dateStr}.pdf`;
-    doc.save(filename);
-
-  } catch (error) {
-    console.error('Error generating PDF:', error);
-    alert('Failed to generate PDF. Please check the console for more details.');
+    addImageToPage(doc, bracketImg, config, yStart, scale, i + 2, totalPages);
+    yStart += viewHeight;
   }
+
+  // save
+  const dateStr = new Date().toISOString().split('T')[0];
+  const sanitizedEventName = config.eventName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+  const filename = `Bracket_${sanitizedEventName}_${config.categoryName.replace(/ /g, '_')}_${dateStr}.pdf`;
+  doc.save(filename);
 };
 
 // =================================================================================================
