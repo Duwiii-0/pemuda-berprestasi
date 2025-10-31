@@ -104,34 +104,39 @@ const renderHeader = (doc: jsPDF, config: ExportConfig): void => {
 };
 
 /**
- * Render footer di setiap halaman PDF
+ * Scale down cards untuk prestasi agar final lebih terlihat
  */
-const renderFooter = (doc: jsPDF, pageNumber: number, totalPages: number): void => {
-  const footerY = PAGE_CONFIG.HEIGHT - PAGE_CONFIG.MARGIN.BOTTOM + 2;
+const scaleDownCards = (
+  bracketVisual: HTMLElement
+): Array<{ el: HTMLElement; originalTransform: string }> => {
+  const scaledCards: Array<{ el: HTMLElement; originalTransform: string }> = [];
 
-  try {
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
-    doc.setTextColor(107, 114, 128); // RGB: #6B7280
+  // Cari semua card di bracket
+  const cards = bracketVisual.querySelectorAll('[class*="absolute"]');
+  
+  cards.forEach((card) => {
+    const htmlCard = card as HTMLElement;
+    // Hanya scale card yang berisi participant info (bukan SVG lines)
+    if (htmlCard.querySelector('[class*="bg-white"], [class*="border"]')) {
+      scaledCards.push({
+        el: htmlCard,
+        originalTransform: htmlCard.style.transform,
+      });
+      // Scale ke 80% agar lebih kecil
+      htmlCard.style.transform = `${htmlCard.style.transform || ''} scale(0.80)`;
+      htmlCard.style.transformOrigin = 'center';
+    }
+  });
 
-    // Page number di tengah
-    doc.text(
-      `Page ${pageNumber} of ${totalPages}`,
-      PAGE_CONFIG.WIDTH / 2,
-      footerY,
-      { align: 'center' }
-    );
+  return scaledCards;
+};
 
-    // Tanggal export di kiri
-    const exportDate = new Date().toLocaleDateString('id-ID', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-    });
-    doc.text(exportDate, PAGE_CONFIG.MARGIN.LEFT, footerY);
-  } catch (error) {
-    console.error('❌ Error rendering footer:', error);
-  }
+const restoreCards = (
+  scaledCards: Array<{ el: HTMLElement; originalTransform: string }>
+): void => {
+  scaledCards.forEach(({ el, originalTransform }) => {
+    el.style.transform = originalTransform;
+  });
 };
 
 // =================================================================================================
@@ -152,29 +157,51 @@ const captureBracketImage = async (bracketElement: HTMLElement): Promise<HTMLIma
   }
 
   console.log('✅ Bracket container found');
+  
+  // ✅ STEP 1.5: Cari parent container yang include header bracket
+  let captureTarget = bracketVisual;
+  
+  // Cek apakah ada parent yang contain header (Round 1, Quarter Final, dll)
+  const parent = bracketVisual.parentElement;
+  if (parent) {
+    const hasHeader = parent.querySelector('[class*="Round"], [class*="Quarter"], [class*="Semi"], [class*="Final"]');
+    if (hasHeader) {
+      captureTarget = parent;
+      console.log('✅ Found parent with bracket headers');
+    }
+  }
+
   console.log('📏 Original dimensions:', {
-    width: bracketVisual.scrollWidth,
-    height: bracketVisual.scrollHeight,
+    width: captureTarget.scrollWidth,
+    height: captureTarget.scrollHeight,
   });
 
   // ✅ STEP 2: Hide unwanted elements (leaderboard, buttons)
-  const hiddenElements = hideUnwantedElements(bracketVisual);
+  const hiddenElements = hideUnwantedElements(captureTarget);
   console.log(`🙈 Hidden ${hiddenElements.length} elements`);
 
+  // ✅ STEP 2.5: Perkecil card untuk prestasi
+  const scaledCards = scaleDownCards(captureTarget);
+  console.log(`📏 Scaled ${scaledCards.length} cards to 80%`);
+
   // ✅ STEP 3: Wait for render
-  await new Promise(resolve => setTimeout(resolve, 150));
+  await new Promise(resolve => setTimeout(resolve, 200));
 
-  // ✅ STEP 4: Capture dengan ukuran ASLI (tidak diperbesar)
-  const actualWidth = bracketVisual.scrollWidth;
-  const actualHeight = bracketVisual.scrollHeight;
+  // ✅ STEP 4: Capture dengan ukuran DIPERBESAR secara horizontal
+  const actualWidth = captureTarget.scrollWidth;
+  const actualHeight = captureTarget.scrollHeight;
 
-  console.log('📸 Capturing with actual size:', { actualWidth, actualHeight });
+  // Perbesar canvas 1.8x secara horizontal untuk capture final
+  const captureWidth = Math.floor(actualWidth * 1.8);
+  const captureHeight = actualHeight;
 
-  const dataUrl = await htmlToImage.toPng(bracketVisual, {
+  console.log('📸 Capturing with enlarged size:', { captureWidth, captureHeight });
+
+  const dataUrl = await htmlToImage.toPng(captureTarget, {
     quality: 1,
-    pixelRatio: 2, // ✅ Resolusi tinggi tapi tidak berlebihan
-    width: actualWidth,
-    height: actualHeight,
+    pixelRatio: 2,
+    width: captureWidth,
+    height: captureHeight,
     backgroundColor: '#FFFFFF',
     cacheBust: true,
     style: {
@@ -189,51 +216,9 @@ const captureBracketImage = async (bracketElement: HTMLElement): Promise<HTMLIma
     },
   });
 
-  // ✅ STEP 5: Restore hidden elements
+  restoreCards(scaledCards);
   restoreHiddenElements(hiddenElements);
   console.log('✅ Elements restored');
-
-  // =================================================================================================
-// HELPER: SCALE DOWN CARDS
-// =================================================================================================
-
-/**
- * Scale down cards untuk prestasi agar final lebih terlihat
- */
-const scaleDownCards = (
-  bracketVisual: HTMLElement
-): Array<{ el: HTMLElement; originalTransform: string }> => {
-  const scaledCards: Array<{ el: HTMLElement; originalTransform: string }> = [];
-
-  // Cari semua card di bracket
-  const cards = bracketVisual.querySelectorAll('[class*="absolute"]');
-  
-  cards.forEach((card) => {
-    const htmlCard = card as HTMLElement;
-    // Hanya scale card yang berisi participant info (bukan SVG lines)
-    if (htmlCard.querySelector('[class*="bg-white"], [class*="border"]')) {
-      scaledCards.push({
-        el: htmlCard,
-        originalTransform: htmlCard.style.transform,
-      });
-      htmlCard.style.transform = `${htmlCard.style.transform || ''} scale(0.85)`;
-      htmlCard.style.transformOrigin = 'center';
-    }
-  });
-
-  return scaledCards;
-};
-
-/**
- * Restore cards ke ukuran semula
- */
-const restoreCards = (
-  scaledCards: Array<{ el: HTMLElement; originalTransform: string }>
-): void => {
-  scaledCards.forEach(({ el, originalTransform }) => {
-    el.style.transform = originalTransform;
-  });
-};
 
   // ✅ STEP 6: Load image
   const img = new Image();
