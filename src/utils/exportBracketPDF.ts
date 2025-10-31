@@ -211,18 +211,30 @@ const captureBracketImage = async (bracketElement: HTMLElement): Promise<HTMLIma
  * Temukan container bracket visual yang benar
  */
 const findBracketVisual = (element: HTMLElement): HTMLElement | null => {
-  // Strategy 1: Cari div dengan SVG dan cards
+  console.log('🔍 Searching for bracket visual container...');
+  console.log('📦 Root element:', element);
+  
+  // Strategy 1: Langsung return element jika sudah SVG container
+  if (element.querySelector('svg')) {
+    console.log('✅ Root element has SVG, using it directly');
+    return element;
+  }
+  
+  // Strategy 2: Cari div dengan SVG dan cards
   const allRelatives = element.querySelectorAll('.relative');
+  console.log(`📋 Found ${allRelatives.length} .relative elements`);
+  
   for (const rel of allRelatives) {
     const svg = rel.querySelector('svg');
     const cards = rel.querySelectorAll('[class*="absolute"]');
 
     if (svg && cards.length > 0) {
+      console.log(`✅ Found bracket via SVG + ${cards.length} cards`);
       return rel as HTMLElement;
     }
   }
 
-  // Strategy 2: Cari container terbesar dengan SVG
+  // Strategy 3: Cari container terbesar dengan SVG
   let maxArea = 0;
   let largest: HTMLElement | null = null;
 
@@ -230,6 +242,7 @@ const findBracketVisual = (element: HTMLElement): HTMLElement | null => {
     if (rel.querySelector('svg')) {
       const htmlRel = rel as HTMLElement;
       const area = htmlRel.offsetWidth * htmlRel.offsetHeight;
+      console.log(`📐 Found SVG container: ${area}px area`);
       if (area > maxArea) {
         maxArea = area;
         largest = htmlRel;
@@ -237,7 +250,22 @@ const findBracketVisual = (element: HTMLElement): HTMLElement | null => {
     }
   }
 
-  return largest;
+  if (largest) {
+    console.log('✅ Using largest SVG container');
+    return largest;
+  }
+
+  // Strategy 4: Fallback - cari semua div dengan overflow
+  const allDivs = element.querySelectorAll('div');
+  for (const div of allDivs) {
+    if (div.querySelector('svg')) {
+      console.log('✅ Found SVG in div (fallback)');
+      return div as HTMLElement;
+    }
+  }
+
+  console.error('❌ No bracket visual container found with any strategy');
+  return null;
 };
 
 /**
