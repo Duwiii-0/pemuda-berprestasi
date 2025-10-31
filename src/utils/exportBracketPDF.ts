@@ -13,12 +13,29 @@ interface ExportConfig {
   totalParticipants: number;
 }
 
-const PAGE_WIDTH = 297;
-const PAGE_HEIGHT = 210;
+// ✅ DYNAMIC PAGE SIZE based on bracket complexity
+const getOptimalPageSize = (participantCount: number): { width: number; height: number; format: string } => {
+  if (participantCount <= 4) {
+    // Small bracket - A4 Landscape cukup
+    return { width: 297, height: 210, format: 'A4 Landscape' };
+  } else if (participantCount <= 8) {
+    // Medium bracket - A3 Landscape
+    return { width: 420, height: 297, format: 'A3 Landscape' };
+  } else if (participantCount <= 16) {
+    // Large bracket - A2 Landscape
+    return { width: 594, height: 420, format: 'A2 Landscape' };
+  } else {
+    // Very large bracket - A1 Landscape (atau custom super wide)
+    return { width: 841, height: 594, format: 'A1 Landscape' };
+  }
+};
+
+let PAGE_WIDTH = 297;
+let PAGE_HEIGHT = 210;
 const MARGIN_TOP = 15;
-const MARGIN_BOTTOM = 10; // ✅ Reduced
-const MARGIN_LEFT = 10;   // ✅ Reduced from 15
-const MARGIN_RIGHT = 10;  // ✅ Reduced from 15
+const MARGIN_BOTTOM = 10;
+const MARGIN_LEFT = 10;
+const MARGIN_RIGHT = 10;
 const HEADER_HEIGHT = 18;
 const FOOTER_HEIGHT = 10;
 
@@ -332,6 +349,16 @@ const addImageToPage = (
 export const exportBracketToPDF = async (kelasData: any, bracketElement: HTMLElement): Promise<void> => {
   console.log('🚀 Starting PDF export...');
   
+  const approvedParticipants = kelasData.peserta_kompetisi.filter((p: any) => p.status === 'APPROVED');
+  const participantCount = approvedParticipants.length;
+  
+  // ✅ PILIH UKURAN KERTAS OPTIMAL
+  const pageSize = getOptimalPageSize(participantCount);
+  PAGE_WIDTH = pageSize.width;
+  PAGE_HEIGHT = pageSize.height;
+  
+  console.log(`📄 Selected page format: ${pageSize.format} (${PAGE_WIDTH}x${PAGE_HEIGHT}mm) for ${participantCount} participants`);
+  
   const config: ExportConfig = {
     eventName: kelasData.kompetisi.nama_event,
     categoryName: `${kelasData.kelompok?.nama_kelompok || ''} ${
@@ -343,14 +370,15 @@ export const exportBracketToPDF = async (kelasData: any, bracketElement: HTMLEle
     })} - ${new Date(kelasData.kompetisi.tanggal_selesai).toLocaleDateString('id-ID', {
       day: 'numeric', month: 'long', year: 'numeric'
     })}`,
-    totalParticipants: kelasData.peserta_kompetisi.filter((p: any) => p.status === 'APPROVED').length,
+    totalParticipants: participantCount,
   };
 
   try {
+    // ✅ CREATE PDF dengan custom size
     const doc = new jsPDF({ 
       orientation: 'landscape', 
       unit: 'mm', 
-      format: 'a4', 
+      format: [PAGE_HEIGHT, PAGE_WIDTH], // [height, width] untuk landscape
       compress: true 
     });
     doc.deletePage(1);
@@ -370,7 +398,8 @@ export const exportBracketToPDF = async (kelasData: any, bracketElement: HTMLEle
       imageHeight: bracketImg.height,
       maxPixelsPerPage,
       totalSlices,
-      totalPages
+      totalPages,
+      pageFormat: pageSize.format
     });
 
     // Add cover page
@@ -395,10 +424,11 @@ export const exportBracketToPDF = async (kelasData: any, bracketElement: HTMLEle
 
     // Save PDF
     const dateStr = new Date().toISOString().split('T')[0];
-    const filename = `Bracket_${config.eventName.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_${config.categoryName.replace(/ /g, '_')}_${dateStr}.pdf`;
+    const filename = `Bracket_${pageSize.format.replace(/ /g, '_')}_${config.eventName.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_${config.categoryName.replace(/ /g, '_')}_${dateStr}.pdf`;
     
     doc.save(filename);
-    console.log('✅ PDF saved:', filename);
+    console.log(`✅ PDF saved: ${filename}`);
+    console.log(`📏 Format: ${pageSize.format} - Perfect for ${participantCount} participants!`);
 
   } catch (error) {
     console.error('❌ Error exporting PDF:', error);
