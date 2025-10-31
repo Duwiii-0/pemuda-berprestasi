@@ -731,7 +731,7 @@ const handleExportPDF = async () => {
     
     // Center alignment untuk ronde
     const totalHeight = (totalMatchesInRound - 1) * spacing;
-    const startOffset = -totalHeight / 4;
+    const startOffset = 0;
     
     return startOffset + (matchIndex * spacing);
   };
