@@ -147,6 +147,10 @@ const restoreCards = (
  * Capture bracket element sebagai PNG dengan resolusi tinggi
  * PENTING: Tidak memperbesar canvas, hanya capture sesuai ukuran asli
  */
+/**
+ * Capture bracket element sebagai PNG dengan resolusi tinggi
+ * KEMBALI KE VERSI NORMAL + tambah capture header
+ */
 const captureBracketImage = async (bracketElement: HTMLElement): Promise<HTMLImageElement> => {
   console.log('📸 Starting bracket capture...');
 
@@ -162,13 +166,27 @@ const captureBracketImage = async (bracketElement: HTMLElement): Promise<HTMLIma
   let captureTarget = bracketVisual;
   
   // Cek apakah ada parent yang contain header (Round 1, Quarter Final, dll)
-  const parent = bracketVisual.parentElement;
-  if (parent) {
-    const hasHeader = parent.querySelector('[class*="Round"], [class*="Quarter"], [class*="Semi"], [class*="Final"]');
-    if (hasHeader) {
+  let parent = bracketVisual.parentElement;
+  
+  // Cari sampai 3 level ke atas untuk nemuin header
+  for (let i = 0; i < 3 && parent; i++) {
+    const headers = parent.querySelectorAll('[class*="text-"], [class*="font-"]');
+    let foundHeader = false;
+    
+    headers.forEach(h => {
+      const text = h.textContent?.toLowerCase() || '';
+      if (text.includes('round') || text.includes('quarter') || text.includes('semi') || text.includes('final')) {
+        foundHeader = true;
+      }
+    });
+    
+    if (foundHeader) {
       captureTarget = parent;
-      console.log('✅ Found parent with bracket headers');
+      console.log('✅ Found parent with bracket headers at level', i + 1);
+      break;
     }
+    
+    parent = parent.parentElement;
   }
 
   console.log('📏 Original dimensions:', {
@@ -180,28 +198,20 @@ const captureBracketImage = async (bracketElement: HTMLElement): Promise<HTMLIma
   const hiddenElements = hideUnwantedElements(captureTarget);
   console.log(`🙈 Hidden ${hiddenElements.length} elements`);
 
-  // ✅ STEP 2.5: Perkecil card untuk prestasi
-  const scaledCards = scaleDownCards(captureTarget);
-  console.log(`📏 Scaled ${scaledCards.length} cards to 85%`);
-
   // ✅ STEP 3: Wait for render
   await new Promise(resolve => setTimeout(resolve, 200));
 
-  // ✅ STEP 4: Capture dengan ukuran 1.4x secara horizontal (TIDAK 1.8x!)
+  // ✅ STEP 4: Capture dengan ukuran ASLI (tidak di-scale)
   const actualWidth = captureTarget.scrollWidth;
   const actualHeight = captureTarget.scrollHeight;
 
-  // Perbesar canvas 1.4x secara horizontal untuk prestasi
-  const captureWidth = Math.floor(actualWidth * 1.4);
-  const captureHeight = actualHeight;
-
-  console.log('📸 Capturing with enlarged size:', { captureWidth, captureHeight });
+  console.log('📸 Capturing with actual size:', { actualWidth, actualHeight });
 
   const dataUrl = await htmlToImage.toPng(captureTarget, {
     quality: 1,
     pixelRatio: 2,
-    width: captureWidth,
-    height: captureHeight,
+    width: actualWidth,
+    height: actualHeight,
     backgroundColor: '#FFFFFF',
     cacheBust: true,
     style: {
@@ -216,8 +226,7 @@ const captureBracketImage = async (bracketElement: HTMLElement): Promise<HTMLIma
     },
   });
 
-  // ✅ STEP 5: Restore cards dan hidden elements
-  restoreCards(scaledCards);
+  // ✅ STEP 5: Restore hidden elements
   restoreHiddenElements(hiddenElements);
   console.log('✅ Elements restored');
 
