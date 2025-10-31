@@ -147,10 +147,6 @@ const restoreCards = (
  * Capture bracket element sebagai PNG dengan resolusi tinggi
  * PENTING: Tidak memperbesar canvas, hanya capture sesuai ukuran asli
  */
-/**
- * Capture bracket element sebagai PNG dengan resolusi tinggi
- * KEMBALI KE VERSI NORMAL + tambah capture header
- */
 const captureBracketImage = async (bracketElement: HTMLElement): Promise<HTMLImageElement> => {
   console.log('📸 Starting bracket capture...');
 
@@ -161,53 +157,30 @@ const captureBracketImage = async (bracketElement: HTMLElement): Promise<HTMLIma
   }
 
   console.log('✅ Bracket container found');
-  
-  // ✅ STEP 1.5: Cari parent container yang include header bracket
-  let captureTarget = bracketVisual;
-  
-  // Cek apakah ada parent yang contain header (Round 1, Quarter Final, dll)
-  let parent = bracketVisual.parentElement;
-  
-  // Cari sampai 3 level ke atas untuk nemuin header
-  for (let i = 0; i < 3 && parent; i++) {
-    const headers = parent.querySelectorAll('[class*="text-"], [class*="font-"]');
-    let foundHeader = false;
-    
-    headers.forEach(h => {
-      const text = h.textContent?.toLowerCase() || '';
-      if (text.includes('round') || text.includes('quarter') || text.includes('semi') || text.includes('final')) {
-        foundHeader = true;
-      }
-    });
-    
-    if (foundHeader) {
-      captureTarget = parent;
-      console.log('✅ Found parent with bracket headers at level', i + 1);
-      break;
-    }
-    
-    parent = parent.parentElement;
-  }
-
   console.log('📏 Original dimensions:', {
-    width: captureTarget.scrollWidth,
-    height: captureTarget.scrollHeight,
+    width: bracketVisual.scrollWidth,
+    height: bracketVisual.scrollHeight,
   });
 
-  // ✅ STEP 2: Hide unwanted elements (leaderboard, buttons)
-  const hiddenElements = hideUnwantedElements(captureTarget);
+  // ✅ STEP 2: Scroll ke paling atas agar header tidak kepotong
+  bracketVisual.scrollTop = 0;
+  bracketVisual.scrollLeft = 0;
+  console.log('📜 Scrolled to top');
+
+  // ✅ STEP 3: Hide unwanted elements (leaderboard, buttons)
+  const hiddenElements = hideUnwantedElements(bracketVisual);
   console.log(`🙈 Hidden ${hiddenElements.length} elements`);
 
-  // ✅ STEP 3: Wait for render
+  // ✅ STEP 4: Wait for render
   await new Promise(resolve => setTimeout(resolve, 200));
 
-  // ✅ STEP 4: Capture dengan ukuran ASLI (tidak di-scale)
-  const actualWidth = captureTarget.scrollWidth;
-  const actualHeight = captureTarget.scrollHeight;
+  // ✅ STEP 5: Capture dengan ukuran ASLI
+  const actualWidth = bracketVisual.scrollWidth;
+  const actualHeight = bracketVisual.scrollHeight;
 
   console.log('📸 Capturing with actual size:', { actualWidth, actualHeight });
 
-  const dataUrl = await htmlToImage.toPng(captureTarget, {
+  const dataUrl = await htmlToImage.toPng(bracketVisual, {
     quality: 1,
     pixelRatio: 2,
     width: actualWidth,
@@ -226,11 +199,11 @@ const captureBracketImage = async (bracketElement: HTMLElement): Promise<HTMLIma
     },
   });
 
-  // ✅ STEP 5: Restore hidden elements
+  // ✅ STEP 6: Restore hidden elements
   restoreHiddenElements(hiddenElements);
   console.log('✅ Elements restored');
 
-  // ✅ STEP 6: Load image
+  // ✅ STEP 7: Load image
   const img = new Image();
   img.src = dataUrl;
   await new Promise((resolve) => (img.onload = resolve));
