@@ -32,18 +32,6 @@ const PAGE_CONFIG = {
   FOOTER_HEIGHT: 8,
 } as const;
 
-/**
- * Theme colors untuk PDF
- */
-const THEME = {
-  primary: '#990D35',
-  background: '#F5FBEF',
-  text: '#050505',
-  textSecondary: '#6B7280',
-  border: '#E5E7EB',
-  white: '#FFFFFF',
-} as const;
-
 // =================================================================================================
 // HELPER: TRANSFORM DATA
 // =================================================================================================
@@ -88,27 +76,31 @@ const renderHeader = (doc: jsPDF, config: ExportConfig): void => {
   const centerX = PAGE_CONFIG.WIDTH / 2;
   const baseY = PAGE_CONFIG.MARGIN.TOP;
 
-  // Event name (bold)
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(14);
-  doc.setTextColor(THEME.text);
-  doc.text(config.eventName, centerX, baseY + 5, { align: 'center' });
+  try {
+    // Event name (bold)
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(14);
+    doc.setTextColor(5, 5, 5); // RGB: #050505
+    doc.text(config.eventName, centerX, baseY + 5, { align: 'center' });
 
-  // Category name (normal)
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(11);
-  doc.setTextColor(THEME.textSecondary);
-  doc.text(config.categoryName, centerX, baseY + 12, { align: 'center' });
+    // Category name (normal)
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(11);
+    doc.setTextColor(107, 114, 128); // RGB: #6B7280
+    doc.text(config.categoryName, centerX, baseY + 12, { align: 'center' });
 
-  // Garis pemisah header
-  doc.setDrawColor(THEME.border);
-  doc.setLineWidth(0.3);
-  doc.line(
-    PAGE_CONFIG.MARGIN.LEFT,
-    baseY + 16,
-    PAGE_CONFIG.WIDTH - PAGE_CONFIG.MARGIN.RIGHT,
-    baseY + 16
-  );
+    // Garis pemisah header
+    doc.setDrawColor(229, 231, 235); // RGB: #E5E7EB
+    doc.setLineWidth(0.3);
+    doc.line(
+      PAGE_CONFIG.MARGIN.LEFT,
+      baseY + 16,
+      PAGE_CONFIG.WIDTH - PAGE_CONFIG.MARGIN.RIGHT,
+      baseY + 16
+    );
+  } catch (error) {
+    console.error('❌ Error rendering header:', error);
+  }
 };
 
 /**
@@ -117,25 +109,29 @@ const renderHeader = (doc: jsPDF, config: ExportConfig): void => {
 const renderFooter = (doc: jsPDF, pageNumber: number, totalPages: number): void => {
   const footerY = PAGE_CONFIG.HEIGHT - PAGE_CONFIG.MARGIN.BOTTOM + 2;
 
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9);
-  doc.setTextColor(THEME.textSecondary);
+  try {
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(107, 114, 128); // RGB: #6B7280
 
-  // Page number di tengah
-  doc.text(
-    `Page ${pageNumber} of ${totalPages}`,
-    PAGE_CONFIG.WIDTH / 2,
-    footerY,
-    { align: 'center' }
-  );
+    // Page number di tengah
+    doc.text(
+      `Page ${pageNumber} of ${totalPages}`,
+      PAGE_CONFIG.WIDTH / 2,
+      footerY,
+      { align: 'center' }
+    );
 
-  // Tanggal export di kiri
-  const exportDate = new Date().toLocaleDateString('id-ID', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  });
-  doc.text(exportDate, PAGE_CONFIG.MARGIN.LEFT, footerY);
+    // Tanggal export di kiri
+    const exportDate = new Date().toLocaleDateString('id-ID', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    });
+    doc.text(exportDate, PAGE_CONFIG.MARGIN.LEFT, footerY);
+  } catch (error) {
+    console.error('❌ Error rendering footer:', error);
+  }
 };
 
 // =================================================================================================
@@ -179,7 +175,7 @@ const captureBracketImage = async (bracketElement: HTMLElement): Promise<HTMLIma
     pixelRatio: 2, // ✅ Resolusi tinggi tapi tidak berlebihan
     width: actualWidth,
     height: actualHeight,
-    backgroundColor: THEME.white,
+    backgroundColor: '#FFFFFF',
     cacheBust: true,
     style: {
       transform: 'scale(1)',
@@ -349,9 +345,6 @@ const addImageToPDF = (
 
   // ✅ Hitung scale agar image fit dengan width halaman
   const imageAspectRatio = img.width / img.height;
-  const scaleToFitWidth = availableWidth / (img.width / (img.height / availableHeight));
-  
-  // Display width selalu full available width
   const displayWidth = availableWidth;
   const displayHeight = displayWidth / imageAspectRatio;
 
@@ -368,48 +361,54 @@ const addImageToPDF = (
 
   // ✅ Loop untuk setiap halaman
   for (let pageIndex = 0; pageIndex < totalPages; pageIndex++) {
-    // Tambah halaman baru
-    if (pageIndex > 0) {
-      doc.addPage();
+    console.log(`📄 Processing page ${pageIndex + 1}/${totalPages}`);
+    
+    try {
+      // Tambah halaman baru (kecuali halaman pertama yang sudah ada dari jsPDF)
+      if (pageIndex > 0) {
+        doc.addPage();
+      }
+
+      // Background putih menggunakan RGB
+      doc.setFillColor(255, 255, 255); // White
+      doc.rect(0, 0, PAGE_CONFIG.WIDTH, PAGE_CONFIG.HEIGHT, 'F');
+
+      // Render header & footer
+      renderHeader(doc, config);
+      renderFooter(doc, pageIndex + 1, totalPages);
+
+      // ✅ Hitung slice untuk halaman ini
+      const sourceYStart = (pageIndex * availableHeight * img.height) / displayHeight;
+      const sourceHeight = Math.min(
+        (availableHeight * img.height) / displayHeight,
+        img.height - sourceYStart
+      );
+
+      // ✅ Crop image di canvas
+      canvas.height = sourceHeight;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, sourceYStart, img.width, sourceHeight, 0, 0, img.width, sourceHeight);
+
+      const slicedDataUrl = canvas.toDataURL('image/png', 1.0);
+
+      // ✅ Hitung tinggi display untuk slice ini
+      const sliceDisplayHeight = Math.min(availableHeight, displayHeight - pageIndex * availableHeight);
+
+      // ✅ Posisi image
+      const x = PAGE_CONFIG.MARGIN.LEFT;
+      const y = PAGE_CONFIG.MARGIN.TOP + PAGE_CONFIG.HEADER_HEIGHT;
+
+      console.log(`   ├─ Source: y=${sourceYStart.toFixed(0)}, h=${sourceHeight.toFixed(0)}`);
+      console.log(`   └─ Display: h=${sliceDisplayHeight.toFixed(2)}mm`);
+
+      // ✅ Add image ke PDF
+      doc.addImage(slicedDataUrl, 'PNG', x, y, displayWidth, sliceDisplayHeight, undefined, 'FAST');
+      
+      console.log(`   ✅ Page ${pageIndex + 1} rendered successfully`);
+    } catch (error) {
+      console.error(`   ❌ Error on page ${pageIndex + 1}:`, error);
+      throw error;
     }
-
-    // Background putih
-    doc.setFillColor(THEME.white);
-    doc.rect(0, 0, PAGE_CONFIG.WIDTH, PAGE_CONFIG.HEIGHT, 'F');
-
-    // Render header & footer
-    renderHeader(doc, config);
-    renderFooter(doc, pageIndex + 1, totalPages);
-
-    // ✅ Hitung slice untuk halaman ini
-    const sourceYStart = (pageIndex * availableHeight * img.height) / displayHeight;
-    const sourceHeight = Math.min(
-      (availableHeight * img.height) / displayHeight,
-      img.height - sourceYStart
-    );
-
-    // ✅ Crop image di canvas
-    canvas.height = sourceHeight;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(img, 0, sourceYStart, img.width, sourceHeight, 0, 0, img.width, sourceHeight);
-
-    const slicedDataUrl = canvas.toDataURL('image/png', 1.0);
-
-    // ✅ Hitung tinggi display untuk slice ini
-    const sliceDisplayHeight = Math.min(availableHeight, displayHeight - pageIndex * availableHeight);
-
-    // ✅ Posisi image
-    const x = PAGE_CONFIG.MARGIN.LEFT;
-    const y = PAGE_CONFIG.MARGIN.TOP + PAGE_CONFIG.HEADER_HEIGHT;
-
-    console.log(`📄 Page ${pageIndex + 1}:`, {
-      sourceYStart: sourceYStart.toFixed(0),
-      sourceHeight: sourceHeight.toFixed(0),
-      displayHeight: sliceDisplayHeight.toFixed(2),
-    });
-
-    // ✅ Add image ke PDF
-    doc.addImage(slicedDataUrl, 'PNG', x, y, displayWidth, sliceDisplayHeight, undefined, 'FAST');
   }
 };
 
@@ -442,10 +441,7 @@ export const exportBracketToPDF = async (
       compress: true,
     });
 
-    // Hapus halaman pertama default
-    doc.deletePage(1);
-
-    // ✅ STEP 3: Tambahkan image ke PDF dengan pagination
+    // ✅ STEP 3: Tambahkan image ke PDF dengan pagination (halaman pertama sudah ada)
     addImageToPDF(doc, bracketImage, config);
 
     // ✅ STEP 4: Generate filename

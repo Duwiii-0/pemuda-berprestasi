@@ -775,6 +775,7 @@ const handleExportPDF = async () => {
   setExportingPDF(true);
 
   try {
+    // Get bracket element
     const bracketElement = bracketRef.current;
 
     if (!bracketElement) {
@@ -787,7 +788,7 @@ const handleExportPDF = async () => {
     showNotification(
       'success',
       'Berhasil!',
-      'PDF bracket berhasil didownload!',
+      'PDF bracket PEMULA berhasil didownload!',
       () => setShowModal(false)
     );
   } catch (error: any) {
