@@ -229,56 +229,49 @@ const findBracketVisual = (element: HTMLElement): HTMLElement | null => {
   console.log('🔍 Searching for bracket visual container...');
   console.log('📦 Root element:', element);
   
-  // Strategy 1: Cari container yang punya overflow (biasanya parent dari bracket)
-  const allDivs = element.querySelectorAll('div');
-  let candidates: HTMLElement[] = [];
+  // Strategy 1: Cari container yang ada text "Round", "Quarter", "Semi", "Final"
+  const allDivs = Array.from(element.querySelectorAll('div'));
   
+  for (const div of allDivs) {
+    const htmlDiv = div as HTMLElement;
+    
+    // Cek apakah div ini atau child-nya ada text header
+    const allText = htmlDiv.innerText || '';
+    const hasHeaderText = /Round|Quarter|Semi|Final/i.test(allText);
+    
+    // Cek apakah ada SVG di dalamnya
+    const hasSvg = htmlDiv.querySelector('svg') !== null;
+    
+    // Cek apakah ada cards
+    const hasCards = htmlDiv.querySelectorAll('[class*="absolute"]').length > 0;
+    
+    if (hasHeaderText && hasSvg && hasCards) {
+      console.log('✅ Found container with header text + SVG + cards');
+      console.log('   Text preview:', allText.substring(0, 100));
+      return htmlDiv;
+    }
+  }
+  
+  // Strategy 2: Cari container dengan overflow yang ada SVG
   for (const div of allDivs) {
     const htmlDiv = div as HTMLElement;
     const style = window.getComputedStyle(htmlDiv);
     
-    // Cari div yang punya overflow-x auto atau scroll (biasanya bracket container)
     if (style.overflowX === 'auto' || style.overflowX === 'scroll') {
       const hasSvg = htmlDiv.querySelector('svg');
       const hasCards = htmlDiv.querySelectorAll('[class*="absolute"]').length > 0;
       
       if (hasSvg && hasCards) {
-        candidates.push(htmlDiv);
         console.log('✅ Found overflow container with SVG + cards');
+        return htmlDiv;
       }
     }
   }
   
-  // Pilih container terbesar (biasanya yang paling outer)
-  if (candidates.length > 0) {
-    candidates.sort((a, b) => {
-      const areaA = a.scrollWidth * a.scrollHeight;
-      const areaB = b.scrollWidth * b.scrollHeight;
-      return areaB - areaA;
-    });
-    
-    console.log(`✅ Selected largest container: ${candidates[0].scrollWidth}x${candidates[0].scrollHeight}`);
-    return candidates[0];
-  }
-  
-  // Strategy 2: Langsung return element jika sudah SVG container
+  // Strategy 3: Fallback - element root jika ada SVG
   if (element.querySelector('svg')) {
-    console.log('✅ Root element has SVG, using it directly');
+    console.log('✅ Using root element (has SVG)');
     return element;
-  }
-  
-  // Strategy 3: Cari div dengan SVG dan cards
-  const allRelatives = element.querySelectorAll('.relative');
-  console.log(`📋 Found ${allRelatives.length} .relative elements`);
-  
-  for (const rel of allRelatives) {
-    const svg = rel.querySelector('svg');
-    const cards = rel.querySelectorAll('[class*="absolute"]');
-
-    if (svg && cards.length > 0) {
-      console.log(`✅ Found bracket via SVG + ${cards.length} cards`);
-      return rel as HTMLElement;
-    }
   }
 
   console.error('❌ No bracket visual container found');
