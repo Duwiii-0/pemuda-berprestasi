@@ -957,8 +957,8 @@ const handleExportPDF = async () => {
 
       {/* PRESTASI Layout dengan FIXED POSITIONING */}
       {bracketGenerated && matches.length > 0 ? (
-        <div className="p-6" ref={bracketRef}>
-            <div ref={bracketRef} id="bracket-export-area">
+        <div className="p-6" >
+            <div id="bracket-export-area">
             {/* Title for PDF */}
             <div className="mb-6 text-center">
               <h2 className="text-2xl font-bold" style={{ color: '#990D35' }}>
@@ -969,7 +969,7 @@ const handleExportPDF = async () => {
               </p>
             </div>
           </div>
-          <div className="overflow-x-auto overflow-y-visible pb-8">
+          <div ref={bracketRef} className="overflow-x-auto overflow-y-visible pb-8">
             {/* Round Headers */}
             <div className="flex gap-0 mb-6 px-8 sticky top-0 z-20 bg-white/95 backdrop-blur-sm py-4 shadow-sm">
               {Array.from({ length: totalRounds }, (_, roundIndex) => {

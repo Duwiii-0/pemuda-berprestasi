@@ -150,17 +150,19 @@ const restoreCards = (
 const captureBracketImage = async (bracketElement: HTMLElement): Promise<HTMLImageElement> => {
   console.log('📸 Starting bracket capture...');
 
-  // ✅ LANGSUNG pakai element yang diberikan (jangan cari lagi)
-  const bracketVisual = bracketElement;
+  // ✅ STEP 1: Temukan container bracket yang tepat
+  const bracketVisual = findBracketVisual(bracketElement);
+  if (!bracketVisual) {
+    throw new Error('❌ Bracket visual container not found');
+  }
 
-  console.log('✅ Using provided bracket element directly');
+  console.log('✅ Bracket container found');
   console.log('📏 Container info:', {
     scrollWidth: bracketVisual.scrollWidth,
     scrollHeight: bracketVisual.scrollHeight,
     offsetWidth: bracketVisual.offsetWidth,
     offsetHeight: bracketVisual.offsetHeight,
     className: bracketVisual.className,
-    tagName: bracketVisual.tagName,
   });
 
   // ✅ STEP 2: Scroll ke paling atas kiri agar header tidak kepotong
@@ -179,6 +181,7 @@ const captureBracketImage = async (bracketElement: HTMLElement): Promise<HTMLIma
   await new Promise(resolve => setTimeout(resolve, 300));
 
   // ✅ STEP 5: Capture dengan FULL scrollWidth x scrollHeight
+  // Ini akan capture SEMUA konten, termasuk yang di-scroll
   const fullWidth = bracketVisual.scrollWidth;
   const fullHeight = bracketVisual.scrollHeight;
 
@@ -186,7 +189,7 @@ const captureBracketImage = async (bracketElement: HTMLElement): Promise<HTMLIma
 
   const dataUrl = await htmlToImage.toPng(bracketVisual, {
     quality: 1,
-    pixelRatio: 2,
+    pixelRatio: 2, // High resolution
     width: fullWidth,
     height: fullHeight,
     backgroundColor: '#FFFFFF',
@@ -194,6 +197,7 @@ const captureBracketImage = async (bracketElement: HTMLElement): Promise<HTMLIma
     style: {
       transform: 'scale(1)',
       transformOrigin: 'top left',
+      overflow: 'visible', // Penting agar yang di-scroll ikut ke-capture
     },
     filter: (node) => {
       if (node.nodeName === 'BUTTON') return false;
@@ -221,6 +225,7 @@ const captureBracketImage = async (bracketElement: HTMLElement): Promise<HTMLIma
 /**
  * Temukan container bracket visual yang benar
  */
+
 const findBracketVisual = (element: HTMLElement): HTMLElement | null => {
   console.log('🔍 Searching for bracket visual container...');
   console.log('📦 Root element:', element);
