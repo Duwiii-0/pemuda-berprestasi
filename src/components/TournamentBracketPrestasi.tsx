@@ -819,7 +819,7 @@ const handleExportPDF = async () => {
     const firstRoundHeight = (firstRoundMatches - 1) * baseSpacing + CARD_HEIGHT;
     
     // Tambahkan padding atas dan bawah
-    const totalHeight = firstRoundHeight + 50; // 200px padding atas + 200px padding bawah
+    const totalHeight = firstRoundHeight + 20; // 200px padding atas + 200px padding bawah
     const centerOffset = totalHeight / 2;
     
     return { 
