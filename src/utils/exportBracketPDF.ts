@@ -121,105 +121,113 @@ const addCoverPage = (doc: jsPDF, config: ExportConfig, totalPages: number) => {
 
 const convertElementToImage = async (element: HTMLElement): Promise<HTMLImageElement> => {
   console.log('🎯 Starting bracket capture...');
+  console.log('📦 Original element:', element);
   
-  // ✅ STEP 1: Find the actual bracket container (overflow-x-auto div)
-  const bracketContainer = element.querySelector('.overflow-x-auto') as HTMLElement;
+  // ✅ STEP 1: Find the ACTUAL bracket visual area (with SVG and cards)
+  // Look for the div with 'relative' class that contains SVG and positioned cards
+  let bracketVisual = element.querySelector('.relative') as HTMLElement;
   
-  if (!bracketContainer) {
-    throw new Error('Bracket container not found');
+  // If not found in direct children, search deeper
+  if (!bracketVisual) {
+    const allRelatives = element.querySelectorAll('.relative');
+    // Find the one with SVG inside (that's the bracket)
+    for (const rel of allRelatives) {
+      if (rel.querySelector('svg')) {
+        bracketVisual = rel as HTMLElement;
+        break;
+      }
+    }
   }
   
-  console.log('📦 Found bracket container:', {
-    scrollWidth: bracketContainer.scrollWidth,
-    offsetWidth: bracketContainer.offsetWidth,
-    scrollHeight: bracketContainer.scrollHeight,
-    offsetHeight: bracketContainer.offsetHeight
+  if (!bracketVisual) {
+    console.error('❌ Bracket visual container not found!');
+    throw new Error('Bracket visual container with SVG not found');
+  }
+  
+  console.log('✅ Found bracket visual container');
+  console.log('📏 Bracket dimensions:', {
+    scrollWidth: bracketVisual.scrollWidth,
+    offsetWidth: bracketVisual.offsetWidth,
+    scrollHeight: bracketVisual.scrollHeight,
+    offsetHeight: bracketVisual.offsetHeight,
+    clientWidth: bracketVisual.clientWidth,
+    clientHeight: bracketVisual.clientHeight
   });
 
-  // ✅ STEP 2: Hide ALL unwanted elements
-  const elementsToHide = [
-    // Leaderboard (by ID and class)
-    '#prestasi-leaderboard',
-    '#pemula-leaderboard',
-    '.leaderboard',
-    
-    // Headers, toolbars, buttons
-    'button',
-    '.toolbar',
-    'header',
-    'nav',
-    'aside',
-    
-    // Round labels (sticky headers)
-    '.sticky',
-    
-    // Any grid containers that might contain leaderboard
-    '.lg\\:grid-cols-2',
-    '.grid-cols-1'
-  ];
-
-  const hiddenElements: Array<{ el: HTMLElement; originalDisplay: string }> = [];
+  // ✅ STEP 2: Hide unwanted elements in the ORIGINAL DOM
+  const hiddenElements: Array<{ el: HTMLElement; originalDisplay: string; originalVisibility: string }> = [];
   
-  elementsToHide.forEach(selector => {
-    const elements = element.querySelectorAll(selector);
-    elements.forEach(el => {
-      const htmlEl = el as HTMLElement;
-      hiddenElements.push({
-        el: htmlEl,
-        originalDisplay: htmlEl.style.display
-      });
-      htmlEl.style.display = 'none';
+  // Hide leaderboard sections
+  const leaderboards = document.querySelectorAll('#prestasi-leaderboard, #pemula-leaderboard, [id$="-leaderboard"]');
+  leaderboards.forEach(el => {
+    const htmlEl = el as HTMLElement;
+    hiddenElements.push({
+      el: htmlEl,
+      originalDisplay: htmlEl.style.display,
+      originalVisibility: htmlEl.style.visibility
     });
+    htmlEl.style.display = 'none';
+    htmlEl.style.visibility = 'hidden';
+  });
+
+  // Hide buttons OUTSIDE the bracket
+  const allButtons = document.querySelectorAll('button');
+  allButtons.forEach(btn => {
+    const htmlBtn = btn as HTMLElement;
+    // Only hide if NOT inside the bracket visual
+    if (!bracketVisual.contains(htmlBtn)) {
+      hiddenElements.push({
+        el: htmlBtn,
+        originalDisplay: htmlBtn.style.display,
+        originalVisibility: htmlBtn.style.visibility
+      });
+      htmlBtn.style.display = 'none';
+    }
   });
 
   console.log(`🙈 Hidden ${hiddenElements.length} elements`);
 
-  // ✅ STEP 3: Get the inner bracket visual container
-  const bracketVisual = bracketContainer.querySelector('.relative') as HTMLElement;
-  const targetElement = bracketVisual || bracketContainer;
+  // ✅ STEP 3: Wait a bit for render
+  await new Promise(resolve => setTimeout(resolve, 100));
 
-  // Get actual dimensions including scrollable content
-  const width = targetElement.scrollWidth || targetElement.offsetWidth;
-  const height = targetElement.scrollHeight || targetElement.offsetHeight;
+  // Get actual dimensions
+  const width = Math.max(bracketVisual.scrollWidth, bracketVisual.offsetWidth, 2000);
+  const height = Math.max(bracketVisual.scrollHeight, bracketVisual.offsetHeight, 1000);
 
-  console.log('📐 Target dimensions:', { width, height });
+  console.log('📐 Final dimensions for capture:', { width, height });
 
-  // ✅ STEP 4: Clone and prepare for capture
-  const clone = targetElement.cloneNode(true) as HTMLElement;
-  clone.style.position = 'absolute';
-  clone.style.top = '-99999px';
-  clone.style.left = '0';
-  clone.style.width = `${width}px`;
-  clone.style.height = `${height}px`;
-  clone.style.overflow = 'visible';
-  clone.style.background = '#FFFFFF';
-  clone.style.padding = '20px';
-  
-  // Remove any hidden elements from clone
-  clone.querySelectorAll('button, .sticky').forEach(el => el.remove());
-  
-  document.body.appendChild(clone);
-
-  // ✅ STEP 5: Capture with high quality
+  // ✅ STEP 4: Capture directly (no clone to preserve positioning)
   console.log('📸 Capturing image...');
-  const dataUrl = await htmlToImage.toPng(clone, {
+  const dataUrl = await htmlToImage.toPng(bracketVisual, {
     quality: 1,
-    pixelRatio: 2.5, // Higher quality
-    width: width + 40, // Add padding
-    height: height + 40,
+    pixelRatio: 2,
+    width: width,
+    height: height,
     backgroundColor: '#FFFFFF',
     cacheBust: true,
     style: {
       transform: 'scale(1)',
-      transformOrigin: 'top left'
+      transformOrigin: 'top left',
+      margin: '0',
+      padding: '20px'
+    },
+    filter: (node) => {
+      // Filter out buttons inside bracket
+      if (node.nodeName === 'BUTTON') {
+        return false;
+      }
+      // Filter out sticky headers
+      if ((node as HTMLElement).classList?.contains('sticky')) {
+        return false;
+      }
+      return true;
     }
   });
 
-  // ✅ STEP 6: Cleanup
-  document.body.removeChild(clone);
-  
-  hiddenElements.forEach(({ el, originalDisplay }) => {
+  // ✅ STEP 5: Restore hidden elements
+  hiddenElements.forEach(({ el, originalDisplay, originalVisibility }) => {
     el.style.display = originalDisplay;
+    el.style.visibility = originalVisibility;
   });
 
   console.log('✅ Image captured successfully');
