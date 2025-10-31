@@ -147,8 +147,17 @@ const convertElementToImage = async (element: HTMLElement): Promise<HTMLImageEle
   });
 
   // 🔹 ukur pakai scrollWidth & scrollHeight agar proporsional
-  const width = bracketOnly.scrollWidth;
-  const height = bracketOnly.scrollHeight;
+  // Fallback to offsetWidth/height or getBoundingClientRect to avoid zero dimensions
+  const rect = bracketOnly.getBoundingClientRect();
+  const width = Math.max(bracketOnly.scrollWidth, rect.width, bracketOnly.offsetWidth);
+  const height = Math.max(bracketOnly.scrollHeight, rect.height, bracketOnly.offsetHeight);
+
+  // If dimensions are still zero, throw an error.
+  if (width === 0 || height === 0) {
+    // Restore hidden elements before throwing
+    hiddenEls.forEach(el => (el.style.display = ''));
+    throw new Error(`Failed to calculate bracket dimensions (width or height is 0). Element might be hidden or empty.`);
+  }
 
   // 🔹 clone biar layout-nya utuh dan tidak scrollable
   const clone = bracketOnly.cloneNode(true) as HTMLElement;
