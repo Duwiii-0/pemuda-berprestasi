@@ -133,30 +133,47 @@ const addCoverPage = (doc: jsPDF, config: ExportConfig, totalPages: number) => {
   addHeaderAndFooter(doc, config, 1, totalPages);
 };
 
-// =================================================================================================
-// Convert DOM → Image dengan auto height fix
-// =================================================================================================
 const convertElementToImage = async (element: HTMLElement): Promise<HTMLImageElement> => {
-  const clone = element.cloneNode(true) as HTMLElement;
+  // 🔹 cari container bagan yang sebenarnya
+  const bracketOnly = element.querySelector('.bracket-container') as HTMLElement || element;
+
+  // 🔹 sembunyikan elemen non-bracket (leaderboard, toolbar, dsb)
+  const toHide = element.querySelectorAll('.leaderboard, .toolbar, .header, .round-labels');
+  const hiddenEls: HTMLElement[] = [];
+  toHide.forEach(el => {
+    const htmlEl = el as HTMLElement;
+    htmlEl.style.display = 'none';
+    hiddenEls.push(htmlEl);
+  });
+
+  // 🔹 ukur pakai scrollWidth & scrollHeight agar proporsional
+  const width = bracketOnly.scrollWidth;
+  const height = bracketOnly.scrollHeight;
+
+  // 🔹 clone biar layout-nya utuh dan tidak scrollable
+  const clone = bracketOnly.cloneNode(true) as HTMLElement;
   clone.style.position = 'absolute';
   clone.style.top = '-9999px';
   clone.style.left = '0';
+  clone.style.width = `${width}px`;
+  clone.style.height = `${height}px`;
+  clone.style.overflow = 'visible';
   clone.style.background = '#FFFFFF';
-  clone.style.padding = '0';
   document.body.appendChild(clone);
 
-  // Pastikan tinggi penuh (supaya tidak kepotong)
-  const rect = clone.getBoundingClientRect();
+  // 🔹 render image dari clone dengan ukuran penuh
   const dataUrl = await htmlToImage.toPng(clone, {
     quality: 1,
     pixelRatio: 2,
-    width: rect.width,
-    height: rect.height,
     backgroundColor: '#FFFFFF',
     cacheBust: true,
+    width,
+    height,
   });
 
+  // 🔹 bersihkan setelah render
   document.body.removeChild(clone);
+  hiddenEls.forEach(el => (el.style.display = ''));
 
   const img = new Image();
   img.src = dataUrl;
@@ -221,8 +238,8 @@ export const exportBracketToPDF = async (
 
   const bracketImg = await convertElementToImage(bracketElement);
 
-  // ukuran besar tapi masih aman (tidak crash)
-  const scale = 1.8;
+  // scale sedikit biar pas (1.5x – 1.8x)
+  const scale = 1.6;
   const totalHeight = bracketImg.height * scale;
   const viewHeight = PAGE_HEIGHT - (HEADER_HEIGHT + FOOTER_HEIGHT + 20);
 
