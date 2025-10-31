@@ -272,7 +272,7 @@ const addImageToPage = (
   maxHeight: number
 ) => {
   // ✅ MAKSIMALKAN AREA UNTUK BRACKET
-  const availableHeight = PAGE_HEIGHT - HEADER_HEIGHT - FOOTER_HEIGHT - 5; // Minimal margin
+  const availableHeight = PAGE_HEIGHT - HEADER_HEIGHT - FOOTER_HEIGHT - 5;
   const availableWidth = PAGE_WIDTH - MARGIN_LEFT - MARGIN_RIGHT;
 
   // Create canvas for current page slice
@@ -287,10 +287,10 @@ const addImageToPage = (
   
   ctx.drawImage(
     img,
-    0, sourceY,           // source x, y
-    img.width, sourceHeight, // source width, height
-    0, 0,                 // dest x, y
-    img.width, sourceHeight  // dest width, height
+    0, sourceY,
+    img.width, sourceHeight,
+    0, 0,
+    img.width, sourceHeight
   );
 
   const croppedData = canvas.toDataURL('image/jpeg', 0.95);
@@ -301,42 +301,37 @@ const addImageToPage = (
 
   addHeaderAndFooter(doc, config, pageNumber, totalPages);
 
-  // ✅ STRETCH MAKSIMAL - PRIORITASKAN WIDTH
-  const aspectRatio = canvas.width / canvas.height;
+  // ✅ STRATEGY: Prioritas WIDTH penuh, HEIGHT mengikuti aspect ratio ASLI
+  const originalAspectRatio = canvas.width / canvas.height;
   
-  // Start with full width
+  // Start dengan full width
   let displayWidth = availableWidth;
-  let displayHeight = displayWidth / aspectRatio;
+  let displayHeight = displayWidth / originalAspectRatio; // ✅ KEEP ORIGINAL RATIO
 
-  // If height still too tall, fit to height instead
+  // ✅ ONLY jika height melebihi available, baru scale down
   if (displayHeight > availableHeight) {
     displayHeight = availableHeight;
-    displayWidth = displayHeight * aspectRatio;
+    displayWidth = displayHeight * originalAspectRatio;
     
-    // ✅ PAKSA FULL WIDTH jika masih ada space
-    if (displayWidth < availableWidth) {
-      displayWidth = availableWidth;
-      displayHeight = displayWidth / aspectRatio;
-      
-      // Jika overflow, clamp to available height
-      if (displayHeight > availableHeight) {
-        displayHeight = availableHeight;
-      }
+    // ✅ TAPI jangan sampai width kurang dari 90% available
+    const minWidth = availableWidth * 0.90;
+    if (displayWidth < minWidth) {
+      displayWidth = minWidth;
+      // Height tetap proporsional (tidak dipaksa stretch)
+      displayHeight = displayWidth / originalAspectRatio;
     }
   }
 
-  // ✅ POSISI: Stick to left margin, center vertically
+  // ✅ POSISI: Left-aligned, top-aligned (tidak center vertikal)
   const x = MARGIN_LEFT;
-  const y = HEADER_HEIGHT + ((availableHeight - displayHeight) / 2) + 2;
+  const y = HEADER_HEIGHT + 5; // Minimal spacing dari header
 
-  console.log(`📄 Adding to PDF - Page ${pageNumber}:`, {
-    availableWidth: availableWidth.toFixed(2),
-    availableHeight: availableHeight.toFixed(2),
-    displayWidth: displayWidth.toFixed(2),
-    displayHeight: displayHeight.toFixed(2),
-    fillPercentage: ((displayWidth / availableWidth) * 100).toFixed(1) + '%',
-    x: x.toFixed(2),
-    y: y.toFixed(2)
+  console.log(`📄 Page ${pageNumber}:`, {
+    canvas: `${canvas.width}×${canvas.height}px`,
+    available: `${availableWidth.toFixed(0)}×${availableHeight.toFixed(0)}mm`,
+    display: `${displayWidth.toFixed(0)}×${displayHeight.toFixed(0)}mm`,
+    aspectRatio: originalAspectRatio.toFixed(2),
+    widthUsage: `${((displayWidth/availableWidth)*100).toFixed(1)}%`
   });
 
   doc.addImage(croppedData, 'JPEG', x, y, displayWidth, displayHeight, undefined, 'FAST');
