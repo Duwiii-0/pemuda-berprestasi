@@ -157,51 +157,60 @@ const captureBracketImage = async (bracketElement: HTMLElement): Promise<HTMLIma
   }
 
   console.log('✅ Bracket container found');
-  console.log('📏 Original dimensions:', {
-    width: bracketVisual.scrollWidth,
-    height: bracketVisual.scrollHeight,
+  console.log('📏 Container info:', {
+    scrollWidth: bracketVisual.scrollWidth,
+    scrollHeight: bracketVisual.scrollHeight,
+    offsetWidth: bracketVisual.offsetWidth,
+    offsetHeight: bracketVisual.offsetHeight,
+    className: bracketVisual.className,
   });
 
-  // ✅ STEP 2: Scroll ke paling atas agar header tidak kepotong
+  // ✅ STEP 2: Scroll ke paling atas kiri agar header tidak kepotong
+  const originalScrollTop = bracketVisual.scrollTop;
+  const originalScrollLeft = bracketVisual.scrollLeft;
+  
   bracketVisual.scrollTop = 0;
   bracketVisual.scrollLeft = 0;
-  console.log('📜 Scrolled to top');
+  console.log('📜 Scrolled to top-left');
 
   // ✅ STEP 3: Hide unwanted elements (leaderboard, buttons)
   const hiddenElements = hideUnwantedElements(bracketVisual);
   console.log(`🙈 Hidden ${hiddenElements.length} elements`);
 
   // ✅ STEP 4: Wait for render
-  await new Promise(resolve => setTimeout(resolve, 200));
+  await new Promise(resolve => setTimeout(resolve, 300));
 
-  // ✅ STEP 5: Capture dengan ukuran ASLI
-  const actualWidth = bracketVisual.scrollWidth;
-  const actualHeight = bracketVisual.scrollHeight;
+  // ✅ STEP 5: Capture dengan FULL scrollWidth x scrollHeight
+  // Ini akan capture SEMUA konten, termasuk yang di-scroll
+  const fullWidth = bracketVisual.scrollWidth;
+  const fullHeight = bracketVisual.scrollHeight;
 
-  console.log('📸 Capturing with actual size:', { actualWidth, actualHeight });
+  console.log('📸 Capturing FULL size:', { fullWidth, fullHeight });
 
   const dataUrl = await htmlToImage.toPng(bracketVisual, {
     quality: 1,
-    pixelRatio: 2,
-    width: actualWidth,
-    height: actualHeight,
+    pixelRatio: 2, // High resolution
+    width: fullWidth,
+    height: fullHeight,
     backgroundColor: '#FFFFFF',
     cacheBust: true,
     style: {
       transform: 'scale(1)',
       transformOrigin: 'top left',
+      overflow: 'visible', // Penting agar yang di-scroll ikut ke-capture
     },
     filter: (node) => {
-      // Filter out buttons dan sticky elements
       if (node.nodeName === 'BUTTON') return false;
       if ((node as HTMLElement).classList?.contains('sticky')) return false;
       return true;
     },
   });
 
-  // ✅ STEP 6: Restore hidden elements
+  // ✅ STEP 6: Restore scroll position dan hidden elements
+  bracketVisual.scrollTop = originalScrollTop;
+  bracketVisual.scrollLeft = originalScrollLeft;
   restoreHiddenElements(hiddenElements);
-  console.log('✅ Elements restored');
+  console.log('✅ Elements and scroll restored');
 
   // ✅ STEP 7: Load image
   const img = new Image();
@@ -220,13 +229,45 @@ const findBracketVisual = (element: HTMLElement): HTMLElement | null => {
   console.log('🔍 Searching for bracket visual container...');
   console.log('📦 Root element:', element);
   
-  // Strategy 1: Langsung return element jika sudah SVG container
+  // Strategy 1: Cari container yang punya overflow (biasanya parent dari bracket)
+  const allDivs = element.querySelectorAll('div');
+  let candidates: HTMLElement[] = [];
+  
+  for (const div of allDivs) {
+    const htmlDiv = div as HTMLElement;
+    const style = window.getComputedStyle(htmlDiv);
+    
+    // Cari div yang punya overflow-x auto atau scroll (biasanya bracket container)
+    if (style.overflowX === 'auto' || style.overflowX === 'scroll') {
+      const hasSvg = htmlDiv.querySelector('svg');
+      const hasCards = htmlDiv.querySelectorAll('[class*="absolute"]').length > 0;
+      
+      if (hasSvg && hasCards) {
+        candidates.push(htmlDiv);
+        console.log('✅ Found overflow container with SVG + cards');
+      }
+    }
+  }
+  
+  // Pilih container terbesar (biasanya yang paling outer)
+  if (candidates.length > 0) {
+    candidates.sort((a, b) => {
+      const areaA = a.scrollWidth * a.scrollHeight;
+      const areaB = b.scrollWidth * b.scrollHeight;
+      return areaB - areaA;
+    });
+    
+    console.log(`✅ Selected largest container: ${candidates[0].scrollWidth}x${candidates[0].scrollHeight}`);
+    return candidates[0];
+  }
+  
+  // Strategy 2: Langsung return element jika sudah SVG container
   if (element.querySelector('svg')) {
     console.log('✅ Root element has SVG, using it directly');
     return element;
   }
   
-  // Strategy 2: Cari div dengan SVG dan cards
+  // Strategy 3: Cari div dengan SVG dan cards
   const allRelatives = element.querySelectorAll('.relative');
   console.log(`📋 Found ${allRelatives.length} .relative elements`);
   
@@ -240,40 +281,9 @@ const findBracketVisual = (element: HTMLElement): HTMLElement | null => {
     }
   }
 
-  // Strategy 3: Cari container terbesar dengan SVG
-  let maxArea = 0;
-  let largest: HTMLElement | null = null;
-
-  for (const rel of allRelatives) {
-    if (rel.querySelector('svg')) {
-      const htmlRel = rel as HTMLElement;
-      const area = htmlRel.offsetWidth * htmlRel.offsetHeight;
-      console.log(`📐 Found SVG container: ${area}px area`);
-      if (area > maxArea) {
-        maxArea = area;
-        largest = htmlRel;
-      }
-    }
-  }
-
-  if (largest) {
-    console.log('✅ Using largest SVG container');
-    return largest;
-  }
-
-  // Strategy 4: Fallback - cari semua div dengan overflow
-  const allDivs = element.querySelectorAll('div');
-  for (const div of allDivs) {
-    if (div.querySelector('svg')) {
-      console.log('✅ Found SVG in div (fallback)');
-      return div as HTMLElement;
-    }
-  }
-
-  console.error('❌ No bracket visual container found with any strategy');
+  console.error('❌ No bracket visual container found');
   return null;
 };
-
 /**
  * Hide unwanted elements (leaderboard, external buttons)
  */
