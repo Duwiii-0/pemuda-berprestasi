@@ -16,9 +16,9 @@ interface ExportConfig {
 const PAGE_WIDTH = 297;
 const PAGE_HEIGHT = 210;
 const MARGIN_TOP = 15;
-const MARGIN_BOTTOM = 15;
-const MARGIN_LEFT = 15;
-const MARGIN_RIGHT = 15;
+const MARGIN_BOTTOM = 10; // ✅ Reduced
+const MARGIN_LEFT = 10;   // ✅ Reduced from 15
+const MARGIN_RIGHT = 10;  // ✅ Reduced from 15
 const HEADER_HEIGHT = 18;
 const FOOTER_HEIGHT = 10;
 
@@ -254,7 +254,8 @@ const addImageToPage = (
   yOffset: number,
   maxHeight: number
 ) => {
-  const availableHeight = PAGE_HEIGHT - HEADER_HEIGHT - FOOTER_HEIGHT - MARGIN_TOP - MARGIN_BOTTOM - 10;
+  // ✅ MAKSIMALKAN AREA UNTUK BRACKET
+  const availableHeight = PAGE_HEIGHT - HEADER_HEIGHT - FOOTER_HEIGHT - 5; // Minimal margin
   const availableWidth = PAGE_WIDTH - MARGIN_LEFT - MARGIN_RIGHT;
 
   // Create canvas for current page slice
@@ -283,24 +284,40 @@ const addImageToPage = (
 
   addHeaderAndFooter(doc, config, pageNumber, totalPages);
 
-  // Calculate aspect ratio and stretch
+  // ✅ STRETCH MAKSIMAL - PRIORITASKAN WIDTH
   const aspectRatio = canvas.width / canvas.height;
+  
+  // Start with full width
   let displayWidth = availableWidth;
   let displayHeight = displayWidth / aspectRatio;
 
-  // If height exceeds available space, scale down
+  // If height still too tall, fit to height instead
   if (displayHeight > availableHeight) {
     displayHeight = availableHeight;
     displayWidth = displayHeight * aspectRatio;
+    
+    // ✅ PAKSA FULL WIDTH jika masih ada space
+    if (displayWidth < availableWidth) {
+      displayWidth = availableWidth;
+      displayHeight = displayWidth / aspectRatio;
+      
+      // Jika overflow, clamp to available height
+      if (displayHeight > availableHeight) {
+        displayHeight = availableHeight;
+      }
+    }
   }
 
-  // Center the image
-  const x = (PAGE_WIDTH - displayWidth) / 2;
-  const y = HEADER_HEIGHT + MARGIN_TOP;
+  // ✅ POSISI: Stick to left margin, center vertically
+  const x = MARGIN_LEFT;
+  const y = HEADER_HEIGHT + ((availableHeight - displayHeight) / 2) + 2;
 
   console.log(`📄 Adding to PDF - Page ${pageNumber}:`, {
+    availableWidth: availableWidth.toFixed(2),
+    availableHeight: availableHeight.toFixed(2),
     displayWidth: displayWidth.toFixed(2),
     displayHeight: displayHeight.toFixed(2),
+    fillPercentage: ((displayWidth / availableWidth) * 100).toFixed(1) + '%',
     x: x.toFixed(2),
     y: y.toFixed(2)
   });
