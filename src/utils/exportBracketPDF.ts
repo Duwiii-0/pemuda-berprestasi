@@ -18,15 +18,18 @@ const getOptimalPageSize = (participantCount: number): { width: number; height: 
   if (participantCount <= 4) {
     // Small bracket - A4 Landscape cukup
     return { width: 297, height: 210, format: 'A4 Landscape' };
-  } else if (participantCount <= 8) {
+  } else if (participantCount <= 6) {
     // Medium bracket - A3 Landscape
     return { width: 420, height: 297, format: 'A3 Landscape' };
-  } else if (participantCount <= 16) {
-    // Large bracket - A2 Landscape
+  } else if (participantCount <= 12) {
+    // Large bracket - A2 Landscape (8-12 peserta butuh ini!)
     return { width: 594, height: 420, format: 'A2 Landscape' };
-  } else {
-    // Very large bracket - A1 Landscape (atau custom super wide)
+  } else if (participantCount <= 24) {
+    // Very large bracket - A1 Landscape
     return { width: 841, height: 594, format: 'A1 Landscape' };
+  } else {
+    // Massive bracket - A0 Landscape (banner size!)
+    return { width: 1189, height: 841, format: 'A0 Landscape' };
   }
 };
 
