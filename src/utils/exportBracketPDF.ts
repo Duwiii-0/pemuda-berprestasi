@@ -17,8 +17,8 @@ const PAGE_WIDTH = 297;
 const PAGE_HEIGHT = 210;
 const MARGIN_TOP = 15;
 const MARGIN_BOTTOM = 15;
-const MARGIN_LEFT = 20;
-const MARGIN_RIGHT = 20;
+const MARGIN_LEFT = 15;
+const MARGIN_RIGHT = 15;
 const HEADER_HEIGHT = 18;
 const FOOTER_HEIGHT = 10;
 
@@ -116,92 +116,188 @@ const addCoverPage = (doc: jsPDF, config: ExportConfig, totalPages: number) => {
 };
 
 // =================================================================================================
-// DOM-TO-IMAGE: CLEAN BRACKET CAPTURE
+// DOM-TO-IMAGE: CLEAN BRACKET CAPTURE (ONLY BRACKET, NO LEADERBOARD)
 // =================================================================================================
 
 const convertElementToImage = async (element: HTMLElement): Promise<HTMLImageElement> => {
-  // Ambil container bracket terluas
-  const bracketOnly = (() => {
-    const allDivs = Array.from(element.querySelectorAll('div')) as HTMLElement[];
-    return allDivs.reduce((max, el) =>
-      el.scrollWidth > max.scrollWidth ? el : max, element
-    );
-  })();
-
-  // Sembunyikan elemen non-bagan
-  const toHide = element.querySelectorAll('.leaderboard, .toolbar, .header, .round-labels, aside, nav');
-  const hiddenEls: HTMLElement[] = [];
-  toHide.forEach(el => {
-    const htmlEl = el as HTMLElement;
-    htmlEl.style.display = 'none';
-    hiddenEls.push(htmlEl);
+  console.log('🎯 Starting bracket capture...');
+  
+  // ✅ STEP 1: Find the actual bracket container (overflow-x-auto div)
+  const bracketContainer = element.querySelector('.overflow-x-auto') as HTMLElement;
+  
+  if (!bracketContainer) {
+    throw new Error('Bracket container not found');
+  }
+  
+  console.log('📦 Found bracket container:', {
+    scrollWidth: bracketContainer.scrollWidth,
+    offsetWidth: bracketContainer.offsetWidth,
+    scrollHeight: bracketContainer.scrollHeight,
+    offsetHeight: bracketContainer.offsetHeight
   });
 
-  const width = bracketOnly.scrollWidth || bracketOnly.offsetWidth;
-  const height = bracketOnly.scrollHeight || bracketOnly.offsetHeight;
+  // ✅ STEP 2: Hide ALL unwanted elements
+  const elementsToHide = [
+    // Leaderboard (by ID and class)
+    '#prestasi-leaderboard',
+    '#pemula-leaderboard',
+    '.leaderboard',
+    
+    // Headers, toolbars, buttons
+    'button',
+    '.toolbar',
+    'header',
+    'nav',
+    'aside',
+    
+    // Round labels (sticky headers)
+    '.sticky',
+    
+    // Any grid containers that might contain leaderboard
+    '.lg\\:grid-cols-2',
+    '.grid-cols-1'
+  ];
 
-  const clone = bracketOnly.cloneNode(true) as HTMLElement;
+  const hiddenElements: Array<{ el: HTMLElement; originalDisplay: string }> = [];
+  
+  elementsToHide.forEach(selector => {
+    const elements = element.querySelectorAll(selector);
+    elements.forEach(el => {
+      const htmlEl = el as HTMLElement;
+      hiddenElements.push({
+        el: htmlEl,
+        originalDisplay: htmlEl.style.display
+      });
+      htmlEl.style.display = 'none';
+    });
+  });
+
+  console.log(`🙈 Hidden ${hiddenElements.length} elements`);
+
+  // ✅ STEP 3: Get the inner bracket visual container
+  const bracketVisual = bracketContainer.querySelector('.relative') as HTMLElement;
+  const targetElement = bracketVisual || bracketContainer;
+
+  // Get actual dimensions including scrollable content
+  const width = targetElement.scrollWidth || targetElement.offsetWidth;
+  const height = targetElement.scrollHeight || targetElement.offsetHeight;
+
+  console.log('📐 Target dimensions:', { width, height });
+
+  // ✅ STEP 4: Clone and prepare for capture
+  const clone = targetElement.cloneNode(true) as HTMLElement;
   clone.style.position = 'absolute';
-  clone.style.top = '-9999px';
+  clone.style.top = '-99999px';
   clone.style.left = '0';
   clone.style.width = `${width}px`;
   clone.style.height = `${height}px`;
   clone.style.overflow = 'visible';
   clone.style.background = '#FFFFFF';
+  clone.style.padding = '20px';
+  
+  // Remove any hidden elements from clone
+  clone.querySelectorAll('button, .sticky').forEach(el => el.remove());
+  
   document.body.appendChild(clone);
 
+  // ✅ STEP 5: Capture with high quality
+  console.log('📸 Capturing image...');
   const dataUrl = await htmlToImage.toPng(clone, {
     quality: 1,
-    pixelRatio: 2,
-    width,
-    height,
+    pixelRatio: 2.5, // Higher quality
+    width: width + 40, // Add padding
+    height: height + 40,
     backgroundColor: '#FFFFFF',
+    cacheBust: true,
+    style: {
+      transform: 'scale(1)',
+      transformOrigin: 'top left'
+    }
   });
 
+  // ✅ STEP 6: Cleanup
   document.body.removeChild(clone);
-  hiddenEls.forEach(el => (el.style.display = ''));
+  
+  hiddenElements.forEach(({ el, originalDisplay }) => {
+    el.style.display = originalDisplay;
+  });
+
+  console.log('✅ Image captured successfully');
 
   const img = new Image();
   img.src = dataUrl;
   await new Promise(resolve => (img.onload = resolve));
+  
+  console.log('🖼️ Image loaded:', { width: img.width, height: img.height });
+  
   return img;
 };
 
 // =================================================================================================
-// ADD IMAGE TO PAGE (SPLIT IF NEEDED)
+// ADD IMAGE TO PAGE (STRETCHED TO FIT)
 // =================================================================================================
 
 const addImageToPage = (
   doc: jsPDF,
   img: HTMLImageElement,
   config: ExportConfig,
-  yStart: number,
-  scale: number,
   pageNumber: number,
-  totalPages: number
+  totalPages: number,
+  yOffset: number,
+  maxHeight: number
 ) => {
+  const availableHeight = PAGE_HEIGHT - HEADER_HEIGHT - FOOTER_HEIGHT - MARGIN_TOP - MARGIN_BOTTOM - 10;
+  const availableWidth = PAGE_WIDTH - MARGIN_LEFT - MARGIN_RIGHT;
+
+  // Create canvas for current page slice
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d')!;
-  const scaledHeight = PAGE_HEIGHT - (HEADER_HEIGHT + FOOTER_HEIGHT + 20);
-
-  const cropY = yStart / scale;
-  const cropHeight = scaledHeight / scale;
+  
+  const sourceY = yOffset;
+  const sourceHeight = Math.min(maxHeight, img.height - yOffset);
+  
   canvas.width = img.width;
-  canvas.height = Math.min(img.height - cropY, cropHeight);
-  ctx.drawImage(img, 0, cropY, img.width, canvas.height, 0, 0, img.width, canvas.height);
+  canvas.height = sourceHeight;
+  
+  ctx.drawImage(
+    img,
+    0, sourceY,           // source x, y
+    img.width, sourceHeight, // source width, height
+    0, 0,                 // dest x, y
+    img.width, sourceHeight  // dest width, height
+  );
 
-  const croppedData = canvas.toDataURL('image/jpeg', 1.0);
+  const croppedData = canvas.toDataURL('image/jpeg', 0.95);
+
+  // Draw white background
   doc.setFillColor('#FFFFFF');
   doc.rect(0, 0, PAGE_WIDTH, PAGE_HEIGHT, 'F');
 
   addHeaderAndFooter(doc, config, pageNumber, totalPages);
 
-  const displayWidth = PAGE_WIDTH - 2 * MARGIN_LEFT;
-  const displayHeight = (canvas.height * displayWidth) / img.width;
-  const x = MARGIN_LEFT;
-  const y = HEADER_HEIGHT + 8;
+  // Calculate aspect ratio and stretch
+  const aspectRatio = canvas.width / canvas.height;
+  let displayWidth = availableWidth;
+  let displayHeight = displayWidth / aspectRatio;
 
-  doc.addImage(croppedData, 'JPEG', x, y, displayWidth, displayHeight);
+  // If height exceeds available space, scale down
+  if (displayHeight > availableHeight) {
+    displayHeight = availableHeight;
+    displayWidth = displayHeight * aspectRatio;
+  }
+
+  // Center the image
+  const x = (PAGE_WIDTH - displayWidth) / 2;
+  const y = HEADER_HEIGHT + MARGIN_TOP;
+
+  console.log(`📄 Adding to PDF - Page ${pageNumber}:`, {
+    displayWidth: displayWidth.toFixed(2),
+    displayHeight: displayHeight.toFixed(2),
+    x: x.toFixed(2),
+    y: y.toFixed(2)
+  });
+
+  doc.addImage(croppedData, 'JPEG', x, y, displayWidth, displayHeight, undefined, 'FAST');
 };
 
 // =================================================================================================
@@ -209,7 +305,8 @@ const addImageToPage = (
 // =================================================================================================
 
 export const exportBracketToPDF = async (kelasData: any, bracketElement: HTMLElement): Promise<void> => {
-  // inline transformBracketDataForPDF agar tidak error saat build
+  console.log('🚀 Starting PDF export...');
+  
   const config: ExportConfig = {
     eventName: kelasData.kompetisi.nama_event,
     categoryName: `${kelasData.kelompok?.nama_kelompok || ''} ${
@@ -225,34 +322,61 @@ export const exportBracketToPDF = async (kelasData: any, bracketElement: HTMLEle
   };
 
   try {
-    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4', compress: true });
+    const doc = new jsPDF({ 
+      orientation: 'landscape', 
+      unit: 'mm', 
+      format: 'a4', 
+      compress: true 
+    });
     doc.deletePage(1);
 
+    // Capture bracket image
     const bracketImg = await convertElementToImage(bracketElement);
 
-    // auto scale supaya bracket pas (tidak terlalu kecil)
-    const scale = 1.8;
-    const totalHeight = bracketImg.height * scale;
-    const viewHeight = PAGE_HEIGHT - (HEADER_HEIGHT + FOOTER_HEIGHT + 20);
-    const totalSlices = Math.ceil(totalHeight / viewHeight);
-    const totalPages = totalSlices + 1;
+    // Calculate how many pages needed
+    const maxHeightPerPage = PAGE_HEIGHT - HEADER_HEIGHT - FOOTER_HEIGHT - MARGIN_TOP - MARGIN_BOTTOM - 10;
+    const pxPerMm = bracketImg.height / maxHeightPerPage;
+    const maxPixelsPerPage = Math.floor(maxHeightPerPage * pxPerMm);
+    
+    const totalSlices = Math.ceil(bracketImg.height / maxPixelsPerPage);
+    const totalPages = totalSlices + 1; // +1 for cover
 
+    console.log('📊 PDF Structure:', {
+      imageHeight: bracketImg.height,
+      maxPixelsPerPage,
+      totalSlices,
+      totalPages
+    });
+
+    // Add cover page
     doc.addPage();
     addCoverPage(doc, config, totalPages);
 
-    let yStart = 0;
+    // Add bracket pages
+    let yOffset = 0;
     for (let i = 0; i < totalSlices; i++) {
       doc.addPage();
-      addImageToPage(doc, bracketImg, config, yStart, scale, i + 2, totalPages);
-      yStart += viewHeight;
+      addImageToPage(
+        doc, 
+        bracketImg, 
+        config, 
+        i + 2, // Page number (after cover)
+        totalPages,
+        yOffset,
+        maxPixelsPerPage
+      );
+      yOffset += maxPixelsPerPage;
     }
 
+    // Save PDF
     const dateStr = new Date().toISOString().split('T')[0];
     const filename = `Bracket_${config.eventName.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_${config.categoryName.replace(/ /g, '_')}_${dateStr}.pdf`;
+    
     doc.save(filename);
+    console.log('✅ PDF saved:', filename);
 
   } catch (error) {
     console.error('❌ Error exporting PDF:', error);
-    alert('Gagal membuat PDF. Cek console untuk detail.');
+    throw error;
   }
 };
