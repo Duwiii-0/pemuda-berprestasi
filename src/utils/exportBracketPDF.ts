@@ -106,6 +106,7 @@ const renderHeader = (doc: jsPDF, config: ExportConfig): void => {
 /**
  * Scale down cards untuk prestasi agar final lebih terlihat
  */
+
 const scaleDownCards = (
   bracketVisual: HTMLElement
 ): Array<{ el: HTMLElement; originalTransform: string }> => {
@@ -122,8 +123,7 @@ const scaleDownCards = (
         el: htmlCard,
         originalTransform: htmlCard.style.transform,
       });
-      // Scale ke 80% agar lebih kecil
-      htmlCard.style.transform = `${htmlCard.style.transform || ''} scale(0.80)`;
+      htmlCard.style.transform = `${htmlCard.style.transform || ''} scale(0.85)`;
       htmlCard.style.transformOrigin = 'center';
     }
   });
@@ -182,17 +182,17 @@ const captureBracketImage = async (bracketElement: HTMLElement): Promise<HTMLIma
 
   // ✅ STEP 2.5: Perkecil card untuk prestasi
   const scaledCards = scaleDownCards(captureTarget);
-  console.log(`📏 Scaled ${scaledCards.length} cards to 80%`);
+  console.log(`📏 Scaled ${scaledCards.length} cards to 85%`);
 
   // ✅ STEP 3: Wait for render
   await new Promise(resolve => setTimeout(resolve, 200));
 
-  // ✅ STEP 4: Capture dengan ukuran DIPERBESAR secara horizontal
+  // ✅ STEP 4: Capture dengan ukuran 1.4x secara horizontal (TIDAK 1.8x!)
   const actualWidth = captureTarget.scrollWidth;
   const actualHeight = captureTarget.scrollHeight;
 
-  // Perbesar canvas 1.8x secara horizontal untuk capture final
-  const captureWidth = Math.floor(actualWidth * 1.8);
+  // Perbesar canvas 1.4x secara horizontal untuk prestasi
+  const captureWidth = Math.floor(actualWidth * 1.4);
   const captureHeight = actualHeight;
 
   console.log('📸 Capturing with enlarged size:', { captureWidth, captureHeight });
@@ -216,6 +216,7 @@ const captureBracketImage = async (bracketElement: HTMLElement): Promise<HTMLIma
     },
   });
 
+  // ✅ STEP 5: Restore cards dan hidden elements
   restoreCards(scaledCards);
   restoreHiddenElements(hiddenElements);
   console.log('✅ Elements restored');
