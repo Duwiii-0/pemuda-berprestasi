@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Trophy, Edit3, ArrowLeft, AlertTriangle, RefreshCw, Download, Shuffle, CheckCircle } from 'lucide-react';
-import { exportBracketToPDF, transformBracketDataForPDF } from '../utils/exportBracketPDF';
+import { exportBracketToPDF } from '../utils/exportBracketPDF';
 import { useAuth } from '../context/authContext';
 
 interface Peserta {
@@ -178,15 +178,8 @@ const handleExportPDF = async () => {
       throw new Error('Bracket element not found');
     }
 
-    const pdfConfig = transformBracketDataForPDF(
-      kelasData,
-      matches,
-      prestasiLeaderboard,
-      false
-    );
-
     // Pass DOM elements to export function
-    await exportBracketToPDF(pdfConfig, bracketElement, leaderboardElement || undefined);
+    await exportBracketToPDF(kelasData, bracketRef.current!)
 
     showNotification(
       'success',
