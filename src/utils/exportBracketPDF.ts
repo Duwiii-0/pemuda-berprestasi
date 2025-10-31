@@ -139,22 +139,43 @@ const addCoverPage = (doc: jsPDF, config: ExportConfig, totalPages: number) => {
 // DOM-TO-IMAGE: CLEAN BRACKET CAPTURE (ONLY BRACKET, NO LEADERBOARD)
 // =================================================================================================
 
+// =================================================================================================
+// DOM-TO-IMAGE: CLEAN BRACKET CAPTURE (ONLY BRACKET, NO LEADERBOARD)
+// =================================================================================================
+
 const convertElementToImage = async (element: HTMLElement): Promise<HTMLImageElement> => {
   console.log('🎯 Starting bracket capture...');
   console.log('📦 Original element:', element);
   
   // ✅ STEP 1: Find the ACTUAL bracket visual area (with SVG and cards)
-  // Look for the div with 'relative' class that contains SVG and positioned cards
-  let bracketVisual = element.querySelector('.relative') as HTMLElement;
+  // PERBAIKAN: Untuk bracket pemula/prestasi, cari container yang paling tepat
+  let bracketVisual: HTMLElement | null = null;
   
-  // If not found in direct children, search deeper
+  // Strategy 1: Cari div yang punya SVG dan match cards
+  const allRelatives = element.querySelectorAll('.relative');
+  for (const rel of allRelatives) {
+    const svg = rel.querySelector('svg');
+    const cards = rel.querySelectorAll('[class*="absolute"]'); // Match cards
+    
+    // Bracket visual biasanya punya SVG DAN cards yang positioned absolute
+    if (svg && cards.length > 0) {
+      bracketVisual = rel as HTMLElement;
+      console.log('✅ Found bracket via SVG + cards:', cards.length, 'cards');
+      break;
+    }
+  }
+  
+  // Strategy 2: Kalau belum ketemu, cari yang paling besar dengan SVG
   if (!bracketVisual) {
-    const allRelatives = element.querySelectorAll('.relative');
-    // Find the one with SVG inside (that's the bracket)
+    let maxArea = 0;
     for (const rel of allRelatives) {
       if (rel.querySelector('svg')) {
-        bracketVisual = rel as HTMLElement;
-        break;
+        const htmlRel = rel as HTMLElement;
+        const area = htmlRel.offsetWidth * htmlRel.offsetHeight;
+        if (area > maxArea) {
+          maxArea = area;
+          bracketVisual = htmlRel;
+        }
       }
     }
   }
@@ -210,17 +231,17 @@ const convertElementToImage = async (element: HTMLElement): Promise<HTMLImageEle
   // ✅ STEP 3: Wait a bit for render
   await new Promise(resolve => setTimeout(resolve, 100));
 
-  // Get actual dimensions
-  const width = Math.max(bracketVisual.scrollWidth, bracketVisual.offsetWidth, 2000);
-  const height = Math.max(bracketVisual.scrollHeight, bracketVisual.offsetHeight, 1000);
+  // ✅ SUPER BESAR canvas untuk bracket prestasi yang kompleks
+  const width = Math.max(bracketVisual.scrollWidth, bracketVisual.offsetWidth, 4000); // ⬆️ 2000 → 4000
+  const height = Math.max(bracketVisual.scrollHeight, bracketVisual.offsetHeight, 2500); // ⬆️ 1000 → 2500
 
   console.log('📐 Final dimensions for capture:', { width, height });
 
-  // ✅ STEP 4: Capture directly (no clone to preserve positioning)
+  // ✅ STEP 4: Capture dengan resolusi SUPER TINGGI
   console.log('📸 Capturing image...');
   const dataUrl = await htmlToImage.toPng(bracketVisual, {
     quality: 1,
-    pixelRatio: 2,
+    pixelRatio: 3, // ⬆️ 2 → 3 untuk detail lebih tajam
     width: width,
     height: height,
     backgroundColor: '#FFFFFF',
@@ -229,7 +250,7 @@ const convertElementToImage = async (element: HTMLElement): Promise<HTMLImageEle
       transform: 'scale(1)',
       transformOrigin: 'top left',
       margin: '0',
-      padding: '20px'
+      padding: '40px' // ⬆️ 20px → 40px untuk spacing lebih lapang
     },
     filter: (node) => {
       // Filter out buttons inside bracket
