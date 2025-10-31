@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Trophy, Edit3, Save, CheckCircle, ArrowLeft, AlertTriangle, RefreshCw, Download, Shuffle } from 'lucide-react';
-import { exportBracketToPDF } from '../utils/exportBracketPDF';
+import { exportBracketFromData } from '../utils/exportBracketPDF';
 import { useAuth } from '../context/authContext';
 
 interface Peserta {
@@ -761,59 +761,47 @@ else {
     return leaderboard;
   };
 
-  const handleExportPDF = async () => {
-    if (!kelasData || matches.length === 0) {
-      showNotification(
-        'warning',
-        'Tidak Dapat Export',
-        'Bracket belum dibuat atau tidak ada data untuk di-export.',
-        () => setShowModal(false)
-      );
-      return;
+const handleExportPDF = async () => {
+  if (!kelasData || matches.length === 0) {
+    showNotification(
+      'warning',
+      'Tidak Dapat Export',
+      'Bracket belum dibuat atau tidak ada data untuk di-export.',
+      () => setShowModal(false)
+    );
+    return;
+  }
+
+  setExportingPDF(true);
+
+  try {
+    const bracketElement = bracketRef.current;
+
+    if (!bracketElement) {
+      throw new Error('Bracket element not found');
     }
 
-    setExportingPDF(true);
+    // ✅ FIXED: Gunakan fungsi yang benar
+    await exportBracketFromData(kelasData, bracketElement);
 
-    try {
-      const bracketElement = bracketRef.current;
-      const leaderboardElement = leaderboardRef.current;
-
-      if (!bracketElement) {
-        throw new Error('Bracket element not found');
-      }
-
-      // Transform leaderboard untuk PDF
-      const pdfLeaderboard = leaderboard ? {
-        first: null,
-        second: null,
-        third: [
-          ...leaderboard.gold.map(p => ({ name: p.name, dojo: p.dojo, id: p.id })),
-          ...leaderboard.silver.map(p => ({ name: p.name, dojo: p.dojo, id: p.id })),
-          ...leaderboard.bronze.map(p => ({ name: p.name, dojo: p.dojo, id: p.id }))
-        ]
-      } : null;
-
-      await exportBracketToPDF(kelasData, bracketRef.current!)
-
-      showNotification(
-        'success',
-        'Berhasil!',
-        'PDF bracket berhasil didownload!',
-        () => setShowModal(false)
-      );
-    } catch (error: any) {
-      console.error('❌ Error exporting PDF:', error);
-      showNotification(
-        'error',
-        'Gagal Export PDF',
-        error.message || 'Terjadi kesalahan saat membuat PDF.',
-        () => setShowModal(false)
-      );
-    } finally {
-      setExportingPDF(false);
-    }
-  };
-
+    showNotification(
+      'success',
+      'Berhasil!',
+      'PDF bracket berhasil didownload!',
+      () => setShowModal(false)
+    );
+  } catch (error: any) {
+    console.error('❌ Error exporting PDF:', error);
+    showNotification(
+      'error',
+      'Gagal Export PDF',
+      error.message || 'Terjadi kesalahan saat membuat PDF.',
+      () => setShowModal(false)
+    );
+  } finally {
+    setExportingPDF(false);
+  }
+};
   const leaderboard = generateLeaderboard();
 
 return (

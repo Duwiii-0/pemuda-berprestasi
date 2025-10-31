@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Trophy, Edit3, ArrowLeft, AlertTriangle, RefreshCw, Download, Shuffle, CheckCircle } from 'lucide-react';
-import { exportBracketToPDF } from '../utils/exportBracketPDF';
+import { exportBracketFromData } from '../utils/exportBracketPDF';
 import { useAuth } from '../context/authContext';
 
 interface Peserta {
@@ -170,16 +170,14 @@ const handleExportPDF = async () => {
   setExportingPDF(true);
 
   try {
-    // Get DOM elements
     const bracketElement = bracketRef.current;
-    const leaderboardElement = document.getElementById('prestasi-leaderboard');
 
     if (!bracketElement) {
       throw new Error('Bracket element not found');
     }
 
-    // Pass DOM elements to export function
-    await exportBracketToPDF(kelasData, bracketRef.current!)
+    // ✅ FIXED: Gunakan fungsi yang benar dengan parameter yang tepat
+    await exportBracketFromData(kelasData, bracketElement);
 
     showNotification(
       'success',
