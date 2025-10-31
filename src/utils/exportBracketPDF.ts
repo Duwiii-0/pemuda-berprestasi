@@ -28,8 +28,8 @@ const PAGE_CONFIG = {
     LEFT: 10,
     RIGHT: 10,
   },
-  HEADER_HEIGHT: 20,
-  FOOTER_HEIGHT: 8,
+  HEADER_HEIGHT: 25,
+  FOOTER_HEIGHT: 0,
 } as const;
 
 // =================================================================================================
@@ -193,6 +193,48 @@ const captureBracketImage = async (bracketElement: HTMLElement): Promise<HTMLIma
   restoreHiddenElements(hiddenElements);
   console.log('✅ Elements restored');
 
+  // =================================================================================================
+// HELPER: SCALE DOWN CARDS
+// =================================================================================================
+
+/**
+ * Scale down cards untuk prestasi agar final lebih terlihat
+ */
+const scaleDownCards = (
+  bracketVisual: HTMLElement
+): Array<{ el: HTMLElement; originalTransform: string }> => {
+  const scaledCards: Array<{ el: HTMLElement; originalTransform: string }> = [];
+
+  // Cari semua card di bracket
+  const cards = bracketVisual.querySelectorAll('[class*="absolute"]');
+  
+  cards.forEach((card) => {
+    const htmlCard = card as HTMLElement;
+    // Hanya scale card yang berisi participant info (bukan SVG lines)
+    if (htmlCard.querySelector('[class*="bg-white"], [class*="border"]')) {
+      scaledCards.push({
+        el: htmlCard,
+        originalTransform: htmlCard.style.transform,
+      });
+      htmlCard.style.transform = `${htmlCard.style.transform || ''} scale(0.85)`;
+      htmlCard.style.transformOrigin = 'center';
+    }
+  });
+
+  return scaledCards;
+};
+
+/**
+ * Restore cards ke ukuran semula
+ */
+const restoreCards = (
+  scaledCards: Array<{ el: HTMLElement; originalTransform: string }>
+): void => {
+  scaledCards.forEach(({ el, originalTransform }) => {
+    el.style.transform = originalTransform;
+  });
+};
+
   // ✅ STEP 6: Load image
   const img = new Image();
   img.src = dataUrl;
@@ -332,26 +374,36 @@ const addImageToPDF = (
   img: HTMLImageElement,
   config: ExportConfig
 ): void => {
-  // ✅ Hitung area konten yang tersedia (exclude header & footer)
-  const availableWidth = PAGE_CONFIG.WIDTH - PAGE_CONFIG.MARGIN.LEFT - PAGE_CONFIG.MARGIN.RIGHT;
-  const availableHeight =
+  // ✅ Hitung area konten untuk halaman PERTAMA (ada header)
+  const firstPageAvailableHeight =
     PAGE_CONFIG.HEIGHT -
     PAGE_CONFIG.HEADER_HEIGHT -
-    PAGE_CONFIG.FOOTER_HEIGHT -
     PAGE_CONFIG.MARGIN.TOP -
     PAGE_CONFIG.MARGIN.BOTTOM;
 
-  console.log('📐 Available area per page:', { availableWidth, availableHeight });
+  // ✅ Hitung area konten untuk halaman SELANJUTNYA (tanpa margin, full page)
+  const nextPagesAvailableHeight = PAGE_CONFIG.HEIGHT;
+
+  const availableWidth = PAGE_CONFIG.WIDTH - PAGE_CONFIG.MARGIN.LEFT - PAGE_CONFIG.MARGIN.RIGHT;
+
+  console.log('📐 Available area:', {
+    firstPage: firstPageAvailableHeight,
+    nextPages: nextPagesAvailableHeight,
+    width: availableWidth,
+  });
 
   // ✅ Hitung scale agar image fit dengan width halaman
   const imageAspectRatio = img.width / img.height;
   const displayWidth = availableWidth;
   const displayHeight = displayWidth / imageAspectRatio;
 
-  console.log('🎨 Display size per page:', { displayWidth, displayHeight: displayHeight.toFixed(2) });
+  console.log('🎨 Display size:', { displayWidth, displayHeight: displayHeight.toFixed(2) });
 
   // ✅ Hitung berapa banyak halaman yang dibutuhkan
-  const totalPages = Math.ceil(displayHeight / availableHeight);
+  const remainingHeight = displayHeight - firstPageAvailableHeight;
+  const additionalPages = remainingHeight > 0 ? Math.ceil(remainingHeight / nextPagesAvailableHeight) : 0;
+  const totalPages = 1 + additionalPages;
+
   console.log(`📄 Total pages needed: ${totalPages}`);
 
   // ✅ Buat canvas untuk slicing
@@ -359,28 +411,40 @@ const addImageToPDF = (
   const ctx = canvas.getContext('2d')!;
   canvas.width = img.width;
 
+  let accumulatedDisplayHeight = 0;
+
   // ✅ Loop untuk setiap halaman
   for (let pageIndex = 0; pageIndex < totalPages; pageIndex++) {
     console.log(`📄 Processing page ${pageIndex + 1}/${totalPages}`);
-    
+
     try {
-      // Tambah halaman baru (kecuali halaman pertama yang sudah ada dari jsPDF)
+      // Tambah halaman baru (kecuali halaman pertama)
       if (pageIndex > 0) {
         doc.addPage();
       }
 
-      // Background putih menggunakan RGB
-      doc.setFillColor(255, 255, 255); // White
+      // Background putih
+      doc.setFillColor(255, 255, 255);
       doc.rect(0, 0, PAGE_CONFIG.WIDTH, PAGE_CONFIG.HEIGHT, 'F');
 
-      // Render header & footer
-      renderHeader(doc, config);
-      renderFooter(doc, pageIndex + 1, totalPages);
+      let y: number;
+      let currentPageHeight: number;
+
+      if (pageIndex === 0) {
+        // ✅ HALAMAN PERTAMA: Ada header dan margin
+        renderHeader(doc, config);
+        y = PAGE_CONFIG.MARGIN.TOP + PAGE_CONFIG.HEADER_HEIGHT;
+        currentPageHeight = firstPageAvailableHeight;
+      } else {
+        // ✅ HALAMAN SELANJUTNYA: Tanpa margin, full page
+        y = 0;
+        currentPageHeight = nextPagesAvailableHeight;
+      }
 
       // ✅ Hitung slice untuk halaman ini
-      const sourceYStart = (pageIndex * availableHeight * img.height) / displayHeight;
+      const sourceYStart = (accumulatedDisplayHeight * img.height) / displayHeight;
       const sourceHeight = Math.min(
-        (availableHeight * img.height) / displayHeight,
+        (currentPageHeight * img.height) / displayHeight,
         img.height - sourceYStart
       );
 
@@ -392,18 +456,19 @@ const addImageToPDF = (
       const slicedDataUrl = canvas.toDataURL('image/png', 1.0);
 
       // ✅ Hitung tinggi display untuk slice ini
-      const sliceDisplayHeight = Math.min(availableHeight, displayHeight - pageIndex * availableHeight);
+      const sliceDisplayHeight = Math.min(currentPageHeight, displayHeight - accumulatedDisplayHeight);
 
-      // ✅ Posisi image
-      const x = PAGE_CONFIG.MARGIN.LEFT;
-      const y = PAGE_CONFIG.MARGIN.TOP + PAGE_CONFIG.HEADER_HEIGHT;
+      const x = pageIndex === 0 ? PAGE_CONFIG.MARGIN.LEFT : 0;
+      const imgWidth = pageIndex === 0 ? displayWidth : PAGE_CONFIG.WIDTH;
 
       console.log(`   ├─ Source: y=${sourceYStart.toFixed(0)}, h=${sourceHeight.toFixed(0)}`);
-      console.log(`   └─ Display: h=${sliceDisplayHeight.toFixed(2)}mm`);
+      console.log(`   └─ Display: x=${x}, y=${y}, h=${sliceDisplayHeight.toFixed(2)}mm`);
 
       // ✅ Add image ke PDF
-      doc.addImage(slicedDataUrl, 'PNG', x, y, displayWidth, sliceDisplayHeight, undefined, 'FAST');
-      
+      doc.addImage(slicedDataUrl, 'PNG', x, y, imgWidth, sliceDisplayHeight, undefined, 'FAST');
+
+      accumulatedDisplayHeight += sliceDisplayHeight;
+
       console.log(`   ✅ Page ${pageIndex + 1} rendered successfully`);
     } catch (error) {
       console.error(`   ❌ Error on page ${pageIndex + 1}:`, error);
