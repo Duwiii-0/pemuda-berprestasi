@@ -998,6 +998,9 @@ return (
 }
 
 
+/**
+ * 🆕 Render connector dari card ke next round (HORIZONTAL)
+ */
 const renderCardConnector = (
   match: Match,
   matchIndex: number,
@@ -1016,7 +1019,6 @@ const renderCardConnector = (
         position: 'absolute',
         left: isRight ? -lineLength : CARD_WIDTH,
         top: '50%',
-        transform: 'translateY(-50%)',
         width: lineLength,
         height: 2,
         pointerEvents: 'none',
@@ -1038,7 +1040,7 @@ const renderCardConnector = (
 };
 
 /**
- * 🆕 Render vertical connector between pairs
+ * 🆕 Render vertical connector between pairs (FIXED)
  */
 const renderVerticalConnector = (
   matchIndex: number,
@@ -1054,14 +1056,17 @@ const renderVerticalConnector = (
   const verticalGap = VERTICAL_SPACING * Math.pow(2, roundIndex);
   const lineLength = ROUND_GAP / 2;
   
+  // Total height = card height + gap between cards
+  const totalHeight = CARD_HEIGHT + verticalGap;
+  
   return (
     <svg
       style={{
         position: 'absolute',
         left: isRight ? -lineLength : CARD_WIDTH + lineLength,
         top: '50%',
-        width: 2,
-        height: verticalGap,
+        width: 3,
+        height: totalHeight,
         pointerEvents: 'none',
         zIndex: 5,
         overflow: 'visible'
@@ -1071,7 +1076,7 @@ const renderVerticalConnector = (
         x1="0"
         y1="0"
         x2="0"
-        y2={verticalGap}
+        y2={totalHeight}
         stroke="#990D35"
         strokeWidth="3"
         opacity="0.8"
