@@ -1040,7 +1040,7 @@ const renderCardConnector = (
 };
 
 /**
- * 🆕 Render vertical connector between pairs (FIXED)
+ * 🆕 Render vertical connector between pairs
  */
 const renderVerticalConnector = (
   matchIndex: number,
@@ -1056,7 +1056,7 @@ const renderVerticalConnector = (
   const verticalGap = VERTICAL_SPACING * Math.pow(2, roundIndex);
   const lineLength = ROUND_GAP / 2;
   
-  // ✅ Height harus mencakup card + gap
+  // ✅ Connector height
   const connectorHeight = verticalGap + CARD_HEIGHT;
   
   return (
@@ -1073,9 +1073,9 @@ const renderVerticalConnector = (
       }}
     >
       <line
-        x1="0"
+        x1="1.5"
         y1="0"
-        x2="0"
+        x2="1.5"
         y2={connectorHeight}
         stroke="#990D35"
         strokeWidth="3"
@@ -1084,6 +1084,7 @@ const renderVerticalConnector = (
     </svg>
   );
 };
+
 /**
  * 🆕 Render one side of split bracket with connectors
  */
@@ -1101,7 +1102,7 @@ const renderBracketSide = (
       style={{
         display: 'flex',
         flexDirection: isRight ? 'row-reverse' : 'row',
-        alignItems: 'center',
+        alignItems: 'flex-start', // ✅ UBAH dari 'center' ke 'flex-start'
         gap: `${ROUND_GAP}px`,
         position: 'relative'
       }}
@@ -1115,10 +1116,6 @@ const renderBracketSide = (
         const verticalGap = VERTICAL_SPACING * Math.pow(2, roundIndex);
         const hasNextRound = roundIndex < matchesBySide.length - 1 && matchesBySide[roundIndex + 1].length > 0;
         
-        // ✅ Calculate vertical offset untuk center alignment
-        const prevRoundGap = roundIndex > 0 ? VERTICAL_SPACING * Math.pow(2, roundIndex - 1) : 0;
-        const marginTop = roundIndex > 0 ? (prevRoundGap / 2) + (CARD_HEIGHT / 2) : 0;
-        
         return (
           <div 
             key={`${side}-round-${actualRound}`} 
@@ -1126,8 +1123,7 @@ const renderBracketSide = (
               position: 'relative',
               display: 'flex',
               flexDirection: 'column',
-              alignItems: 'center',
-              marginTop: `${marginTop}px` // ✅ OFFSET KE BAWAH
+              alignItems: 'center'
             }}
           >
             {/* Round Header */}
@@ -1161,7 +1157,9 @@ const renderBracketSide = (
                 display: 'flex',
                 flexDirection: 'column',
                 gap: `${verticalGap}px`,
-                position: 'relative'
+                position: 'relative',
+                // ✅ TAMBAH paddingTop untuk round 2+
+                paddingTop: roundIndex > 0 ? `${(VERTICAL_SPACING * Math.pow(2, roundIndex - 1) / 2) + (CARD_HEIGHT / 2)}px` : '0'
               }}
             >
               {roundMatches.map((match, matchIndex) => (
