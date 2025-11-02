@@ -121,6 +121,7 @@ const CARD_HEIGHT = 150;       // ✅ Reduced
 const ROUND_GAP = 60;         // ✅ Gap antar round
 const VERTICAL_SPACING = 120;  // ✅ Jarak vertikal antar match
 const CENTER_GAP = 80;         // ✅ Jarak antara left/right dengan center
+const LINE_EXTENSION = 40;
 
   const showNotification = (
     type: 'success' | 'error' | 'warning' | 'info',
@@ -846,7 +847,7 @@ const renderConnectors = (
 /**
  * 🆕 Render single match card
  */
-const renderMatchCard = (match: Match, round: number, matchIndex: number) => {
+const renderMatchCard = (match: Match, key: string | number) => {
   const hasScores = match.skor_a > 0 || match.skor_b > 0;
   const winner = hasScores 
     ? (match.skor_a > match.skor_b ? match.peserta_a : match.peserta_b)
@@ -1177,7 +1178,7 @@ const renderBracketSide = (
                   {renderVerticalConnector(matchIndex, roundIndex, side, matchCount)}
                   
                   {/* Match Card */}
-                  {renderMatchCard(match, actualRound, matchIndex)}
+                  {renderMatchCard(match, match.id_match)}
                 </div>
               ))}
             </div>
@@ -1313,7 +1314,7 @@ const renderCenterFinal = () => {
       </div>
       
       {/* Final Match Card */}
-      {renderMatchCard(finalMatch, getTotalRounds(), 0)}
+      {renderMatchCard(finalMatch, `final-${finalMatch.id_match}`)}
     </div>
   );
 };
@@ -1335,6 +1336,17 @@ React.useEffect(() => {
 
   const prestasiLeaderboard = generatePrestasiLeaderboard();
   const totalRounds = getTotalRounds();
+
+  const calculateCenterOffset = () => {
+  if (matches.length === 0) return 400;
+  
+  const firstRoundMatches = getMatchesByRound(1).length;
+  const baseSpacing = 280;
+  const firstRoundHeight = (firstRoundMatches - 1) * baseSpacing + CARD_HEIGHT;
+  return (firstRoundHeight / 2) + 200;
+};
+
+const centerOffset = calculateCenterOffset();
 
   // 🆕 STEP 7: Inline styles for bracket
 React.useEffect(() => {
@@ -1402,13 +1414,10 @@ React.useEffect(() => {
   };
 }, []);
 
-  // ============================================================================
-// 🆕 SPLIT BRACKET HELPERS
+// ============================================================================
+// 🆕 HELPER: Calculate positions for split bracket
 // ============================================================================
 
-/**
- * Split matches into left and right sides
- */
 /**
  * Split matches into left and right sides
  */
@@ -1436,30 +1445,151 @@ const splitMatchesBySide = (matches: Match[], totalRounds: number) => {
 };
 
 /**
- * Get left side matches only
+ * Get left matches only (untuk render bracket side)
  */
 const getLeftMatches = () => {
   const totalRounds = getTotalRounds();
-  const allRounds = splitMatchesBySide(matches, totalRounds);
-  return allRounds.map(r => r.left).slice(0, -1); // Exclude final
+  const split = splitMatchesBySide(matches, totalRounds);
+  
+  const result: Match[][] = [];
+  
+  for (let roundIndex = 0; roundIndex < totalRounds - 1; roundIndex++) {
+    result.push(split[roundIndex].left);
+  }
+  
+  return result;
 };
 
 /**
- * Get right side matches only
+ * Get right matches only (untuk render bracket side)
  */
 const getRightMatches = () => {
   const totalRounds = getTotalRounds();
-  const allRounds = splitMatchesBySide(matches, totalRounds);
-  return allRounds.map(r => r.right).slice(0, -1); // Exclude final
+  const split = splitMatchesBySide(matches, totalRounds);
+  
+  const result: Match[][] = [];
+  
+  for (let roundIndex = 0; roundIndex < totalRounds - 1; roundIndex++) {
+    result.push(split[roundIndex].right);
+  }
+  
+  return result;
 };
 
 /**
- * Get final match (untuk ditampilkan di center)
+ * Get final match (untuk render di center)
  */
 const getFinalMatch = (): Match | null => {
   const totalRounds = getTotalRounds();
   const finalMatches = getMatchesByRound(totalRounds);
   return finalMatches.length > 0 ? finalMatches[0] : null;
+};
+
+/**
+ * Calculate card position for split bracket
+ */
+const calculateCardPosition = (
+  side: 'left' | 'right' | 'final',
+  roundIndex: number,
+  matchIndex: number,
+  totalMatchesInRound: number,
+  centerOffset: number
+): { x: number; y: number } => {
+  
+  if (side === 'final') {
+    // Final card di tengah
+    const totalRounds = getTotalRounds();
+    const finalX = (totalRounds - 1) * (CARD_WIDTH + ROUND_GAP) + 32;
+    return { x: finalX, y: centerOffset - (CARD_HEIGHT / 2) };
+  }
+  
+  const baseSpacing = 280;
+  const spacingMultiplier = Math.pow(2, roundIndex);
+  const spacing = baseSpacing * spacingMultiplier;
+  
+  // Vertical position
+  const totalHeight = (totalMatchesInRound - 1) * spacing;
+  const startOffset = -totalHeight / 2;
+  const y = centerOffset + startOffset + (matchIndex * spacing);
+  
+  // Horizontal position
+  let x: number;
+  if (side === 'left') {
+    x = roundIndex * (CARD_WIDTH + ROUND_GAP) + 32;
+  } else {
+    // Right side: mirror position dari kanan
+    const leftSideWidth = (getTotalRounds() - 1) * (CARD_WIDTH + ROUND_GAP);
+    x = leftSideWidth + (roundIndex * (CARD_WIDTH + ROUND_GAP)) + 32;
+  }
+  
+  return { x, y };
+};
+
+/**
+ * Get left bracket matches (excluding final)
+ */
+const getLeftBracketMatches = () => {
+  const totalRounds = getTotalRounds();
+  const split = splitMatchesBySide(matches, totalRounds);
+  
+  const result: { round: number; matches: Match[]; positions: {x: number; y: number}[] }[] = [];
+  
+  for (let roundIndex = 0; roundIndex < totalRounds - 1; roundIndex++) {
+    const roundMatches = split[roundIndex].left;
+    const positions = roundMatches.map((_, idx) => 
+      calculateCardPosition('left', roundIndex, idx, roundMatches.length, centerOffset)
+    );
+    
+    result.push({
+      round: roundIndex + 1,
+      matches: roundMatches,
+      positions
+    });
+  }
+  
+  return result;
+};
+
+/**
+ * Get right bracket matches (excluding final)
+ */
+const getRightBracketMatches = () => {
+  const totalRounds = getTotalRounds();
+  const split = splitMatchesBySide(matches, totalRounds);
+  
+  const result: { round: number; matches: Match[]; positions: {x: number; y: number}[] }[] = [];
+  
+  for (let roundIndex = 0; roundIndex < totalRounds - 1; roundIndex++) {
+    const roundMatches = split[roundIndex].right;
+    const positions = roundMatches.map((_, idx) => 
+      calculateCardPosition('right', roundIndex, idx, roundMatches.length, centerOffset)
+    );
+    
+    result.push({
+      round: roundIndex + 1,
+      matches: roundMatches,
+      positions
+    });
+  }
+  
+  return result;
+};
+
+/**
+ * Get final match with position
+ */
+const getFinalMatchWithPosition = () => {
+  const totalRounds = getTotalRounds();
+  const finalMatches = getMatchesByRound(totalRounds);
+  
+  if (finalMatches.length === 0) return null;
+  
+  const position = calculateCardPosition('final', totalRounds - 1, 0, 1, centerOffset);
+  
+  return {
+    match: finalMatches[0],
+    position
+  };
 };
 
   return (
@@ -1602,69 +1732,171 @@ const getFinalMatch = (): Match | null => {
             </div>
 
             {/* Bracket Content */}
-            <div ref={bracketRef} className="overflow-x-auto overflow-y-visible pb-8">
-              <div 
-                className="tournament-layout"
-                style={{
-                  display: 'flex',
-                  justifyContent: 'center',
-                  alignItems: 'center',        // ✅ Center vertical alignment
-                  gap: `${CENTER_GAP}px`,
-                  minWidth: 'fit-content',
-                  minHeight: '80vh',
-                  padding: '40px 20px',
-                  position: 'relative'
-                }}
-              >
-                {/* LEFT BRACKET */}
-                {renderBracketSide(getLeftMatches(), 'left', 1)}
+<div ref={bracketRef} className="overflow-x-auto overflow-y-visible pb-8">
+  {/* Bracket Visual Container - ABSOLUTE POSITIONING */}
+  <div className="relative" style={{ 
+    minHeight: `1200px`, // temporary fixed height
+    paddingBottom: '200px', 
+    position: 'relative',
+    overflow: 'visible'
+  }}>
+    
+    {/* ✅ SVG Layer untuk semua connectors */}
+    <svg 
+      className="absolute top-0 left-0 pointer-events-none" 
+      style={{ 
+        width: '100%',
+        height: '100%',
+        zIndex: 1
+      }}
+    >
+      {/* LEFT BRACKET CONNECTORS */}
+      {getLeftBracketMatches().map((roundData, roundIdx) => {
+        if (roundIdx >= getTotalRounds() - 1) return null;
+        
+        const nextRoundData = roundIdx < getLeftBracketMatches().length - 1 
+          ? getLeftBracketMatches()[roundIdx + 1] 
+          : null;
+        
+        const isFinalNext = !nextRoundData;
+        const finalData = getFinalMatchWithPosition();
+        
+        return roundData.matches.map((match, matchIdx) => {
+          const pos = roundData.positions[matchIdx];
+          const x1 = pos.x + CARD_WIDTH;
+          const y1 = pos.y + (CARD_HEIGHT / 2);
+          
+          let x2: number, y2: number;
+          
+          if (isFinalNext && finalData) {
+            // Connect to final
+            x2 = finalData.position.x;
+            y2 = finalData.position.y + (CARD_HEIGHT / 2);
+          } else if (nextRoundData) {
+            // Connect to next round
+            const nextMatchIdx = Math.floor(matchIdx / 2);
+            const nextPos = nextRoundData.positions[nextMatchIdx];
+            x2 = nextPos.x;
+            y2 = nextPos.y + (CARD_HEIGHT / 2);
+          } else {
+            return null;
+          }
+          
+          const midX = x1 + LINE_EXTENSION;
+          
+          return (
+            <g key={`left-connector-${match.id_match}`}>
+              <line x1={x1} y1={y1} x2={midX} y2={y1} stroke="#990D35" strokeWidth="3" opacity="0.7" />
+              <line x1={midX} y1={y1} x2={midX} y2={y2} stroke="#990D35" strokeWidth="3" opacity="0.7" />
+              <line x1={midX} y1={y2} x2={x2} y2={y2} stroke="#990D35" strokeWidth="3" opacity="0.7" />
+            </g>
+          );
+        });
+      })}
+      
+      {/* RIGHT BRACKET CONNECTORS */}
+      {getRightBracketMatches().map((roundData, roundIdx) => {
+        if (roundIdx >= getTotalRounds() - 1) return null;
+        
+        const nextRoundData = roundIdx < getRightBracketMatches().length - 1 
+          ? getRightBracketMatches()[roundIdx + 1] 
+          : null;
+        
+        const isFinalNext = !nextRoundData;
+        const finalData = getFinalMatchWithPosition();
+        
+        return roundData.matches.map((match, matchIdx) => {
+          const pos = roundData.positions[matchIdx];
+          const x1 = pos.x;
+          const y1 = pos.y + (CARD_HEIGHT / 2);
+          
+          let x2: number, y2: number;
+          
+          if (isFinalNext && finalData) {
+            // Connect to final (from right)
+            x2 = finalData.position.x + CARD_WIDTH;
+            y2 = finalData.position.y + (CARD_HEIGHT / 2);
+          } else if (nextRoundData) {
+            // Connect to next round
+            const nextMatchIdx = Math.floor(matchIdx / 2);
+            const nextPos = nextRoundData.positions[nextMatchIdx];
+            x2 = nextPos.x + CARD_WIDTH;
+            y2 = nextPos.y + (CARD_HEIGHT / 2);
+          } else {
+            return null;
+          }
+          
+          const midX = x1 - LINE_EXTENSION;
+          
+          return (
+            <g key={`right-connector-${match.id_match}`}>
+              <line x1={x1} y1={y1} x2={midX} y2={y1} stroke="#990D35" strokeWidth="3" opacity="0.7" />
+              <line x1={midX} y1={y1} x2={midX} y2={y2} stroke="#990D35" strokeWidth="3" opacity="0.7" />
+              <line x1={midX} y1={y2} x2={x2} y2={y2} stroke="#990D35" strokeWidth="3" opacity="0.7" />
+            </g>
+          );
+        });
+      })}
+    </svg>
 
-                {/* CENTER FINAL */}
-                <div style={{ 
-                  position: 'relative', 
-                  zIndex: 10, 
-                  display: 'flex', 
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                  {/* Left Connector */}
-                  <svg
-                    style={{
-                      position: 'absolute',
-                      left: `-${CENTER_GAP / 2}px`,
-                      top: '50%',
-                      width: `${CENTER_GAP / 2}px`,
-                      height: '2px',
-                      pointerEvents: 'none',
-                      zIndex: 5
-                    }}
-                  >
-                    <line x1="0" y1="0" x2={CENTER_GAP / 2} y2="0" stroke="#990D35" strokeWidth="2" />
-                  </svg>
-                  
-                  {/* Right Connector */}
-                  <svg
-                    style={{
-                      position: 'absolute',
-                      right: `-${CENTER_GAP / 2}px`,
-                      top: '50%',
-                      width: `${CENTER_GAP / 2}px`,
-                      height: '2px',
-                      pointerEvents: 'none',
-                      zIndex: 5
-                    }}
-                  >
-                    <line x1="0" y1="0" x2={CENTER_GAP / 2} y2="0" stroke="#990D35" strokeWidth="2" />
-                  </svg>
-                  
-                  {renderCenterFinal()}
-                </div>
-
-                {/* RIGHT BRACKET */}
-                {renderBracketSide(getRightMatches(), 'right', 1)}
-              </div>
-            </div> {/* Closing tag untuk bracket-export-area */}
+    {/* ✅ LEFT BRACKET CARDS */}
+    {getLeftBracketMatches().map((roundData, roundIdx) => 
+      roundData.matches.map((match, idx) => {
+        const pos = roundData.positions[idx];
+        return (
+          <div
+            key={`left-${match.id_match}`}
+            style={{
+              position: 'absolute',
+              left: `${pos.x}px`,
+              top: `${pos.y}px`,
+              zIndex: 10
+            }}
+          >
+            {renderMatchCard(match, `left-${match.id_match}`)}
+          </div>
+        );
+      })
+    )}
+    
+    {/* ✅ RIGHT BRACKET CARDS */}
+    {getRightBracketMatches().map((roundData, roundIdx) => 
+      roundData.matches.map((match, idx) => {
+        const pos = roundData.positions[idx];
+        return (
+          <div
+            key={`right-${match.id_match}`}
+            style={{
+              position: 'absolute',
+              left: `${pos.x}px`,
+              top: `${pos.y}px`,
+              zIndex: 10
+            }}
+          >
+            {renderMatchCard(match, `right-${match.id_match}`)}
+          </div>
+        );
+      })
+    )}
+    
+    {/* ✅ FINAL CARD */}
+    {getFinalMatchWithPosition() && (
+      <div
+        style={{
+          position: 'absolute',
+          left: `${getFinalMatchWithPosition()!.position.x}px`,
+          top: `${getFinalMatchWithPosition()!.position.y}px`,
+          zIndex: 10
+        }}
+      >
+        {renderMatchCard(
+          getFinalMatchWithPosition()!.match, 
+          `final-${getFinalMatchWithPosition()!.match.id_match}`
+        )}
+      </div>
+    )}
+  </div>
+</div>
 
             {/* Leaderboard section tetap di luar export area */}
             {prestasiLeaderboard && (
