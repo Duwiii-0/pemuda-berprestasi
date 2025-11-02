@@ -2,13 +2,10 @@ import jsPDF from 'jspdf';
 import * as htmlToImage from 'html-to-image';
 
 // =================================================================================================
-// TYPES & CONFIGURATION
+// CONFIGURATION & CONSTANTS
 // =================================================================================================
 
-/**
- * Configuration untuk export PDF
- */
-export interface ExportConfig {
+interface ExportConfig {
   eventName: string;
   categoryName: string;
   location: string;
@@ -16,501 +13,389 @@ export interface ExportConfig {
   totalParticipants: number;
 }
 
-/**
- * Format halaman A4 Landscape (dalam mm)
- */
-const PAGE_CONFIG = {
-  WIDTH: 297,
-  HEIGHT: 210,
-  MARGIN: {
-    TOP: 0,
-    BOTTOM: 0,
-    LEFT: 0,
-    RIGHT: 0,
-  },
-  HEADER_HEIGHT: 25,
-  FOOTER_HEIGHT: 0,
-} as const;
+// ✅ DYNAMIC PAGE SIZE based on bracket complexity
+const getOptimalPageSize = (participantCount: number): { width: number; height: number; format: string } => {
+  if (participantCount <= 4) {
+    return { width: 297, height: 210, format: 'A4 Landscape' };
+  } else if (participantCount <= 6) {
+    return { width: 420, height: 297, format: 'A3 Landscape' };
+  } else if (participantCount <= 12) {
+    return { width: 594, height: 420, format: 'A2 Landscape' };
+  } else if (participantCount <= 24) {
+    return { width: 841, height: 594, format: 'A1 Landscape' };
+  } else {
+    return { width: 1189, height: 841, format: 'A0 Landscape' };
+  }
+};
 
-// =================================================================================================
-// HELPER: TRANSFORM DATA
-// =================================================================================================
+let PAGE_WIDTH = 297;
+let PAGE_HEIGHT = 210;
+const MARGIN_TOP = 15;
+const MARGIN_BOTTOM = 10;
+const MARGIN_LEFT = 10;
+const MARGIN_RIGHT = 10;
+const HEADER_HEIGHT = 18;
+const FOOTER_HEIGHT = 10;
 
-/**
- * Transform data dari API ke format ExportConfig
- */
-export const transformBracketData = (kelasData: any): ExportConfig => {
-  const approvedParticipants = kelasData.peserta_kompetisi.filter(
-    (p: any) => p.status === 'APPROVED'
-  );
-
-  const gender = kelasData.kelas_berat?.jenis_kelamin === 'LAKI_LAKI' ? 'Male' : 'Female';
-  const className = kelasData.kelas_berat?.nama_kelas || kelasData.poomsae?.nama_kelas || '';
-  const groupName = kelasData.kelompok?.nama_kelompok || '';
-
-  return {
-    eventName: kelasData.kompetisi.nama_event,
-    categoryName: `${groupName} ${gender} ${className}`.trim(),
-    location: kelasData.kompetisi.lokasi,
-    dateRange: `${new Date(kelasData.kompetisi.tanggal_mulai).toLocaleDateString('id-ID', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    })} - ${new Date(kelasData.kompetisi.tanggal_selesai).toLocaleDateString('id-ID', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    })}`,
-    totalParticipants: approvedParticipants.length,
-  };
+const THEME = {
+  primary: '#990D35',
+  background: '#F5FBEF',
+  text: '#050505',
+  textSecondary: '#6B7280',
+  border: '#E5E7EB',
+  white: '#FFFFFF',
 };
 
 // =================================================================================================
 // HEADER & FOOTER
 // =================================================================================================
 
-/**
- * Render header di setiap halaman PDF
- */
-const renderHeader = (doc: jsPDF, config: ExportConfig): void => {
-  const centerX = PAGE_CONFIG.WIDTH / 2;
-  const baseY = PAGE_CONFIG.MARGIN.TOP;
+const addHeaderAndFooter = (
+  doc: jsPDF,
+  config: ExportConfig,
+  pageNumber: number,
+  totalPages: number
+) => {
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(13);
+  doc.setTextColor(THEME.text);
+  doc.text(config.eventName, PAGE_WIDTH / 2, MARGIN_TOP + 5, { align: 'center' });
 
-  try {
-    // Event name (bold)
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(14);
-    doc.setTextColor(5, 5, 5); // RGB: #050505
-    doc.text(config.eventName, centerX, baseY + 5, { align: 'center' });
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  doc.setTextColor(THEME.textSecondary);
+  doc.text(config.categoryName, PAGE_WIDTH / 2, MARGIN_TOP + 11, { align: 'center' });
 
-    // Category name (normal)
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(11);
-    doc.setTextColor(107, 114, 128); // RGB: #6B7280
-    doc.text(config.categoryName, centerX, baseY + 12, { align: 'center' });
-
-    // Garis pemisah header
-    doc.setDrawColor(229, 231, 235); // RGB: #E5E7EB
-    doc.setLineWidth(0.3);
-    doc.line(
-      PAGE_CONFIG.MARGIN.LEFT,
-      baseY + 16,
-      PAGE_CONFIG.WIDTH - PAGE_CONFIG.MARGIN.RIGHT,
-      baseY + 16
-    );
-  } catch (error) {
-    console.error('❌ Error rendering header:', error);
-  }
+  const footerY = PAGE_HEIGHT - MARGIN_BOTTOM;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(THEME.textSecondary);
+  const exportDate = new Date().toLocaleDateString('id-ID', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+  });
+  doc.text(exportDate, MARGIN_LEFT, footerY);
+  doc.text(`Page ${pageNumber} of ${totalPages}`, PAGE_WIDTH / 2, footerY, { align: 'center' });
 };
 
-/**
- * Scale down cards untuk prestasi agar final lebih terlihat
- */
+// =================================================================================================
+// COVER PAGE
+// =================================================================================================
 
-const scaleDownCards = (
-  bracketVisual: HTMLElement
-): Array<{ el: HTMLElement; originalTransform: string }> => {
-  const scaledCards: Array<{ el: HTMLElement; originalTransform: string }> = [];
+const addCoverPage = (doc: jsPDF, config: ExportConfig, totalPages: number) => {
+  doc.setFillColor(THEME.background);
+  doc.rect(0, 0, PAGE_WIDTH, PAGE_HEIGHT, 'F');
 
-  // Cari semua card di bracket
-  const cards = bracketVisual.querySelectorAll('[class*="absolute"]');
+  doc.setFillColor(THEME.primary);
+  doc.rect(0, 0, PAGE_WIDTH, 40, 'F');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(32);
+  doc.setTextColor(THEME.white);
+  doc.text(config.eventName.toUpperCase(), PAGE_WIDTH / 2, 25, { align: 'center' });
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(12);
+  doc.text('Competition Bracket', PAGE_WIDTH / 2, 35, { align: 'center' });
+
+  const boxX = PAGE_WIDTH / 2 - 100;
+  const boxY = 70;
+  const boxWidth = 200;
+  const boxHeight = 60;
+
+  doc.setDrawColor(THEME.border);
+  doc.setFillColor(THEME.white);
+  doc.roundedRect(boxX, boxY, boxWidth, boxHeight, 5, 5, 'FD');
+
+  const infoItems = [
+    { label: 'Category', value: config.categoryName },
+    { label: 'Location', value: config.location },
+    { label: 'Date', value: config.dateRange },
+    { label: 'Participants', value: `${config.totalParticipants} Athletes` },
+  ];
+
+  let currentY = boxY + 15;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  infoItems.forEach(item => {
+    doc.setTextColor(THEME.textSecondary);
+    doc.text(item.label, boxX + 15, currentY, { align: 'left' });
+    doc.setTextColor(THEME.text);
+    doc.text(item.value, boxX + boxWidth - 15, currentY, { align: 'right' });
+    currentY += 10;
+  });
+
+  addHeaderAndFooter(doc, config, 1, totalPages);
+};
+
+// =================================================================================================
+// DOM-TO-IMAGE: CLEAN BRACKET CAPTURE
+// =================================================================================================
+
+const convertElementToImage = async (element: HTMLElement): Promise<HTMLImageElement> => {
+  console.log('🎯 Starting bracket capture...');
+  console.log('📦 Original element:', element);
   
-  cards.forEach((card) => {
-    const htmlCard = card as HTMLElement;
-    // Hanya scale card yang berisi participant info (bukan SVG lines)
-    if (htmlCard.querySelector('[class*="bg-white"], [class*="border"]')) {
-      scaledCards.push({
-        el: htmlCard,
-        originalTransform: htmlCard.style.transform,
-      });
-      htmlCard.style.transform = `${htmlCard.style.transform || ''} scale(0.85)`;
-      htmlCard.style.transformOrigin = 'center';
-    }
-  });
-
-  return scaledCards;
-};
-
-const restoreCards = (
-  scaledCards: Array<{ el: HTMLElement; originalTransform: string }>
-): void => {
-  scaledCards.forEach(({ el, originalTransform }) => {
-    el.style.transform = originalTransform;
-  });
-};
-
-// =================================================================================================
-// CORE: CAPTURE BRACKET AS IMAGE
-// =================================================================================================
-
-/**
- * Capture bracket element sebagai PNG dengan resolusi tinggi
- * PENTING: Tidak memperbesar canvas, hanya capture sesuai ukuran asli
- */
-const captureBracketImage = async (bracketElement: HTMLElement): Promise<HTMLImageElement> => {
-  console.log('📸 Starting bracket capture...');
-
-  // ✅ STEP 1: Temukan container bracket yang tepat
-  const bracketVisual = findBracketVisual(bracketElement);
+  let bracketVisual = element.querySelector('.tournament-layout') as HTMLElement;
+  
   if (!bracketVisual) {
-    throw new Error('❌ Bracket visual container not found');
-  }
-
-  console.log('✅ Bracket container found');
-  console.log('📏 Container info:', {
-    scrollWidth: bracketVisual.scrollWidth,
-    scrollHeight: bracketVisual.scrollHeight,
-    offsetWidth: bracketVisual.offsetWidth,
-    offsetHeight: bracketVisual.offsetHeight,
-    className: bracketVisual.className,
-  });
-
-  // ✅ STEP 2: Scroll ke paling atas kiri agar header tidak kepotong
-  const originalScrollTop = bracketVisual.scrollTop;
-  const originalScrollLeft = bracketVisual.scrollLeft;
-  
-  bracketVisual.scrollTop = 0;
-  bracketVisual.scrollLeft = 0;
-  console.log('📜 Scrolled to top-left');
-
-  // ✅ STEP 3: Hide unwanted elements (leaderboard, buttons)
-  const hiddenElements = hideUnwantedElements(bracketVisual);
-  console.log(`🙈 Hidden ${hiddenElements.length} elements`);
-
-  // ✅ STEP 4: Wait for render
-  await new Promise(resolve => setTimeout(resolve, 300));
-
-  // ✅ STEP 5: Capture dengan FULL scrollWidth x scrollHeight
-  // Ini akan capture SEMUA konten, termasuk yang di-scroll
-  const fullWidth = bracketVisual.scrollWidth;
-  const fullHeight = bracketVisual.scrollHeight;
-
-  console.log('📸 Capturing FULL size:', { fullWidth, fullHeight });
-
-  const dataUrl = await htmlToImage.toPng(bracketVisual, {
-    quality: 1,
-    pixelRatio: 2, // High resolution
-    width: fullWidth,
-    height: fullHeight,
-    backgroundColor: '#FFFFFF',
-    cacheBust: true,
-    style: {
-      transform: 'scale(1)',
-      transformOrigin: 'top left',
-      overflow: 'visible', // Penting agar yang di-scroll ikut ke-capture
-    },
-    filter: (node) => {
-      if (node.nodeName === 'BUTTON') return false;
-      if ((node as HTMLElement).classList?.contains('sticky')) return false;
-      return true;
-    },
-  });
-
-  // ✅ STEP 6: Restore scroll position dan hidden elements
-  bracketVisual.scrollTop = originalScrollTop;
-  bracketVisual.scrollLeft = originalScrollLeft;
-  restoreHiddenElements(hiddenElements);
-  console.log('✅ Elements and scroll restored');
-
-  // ✅ STEP 7: Load image
-  const img = new Image();
-  img.src = dataUrl;
-  await new Promise((resolve) => (img.onload = resolve));
-
-  console.log('🖼️ Image loaded:', { width: img.width, height: img.height });
-
-  return img;
-};
-
-/**
- * Temukan container bracket visual yang benar
- */
-
-const findBracketVisual = (element: HTMLElement): HTMLElement | null => {
-  console.log('🔍 Searching for bracket visual container...');
-  console.log('📦 Root element:', element);
-  
-  // Strategy 1: Cari container yang ada text "Round", "Quarter", "Semi", "Final"
-  const allDivs = Array.from(element.querySelectorAll('div'));
-  
-  for (const div of allDivs) {
-    const htmlDiv = div as HTMLElement;
-    
-    // Cek apakah div ini atau child-nya ada text header
-    const allText = htmlDiv.innerText || '';
-    const hasHeaderText = /Round|Quarter|Semi|Final/i.test(allText);
-    
-    // Cek apakah ada SVG di dalamnya
-    const hasSvg = htmlDiv.querySelector('svg') !== null;
-    
-    // Cek apakah ada cards
-    const hasCards = htmlDiv.querySelectorAll('[class*="absolute"]').length > 0;
-    
-    if (hasHeaderText && hasSvg && hasCards) {
-      console.log('✅ Found container with header text + SVG + cards');
-      console.log('   Text preview:', allText.substring(0, 100));
-      return htmlDiv;
-    }
+    bracketVisual = element.querySelector('.relative') as HTMLElement;
   }
   
-  // Strategy 2: Cari container dengan overflow yang ada SVG
-  for (const div of allDivs) {
-    const htmlDiv = div as HTMLElement;
-    const style = window.getComputedStyle(htmlDiv);
-    
-    if (style.overflowX === 'auto' || style.overflowX === 'scroll') {
-      const hasSvg = htmlDiv.querySelector('svg');
-      const hasCards = htmlDiv.querySelectorAll('[class*="absolute"]').length > 0;
-      
-      if (hasSvg && hasCards) {
-        console.log('✅ Found overflow container with SVG + cards');
-        return htmlDiv;
+  if (!bracketVisual) {
+    const allRelatives = element.querySelectorAll('.relative');
+    for (const rel of allRelatives) {
+      if (rel.querySelector('svg')) {
+        bracketVisual = rel as HTMLElement;
+        break;
       }
     }
   }
   
-  // Strategy 3: Fallback - element root jika ada SVG
-  if (element.querySelector('svg')) {
-    console.log('✅ Using root element (has SVG)');
-    return element;
+  if (!bracketVisual) {
+    console.error('❌ Bracket visual container not found!');
+    throw new Error('Bracket visual container not found');
   }
+  
+  console.log('✅ Found bracket visual container');
+  console.log('📏 Bracket dimensions:', {
+    scrollWidth: bracketVisual.scrollWidth,
+    offsetWidth: bracketVisual.offsetWidth,
+    scrollHeight: bracketVisual.scrollHeight,
+    offsetHeight: bracketVisual.offsetHeight,
+  });
 
-  console.error('❌ No bracket visual container found');
-  return null;
-};
-/**
- * Hide unwanted elements (leaderboard, external buttons)
- */
-const hideUnwantedElements = (
-  bracketVisual: HTMLElement
-): Array<{ el: HTMLElement; originalDisplay: string; originalVisibility: string }> => {
-  const hiddenElements: Array<{
-    el: HTMLElement;
-    originalDisplay: string;
-    originalVisibility: string;
-  }> = [];
-
-  // Hide leaderboards
-  const leaderboards = document.querySelectorAll(
-    '#prestasi-leaderboard, #pemula-leaderboard, [id$="-leaderboard"]'
-  );
-  leaderboards.forEach((el) => {
+  const hiddenElements: Array<{ el: HTMLElement; originalDisplay: string; originalVisibility: string }> = [];
+  
+  const leaderboards = document.querySelectorAll('#prestasi-leaderboard, #pemula-leaderboard, [id$="-leaderboard"]');
+  leaderboards.forEach(el => {
     const htmlEl = el as HTMLElement;
     hiddenElements.push({
       el: htmlEl,
       originalDisplay: htmlEl.style.display,
-      originalVisibility: htmlEl.style.visibility,
+      originalVisibility: htmlEl.style.visibility
     });
     htmlEl.style.display = 'none';
     htmlEl.style.visibility = 'hidden';
   });
 
-  // Hide buttons outside bracket
   const allButtons = document.querySelectorAll('button');
-  allButtons.forEach((btn) => {
+  allButtons.forEach(btn => {
     const htmlBtn = btn as HTMLElement;
     if (!bracketVisual.contains(htmlBtn)) {
       hiddenElements.push({
         el: htmlBtn,
         originalDisplay: htmlBtn.style.display,
-        originalVisibility: htmlBtn.style.visibility,
+        originalVisibility: htmlBtn.style.visibility
       });
       htmlBtn.style.display = 'none';
     }
   });
 
-  return hiddenElements;
-};
+  console.log(`🙈 Hidden ${hiddenElements.length} elements`);
 
-/**
- * Restore hidden elements
- */
-const restoreHiddenElements = (
-  hiddenElements: Array<{ el: HTMLElement; originalDisplay: string; originalVisibility: string }>
-): void => {
+  await new Promise(resolve => setTimeout(resolve, 100));
+
+  const width = Math.max(bracketVisual.scrollWidth, bracketVisual.offsetWidth, 2000);
+  const height = Math.max(bracketVisual.scrollHeight, bracketVisual.offsetHeight, 1000);
+
+  console.log('📐 Final dimensions for capture:', { width, height });
+
+  console.log('📸 Capturing image...');
+  const dataUrl = await htmlToImage.toPng(bracketVisual, {
+    quality: 1,
+    pixelRatio: 2,
+    width: width,
+    height: height,
+    backgroundColor: '#FFFFFF',
+    cacheBust: true,
+    style: {
+      transform: 'scale(1)',
+      transformOrigin: 'top left',
+      margin: '0',
+      padding: '20px'
+    },
+    filter: (node) => {
+      if (node.nodeName === 'BUTTON') {
+        return false;
+      }
+      if ((node as HTMLElement).classList?.contains('sticky')) {
+        return false;
+      }
+      return true;
+    }
+  });
+
   hiddenElements.forEach(({ el, originalDisplay, originalVisibility }) => {
     el.style.display = originalDisplay;
     el.style.visibility = originalVisibility;
   });
+
+  console.log('✅ Image captured successfully');
+
+  const img = new Image();
+  img.src = dataUrl;
+  await new Promise(resolve => (img.onload = resolve));
+  
+  console.log('🖼️ Image loaded:', { width: img.width, height: img.height });
+  
+  return img;
 };
 
 // =================================================================================================
-// CORE: ADD IMAGE TO PDF WITH PAGINATION
+// ADD IMAGE TO PAGE
 // =================================================================================================
 
-/**
- * Tambahkan image ke PDF dengan pagination otomatis
- */
-const addImageToPDF = (
+const addImageToPage = (
   doc: jsPDF,
   img: HTMLImageElement,
-  config: ExportConfig
-): void => {
-  // ✅ Hitung area konten untuk halaman PERTAMA (ada header)
-  const firstPageAvailableHeight =
-    PAGE_CONFIG.HEIGHT -
-    PAGE_CONFIG.HEADER_HEIGHT -
-    PAGE_CONFIG.MARGIN.TOP -
-    PAGE_CONFIG.MARGIN.BOTTOM;
+  config: ExportConfig,
+  pageNumber: number,
+  totalPages: number,
+  yOffset: number,
+  maxHeight: number
+) => {
+  const availableHeight = PAGE_HEIGHT - HEADER_HEIGHT - FOOTER_HEIGHT - 5;
+  const availableWidth = PAGE_WIDTH - MARGIN_LEFT - MARGIN_RIGHT;
 
-  // ✅ Hitung area konten untuk halaman SELANJUTNYA (tanpa margin, full page)
-  const nextPagesAvailableHeight = PAGE_CONFIG.HEIGHT;
-
-  const availableWidth = PAGE_CONFIG.WIDTH - PAGE_CONFIG.MARGIN.LEFT - PAGE_CONFIG.MARGIN.RIGHT;
-
-  console.log('📐 Available area:', {
-    firstPage: firstPageAvailableHeight,
-    nextPages: nextPagesAvailableHeight,
-    width: availableWidth,
-  });
-
-  // ✅ Hitung scale agar image fit dengan width halaman
-  const imageAspectRatio = img.width / img.height;
-  const displayWidth = availableWidth;
-  const displayHeight = displayWidth / imageAspectRatio;
-
-  console.log('🎨 Display size:', { displayWidth, displayHeight: displayHeight.toFixed(2) });
-
-  // ✅ Hitung berapa banyak halaman yang dibutuhkan
-  const remainingHeight = displayHeight - firstPageAvailableHeight;
-  const additionalPages = remainingHeight > 0 ? Math.ceil(remainingHeight / nextPagesAvailableHeight) : 0;
-  const totalPages = 1 + additionalPages;
-
-  console.log(`📄 Total pages needed: ${totalPages}`);
-
-  // ✅ Buat canvas untuk slicing
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d')!;
+  
+  const sourceY = yOffset;
+  const sourceHeight = Math.min(maxHeight, img.height - yOffset);
+  
   canvas.width = img.width;
+  canvas.height = sourceHeight;
+  
+  ctx.drawImage(
+    img,
+    0, sourceY,
+    img.width, sourceHeight,
+    0, 0,
+    img.width, sourceHeight
+  );
 
-  let accumulatedDisplayHeight = 0;
+  const croppedData = canvas.toDataURL('image/jpeg', 0.95);
 
-  // ✅ Loop untuk setiap halaman
-  for (let pageIndex = 0; pageIndex < totalPages; pageIndex++) {
-    console.log(`📄 Processing page ${pageIndex + 1}/${totalPages}`);
+  doc.setFillColor('#FFFFFF');
+  doc.rect(0, 0, PAGE_WIDTH, PAGE_HEIGHT, 'F');
 
-    try {
-      // Tambah halaman baru (kecuali halaman pertama)
-      if (pageIndex > 0) {
-        doc.addPage();
-      }
+  addHeaderAndFooter(doc, config, pageNumber, totalPages);
 
-      // Background putih
-      doc.setFillColor(255, 255, 255);
-      doc.rect(0, 0, PAGE_CONFIG.WIDTH, PAGE_CONFIG.HEIGHT, 'F');
+  const originalAspectRatio = canvas.width / canvas.height;
+  
+  let displayWidth = availableWidth;
+  let displayHeight = displayWidth / originalAspectRatio;
 
-      let y: number;
-      let currentPageHeight: number;
-
-      if (pageIndex === 0) {
-        // ✅ HALAMAN PERTAMA: Ada header dan margin
-        renderHeader(doc, config);
-        y = PAGE_CONFIG.MARGIN.TOP + PAGE_CONFIG.HEADER_HEIGHT;
-        currentPageHeight = firstPageAvailableHeight;
-      } else {
-        // ✅ HALAMAN SELANJUTNYA: Tanpa margin, full page
-        y = 0;
-        currentPageHeight = nextPagesAvailableHeight;
-      }
-
-      // ✅ Hitung slice untuk halaman ini
-      const sourceYStart = (accumulatedDisplayHeight * img.height) / displayHeight;
-      const sourceHeight = Math.min(
-        (currentPageHeight * img.height) / displayHeight,
-        img.height - sourceYStart
-      );
-
-      // ✅ Crop image di canvas
-      canvas.height = sourceHeight;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(img, 0, sourceYStart, img.width, sourceHeight, 0, 0, img.width, sourceHeight);
-
-      const slicedDataUrl = canvas.toDataURL('image/png', 1.0);
-
-      // ✅ Hitung tinggi display untuk slice ini
-      const sliceDisplayHeight = Math.min(currentPageHeight, displayHeight - accumulatedDisplayHeight);
-
-      const x = pageIndex === 0 ? PAGE_CONFIG.MARGIN.LEFT : 0;
-      const imgWidth = pageIndex === 0 ? displayWidth : PAGE_CONFIG.WIDTH;
-
-      console.log(`   ├─ Source: y=${sourceYStart.toFixed(0)}, h=${sourceHeight.toFixed(0)}`);
-      console.log(`   └─ Display: x=${x}, y=${y}, h=${sliceDisplayHeight.toFixed(2)}mm`);
-
-      // ✅ Add image ke PDF
-      doc.addImage(slicedDataUrl, 'PNG', x, y, imgWidth, sliceDisplayHeight, undefined, 'FAST');
-
-      accumulatedDisplayHeight += sliceDisplayHeight;
-
-      console.log(`   ✅ Page ${pageIndex + 1} rendered successfully`);
-    } catch (error) {
-      console.error(`   ❌ Error on page ${pageIndex + 1}:`, error);
-      throw error;
+  if (displayHeight > availableHeight) {
+    displayHeight = availableHeight;
+    displayWidth = displayHeight * originalAspectRatio;
+    
+    const minWidth = availableWidth * 0.90;
+    if (displayWidth < minWidth) {
+      displayWidth = minWidth;
+      displayHeight = displayWidth / originalAspectRatio;
     }
   }
+
+  const x = MARGIN_LEFT;
+  const y = HEADER_HEIGHT + 5;
+
+  console.log(`📄 Page ${pageNumber}:`, {
+    canvas: `${canvas.width}×${canvas.height}px`,
+    available: `${availableWidth.toFixed(0)}×${availableHeight.toFixed(0)}mm`,
+    display: `${displayWidth.toFixed(0)}×${displayHeight.toFixed(0)}mm`,
+    aspectRatio: originalAspectRatio.toFixed(2),
+    widthUsage: `${((displayWidth/availableWidth)*100).toFixed(1)}%`
+  });
+
+  doc.addImage(croppedData, 'JPEG', x, y, displayWidth, displayHeight, undefined, 'FAST');
 };
 
 // =================================================================================================
 // MAIN EXPORT FUNCTION
 // =================================================================================================
 
-/**
- * Export bracket ke PDF dengan format profesional
- * 
- * @param config - Konfigurasi event dan kategori
- * @param bracketElement - HTML element yang berisi bracket visual
- */
-export const exportBracketToPDF = async (
-  config: ExportConfig,
-  bracketElement: HTMLElement
-): Promise<void> => {
+export const exportBracketFromData = async (kelasData: any, bracketElement: HTMLElement): Promise<void> => {
   console.log('🚀 Starting PDF export...');
-  console.log('📋 Config:', config);
+  
+  const approvedParticipants = kelasData.peserta_kompetisi.filter((p: any) => p.status === 'APPROVED');
+  const participantCount = approvedParticipants.length;
+  
+  const pageSize = getOptimalPageSize(participantCount);
+  PAGE_WIDTH = pageSize.width;
+  PAGE_HEIGHT = pageSize.height;
+  
+  console.log(`📄 Selected page format: ${pageSize.format} (${PAGE_WIDTH}x${PAGE_HEIGHT}mm) for ${participantCount} participants`);
+  
+  const config: ExportConfig = {
+    eventName: kelasData.kompetisi.nama_event,
+    categoryName: `${kelasData.kelompok?.nama_kelompok || ''} ${
+      kelasData.kelas_berat?.jenis_kelamin === 'LAKI_LAKI' ? 'Male' : 'Female'
+    } ${kelasData.kelas_berat?.nama_kelas || kelasData.poomsae?.nama_kelas || ''}`.trim(),
+    location: kelasData.kompetisi.lokasi,
+    dateRange: `${new Date(kelasData.kompetisi.tanggal_mulai).toLocaleDateString('id-ID', {
+      day: 'numeric', month: 'long', year: 'numeric'
+    })} - ${new Date(kelasData.kompetisi.tanggal_selesai).toLocaleDateString('id-ID', {
+      day: 'numeric', month: 'long', year: 'numeric'
+    })}`,
+    totalParticipants: participantCount,
+  };
 
   try {
-    // ✅ STEP 1: Capture bracket sebagai image
-    const bracketImage = await captureBracketImage(bracketElement);
+    const doc = new jsPDF({ 
+      orientation: 'landscape', 
+      unit: 'mm', 
+      format: [PAGE_HEIGHT, PAGE_WIDTH],
+      compress: true 
+    });
+    doc.deletePage(1);
 
-    // ✅ STEP 2: Buat PDF document
-    const doc = new jsPDF({
-      orientation: 'landscape',
-      unit: 'mm',
-      format: 'a4',
-      compress: true,
+    const bracketImg = await convertElementToImage(bracketElement);
+
+    const maxHeightPerPage = PAGE_HEIGHT - HEADER_HEIGHT - FOOTER_HEIGHT - MARGIN_TOP - MARGIN_BOTTOM - 10;
+    const pxPerMm = bracketImg.height / maxHeightPerPage;
+    const maxPixelsPerPage = Math.floor(maxHeightPerPage * pxPerMm);
+    
+    const totalSlices = Math.ceil(bracketImg.height / maxPixelsPerPage);
+    const totalPages = totalSlices + 1;
+
+    console.log('📊 PDF Structure:', {
+      imageHeight: bracketImg.height,
+      maxPixelsPerPage,
+      totalSlices,
+      totalPages,
+      pageFormat: pageSize.format
     });
 
-    // ✅ STEP 3: Tambahkan image ke PDF dengan pagination (halaman pertama sudah ada)
-    addImageToPDF(doc, bracketImage, config);
+    doc.addPage();
+    addCoverPage(doc, config, totalPages);
 
-    // ✅ STEP 4: Generate filename
+    let yOffset = 0;
+    for (let i = 0; i < totalSlices; i++) {
+      doc.addPage();
+      addImageToPage(
+        doc, 
+        bracketImg, 
+        config, 
+        i + 2,
+        totalPages,
+        yOffset,
+        maxPixelsPerPage
+      );
+      yOffset += maxPixelsPerPage;
+    }
+
     const dateStr = new Date().toISOString().split('T')[0];
-    const sanitizedEvent = config.eventName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
-    const sanitizedCategory = config.categoryName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
-    const filename = `Bracket_${sanitizedEvent}_${sanitizedCategory}_${dateStr}.pdf`;
-
-    // ✅ STEP 5: Save PDF
+    const filename = `Bracket_${pageSize.format.replace(/ /g, '_')}_${config.eventName.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_${config.categoryName.replace(/ /g, '_')}_${dateStr}.pdf`;
+    
     doc.save(filename);
+    console.log(`✅ PDF saved: ${filename}`);
+    console.log(`📏 Format: ${pageSize.format} - Perfect for ${participantCount} participants!`);
 
-    console.log('✅ PDF exported successfully:', filename);
   } catch (error) {
     console.error('❌ Error exporting PDF:', error);
     throw error;
   }
-};
-
-// =================================================================================================
-// CONVENIENCE FUNCTION: EXPORT WITH DATA TRANSFORM
-// =================================================================================================
-
-/**
- * Export bracket ke PDF langsung dari data API
- * 
- * @param kelasData - Data dari API
- * @param bracketElement - HTML element bracket
- */
-export const exportBracketFromData = async (
-  kelasData: any,
-  bracketElement: HTMLElement
-): Promise<void> => {
-  const config = transformBracketData(kelasData);
-  await exportBracketToPDF(config, bracketElement);
 };

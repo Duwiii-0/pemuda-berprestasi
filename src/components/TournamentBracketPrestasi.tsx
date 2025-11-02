@@ -116,11 +116,11 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
     message: '',
   });
 
-  // Layout constants - PRESISI UNTUK GAP KONSISTEN
-  const CARD_WIDTH = 360;
-  const CARD_HEIGHT = 220;
-  const ROUND_GAP = 155;
-  const LINE_EXTENSION = 40;
+const CARD_WIDTH = 300;        // ✅ Reduced untuk fit split
+const CARD_HEIGHT = 180;       // ✅ Reduced
+const ROUND_GAP = 120;         // ✅ Gap antar round
+const VERTICAL_SPACING = 240;  // ✅ Jarak vertikal antar match
+const CENTER_GAP = 80;         // ✅ Jarak antara left/right dengan center
 
   const showNotification = (
     type: 'success' | 'error' | 'warning' | 'info',
@@ -723,19 +723,6 @@ const handleExportPDF = async () => {
     return matches.filter(match => match.ronde === round);
   };
 
-  // Fungsi untuk hitung posisi vertikal yang konsisten
-  const calculateVerticalPosition = (roundIndex: number, matchIndex: number, totalMatchesInRound: number): number => {
-    const baseSpacing = 280;
-    const spacingMultiplier = Math.pow(2, roundIndex);
-    const spacing = baseSpacing * spacingMultiplier;
-    
-    // Center alignment untuk ronde
-    const totalHeight = (totalMatchesInRound - 1) * spacing;
-    const startOffset = -totalHeight / 2;
-    
-    return startOffset + (matchIndex * spacing);
-  };
-
   const generatePrestasiLeaderboard = () => {
     if (matches.length === 0) return null;
 
@@ -805,30 +792,414 @@ const handleExportPDF = async () => {
     return leaderboard;
   };
 
+  /**
+ * 🆕 Render one side of split bracket (left or right)
+ */
+const renderBracketSide = (
+  matchesBySide: Match[][], 
+  side: 'left' | 'right',
+  startRound: number = 1
+) => {
+  const isRight = side === 'right';
+  const totalRounds = getTotalRounds();
+  const roundsToShow = matchesBySide.length;
+  
+  return (
+    <div 
+      className="bracket-side"
+      style={{
+        display: 'flex',
+        flexDirection: isRight ? 'row-reverse' : 'row',
+        gap: `${ROUND_GAP}px`,
+        position: 'relative'
+      }}
+    >
+      {matchesBySide.map((roundMatches, roundIndex) => {
+        if (roundMatches.length === 0) return null;
+        
+        const actualRound = startRound + roundIndex;
+        const roundName = getRoundName(actualRound, totalRounds);
+        
+        return (
+          <div key={`${side}-round-${actualRound}`} style={{ position: 'relative' }}>
+            {/* Round Header */}
+            <div 
+              className="round-header"
+              style={{
+                width: `${CARD_WIDTH}px`,
+                marginBottom: '20px',
+                textAlign: 'center'
+              }}
+            >
+              <div 
+                className="px-4 py-2 rounded-lg font-bold text-sm shadow-md"
+                style={{ backgroundColor: '#990D35', color: '#F5FBEF' }}
+              >
+                {roundName}
+              </div>
+              <div className="text-xs mt-1" style={{ color: '#050505', opacity: 0.6 }}>
+                {roundMatches.length} {roundMatches.length === 1 ? 'Match' : 'Matches'}
+              </div>
+            </div>
+            
+            {/* Round Matches */}
+            <div 
+              className="round-matches"
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: `${VERTICAL_SPACING}px`,
+                position: 'relative'
+              }}
+            >
+              {roundMatches.map((match, matchIndex) => (
+                <div key={match.id_match}>
+                  {renderMatchCard(match, actualRound, matchIndex)}
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
+/**
+ * 🆕 Render single match card
+ */
+const renderMatchCard = (match: Match, round: number, matchIndex: number) => {
+  const hasScores = match.skor_a > 0 || match.skor_b > 0;
+  const winner = hasScores 
+    ? (match.skor_a > match.skor_b ? match.peserta_a : match.peserta_b)
+    : null;
+  
+  return (
+    <div
+      className="match-card bg-white rounded-xl shadow-lg border-2 overflow-hidden hover:shadow-xl transition-all"
+      style={{ 
+        borderColor: winner ? '#22c55e' : '#990D35',
+        width: `${CARD_WIDTH}px`,
+        minHeight: `${CARD_HEIGHT}px`,
+      }}
+    >
+      {/* Header */}
+      <div 
+        className="px-3 py-2 border-b flex items-center justify-between"
+        style={{ 
+          backgroundColor: 'rgba(153, 13, 53, 0.05)',
+          borderColor: '#990D35'
+        }}
+      >
+        <div className="flex items-center gap-2">
+          {match.nomor_partai && (
+            <span 
+              className="text-xs px-2 py-1 rounded-full font-bold"
+              style={{ backgroundColor: '#990D35', color: 'white' }}
+            >
+              {match.nomor_partai}
+            </span>
+          )}
+        </div>
+        
+        <div className="flex items-center gap-2">
+          {match.tanggal_pertandingan && (
+            <span className="text-xs" style={{ color: '#050505', opacity: 0.7 }}>
+              {new Date(match.tanggal_pertandingan).toLocaleDateString('id-ID', {
+                day: '2-digit',
+                month: 'short'
+              })}
+            </span>
+          )}
+          <button
+            onClick={() => setEditingMatch(match)}
+            className="p-1 rounded hover:bg-black/5"
+          >
+            <Edit3 size={12} style={{ color: '#050505', opacity: 0.6 }} />
+          </button>
+        </div>
+      </div>
+
+      {/* Participants */}
+      <div className="flex flex-col">
+        {/* Participant A */}
+        <div 
+          className={`flex-1 px-3 py-2 border-b flex items-center justify-between gap-2 ${
+            match.skor_a > match.skor_b && hasScores
+              ? 'bg-gradient-to-r from-green-50 to-green-100' 
+              : ''
+          }`}
+          style={{ minHeight: '70px' }}
+        >
+          {match.peserta_a ? (
+            <>
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-sm leading-tight truncate" style={{ color: '#050505' }}>
+                  {getParticipantName(match.peserta_a)}
+                </p>
+                <p className="text-xs truncate mt-0.5" style={{ color: '#3B82F6', opacity: 0.7 }}>
+                  {getDojoName(match.peserta_a)}
+                </p>
+              </div>
+              {hasScores && (
+                <div 
+                  className="w-10 h-10 rounded-lg flex items-center justify-center font-bold shadow-sm"
+                  style={{ 
+                    backgroundColor: match.skor_a > match.skor_b ? '#22c55e' : '#e5e7eb',
+                    color: match.skor_a > match.skor_b ? 'white' : '#6b7280'
+                  }}
+                >
+                  {match.skor_a}
+                </div>
+              )}
+            </>
+          ) : (
+            <span className="text-sm text-gray-400 w-full text-center">TBD</span>
+          )}
+        </div>
+
+        {/* Participant B */}
+        <div 
+          className={`flex-1 px-3 py-2 flex items-center justify-between gap-2 ${
+            match.skor_b > match.skor_a && hasScores
+              ? 'bg-gradient-to-r from-green-50 to-green-100' 
+              : ''
+          }`}
+          style={{ minHeight: '70px' }}
+        >
+          {match.peserta_b ? (
+            <>
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-sm leading-tight truncate" style={{ color: '#050505' }}>
+                  {getParticipantName(match.peserta_b)}
+                </p>
+                <p className="text-xs truncate mt-0.5" style={{ color: '#EF4444', opacity: 0.7 }}>
+                  {getDojoName(match.peserta_b)}
+                </p>
+              </div>
+              {hasScores && (
+                <div 
+                  className="w-10 h-10 rounded-lg flex items-center justify-center font-bold shadow-sm"
+                  style={{ 
+                    backgroundColor: match.skor_b > match.skor_a ? '#22c55e' : '#e5e7eb',
+                    color: match.skor_b > match.skor_a ? 'white' : '#6b7280'
+                  }}
+                >
+                  {match.skor_b}
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="w-full flex justify-center">
+              {match.ronde === 1 ? (
+                <span 
+                  className="text-xs px-2 py-1 rounded-full font-medium"
+                  style={{ backgroundColor: 'rgba(245, 183, 0, 0.15)', color: '#F5B700' }}
+                >
+                  BYE
+                </span>
+              ) : (
+                <span 
+                  className="text-xs px-2 py-1 rounded-full font-medium"
+                  style={{ backgroundColor: 'rgba(192, 192, 192, 0.15)', color: '#6b7280' }}
+                >
+                  TBD
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/**
+ * 🆕 Render center final match
+ */
+const renderCenterFinal = () => {
+  const finalMatch = getFinalMatch();
+  
+  if (!finalMatch) {
+    return (
+      <div 
+        className="center-final"
+        style={{
+          width: `${CARD_WIDTH}px`,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '20px'
+        }}
+      >
+        <div 
+          className="px-6 py-3 rounded-lg font-bold text-lg shadow-md"
+          style={{ backgroundColor: '#990D35', color: '#F5FBEF' }}
+        >
+          FINAL
+        </div>
+        <div 
+          className="w-full p-6 rounded-xl border-2 text-center"
+          style={{ borderColor: '#990D35', backgroundColor: 'rgba(153, 13, 53, 0.05)' }}
+        >
+          <Trophy size={48} style={{ color: '#990D35', opacity: 0.3 }} className="mx-auto mb-2" />
+          <p className="text-sm font-medium" style={{ color: '#050505', opacity: 0.6 }}>
+            Waiting for finalists
+          </p>
+        </div>
+      </div>
+    );
+  }
+  
+  return (
+    <div 
+      className="center-final"
+      style={{
+        width: `${CARD_WIDTH}px`,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: '20px'
+      }}
+    >
+      {/* Final Header */}
+      <div 
+        className="px-6 py-3 rounded-lg font-bold text-lg shadow-md"
+        style={{ backgroundColor: '#FFD700', color: '#050505' }}
+      >
+        🏆 FINAL
+      </div>
+      
+      {/* Final Match Card */}
+      {renderMatchCard(finalMatch, getTotalRounds(), 0)}
+    </div>
+  );
+};
+
   const prestasiLeaderboard = generatePrestasiLeaderboard();
   const totalRounds = getTotalRounds();
 
-  // Fungsi untuk hitung dinamis minHeight dan centerOffset
-  const calculateBracketDimensions = () => {
-    if (matches.length === 0) return { minHeight: 1000, centerOffset: 500 };
-    
-    const firstRoundMatches = getMatchesByRound(1).length;
-    const baseSpacing = 280;
-    
-    // Hitung tinggi maksimal yang dibutuhkan oleh ronde pertama
-    const firstRoundHeight = (firstRoundMatches - 1) * baseSpacing + CARD_HEIGHT;
-    
-    // Tambahkan padding atas dan bawah
-    const totalHeight = firstRoundHeight + 20; // 200px padding atas + 200px padding bawah
-    const centerOffset = totalHeight / 2;
-    
-    return { 
-      minHeight: Math.max(1000, totalHeight),
-      centerOffset 
-    };
-  };
+  // 🆕 STEP 7: Inline styles for bracket
+React.useEffect(() => {
+  const style = document.createElement('style');
+  style.innerHTML = `
+    .tournament-layout {
+      position: relative;
+    }
 
-  const { minHeight, centerOffset } = calculateBracketDimensions();
+    .bracket-side {
+      position: relative;
+    }
+
+    .match-card {
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+
+    .match-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    }
+
+    .round-header {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: white;
+      padding-bottom: 10px;
+    }
+
+    /* Hide scrollbar but keep functionality */
+    .overflow-x-auto::-webkit-scrollbar {
+      height: 8px;
+    }
+
+    .overflow-x-auto::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 10px;
+    }
+
+    .overflow-x-auto::-webkit-scrollbar-thumb {
+      background: #990D35;
+      border-radius: 10px;
+    }
+
+    .overflow-x-auto::-webkit-scrollbar-thumb:hover {
+      background: #7a0a2a;
+    }
+
+    /* Smooth scroll */
+    .overflow-x-auto {
+      scroll-behavior: smooth;
+    }
+  `;
+  document.head.appendChild(style);
+  
+  return () => {
+    document.head.removeChild(style);
+  };
+}, []);
+
+  // ============================================================================
+// 🆕 SPLIT BRACKET HELPERS
+// ============================================================================
+
+/**
+ * Split matches into left and right sides
+ */
+/**
+ * Split matches into left and right sides
+ */
+const splitMatchesBySide = (matches: Match[], totalRounds: number) => {
+  const allRounds: { left: Match[]; right: Match[] }[] = [];
+  
+  for (let round = 1; round <= totalRounds; round++) {
+    const roundMatches = getMatchesByRound(round);
+    
+    // Final round stays in center (tidak di-split)
+    if (round === totalRounds) {
+      allRounds.push({ left: [], right: [] });
+      continue;
+    }
+    
+    // Split round matches in half
+    const half = Math.ceil(roundMatches.length / 2);
+    allRounds.push({
+      left: roundMatches.slice(0, half),
+      right: roundMatches.slice(half)
+    });
+  }
+  
+  return allRounds;
+};
+
+/**
+ * Get left side matches only
+ */
+const getLeftMatches = () => {
+  const totalRounds = getTotalRounds();
+  const allRounds = splitMatchesBySide(matches, totalRounds);
+  return allRounds.map(r => r.left).slice(0, -1); // Exclude final
+};
+
+/**
+ * Get right side matches only
+ */
+const getRightMatches = () => {
+  const totalRounds = getTotalRounds();
+  const allRounds = splitMatchesBySide(matches, totalRounds);
+  return allRounds.map(r => r.right).slice(0, -1); // Exclude final
+};
+
+/**
+ * Get final match (untuk ditampilkan di center)
+ */
+const getFinalMatch = (): Match | null => {
+  const totalRounds = getTotalRounds();
+  const finalMatches = getMatchesByRound(totalRounds);
+  return finalMatches.length > 0 ? finalMatches[0] : null;
+};
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#F5FBEF' }}>
@@ -969,303 +1340,35 @@ const handleExportPDF = async () => {
               </p>
             </div>
           </div>
-          <div ref={bracketRef} className="overflow-x-auto overflow-y-visible pb-8">
-            {/* Round Headers */}
-            <div className="flex gap-0 mb-6 px-8 sticky top-0 z-20 bg-white/95 backdrop-blur-sm py-4 shadow-sm">
-              {Array.from({ length: totalRounds }, (_, roundIndex) => {
-                const round = roundIndex + 1;
-                const roundMatches = getMatchesByRound(round);
-                const roundName = getRoundName(round, totalRounds);
-                
-                return (
-                  <div 
-                    key={`header-${round}`}
-                    className="flex-shrink-0"
-                    style={{ 
-                      width: `${CARD_WIDTH}px`,
-                      marginRight: roundIndex < totalRounds - 1 ? `${ROUND_GAP}px` : '0px'
-                    }}
-                  >
-                    <div 
-                      className="text-center px-6 py-3 rounded-lg font-bold text-lg shadow-md"
-                      style={{ backgroundColor: '#990D35', color: '#F5FBEF' }}
-                    >
-                      {roundName}
-                    </div>
-                    <div className="text-center mt-2 text-sm font-medium" style={{ color: '#050505', opacity: 0.6 }}>
-                      {roundMatches.length} {roundMatches.length === 1 ? 'Match' : 'Matches'}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+              <div ref={bracketRef} className="overflow-x-auto overflow-y-visible pb-8">
+  <div 
+    className="tournament-layout"
+    style={{
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      gap: `${CENTER_GAP}px`,
+      minWidth: 'fit-content',
+      padding: '40px 20px',
+      position: 'relative'
+    }}
+  >
+    {/* LEFT BRACKET */}
+    <div style={{ position: 'relative' }}>
+      {renderBracketSide(getLeftMatches(), 'left', 1)}
+    </div>
 
-              {/* Bracket Visual Container - DYNAMIC HEIGHT */}
-              <div className="relative" style={{ 
-                minHeight: `${minHeight}px`,  // ✅ CHANGED: Dynamic
-                paddingBottom: '200px', 
-                position: 'relative',
-                overflow: 'visible'
-              }}>
-              {/* SVG untuk garis connecting yang konsisten */}
-              <svg 
-                className="absolute top-0 left-8 pointer-events-none" 
-                style={{ 
-                  width: `${totalRounds * (CARD_WIDTH + ROUND_GAP)}px`,
-                  height: '100%'
-                }}
-              >
-                {Array.from({ length: totalRounds }, (_, roundIndex) => {
-                  const round = roundIndex + 1;
-                  const roundMatches = getMatchesByRound(round);
-                  
-                  if (roundIndex >= totalRounds - 1) return null;
-                  
-                  return roundMatches.map((match, matchIndex) => {
-                    const nextRoundMatches = getMatchesByRound(round + 1);
-                    const nextMatchIndex = Math.floor(matchIndex / 2);
-                    
-                  // Posisi kartu saat ini
-                  const x1 = roundIndex * (CARD_WIDTH + ROUND_GAP) + CARD_WIDTH;
-                  const y1 = calculateVerticalPosition(roundIndex, matchIndex, roundMatches.length) + centerOffset + (CARD_HEIGHT / 2);  // ✅ CHANGED
+    {/* CENTER FINAL */}
+    <div style={{ position: 'relative', zIndex: 10 }}>
+      {renderCenterFinal()}
+    </div>
 
-                  // Posisi kartu tujuan di ronde berikutnya
-                  const x2 = (roundIndex + 1) * (CARD_WIDTH + ROUND_GAP);
-                  const y2 = calculateVerticalPosition(roundIndex + 1, nextMatchIndex, nextRoundMatches.length) + centerOffset + (CARD_HEIGHT / 2);  // ✅ CHANGED
-                    
-                    // Titik tengah untuk garis vertikal
-                    const midX = x1 + LINE_EXTENSION;
-                    
-                    return (
-                      <g key={`line-${match.id_match}`}>
-                        {/* Garis horizontal keluar dari kartu */}
-                        <line
-                          x1={x1}
-                          y1={y1}
-                          x2={midX}
-                          y2={y1}
-                          stroke="#990D35"
-                          strokeWidth="2"
-                        />
-                        
-                        {/* Garis vertikal menuju titik tengah */}
-                        <line
-                          x1={midX}
-                          y1={y1}
-                          x2={midX}
-                          y2={y2}
-                          stroke="#990D35"
-                          strokeWidth="2"
-                        />
-                        
-                        {/* Garis horizontal masuk ke kartu berikutnya */}
-                        <line
-                          x1={midX}
-                          y1={y2}
-                          x2={x2}
-                          y2={y2}
-                          stroke="#990D35"
-                          strokeWidth="2"
-                        />
-                      </g>
-                    );
-                  });
-                })}
-              </svg>
-
-              {/* Match Cards dengan ABSOLUTE POSITIONING */}
-              {Array.from({ length: totalRounds }, (_, roundIndex) => {
-                const round = roundIndex + 1;
-                const roundMatches = getMatchesByRound(round);
-                
-                return roundMatches.map((match, matchIndex) => {
-                  const hasScores = match.skor_a > 0 || match.skor_b > 0;
-                  const winner = hasScores 
-                    ? (match.skor_a > match.skor_b ? match.peserta_a : match.peserta_b)
-                    : null;
-                  
-                  const left = roundIndex * (CARD_WIDTH + ROUND_GAP) + 32; // +32 untuk padding kiri
-                  const top = calculateVerticalPosition(roundIndex, matchIndex, roundMatches.length) + centerOffset;
-                  
-                  return (
-                    <div
-                      key={match.id_match}
-                      className="absolute bg-white rounded-xl shadow-lg border-2 overflow-hidden hover:shadow-xl transition-all"
-                      style={{ 
-                        borderColor: winner ? '#22c55e' : '#990D35',
-                        width: `${CARD_WIDTH}px`,
-                        height: `${CARD_HEIGHT}px`,
-                        left: `${left}px`,
-                        top: `${top}px`,
-                        display: 'flex',
-                        flexDirection: 'column'
-                      }}
-                    >
-                      <div 
-                        className="px-4 py-2.5 border-b flex items-center justify-between"
-                        style={{ 
-                          backgroundColor: 'rgba(153, 13, 53, 0.05)',
-                          borderColor: '#990D35'
-                        }}
-                      >
-                        <div className="flex items-center gap-2">
-                          
-                          {/* ⭐ TAMBAHKAN BADGE: NOMOR PARTAI */}
-                          {match.nomor_partai && (
-                            <span 
-                              className="text-xs px-2.5 py-1 rounded-full font-bold shadow-sm"
-                              style={{ backgroundColor: '#990D35', color: 'white' }}
-                            >
-                              No. Partai: {match.nomor_partai}
-                            </span>
-                          )}
-
-                        </div>
-                        
-                        <div className="flex items-center gap-3">
-                          {/* ⭐ TAMBAHKAN DISPLAY TANGGAL */}
-                          {match.tanggal_pertandingan && (
-                            <span className="text-xs flex items-center gap-1" style={{ color: '#050505', opacity: 0.7 }}>
-                              {new Date(match.tanggal_pertandingan).toLocaleDateString('id-ID', {
-                                day: '2-digit',
-                                month: 'short',
-                                year: 'numeric'
-                              })}
-                            </span>
-                          )}
-                          <button
-                            onClick={() => setEditingMatch(match)}
-                            className="p-1.5 rounded-lg hover:bg-black/5 transition-all"
-                          >
-                            <Edit3 size={14} style={{ color: '#050505', opacity: 0.6 }} />
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Participants */}
-                      <div className="flex flex-col">
-                        {/* Participant A */}
-                        <div 
-                          className={`flex-1 px-4 py-3 border-b flex items-center justify-between gap-3 transition-all ${
-                            match.skor_a > match.skor_b && hasScores
-                              ? 'bg-gradient-to-r from-green-50 to-green-100' 
-                              : 'hover:bg-blue-50/30'
-                          }`}
-                          style={{ borderColor: 'rgba(0, 0, 0, 0.05)', minHeight: '85px' }}
-                        >
-                          {match.peserta_a ? (
-                            <>
-                              <div className="flex-1 min-w-0">
-                                <p 
-                                  className="font-bold text-sm leading-tight break-words"
-                                  style={{ 
-                                    color: '#050505',
-                                    wordBreak: 'break-word',
-                                    overflowWrap: 'break-word',
-                                    display: '-webkit-box',
-                                    WebkitLineClamp: 2,
-                                    WebkitBoxOrient: 'vertical',
-                                    overflow: 'hidden'
-                                  }}
-                                >
-                                  {getParticipantName(match.peserta_a)}
-                                </p>
-                                <p className="text-xs truncate mt-0.5" style={{ color: '#3B82F6', opacity: 0.7 }}>
-                                  {getDojoName(match.peserta_a)}
-                                </p>
-                              </div>
-                              {hasScores && (
-                                <div 
-                                  className="w-12 h-12 rounded-lg flex items-center justify-center font-bold text-lg shadow-sm flex-shrink-0"
-                                  style={{ 
-                                    backgroundColor: match.skor_a > match.skor_b ? '#22c55e' : '#e5e7eb',
-                                    color: match.skor_a > match.skor_b ? 'white' : '#6b7280'
-                                  }}
-                                >
-                                  {match.skor_a}
-                                </div>
-                              )}
-                            </>
-                          ) : (
-                            <span className="text-sm text-gray-400 w-full text-center font-medium">TBD</span>
-                          )}
-                        </div>
-
-                        {/* Participant B */}
-                        <div 
-                          className={`flex-1 px-4 py-3 flex items-center justify-between gap-3 transition-all ${
-                            match.skor_b > match.skor_a && hasScores
-                              ? 'bg-gradient-to-r from-green-50 to-green-100' 
-                              : 'hover:bg-red-50/30'
-                          }`}
-                          style={{ minHeight: '85px' }}
-                        >
-                          {match.peserta_b ? (
-                            <>
-                              <div className="flex-1 min-w-0">
-                                <p 
-                                  className="font-bold text-sm leading-tight break-words"
-                                  style={{ 
-                                    color: '#050505',
-                                    wordBreak: 'break-word',
-                                    overflowWrap: 'break-word',
-                                    display: '-webkit-box',
-                                    WebkitLineClamp: 2,
-                                    WebkitBoxOrient: 'vertical',
-                                    overflow: 'hidden'
-                                  }}
-                                >
-                                  {getParticipantName(match.peserta_b)}
-                                </p>
-                                <p className="text-xs truncate mt-0.5" style={{ color: '#EF4444', opacity: 0.7 }}>
-                                  {getDojoName(match.peserta_b)}
-                                </p>
-                              </div>
-                              {hasScores && (
-                                <div 
-                                  className="w-12 h-12 rounded-lg flex items-center justify-center font-bold text-lg shadow-sm flex-shrink-0"
-                                  style={{ 
-                                    backgroundColor: match.skor_b > match.skor_a ? '#22c55e' : '#e5e7eb',
-                                    color: match.skor_b > match.skor_a ? 'white' : '#6b7280'
-                                  }}
-                                >
-                                  {match.skor_b}
-                                </div>
-                              )}
-                            </>
-                          ) : (
-                            <div className="w-full flex justify-center">
-                              {match.ronde === 1 ? (
-                                <span 
-                                  className="text-xs px-3 py-1.5 rounded-full font-medium"
-                                  style={{ 
-                                    backgroundColor: 'rgba(245, 183, 0, 0.15)',
-                                    color: '#F5B700'
-                                  }}
-                                >
-                                  BYE
-                                </span>
-                              ) : (
-                                <span 
-                                  className="text-xs px-3 py-1.5 rounded-full font-medium"
-                                  style={{ 
-                                    backgroundColor: 'rgba(192, 192, 192, 0.15)',
-                                    color: '#6b7280'
-                                  }}
-                                >
-                                  TBD
-                                </span>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                });
-              })}
-            </div>
-          </div>
+    {/* RIGHT BRACKET */}
+    <div style={{ position: 'relative' }}>
+      {renderBracketSide(getRightMatches(), 'right', 1)}
+    </div>
+  </div>
+</div>
 
           {/* PRESTASI LEADERBOARD */}
           {prestasiLeaderboard && (
