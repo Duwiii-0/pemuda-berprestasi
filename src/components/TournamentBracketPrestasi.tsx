@@ -819,6 +819,7 @@ const renderBracketSide = (
         
         const actualRound = startRound + roundIndex;
         const roundName = getRoundName(actualRound, totalRounds);
+        const isLastRound = roundIndex === matchesBySide.length - 1;
         
         return (
           <div key={`${side}-round-${actualRound}`} style={{ position: 'relative' }}>
@@ -853,8 +854,74 @@ const renderBracketSide = (
               }}
             >
               {roundMatches.map((match, matchIndex) => (
-                <div key={match.id_match}>
+                <div 
+                  key={match.id_match}
+                  style={{ position: 'relative' }}
+                >
                   {renderMatchCard(match, actualRound, matchIndex)}
+                  
+                  {/* ✅ CONNECTOR LINES */}
+                  {!isLastRound && (
+                    <svg
+                      style={{
+                        position: 'absolute',
+                        top: '50%',
+                        [isRight ? 'right' : 'left']: `-${ROUND_GAP}px`,
+                        width: `${ROUND_GAP}px`,
+                        height: `${VERTICAL_SPACING + CARD_HEIGHT}px`,
+                        transform: 'translateY(-50%)',
+                        pointerEvents: 'none',
+                        zIndex: 1,
+                        overflow: 'visible'
+                      }}
+                    >
+                      {/* Horizontal line from card */}
+                      <line
+                        x1={isRight ? ROUND_GAP : 0}
+                        y1="50%"
+                        x2={isRight ? ROUND_GAP - 40 : 40}
+                        y2="50%"
+                        stroke="#990D35"
+                        strokeWidth="2"
+                      />
+                      
+                      {/* Vertical line connecting to next round */}
+                      {matchIndex % 2 === 0 && (
+                        <>
+                          <line
+                            x1={isRight ? ROUND_GAP - 40 : 40}
+                            y1="50%"
+                            x2={isRight ? ROUND_GAP - 40 : 40}
+                            y2={`calc(50% + ${VERTICAL_SPACING / 2 + CARD_HEIGHT / 2}px)`}
+                            stroke="#990D35"
+                            strokeWidth="2"
+                          />
+                          <line
+                            x1={isRight ? ROUND_GAP - 40 : 40}
+                            y1={`calc(50% + ${VERTICAL_SPACING / 2 + CARD_HEIGHT / 2}px)`}
+                            x2={isRight ? ROUND_GAP : 0}
+                            y2={`calc(50% + ${VERTICAL_SPACING / 2 + CARD_HEIGHT / 2}px)`}
+                            stroke="#990D35"
+                            strokeWidth="2"
+                          />
+                        </>
+                      )}
+                      
+                      {/* Vertical line for odd matches */}
+                      {matchIndex % 2 === 1 && (
+                        <>
+                          <line
+                            x1={isRight ? ROUND_GAP - 40 : 40}
+                            y1="50%"
+                            x2={isRight ? ROUND_GAP - 40 : 40}
+                            y2={`calc(50% - ${VERTICAL_SPACING / 2 + CARD_HEIGHT / 2}px)`}
+                            stroke="#990D35"
+                            strokeWidth="2"
+                          />
+                        </>
+                      )}
+                    </svg>
+                  )}
                 </div>
               ))}
             </div>
@@ -1349,8 +1416,10 @@ const getFinalMatch = (): Match | null => {
       alignItems: 'center',
       gap: `${CENTER_GAP}px`,
       minWidth: 'fit-content',
+      minHeight: '80vh',           // ✅ TAMBAH: Minimal height
       padding: '40px 20px',
-      position: 'relative'
+      position: 'relative',
+      margin: '0 auto'             // ✅ TAMBAH: Center horizontal
     }}
   >
     {/* LEFT BRACKET */}
