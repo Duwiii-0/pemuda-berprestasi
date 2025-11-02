@@ -1182,24 +1182,33 @@ const renderCenterFinal = () => {
 /**
  * ✅ Render absolute SVG connectors untuk Round 1 → Semi Final
  */
+/**
+ * ✅ Render absolute SVG connectors untuk Round 1 → Semi Final
+ * HANYA untuk match GENAP (0, 2, 4...) yang connect
+ */
 const renderAbsoluteConnectors = () => {
   const leftRound1 = getLeftMatches()[0] || [];
   const rightRound1 = getRightMatches()[0] || [];
   
-  const connectors: React.ReactElement[] = [];  // ✅ FIXED TYPE
+  const connectors: React.ReactElement[] = [];
   
-  // ✅ LEFT SIDE: Round 1 → Semi Final
-  if (leftRound1.length >= 2) {
+  // ✅ LEFT SIDE: Hanya match GENAP
+  leftRound1.forEach((match, matchIndex) => {
+    if (matchIndex % 2 !== 0) return; // ⚠️ Skip match ganjil
+    
     const baseSpacing = VERTICAL_SPACING;
     const cardCenterY = CARD_HEIGHT / 2;
     
+    // Hitung posisi Y berdasarkan matchIndex
+    const matchPairOffset = matchIndex * (baseSpacing + CARD_HEIGHT / 2);
+    
     connectors.push(
       <svg
-        key="left-connector-0"
+        key={`left-connector-${matchIndex}`}
         style={{
           position: 'absolute',
           left: `${CARD_WIDTH}px`,
-          top: `calc(50% - ${baseSpacing / 2}px - ${cardCenterY}px)`,
+          top: `calc(50% - ${baseSpacing}px + ${matchPairOffset}px)`,
           width: `${ROUND_GAP}px`,
           height: `${baseSpacing + CARD_HEIGHT}px`,
           pointerEvents: 'none',
@@ -1207,7 +1216,7 @@ const renderAbsoluteConnectors = () => {
           overflow: 'visible'
         }}
       >
-        {/* Horizontal dari card 0 */}
+        {/* Horizontal dari card genap */}
         <line
           x1="0"
           y1={cardCenterY}
@@ -1217,7 +1226,7 @@ const renderAbsoluteConnectors = () => {
           strokeWidth="3"
         />
         
-        {/* Vertical turun */}
+        {/* Vertical turun ke match ganjil */}
         <line
           x1={ROUND_GAP / 2}
           y1={cardCenterY}
@@ -1238,20 +1247,24 @@ const renderAbsoluteConnectors = () => {
         />
       </svg>
     );
-  }
+  });
   
-  // ✅ RIGHT SIDE: Round 1 → Semi Final
-  if (rightRound1.length >= 2) {
+  // ✅ RIGHT SIDE: Hanya match GENAP
+  rightRound1.forEach((match, matchIndex) => {
+    if (matchIndex % 2 !== 0) return; // ⚠️ Skip match ganjil
+    
     const baseSpacing = VERTICAL_SPACING;
     const cardCenterY = CARD_HEIGHT / 2;
     
+    const matchPairOffset = matchIndex * (baseSpacing + CARD_HEIGHT / 2);
+    
     connectors.push(
       <svg
-        key="right-connector-0"
+        key={`right-connector-${matchIndex}`}
         style={{
           position: 'absolute',
           right: `${CARD_WIDTH}px`,
-          top: `calc(50% - ${baseSpacing / 2}px - ${cardCenterY}px)`,
+          top: `calc(50% - ${baseSpacing}px + ${matchPairOffset}px)`,
           width: `${ROUND_GAP}px`,
           height: `${baseSpacing + CARD_HEIGHT}px`,
           pointerEvents: 'none',
@@ -1259,7 +1272,7 @@ const renderAbsoluteConnectors = () => {
           overflow: 'visible'
         }}
       >
-        {/* Horizontal dari card 0 */}
+        {/* Horizontal dari card genap */}
         <line
           x1={ROUND_GAP}
           y1={cardCenterY}
@@ -1269,7 +1282,7 @@ const renderAbsoluteConnectors = () => {
           strokeWidth="3"
         />
         
-        {/* Vertical turun */}
+        {/* Vertical turun ke match ganjil */}
         <line
           x1={ROUND_GAP / 2}
           y1={cardCenterY}
@@ -1290,7 +1303,7 @@ const renderAbsoluteConnectors = () => {
         />
       </svg>
     );
-  }
+  });
   
   return connectors;
 };
