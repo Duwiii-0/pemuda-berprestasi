@@ -938,51 +938,17 @@ const renderBracketSide = (
     >
                   {renderMatchCard(match, actualRound, matchIndex)}
                   
-               {/* ✅ CONNECTOR LINES - FIXED DIRECTION */}
-{roundIndex < matchesBySide.length - 1 && matchIndex % 2 === 0 && (
-  <svg
-    style={{
-      position: 'absolute',
-      top: `${CARD_HEIGHT / 2}px`,
-      [isRight ? 'right' : 'left']: `-${ROUND_GAP}px`,
-      width: `${ROUND_GAP}px`,
-      height: `${calculateVerticalGap(roundIndex) + CARD_HEIGHT}px`,
-      pointerEvents: 'none',
-      zIndex: 5,
-      overflow: 'visible'
+{roundMatches.map((match, matchIndex) => (
+  <div 
+    key={match.id_match}
+    style={{ 
+      position: 'relative',
+      zIndex: 10
     }}
   >
-    {/* 1️⃣ Horizontal keluar dari card saat ini */}
-    <line
-      x1={isRight ? ROUND_GAP : 0}  // ✅ Start dari edge card
-      y1="0"
-      x2={ROUND_GAP / 2}             // ✅ Ke tengah SVG
-      y2="0"
-      stroke="#990D35"
-      strokeWidth="2"
-    />
-    
-    {/* 2️⃣ Vertical line turun ke match pasangan */}
-    <line
-      x1={ROUND_GAP / 2}
-      y1="0"
-      x2={ROUND_GAP / 2}
-      y2={calculateVerticalGap(roundIndex) + CARD_HEIGHT}
-      stroke="#990D35"
-      strokeWidth="2"
-    />
-    
-    {/* 3️⃣ Horizontal menuju CENTER (next round) - FIXED! */}
-    <line
-      x1={ROUND_GAP / 2}
-      y1={(calculateVerticalGap(roundIndex) + CARD_HEIGHT) / 2}
-      x2={isRight ? 0 : ROUND_GAP}  // ✅ Right→LEFT (0), Left→RIGHT (ROUND_GAP)
-      y2={(calculateVerticalGap(roundIndex) + CARD_HEIGHT) / 2}
-      stroke="#990D35"
-      strokeWidth="2"
-    />
-  </svg>
-)}
+    {renderMatchCard(match, actualRound, matchIndex)}
+  </div>
+))}
     </div>
   );
 })}
@@ -1210,6 +1176,123 @@ const renderCenterFinal = () => {
       {renderMatchCard(finalMatch, getTotalRounds(), 0)}
     </div>
   );
+};
+
+// ✅ TAMBAH FUNGSI INI DI SINI (SEBELUM const prestasiLeaderboard)
+/**
+ * ✅ Render absolute SVG connectors untuk Round 1 → Semi Final
+ */
+const renderAbsoluteConnectors = () => {
+  const leftRound1 = getLeftMatches()[0] || [];
+  const rightRound1 = getRightMatches()[0] || [];
+  
+  const connectors: React.ReactElement[] = [];  // ✅ FIXED TYPE
+  
+  // ✅ LEFT SIDE: Round 1 → Semi Final
+  if (leftRound1.length >= 2) {
+    const baseSpacing = VERTICAL_SPACING;
+    const cardCenterY = CARD_HEIGHT / 2;
+    
+    connectors.push(
+      <svg
+        key="left-connector-0"
+        style={{
+          position: 'absolute',
+          left: `${CARD_WIDTH}px`,
+          top: `calc(50% - ${baseSpacing / 2}px - ${cardCenterY}px)`,
+          width: `${ROUND_GAP}px`,
+          height: `${baseSpacing + CARD_HEIGHT}px`,
+          pointerEvents: 'none',
+          zIndex: 5,
+          overflow: 'visible'
+        }}
+      >
+        {/* Horizontal dari card 0 */}
+        <line
+          x1="0"
+          y1={cardCenterY}
+          x2={ROUND_GAP / 2}
+          y2={cardCenterY}
+          stroke="#990D35"
+          strokeWidth="3"
+        />
+        
+        {/* Vertical turun */}
+        <line
+          x1={ROUND_GAP / 2}
+          y1={cardCenterY}
+          x2={ROUND_GAP / 2}
+          y2={cardCenterY + baseSpacing + CARD_HEIGHT}
+          stroke="#990D35"
+          strokeWidth="3"
+        />
+        
+        {/* Horizontal ke Semi Final */}
+        <line
+          x1={ROUND_GAP / 2}
+          y1={cardCenterY + (baseSpacing + CARD_HEIGHT) / 2}
+          x2={ROUND_GAP}
+          y2={cardCenterY + (baseSpacing + CARD_HEIGHT) / 2}
+          stroke="#990D35"
+          strokeWidth="3"
+        />
+      </svg>
+    );
+  }
+  
+  // ✅ RIGHT SIDE: Round 1 → Semi Final
+  if (rightRound1.length >= 2) {
+    const baseSpacing = VERTICAL_SPACING;
+    const cardCenterY = CARD_HEIGHT / 2;
+    
+    connectors.push(
+      <svg
+        key="right-connector-0"
+        style={{
+          position: 'absolute',
+          right: `${CARD_WIDTH}px`,
+          top: `calc(50% - ${baseSpacing / 2}px - ${cardCenterY}px)`,
+          width: `${ROUND_GAP}px`,
+          height: `${baseSpacing + CARD_HEIGHT}px`,
+          pointerEvents: 'none',
+          zIndex: 5,
+          overflow: 'visible'
+        }}
+      >
+        {/* Horizontal dari card 0 */}
+        <line
+          x1={ROUND_GAP}
+          y1={cardCenterY}
+          x2={ROUND_GAP / 2}
+          y2={cardCenterY}
+          stroke="#990D35"
+          strokeWidth="3"
+        />
+        
+        {/* Vertical turun */}
+        <line
+          x1={ROUND_GAP / 2}
+          y1={cardCenterY}
+          x2={ROUND_GAP / 2}
+          y2={cardCenterY + baseSpacing + CARD_HEIGHT}
+          stroke="#990D35"
+          strokeWidth="3"
+        />
+        
+        {/* Horizontal ke Semi Final */}
+        <line
+          x1={ROUND_GAP / 2}
+          y1={cardCenterY + (baseSpacing + CARD_HEIGHT) / 2}
+          x2="0"
+          y2={cardCenterY + (baseSpacing + CARD_HEIGHT) / 2}
+          stroke="#990D35"
+          strokeWidth="3"
+        />
+      </svg>
+    );
+  }
+  
+  return connectors;
 };
 
   const prestasiLeaderboard = generatePrestasiLeaderboard();
@@ -1483,66 +1566,69 @@ const getFinalMatch = (): Match | null => {
             {/* Bracket Content */}
             <div ref={bracketRef} className="overflow-x-auto overflow-y-visible pb-8">
               <div 
-                className="tournament-layout"
-                style={{
-                  display: 'flex',
-                  justifyContent: 'center',
-                  alignItems: 'center',        // ✅ Center vertical alignment
-                  gap: `${CENTER_GAP}px`,
-                  minWidth: 'fit-content',
-                  minHeight: '80vh',
-                  padding: '40px 20px',
-                  position: 'relative'
-                }}
-              >
-                {/* LEFT BRACKET */}
-                {renderBracketSide(getLeftMatches(), 'left', 1)}
+  className="tournament-layout"
+  style={{
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: `${CENTER_GAP}px`,
+    minWidth: 'fit-content',
+    minHeight: '80vh',
+    padding: '40px 20px',
+    position: 'relative'
+  }}
+>
+  {/* LEFT BRACKET */}
+  {renderBracketSide(getLeftMatches(), 'left', 1)}
 
-                {/* CENTER FINAL */}
-                <div style={{ 
-                  position: 'relative', 
-                  zIndex: 10, 
-                  display: 'flex', 
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                  {/* Left Connector */}
-                  <svg
-                    style={{
-                      position: 'absolute',
-                      left: `-${CENTER_GAP / 2}px`,
-                      top: '50%',
-                      width: `${CENTER_GAP / 2}px`,
-                      height: '2px',
-                      pointerEvents: 'none',
-                      zIndex: 5
-                    }}
-                  >
-                    <line x1="0" y1="0" x2={CENTER_GAP / 2} y2="0" stroke="#990D35" strokeWidth="2" />
-                  </svg>
-                  
-                  {/* Right Connector */}
-                  <svg
-                    style={{
-                      position: 'absolute',
-                      right: `-${CENTER_GAP / 2}px`,
-                      top: '50%',
-                      width: `${CENTER_GAP / 2}px`,
-                      height: '2px',
-                      pointerEvents: 'none',
-                      zIndex: 5
-                    }}
-                  >
-                    <line x1="0" y1="0" x2={CENTER_GAP / 2} y2="0" stroke="#990D35" strokeWidth="2" />
-                  </svg>
-                  
-                  {renderCenterFinal()}
-                </div>
+  {/* CENTER FINAL */}
+  <div style={{ 
+    position: 'relative', 
+    zIndex: 10, 
+    display: 'flex', 
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center'
+  }}>
+    {/* ✅ UPDATE: Pertebal line connector */}
+    <svg
+      style={{
+        position: 'absolute',
+        left: `-${CENTER_GAP / 2}px`,
+        top: '50%',
+        width: `${CENTER_GAP / 2}px`,
+        height: '2px',
+        pointerEvents: 'none',
+        zIndex: 5
+      }}
+    >
+      <line x1="0" y1="0" x2={CENTER_GAP / 2} y2="0" stroke="#990D35" strokeWidth="3" />
+    </svg>
+    
+    <svg
+      style={{
+        position: 'absolute',
+        right: `-${CENTER_GAP / 2}px`,
+        top: '50%',
+        width: `${CENTER_GAP / 2}px`,
+        height: '2px',
+        pointerEvents: 'none',
+        zIndex: 5
+      }}
+    >
+      <line x1="0" y1="0" x2={CENTER_GAP / 2} y2="0" stroke="#990D35" strokeWidth="3" />
+    </svg>
+    
+    {renderCenterFinal()}
+  </div>
 
-                {/* RIGHT BRACKET */}
-                {renderBracketSide(getRightMatches(), 'right', 1)}
-              </div>
+  {/* RIGHT BRACKET */}
+  {renderBracketSide(getRightMatches(), 'right', 1)}
+
+  {/* ✅ TAMBAH INI: Absolute connectors */}
+  {renderAbsoluteConnectors()}
+</div>
+
             </div> {/* Closing tag untuk bracket-export-area */}
 
             {/* Leaderboard section tetap di luar export area */}
