@@ -35,9 +35,9 @@ interface Match {
     nama_venue: string;
   };
   tanggal_pertandingan?: string;  
-  nomor_partai?: string;           
-  nomor_antrian?: number;          
-  nomor_lapangan?: string;         
+  nomor_partai?: string;                   
+  nomor_antrian?: number;                 
+  nomor_lapangan?: string;                
 }
 
 interface KelasKejuaraan {
@@ -1092,8 +1092,9 @@ return (
         </div>
       </div>
     </div>
-  );
-};
+</div>
+);
+}
 
 /**
  * 🆕 Render center final match
@@ -1414,8 +1415,8 @@ const getFinalMatch = (): Match | null => {
 
       {/* PRESTASI Layout dengan FIXED POSITIONING */}
       {bracketGenerated && matches.length > 0 ? (
-        <div className="p-6" >
-            <div id="bracket-export-area">
+        <div className="p-6">
+          <div id="bracket-export-area">
             {/* Title for PDF */}
             <div className="mb-6 text-center">
               <h2 className="text-2xl font-bold" style={{ color: '#990D35' }}>
@@ -1425,212 +1426,214 @@ const getFinalMatch = (): Match | null => {
                 {kelasData.kompetisi.nama_event} • {kelasData.kompetisi.lokasi}
               </p>
             </div>
-          </div>
-              <div ref={bracketRef} className="overflow-x-auto overflow-y-visible pb-8">
-  <div 
-    className="tournament-layout"
-    style={{
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',        // ✅ Center vertical alignment
-      gap: `${CENTER_GAP}px`,
-      minWidth: 'fit-content',
-      minHeight: '80vh',
-      padding: '40px 20px',
-      position: 'relative'
-    }}
-  >
-    {/* LEFT BRACKET */}
-    {renderBracketSide(getLeftMatches(), 'left', 1)}
 
-    {/* CENTER FINAL */}
-    <div style={{ 
-      position: 'relative', 
-      zIndex: 10, 
-      display: 'flex', 
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center'
-    }}>
-      {/* Left Connector */}
-      <svg
-        style={{
-          position: 'absolute',
-          left: `-${CENTER_GAP / 2}px`,
-          top: '50%',
-          width: `${CENTER_GAP / 2}px`,
-          height: '2px',
-          pointerEvents: 'none',
-          zIndex: 5
-        }}
-      >
-        <line x1="0" y1="0" x2={CENTER_GAP / 2} y2="0" stroke="#990D35" strokeWidth="2" />
-      </svg>
-      
-      {/* Right Connector */}
-      <svg
-        style={{
-          position: 'absolute',
-          right: `-${CENTER_GAP / 2}px`,
-          top: '50%',
-          width: `${CENTER_GAP / 2}px`,
-          height: '2px',
-          pointerEvents: 'none',
-          zIndex: 5
-        }}
-      >
-        <line x1="0" y1="0" x2={CENTER_GAP / 2} y2="0" stroke="#990D35" strokeWidth="2" />
-      </svg>
-      
-      {renderCenterFinal()}
-    </div>
+            {/* Bracket Content */}
+            <div ref={bracketRef} className="overflow-x-auto overflow-y-visible pb-8">
+              <div 
+                className="tournament-layout"
+                style={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',        // ✅ Center vertical alignment
+                  gap: `${CENTER_GAP}px`,
+                  minWidth: 'fit-content',
+                  minHeight: '80vh',
+                  padding: '40px 20px',
+                  position: 'relative'
+                }}
+              >
+                {/* LEFT BRACKET */}
+                {renderBracketSide(getLeftMatches(), 'left', 1)}
 
-    {/* RIGHT BRACKET */}
-    {renderBracketSide(getRightMatches(), 'right', 1)}
-  </div>
-</div>
+                {/* CENTER FINAL */}
+                <div style={{ 
+                  position: 'relative', 
+                  zIndex: 10, 
+                  display: 'flex', 
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  {/* Left Connector */}
+                  <svg
+                    style={{
+                      position: 'absolute',
+                      left: `-${CENTER_GAP / 2}px`,
+                      top: '50%',
+                      width: `${CENTER_GAP / 2}px`,
+                      height: '2px',
+                      pointerEvents: 'none',
+                      zIndex: 5
+                    }}
+                  >
+                    <line x1="0" y1="0" x2={CENTER_GAP / 2} y2="0" stroke="#990D35" strokeWidth="2" />
+                  </svg>
+                  
+                  {/* Right Connector */}
+                  <svg
+                    style={{
+                      position: 'absolute',
+                      right: `-${CENTER_GAP / 2}px`,
+                      top: '50%',
+                      width: `${CENTER_GAP / 2}px`,
+                      height: '2px',
+                      pointerEvents: 'none',
+                      zIndex: 5
+                    }}
+                  >
+                    <line x1="0" y1="0" x2={CENTER_GAP / 2} y2="0" stroke="#990D35" strokeWidth="2" />
+                  </svg>
+                  
+                  {renderCenterFinal()}
+                </div>
 
-          {/* PRESTASI LEADERBOARD */}
-          {prestasiLeaderboard && (
-            <div className="mt-8" id="prestasi-leaderboard">
-              <div className="max-w-4xl mx-auto">
-                <div className="bg-white rounded-lg shadow-lg border-2" style={{ borderColor: '#990D35' }}>
-                  <div className="p-6 border-b" style={{ backgroundColor: 'rgba(153, 13, 53, 0.05)', borderColor: '#990D35' }}>
-                    <div className="flex items-center gap-3 justify-center">
-                      <Trophy size={28} style={{ color: '#990D35' }} />
-                      <h3 className="text-2xl font-bold" style={{ color: '#990D35' }}>
-                        LEADERBOARD
-                      </h3>
-                    </div>
-                  </div>
+                {/* RIGHT BRACKET */}
+                {renderBracketSide(getRightMatches(), 'right', 1)}
+              </div>
+            </div> {/* Closing tag untuk bracket-export-area */}
 
-                  <div className="p-8">
-                    {/* 1st Place */}
-                    {prestasiLeaderboard.first && (
-                      <div className="mb-6">
-                        <div 
-                          className="relative p-6 rounded-xl border-4 shadow-xl"
-                          style={{ 
-                            backgroundColor: 'rgba(255, 215, 0, 0.1)', 
-                            borderColor: '#FFD700'
-                          }}
-                        >
-                          <div className="flex items-center gap-4">
-                            <div 
-                              className="w-20 h-20 rounded-full flex items-center justify-center flex-shrink-0 shadow-lg"
-                              style={{ backgroundColor: '#FFD700' }}
-                            >
-                              <span className="text-4xl">🥇</span>
-                            </div>
-                            
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-2">
-                                <span 
-                                  className="text-xs font-bold px-3 py-1 rounded-full"
-                                  style={{ backgroundColor: '#FFD700', color: 'white' }}
-                                >
-                                  CHAMPION
-                                </span>
-                              </div>
-                              <h4 className="text-2xl font-bold mb-1" style={{ color: '#050505' }}>
-                                {prestasiLeaderboard.first.name}
-                              </h4>
-                              <p className="text-sm uppercase font-medium" style={{ color: '#050505', opacity: 0.6 }}>
-                                {prestasiLeaderboard.first.dojo}
-                              </p>
-                            </div>
-                            
-                            <Trophy size={48} style={{ color: '#FFD700' }} className="flex-shrink-0" />
-                          </div>
-                        </div>
+            {/* Leaderboard section tetap di luar export area */}
+            {prestasiLeaderboard && (
+              <div className="mt-8" id="prestasi-leaderboard">
+                <div className="max-w-4xl mx-auto">
+                  <div className="bg-white rounded-lg shadow-lg border-2" style={{ borderColor: '#990D35' }}>
+                    <div className="p-6 border-b" style={{ backgroundColor: 'rgba(153, 13, 53, 0.05)', borderColor: '#990D35' }}>
+                      <div className="flex items-center gap-3 justify-center">
+                        <Trophy size={28} style={{ color: '#990D35' }} />
+                        <h3 className="text-2xl font-bold" style={{ color: '#990D35' }}>
+                          LEADERBOARD
+                        </h3>
                       </div>
-                    )}
+                    </div>
 
-                    {/* 2nd & 3rd Places */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      {/* 2nd Place */}
-                      {prestasiLeaderboard.second && (
-                        <div 
-                          className="p-4 rounded-lg border-2 shadow-md col-span-1"
-                          style={{ 
-                            backgroundColor: 'rgba(192, 192, 192, 0.1)', 
-                            borderColor: '#C0C0C0'
-                          }}
-                        >
-                          <div className="flex flex-col items-center text-center">
-                            <div 
-                              className="w-16 h-16 rounded-full flex items-center justify-center mb-3 shadow-md"
-                              style={{ backgroundColor: '#C0C0C0' }}
-                            >
-                              <span className="text-3xl">🥈</span>
+                    <div className="p-8">
+                      {/* 1st Place */}
+                      {prestasiLeaderboard.first && (
+                        <div className="mb-6">
+                          <div 
+                            className="relative p-6 rounded-xl border-4 shadow-xl"
+                            style={{ 
+                              backgroundColor: 'rgba(255, 215, 0, 0.1)', 
+                              borderColor: '#FFD700'
+                            }}
+                          >
+                            <div className="flex items-center gap-4">
+                              <div 
+                                className="w-20 h-20 rounded-full flex items-center justify-center flex-shrink-0 shadow-lg"
+                                style={{ backgroundColor: '#FFD700' }}
+                              >
+                                <span className="text-4xl">🥇</span>
+                              </div>
+                              
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <span 
+                                    className="text-xs font-bold px-3 py-1 rounded-full"
+                                    style={{ backgroundColor: '#FFD700', color: 'white' }}
+                                  >
+                                    CHAMPION
+                                  </span>
+                                </div>
+                                <h4 className="text-2xl font-bold mb-1" style={{ color: '#050505' }}>
+                                  {prestasiLeaderboard.first.name}
+                                </h4>
+                                <p className="text-sm uppercase font-medium" style={{ color: '#050505', opacity: 0.6 }}>
+                                  {prestasiLeaderboard.first.dojo}
+                                </p>
+                              </div>
+                              
+                              <Trophy size={48} style={{ color: '#FFD700' }} className="flex-shrink-0" />
                             </div>
-                            <span 
-                              className="text-xs font-bold px-2 py-1 rounded-full mb-2"
-                              style={{ backgroundColor: '#C0C0C0', color: 'white' }}
-                            >
-                              2ND PLACE
-                            </span>
-                            <h5 className="text-lg font-bold mb-1" style={{ color: '#050505' }}>
-                              {prestasiLeaderboard.second.name}
-                            </h5>
-                            <p className="text-xs uppercase" style={{ color: '#050505', opacity: 0.6 }}>
-                              {prestasiLeaderboard.second.dojo}
-                            </p>
                           </div>
                         </div>
                       )}
 
-                      {/* 3rd Places */}
-                      {prestasiLeaderboard.third.map((participant) => (
-                        <div 
-                          key={participant.id}
-                          className="p-4 rounded-lg border-2 shadow-md col-span-1"
-                          style={{ 
-                            backgroundColor: 'rgba(205, 127, 50, 0.1)', 
-                            borderColor: '#CD7F32'
-                          }}
-                        >
-                          <div className="flex flex-col items-center text-center">
-                            <div 
-                              className="w-16 h-16 rounded-full flex items-center justify-center mb-3 shadow-md"
-                              style={{ backgroundColor: '#CD7F32' }}
-                            >
-                              <span className="text-3xl">🥉</span>
+                      {/* 2nd & 3rd Places */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {/* 2nd Place */}
+                        {prestasiLeaderboard.second && (
+                          <div 
+                            className="p-4 rounded-lg border-2 shadow-md col-span-1"
+                            style={{ 
+                              backgroundColor: 'rgba(192, 192, 192, 0.1)', 
+                              borderColor: '#C0C0C0'
+                            }}
+                          >
+                            <div className="flex flex-col items-center text-center">
+                              <div 
+                                className="w-16 h-16 rounded-full flex items-center justify-center mb-3 shadow-md"
+                                style={{ backgroundColor: '#C0C0C0' }}
+                              >
+                                <span className="text-3xl">🥈</span>
+                              </div>
+                              <span 
+                                className="text-xs font-bold px-2 py-1 rounded-full mb-2"
+                                style={{ backgroundColor: '#C0C0C0', color: 'white' }}
+                              >
+                                2ND PLACE
+                              </span>
+                              <h5 className="text-lg font-bold mb-1" style={{ color: '#050505' }}>
+                                {prestasiLeaderboard.second.name}
+                              </h5>
+                              <p className="text-xs uppercase" style={{ color: '#050505', opacity: 0.6 }}>
+                                {prestasiLeaderboard.second.dojo}
+                              </p>
                             </div>
-                            <span 
-                              className="text-xs font-bold px-2 py-1 rounded-full mb-2"
-                              style={{ backgroundColor: '#CD7F32', color: 'white' }}
-                            >
-                              3RD PLACE
-                            </span>
-                            <h5 className="text-lg font-bold mb-1" style={{ color: '#050505' }}>
-                              {participant.name}
-                            </h5>
-                            <p className="text-xs uppercase" style={{ color: '#050505', opacity: 0.6 }}>
-                              {participant.dojo}
-                            </p>
                           </div>
-                        </div>
-                      ))}
-                    </div>
+                        )}
 
-                    {/* Empty State */}
-                    {!prestasiLeaderboard.first && !prestasiLeaderboard.second && prestasiLeaderboard.third.length === 0 && (
-                      <div className="text-center py-12">
-                        <Trophy size={64} style={{ color: '#990D35', opacity: 0.3 }} className="mx-auto mb-4" />
-                        <p className="text-lg font-semibold mb-2" style={{ color: '#050505' }}>
-                          Belum Ada Hasil
-                        </p>
-                        <p className="text-sm" style={{ color: '#050505', opacity: 0.5 }}>
-                          Leaderboard akan muncul setelah pertandingan dimulai
-                        </p>
+                        {/* 3rd Places */}
+                        {prestasiLeaderboard.third.map((participant) => (
+                          <div 
+                            key={participant.id}
+                            className="p-4 rounded-lg border-2 shadow-md col-span-1"
+                            style={{ 
+                              backgroundColor: 'rgba(205, 127, 50, 0.1)', 
+                              borderColor: '#CD7F32'
+                            }}
+                          >
+                            <div className="flex flex-col items-center text-center">
+                              <div 
+                                className="w-16 h-16 rounded-full flex items-center justify-center mb-3 shadow-md"
+                                style={{ backgroundColor: '#CD7F32' }}
+                              >
+                                <span className="text-3xl">🥉</span>
+                              </div>
+                              <span 
+                                className="text-xs font-bold px-2 py-1 rounded-full mb-2"
+                                style={{ backgroundColor: '#CD7F32', color: 'white' }}
+                              >
+                                3RD PLACE
+                              </span>
+                              <h5 className="text-lg font-bold mb-1" style={{ color: '#050505' }}>
+                                {participant.name}
+                              </h5>
+                              <p className="text-xs uppercase" style={{ color: '#050505', opacity: 0.6 }}>
+                                {participant.dojo}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                    )}
+
+                      {/* Empty State */}
+                      {!prestasiLeaderboard.first && !prestasiLeaderboard.second && prestasiLeaderboard.third.length === 0 && (
+                        <div className="text-center py-12">
+                          <Trophy size={64} style={{ color: '#990D35', opacity: 0.3 }} className="mx-auto mb-4" />
+                          <p className="text-lg font-semibold mb-2" style={{ color: '#050505' }}>
+                            Belum Ada Hasil
+                          </p>
+                          <p className="text-sm" style={{ color: '#050505', opacity: 0.5 }}>
+                            Leaderboard akan muncul setelah pertandingan dimulai
+                          </p>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       ) : (
         <div className="p-6">
