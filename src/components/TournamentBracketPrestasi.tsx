@@ -874,14 +874,68 @@ const renderBracketSide = (
                 position: 'relative'
               }}
             >
-              {roundMatches.map((match, matchIndex) => (
-                <div 
-                  key={match.id_match}
-                  style={{ 
-                    position: 'relative',
-                    zIndex: 10
-                  }}
-                >
+              {roundMatches.map((match, matchIndex) => {
+  const shouldDrawLine = roundIndex < matchesBySide.length - 1 && matchIndex % 2 === 0;
+  
+  // ✅ LOGGING POSISI CARD
+  console.log(`🎯 ${side.toUpperCase()} Side - Round ${actualRound} - Match ${matchIndex}:`, {
+    shouldDrawLine,
+    matchIndex,
+    isEven: matchIndex % 2 === 0,
+    roundIndex,
+    hasNextRound: roundIndex < matchesBySide.length - 1
+  });
+  
+  if (shouldDrawLine) {
+    const vertGap = calculateVerticalGap(roundIndex);
+    const svgTop = CARD_HEIGHT / 2;
+    const svgLeft = isRight ? 'right' : 'left';
+    const svgOffset = `-${ROUND_GAP}px`;
+    
+    // ✅ LOGGING SVG POSITION
+    console.log(`  📍 SVG Container:`, {
+      position: 'absolute',
+      [svgLeft]: svgOffset,
+      top: `${svgTop}px`,
+      width: `${ROUND_GAP}px`,
+      height: `${vertGap + CARD_HEIGHT}px`
+    });
+    
+    // ✅ LOGGING LINE COORDINATES
+    const line1 = {
+      x1: isRight ? ROUND_GAP : 0,
+      y1: 0,
+      x2: ROUND_GAP / 2,
+      y2: 0
+    };
+    
+    const line2 = {
+      x1: ROUND_GAP / 2,
+      y1: 0,
+      x2: ROUND_GAP / 2,
+      y2: vertGap + CARD_HEIGHT
+    };
+    
+    const line3 = {
+      x1: ROUND_GAP / 2,
+      y1: (vertGap + CARD_HEIGHT) / 2,
+      x2: isRight ? 0 : ROUND_GAP,
+      y2: (vertGap + CARD_HEIGHT) / 2
+    };
+    
+    console.log(`  📏 Line 1 (Horizontal keluar):`, line1);
+    console.log(`  📏 Line 2 (Vertical):`, line2);
+    console.log(`  📏 Line 3 (Horizontal ke center):`, line3);
+  }
+  
+  return (
+    <div 
+      key={match.id_match}
+      style={{ 
+        position: 'relative',
+        zIndex: 10
+      }}
+    >
                   {renderMatchCard(match, actualRound, matchIndex)}
                   
                {/* ✅ CONNECTOR LINES - FIXED DIRECTION */}
@@ -929,8 +983,9 @@ const renderBracketSide = (
     />
   </svg>
 )}
-                </div>
-              ))}
+    </div>
+  );
+})}
             </div>
           </div>
         );
