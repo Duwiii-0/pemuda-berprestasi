@@ -116,10 +116,10 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
     message: '',
   });
 
-const CARD_WIDTH = 300;        // ✅ Reduced untuk fit split
-const CARD_HEIGHT = 180;       // ✅ Reduced
-const ROUND_GAP = 120;         // ✅ Gap antar round
-const VERTICAL_SPACING = 240;  // ✅ Jarak vertikal antar match
+const CARD_WIDTH = 250;        // ✅ Reduced untuk fit split
+const CARD_HEIGHT = 150;       // ✅ Reduced
+const ROUND_GAP = 60;         // ✅ Gap antar round
+const VERTICAL_SPACING = 120;  // ✅ Jarak vertikal antar match
 const CENTER_GAP = 80;         // ✅ Jarak antara left/right dengan center
 
   const showNotification = (
@@ -952,6 +952,7 @@ const renderMatchCard = (match: Match, round: number, matchIndex: number) => {
     : null;
   
 return (
+<div style={{ transform: 'scale(0.85)', transformOrigin: 'center' }}>
   <div
     className="match-card bg-white rounded-xl shadow-lg border-2 overflow-hidden hover:shadow-xl transition-all"
     style={{ 

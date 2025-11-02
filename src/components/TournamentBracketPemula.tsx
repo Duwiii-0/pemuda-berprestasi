@@ -950,9 +950,10 @@ return (
               </p>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-2">
               {/* ROUND 1 MATCHES */}
               {matches.filter(m => m.ronde === 1).map((match, matchIndex) => (
+<div style={{ transform: 'scale(0.85)', transformOrigin: 'center' }}>
                 <div
                   key={match.id_match}
                   className="bg-white rounded-xl shadow-md border-2 overflow-hidden"
@@ -995,10 +996,10 @@ return (
                     </div>
                   </div>
 
-                  <div className="p-4 space-y-3">
+                  <div className="p-2 space-y-3">
                     {/* Participant A */}
                     <div 
-                      className={`relative rounded-lg border-2 p-3 transition-all ${
+                      className={`relative rounded-lg border-2 p-2 transition-all ${
                         match.skor_a > match.skor_b && (match.skor_a > 0 || match.skor_b > 0)
                           ? 'border-yellow-400 bg-yellow-50/50' 
                           : 'border-gray-200 bg-white'
@@ -1054,7 +1055,7 @@ return (
                     {/* Participant B */}
                     {match.peserta_b ? (
                       <div 
-                        className={`relative rounded-lg border-2 p-3 transition-all ${
+                        className={`relative rounded-lg border-2 p-2 transition-all ${
                           match.skor_b > match.skor_a && (match.skor_a > 0 || match.skor_b > 0)
                             ? 'border-yellow-400 bg-yellow-50/50' 
                             : match.skor_a > 0 || match.skor_b > 0
@@ -1126,6 +1127,7 @@ return (
                     )}
                   </div>
                 </div>
+</div>
               ))}
 
               {/* ADDITIONAL MATCH (Round 2) */}
@@ -1152,6 +1154,7 @@ return (
                     </div>
 
                     {/* Additional Match Card */}
+<div style={{ transform: 'scale(0.85)', transformOrigin: 'center' }}>
                     <div
                       className="bg-white rounded-xl shadow-md border-2 overflow-hidden"
                       style={{ borderColor: '#990D35' }}
@@ -1193,10 +1196,10 @@ return (
                         </div>
                       </div>
 
-                      <div className="p-4 space-y-3">
+                      <div className="p-2 space-y-3">
                         {/* Participant A (BYE) */}
                         <div 
-                          className={`relative rounded-lg border-2 p-3 transition-all ${
+                          className={`relative rounded-lg border-2 p-2 transition-all ${
                             additionalMatch.skor_a > additionalMatch.skor_b && (additionalMatch.skor_a > 0 || additionalMatch.skor_b > 0)
                               ? 'border-yellow-400 bg-yellow-50/50' 
                               : 'border-gray-200 bg-white'
@@ -1246,7 +1249,7 @@ return (
                                     className="w-12 h-12 rounded-lg flex items-center justify-center font-bold text-xl shadow-sm"
                                     style={{ 
                                       backgroundColor: additionalMatch.skor_a > additionalMatch.skor_b ? '#22c55e' : '#e5e7eb',
-                                      color: additionalMatch.skor_a > additionalMatch.skor_b ? 'white' : '#6b7280'
+                                      color: additionalMatch.skor_a > additional.skor_b ? 'white' : '#6b7280'
                                     }}
                                   >
                                     {additionalMatch.skor_a}
@@ -1265,7 +1268,7 @@ return (
 
                         {/* Participant B (from last match) */}
                         <div 
-                          className={`relative rounded-lg border-2 p-3 transition-all ${
+                          className={`relative rounded-lg border-2 p-2 transition-all ${
                             additionalMatch.skor_b > additionalMatch.skor_a && (additionalMatch.skor_a > 0 || additionalMatch.skor_b > 0)
                               ? 'border-yellow-400 bg-yellow-50/50' 
                               : additionalMatch.skor_a > 0 || additionalMatch.skor_b > 0
@@ -1344,6 +1347,7 @@ return (
                         </div>
                       </div>
                     </div>
+</div>
                   </div>
                 );
               })()}

@@ -211,10 +211,9 @@ const convertElementToImage = async (element: HTMLElement): Promise<HTMLImageEle
     backgroundColor: '#FFFFFF',
     cacheBust: true,
     style: {
-      transform: 'scale(1)',
+      transform: 'scale(0.85)',
       transformOrigin: 'top left',
       margin: '0',
-      padding: '20px'
     },
     filter: (node) => {
       if (node.nodeName === 'BUTTON') {
