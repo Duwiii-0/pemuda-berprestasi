@@ -1056,8 +1056,8 @@ const renderVerticalConnector = (
   const verticalGap = VERTICAL_SPACING * Math.pow(2, roundIndex);
   const lineLength = ROUND_GAP / 2;
   
-  // Total height = card height + gap between cards
-  const totalHeight = CARD_HEIGHT + verticalGap;
+  // ✅ Height harus mencakup card + gap
+  const connectorHeight = verticalGap + CARD_HEIGHT;
   
   return (
     <svg
@@ -1066,7 +1066,7 @@ const renderVerticalConnector = (
         left: isRight ? -lineLength : CARD_WIDTH + lineLength,
         top: '50%',
         width: 3,
-        height: totalHeight,
+        height: connectorHeight,
         pointerEvents: 'none',
         zIndex: 5,
         overflow: 'visible'
@@ -1076,7 +1076,7 @@ const renderVerticalConnector = (
         x1="0"
         y1="0"
         x2="0"
-        y2={totalHeight}
+        y2={connectorHeight}
         stroke="#990D35"
         strokeWidth="3"
         opacity="0.8"
@@ -1084,7 +1084,6 @@ const renderVerticalConnector = (
     </svg>
   );
 };
-
 /**
  * 🆕 Render one side of split bracket with connectors
  */
@@ -1116,6 +1115,10 @@ const renderBracketSide = (
         const verticalGap = VERTICAL_SPACING * Math.pow(2, roundIndex);
         const hasNextRound = roundIndex < matchesBySide.length - 1 && matchesBySide[roundIndex + 1].length > 0;
         
+        // ✅ Calculate vertical offset untuk center alignment
+        const prevRoundGap = roundIndex > 0 ? VERTICAL_SPACING * Math.pow(2, roundIndex - 1) : 0;
+        const marginTop = roundIndex > 0 ? (prevRoundGap / 2) + (CARD_HEIGHT / 2) : 0;
+        
         return (
           <div 
             key={`${side}-round-${actualRound}`} 
@@ -1123,7 +1126,8 @@ const renderBracketSide = (
               position: 'relative',
               display: 'flex',
               flexDirection: 'column',
-              alignItems: 'center'
+              alignItems: 'center',
+              marginTop: `${marginTop}px` // ✅ OFFSET KE BAWAH
             }}
           >
             {/* Round Header */}
