@@ -792,9 +792,12 @@ const handleExportPDF = async () => {
     return leaderboard;
   };
 
-  /**
- * 🆕 Render one side of split bracket (left or right)
- */
+// ✅ FUNGSI HITUNG VERTICAL GAP ANTAR MATCH
+const calculateVerticalGap = (roundIndex: number): number => {
+  const baseSpacing = 280;
+  return baseSpacing * Math.pow(2, roundIndex);
+};
+
 /**
  * 🆕 Render one side of split bracket (FINAL-CENTERED)
  */
@@ -881,57 +884,58 @@ const renderBracketSide = (
                 >
                   {renderMatchCard(match, actualRound, matchIndex)}
                   
-                  {/* ✅ CONNECTOR LINES - SIMPLIFIED */}
-                  {roundIndex < matchesBySide.length - 1 && (
-                    <svg
-                      style={{
-                        position: 'absolute',
-                        top: `${CARD_HEIGHT / 2}px`,
-                        [isRight ? 'right' : 'left']: `-${ROUND_GAP}px`,
-                        width: `${ROUND_GAP}px`,
-                        height: matchIndex % 2 === 0 
-                          ? `${verticalGap + CARD_HEIGHT}px` 
-                          : '2px',
-                        pointerEvents: 'none',
-                        zIndex: 5,
-                        overflow: 'visible'
-                      }}
-                    >
-                      {/* Horizontal line dari card */}
-                      <line
-                        x1={isRight ? ROUND_GAP : 0}
-                        y1="0"
-                        x2={ROUND_GAP / 2}
-                        y2="0"
-                        stroke="#990D35"
-                        strokeWidth="2"
-                      />
-                      
-                      {/* Match GENAP: vertical + horizontal ke next round */}
-                      {matchIndex % 2 === 0 && (
-                        <>
-                          {/* Vertical line ke match ganjil di bawah */}
-                          <line
-                            x1={ROUND_GAP / 2}
-                            y1="0"
-                            x2={ROUND_GAP / 2}
-                            y2={verticalGap + CARD_HEIGHT}
-                            stroke="#990D35"
-                            strokeWidth="2"
-                          />
-                          {/* Horizontal ke junction point */}
-                          <line
-                            x1={ROUND_GAP / 2}
-                            y1={(verticalGap + CARD_HEIGHT) / 2}
-                            x2={isRight ? ROUND_GAP : 0}
-                            y2={(verticalGap + CARD_HEIGHT) / 2}
-                            stroke="#990D35"
-                            strokeWidth="2"
-                          />
-                        </>
-                      )}
-                    </svg>
-                  )}
+                  {/* ✅ CONNECTOR LINES - FIXED */}
+{roundIndex < matchesBySide.length - 1 && (
+  <svg
+    style={{
+      position: 'absolute',
+      top: `${CARD_HEIGHT / 2}px`,
+      [isRight ? 'right' : 'left']: `-${ROUND_GAP}px`,
+      width: `${ROUND_GAP}px`,
+      height: matchIndex % 2 === 0 
+        ? `${calculateVerticalGap(roundIndex) + CARD_HEIGHT}px` 
+        : '2px',
+      pointerEvents: 'none',
+      zIndex: 5,
+      overflow: 'visible'
+    }}
+  >
+    {/* 1️⃣ Horizontal line keluar dari card */}
+    <line
+      x1={isRight ? ROUND_GAP : 0}
+      y1="0"
+      x2={isRight ? ROUND_GAP / 2 : ROUND_GAP / 2}
+      y2="0"
+      stroke="#990D35"
+      strokeWidth="2"
+    />
+    
+    {/* 2️⃣ Match GENAP: vertical + horizontal ke next round */}
+    {matchIndex % 2 === 0 && (
+      <>
+        {/* Vertical line ke match ganjil di bawah */}
+        <line
+          x1={ROUND_GAP / 2}
+          y1="0"
+          x2={ROUND_GAP / 2}
+          y2={calculateVerticalGap(roundIndex) + CARD_HEIGHT}
+          stroke="#990D35"
+          strokeWidth="2"
+        />
+        
+        {/* 3️⃣ Horizontal ke next card (di tengah-tengah dua match) */}
+        <line
+          x1={ROUND_GAP / 2}
+          y1={(calculateVerticalGap(roundIndex) + CARD_HEIGHT) / 2}
+          x2={isRight ? 0 : ROUND_GAP}
+          y2={(calculateVerticalGap(roundIndex) + CARD_HEIGHT) / 2}
+          stroke="#990D35"
+          strokeWidth="2"
+        />
+      </>
+    )}
+  </svg>
+)}
                 </div>
               ))}
             </div>
@@ -1095,6 +1099,7 @@ return (
 </div>
 );
 }
+
 
 /**
  * 🆕 Render center final match
