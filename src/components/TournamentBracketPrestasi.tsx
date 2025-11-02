@@ -998,10 +998,6 @@ return (
 );
 }
 
-
-/**
- * 🆕 Render connector dari card ke next round (HORIZONTAL)
- */
 const renderCardConnector = (
   match: Match,
   matchIndex: number,
@@ -1041,7 +1037,7 @@ const renderCardConnector = (
 };
 
 /**
- * 🆕 Render vertical connector between pairs
+ * Render vertical connector between pairs - FIXED
  */
 const renderVerticalConnector = (
   matchIndex: number,
@@ -1049,7 +1045,7 @@ const renderVerticalConnector = (
   side: 'left' | 'right',
   matchCount: number
 ) => {
-  // Only draw for even index (top card of pair)
+  // Only draw for first match of pair (even index)
   if (matchIndex % 2 !== 0) return null;
   if (matchIndex + 1 >= matchCount) return null;
   
@@ -1057,8 +1053,8 @@ const renderVerticalConnector = (
   const verticalGap = VERTICAL_SPACING * Math.pow(2, roundIndex);
   const lineLength = ROUND_GAP / 2;
   
-  // ✅ Connector height
-  const connectorHeight = verticalGap + CARD_HEIGHT;
+  // Total distance between centers of two cards
+  const totalDistance = verticalGap + CARD_HEIGHT;
   
   return (
     <svg
@@ -1067,7 +1063,7 @@ const renderVerticalConnector = (
         left: isRight ? -lineLength : CARD_WIDTH + lineLength,
         top: '50%',
         width: 3,
-        height: connectorHeight,
+        height: totalDistance,
         pointerEvents: 'none',
         zIndex: 5,
         overflow: 'visible'
@@ -1077,7 +1073,7 @@ const renderVerticalConnector = (
         x1="1.5"
         y1="0"
         x2="1.5"
-        y2={connectorHeight}
+        y2={totalDistance}
         stroke="#990D35"
         strokeWidth="3"
         opacity="0.8"
@@ -1189,9 +1185,6 @@ const renderBracketSide = (
   );
 };
 
-/**
- * 🆕 Render center final with connectors
- */
 const renderCenterFinal = () => {
   const finalMatch = getFinalMatch();
   const lineLength = CENTER_GAP / 2;
@@ -1210,7 +1203,7 @@ const renderCenterFinal = () => {
           position: 'relative'
         }}
       >
-        {/* Left connector line */}
+        {/* Left connector */}
         <svg
           style={{
             position: 'absolute',
@@ -1226,7 +1219,7 @@ const renderCenterFinal = () => {
           <line x1="0" y1="0" x2={lineLength} y2="0" stroke="#990D35" strokeWidth="3" opacity="0.6" />
         </svg>
         
-        {/* Right connector line */}
+        {/* Right connector */}
         <svg
           style={{
             position: 'absolute',
@@ -1242,12 +1235,14 @@ const renderCenterFinal = () => {
           <line x1="0" y1="0" x2={lineLength} y2="0" stroke="#990D35" strokeWidth="3" opacity="0.6" />
         </svg>
         
+        {/* Header */}
         <div 
           className="px-6 py-3 rounded-lg font-bold text-lg shadow-md"
           style={{ backgroundColor: '#990D35', color: '#F5FBEF' }}
         >
           FINAL
         </div>
+        
         <div 
           className="w-full p-6 rounded-xl border-2 text-center"
           style={{ borderColor: '#990D35', backgroundColor: 'rgba(153, 13, 53, 0.05)' }}
@@ -1273,7 +1268,7 @@ const renderCenterFinal = () => {
         position: 'relative'
       }}
     >
-      {/* Left connector line */}
+      {/* Left connector */}
       <svg
         style={{
           position: 'absolute',
@@ -1289,7 +1284,7 @@ const renderCenterFinal = () => {
         <line x1="0" y1="0" x2={lineLength} y2="0" stroke="#990D35" strokeWidth="3" opacity="0.8" />
       </svg>
       
-      {/* Right connector line */}
+      {/* Right connector */}
       <svg
         style={{
           position: 'absolute',
@@ -1731,170 +1726,38 @@ const getFinalMatchWithPosition = () => {
               </p>
             </div>
 
-            {/* Bracket Content */}
+{/* Bracket Content */}
 <div ref={bracketRef} className="overflow-x-auto overflow-y-visible pb-8">
-  {/* Bracket Visual Container - ABSOLUTE POSITIONING */}
-  <div className="relative" style={{ 
-    minHeight: `1200px`, // temporary fixed height
-    paddingBottom: '200px', 
-    position: 'relative',
-    overflow: 'visible'
-  }}>
-    
-    {/* ✅ SVG Layer untuk semua connectors */}
-    <svg 
-      className="absolute top-0 left-0 pointer-events-none" 
-      style={{ 
-        width: '100%',
-        height: '100%',
-        zIndex: 1
-      }}
-    >
-      {/* LEFT BRACKET CONNECTORS */}
-      {getLeftBracketMatches().map((roundData, roundIdx) => {
-        if (roundIdx >= getTotalRounds() - 1) return null;
-        
-        const nextRoundData = roundIdx < getLeftBracketMatches().length - 1 
-          ? getLeftBracketMatches()[roundIdx + 1] 
-          : null;
-        
-        const isFinalNext = !nextRoundData;
-        const finalData = getFinalMatchWithPosition();
-        
-        return roundData.matches.map((match, matchIdx) => {
-          const pos = roundData.positions[matchIdx];
-          const x1 = pos.x + CARD_WIDTH;
-          const y1 = pos.y + (CARD_HEIGHT / 2);
-          
-          let x2: number, y2: number;
-          
-          if (isFinalNext && finalData) {
-            // Connect to final
-            x2 = finalData.position.x;
-            y2 = finalData.position.y + (CARD_HEIGHT / 2);
-          } else if (nextRoundData) {
-            // Connect to next round
-            const nextMatchIdx = Math.floor(matchIdx / 2);
-            const nextPos = nextRoundData.positions[nextMatchIdx];
-            x2 = nextPos.x;
-            y2 = nextPos.y + (CARD_HEIGHT / 2);
-          } else {
-            return null;
-          }
-          
-          const midX = x1 + LINE_EXTENSION;
-          
-          return (
-            <g key={`left-connector-${match.id_match}`}>
-              <line x1={x1} y1={y1} x2={midX} y2={y1} stroke="#990D35" strokeWidth="3" opacity="0.7" />
-              <line x1={midX} y1={y1} x2={midX} y2={y2} stroke="#990D35" strokeWidth="3" opacity="0.7" />
-              <line x1={midX} y1={y2} x2={x2} y2={y2} stroke="#990D35" strokeWidth="3" opacity="0.7" />
-            </g>
-          );
-        });
-      })}
-      
-      {/* RIGHT BRACKET CONNECTORS */}
-      {getRightBracketMatches().map((roundData, roundIdx) => {
-        if (roundIdx >= getTotalRounds() - 1) return null;
-        
-        const nextRoundData = roundIdx < getRightBracketMatches().length - 1 
-          ? getRightBracketMatches()[roundIdx + 1] 
-          : null;
-        
-        const isFinalNext = !nextRoundData;
-        const finalData = getFinalMatchWithPosition();
-        
-        return roundData.matches.map((match, matchIdx) => {
-          const pos = roundData.positions[matchIdx];
-          const x1 = pos.x;
-          const y1 = pos.y + (CARD_HEIGHT / 2);
-          
-          let x2: number, y2: number;
-          
-          if (isFinalNext && finalData) {
-            // Connect to final (from right)
-            x2 = finalData.position.x + CARD_WIDTH;
-            y2 = finalData.position.y + (CARD_HEIGHT / 2);
-          } else if (nextRoundData) {
-            // Connect to next round
-            const nextMatchIdx = Math.floor(matchIdx / 2);
-            const nextPos = nextRoundData.positions[nextMatchIdx];
-            x2 = nextPos.x + CARD_WIDTH;
-            y2 = nextPos.y + (CARD_HEIGHT / 2);
-          } else {
-            return null;
-          }
-          
-          const midX = x1 - LINE_EXTENSION;
-          
-          return (
-            <g key={`right-connector-${match.id_match}`}>
-              <line x1={x1} y1={y1} x2={midX} y2={y1} stroke="#990D35" strokeWidth="3" opacity="0.7" />
-              <line x1={midX} y1={y1} x2={midX} y2={y2} stroke="#990D35" strokeWidth="3" opacity="0.7" />
-              <line x1={midX} y1={y2} x2={x2} y2={y2} stroke="#990D35" strokeWidth="3" opacity="0.7" />
-            </g>
-          );
-        });
-      })}
-    </svg>
+  <div 
+    className="tournament-layout"
+    style={{
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      gap: `${CENTER_GAP}px`,
+      minWidth: 'fit-content',
+      minHeight: '80vh',
+      padding: '40px 20px',
+      position: 'relative'
+    }}
+  >
+    {/* LEFT BRACKET */}
+    {renderBracketSide(getLeftMatches(), 'left', 1)}
 
-    {/* ✅ LEFT BRACKET CARDS */}
-    {getLeftBracketMatches().map((roundData, roundIdx) => 
-      roundData.matches.map((match, idx) => {
-        const pos = roundData.positions[idx];
-        return (
-          <div
-            key={`left-${match.id_match}`}
-            style={{
-              position: 'absolute',
-              left: `${pos.x}px`,
-              top: `${pos.y}px`,
-              zIndex: 10
-            }}
-          >
-            {renderMatchCard(match, `left-${match.id_match}`)}
-          </div>
-        );
-      })
-    )}
-    
-    {/* ✅ RIGHT BRACKET CARDS */}
-    {getRightBracketMatches().map((roundData, roundIdx) => 
-      roundData.matches.map((match, idx) => {
-        const pos = roundData.positions[idx];
-        return (
-          <div
-            key={`right-${match.id_match}`}
-            style={{
-              position: 'absolute',
-              left: `${pos.x}px`,
-              top: `${pos.y}px`,
-              zIndex: 10
-            }}
-          >
-            {renderMatchCard(match, `right-${match.id_match}`)}
-          </div>
-        );
-      })
-    )}
-    
-    {/* ✅ FINAL CARD */}
-    {getFinalMatchWithPosition() && (
-      <div
-        style={{
-          position: 'absolute',
-          left: `${getFinalMatchWithPosition()!.position.x}px`,
-          top: `${getFinalMatchWithPosition()!.position.y}px`,
-          zIndex: 10
-        }}
-      >
-        {renderMatchCard(
-          getFinalMatchWithPosition()!.match, 
-          `final-${getFinalMatchWithPosition()!.match.id_match}`
-        )}
-      </div>
-    )}
+    {/* CENTER FINAL */}
+    <div style={{ 
+      position: 'relative', 
+      zIndex: 10, 
+      display: 'flex', 
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center'
+    }}>
+      {renderCenterFinal()}
+    </div>
+
+    {/* RIGHT BRACKET */}
+    {renderBracketSide(getRightMatches(), 'right', 1)}
   </div>
 </div>
 
