@@ -798,8 +798,54 @@ const calculateVerticalGap = (roundIndex: number): number => {
   return baseSpacing * Math.pow(2, roundIndex);
 };
 
+const renderConnectors = (
+  fromMatches: Match[],
+  toMatch: Match,
+  side: 'left' | 'right',
+  roundIndex: number
+) => {
+  const isRight = side === 'right';
+  const verticalGapFrom = VERTICAL_SPACING * Math.pow(2, roundIndex);
+  const verticalGapTo = VERTICAL_SPACING * Math.pow(2, roundIndex + 1);
+  
+  return fromMatches.map((fromMatch, idx) => {
+    const fromY = idx * verticalGapFrom + (CARD_HEIGHT / 2);
+    const toY = Math.floor(idx / 2) * verticalGapTo + (CARD_HEIGHT / 2);
+    const midX = CARD_WIDTH + (ROUND_GAP / 2);
+    
+    return (
+      <svg
+        key={`connector-${fromMatch.id_match}-to-${toMatch.id_match}`}
+        style={{
+          position: 'absolute',
+          left: isRight ? -ROUND_GAP : CARD_WIDTH,
+          top: 0,
+          width: ROUND_GAP,
+          height: '100%',
+          pointerEvents: 'none',
+          zIndex: 5,
+          overflow: 'visible'
+        }}
+      >
+        <path
+          d={`
+            M ${isRight ? ROUND_GAP : 0} ${fromY}
+            L ${midX} ${fromY}
+            L ${midX} ${toY}
+            L ${isRight ? 0 : ROUND_GAP} ${toY}
+          `}
+          stroke="#990D35"
+          strokeWidth="2"
+          fill="none"
+          opacity="0.6"
+        />
+      </svg>
+    );
+  });
+};
+
 /**
- * 🆕 Render one side of split bracket (FINAL-CENTERED)
+ * 🆕 Render one side of split bracket with connectors
  */
 const renderBracketSide = (
   matchesBySide: Match[][], 
@@ -815,7 +861,7 @@ const renderBracketSide = (
       style={{
         display: 'flex',
         flexDirection: isRight ? 'row-reverse' : 'row',
-        alignItems: 'center',  // ✅ Center align ke Final
+        alignItems: 'center',
         gap: `${ROUND_GAP}px`,
         position: 'relative'
       }}
@@ -826,8 +872,6 @@ const renderBracketSide = (
         const actualRound = startRound + roundIndex;
         const roundName = getRoundName(actualRound, totalRounds);
         const matchCount = roundMatches.length;
-        
-        // ✅ Calculate vertical spacing based on round (exponential)
         const verticalGap = VERTICAL_SPACING * Math.pow(2, roundIndex);
         
         return (
@@ -864,7 +908,7 @@ const renderBracketSide = (
               </div>
             </div>
             
-            {/* Round Matches Container */}
+            {/* Round Matches Container with Connectors */}
             <div 
               className="round-matches-container"
               style={{
@@ -874,17 +918,62 @@ const renderBracketSide = (
                 position: 'relative'
               }}
             >
-             {roundMatches.map((match, matchIndex) => (
-  <div 
-    key={match.id_match}
-    style={{ 
-      position: 'relative',
-      zIndex: 10
-    }}
-  >
-    {renderMatchCard(match, actualRound, matchIndex)}
-  </div>
-))}
+              {/* Draw connectors to next round */}
+              {roundIndex < matchesBySide.length - 1 && matchesBySide[roundIndex + 1].length > 0 && (
+                <>
+                  {roundMatches.map((match, matchIdx) => {
+                    const nextRoundMatch = matchesBySide[roundIndex + 1][Math.floor(matchIdx / 2)];
+                    if (!nextRoundMatch) return null;
+                    
+                    const fromY = matchIdx * verticalGap + (CARD_HEIGHT / 2);
+                    const toMatchIndex = Math.floor(matchIdx / 2);
+                    const nextVerticalGap = VERTICAL_SPACING * Math.pow(2, roundIndex + 1);
+                    const toY = toMatchIndex * nextVerticalGap + (CARD_HEIGHT / 2);
+                    const midX = CARD_WIDTH + (ROUND_GAP / 2);
+                    
+                    return (
+                      <svg
+                        key={`connector-${match.id_match}`}
+                        style={{
+                          position: 'absolute',
+                          left: isRight ? -ROUND_GAP : CARD_WIDTH,
+                          top: 0,
+                          width: ROUND_GAP,
+                          height: '100%',
+                          pointerEvents: 'none',
+                          zIndex: 5,
+                          overflow: 'visible'
+                        }}
+                      >
+                        <path
+                          d={`
+                            M ${isRight ? ROUND_GAP : 0} ${fromY}
+                            L ${midX} ${fromY}
+                            L ${midX} ${toY}
+                            L ${isRight ? 0 : ROUND_GAP} ${toY}
+                          `}
+                          stroke="#990D35"
+                          strokeWidth="2"
+                          fill="none"
+                          opacity="0.4"
+                        />
+                      </svg>
+                    );
+                  })}
+                </>
+              )}
+              
+              {roundMatches.map((match, matchIndex) => (
+                <div 
+                  key={match.id_match}
+                  style={{ 
+                    position: 'relative',
+                    zIndex: 10
+                  }}
+                >
+                  {renderMatchCard(match, actualRound, matchIndex)}
+                </div>
+              ))}
             </div>
           </div>
         );
