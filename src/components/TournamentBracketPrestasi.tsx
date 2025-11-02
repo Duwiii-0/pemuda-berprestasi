@@ -824,14 +824,17 @@ const renderBracketSide = (
         return (
           <div key={`${side}-round-${actualRound}`} style={{ position: 'relative' }}>
             {/* Round Header */}
-            <div 
-              className="round-header"
-              style={{
-                width: `${CARD_WIDTH}px`,
-                marginBottom: '20px',
-                textAlign: 'center'
-              }}
-            >
+<div 
+  className="round-header"
+  style={{
+    width: `${CARD_WIDTH}px`,
+    marginBottom: '20px',
+    textAlign: 'center',
+    position: 'relative',    // ✅ TAMBAH
+    zIndex: 20,              // ✅ TAMBAH - Higher than connector
+    background: '#F5FBEF'    // ✅ TAMBAH - Cover lines behind
+  }}
+>
               <div 
                 className="px-4 py-2 rounded-lg font-bold text-sm shadow-md"
                 style={{ backgroundColor: '#990D35', color: '#F5FBEF' }}
@@ -862,74 +865,60 @@ const renderBracketSide = (
                 >
                   {renderMatchCard(match, actualRound, matchIndex)}
                   
-                  {/* ✅ CONNECTOR LINES - COMPLETE FIX */}
-{!isLastRound && (
+                 {/* ✅ CONNECTOR LINES - NO OVERLAP */}
+{!isLastRound && matchIndex % 2 === 0 && (
   <svg
     style={{
       position: 'absolute',
       top: '50%',
-      transform: 'translateY(-50%)',
       [isRight ? 'right' : 'left']: `-${ROUND_GAP}px`,
       width: `${ROUND_GAP}px`,
-      height: matchIndex % 2 === 0 
-        ? `${(VERTICAL_SPACING * Math.pow(2, roundIndex + 1)) / 2}px`
-        : '2px',
+      height: `${VERTICAL_SPACING * Math.pow(2, roundIndex + 1)}px`,
+      transform: 'translateY(-50%)',
       pointerEvents: 'none',
-      zIndex: 1,
+      zIndex: 5,  // ✅ Below headers (20), above background (0)
       overflow: 'visible'
     }}
   >
-    {/* Horizontal line dari card */}
+    {/* Horizontal dari card genap (atas) */}
     <line
       x1={isRight ? ROUND_GAP : 0}
-      y1={matchIndex % 2 === 0 ? "0" : "0"}
+      y1="0"
       x2={ROUND_GAP / 2}
-      y2={matchIndex % 2 === 0 ? "0" : "0"}
+      y2="0"
       stroke="#990D35"
       strokeWidth="2"
     />
     
-    {/* Match GENAP (atas): buat vertical line ke match ganjil di bawah */}
-    {matchIndex % 2 === 0 && roundIndex < matchesBySide.length - 1 && (
-      <>
-        {/* Vertical connector */}
-        <line
-          x1={ROUND_GAP / 2}
-          y1="0"
-          x2={ROUND_GAP / 2}
-          y2={`${(VERTICAL_SPACING * Math.pow(2, roundIndex + 1)) / 2}px`}
-          stroke="#990D35"
-          strokeWidth="2"
-        />
-      </>
-    )}
+    {/* Vertical connector menuju match ganjil (bawah) */}
+    <line
+      x1={ROUND_GAP / 2}
+      y1="0"
+      x2={ROUND_GAP / 2}
+      y2={VERTICAL_SPACING * Math.pow(2, roundIndex + 1)}
+      stroke="#990D35"
+      strokeWidth="2"
+    />
     
-    {/* Match GANJIL (bawah): horizontal line bertemu dengan vertical dari atas */}
-    {matchIndex % 2 === 1 && (
-      <>
-        {/* Horizontal line ke junction point */}
-        <line
-          x1={ROUND_GAP / 2}
-          y1="0"
-          x2={isRight ? ROUND_GAP : 0}
-          y2="0"
-          stroke="#990D35"
-          strokeWidth="2"
-        />
-      </>
-    )}
+    {/* Horizontal dari junction ke round berikutnya */}
+    <line
+      x1={ROUND_GAP / 2}
+      y1={VERTICAL_SPACING * Math.pow(2, roundIndex + 1) / 2}
+      x2={isRight ? ROUND_GAP : 0}
+      y2={VERTICAL_SPACING * Math.pow(2, roundIndex + 1) / 2}
+      stroke="#990D35"
+      strokeWidth="2"
+    />
     
-    {/* Match GENAP: horizontal line ke round berikutnya */}
-    {matchIndex % 2 === 0 && (
-      <line
-        x1={ROUND_GAP / 2}
-        y1={`${(VERTICAL_SPACING * Math.pow(2, roundIndex + 1)) / 2}px`}
-        x2={isRight ? ROUND_GAP : 0}
-        y2={`${(VERTICAL_SPACING * Math.pow(2, roundIndex + 1)) / 2}px`}
-        stroke="#990D35"
-        strokeWidth="2"
-      />
-    )}
+    {/* Horizontal dari card ganjil (bawah) */}
+    <line
+      x1={isRight ? ROUND_GAP : 0}
+      y1={VERTICAL_SPACING * Math.pow(2, roundIndex + 1)}
+      x2={ROUND_GAP / 2}
+      y2={VERTICAL_SPACING * Math.pow(2, roundIndex + 1)}
+      stroke="#990D35"
+      strokeWidth="2"
+    />
   </svg>
 )}
                 </div>
@@ -951,15 +940,18 @@ const renderMatchCard = (match: Match, round: number, matchIndex: number) => {
     ? (match.skor_a > match.skor_b ? match.peserta_a : match.peserta_b)
     : null;
   
-  return (
-    <div
-      className="match-card bg-white rounded-xl shadow-lg border-2 overflow-hidden hover:shadow-xl transition-all"
-      style={{ 
-        borderColor: winner ? '#22c55e' : '#990D35',
-        width: `${CARD_WIDTH}px`,
-        minHeight: `${CARD_HEIGHT}px`,
-      }}
-    >
+return (
+  <div
+    className="match-card bg-white rounded-xl shadow-lg border-2 overflow-hidden hover:shadow-xl transition-all"
+    style={{ 
+      borderColor: winner ? '#22c55e' : '#990D35',
+      width: `${CARD_WIDTH}px`,
+      minHeight: `${CARD_HEIGHT}px`,
+      position: 'relative',    // ✅ TAMBAH
+      zIndex: 10,              // ✅ TAMBAH - Above connectors
+      background: 'white'      // ✅ TAMBAH - Solid background
+    }}
+  >
       {/* Header */}
       <div 
         className="px-3 py-2 border-b flex items-center justify-between"
@@ -1163,28 +1155,33 @@ React.useEffect(() => {
   style.innerHTML = `
     .tournament-layout {
       position: relative;
+      z-index: 1;
     }
 
     .bracket-side {
       position: relative;
+      z-index: 2;
     }
 
     .match-card {
       transition: all 0.2s ease;
       cursor: pointer;
+      position: relative;  /* ✅ TAMBAH */
+      z-index: 10;         /* ✅ TAMBAH */
+      background: white;   /* ✅ TAMBAH */
     }
 
     .match-card:hover {
       transform: translateY(-2px);
       box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+      z-index: 15;  /* ✅ TAMBAH - Hover lebih tinggi */
     }
 
     .round-header {
-      position: sticky;
-      top: 0;
-      z-index: 10;
-      background: white;
-      padding-bottom: 10px;
+      position: relative;     /* ✅ TAMBAH */
+      z-index: 20;            /* ✅ TAMBAH */
+      background: #F5FBEF;    /* ✅ TAMBAH */
+      padding: 0 10px;        /* ✅ TAMBAH */
     }
 
     /* Hide scrollbar but keep functionality */
