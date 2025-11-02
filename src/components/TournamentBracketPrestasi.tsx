@@ -998,9 +998,6 @@ return (
 }
 
 
-/**
- * 🆕 Render connector dari card ke next round
- */
 const renderCardConnector = (
   match: Match,
   matchIndex: number,
@@ -1018,7 +1015,8 @@ const renderCardConnector = (
       style={{
         position: 'absolute',
         left: isRight ? -lineLength : CARD_WIDTH,
-        top: CARD_HEIGHT / 2,
+        top: '50%',
+        transform: 'translateY(-50%)',
         width: lineLength,
         height: 2,
         pointerEvents: 'none',
@@ -1032,8 +1030,8 @@ const renderCardConnector = (
         x2={isRight ? 0 : lineLength}
         y2="0"
         stroke="#990D35"
-        strokeWidth="2"
-        opacity="0.5"
+        strokeWidth="3"
+        opacity="0.8"
       />
     </svg>
   );
@@ -1061,7 +1059,7 @@ const renderVerticalConnector = (
       style={{
         position: 'absolute',
         left: isRight ? -lineLength : CARD_WIDTH + lineLength,
-        top: CARD_HEIGHT / 2,
+        top: '50%',
         width: 2,
         height: verticalGap,
         pointerEvents: 'none',
@@ -1075,8 +1073,8 @@ const renderVerticalConnector = (
         x2="0"
         y2={verticalGap}
         stroke="#990D35"
-        strokeWidth="2"
-        opacity="0.5"
+        strokeWidth="3"
+        opacity="0.8"
       />
     </svg>
   );
@@ -1210,13 +1208,14 @@ const renderCenterFinal = () => {
             position: 'absolute',
             left: -lineLength,
             top: '50%',
+            transform: 'translateY(-50%)',
             width: lineLength,
             height: 2,
             pointerEvents: 'none',
             zIndex: 5
           }}
         >
-          <line x1="0" y1="0" x2={lineLength} y2="0" stroke="#990D35" strokeWidth="2" opacity="0.3" />
+          <line x1="0" y1="0" x2={lineLength} y2="0" stroke="#990D35" strokeWidth="3" opacity="0.6" />
         </svg>
         
         {/* Right connector line */}
@@ -1225,13 +1224,14 @@ const renderCenterFinal = () => {
             position: 'absolute',
             right: -lineLength,
             top: '50%',
+            transform: 'translateY(-50%)',
             width: lineLength,
             height: 2,
             pointerEvents: 'none',
             zIndex: 5
           }}
         >
-          <line x1="0" y1="0" x2={lineLength} y2="0" stroke="#990D35" strokeWidth="2" opacity="0.3" />
+          <line x1="0" y1="0" x2={lineLength} y2="0" stroke="#990D35" strokeWidth="3" opacity="0.6" />
         </svg>
         
         <div 
@@ -1271,13 +1271,14 @@ const renderCenterFinal = () => {
           position: 'absolute',
           left: -lineLength,
           top: '50%',
+          transform: 'translateY(-50%)',
           width: lineLength,
           height: 2,
           pointerEvents: 'none',
           zIndex: 5
         }}
       >
-        <line x1="0" y1="0" x2={lineLength} y2="0" stroke="#990D35" strokeWidth="2" opacity="0.5" />
+        <line x1="0" y1="0" x2={lineLength} y2="0" stroke="#990D35" strokeWidth="3" opacity="0.8" />
       </svg>
       
       {/* Right connector line */}
@@ -1286,13 +1287,14 @@ const renderCenterFinal = () => {
           position: 'absolute',
           right: -lineLength,
           top: '50%',
+          transform: 'translateY(-50%)',
           width: lineLength,
           height: 2,
           pointerEvents: 'none',
           zIndex: 5
         }}
       >
-        <line x1="0" y1="0" x2={lineLength} y2="0" stroke="#990D35" strokeWidth="2" opacity="0.5" />
+        <line x1="0" y1="0" x2={lineLength} y2="0" stroke="#990D35" strokeWidth="3" opacity="0.8" />
       </svg>
       
       {/* Final Header */}
