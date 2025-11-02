@@ -860,68 +860,69 @@ const renderBracketSide = (
                 >
                   {renderMatchCard(match, actualRound, matchIndex)}
                   
-                  {/* ✅ CONNECTOR LINES */}
-                  {!isLastRound && (
-                    <svg
-                      style={{
-                        position: 'absolute',
-                        top: '50%',
-                        [isRight ? 'right' : 'left']: `-${ROUND_GAP}px`,
-                        width: `${ROUND_GAP}px`,
-                        height: `${VERTICAL_SPACING + CARD_HEIGHT}px`,
-                        transform: 'translateY(-50%)',
-                        pointerEvents: 'none',
-                        zIndex: 1,
-                        overflow: 'visible'
-                      }}
-                    >
-                      {/* Horizontal line from card */}
-                      <line
-                        x1={isRight ? ROUND_GAP : 0}
-                        y1="50%"
-                        x2={isRight ? ROUND_GAP - 40 : 40}
-                        y2="50%"
-                        stroke="#990D35"
-                        strokeWidth="2"
-                      />
-                      
-                      {/* Vertical line connecting to next round */}
-                      {matchIndex % 2 === 0 && (
-                        <>
-                          <line
-                            x1={isRight ? ROUND_GAP - 40 : 40}
-                            y1="50%"
-                            x2={isRight ? ROUND_GAP - 40 : 40}
-                            y2={`calc(50% + ${VERTICAL_SPACING / 2 + CARD_HEIGHT / 2}px)`}
-                            stroke="#990D35"
-                            strokeWidth="2"
-                          />
-                          <line
-                            x1={isRight ? ROUND_GAP - 40 : 40}
-                            y1={`calc(50% + ${VERTICAL_SPACING / 2 + CARD_HEIGHT / 2}px)`}
-                            x2={isRight ? ROUND_GAP : 0}
-                            y2={`calc(50% + ${VERTICAL_SPACING / 2 + CARD_HEIGHT / 2}px)`}
-                            stroke="#990D35"
-                            strokeWidth="2"
-                          />
-                        </>
-                      )}
-                      
-                      {/* Vertical line for odd matches */}
-                      {matchIndex % 2 === 1 && (
-                        <>
-                          <line
-                            x1={isRight ? ROUND_GAP - 40 : 40}
-                            y1="50%"
-                            x2={isRight ? ROUND_GAP - 40 : 40}
-                            y2={`calc(50% - ${VERTICAL_SPACING / 2 + CARD_HEIGHT / 2}px)`}
-                            stroke="#990D35"
-                            strokeWidth="2"
-                          />
-                        </>
-                      )}
-                    </svg>
-                  )}
+                  {/* ✅ CONNECTOR LINES - FIXED */}
+{!isLastRound && (
+  <svg
+    style={{
+      position: 'absolute',
+      top: `${CARD_HEIGHT / 2}px`,
+      [isRight ? 'right' : 'left']: `-${ROUND_GAP}px`,
+      width: `${ROUND_GAP}px`,
+      height: matchIndex % 2 === 0 
+        ? `${VERTICAL_SPACING + CARD_HEIGHT}px` 
+        : '2px',
+      pointerEvents: 'none',
+      zIndex: 1,
+      overflow: 'visible'
+    }}
+  >
+    {/* Horizontal line keluar dari card */}
+    <line
+      x1={isRight ? ROUND_GAP : 0}
+      y1="0"
+      x2={isRight ? ROUND_GAP / 2 : ROUND_GAP / 2}
+      y2="0"
+      stroke="#990D35"
+      strokeWidth="2"
+    />
+    
+    {/* Match genap (atas) - buat L-shape ke bawah */}
+    {matchIndex % 2 === 0 && (
+      <>
+        {/* Vertical line ke bawah */}
+        <line
+          x1={ROUND_GAP / 2}
+          y1="0"
+          x2={ROUND_GAP / 2}
+          y2={VERTICAL_SPACING + CARD_HEIGHT}
+          stroke="#990D35"
+          strokeWidth="2"
+        />
+        {/* Horizontal line ke card berikutnya */}
+        <line
+          x1={ROUND_GAP / 2}
+          y1={VERTICAL_SPACING + CARD_HEIGHT}
+          x2={isRight ? ROUND_GAP : 0}
+          y2={VERTICAL_SPACING + CARD_HEIGHT}
+          stroke="#990D35"
+          strokeWidth="2"
+        />
+      </>
+    )}
+    
+    {/* Match ganjil (bawah) - hanya garis horizontal */}
+    {matchIndex % 2 === 1 && (
+      <line
+        x1={ROUND_GAP / 2}
+        y1="0"
+        x2={isRight ? ROUND_GAP : 0}
+        y2="0"
+        stroke="#990D35"
+        strokeWidth="2"
+      />
+    )}
+  </svg>
+)}
                 </div>
               ))}
             </div>
