@@ -844,15 +844,17 @@ const renderBracketSide = (
             </div>
             
             {/* Round Matches */}
-            <div 
-              className="round-matches"
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: `${VERTICAL_SPACING}px`,
-                position: 'relative'
-              }}
-            >
+<div 
+  className="round-matches"
+  style={{
+    display: 'flex',
+    flexDirection: 'column',
+    gap: `${VERTICAL_SPACING * Math.pow(2, roundIndex)}px`,  // ✅ Exponential spacing
+    position: 'relative',
+    justifyContent: 'center',                                 // ✅ Center alignment
+    minHeight: '60vh'                                         // ✅ Minimal height untuk center
+  }}
+>
               {roundMatches.map((match, matchIndex) => (
                 <div 
                   key={match.id_match}
@@ -860,63 +862,70 @@ const renderBracketSide = (
                 >
                   {renderMatchCard(match, actualRound, matchIndex)}
                   
-                  {/* ✅ CONNECTOR LINES - FIXED */}
+                  {/* ✅ CONNECTOR LINES - COMPLETE FIX */}
 {!isLastRound && (
   <svg
     style={{
       position: 'absolute',
-      top: `${CARD_HEIGHT / 2}px`,
+      top: '50%',
+      transform: 'translateY(-50%)',
       [isRight ? 'right' : 'left']: `-${ROUND_GAP}px`,
       width: `${ROUND_GAP}px`,
       height: matchIndex % 2 === 0 
-        ? `${VERTICAL_SPACING + CARD_HEIGHT}px` 
+        ? `${(VERTICAL_SPACING * Math.pow(2, roundIndex + 1)) / 2}px`
         : '2px',
       pointerEvents: 'none',
       zIndex: 1,
       overflow: 'visible'
     }}
   >
-    {/* Horizontal line keluar dari card */}
+    {/* Horizontal line dari card */}
     <line
       x1={isRight ? ROUND_GAP : 0}
-      y1="0"
-      x2={isRight ? ROUND_GAP / 2 : ROUND_GAP / 2}
-      y2="0"
+      y1={matchIndex % 2 === 0 ? "0" : "0"}
+      x2={ROUND_GAP / 2}
+      y2={matchIndex % 2 === 0 ? "0" : "0"}
       stroke="#990D35"
       strokeWidth="2"
     />
     
-    {/* Match genap (atas) - buat L-shape ke bawah */}
-    {matchIndex % 2 === 0 && (
+    {/* Match GENAP (atas): buat vertical line ke match ganjil di bawah */}
+    {matchIndex % 2 === 0 && roundIndex < matchesBySide.length - 1 && (
       <>
-        {/* Vertical line ke bawah */}
+        {/* Vertical connector */}
         <line
           x1={ROUND_GAP / 2}
           y1="0"
           x2={ROUND_GAP / 2}
-          y2={VERTICAL_SPACING + CARD_HEIGHT}
-          stroke="#990D35"
-          strokeWidth="2"
-        />
-        {/* Horizontal line ke card berikutnya */}
-        <line
-          x1={ROUND_GAP / 2}
-          y1={VERTICAL_SPACING + CARD_HEIGHT}
-          x2={isRight ? ROUND_GAP : 0}
-          y2={VERTICAL_SPACING + CARD_HEIGHT}
+          y2={`${(VERTICAL_SPACING * Math.pow(2, roundIndex + 1)) / 2}px`}
           stroke="#990D35"
           strokeWidth="2"
         />
       </>
     )}
     
-    {/* Match ganjil (bawah) - hanya garis horizontal */}
+    {/* Match GANJIL (bawah): horizontal line bertemu dengan vertical dari atas */}
     {matchIndex % 2 === 1 && (
+      <>
+        {/* Horizontal line ke junction point */}
+        <line
+          x1={ROUND_GAP / 2}
+          y1="0"
+          x2={isRight ? ROUND_GAP : 0}
+          y2="0"
+          stroke="#990D35"
+          strokeWidth="2"
+        />
+      </>
+    )}
+    
+    {/* Match GENAP: horizontal line ke round berikutnya */}
+    {matchIndex % 2 === 0 && (
       <line
         x1={ROUND_GAP / 2}
-        y1="0"
+        y1={`${(VERTICAL_SPACING * Math.pow(2, roundIndex + 1)) / 2}px`}
         x2={isRight ? ROUND_GAP : 0}
-        y2="0"
+        y2={`${(VERTICAL_SPACING * Math.pow(2, roundIndex + 1)) / 2}px`}
         stroke="#990D35"
         strokeWidth="2"
       />
@@ -1429,10 +1438,56 @@ const getFinalMatch = (): Match | null => {
     </div>
 
     {/* CENTER FINAL */}
-    <div style={{ position: 'relative', zIndex: 10 }}>
-      {renderCenterFinal()}
-    </div>
-
+{/* CENTER FINAL */}
+<div style={{ position: 'relative', zIndex: 10, display: 'flex', alignItems: 'center' }}>
+  {/* Left connector to Final */}
+  <svg
+    style={{
+      position: 'absolute',
+      left: `-${CENTER_GAP}px`,
+      top: '50%',
+      transform: 'translateY(-50%)',
+      width: `${CENTER_GAP}px`,
+      height: '2px',
+      pointerEvents: 'none',
+      zIndex: 1
+    }}
+  >
+    <line
+      x1="0"
+      y1="0"
+      x2={CENTER_GAP}
+      y2="0"
+      stroke="#990D35"
+      strokeWidth="2"
+    />
+  </svg>
+  
+  {/* Right connector to Final */}
+  <svg
+    style={{
+      position: 'absolute',
+      right: `-${CENTER_GAP}px`,
+      top: '50%',
+      transform: 'translateY(-50%)',
+      width: `${CENTER_GAP}px`,
+      height: '2px',
+      pointerEvents: 'none',
+      zIndex: 1
+    }}
+  >
+    <line
+      x1="0"
+      y1="0"
+      x2={CENTER_GAP}
+      y2="0"
+      stroke="#990D35"
+      strokeWidth="2"
+    />
+  </svg>
+  
+  {renderCenterFinal()}
+</div>
     {/* RIGHT BRACKET */}
     <div style={{ position: 'relative' }}>
       {renderBracketSide(getRightMatches(), 'right', 1)}
