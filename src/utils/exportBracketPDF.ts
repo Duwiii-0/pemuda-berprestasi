@@ -32,16 +32,16 @@ const THEME = {
   white: '#FFFFFF',
 };
 
-// ✅ DYNAMIC SCALE based on participant count
+// ✅ DYNAMIC SCALE based on participant count - REVERSED (lebih besar = lebih sedikit peserta)
 const getScaleFactor = (participantCount: number): number => {
   if (participantCount > 16) {
-    return 1.25; // Sangat kecil untuk banyak peserta
+    return 0.70; // Paling kecil untuk banyak peserta
   } else if (participantCount > 8) {
-    return 1.50; // Sedang
+    return 0.80; // Sedang
   } else if (participantCount > 4) {
-    return 1.75; // Agak besar
+    return 0.90; // Agak besar
   } else {
-    return 2.00; // Besar untuk sedikit peserta
+    return 0.95; // PALING BESAR untuk sedikit peserta
   }
 };
 
@@ -154,14 +154,14 @@ const convertElementToImage = async (
   console.log('📸 Capturing image...');
   const dataUrl = await htmlToImage.toPng(bracketVisual, {
     quality: 1,
-    pixelRatio: 2,
+    pixelRatio: 3, // ✅ INCREASED dari 2 ke 3 untuk kualitas lebih tajam
     width: width,
     height: height,
     backgroundColor: '#FFFFFF',
     cacheBust: true,
     style: {
       transform: `scale(${scaleFactor})`,
-      transformOrigin: 'top left',
+      transformOrigin: 'center center', // ✅ CHANGED ke center
       margin: '0',
     },
     filter: (node) => {
@@ -210,7 +210,7 @@ export const exportBracketFromData = async (
   
   console.log(`📄 Format: A4 Landscape (${PAGE_WIDTH}x${PAGE_HEIGHT}mm)`);
   console.log(`👥 Participants: ${participantCount}`);
-  console.log(`📏 Scale factor: ${scaleFactor}`);
+  console.log(`📏 Scale factor: ${scaleFactor} (smaller = more participants)`);
   
   const config: ExportConfig = {
     eventName: kelasData.kompetisi.nama_event,
@@ -241,64 +241,56 @@ export const exportBracketFromData = async (
     // ✅ Add header and footer FIRST
     addHeaderAndFooter(doc, config);
 
-    // ✅ Calculate available space (space antara header dan footer)
-    const availableWidth = PAGE_WIDTH - MARGIN_LEFT - MARGIN_RIGHT;
-    const availableHeight = PAGE_HEIGHT - HEADER_HEIGHT - FOOTER_HEIGHT - MARGIN_TOP - MARGIN_BOTTOM;
+    // ✅ Calculate MAXIMUM available space
+    const contentStartY = HEADER_HEIGHT + MARGIN_TOP;
+    const contentEndY = PAGE_HEIGHT - FOOTER_HEIGHT - MARGIN_BOTTOM;
+    const maxWidth = PAGE_WIDTH - MARGIN_LEFT - MARGIN_RIGHT;
+    const maxHeight = contentEndY - contentStartY;
 
-    console.log('📐 Available space:', { 
-      width: availableWidth.toFixed(2), 
-      height: availableHeight.toFixed(2)
+    console.log('📐 Maximum available space:', { 
+      width: maxWidth.toFixed(2), 
+      height: maxHeight.toFixed(2),
+      startY: contentStartY.toFixed(2),
+      endY: contentEndY.toFixed(2)
     });
 
-    // ✅ Calculate image dimensions to fit (gunakan 95% dari space untuk margin)
+    // ✅ Calculate image dimensions to MAXIMIZE space usage
     const imgAspectRatio = bracketImg.width / bracketImg.height;
     
-    let displayWidth = availableWidth * 0.95; // 95% dari lebar tersedia
+    let displayWidth = maxWidth; // Start with FULL width
     let displayHeight = displayWidth / imgAspectRatio;
 
-    // If height exceeds available space, scale based on height instead
-    if (displayHeight > availableHeight * 0.95) {
-      displayHeight = availableHeight * 0.95;
+    // If height exceeds, scale based on height instead
+    if (displayHeight > maxHeight) {
+      displayHeight = maxHeight; // Use FULL height
       displayWidth = displayHeight * imgAspectRatio;
     }
 
-    // ✅ CENTER BOTH HORIZONTALLY AND VERTICALLY
-    const startX = MARGIN_LEFT;
-    const startY = HEADER_HEIGHT + MARGIN_TOP;
-    const endX = PAGE_WIDTH - MARGIN_RIGHT;
-    const endY = PAGE_HEIGHT - FOOTER_HEIGHT - MARGIN_BOTTOM;
+    console.log('📏 Image sizing:', {
+      originalAspectRatio: imgAspectRatio.toFixed(3),
+      calculatedWidth: displayWidth.toFixed(2),
+      calculatedHeight: displayHeight.toFixed(2),
+      widthUsage: `${((displayWidth / maxWidth) * 100).toFixed(1)}%`,
+      heightUsage: `${((displayHeight / maxHeight) * 100).toFixed(1)}%`
+    });
 
-    const centerX = (startX + endX) / 2;
-    const centerY = (startY + endY) / 2;
+    // ✅ PERFECT CENTER calculation
+    const centerX = MARGIN_LEFT + (maxWidth / 2);
+    const centerY = contentStartY + (maxHeight / 2);
 
     const x = centerX - (displayWidth / 2);
     const y = centerY - (displayHeight / 2);
 
-    console.log('🎯 Centering calculation:', {
-      availableSpace: {
-        startX: startX.toFixed(2),
-        startY: startY.toFixed(2),
-        endX: endX.toFixed(2),
-        endY: endY.toFixed(2),
-        width: availableWidth.toFixed(2),
-        height: availableHeight.toFixed(2)
-      },
-      center: {
-        x: centerX.toFixed(2),
-        y: centerY.toFixed(2)
-      },
-      image: {
-        width: displayWidth.toFixed(2),
-        height: displayHeight.toFixed(2),
-        aspectRatio: imgAspectRatio.toFixed(3)
-      },
-      finalPosition: {
-        x: x.toFixed(2),
-        y: y.toFixed(2)
+    console.log('🎯 Perfect centering:', {
+      pageCenter: { x: centerX.toFixed(2), y: centerY.toFixed(2) },
+      imageTopLeft: { x: x.toFixed(2), y: y.toFixed(2) },
+      imageCenter: { 
+        x: (x + displayWidth / 2).toFixed(2), 
+        y: (y + displayHeight / 2).toFixed(2) 
       }
     });
 
-    // ✅ Add bracket image to PDF (PERFECTLY CENTERED)
+    // ✅ Add bracket image to PDF (PERFECTLY CENTERED & MAXIMIZED)
     doc.addImage(
       bracketImg.src, 
       'PNG', 
@@ -316,7 +308,7 @@ export const exportBracketFromData = async (
     
     doc.save(filename);
     console.log(`✅ PDF saved: ${filename}`);
-    console.log(`📏 Format: A4 Landscape - Scale: ${scaleFactor}x for ${participantCount} participants!`);
+    console.log(`📏 Final: Scale ${scaleFactor}x for ${participantCount} participants - MAXIMIZED & CENTERED!`);
 
   } catch (error) {
     console.error('❌ Error exporting PDF:', error);
