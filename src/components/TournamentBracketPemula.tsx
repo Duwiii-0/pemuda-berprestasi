@@ -936,7 +936,8 @@ return (
       <div className="p-6">
         <div className="flex flex-col items-center gap-8 max-w-4xl mx-auto">
           {/* CENTER: Bracket Container */}
-          <div ref={bracketRef} className="w-full">
+          <div className="w-full">    
+          <div ref={bracketRef} className="tournament-layout bg-white p-6 rounded-lg">
             {/* Title for PDF */}
             <div className="mb-6 text-center">
               <h2 className="text-2xl font-bold" style={{ color: '#990D35' }}>
@@ -1107,7 +1108,7 @@ return (
                 const additionalMatch = round2Matches[0];
                 
                 return (
-                  <div className="mt-8 pt-8 border-t-4 border-dashed" style={{ borderColor: '#DC143C' }}>
+                  <div className="mt-8 pt-6">
                     {/* Header Additional Match */}
                     <div className="mb-4">
                       <div 
@@ -1278,6 +1279,7 @@ return (
                   </div>
                 );
               })()}
+              </div>
             </div>
           </div>
 
