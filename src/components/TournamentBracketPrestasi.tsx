@@ -1104,7 +1104,7 @@ const renderCenterFinal = () => {
   
   // Final Y position = rata-rata dari kedua semi-final
   const finalYPosition = (leftSemiY + rightSemiY) / 2;
-  const lineLength = CENTER_GAP / 2 + 40;
+  const lineLength = CENTER_GAP / 2 + 60;
   
   return (
     <div 
