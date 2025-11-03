@@ -1239,13 +1239,13 @@ const renderBracketSide = (
     
     return (
       <React.Fragment key={`connector-${match.id_match}`}>
-       {/* HORIZONTAL LINE ke next round */}
+      {/* HORIZONTAL LINE ke next round */}
 {hasNextRound && (
   <svg
     style={{
       position: 'absolute',
       left: isRight ? -(ROUND_GAP / 2) : CARD_WIDTH,
-      top: `${cardCenterY - 80}px`,  // ✅ KOMPENSASI dengan -80
+      top: `${yPosition + (CARD_HEIGHT / 2)}px`,  // ✅ LANGSUNG dari yPosition
       width: ROUND_GAP / 2,
       height: 2,
       pointerEvents: 'none',
@@ -1253,79 +1253,70 @@ const renderBracketSide = (
       overflow: 'visible'
     }}
   >
-            <line
-              x1={isRight ? ROUND_GAP / 2 : 0}
-              y1="0"
-              x2={isRight ? 0 : ROUND_GAP / 2}
-              y2="0"
-              stroke="#990D35"
-              strokeWidth="2.5"
-              opacity="0.8"
-            />
-          </svg>
-        )}
+    <line
+      x1={isRight ? ROUND_GAP / 2 : 0}
+      y1="0"
+      x2={isRight ? 0 : ROUND_GAP / 2}
+      y2="0"
+      stroke="#990D35"
+      strokeWidth="2.5"
+      opacity="0.8"
+    />
+  </svg>
+)}
         
-        {/* VERTICAL LINE - Only for first match of each pair */}
-        {hasNextRound && matchIndex % 2 === 0 && matchIndex + 1 < matchCount && (
-          (() => {
-            const match1Y = verticalPositions[roundIndex][matchIndex];
-            const match2Y = verticalPositions[roundIndex][matchIndex + 1];
-            const targetY = verticalPositions[roundIndex + 1][Math.floor(matchIndex / 2)];
-            
-            const y1 = match1Y + 80 + (CARD_HEIGHT / 2);
-            const y2 = match2Y + 80 + (CARD_HEIGHT / 2);
-            const y3 = targetY + 80 + (CARD_HEIGHT / 2);
-            
-            console.log(`🔗 [${side.toUpperCase()}] VERTICAL LINE for pair ${matchIndex}/${matchIndex + 1}:`);
-            console.log(`   Match 1 Y: ${match1Y} → Center: ${y1}px`);
-            console.log(`   Match 2 Y: ${match2Y} → Center: ${y2}px`);
-            console.log(`   Target Y: ${targetY} → Center: ${y3}px`);
-            
-            const minY = Math.min(y1, y2, y3);
-            const maxY = Math.max(y1, y2, y3);
-            const lineX = isRight ? -(ROUND_GAP / 2) : CARD_WIDTH + (ROUND_GAP / 2);
-            
-            console.log(`   SVG: left=${lineX}px, top=${minY}px, height=${maxY - minY}px`);
-            console.log(`   Line points: (1.5, ${y1 - minY}) → (1.5, ${y3 - minY})`);
-            console.log(`   Line points: (1.5, ${y2 - minY}) → (1.5, ${y3 - minY})`);
-            
-            return (
-              <svg
-                key={`vertical-${match.id_match}`}
-                style={{
-                  position: 'absolute',
-                  left: `${lineX}px`,
-                  top: `${minY}px`,
-                  width: 3,
-                  height: `${maxY - minY}px`,
-                  pointerEvents: 'none',
-                  zIndex: 4,
-                  overflow: 'visible',
-                  backgroundColor: 'rgba(0, 255, 0, 0.3)' // DEBUG: Green background
-                }}
-              >
-                <line
-                  x1="1.5"
-                  y1={y1 - minY}
-                  x2="1.5"
-                  y2={y3 - minY}
-                  stroke="#990D35"
-                  strokeWidth="2.5"
-                  opacity="0.8"
-                />
-                <line
-                  x1="1.5"
-                  y1={y2 - minY}
-                  x2="1.5"
-                  y2={y3 - minY}
-                  stroke="#990D35"
-                  strokeWidth="2.5"
-                  opacity="0.8"
-                />
-              </svg>
-            );
-          })()
-        )}
+{/* VERTICAL LINE - Only for first match of each pair */}
+{hasNextRound && matchIndex % 2 === 0 && matchIndex + 1 < matchCount && (
+  (() => {
+    const match1Y = verticalPositions[roundIndex][matchIndex];
+    const match2Y = verticalPositions[roundIndex][matchIndex + 1];
+    const targetY = verticalPositions[roundIndex + 1][Math.floor(matchIndex / 2)];
+    
+    // ✅ Card center positions (tanpa offset +80)
+    const y1 = match1Y + (CARD_HEIGHT / 2);
+    const y2 = match2Y + (CARD_HEIGHT / 2);
+    const y3 = targetY + (CARD_HEIGHT / 2);
+    
+    const minY = Math.min(y1, y2, y3);
+    const maxY = Math.max(y1, y2, y3);
+    const lineX = isRight ? -(ROUND_GAP / 2) : CARD_WIDTH + (ROUND_GAP / 2);
+    
+    return (
+      <svg
+        key={`vertical-${match.id_match}`}
+        style={{
+          position: 'absolute',
+          left: `${lineX}px`,
+          top: `${minY}px`,
+          width: 3,
+          height: `${maxY - minY}px`,
+          pointerEvents: 'none',
+          zIndex: 4,
+          overflow: 'visible'
+        }}
+      >
+        <line
+          x1="1.5"
+          y1={y1 - minY}
+          x2="1.5"
+          y2={y3 - minY}
+          stroke="#990D35"
+          strokeWidth="2.5"
+          opacity="0.8"
+        />
+        <line
+          x1="1.5"
+          y1={y2 - minY}
+          x2="1.5"
+          y2={y3 - minY}
+          stroke="#990D35"
+          strokeWidth="2.5"
+          opacity="0.8"
+        />
+      </svg>
+    );
+  })()
+)}
       </React.Fragment>
     );
   })}
