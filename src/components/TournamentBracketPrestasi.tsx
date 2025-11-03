@@ -1351,7 +1351,7 @@ const renderBracketSide = (
     </React.Fragment>
   );
 })}
-              {/* ============================================
+{/* ============================================
     RENDER CONNECTORS (Behind everything)
     ============================================ */}
 {hasNextRound && roundMatches.map((match, matchIndex) => {
@@ -1359,8 +1359,6 @@ const renderBracketSide = (
   if (yPosition === undefined) return null;
   
   const cardCenterY = yPosition + (CARD_HEIGHT / 2);
-  
-  // 🎯 Determine if this match is part of a pair
   const isFirstInPair = matchIndex % 2 === 0;
   const hasPartner = matchIndex + 1 < matchCount;
   const partnerY = hasPartner ? verticalPositions[roundIndex]?.[matchIndex + 1] : undefined;
@@ -1394,66 +1392,71 @@ const renderBracketSide = (
       </svg>
       
       {/* 2️⃣ VERTICAL LINE - Connect pairs to target */}
-{isFirstInPair && targetY !== undefined && (
-  (() => {
-    const targetCenterY = targetY + (CARD_HEIGHT / 2);
-    
-    // Calculate positions for all involved points
-    const y1 = cardCenterY; // First match center
-    const y2 = hasPartner && partnerY !== undefined 
-      ? partnerY + (CARD_HEIGHT / 2) 
-      : cardCenterY; // Partner match center (or same if no partner)
-    const y3 = targetCenterY; // Target match center
-    
-    // Find the range we need to cover
-    const minY = Math.min(y1, y2, y3);
-    const maxY = Math.max(y1, y2, y3);
-    const svgHeight = maxY - minY;
-    
-    // Position of vertical line (at the end of horizontal lines)
-    const lineX = isRight ? -(ROUND_GAP / 2) : CARD_WIDTH + (ROUND_GAP / 2);
-    
-    return (
-      <svg
-        key={`vertical-${matchIndex}`}
-        style={{
-          position: 'absolute',
-          left: `${lineX}px`,
-          top: `${minY}px`,
-          width: 2,
-          height: svgHeight,
-          pointerEvents: 'none',
-          zIndex: 4,
-          overflow: 'visible'
-        }}
-      >
-        {/* Line from first match to target */}
-        <line
-          x1="1"
-          y1={y1 - minY}
-          x2="1"
-          y2={y3 - minY}
-          stroke="#990D35"
-          strokeWidth="2"
-          opacity="0.8"
-        />
-        
-        {/* Line from partner match to target (if exists) */}
-        {hasPartner && partnerY !== undefined && (
-          <line
-            x1="1"
-            y1={y2 - minY}
-            x2="1"
-            y2={y3 - minY}
-            stroke="#990D35"
-            strokeWidth="2"
-            opacity="0.8"
-          />
-        )}
-      </svg>
-    );
-  })()
-)}
+      {isFirstInPair && targetY !== undefined && (
+        <svg
+          style={{
+            position: 'absolute',
+            left: isRight ? `-${ROUND_GAP / 2}px` : `${CARD_WIDTH + (ROUND_GAP / 2)}px`,
+            top: `${(() => {
+              const targetCenterY = targetY + (CARD_HEIGHT / 2);
+              const y1 = cardCenterY;
+              const y2 = hasPartner && partnerY !== undefined ? partnerY + (CARD_HEIGHT / 2) : cardCenterY;
+              const y3 = targetCenterY;
+              return Math.min(y1, y2, y3);
+            })()}px`,
+            width: 2,
+            height: `${(() => {
+              const targetCenterY = targetY + (CARD_HEIGHT / 2);
+              const y1 = cardCenterY;
+              const y2 = hasPartner && partnerY !== undefined ? partnerY + (CARD_HEIGHT / 2) : cardCenterY;
+              const y3 = targetCenterY;
+              const minY = Math.min(y1, y2, y3);
+              const maxY = Math.max(y1, y2, y3);
+              return maxY - minY;
+            })()}px`,
+            pointerEvents: 'none',
+            zIndex: 4,
+            overflow: 'visible',
+            backgroundColor: 'rgba(153, 13, 53, 0.1)' // DEBUG: slight bg to see SVG area
+          }}
+        >
+          {(() => {
+            const targetCenterY = targetY + (CARD_HEIGHT / 2);
+            const y1 = cardCenterY;
+            const y2 = hasPartner && partnerY !== undefined ? partnerY + (CARD_HEIGHT / 2) : cardCenterY;
+            const y3 = targetCenterY;
+            const minY = Math.min(y1, y2, y3);
+            
+            return (
+              <>
+                {/* Line from first match to target */}
+                <line
+                  x1="1"
+                  y1={y1 - minY}
+                  x2="1"
+                  y2={y3 - minY}
+                  stroke="#990D35"
+                  strokeWidth="3"
+                  opacity="1"
+                />
+                
+                {/* Line from partner match to target (if exists) */}
+                {hasPartner && partnerY !== undefined && (
+                  <line
+                    x1="1"
+                    y1={y2 - minY}
+                    x2="1"
+                    y2={y3 - minY}
+                    stroke="#990D35"
+                    strokeWidth="3"
+                    opacity="1"
+                  />
+                )}
+              </>
+            );
+          })()}
+        </svg>
+      )}
     </React.Fragment>
   );
 })}
