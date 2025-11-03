@@ -1300,103 +1300,126 @@ const renderBracketSide = (
               {/* ============================================
                     🔗 RENDER CONNECTORS (Garis penghubung)
                   ============================================ */}
-              {hasNextRound &&
-                roundMatches.map((match, matchIndex) => {
-                  const yPosition = verticalPositions[roundIndex]?.[matchIndex];
-                  if (yPosition === undefined) return null;
+              {hasNextRound && roundMatches.map((match, matchIndex) => {
+  const yPosition = verticalPositions[roundIndex]?.[matchIndex];
+  if (yPosition === undefined) return null;
 
-                  const cardCenterY = yPosition + CARD_HEIGHT / 2;
-                  const isFirstInPair = matchIndex % 2 === 0;
-                  const hasPartner = matchIndex + 1 < matchCount;
-                  const partnerY = hasPartner
-                    ? verticalPositions[roundIndex]?.[matchIndex + 1]
-                    : undefined;
-                  const targetMatchIdx = Math.floor(matchIndex / 2);
-                  const targetY = verticalPositions[roundIndex + 1]?.[targetMatchIdx];
+  const cardCenterY = yPosition + CARD_HEIGHT / 2;
+  const isFirstInPair = matchIndex % 2 === 0;
+  const hasPartner = matchIndex + 1 < matchCount;
+  const targetMatchIdx = Math.floor(matchIndex / 2);
+  const targetY = verticalPositions[roundIndex + 1]?.[targetMatchIdx];
 
-                  return (
-                    <React.Fragment key={`connectors-${match.id_match}`}>
-                      {/* 1️⃣ Horizontal line */}
-                      <svg
-                        style={{
-                          position: 'absolute',
-                          left: isRight ? `-${ROUND_GAP / 2}px` : `${CARD_WIDTH}px`,
-                          top: `${cardCenterY - 1}px`,
-                          width: ROUND_GAP / 2,
-                          height: 2,
-                          pointerEvents: 'none',
-                          zIndex: 5,
-                          overflow: 'visible',
-                        }}
-                      >
-                        <line
-                          x1={isRight ? ROUND_GAP / 2 : 0}
-                          y1="1"
-                          x2={isRight ? 0 : ROUND_GAP / 2}
-                          y2="1"
-                          stroke="#990D35"
-                          strokeWidth="2"
-                          opacity="0.8"
-                        />
-                      </svg>
+  const halfGap = ROUND_GAP / 2;
 
-                      {/* 2️⃣ Vertical line */}
-                      {isFirstInPair && targetY !== undefined && (() => {
-                        const targetCenterY = targetY + CARD_HEIGHT / 2;
-                        const y1 = cardCenterY;
-                        const y2 =
-                          hasPartner && partnerY !== undefined
-                            ? partnerY + CARD_HEIGHT / 2
-                            : cardCenterY;
-                        const y3 = targetCenterY;
+  return (
+    <React.Fragment key={`connectors-${match.id_match}`}>
+      {/* ═══════════════════════════════════════════
+          STEP 1: Horizontal line DARI card KE vertical line
+          ═══════════════════════════════════════════ */}
+      <svg
+        style={{
+          position: 'absolute',
+          left: isRight ? `${-halfGap}px` : `${CARD_WIDTH}px`,
+          top: `${cardCenterY - 1}px`,
+          width: halfGap,
+          height: 2,
+          pointerEvents: 'none',
+          zIndex: 5,
+        }}
+      >
+        <line
+          x1={isRight ? halfGap : 0}
+          y1="1"
+          x2={isRight ? 0 : halfGap}
+          y2="1"
+          stroke="#990D35"
+          strokeWidth="2"
+          opacity="0.8"
+        />
+      </svg>
 
-                        const minY = Math.min(y1, y2, y3);
-                        const maxY = Math.max(y1, y2, y3);
-                        const svgHeight = maxY - minY;
-                        const lineX = isRight
-                          ? -(ROUND_GAP / 2)
-                          : CARD_WIDTH + ROUND_GAP / 2;
+      {/* ═══════════════════════════════════════════
+          STEP 2 & 3: Vertical line + Horizontal BARU ke target
+          Hanya render untuk match PERTAMA dalam pair
+          ═══════════════════════════════════════════ */}
+      {isFirstInPair && hasPartner && targetY !== undefined && (() => {
+        const partnerY = verticalPositions[roundIndex]?.[matchIndex + 1];
+        if (partnerY === undefined) return null;
 
-                        return (
-                          <svg
-                            key={`vertical-${matchIndex}`}
-                            style={{
-                              position: 'absolute',
-                              left: `${lineX}px`,
-                              top: `${minY}px`,
-                              width: 2,
-                              height: svgHeight,
-                              pointerEvents: 'none',
-                              zIndex: 4,
-                              overflow: 'visible',
-                            }}
-                          >
-                            <line
-                              x1="1"
-                              y1={y1 - minY}
-                              x2="1"
-                              y2={y3 - minY}
-                              stroke="#990D35"
-                              strokeWidth="2"
-                              opacity="0.8"
-                            />
-                            {hasPartner && partnerY !== undefined && (
-                              <line
-                                x1="1"
-                                y1={y2 - minY}
-                                x2="1"
-                                y2={y3 - minY}
-                                stroke="#990D35"
-                                strokeWidth="2"
-                                opacity="0.8"
-                              />
-                            )}
-                          </svg>
-                        );
-                      })()}
-                    </React.Fragment>
-                  );
-                })}
+        const partnerCenterY = partnerY + CARD_HEIGHT / 2;
+        const targetCenterY = targetY + CARD_HEIGHT / 2;
+        
+        // Posisi X vertical line (di tengah gap)
+        const verticalLineX = isRight 
+          ? -halfGap
+          : CARD_WIDTH + halfGap;
+
+        // Y positions untuk vertical line
+        const topY = Math.min(cardCenterY, partnerCenterY);
+        const bottomY = Math.max(cardCenterY, partnerCenterY);
+        const verticalHeight = bottomY - topY;
+        const midPointY = (cardCenterY + partnerCenterY) / 2;
+
+        return (
+          <>
+            {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                VERTICAL LINE menghubungkan 2 horizontal
+                ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+            <svg
+              style={{
+                position: 'absolute',
+                left: `${verticalLineX}px`,
+                top: `${topY}px`,
+                width: 2,
+                height: verticalHeight,
+                pointerEvents: 'none',
+                zIndex: 4,
+              }}
+            >
+              <line
+                x1="1"
+                y1="0"
+                x2="1"
+                y2={verticalHeight}
+                stroke="#990D35"
+                strokeWidth="2"
+                opacity="0.8"
+              />
+            </svg>
+
+            {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                HORIZONTAL BARU dari vertical ke target card
+                ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+            <svg
+              style={{
+                position: 'absolute',
+                left: isRight 
+                  ? `${-ROUND_GAP}px`  // Start dari next card edge
+                  : `${CARD_WIDTH + halfGap}px`,  // Start dari vertical line
+                top: `${midPointY - 1}px`,  // Tengah-tengah vertical line
+                width: halfGap,
+                height: 2,
+                pointerEvents: 'none',
+                zIndex: 5,
+              }}
+            >
+              <line
+                x1={isRight ? halfGap : 0}
+                y1="1"
+                x2={isRight ? 0 : halfGap}
+                y2="1"
+                stroke="#990D35"
+                strokeWidth="2"
+                opacity="0.8"
+              />
+            </svg>
+          </>
+        );
+      })()}
+    </React.Fragment>
+  );
+})}
 
               {/* ============================================
                   🧩 RENDER MATCH CARDS (Di atas garis)
