@@ -1147,46 +1147,46 @@ const renderCenterFinal = () => {
   style={{
     position: 'absolute',
     left: -lineLength,
-    top: `${finalYPosition + (CARD_HEIGHT / 2)}px`,  // ✅ HAPUS +80
+    top: `${finalYPosition + (CARD_HEIGHT / 2) - 1}px`,  // Tengah card
     width: lineLength,
     height: 2,
     pointerEvents: 'none',
     zIndex: 5
   }}
 >
-          <line 
-            x1="0" 
-            y1="0" 
-            x2={lineLength} 
-            y2="0" 
-            stroke="#990D35" 
-            strokeWidth="2.5" 
-            opacity="0.8" 
-          />
-        </svg>
+  <line 
+    x1="0" 
+    y1="1" 
+    x2={lineLength} 
+    y2="1" 
+    stroke="#990D35" 
+    strokeWidth="2.5" 
+    opacity="0.8" 
+  />
+</svg>
         
 {/* 🔗 RIGHT CONNECTOR ke Final */}
 <svg
   style={{
     position: 'absolute',
     right: -lineLength,
-    top: `${finalYPosition + (CARD_HEIGHT / 2)}px`,  // ✅ HAPUS +80
+    top: `${finalYPosition + (CARD_HEIGHT / 2) - 1}px`,  // Tengah card
     width: lineLength,
     height: 2,
     pointerEvents: 'none',
     zIndex: 5
   }}
 >
-          <line 
-            x1="0" 
-            y1="0" 
-            x2={lineLength} 
-            y2="0" 
-            stroke="#990D35" 
-            strokeWidth="2.5" 
-            opacity="0.8" 
-          />
-        </svg>
+  <line 
+    x1="0" 
+    y1="1" 
+    x2={lineLength} 
+    y2="1" 
+    stroke="#990D35" 
+    strokeWidth="2.5" 
+    opacity="0.8" 
+  />
+</svg>
         
 {/* Final Match Card */}
 <div
