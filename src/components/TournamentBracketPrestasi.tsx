@@ -1369,7 +1369,7 @@ const renderBracketSide = (
   
   return (
     <React.Fragment key={`connectors-${match.id_match}`}>
-      {/* 1️⃣ HORIZONTAL LINE - Every match to connection point */}
+      {/* 1️⃣ HORIZONTAL LINE */}
       <svg
         style={{
           position: 'absolute',
@@ -1393,27 +1393,8 @@ const renderBracketSide = (
         />
       </svg>
       
-      {/* 2️⃣ VERTICAL LINE - Connect pairs to target */}
-      {/* 2️⃣ VERTICAL LINE - Connect pairs to target */}
-{(() => {
-  console.log(`\n🔍 Checking vertical line render conditions:`);
-  console.log(`  isFirstInPair: ${isFirstInPair}`);
-  console.log(`  targetY: ${targetY}`);
-  console.log(`  targetY !== undefined: ${targetY !== undefined}`);
-  console.log(`  Will render: ${isFirstInPair && targetY !== undefined}`);
-  
-  if (!isFirstInPair) {
-    console.log(`  ❌ SKIP: Not first in pair (matchIndex=${matchIndex})`);
-    return null;
-  }
-  
-  if (targetY === undefined) {
-    console.log(`  ❌ SKIP: No target Y found!`);
-    return null;
-  }
-  
-  console.log(`  ✅ RENDERING VERTICAL LINE!`);
-  
+{/* 2️⃣ VERTICAL LINE - Connect pairs to target */}
+{isFirstInPair && targetY !== undefined && (() => {
   const targetCenterY = targetY + (CARD_HEIGHT / 2);
   const y1 = cardCenterY;
   const y2 = hasPartner && partnerY !== undefined ? partnerY + (CARD_HEIGHT / 2) : cardCenterY;
@@ -1422,110 +1403,45 @@ const renderBracketSide = (
   const maxY = Math.max(y1, y2, y3);
   const lineX = isRight ? -(ROUND_GAP / 2) : CARD_WIDTH + (ROUND_GAP / 2);
   
- return (
-  <svg
-    style={{
-      position: 'absolute',
-      left: `${lineX}px`,
-      top: `${minY}px`,
-      width: 10,  // ✅ UBAH dari 2 jadi 10 untuk debug
-      height: `${maxY - minY}px`,
-      pointerEvents: 'none',
-      zIndex: 100,  // ✅ UBAH jadi sangat tinggi
-      overflow: 'visible',
-      backgroundColor: 'rgba(255, 0, 255, 0.5)',  // BRIGHT PINK
-      border: '2px solid cyan'  // ✅ TAMBAH border
-    }}
-  >
-    <line
-      x1="5"  // ✅ UBAH dari 1 jadi 5 (tengah SVG)
-      y1={y1 - minY}
-      x2="5"  // ✅ UBAH dari 1 jadi 5
-      y2={y3 - minY}
-      stroke="#FF0000"  // ✅ UBAH jadi merah terang
-      strokeWidth="8"  // ✅ UBAH jadi sangat tebal
-      opacity="1"
-    />
-    
-    {hasPartner && partnerY !== undefined && (
+  return (
+    <svg
+      style={{
+        position: 'absolute',
+        left: `${lineX - 2}px`,  // ✅ Offset 2px untuk center stroke
+        top: `${minY}px`,
+        width: '4px',  // ✅ Cukup untuk stroke width
+        height: `${maxY - minY}px`,
+        pointerEvents: 'none',
+        zIndex: 5,
+        overflow: 'visible'
+      }}
+    >
+      {/* Line from first match to target */}
       <line
-        x1="5"
-        y1={y2 - minY}
-        x2="5"
+        x1="2"
+        y1={y1 - minY}
+        x2="2"
         y2={y3 - minY}
-        stroke="#00FF00"  // ✅ UBAH jadi hijau terang
-        strokeWidth="8"
-        opacity="1"
+        stroke="#990D35"
+        strokeWidth="2.5"
+        opacity="0.8"
       />
-    )}
-  </svg>
+      
+      {/* Line from partner match to target (if exists) */}
+      {hasPartner && partnerY !== undefined && (
+        <line
+          x1="2"
+          y1={y2 - minY}
+          x2="2"
+          y2={y3 - minY}
+          stroke="#990D35"
+          strokeWidth="2.5"
+          opacity="0.8"
+        />
+      )}
+    </svg>
   );
 })()}
-      {isFirstInPair && targetY !== undefined && (
-        <svg
-          style={{
-            position: 'absolute',
-            left: isRight ? `-${ROUND_GAP / 2}px` : `${CARD_WIDTH + (ROUND_GAP / 2)}px`,
-            top: `${(() => {
-              const targetCenterY = targetY + (CARD_HEIGHT / 2);
-              const y1 = cardCenterY;
-              const y2 = hasPartner && partnerY !== undefined ? partnerY + (CARD_HEIGHT / 2) : cardCenterY;
-              const y3 = targetCenterY;
-              return Math.min(y1, y2, y3);
-            })()}px`,
-            width: 2,
-            height: `${(() => {
-              const targetCenterY = targetY + (CARD_HEIGHT / 2);
-              const y1 = cardCenterY;
-              const y2 = hasPartner && partnerY !== undefined ? partnerY + (CARD_HEIGHT / 2) : cardCenterY;
-              const y3 = targetCenterY;
-              const minY = Math.min(y1, y2, y3);
-              const maxY = Math.max(y1, y2, y3);
-              return maxY - minY;
-            })()}px`,
-            pointerEvents: 'none',
-            zIndex: 4,
-            overflow: 'visible',
-            backgroundColor: 'rgba(153, 13, 53, 0.1)' // DEBUG: slight bg to see SVG area
-          }}
-        >
-          {(() => {
-            const targetCenterY = targetY + (CARD_HEIGHT / 2);
-            const y1 = cardCenterY;
-            const y2 = hasPartner && partnerY !== undefined ? partnerY + (CARD_HEIGHT / 2) : cardCenterY;
-            const y3 = targetCenterY;
-            const minY = Math.min(y1, y2, y3);
-            
-            return (
-              <>
-                {/* Line from first match to target */}
-                <line
-                  x1="1"
-                  y1={y1 - minY}
-                  x2="1"
-                  y2={y3 - minY}
-                  stroke="#990D35"
-                  strokeWidth="3"
-                  opacity="1"
-                />
-                
-                {/* Line from partner match to target (if exists) */}
-                {hasPartner && partnerY !== undefined && (
-                  <line
-                    x1="1"
-                    y1={y2 - minY}
-                    x2="1"
-                    y2={y3 - minY}
-                    stroke="#990D35"
-                    strokeWidth="3"
-                    opacity="1"
-                  />
-                )}
-              </>
-            );
-          })()}
-        </svg>
-      )}
     </React.Fragment>
   );
 })}
