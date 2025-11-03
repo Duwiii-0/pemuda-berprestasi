@@ -1154,10 +1154,8 @@ const renderBracketSide = (
   // Calculate ALL vertical positions first
   const verticalPositions = calculateVerticalPositions(matchesBySide);
 
-  // Calculate total height needed for the bracket side
-  const maxRoundHeight = Math.max(
-    ...verticalPositions.flat().filter(y => y !== undefined)
-  ) + CARD_HEIGHT + BASE_VERTICAL_GAP; // Add some padding at the bottom
+  // Calculate total height needed for the bracket side using the helper function
+  const bracketSideHeight = calculateBracketHeight(matchesBySide);
 
   return (
     <div
@@ -1166,9 +1164,9 @@ const renderBracketSide = (
         display: 'flex',
         flexDirection: isRight ? 'row-reverse' : 'row',
         alignItems: 'flex-start',
-        // Gap between rounds is handled by the structure, not flex gap
+        gap: `${ROUND_GAP}px`, // Keep gap for visual spacing between round containers
         position: 'relative',
-        minHeight: `${maxRoundHeight}px`,
+        minHeight: `${bracketSideHeight}px`, // Use calculated height
         overflow: 'visible', // Important for connectors to not be clipped by this parent
       }}
     >
@@ -1180,21 +1178,6 @@ const renderBracketSide = (
         const matchCount = roundMatches.length;
         const hasNextRound = roundIndex < matchesBySide.length - 1 && matchesBySide[roundIndex + 1].length > 0;
 
-        // Determine the min and max Y for this round's matches to size the SVG correctly
-        const currentRoundMinY = Math.min(...verticalPositions[roundIndex]);
-        const currentRoundMaxY = Math.max(...verticalPositions[roundIndex]) + CARD_HEIGHT;
-
-        // The height of the SVG should cover all matches in this round and potentially extend to the next round's connection points
-        let svgHeight = currentRoundMaxY - currentRoundMinY;
-        if (hasNextRound) {
-          const nextRoundMinY = Math.min(...verticalPositions[roundIndex + 1]);
-          const nextRoundMaxY = Math.max(...verticalPositions[roundIndex + 1]) + CARD_HEIGHT;
-          svgHeight = Math.max(svgHeight, nextRoundMaxY - currentRoundMinY, nextRoundMinY - currentRoundMinY);
-        }
-        // Add some buffer to the SVG height
-        svgHeight += BASE_VERTICAL_GAP;
-
-
         return (
           <div
             key={`${side}-round-${actualRound}`}
@@ -1202,9 +1185,8 @@ const renderBracketSide = (
               position: 'relative',
               display: 'flex',
               flexDirection: 'column',
-              // The width of this round container should include the card width and the gap for connectors
-              width: `${CARD_WIDTH + (hasNextRound ? ROUND_GAP : 0)}px`,
-              minHeight: `${maxRoundHeight}px`,
+              width: `${CARD_WIDTH}px`, // Each round container is CARD_WIDTH wide
+              minHeight: `${bracketSideHeight}px`, // Use calculated height
               overflow: 'visible', // Ensure nothing is clipped within this round container
             }}
           >
@@ -1232,103 +1214,118 @@ const renderBracketSide = (
               </div>
             </div>
 
-            {/* Container for Match Cards and Connectors */}
+            {/* MATCHES + CONNECTORS CONTAINER */}
             <div
               style={{
                 position: 'relative',
-                width: `${CARD_WIDTH + (hasNextRound ? ROUND_GAP : 0)}px`, // This container needs to be wide enough
-                height: `${maxRoundHeight}px`, // Ensure it covers the full vertical extent
+                width: `${CARD_WIDTH}px`,
+                height: `${bracketSideHeight}px`, // Ensure it covers the full vertical extent
+                flexGrow: 0,
+                flexShrink: 0,
                 overflow: 'visible',
               }}
             >
-              {/* Connectors SVG (rendered behind cards) */}
-              {hasNextRound && (
-                <svg
-                  style={{
-                    position: 'absolute',
-                    left: isRight ? `-${ROUND_GAP}px` : `${CARD_WIDTH}px`, // Position the SVG in the gap
-                    top: `${currentRoundMinY}px`, // Start from the top of the first card in this round
-                    width: `${ROUND_GAP}px`,
-                    height: `${svgHeight}px`,
-                    pointerEvents: 'none',
-                    zIndex: 5, // Below match cards
-                    overflow: 'visible',
-                  }}
-                >
-                  {roundMatches.map((match, matchIndex) => {
-                    const yPosition = verticalPositions[roundIndex]?.[matchIndex];
-                    if (yPosition === undefined) return null;
+              {hasNextRound && roundMatches.map((match, matchIndex) => {
+                const yPosition = verticalPositions[roundIndex]?.[matchIndex];
+                if (yPosition === undefined) return null;
 
-                    const cardCenterY = yPosition + (CARD_HEIGHT / 2);
-                    const isFirstInPair = matchIndex % 2 === 0;
-                    const hasPartner = matchIndex + 1 < matchCount;
-                    const partnerY = hasPartner ? verticalPositions[roundIndex]?.[matchIndex + 1] : undefined;
-                    const targetMatchIdx = Math.floor(matchIndex / 2);
-                    const targetY = verticalPositions[roundIndex + 1]?.[targetMatchIdx];
+                const cardCenterY = yPosition + (CARD_HEIGHT / 2);
+                const isFirstInPair = matchIndex % 2 === 0;
+                const hasPartner = matchIndex + 1 < matchCount;
+                const partnerY = hasPartner ? verticalPositions[roundIndex]?.[matchIndex + 1] : undefined;
+                const targetMatchIdx = Math.floor(matchIndex / 2);
+                const targetY = verticalPositions[roundIndex + 1]?.[targetMatchIdx];
 
-                    // Coordinates relative to the SVG's top-left corner
-                    const svgRelativeCardCenterY = cardCenterY - currentRoundMinY;
+                // Calculate coordinates for vertical line
+                let verticalLineMinY = 0;
+                let verticalLineMaxY = 0;
+                let verticalLineTargetCenterY = 0;
 
-                    const lines = [];
+                if (isFirstInPair && targetY !== undefined) {
+                  const currentMatchCenterY = cardCenterY;
+                  const partnerMatchCenterY = hasPartner && partnerY !== undefined
+                    ? partnerY + (CARD_HEIGHT / 2)
+                    : currentMatchCenterY; // If no partner, it's a BYE, so use current match's Y
 
-                    // 1. Horizontal line from card to connection point
-                    lines.push(
+                  verticalLineTargetCenterY = targetY + (CARD_HEIGHT / 2);
+
+                  verticalLineMinY = Math.min(currentMatchCenterY, partnerMatchCenterY, verticalLineTargetCenterY);
+                  verticalLineMaxY = Math.max(currentMatchCenterY, partnerMatchCenterY, verticalLineTargetCenterY);
+                }
+
+                return (
+                  <React.Fragment key={`connectors-${match.id_match}`}>
+                    {/* 1️⃣ HORIZONTAL LINE */}
+                    <svg
+                      style={{
+                        position: 'absolute',
+                        left: isRight ? `-${ROUND_GAP / 2}px` : `${CARD_WIDTH}px`,
+                        top: `${cardCenterY - 1}px`, // -1 to center strokeWidth 2 line
+                        width: ROUND_GAP / 2,
+                        height: 2,
+                        pointerEvents: 'none',
+                        zIndex: 5,
+                        overflow: 'visible',
+                        backgroundColor: 'rgba(255, 0, 0, 0.2)', // Debug: Red for horizontal SVG
+                      }}
+                    >
                       <line
-                        key={`h-line-${match.id_match}`}
-                        x1={isRight ? ROUND_GAP : 0}
-                        y1={svgRelativeCardCenterY}
-                        x2={isRight ? ROUND_GAP / 2 : ROUND_GAP / 2}
-                        y2={svgRelativeCardCenterY}
+                        x1={isRight ? ROUND_GAP / 2 : 0}
+                        y1="1" // Center of the 2px height SVG
+                        x2={isRight ? 0 : ROUND_GAP / 2}
+                        y2="1"
                         stroke="#990D35"
                         strokeWidth="2"
                         opacity="0.8"
                       />
-                    );
+                    </svg>
 
-                    // 2. Vertical line connecting pair to next round
-                    if (isFirstInPair && targetY !== undefined) {
-                      const targetCenterY = targetY + (CARD_HEIGHT / 2);
-                      const svgRelativeTargetCenterY = targetCenterY - currentRoundMinY;
-
-                      const y1 = svgRelativeCardCenterY;
-                      const y2 = hasPartner && partnerY !== undefined
-                        ? (partnerY + (CARD_HEIGHT / 2)) - currentRoundMinY
-                        : svgRelativeCardCenterY; // If no partner, it's a BYE, so vertical line is just from current card to target
-
-                      // Vertical line from the connection point of the pair to the target match
-                      lines.push(
+                    {/* 2️⃣ VERTICAL LINE */}
+                    {isFirstInPair && targetY !== undefined && (
+                      <svg
+                        style={{
+                          position: 'absolute',
+                          // Position in the middle of the ROUND_GAP
+                          left: isRight ? `-${ROUND_GAP / 2 + 2}px` : `${CARD_WIDTH + ROUND_GAP / 2 - 2}px`, // -2 for 4px width SVG
+                          top: `${verticalLineMinY}px`,
+                          width: '4px', // Small width for vertical line SVG
+                          height: `${verticalLineMaxY - verticalLineMinY}px`,
+                          pointerEvents: 'none',
+                          zIndex: 5,
+                          overflow: 'visible',
+                          backgroundColor: 'rgba(0, 0, 255, 0.2)', // Debug: Blue for vertical SVG
+                        }}
+                      >
+                        {/* Line from first match to target */}
                         <line
-                          key={`v-line-${match.id_match}`}
-                          x1={ROUND_GAP / 2}
-                          y1={Math.min(y1, y2)} // Start from the higher Y of the two cards
-                          x2={ROUND_GAP / 2}
-                          y2={svgRelativeTargetCenterY}
+                          x1="2" // Center of the 4px width SVG
+                          y1={cardCenterY - verticalLineMinY}
+                          x2="2"
+                          y2={verticalLineTargetCenterY - verticalLineMinY}
                           stroke="#990D35"
                           strokeWidth="2"
                           opacity="0.8"
                         />
-                      );
 
-                      // Horizontal line from the vertical connector to the target match
-                      lines.push(
-                        <line
-                          key={`h-line-target-${match.id_match}`}
-                          x1={isRight ? ROUND_GAP / 2 : ROUND_GAP / 2}
-                          y1={svgRelativeTargetCenterY}
-                          x2={isRight ? 0 : ROUND_GAP}
-                          y2={svgRelativeTargetCenterY}
-                          stroke="#990D35"
-                          strokeWidth="2"
-                          opacity="0.8"
-                        />
-                      );
-                    }
-                    return lines;
-                  })}
-                </svg>
-              )}
+                        {/* Line from partner match to target (if exists) */}
+                        {hasPartner && partnerY !== undefined && (
+                          <line
+                            x1="2"
+                            y1={(partnerY + (CARD_HEIGHT / 2)) - verticalLineMinY}
+                            x2="2"
+                            y2={verticalLineTargetCenterY - verticalLineMinY}
+                            stroke="#990D35"
+                            strokeWidth="2"
+                            opacity="0.8"
+                          />
+                        )}
+                      </svg>
+                    )}
+                  </React.Fragment>
+                );
+              })}
 
-              {/* Match Cards (rendered on top) */}
+              {/* 3️⃣ MATCH CARDS */}
               {roundMatches.map((match, matchIndex) => {
                 const yPosition = verticalPositions[roundIndex]?.[matchIndex];
                 if (yPosition === undefined) return null;
@@ -1339,9 +1336,9 @@ const renderBracketSide = (
                     style={{
                       position: 'absolute',
                       top: `${yPosition}px`,
-                      left: 0, // Cards are always at the left edge of this container
+                      left: 0,
                       width: `${CARD_WIDTH}px`,
-                      zIndex: 10, // Above connectors
+                      zIndex: 10,
                     }}
                   >
                     {renderMatchCard(match, match.id_match)}
