@@ -1144,54 +1144,53 @@ const renderCenterFinal = () => {
 };
 
 const renderBracketSide = (
-  matchesBySide: Match[][],
+  matchesBySide: Match[][], 
   side: 'left' | 'right',
   startRound: number = 1
 ) => {
   const isRight = side === 'right';
   const totalRounds = getTotalRounds();
-
-  // Calculate ALL vertical positions first
+  
+  // ✅ Hitung SEMUA posisi vertikal dulu
   const verticalPositions = calculateVerticalPositions(matchesBySide);
-
-  // Calculate total height needed for the bracket side using the helper function
-  const bracketSideHeight = calculateBracketHeight(matchesBySide);
-
+  
+  // ✅ Hitung total height yang dibutuhkan
+  const maxY = Math.max(
+    ...verticalPositions.flat().filter(y => y !== undefined)
+  ) + CARD_HEIGHT + 100;
+  
   return (
-    <div
+    <div 
       className="bracket-side"
       style={{
         display: 'flex',
         flexDirection: isRight ? 'row-reverse' : 'row',
         alignItems: 'flex-start',
-        gap: `${ROUND_GAP}px`, // Keep gap for visual spacing between round containers
+        gap: `${ROUND_GAP}px`,
         position: 'relative',
-        minHeight: `${bracketSideHeight}px`, // Use calculated height
-        overflow: 'visible', // Important for connectors to not be clipped by this parent
+        minHeight: `${maxY}px`
       }}
     >
       {matchesBySide.map((roundMatches, roundIndex) => {
         if (roundMatches.length === 0) return null;
-
+        
         const actualRound = startRound + roundIndex;
         const roundName = getRoundName(actualRound, totalRounds);
         const matchCount = roundMatches.length;
         const hasNextRound = roundIndex < matchesBySide.length - 1 && matchesBySide[roundIndex + 1].length > 0;
-
+        
         return (
-          <div
-            key={`${side}-round-${actualRound}`}
-            style={{
+          <div 
+            key={`${side}-round-${actualRound}`} 
+            style={{ 
               position: 'relative',
               display: 'flex',
               flexDirection: 'column',
-              width: `${CARD_WIDTH}px`, // Each round container is CARD_WIDTH wide
-              minHeight: `${bracketSideHeight}px`, // Use calculated height
-              overflow: 'visible', // Ensure nothing is clipped within this round container
+              minHeight: `${maxY}px`
             }}
           >
             {/* Round Header */}
-            <div
+            <div 
               className="round-header"
               style={{
                 width: `${CARD_WIDTH}px`,
@@ -1200,10 +1199,10 @@ const renderBracketSide = (
                 position: 'relative',
                 zIndex: 20,
                 background: '#F5FBEF',
-                padding: '8px 12px',
+                padding: '8px 12px'
               }}
             >
-              <div
+              <div 
                 className="px-4 py-2 rounded-lg font-bold text-sm shadow-md"
                 style={{ backgroundColor: '#990D35', color: '#F5FBEF' }}
               >
@@ -1213,32 +1212,36 @@ const renderBracketSide = (
                 {matchCount} {matchCount === 1 ? 'Match' : 'Matches'}
               </div>
             </div>
-
+            
             {/* MATCHES + CONNECTORS CONTAINER */}
-            <div
+            <div 
               style={{
                 position: 'relative',
                 width: `${CARD_WIDTH}px`,
-                height: `${bracketSideHeight}px`, // Ensure it covers the full vertical extent
+                height: `${maxY}px`,
                 flexGrow: 0,
-                flexShrink: 0,
-                overflow: 'visible',
+                flexShrink: 0
               }}
             >
-              {hasNextRound && roundMatches.map((match, matchIndex) => {
+              {/* ============================================
+    RENDER CONNECTORS (Behind everything)
+    ============================================ */}
+{hasNextRound && roundMatches.map((match, matchIndex) => {
   const yPosition = verticalPositions[roundIndex]?.[matchIndex];
   if (yPosition === undefined) return null;
-
+  
   const cardCenterY = yPosition + (CARD_HEIGHT / 2);
+  
+  // 🎯 Determine if this match is part of a pair
   const isFirstInPair = matchIndex % 2 === 0;
   const hasPartner = matchIndex + 1 < matchCount;
   const partnerY = hasPartner ? verticalPositions[roundIndex]?.[matchIndex + 1] : undefined;
   const targetMatchIdx = Math.floor(matchIndex / 2);
   const targetY = verticalPositions[roundIndex + 1]?.[targetMatchIdx];
-
+  
   return (
     <React.Fragment key={`connectors-${match.id_match}`}>
-      {/* 1️⃣ HORIZONTAL LINE */}
+      {/* 1️⃣ HORIZONTAL LINE - Every match to connection point */}
       <svg
         style={{
           position: 'absolute',
@@ -1248,7 +1251,7 @@ const renderBracketSide = (
           height: 2,
           pointerEvents: 'none',
           zIndex: 5,
-          overflow: 'visible',
+          overflow: 'visible'
         }}
       >
         <line
@@ -1261,86 +1264,88 @@ const renderBracketSide = (
           opacity="0.8"
         />
       </svg>
-
-      {/* 2️⃣ VERTICAL LINE */}
-      {isFirstInPair && targetY !== undefined && (() => {
-        // ✅ CALCULATE DI DALAM SCOPE!
-        const currentMatchCenterY = cardCenterY;
-        const partnerMatchCenterY = hasPartner && partnerY !== undefined
-          ? partnerY + (CARD_HEIGHT / 2)
-          : currentMatchCenterY;
-        const targetMatchCenterY = targetY + (CARD_HEIGHT / 2);
-
-        const verticalLineMinY = Math.min(currentMatchCenterY, partnerMatchCenterY, targetMatchCenterY);
-        const verticalLineMaxY = Math.max(currentMatchCenterY, partnerMatchCenterY, targetMatchCenterY);
-
-        console.log(`\n🔵 VERTICAL LINE DEBUG:`);
-        console.log(`  Match: ${match.id_match}, Side: ${side}`);
-        console.log(`  currentMatchCenterY: ${currentMatchCenterY}px`);
-        console.log(`  partnerMatchCenterY: ${partnerMatchCenterY}px`);
-        console.log(`  targetMatchCenterY: ${targetMatchCenterY}px`);
-        console.log(`  verticalLineMinY: ${verticalLineMinY}px`);
-        console.log(`  verticalLineMaxY: ${verticalLineMaxY}px`);
-        console.log(`  Height: ${verticalLineMaxY - verticalLineMinY}px`);
-        console.log(`  Left: ${isRight ? `-${ROUND_GAP / 2 + 2}px` : `${CARD_WIDTH + ROUND_GAP / 2 - 2}px`}`);
-
-        return (
-          <svg
-            style={{
-              position: 'absolute',
-              left: isRight ? `-${ROUND_GAP / 2 + 2}px` : `${CARD_WIDTH + ROUND_GAP / 2 - 2}px`,
-              top: `${verticalLineMinY}px`,
-              width: '4px',
-              height: `${verticalLineMaxY - verticalLineMinY}px`,
-              pointerEvents: 'none',
-              zIndex: 5,
-              overflow: 'visible',
-            }}
-          >
-            {/* Line from first match to target */}
-            <line
-              x1="2"
-              y1={currentMatchCenterY - verticalLineMinY}
-              x2="2"
-              y2={targetMatchCenterY - verticalLineMinY}
-              stroke="#990D35"
-              strokeWidth="2"
-              opacity="0.8"
-            />
-
-            {/* Line from partner match to target (if exists) */}
-            {hasPartner && partnerY !== undefined && (
-              <line
-                x1="2"
-                y1={partnerMatchCenterY - verticalLineMinY}
-                x2="2"
-                y2={targetMatchCenterY - verticalLineMinY}
-                stroke="#990D35"
-                strokeWidth="2"
-                opacity="0.8"
-              />
-            )}
-          </svg>
-        );
-      })()}
+      
+      {/* 2️⃣ VERTICAL LINE - Connect pairs to target */}
+{isFirstInPair && targetY !== undefined && (
+  (() => {
+    const targetCenterY = targetY + (CARD_HEIGHT / 2);
+    
+    // Calculate positions for all involved points
+    const y1 = cardCenterY; // First match center
+    const y2 = hasPartner && partnerY !== undefined 
+      ? partnerY + (CARD_HEIGHT / 2) 
+      : cardCenterY; // Partner match center (or same if no partner)
+    const y3 = targetCenterY; // Target match center
+    
+    // Find the range we need to cover
+    const minY = Math.min(y1, y2, y3);
+    const maxY = Math.max(y1, y2, y3);
+    const svgHeight = maxY - minY;
+    
+    // Position of vertical line (at the end of horizontal lines)
+    const lineX = isRight ? -(ROUND_GAP / 2) : CARD_WIDTH + (ROUND_GAP / 2);
+    
+    return (
+      <svg
+        key={`vertical-${matchIndex}`}
+        style={{
+          position: 'absolute',
+          left: `${lineX}px`,
+          top: `${minY}px`,
+          width: 2,
+          height: svgHeight,
+          pointerEvents: 'none',
+          zIndex: 4,
+          overflow: 'visible'
+        }}
+      >
+        {/* Line from first match to target */}
+        <line
+          x1="1"
+          y1={y1 - minY}
+          x2="1"
+          y2={y3 - minY}
+          stroke="#990D35"
+          strokeWidth="2"
+          opacity="0.8"
+        />
+        
+        {/* Line from partner match to target (if exists) */}
+        {hasPartner && partnerY !== undefined && (
+          <line
+            x1="1"
+            y1={y2 - minY}
+            x2="1"
+            y2={y3 - minY}
+            stroke="#990D35"
+            strokeWidth="2"
+            opacity="0.8"
+          />
+        )}
+      </svg>
+    );
+  })()
+)}
     </React.Fragment>
   );
 })}
-
-              {/* 3️⃣ MATCH CARDS */}
+              
+              {/* ============================================
+                  RENDER MATCH CARDS (On top)
+                  ============================================ */}
               {roundMatches.map((match, matchIndex) => {
                 const yPosition = verticalPositions[roundIndex]?.[matchIndex];
                 if (yPosition === undefined) return null;
-
+                
                 return (
-                  <div
+                  <div 
                     key={`card-${match.id_match}`}
-                    style={{
+                    style={{ 
                       position: 'absolute',
                       top: `${yPosition}px`,
                       left: 0,
                       width: `${CARD_WIDTH}px`,
-                      zIndex: 10,
+                      zIndex: 10
                     }}
                   >
                     {renderMatchCard(match, match.id_match)}
