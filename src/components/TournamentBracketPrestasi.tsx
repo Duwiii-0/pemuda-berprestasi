@@ -1151,7 +1151,7 @@ const renderCenterFinal = () => {
     width: lineLength,
     height: 2,
     pointerEvents: 'none',
-    zIndex: 5
+    zIndex: 1
   }}
 >
   <line 
@@ -1174,7 +1174,7 @@ const renderCenterFinal = () => {
     width: lineLength,
     height: 2,
     pointerEvents: 'none',
-    zIndex: 5
+    zIndex: 1
   }}
 >
   <line 
