@@ -1238,29 +1238,31 @@ const renderBracketSide = (
 
   return (
     <React.Fragment key={`connectors-${match.id_match}`}>
-      {/* 1️⃣ HORIZONTAL LINE */}
-      <svg
-        style={{
-          position: 'absolute',
-          left: isRight ? `-${ROUND_GAP / 2}px` : `${CARD_WIDTH}px`,
-          top: `${cardCenterY - 1}px`,
-          width: ROUND_GAP / 2,
-          height: 2,
-          pointerEvents: 'none',
-          zIndex: 5,
-          overflow: 'visible',
-        }}
-      >
-        <line
-          x1={isRight ? ROUND_GAP / 2 : 0}
-          y1="1"
-          x2={isRight ? 0 : ROUND_GAP / 2}
-          y2="1"
-          stroke="#990D35"
-          strokeWidth="2"
-          opacity="0.8"
-        />
-      </svg>
+     {/* 1️⃣ HORIZONTAL LINE */}
+<svg
+  style={{
+    position: 'absolute',
+    // ✅ RIGHT: mulai dari card width, LEFT: mulai dari card width
+    left: isRight ? `${CARD_WIDTH}px` : `${CARD_WIDTH}px`,
+    top: `${cardCenterY - 1}px`,
+    width: ROUND_GAP / 2,
+    height: 2,
+    pointerEvents: 'none',
+    zIndex: 5,
+    overflow: 'visible',
+  }}
+>
+  <line
+    // ✅ RIGHT: draw dari kanan ke kiri, LEFT: draw dari kiri ke kanan
+    x1={isRight ? ROUND_GAP / 2 : 0}
+    y1="1"
+    x2={isRight ? 0 : ROUND_GAP / 2}
+    y2="1"
+    stroke="#990D35"
+    strokeWidth="2"
+    opacity="0.8"
+  />
+</svg>
 
       {/* 2️⃣ VERTICAL LINE */}
       {isFirstInPair && targetY !== undefined && (() => {
@@ -1285,18 +1287,19 @@ const renderBracketSide = (
         console.log(`  Left: ${isRight ? `-${ROUND_GAP / 2 + 2}px` : `${CARD_WIDTH + ROUND_GAP / 2 - 2}px`}`);
 
         return (
-          <svg
-            style={{
-              position: 'absolute',
-              left: isRight ? `-${ROUND_GAP / 2 + 2}px` : `${CARD_WIDTH + ROUND_GAP / 2 - 2}px`,
-              top: `${verticalLineMinY}px`,
-              width: '4px',
-              height: `${verticalLineMaxY - verticalLineMinY}px`,
-              pointerEvents: 'none',
-              zIndex: 5,
-              overflow: 'visible',
-            }}
-          >
+<svg
+  style={{
+    position: 'absolute',
+    // ✅ BOTH sides: vertical line di tengah ROUND_GAP (CARD_WIDTH + ROUND_GAP/2)
+    left: `${CARD_WIDTH + (ROUND_GAP / 2) - 2}px`,
+    top: `${verticalLineMinY}px`,
+    width: '4px',
+    height: `${verticalLineMaxY - verticalLineMinY}px`,
+    pointerEvents: 'none',
+    zIndex: 5,
+    overflow: 'visible',
+  }}
+>
             {/* Line from first match to target */}
             <line
               x1="2"
