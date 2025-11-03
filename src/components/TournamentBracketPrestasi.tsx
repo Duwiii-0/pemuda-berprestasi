@@ -1083,6 +1083,41 @@ const renderVerticalConnector = (
 };
 
 /**
+ * 🆕 Calculate positions for all matches in bracket
+ * Setiap ronde berikutnya akan berada di tengah 2 match parent
+ */
+const calculateBracketPositions = (matchesBySide: Match[][]) => {
+  const positions: number[][] = [];
+  
+  // Round pertama - urutan berurutan
+  if (matchesBySide.length > 0 && matchesBySide[0].length > 0) {
+    positions[0] = matchesBySide[0].map((_, i) => i * (CARD_HEIGHT + VERTICAL_SPACING));
+  }
+  
+  // Round selanjutnya - rata-rata posisi dua parent
+  for (let r = 1; r < matchesBySide.length; r++) {
+    positions[r] = [];
+    const prevRoundMatches = matchesBySide[r - 1];
+    const currentRoundMatches = matchesBySide[r];
+    
+    for (let i = 0; i < currentRoundMatches.length; i++) {
+      const parentIndexA = i * 2;
+      const parentIndexB = i * 2 + 1;
+      
+      // Ambil posisi parent
+      const parentTopA = positions[r - 1][parentIndexA] || 0;
+      const parentTopB = positions[r - 1][parentIndexB] || 0;
+      
+      // Hitung titik tengah
+      const mid = (parentTopA + parentTopB + CARD_HEIGHT) / 2;
+      positions[r].push(mid);
+    }
+  }
+  
+  return positions;
+};
+
+/**
  * 🆕 Render one side of split bracket with connectors
  */
 const renderBracketSide = (
@@ -1093,13 +1128,16 @@ const renderBracketSide = (
   const isRight = side === 'right';
   const totalRounds = getTotalRounds();
   
+  // ✅ HITUNG POSISI VERTIKAL YANG BENAR
+  const positions = calculateBracketPositions(matchesBySide);
+  
   return (
     <div 
       className="bracket-side"
       style={{
         display: 'flex',
         flexDirection: isRight ? 'row-reverse' : 'row',
-        alignItems: 'flex-start', // ✅ UBAH dari 'center' ke 'flex-start'
+        alignItems: 'flex-start',
         gap: `${ROUND_GAP}px`,
         position: 'relative'
       }}
@@ -1110,7 +1148,6 @@ const renderBracketSide = (
         const actualRound = startRound + roundIndex;
         const roundName = getRoundName(actualRound, totalRounds);
         const matchCount = roundMatches.length;
-        const verticalGap = VERTICAL_SPACING * Math.pow(2, roundIndex);
         const hasNextRound = roundIndex < matchesBySide.length - 1 && matchesBySide[roundIndex + 1].length > 0;
         
         return (
@@ -1147,31 +1184,76 @@ const renderBracketSide = (
               </div>
             </div>
             
-            {/* Round Matches Container */}
+            {/* ✅ CONTAINER DENGAN POSISI ABSOLUTE */}
             <div 
               className="round-matches-container"
               style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: `${verticalGap}px`,
                 position: 'relative',
-                // ✅ TAMBAH paddingTop untuk round 2+
-                paddingTop: roundIndex > 0 ? `${(VERTICAL_SPACING * Math.pow(2, roundIndex - 1) / 2) + (CARD_HEIGHT / 2)}px` : '0'
+                width: `${CARD_WIDTH}px`,
+                height: '100%'
               }}
             >
               {roundMatches.map((match, matchIndex) => (
                 <div 
                   key={match.id_match}
                   style={{ 
-                    position: 'relative',
+                    position: 'absolute',
+                    top: `${positions[roundIndex][matchIndex]}px`, // ✅ POSISI DARI CALCULATION
+                    left: 0,
                     zIndex: 10
                   }}
                 >
                   {/* Horizontal connector to next round */}
-                  {renderCardConnector(match, matchIndex, roundIndex, side, hasNextRound)}
+                  {hasNextRound && (
+                    <svg
+                      style={{
+                        position: 'absolute',
+                        left: isRight ? -ROUND_GAP/2 : CARD_WIDTH,
+                        top: '50%',
+                        width: ROUND_GAP/2,
+                        height: 2,
+                        pointerEvents: 'none',
+                        zIndex: 5,
+                        overflow: 'visible'
+                      }}
+                    >
+                      <line
+                        x1={isRight ? ROUND_GAP/2 : 0}
+                        y1="0"
+                        x2={isRight ? 0 : ROUND_GAP/2}
+                        y2="0"
+                        stroke="#990D35"
+                        strokeWidth="3"
+                        opacity="0.8"
+                      />
+                    </svg>
+                  )}
                   
                   {/* Vertical connector between pairs */}
-                  {renderVerticalConnector(matchIndex, roundIndex, side, matchCount)}
+                  {hasNextRound && matchIndex % 2 === 0 && matchIndex + 1 < matchCount && (
+                    <svg
+                      style={{
+                        position: 'absolute',
+                        left: isRight ? -ROUND_GAP/2 : CARD_WIDTH + ROUND_GAP/2,
+                        top: '50%',
+                        width: 3,
+                        height: positions[roundIndex][matchIndex + 1] - positions[roundIndex][matchIndex] + CARD_HEIGHT/2,
+                        pointerEvents: 'none',
+                        zIndex: 5,
+                        overflow: 'visible'
+                      }}
+                    >
+                      <line
+                        x1="1.5"
+                        y1="0"
+                        x2="1.5"
+                        y2="100%"
+                        stroke="#990D35"
+                        strokeWidth="3"
+                        opacity="0.8"
+                      />
+                    </svg>
+                  )}
                   
                   {/* Match Card */}
                   {renderMatchCard(match, match.id_match)}
