@@ -1213,7 +1213,7 @@ const renderBracketSide = (
   </div>
 </div>
             
-                        {/* ✅ MATCHES CONTAINER - FORCE ABSOLUTE */}
+            {/* ✅ MATCHES CONTAINER - FORCE ABSOLUTE */}
 <div 
   style={{
     position: 'relative',
@@ -1232,6 +1232,11 @@ const renderBracketSide = (
     const yPosition = verticalPositions[roundIndex]?.[matchIndex] || 0;
     const cardCenterY = yPosition + 80 + (CARD_HEIGHT / 2);
     
+    console.log(`🔗 [${side.toUpperCase()}] Round ${roundIndex + 1}, Match ${matchIndex + 1}:`);
+    console.log(`   yPosition: ${yPosition}px`);
+    console.log(`   cardCenterY: ${cardCenterY}px (should be divider position)`);
+    console.log(`   hasNextRound: ${hasNextRound}`);
+    
     return (
       <React.Fragment key={`connector-${match.id_match}`}>
         {/* HORIZONTAL LINE ke next round */}
@@ -1245,7 +1250,8 @@ const renderBracketSide = (
               height: 2,
               pointerEvents: 'none',
               zIndex: 5,
-              overflow: 'visible'
+              overflow: 'visible',
+              backgroundColor: 'rgba(255, 0, 0, 0.3)' // DEBUG: Red background
             }}
           >
             <line
@@ -1271,9 +1277,18 @@ const renderBracketSide = (
             const y2 = match2Y + 80 + (CARD_HEIGHT / 2);
             const y3 = targetY + 80 + (CARD_HEIGHT / 2);
             
+            console.log(`🔗 [${side.toUpperCase()}] VERTICAL LINE for pair ${matchIndex}/${matchIndex + 1}:`);
+            console.log(`   Match 1 Y: ${match1Y} → Center: ${y1}px`);
+            console.log(`   Match 2 Y: ${match2Y} → Center: ${y2}px`);
+            console.log(`   Target Y: ${targetY} → Center: ${y3}px`);
+            
             const minY = Math.min(y1, y2, y3);
             const maxY = Math.max(y1, y2, y3);
             const lineX = isRight ? -(ROUND_GAP / 2) : CARD_WIDTH + (ROUND_GAP / 2);
+            
+            console.log(`   SVG: left=${lineX}px, top=${minY}px, height=${maxY - minY}px`);
+            console.log(`   Line points: (1.5, ${y1 - minY}) → (1.5, ${y3 - minY})`);
+            console.log(`   Line points: (1.5, ${y2 - minY}) → (1.5, ${y3 - minY})`);
             
             return (
               <svg
@@ -1286,7 +1301,8 @@ const renderBracketSide = (
                   height: `${maxY - minY}px`,
                   pointerEvents: 'none',
                   zIndex: 4,
-                  overflow: 'visible'
+                  overflow: 'visible',
+                  backgroundColor: 'rgba(0, 255, 0, 0.3)' // DEBUG: Green background
                 }}
               >
                 <line
