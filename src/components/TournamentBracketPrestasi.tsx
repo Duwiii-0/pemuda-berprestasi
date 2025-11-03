@@ -1226,117 +1226,106 @@ const renderBracketSide = (
               }}
             >
               {hasNextRound && roundMatches.map((match, matchIndex) => {
-                const yPosition = verticalPositions[roundIndex]?.[matchIndex];
-                if (yPosition === undefined) return null;
+  const yPosition = verticalPositions[roundIndex]?.[matchIndex];
+  if (yPosition === undefined) return null;
 
-                const cardCenterY = yPosition + (CARD_HEIGHT / 2);
-                const isFirstInPair = matchIndex % 2 === 0;
-                const hasPartner = matchIndex + 1 < matchCount;
-                const partnerY = hasPartner ? verticalPositions[roundIndex]?.[matchIndex + 1] : undefined;
-                const targetMatchIdx = Math.floor(matchIndex / 2);
-                const targetY = verticalPositions[roundIndex + 1]?.[targetMatchIdx];
+  const cardCenterY = yPosition + (CARD_HEIGHT / 2);
+  const isFirstInPair = matchIndex % 2 === 0;
+  const hasPartner = matchIndex + 1 < matchCount;
+  const partnerY = hasPartner ? verticalPositions[roundIndex]?.[matchIndex + 1] : undefined;
+  const targetMatchIdx = Math.floor(matchIndex / 2);
+  const targetY = verticalPositions[roundIndex + 1]?.[targetMatchIdx];
 
-                // Calculate coordinates for vertical line
-                let verticalLineMinY = 0;
-                let verticalLineMaxY = 0;
-                let verticalLineTargetCenterY = 0;
+  return (
+    <React.Fragment key={`connectors-${match.id_match}`}>
+      {/* 1️⃣ HORIZONTAL LINE */}
+      <svg
+        style={{
+          position: 'absolute',
+          left: isRight ? `-${ROUND_GAP / 2}px` : `${CARD_WIDTH}px`,
+          top: `${cardCenterY - 1}px`,
+          width: ROUND_GAP / 2,
+          height: 2,
+          pointerEvents: 'none',
+          zIndex: 5,
+          overflow: 'visible',
+        }}
+      >
+        <line
+          x1={isRight ? ROUND_GAP / 2 : 0}
+          y1="1"
+          x2={isRight ? 0 : ROUND_GAP / 2}
+          y2="1"
+          stroke="#990D35"
+          strokeWidth="2"
+          opacity="0.8"
+        />
+      </svg>
 
-                if (isFirstInPair && targetY !== undefined) {
-                  const currentMatchCenterY = cardCenterY;
-                  const partnerMatchCenterY = hasPartner && partnerY !== undefined
-                    ? partnerY + (CARD_HEIGHT / 2)
-                    : currentMatchCenterY; // If no partner, it's a BYE, so use current match's Y
+      {/* 2️⃣ VERTICAL LINE */}
+      {isFirstInPair && targetY !== undefined && (() => {
+        // ✅ CALCULATE DI DALAM SCOPE!
+        const currentMatchCenterY = cardCenterY;
+        const partnerMatchCenterY = hasPartner && partnerY !== undefined
+          ? partnerY + (CARD_HEIGHT / 2)
+          : currentMatchCenterY;
+        const targetMatchCenterY = targetY + (CARD_HEIGHT / 2);
 
-                  verticalLineTargetCenterY = targetY + (CARD_HEIGHT / 2);
+        const verticalLineMinY = Math.min(currentMatchCenterY, partnerMatchCenterY, targetMatchCenterY);
+        const verticalLineMaxY = Math.max(currentMatchCenterY, partnerMatchCenterY, targetMatchCenterY);
 
-                  verticalLineMinY = Math.min(currentMatchCenterY, partnerMatchCenterY, verticalLineTargetCenterY);
-                  verticalLineMaxY = Math.max(currentMatchCenterY, partnerMatchCenterY, verticalLineTargetCenterY);
-                }
+        console.log(`\n🔵 VERTICAL LINE DEBUG:`);
+        console.log(`  Match: ${match.id_match}, Side: ${side}`);
+        console.log(`  currentMatchCenterY: ${currentMatchCenterY}px`);
+        console.log(`  partnerMatchCenterY: ${partnerMatchCenterY}px`);
+        console.log(`  targetMatchCenterY: ${targetMatchCenterY}px`);
+        console.log(`  verticalLineMinY: ${verticalLineMinY}px`);
+        console.log(`  verticalLineMaxY: ${verticalLineMaxY}px`);
+        console.log(`  Height: ${verticalLineMaxY - verticalLineMinY}px`);
+        console.log(`  Left: ${isRight ? `-${ROUND_GAP / 2 + 2}px` : `${CARD_WIDTH + ROUND_GAP / 2 - 2}px`}`);
 
-                return (
-                  <React.Fragment key={`connectors-${match.id_match}`}>
-                    {/* 1️⃣ HORIZONTAL LINE */}
-<svg
-  style={{
-    position: 'absolute',
-    left: isRight ? `-${ROUND_GAP / 2}px` : `${CARD_WIDTH}px`,
-    top: `${cardCenterY - 1}px`,
-    width: ROUND_GAP / 2,
-    height: 2,
-    pointerEvents: 'none',
-    zIndex: 5,
-    overflow: 'visible',
-    // ✅ HAPUS: backgroundColor: 'rgba(255, 0, 0, 0.2)',
-  }}
->
-                      <line
-                        x1={isRight ? ROUND_GAP / 2 : 0}
-                        y1="1" // Center of the 2px height SVG
-                        x2={isRight ? 0 : ROUND_GAP / 2}
-                        y2="1"
-                        stroke="#990D35"
-                        strokeWidth="2"
-                        opacity="0.8"
-                      />
-                    </svg>
+        return (
+          <svg
+            style={{
+              position: 'absolute',
+              left: isRight ? `-${ROUND_GAP / 2 + 2}px` : `${CARD_WIDTH + ROUND_GAP / 2 - 2}px`,
+              top: `${verticalLineMinY}px`,
+              width: '4px',
+              height: `${verticalLineMaxY - verticalLineMinY}px`,
+              pointerEvents: 'none',
+              zIndex: 5,
+              overflow: 'visible',
+            }}
+          >
+            {/* Line from first match to target */}
+            <line
+              x1="2"
+              y1={currentMatchCenterY - verticalLineMinY}
+              x2="2"
+              y2={targetMatchCenterY - verticalLineMinY}
+              stroke="#990D35"
+              strokeWidth="2"
+              opacity="0.8"
+            />
 
-                    {/* 2️⃣ VERTICAL LINE */}
-                    {isFirstInPair && targetY !== undefined && (
-                      <>
-                          {(() => {
-      console.log(`\n🔵 VERTICAL LINE DEBUG:`);
-      console.log(`  Match: ${match.id_match}`);
-      console.log(`  Side: ${side}`);
-      console.log(`  verticalLineMinY: ${verticalLineMinY}px`);
-      console.log(`  verticalLineMaxY: ${verticalLineMaxY}px`);
-      console.log(`  Height: ${verticalLineMaxY - verticalLineMinY}px`);
-      console.log(`  Left: ${isRight ? `-${ROUND_GAP / 2 + 2}px` : `${CARD_WIDTH + ROUND_GAP / 2 - 2}px`}`);
-      console.log(`  Line Y1: ${cardCenterY - verticalLineMinY}px`);
-      console.log(`  Line Y2: ${verticalLineTargetCenterY - verticalLineMinY}px`);
-      return null;
-    })()}
-<svg
-  style={{
-    position: 'absolute',
-    left: isRight ? `-${ROUND_GAP / 2 + 2}px` : `${CARD_WIDTH + ROUND_GAP / 2 - 2}px`,
-    top: `${verticalLineMinY}px`,
-    width: '4px',
-    height: `${verticalLineMaxY - verticalLineMinY}px`,
-    pointerEvents: 'none',
-    zIndex: 5,
-    overflow: 'visible',
-    // ✅ HAPUS: backgroundColor: 'rgba(0, 0, 255, 0.2)',
-  }}
->
-                        {/* Line from first match to target */}
-                        <line
-                          x1="2" // Center of the 4px width SVG
-                          y1={cardCenterY - verticalLineMinY}
-                          x2="2"
-                          y2={verticalLineTargetCenterY - verticalLineMinY}
-                          stroke="#990D35"
-                          strokeWidth="2"
-                          opacity="0.8"
-                        />
-
-                        {/* Line from partner match to target (if exists) */}
-                        {hasPartner && partnerY !== undefined && (
-                          <line
-                            x1="2"
-                            y1={(partnerY + (CARD_HEIGHT / 2)) - verticalLineMinY}
-                            x2="2"
-                            y2={verticalLineTargetCenterY - verticalLineMinY}
-                            stroke="#990D35"
-                            strokeWidth="2"
-                            opacity="0.8"
-                          />
-                        )}
-                      </svg>
-                      </>
-                    )}
-                  </React.Fragment>
-                );
-              })}
+            {/* Line from partner match to target (if exists) */}
+            {hasPartner && partnerY !== undefined && (
+              <line
+                x1="2"
+                y1={partnerMatchCenterY - verticalLineMinY}
+                x2="2"
+                y2={targetMatchCenterY - verticalLineMinY}
+                stroke="#990D35"
+                strokeWidth="2"
+                opacity="0.8"
+              />
+            )}
+          </svg>
+        );
+      })()}
+    </React.Fragment>
+  );
+})}
 
               {/* 3️⃣ MATCH CARDS */}
               {roundMatches.map((match, matchIndex) => {
