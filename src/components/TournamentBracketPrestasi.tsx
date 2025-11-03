@@ -1223,6 +1223,134 @@ const renderBracketSide = (
                 flexShrink: 0
               }}
             >
+
+{hasNextRound && roundMatches.map((match, matchIndex) => {
+  const yPosition = verticalPositions[roundIndex]?.[matchIndex];
+  if (yPosition === undefined) return null;
+  
+  const cardCenterY = yPosition + (CARD_HEIGHT / 2);
+  const isFirstInPair = matchIndex % 2 === 0;
+  const hasPartner = matchIndex + 1 < matchCount;
+  const partnerY = hasPartner ? verticalPositions[roundIndex]?.[matchIndex + 1] : undefined;
+  const targetMatchIdx = Math.floor(matchIndex / 2);
+  const targetY = verticalPositions[roundIndex + 1]?.[targetMatchIdx];
+  
+  // 🔍 CONSOLE DEBUG
+  if (isFirstInPair) {
+    console.log(`\n🔍 [${side.toUpperCase()}] Round ${roundIndex + 1}, Pair ${Math.floor(matchIndex / 2) + 1}:`);
+    console.log(`  Match ${matchIndex + 1} Y: ${yPosition}px, Center: ${cardCenterY}px`);
+    if (hasPartner && partnerY !== undefined) {
+      console.log(`  Match ${matchIndex + 2} Y: ${partnerY}px, Center: ${partnerY + (CARD_HEIGHT / 2)}px`);
+    } else {
+      console.log(`  No partner (BYE or single match)`);
+    }
+    if (targetY !== undefined) {
+      console.log(`  Target Y: ${targetY}px, Center: ${targetY + (CARD_HEIGHT / 2)}px`);
+    } else {
+      console.log(`  ❌ NO TARGET FOUND!`);
+    }
+    
+    // Calculate what should happen
+    const targetCenterY = targetY ? targetY + (CARD_HEIGHT / 2) : 0;
+    const y1 = cardCenterY;
+    const y2 = hasPartner && partnerY !== undefined ? partnerY + (CARD_HEIGHT / 2) : cardCenterY;
+    const y3 = targetCenterY;
+    const minY = Math.min(y1, y2, y3);
+    const maxY = Math.max(y1, y2, y3);
+    const lineX = isRight ? -(ROUND_GAP / 2) : CARD_WIDTH + (ROUND_GAP / 2);
+    
+    console.log(`  📐 SVG should be:`);
+    console.log(`     left: ${lineX}px`);
+    console.log(`     top: ${minY}px`);
+    console.log(`     height: ${maxY - minY}px`);
+    console.log(`  📍 Line coordinates:`);
+    console.log(`     Match ${matchIndex + 1}: y1=${y1 - minY}, y2=${y3 - minY}`);
+    if (hasPartner && partnerY !== undefined) {
+      console.log(`     Match ${matchIndex + 2}: y1=${y2 - minY}, y2=${y3 - minY}`);
+    }
+  }
+  
+  // 🎨 VISUAL DEBUG: Show connection points
+  const lineX = isRight ? -(ROUND_GAP / 2) : CARD_WIDTH + (ROUND_GAP / 2);
+  
+  return (
+    <React.Fragment key={`debug-${match.id_match}`}>
+      {/* Red dot: Horizontal line endpoint */}
+      <div
+        style={{
+          position: 'absolute',
+          left: `${isRight ? -(ROUND_GAP / 2) : CARD_WIDTH + (ROUND_GAP / 2)}px`,
+          top: `${cardCenterY - 3}px`,
+          width: '6px',
+          height: '6px',
+          backgroundColor: 'red',
+          borderRadius: '50%',
+          zIndex: 25,
+          border: '1px solid white'
+        }}
+      />
+      
+      {/* Blue dot: Target connection point */}
+      {isFirstInPair && targetY !== undefined && (
+        <div
+          style={{
+            position: 'absolute',
+            left: `${lineX}px`,
+            top: `${targetY + (CARD_HEIGHT / 2) - 3}px`,
+            width: '6px',
+            height: '6px',
+            backgroundColor: 'blue',
+            borderRadius: '50%',
+            zIndex: 25,
+            border: '1px solid white'
+          }}
+        />
+      )}
+      
+      {/* Green dot: Partner connection point */}
+      {isFirstInPair && hasPartner && partnerY !== undefined && (
+        <div
+          style={{
+            position: 'absolute',
+            left: `${lineX}px`,
+            top: `${partnerY + (CARD_HEIGHT / 2) - 3}px`,
+            width: '6px',
+            height: '6px',
+            backgroundColor: 'green',
+            borderRadius: '50%',
+            zIndex: 25,
+            border: '1px solid white'
+          }}
+        />
+      )}
+      
+      {/* Yellow box: SVG area visualization */}
+      {isFirstInPair && targetY !== undefined && (() => {
+        const targetCenterY = targetY + (CARD_HEIGHT / 2);
+        const y1 = cardCenterY;
+        const y2 = hasPartner && partnerY !== undefined ? partnerY + (CARD_HEIGHT / 2) : cardCenterY;
+        const y3 = targetCenterY;
+        const minY = Math.min(y1, y2, y3);
+        const maxY = Math.max(y1, y2, y3);
+        
+        return (
+          <div
+            style={{
+              position: 'absolute',
+              left: `${lineX - 5}px`,
+              top: `${minY}px`,
+              width: '12px',
+              height: `${maxY - minY}px`,
+              backgroundColor: 'rgba(255, 255, 0, 0.2)',
+              border: '1px dashed orange',
+              zIndex: 3
+            }}
+          />
+        );
+      })()}
+    </React.Fragment>
+  );
+})}
               {/* ============================================
     RENDER CONNECTORS (Behind everything)
     ============================================ */}
