@@ -880,7 +880,7 @@ return (
               className="text-xs px-2 py-1 rounded-full font-bold"
               style={{ backgroundColor: '#990D35', color: 'white' }}
             >
-              {match.nomor_partai}
+              No. Partai: {match.nomor_partai}
             </span>
           )}
         </div>

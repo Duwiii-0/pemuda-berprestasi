@@ -971,11 +971,11 @@ return (
                     >
                       <div className="flex items-center gap-2 flex-1">
                         {match.nomor_partai && (
-                          <span 
-                            className="text-xs font-medium"
-                            style={{ color: '#050505', opacity: 0.7 }}
-                          >
-                            {match.nomor_partai}
+            <span 
+              className="text-xs px-2 py-1 rounded-full font-bold"
+              style={{ backgroundColor: '#990D35', color: 'white' }}
+            >
+                           No.Partai: {match.nomor_partai}
                           </span>
                         )}
                       </div>
@@ -1062,7 +1062,7 @@ return (
                               <p 
                                 className="text-xs leading-tight"
                                 style={{ 
-                                  color: '#DC143C',
+                                  color: '#EF4444',
                                   opacity: 0.7
                                 }}
                               >
@@ -1119,7 +1119,7 @@ return (
                         }}
                       >
                         <h3 className="text-center font-bold text-base" style={{ color: '#000' }}>
-                          ⚔️ ADDITIONAL MATCH
+                          ADDITIONAL MATCH
                         </h3>
                       </div>
                     </div>
@@ -1240,7 +1240,7 @@ return (
                                 <p 
                                   className="text-xs leading-tight"
                                   style={{ 
-                                    color: '#DC143C',
+                                    color: '#EF4444',
                                     opacity: 0.7
                                   }}
                                 >
