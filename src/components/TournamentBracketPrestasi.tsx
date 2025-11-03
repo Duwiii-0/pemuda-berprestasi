@@ -1646,12 +1646,8 @@ const debugBracketDimensions = () => {
   console.log('=====================================\n');
 };
 
-/**
- * Master debug function - Call this to run all debugs
- */
-/**
- * Master debug function - ENHANCED VERSION
- */
+};
+
 const runFullDebug = () => {
   console.clear();
   console.log('🚀 ===== FULL BRACKET DEBUG STARTED =====\n');
@@ -1889,8 +1885,6 @@ const runFullDebug = () => {
   console.log('=====================================\n');
   
   console.log('✅ ===== FULL BRACKET DEBUG COMPLETED =====\n');
-};
-
 };
 
 // Panggil debug saat component mount
@@ -2266,6 +2260,17 @@ const getFinalMatchWithPosition = () => {
                   </>
                 )}
               </button>
+              {/* DEBUG BUTTON - Development Only */}
+{process.env.NODE_ENV === 'development' && bracketGenerated && (
+  <button
+    onClick={runFullDebug}
+    className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all"
+    style={{ backgroundColor: '#8B5CF6', color: '#F5FBEF' }}
+  >
+    <AlertTriangle size={16} />
+    <span>Debug Bracket</span>
+  </button>
+)}
             </div>
           </div>
 
