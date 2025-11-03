@@ -32,16 +32,15 @@ const THEME = {
   white: '#FFFFFF',
 };
 
-// ✅ DYNAMIC SCALE based on participant count - REVERSED (lebih besar = lebih sedikit peserta)
 const getScaleFactor = (participantCount: number): number => {
   if (participantCount > 16) {
-    return 0.70; // Paling kecil untuk banyak peserta
+    return 1.25; // Banyak peserta → sedikit diperbesar
   } else if (participantCount > 8) {
-    return 0.80; // Sedang
+    return 1.35; // Sedang → lebih besar
   } else if (participantCount > 4) {
-    return 0.90; // Agak besar
+    return 1.45; // Agak besar
   } else {
-    return 0.95; // PALING BESAR untuk sedikit peserta
+    return 1.55; // Sedikit peserta → paling besar
   }
 };
 
@@ -154,13 +153,13 @@ const convertElementToImage = async (
   console.log('📸 Capturing image...');
   const dataUrl = await htmlToImage.toPng(bracketVisual, {
     quality: 1,
-    pixelRatio: 3, // ✅ INCREASED dari 2 ke 3 untuk kualitas lebih tajam
+    pixelRatio: 3 * scaleFactor, // ✅ INCREASED dari 2 ke 3 untuk kualitas lebih tajam
     width: width,
     height: height,
     backgroundColor: '#FFFFFF',
     cacheBust: true,
     style: {
-      transform: `scale(${scaleFactor})`,
+      transform: `scale(${1.0})`,
       transformOrigin: 'center center', // ✅ CHANGED ke center
       margin: '0',
     },
