@@ -1159,18 +1159,19 @@ const renderBracketSide = (
     ...verticalPositions.flat().filter(y => y !== undefined)
   ) + CARD_HEIGHT + 100;
   
-  return (
-    <div 
-      className="bracket-side"
-      style={{
-        display: 'flex',
-        flexDirection: isRight ? 'row-reverse' : 'row',
-        alignItems: 'flex-start',
-        gap: `${ROUND_GAP}px`,
-        position: 'relative',
-        minHeight: `${maxY}px`
-      }}
-    >
+return (
+  <div 
+    className="bracket-side"
+    style={{
+      display: 'flex',
+      flexDirection: isRight ? 'row-reverse' : 'row',
+      alignItems: 'flex-start',
+      gap: `${ROUND_GAP}px`,
+      position: 'relative',
+      minHeight: `${maxY}px`,
+      overflow: 'visible'  // ✅ PENTING!
+    }}
+  >
       {matchesBySide.map((roundMatches, roundIndex) => {
         if (roundMatches.length === 0) return null;
         
@@ -1180,15 +1181,16 @@ const renderBracketSide = (
         const hasNextRound = roundIndex < matchesBySide.length - 1 && matchesBySide[roundIndex + 1].length > 0;
         
         return (
-          <div 
-            key={`${side}-round-${actualRound}`} 
-            style={{ 
-              position: 'relative',
-              display: 'flex',
-              flexDirection: 'column',
-              minHeight: `${maxY}px`
-            }}
-          >
+<div 
+  key={`${side}-round-${actualRound}`} 
+  style={{ 
+    position: 'relative',
+    display: 'flex',
+    flexDirection: 'column',
+    minHeight: `${maxY}px`,
+    overflow: 'visible'  // ✅ TAMBAH INI!
+  }}
+>
             {/* Round Header */}
             <div 
               className="round-header"
@@ -1217,7 +1219,7 @@ const renderBracketSide = (
 <div 
   style={{
     position: 'relative',
-    width: `${CARD_WIDTH}px`,
+    width: `${CARD_WIDTH + ROUND_GAP}px`,  // ✅ TAMBAH ROUND_GAP untuk ruang connector
     height: `${maxY}px`,
     flexGrow: 0,
     flexShrink: 0,
@@ -1401,19 +1403,24 @@ const renderBracketSide = (
   const y3 = targetCenterY;
   const minY = Math.min(y1, y2, y3);
   const maxY = Math.max(y1, y2, y3);
-  const lineX = isRight ? -(ROUND_GAP / 2) : CARD_WIDTH + (ROUND_GAP / 2);
+  
+  // ✅ FIX: Position dari edge card, bukan dari center gap
+  const svgLeft = isRight ? -(ROUND_GAP / 2) - 2 : CARD_WIDTH + (ROUND_GAP / 2) - 2;
   
   return (
     <svg
       style={{
         position: 'absolute',
-        left: `${lineX - 2}px`,  // ✅ Offset 2px untuk center stroke
+        left: `${svgLeft}px`,
         top: `${minY}px`,
-        width: '4px',  // ✅ Cukup untuk stroke width
+        width: '4px',
         height: `${maxY - minY}px`,
         pointerEvents: 'none',
         zIndex: 5,
-        overflow: 'visible'
+        overflow: 'visible',
+        // ✅ DEBUG: Tambahkan ini dulu untuk lihat SVG area
+        backgroundColor: 'rgba(255, 0, 255, 0.2)',
+        border: '1px solid cyan'
       }}
     >
       {/* Line from first match to target */}
@@ -1423,11 +1430,11 @@ const renderBracketSide = (
         x2="2"
         y2={y3 - minY}
         stroke="#990D35"
-        strokeWidth="2.5"
+        strokeWidth="3"
         opacity="0.8"
       />
       
-      {/* Line from partner match to target (if exists) */}
+      {/* Line from partner match to target */}
       {hasPartner && partnerY !== undefined && (
         <line
           x1="2"
@@ -1435,7 +1442,7 @@ const renderBracketSide = (
           x2="2"
           y2={y3 - minY}
           stroke="#990D35"
-          strokeWidth="2.5"
+          strokeWidth="3"
           opacity="0.8"
         />
       )}
