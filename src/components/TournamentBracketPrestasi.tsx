@@ -1240,6 +1240,21 @@ const renderBracketSide = (
     return (
       <React.Fragment key={`connector-${match.id_match}`}>
       {/* HORIZONTAL LINE ke next round */}
+      {/* DEBUG: Show connection point */}
+{hasNextRound && (
+  <div
+    style={{
+      position: 'absolute',
+      left: `${CARD_WIDTH}px`,
+      top: `${cardCenterY - 3}px`,
+      width: '6px',
+      height: '6px',
+      backgroundColor: 'red',
+      borderRadius: '50%',
+      zIndex: 20
+    }}
+  />
+)}
 {hasNextRound && (
   <svg
     style={{
@@ -1321,26 +1336,101 @@ const renderBracketSide = (
     );
   })}
   
-{/* RENDER ALL MATCH CARDS (On top of connectors) */}
+{/* ============================================
+    RENDER ALL CONNECTORS FIRST (Behind cards)
+    ============================================ */}
 {roundMatches.map((match, matchIndex) => {
-  const yPosition = verticalPositions[roundIndex]?.[matchIndex] || 0;
+  const yPosition = verticalPositions[roundIndex]?.[matchIndex];
+  if (yPosition === undefined) return null;
+  
+  const cardCenterY = yPosition + (CARD_HEIGHT / 2);
   
   return (
-    <div 
-      key={`card-${match.id_match}`}
-      style={{ 
-        position: 'absolute',
-        top: `${yPosition}px`,  // ✅ HAPUS +80
-        left: 0,
-        width: `${CARD_WIDTH}px`,
-        height: `${CARD_HEIGHT}px`,
-        zIndex: 10,
-        margin: 0,
-        padding: 0
-      }}
-    >
-      {renderMatchCard(match, match.id_match)}
-    </div>
+    <React.Fragment key={`connector-${match.id_match}`}>
+      {/* HORIZONTAL LINE - Every match connects to next round */}
+      {hasNextRound && (
+        <svg
+          style={{
+            position: 'absolute',
+            left: isRight ? `-${ROUND_GAP / 2}px` : `${CARD_WIDTH}px`,
+            top: `${cardCenterY}px`,
+            width: ROUND_GAP / 2,
+            height: 2,
+            pointerEvents: 'none',
+            zIndex: 5,
+            overflow: 'visible'
+          }}
+        >
+          <line
+            x1={isRight ? ROUND_GAP / 2 : 0}
+            y1="1"
+            x2={isRight ? 0 : ROUND_GAP / 2}
+            y2="1"
+            stroke="#990D35"
+            strokeWidth="2.5"
+            opacity="0.8"
+          />
+        </svg>
+      )}
+      
+      {/* VERTICAL LINE - Only for first match of each pair */}
+      {hasNextRound && matchIndex % 2 === 0 && matchIndex + 1 < matchCount && (
+        (() => {
+          const match1Y = verticalPositions[roundIndex][matchIndex];
+          const match2Y = verticalPositions[roundIndex][matchIndex + 1];
+          const targetY = verticalPositions[roundIndex + 1]?.[Math.floor(matchIndex / 2)];
+          
+          if (match1Y === undefined || match2Y === undefined || targetY === undefined) {
+            return null;
+          }
+          
+          const y1 = match1Y + (CARD_HEIGHT / 2);
+          const y2 = match2Y + (CARD_HEIGHT / 2);
+          const y3 = targetY + (CARD_HEIGHT / 2);
+          
+          const minY = Math.min(y1, y2, y3);
+          const maxY = Math.max(y1, y2, y3);
+          const lineX = isRight ? -(ROUND_GAP / 2) : CARD_WIDTH + (ROUND_GAP / 2);
+          
+          return (
+            <svg
+              key={`vertical-pair-${matchIndex}`}
+              style={{
+                position: 'absolute',
+                left: `${lineX}px`,
+                top: `${minY}px`,
+                width: 3,
+                height: `${maxY - minY}px`,
+                pointerEvents: 'none',
+                zIndex: 4,
+                overflow: 'visible'
+              }}
+            >
+              {/* Line from match 1 to target */}
+              <line
+                x1="1.5"
+                y1={y1 - minY}
+                x2="1.5"
+                y2={y3 - minY}
+                stroke="#990D35"
+                strokeWidth="2.5"
+                opacity="0.8"
+              />
+              {/* Line from match 2 to target */}
+              <line
+                x1="1.5"
+                y1={y2 - minY}
+                x2="1.5"
+                y2={y3 - minY}
+                stroke="#990D35"
+                strokeWidth="2.5"
+                opacity="0.8"
+              />
+            </svg>
+          );
+        })()
+      )}
+    </React.Fragment>
   );
 })}
 </div>
