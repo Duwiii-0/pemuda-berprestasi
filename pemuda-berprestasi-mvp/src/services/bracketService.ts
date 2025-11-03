@@ -189,6 +189,88 @@ static async generateBracket(
   }
 
   /**
+ * 🎯 Distribute BYE positions for LEFT-RIGHT mirrored bracket
+ * CRITICAL: Untuk bracket yang render kiri-kanan (mirrored)
+ */
+static distributeBYEForMirroredBracket(
+  participantCount: number,
+  targetSize: number
+): number[] {
+  const byesNeeded = targetSize - participantCount;
+  if (byesNeeded <= 0) return [];
+  
+  const totalMatchesR1 = targetSize / 2;
+  const halfSize = totalMatchesR1 / 2; // Split point kiri-kanan
+  
+  console.log(`\n🎯 === BYE DISTRIBUTION (MIRRORED BRACKET) ===`);
+  console.log(`   Participants: ${participantCount}`);
+  console.log(`   Target Size: ${targetSize}`);
+  console.log(`   Total R1 Matches: ${totalMatchesR1}`);
+  console.log(`   Half Size (split point): ${halfSize}`);
+  console.log(`   BYEs Needed: ${byesNeeded}`);
+  
+  const byePositions: number[] = [];
+  
+  // Tracking untuk LEFT (0 to halfSize-1) dan RIGHT (halfSize to totalMatchesR1-1)
+  let leftTop = 0;
+  let leftBottom = halfSize - 1;
+  let rightTop = halfSize;
+  let rightBottom = totalMatchesR1 - 1;
+  
+  // Pattern: LEFT-top, RIGHT-top, LEFT-bottom, RIGHT-bottom (alternating)
+  for (let i = 0; i < byesNeeded; i++) {
+    const side = i % 2 === 0 ? 'LEFT' : 'RIGHT';
+    const isFromTop = Math.floor(i / 2) % 2 === 0;
+    
+    if (side === 'LEFT') {
+      if (isFromTop && leftTop <= leftBottom) {
+        byePositions.push(leftTop);
+        console.log(`   BYE ${i + 1}: LEFT-top position ${leftTop}`);
+        leftTop++;
+      } else if (!isFromTop && leftBottom >= leftTop) {
+        byePositions.push(leftBottom);
+        console.log(`   BYE ${i + 1}: LEFT-bottom position ${leftBottom}`);
+        leftBottom--;
+      } else {
+        // Fallback jika LEFT penuh, masuk RIGHT
+        if (rightTop <= rightBottom) {
+          byePositions.push(rightTop);
+          console.log(`   BYE ${i + 1}: RIGHT-top position ${rightTop} (LEFT full)`);
+          rightTop++;
+        }
+      }
+    } else {
+      if (isFromTop && rightTop <= rightBottom) {
+        byePositions.push(rightTop);
+        console.log(`   BYE ${i + 1}: RIGHT-top position ${rightTop}`);
+        rightTop++;
+      } else if (!isFromTop && rightBottom >= rightTop) {
+        byePositions.push(rightBottom);
+        console.log(`   BYE ${i + 1}: RIGHT-bottom position ${rightBottom}`);
+        rightBottom--;
+      } else {
+        // Fallback jika RIGHT penuh, masuk LEFT
+        if (leftTop <= leftBottom) {
+          byePositions.push(leftTop);
+          console.log(`   BYE ${i + 1}: LEFT-top position ${leftTop} (RIGHT full)`);
+          leftTop++;
+        }
+      }
+    }
+  }
+  
+  // Sort positions untuk processing yang lebih mudah
+  byePositions.sort((a, b) => a - b);
+  
+  console.log(`\n   📊 Final BYE Positions:`, byePositions);
+  console.log(`   LEFT side (0-${halfSize-1}):`, byePositions.filter(p => p < halfSize));
+  console.log(`   RIGHT side (${halfSize}-${totalMatchesR1-1}):`, byePositions.filter(p => p >= halfSize));
+  console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`);
+  
+  return byePositions;
+}
+
+  /**
  * Validate and adjust BYE count for bracket generation
  * Returns validation result with optional auto-adjustment
  */
@@ -447,19 +529,10 @@ static async generatePrestasiBracket(
 
   // 3️⃣ Tentukan posisi BYE secara zigzag atas-bawah
   const totalMatchesR1 = targetSize / 2;
-  const byePositions: number[] = [];
-  let top = 0;
-  let bottom = totalMatchesR1 - 1;
-
-  for (let i = 0; i < byesNeeded; i++) {
-    if (i % 2 === 0) {
-      byePositions.push(top++); // even → dari atas
-    } else {
-      byePositions.push(bottom--); // odd → dari bawah
-    }
-  }
-
-  console.log(`   🧩 Zigzag BYE positions (top-bottom):`, byePositions);
+  const byePositions = this.distributeBYEForMirroredBracket(
+  participantCount,
+  targetSize
+);
 
   // 4️⃣ Urutan posisi match (campur bye dan aktif zigzag)
   const activePositions = Array.from({ length: totalMatchesR1 }, (_, i) => i).filter(i => !byePositions.includes(i));
