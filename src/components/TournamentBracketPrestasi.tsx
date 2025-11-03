@@ -1194,8 +1194,13 @@ const renderBracketSide = (
   const isRight = side === 'right';
   const totalRounds = getTotalRounds();
   
-  // ✅ Hitung semua posisi vertikal
+  // ✅ Hitung SEMUA posisi vertikal dulu
   const verticalPositions = calculateVerticalPositions(matchesBySide);
+  
+  // ✅ Hitung total height yang dibutuhkan
+  const maxY = Math.max(
+    ...verticalPositions.flat().filter(y => y !== undefined)
+  ) + CARD_HEIGHT + 100;
   
   return (
     <div 
@@ -1206,7 +1211,7 @@ const renderBracketSide = (
         alignItems: 'flex-start',
         gap: `${ROUND_GAP}px`,
         position: 'relative',
-        height: '100%'
+        minHeight: `${maxY}px`
       }}
     >
       {matchesBySide.map((roundMatches, roundIndex) => {
@@ -1224,18 +1229,18 @@ const renderBracketSide = (
               position: 'relative',
               display: 'flex',
               flexDirection: 'column',
-              alignItems: 'center',
-              height: '100%'
+              minHeight: `${maxY}px`
             }}
           >
-            {/* Round Header */}
+            {/* Round Header - FIXED POSITION */}
             <div 
               className="round-header"
               style={{
                 width: `${CARD_WIDTH}px`,
-                marginBottom: '40px',
+                marginBottom: '20px',
                 textAlign: 'center',
-                position: 'relative',
+                position: 'sticky',
+                top: 0,
                 zIndex: 20,
                 background: '#F5FBEF',
                 padding: '8px'
@@ -1252,27 +1257,26 @@ const renderBracketSide = (
               </div>
             </div>
             
-            {/* ✅ MATCHES CONTAINER dengan ABSOLUTE POSITIONING */}
+            {/* ✅ MATCHES CONTAINER - ABSOLUTE POSITIONING */}
             <div 
               style={{
                 position: 'relative',
                 width: `${CARD_WIDTH}px`,
-                height: '100%',
-                flexGrow: 1
+                height: `${maxY}px`,
+                flexGrow: 0,
+                flexShrink: 0
               }}
             >
               {roundMatches.map((match, matchIndex) => {
-                const yPosition = verticalPositions[roundIndex][matchIndex];
-                const nextRoundY = hasNextRound && matchIndex % 2 === 0
-                  ? verticalPositions[roundIndex + 1][Math.floor(matchIndex / 2)]
-                  : null;
+                // ✅ AMBIL POSISI DARI CALCULATION
+                const yPosition = verticalPositions[roundIndex]?.[matchIndex] || 0;
                 
                 return (
                   <div 
                     key={match.id_match}
                     style={{ 
                       position: 'absolute',
-                      top: `${yPosition}px`,
+                      top: `${yPosition + 60}px`, // +60 untuk header
                       left: 0,
                       width: `${CARD_WIDTH}px`,
                       zIndex: 10
@@ -1304,30 +1308,38 @@ const renderBracketSide = (
                       </svg>
                     )}
                     
-                    {/* ✅ VERTICAL LINE antara pair ke next round */}
-                    {hasNextRound && matchIndex % 2 === 0 && matchIndex + 1 < matchCount && nextRoundY !== null && (
-                      <svg
-                        style={{
-                          position: 'absolute',
-                          left: isRight ? -(ROUND_GAP / 2) : CARD_WIDTH + (ROUND_GAP / 2),
-                          top: CARD_HEIGHT / 2,
-                          width: 2,
-                          height: Math.abs(nextRoundY - yPosition) + (CARD_HEIGHT / 2),
-                          pointerEvents: 'none',
-                          zIndex: 4,
-                          overflow: 'visible'
-                        }}
-                      >
-                        <line
-                          x1="0"
-                          y1="0"
-                          x2="0"
-                          y2="100%"
-                          stroke="#990D35"
-                          strokeWidth="2"
-                          opacity="0.7"
-                        />
-                      </svg>
+                    {/* ✅ VERTICAL LINE antara pair */}
+                    {hasNextRound && matchIndex % 2 === 0 && matchIndex + 1 < matchCount && (
+                      (() => {
+                        const nextMatchY = verticalPositions[roundIndex]?.[matchIndex + 1] || yPosition;
+                        const nextRoundY = verticalPositions[roundIndex + 1]?.[Math.floor(matchIndex / 2)] || 0;
+                        const lineHeight = Math.abs(nextRoundY - yPosition) + (CARD_HEIGHT / 2);
+                        
+                        return (
+                          <svg
+                            style={{
+                              position: 'absolute',
+                              left: isRight ? -(ROUND_GAP / 2) : CARD_WIDTH + (ROUND_GAP / 2),
+                              top: CARD_HEIGHT / 2,
+                              width: 2,
+                              height: lineHeight,
+                              pointerEvents: 'none',
+                              zIndex: 4,
+                              overflow: 'visible'
+                            }}
+                          >
+                            <line
+                              x1="0"
+                              y1="0"
+                              x2="0"
+                              y2={lineHeight}
+                              stroke="#990D35"
+                              strokeWidth="2"
+                              opacity="0.7"
+                            />
+                          </svg>
+                        );
+                      })()
                     )}
                     
                     {/* Match Card */}
@@ -1347,11 +1359,13 @@ const renderCenterFinal = () => {
   const finalMatch = getFinalMatch();
   const lineLength = CENTER_GAP / 2;
   
-  // ✅ Hitung posisi Y yang sama dengan semi-final
+  // ✅ Hitung posisi Y dari semi-final (harus sama)
   const leftMatches = getLeftMatches();
-  const positions = calculateVerticalPositions(leftMatches);
-  const lastRoundPositions = positions[positions.length - 1] || [0];
-  const finalY = lastRoundPositions.length > 0 ? lastRoundPositions[0] : 0;
+  const leftPositions = calculateVerticalPositions(leftMatches);
+  
+  // Ambil Y position dari semi-final (round terakhir sebelum final)
+  const semiFinalY = leftPositions[leftPositions.length - 1]?.[0] || 0;
+  const finalYPosition = semiFinalY + 60; // +60 untuk header
   
   if (!finalMatch) {
     return (
@@ -1363,55 +1377,74 @@ const renderCenterFinal = () => {
           flexDirection: 'column',
           alignItems: 'center',
           position: 'relative',
-          paddingTop: `${finalY}px` // ✅ Align dengan semi-final
+          minHeight: '800px'
         }}
       >
-        {/* Left connector */}
-        <svg
-          style={{
-            position: 'absolute',
-            left: -lineLength,
-            top: `${finalY + CARD_HEIGHT / 2}px`,
-            width: lineLength,
-            height: 2,
-            pointerEvents: 'none',
-            zIndex: 5
-          }}
-        >
-          <line x1="0" y1="0" x2={lineLength} y2="0" stroke="#990D35" strokeWidth="2" opacity="0.6" />
-        </svg>
-        
-        {/* Right connector */}
-        <svg
-          style={{
-            position: 'absolute',
-            right: -lineLength,
-            top: `${finalY + CARD_HEIGHT / 2}px`,
-            width: lineLength,
-            height: 2,
-            pointerEvents: 'none',
-            zIndex: 5
-          }}
-        >
-          <line x1="0" y1="0" x2={lineLength} y2="0" stroke="#990D35" strokeWidth="2" opacity="0.6" />
-        </svg>
-        
         {/* Header */}
         <div 
           className="px-6 py-3 rounded-lg font-bold text-lg shadow-md mb-4"
-          style={{ backgroundColor: '#990D35', color: '#F5FBEF' }}
+          style={{ 
+            backgroundColor: '#990D35', 
+            color: '#F5FBEF',
+            position: 'sticky',
+            top: 0,
+            zIndex: 20
+          }}
         >
           FINAL
         </div>
         
-        <div 
-          className="w-full p-6 rounded-xl border-2 text-center"
-          style={{ borderColor: '#990D35', backgroundColor: 'rgba(153, 13, 53, 0.05)' }}
-        >
-          <Trophy size={48} style={{ color: '#990D35', opacity: 0.3 }} className="mx-auto mb-2" />
-          <p className="text-sm font-medium" style={{ color: '#050505', opacity: 0.6 }}>
-            Waiting for finalists
-          </p>
+        {/* Container untuk card + connectors */}
+        <div style={{ position: 'relative', width: '100%' }}>
+          {/* Left connector */}
+          <svg
+            style={{
+              position: 'absolute',
+              left: -lineLength,
+              top: `${finalYPosition + CARD_HEIGHT / 2}px`,
+              width: lineLength,
+              height: 2,
+              pointerEvents: 'none',
+              zIndex: 5
+            }}
+          >
+            <line x1="0" y1="0" x2={lineLength} y2="0" stroke="#990D35" strokeWidth="2" opacity="0.6" />
+          </svg>
+          
+          {/* Right connector */}
+          <svg
+            style={{
+              position: 'absolute',
+              right: -lineLength,
+              top: `${finalYPosition + CARD_HEIGHT / 2}px`,
+              width: lineLength,
+              height: 2,
+              pointerEvents: 'none',
+              zIndex: 5
+            }}
+          >
+            <line x1="0" y1="0" x2={lineLength} y2="0" stroke="#990D35" strokeWidth="2" opacity="0.6" />
+          </svg>
+          
+          {/* Empty state card */}
+          <div
+            style={{
+              position: 'absolute',
+              top: `${finalYPosition}px`,
+              left: 0,
+              width: `${CARD_WIDTH}px`
+            }}
+          >
+            <div 
+              className="w-full p-6 rounded-xl border-2 text-center"
+              style={{ borderColor: '#990D35', backgroundColor: 'rgba(153, 13, 53, 0.05)' }}
+            >
+              <Trophy size={48} style={{ color: '#990D35', opacity: 0.3 }} className="mx-auto mb-2" />
+              <p className="text-sm font-medium" style={{ color: '#050505', opacity: 0.6 }}>
+                Waiting for finalists
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -1426,52 +1459,71 @@ const renderCenterFinal = () => {
         flexDirection: 'column',
         alignItems: 'center',
         position: 'relative',
-        paddingTop: `${finalY}px` // ✅ Align dengan semi-final
+        minHeight: '800px'
       }}
     >
-      {/* Left connector */}
-      <svg
-        style={{
-          position: 'absolute',
-          left: -lineLength,
-          top: `${finalY + CARD_HEIGHT / 2}px`,
-          width: lineLength,
-          height: 2,
-          pointerEvents: 'none',
-          zIndex: 5
-        }}
-      >
-        <line x1="0" y1="0" x2={lineLength} y2="0" stroke="#990D35" strokeWidth="2" opacity="0.8" />
-      </svg>
-      
-      {/* Right connector */}
-      <svg
-        style={{
-          position: 'absolute',
-          right: -lineLength,
-          top: `${finalY + CARD_HEIGHT / 2}px`,
-          width: lineLength,
-          height: 2,
-          pointerEvents: 'none',
-          zIndex: 5
-        }}
-      >
-        <line x1="0" y1="0" x2={lineLength} y2="0" stroke="#990D35" strokeWidth="2" opacity="0.8" />
-      </svg>
-      
       {/* Final Header */}
       <div 
         className="px-6 py-3 rounded-lg font-bold text-lg shadow-md mb-4"
-        style={{ backgroundColor: '#FFD700', color: '#050505' }}
+        style={{ 
+          backgroundColor: '#FFD700', 
+          color: '#050505',
+          position: 'sticky',
+          top: 0,
+          zIndex: 20
+        }}
       >
         🏆 FINAL
       </div>
       
-      {/* Final Match Card */}
-      {renderMatchCard(finalMatch, `final-${finalMatch.id_match}`)}
+      {/* Container untuk card + connectors */}
+      <div style={{ position: 'relative', width: '100%' }}>
+        {/* Left connector */}
+        <svg
+          style={{
+            position: 'absolute',
+            left: -lineLength,
+            top: `${finalYPosition + CARD_HEIGHT / 2}px`,
+            width: lineLength,
+            height: 2,
+            pointerEvents: 'none',
+            zIndex: 5
+          }}
+        >
+          <line x1="0" y1="0" x2={lineLength} y2="0" stroke="#990D35" strokeWidth="2" opacity="0.8" />
+        </svg>
+        
+        {/* Right connector */}
+        <svg
+          style={{
+            position: 'absolute',
+            right: -lineLength,
+            top: `${finalYPosition + CARD_HEIGHT / 2}px`,
+            width: lineLength,
+            height: 2,
+            pointerEvents: 'none',
+            zIndex: 5
+          }}
+        >
+          <line x1="0" y1="0" x2={lineLength} y2="0" stroke="#990D35" strokeWidth="2" opacity="0.8" />
+        </svg>
+        
+        {/* Final Match Card */}
+        <div
+          style={{
+            position: 'absolute',
+            top: `${finalYPosition}px`,
+            left: 0,
+            width: `${CARD_WIDTH}px`
+          }}
+        >
+          {renderMatchCard(finalMatch, `final-${finalMatch.id_match}`)}
+        </div>
+      </div>
     </div>
   );
 };
+
 const debugCardPositions = () => {
 /**
  * Debug: Print bracket structure
@@ -2302,17 +2354,16 @@ const getFinalMatchWithPosition = () => {
               </p>
             </div>
 
-{/* Bracket Content */}
 <div ref={bracketRef} className="overflow-x-auto overflow-y-visible pb-8">
   <div 
     className="tournament-layout"
     style={{
       display: 'flex',
       justifyContent: 'center',
-      alignItems: 'flex-start', // ✅ UBAH dari center ke flex-start
+      alignItems: 'flex-start', // ✅ PENTING!
       gap: `${CENTER_GAP}px`,
       minWidth: 'fit-content',
-      minHeight: `${calculateBracketHeight(getLeftMatches())}px`, // ✅ Dynamic height
+      minHeight: '800px', // ✅ Fixed minimum height
       padding: '60px 40px',
       position: 'relative'
     }}
@@ -2321,13 +2372,7 @@ const getFinalMatchWithPosition = () => {
     {renderBracketSide(getLeftMatches(), 'left', 1)}
 
     {/* CENTER FINAL */}
-    <div style={{ 
-      position: 'relative', 
-      zIndex: 10,
-      height: '100%'
-    }}>
-      {renderCenterFinal()}
-    </div>
+    {renderCenterFinal()}
 
     {/* RIGHT BRACKET */}
     {renderBracketSide(getRightMatches(), 'right', 1)}
