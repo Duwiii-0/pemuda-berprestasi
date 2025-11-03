@@ -1213,16 +1213,18 @@ const renderBracketSide = (
               </div>
             </div>
             
-            {/* MATCHES + CONNECTORS CONTAINER */}
-            <div 
-              style={{
-                position: 'relative',
-                width: `${CARD_WIDTH}px`,
-                height: `${maxY}px`,
-                flexGrow: 0,
-                flexShrink: 0
-              }}
-            >
+{/* MATCHES + CONNECTORS CONTAINER */}
+<div 
+  style={{
+    position: 'relative',
+    width: `${CARD_WIDTH}px`,
+    height: `${maxY}px`,
+    flexGrow: 0,
+    flexShrink: 0,
+    overflow: 'visible',  // ✅ TAMBAH INI!
+    border: '2px dashed blue'  // ✅ DEBUG: lihat boundary container
+  }}
+>
 
 {hasNextRound && roundMatches.map((match, matchIndex) => {
   const yPosition = verticalPositions[roundIndex]?.[matchIndex];
@@ -1392,6 +1394,72 @@ const renderBracketSide = (
       </svg>
       
       {/* 2️⃣ VERTICAL LINE - Connect pairs to target */}
+      {/* 2️⃣ VERTICAL LINE - Connect pairs to target */}
+{(() => {
+  console.log(`\n🔍 Checking vertical line render conditions:`);
+  console.log(`  isFirstInPair: ${isFirstInPair}`);
+  console.log(`  targetY: ${targetY}`);
+  console.log(`  targetY !== undefined: ${targetY !== undefined}`);
+  console.log(`  Will render: ${isFirstInPair && targetY !== undefined}`);
+  
+  if (!isFirstInPair) {
+    console.log(`  ❌ SKIP: Not first in pair (matchIndex=${matchIndex})`);
+    return null;
+  }
+  
+  if (targetY === undefined) {
+    console.log(`  ❌ SKIP: No target Y found!`);
+    return null;
+  }
+  
+  console.log(`  ✅ RENDERING VERTICAL LINE!`);
+  
+  const targetCenterY = targetY + (CARD_HEIGHT / 2);
+  const y1 = cardCenterY;
+  const y2 = hasPartner && partnerY !== undefined ? partnerY + (CARD_HEIGHT / 2) : cardCenterY;
+  const y3 = targetCenterY;
+  const minY = Math.min(y1, y2, y3);
+  const maxY = Math.max(y1, y2, y3);
+  const lineX = isRight ? -(ROUND_GAP / 2) : CARD_WIDTH + (ROUND_GAP / 2);
+  
+  return (
+    <svg
+      style={{
+        position: 'absolute',
+        left: `${lineX}px`,
+        top: `${minY}px`,
+        width: 2,
+        height: `${maxY - minY}px`,
+        pointerEvents: 'none',
+        zIndex: 4,
+        overflow: 'visible',
+        backgroundColor: 'rgba(255, 0, 255, 0.3)' // BRIGHT PINK untuk debug
+      }}
+    >
+      <line
+        x1="1"
+        y1={y1 - minY}
+        x2="1"
+        y2={y3 - minY}
+        stroke="#990D35"
+        strokeWidth="5"
+        opacity="1"
+      />
+      
+      {hasPartner && partnerY !== undefined && (
+        <line
+          x1="1"
+          y1={y2 - minY}
+          x2="1"
+          y2={y3 - minY}
+          stroke="#990D35"
+          strokeWidth="5"
+          opacity="1"
+        />
+      )}
+    </svg>
+  );
+})()}
       {isFirstInPair && targetY !== undefined && (
         <svg
           style={{
