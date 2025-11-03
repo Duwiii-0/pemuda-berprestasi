@@ -1229,20 +1229,7 @@ const renderBracketSide = (
   const yPosition = verticalPositions[roundIndex]?.[matchIndex] || 0;
   
   return (
-    <div 
-      key={match.id_match}
-      style={{ 
-        position: 'absolute',
-        top: `${yPosition + 80}px`,
-        left: 0,
-        width: `${CARD_WIDTH}px`,
-        height: `${CARD_HEIGHT}px`,
-        zIndex: 10,
-        margin: 0,
-        padding: 0,
-        display: 'block'
-      }}
-    >
+    <React.Fragment key={match.id_match}>
       {/* ============================================
           🔗 HORIZONTAL LINE ke next round
           ============================================ */}
@@ -1251,7 +1238,7 @@ const renderBracketSide = (
           style={{
             position: 'absolute',
             left: isRight ? -(ROUND_GAP / 2) : CARD_WIDTH,
-            top: '50%', // ✅ Tepat di tengah card (divider)
+            top: `${yPosition + 80 + (CARD_HEIGHT / 2)}px`, // ✅ Tepat di tengah card
             width: ROUND_GAP / 2,
             height: 2,
             pointerEvents: 'none',
@@ -1273,55 +1260,52 @@ const renderBracketSide = (
       
       {/* ============================================
           🔗 VERTICAL LINE antara pair ke next round
-          Hanya render untuk match GANJIL (0, 2, 4, ...)
           ============================================ */}
       {hasNextRound && matchIndex % 2 === 0 && matchIndex + 1 < matchCount && (
         (() => {
-          // Posisi match saat ini (atas)
-          const currentY = yPosition;
+          const currentMatchY = verticalPositions[roundIndex]?.[matchIndex] || 0;
+          const nextMatchY = verticalPositions[roundIndex]?.[matchIndex + 1] || currentMatchY;
+          const targetMatchY = verticalPositions[roundIndex + 1]?.[Math.floor(matchIndex / 2)] || 0;
           
-          // Posisi match berikutnya dalam pair (bawah)
-          const nextMatchY = verticalPositions[roundIndex]?.[matchIndex + 1] || currentY;
+          // ✅ Koordinat ABSOLUTE dari container
+          const y1 = currentMatchY + 80 + (CARD_HEIGHT / 2); // Tengah card atas
+          const y2 = nextMatchY + 80 + (CARD_HEIGHT / 2);    // Tengah card bawah
+          const y3 = targetMatchY + 80 + (CARD_HEIGHT / 2);  // Tengah target
+          const x = isRight ? -(ROUND_GAP / 2) : CARD_WIDTH + (ROUND_GAP / 2);
           
-          // Posisi target di next round
-          const targetRoundY = verticalPositions[roundIndex + 1]?.[Math.floor(matchIndex / 2)] || 0;
-          
-          // ✅ HITUNG koordinat RELATIF dari posisi card saat ini
-          const startY = CARD_HEIGHT / 2; // Dari tengah card ini (divider)
-          const pairY = (nextMatchY - currentY) + (CARD_HEIGHT / 2); // Ke tengah card bawah
-          const endY = (targetRoundY - currentY) + 80 + (CARD_HEIGHT / 2); // Ke target next round (+80 offset header)
-          const horizontalX = isRight ? -(ROUND_GAP / 2) : CARD_WIDTH + (ROUND_GAP / 2);
+          const minY = Math.min(y1, y2, y3);
+          const maxY = Math.max(y1, y2, y3);
           
           return (
             <svg
               style={{
                 position: 'absolute',
-                left: 0,
-                top: 0,
-                width: isRight ? CARD_WIDTH + ROUND_GAP : CARD_WIDTH + ROUND_GAP,
-                height: Math.max(pairY + 100, endY + 100),
+                left: isRight ? -(ROUND_GAP / 2) : CARD_WIDTH + (ROUND_GAP / 2),
+                top: `${minY}px`,
+                width: 3,
+                height: `${maxY - minY}px`,
                 pointerEvents: 'none',
                 zIndex: 4,
                 overflow: 'visible'
               }}
             >
-              {/* Garis vertikal dari card atas ke target */}
+              {/* Garis dari card atas ke meeting point */}
               <line
-                x1={horizontalX}
-                y1={startY}
-                x2={horizontalX}
-                y2={endY}
+                x1="1.5"
+                y1={y1 - minY}
+                x2="1.5"
+                y2={y3 - minY}
                 stroke="#990D35"
                 strokeWidth="2.5"
                 opacity="0.8"
               />
               
-              {/* Garis vertikal dari card bawah ke target */}
+              {/* Garis dari card bawah ke meeting point */}
               <line
-                x1={horizontalX}
-                y1={pairY}
-                x2={horizontalX}
-                y2={endY}
+                x1="1.5"
+                y1={y2 - minY}
+                x2="1.5"
+                y2={y3 - minY}
                 stroke="#990D35"
                 strokeWidth="2.5"
                 opacity="0.8"
@@ -1331,9 +1315,24 @@ const renderBracketSide = (
         })()
       )}
       
-      {/* Match Card */}
-      {renderMatchCard(match, match.id_match)}
-    </div>
+      {/* ============================================
+          MATCH CARD
+          ============================================ */}
+      <div 
+        style={{ 
+          position: 'absolute',
+          top: `${yPosition + 80}px`,
+          left: 0,
+          width: `${CARD_WIDTH}px`,
+          height: `${CARD_HEIGHT}px`,
+          zIndex: 10,
+          margin: 0,
+          padding: 0
+        }}
+      >
+        {renderMatchCard(match, match.id_match)}
+      </div>
+    </React.Fragment>
   );
 })}
 </div>  
