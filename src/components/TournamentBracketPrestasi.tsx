@@ -1230,30 +1230,29 @@ const renderBracketSide = (
               minHeight: `${maxY}px`
             }}
           >
-            {/* Round Header - FIXED POSITION */}
-            <div 
-              className="round-header"
-              style={{
-                width: `${CARD_WIDTH}px`,
-                marginBottom: '20px',
-                textAlign: 'center',
-                position: 'sticky',
-                top: 0,
-                zIndex: 20,
-                background: '#F5FBEF',
-                padding: '8px'
-              }}
-            >
-              <div 
-                className="px-4 py-2 rounded-lg font-bold text-sm shadow-md"
-                style={{ backgroundColor: '#990D35', color: '#F5FBEF' }}
-              >
-                {roundName}
-              </div>
-              <div className="text-xs mt-1" style={{ color: '#050505', opacity: 0.6 }}>
-                {matchCount} {matchCount === 1 ? 'Match' : 'Matches'}
-              </div>
-            </div>
+{/* Round Header - NO STICKY */}
+<div 
+  className="round-header"
+  style={{
+    width: `${CARD_WIDTH}px`,
+    marginBottom: '20px',
+    textAlign: 'center',
+    position: 'relative', // ✅ UBAH dari sticky ke relative
+    zIndex: 20,
+    background: '#F5FBEF',
+    padding: '8px 12px'
+  }}
+>
+  <div 
+    className="px-4 py-2 rounded-lg font-bold text-sm shadow-md"
+    style={{ backgroundColor: '#990D35', color: '#F5FBEF' }}
+  >
+    {roundName}
+  </div>
+  <div className="text-xs mt-1" style={{ color: '#050505', opacity: 0.6 }}>
+    {matchCount} {matchCount === 1 ? 'Match' : 'Matches'}
+  </div>
+</div>
             
             {/* ✅ MATCHES CONTAINER - FORCE ABSOLUTE */}
 <div 
@@ -1267,28 +1266,39 @@ const renderBracketSide = (
     padding: 0
   }}
 >
-  {roundMatches.map((match, matchIndex) => {
-    // ✅ AMBIL POSISI DARI CALCULATION
-    const yPosition = verticalPositions[roundIndex]?.[matchIndex] || 0;
-    
-    // ✅ Log untuk debug
-    console.log(`Rendering ${side} Round ${roundIndex + 1} Match ${matchIndex + 1} at Y=${yPosition}px`);
-    
-    return (
-      <div 
-        key={match.id_match}
-        style={{ 
-          position: 'absolute',
-          top: `${yPosition + 80}px`, // +80 untuk compensate header
-          left: 0,
-          width: `${CARD_WIDTH}px`,
-          height: `${CARD_HEIGHT}px`,
-          zIndex: 10,
-          margin: 0,
-          padding: 0,
-          display: 'block'
-        }}
-      >
+{roundMatches.map((match, matchIndex) => {
+  const yPosition = verticalPositions[roundIndex]?.[matchIndex] || 0;
+  
+  return (
+    <div 
+      key={match.id_match}
+      style={{ 
+        position: 'absolute',
+        top: `${yPosition + 80}px`,
+        left: 0,
+        width: `${CARD_WIDTH}px`,
+        height: `${CARD_HEIGHT}px`,
+        zIndex: 10,
+        margin: 0,
+        padding: 0,
+        display: 'block',
+        // ✅ TEMPORARY: Red border untuk debug
+        border: '2px dashed red'
+      }}
+    >
+      {/* ✅ TEMPORARY: Show Y position */}
+      <div style={{
+        position: 'absolute',
+        top: -20,
+        left: 0,
+        fontSize: '10px',
+        color: 'red',
+        background: 'white',
+        padding: '2px 4px',
+        zIndex: 100
+      }}>
+        Y={yPosition}px
+      </div>
         {/* ✅ HORIZONTAL LINE ke next round */}
         {hasNextRound && (
           <svg
@@ -1986,22 +1996,29 @@ React.useEffect(() => {
     .match-card {
       transition: all 0.2s ease;
       cursor: pointer;
-      position: relative;  /* ✅ TAMBAH */
-      z-index: 10;         /* ✅ TAMBAH */
-      background: white;   /* ✅ TAMBAH */
+      position: relative !important;  /* ✅ FORCE */
+      z-index: 10;
+      background: white;
+      box-sizing: border-box !important;  /* ✅ FORCE */
     }
 
     .match-card:hover {
-      transform: translateY(-2px);
+      transform: translateY(-2px) !important;  /* ✅ Only Y translation */
       box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-      z-index: 15;  /* ✅ TAMBAH - Hover lebih tinggi */
+      z-index: 15;
     }
 
     .round-header {
-      position: relative;     /* ✅ TAMBAH */
-      z-index: 20;            /* ✅ TAMBAH */
-      background: #F5FBEF;    /* ✅ TAMBAH */
-      padding: 0 10px;        /* ✅ TAMBAH */
+      position: relative;
+      z-index: 20;
+      background: #F5FBEF;
+      padding: 8px 12px;
+      box-sizing: border-box !important;  /* ✅ FORCE */
+    }
+
+    /* ✅ FORCE no margins/paddings */
+    .bracket-side > div {
+      margin: 0 !important;
     }
 
     /* Hide scrollbar but keep functionality */
@@ -2023,7 +2040,6 @@ React.useEffect(() => {
       background: #7a0a2a;
     }
 
-    /* Smooth scroll */
     .overflow-x-auto {
       scroll-behavior: smooth;
     }
