@@ -775,14 +775,38 @@ const handleExportPDF = async () => {
   setExportingPDF(true);
 
   try {
-    // Get bracket element
-    const bracketElement = bracketRef.current;
-
+    // ✅ METHOD 1: Try using ref
+    let bracketElement = bracketRef.current;
+    
+    // ✅ METHOD 2: If ref fails, query selector
     if (!bracketElement) {
-      throw new Error('Bracket element not found');
+      console.warn('⚠️ Ref not found, trying querySelector...');
+      bracketElement = document.querySelector('.tournament-layout') as HTMLElement;
+    }
+    
+    // ✅ METHOD 3: Last resort - find by class pattern
+    if (!bracketElement) {
+      console.warn('⚠️ tournament-layout not found, trying alternative...');
+      const allDivs = document.querySelectorAll('div[class*="space-y-4"]');
+      for (const div of allDivs) {
+        const htmlDiv = div as HTMLElement;
+        if (htmlDiv.querySelector('.bg-white.rounded-lg.shadow-md')) {
+          bracketElement = htmlDiv.parentElement as HTMLElement;
+          console.log('✅ Found bracket via alternative method');
+          break;
+        }
+      }
     }
 
-    // ✅ FIXED: Gunakan fungsi yang benar
+    if (!bracketElement) {
+      console.error('❌ Could not find bracket element with any method!');
+      throw new Error('Bracket element not found. Please refresh and try again.');
+    }
+
+    console.log('✅ Bracket element found:', bracketElement);
+    console.log('   classList:', bracketElement.classList);
+    console.log('   children:', bracketElement.children.length);
+
     await exportBracketFromData(kelasData, bracketElement);
 
     showNotification(
