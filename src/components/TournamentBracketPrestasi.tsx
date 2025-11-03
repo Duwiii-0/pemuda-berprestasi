@@ -1251,7 +1251,7 @@ const renderBracketSide = (
           style={{
             position: 'absolute',
             left: isRight ? -(ROUND_GAP / 2) : CARD_WIDTH,
-            top: CARD_HEIGHT / 2,
+            top: '50%', // ✅ Tepat di tengah card (divider)
             width: ROUND_GAP / 2,
             height: 2,
             pointerEvents: 'none',
@@ -1286,10 +1286,10 @@ const renderBracketSide = (
           // Posisi target di next round
           const targetRoundY = verticalPositions[roundIndex + 1]?.[Math.floor(matchIndex / 2)] || 0;
           
-          // Hitung koordinat untuk garis
-          const startY = CARD_HEIGHT / 2; // Dari tengah card
-          const middleY = nextMatchY - currentY + (CARD_HEIGHT / 2); // Ke tengah card bawah
-          const endY = targetRoundY - currentY + (CARD_HEIGHT / 2); // Ke target next round
+          // ✅ HITUNG koordinat RELATIF dari posisi card saat ini
+          const startY = CARD_HEIGHT / 2; // Dari tengah card ini (divider)
+          const pairY = (nextMatchY - currentY) + (CARD_HEIGHT / 2); // Ke tengah card bawah
+          const endY = (targetRoundY - currentY) + 80 + (CARD_HEIGHT / 2); // Ke target next round (+80 offset header)
           const horizontalX = isRight ? -(ROUND_GAP / 2) : CARD_WIDTH + (ROUND_GAP / 2);
           
           return (
@@ -1298,14 +1298,14 @@ const renderBracketSide = (
                 position: 'absolute',
                 left: 0,
                 top: 0,
-                width: isRight ? CARD_WIDTH + (ROUND_GAP / 2) : (CARD_WIDTH + ROUND_GAP),
-                height: Math.max(nextMatchY - currentY + CARD_HEIGHT, targetRoundY - currentY + CARD_HEIGHT),
+                width: isRight ? CARD_WIDTH + ROUND_GAP : CARD_WIDTH + ROUND_GAP,
+                height: Math.max(pairY + 100, endY + 100),
                 pointerEvents: 'none',
                 zIndex: 4,
                 overflow: 'visible'
               }}
             >
-              {/* Garis dari card atas ke horizontal line */}
+              {/* Garis vertikal dari card atas ke target */}
               <line
                 x1={horizontalX}
                 y1={startY}
@@ -1316,10 +1316,10 @@ const renderBracketSide = (
                 opacity="0.8"
               />
               
-              {/* Garis dari card bawah ke horizontal line */}
+              {/* Garis vertikal dari card bawah ke target */}
               <line
                 x1={horizontalX}
-                y1={middleY}
+                y1={pairY}
                 x2={horizontalX}
                 y2={endY}
                 stroke="#990D35"
