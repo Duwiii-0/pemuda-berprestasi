@@ -2261,7 +2261,6 @@ const getFinalMatchWithPosition = () => {
                 )}
               </button>
               {/* DEBUG BUTTON - Development Only */}
-{process.env.NODE_ENV === 'development' && bracketGenerated && (
   <button
     onClick={runFullDebug}
     className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all"
@@ -2270,7 +2269,6 @@ const getFinalMatchWithPosition = () => {
     <AlertTriangle size={16} />
     <span>Debug Bracket</span>
   </button>
-)}
             </div>
           </div>
 
