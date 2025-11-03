@@ -35,13 +35,13 @@ const THEME = {
 // ✅ DYNAMIC SCALE based on participant count
 const getScaleFactor = (participantCount: number): number => {
   if (participantCount > 16) {
-    return 0.55; // Sangat kecil untuk banyak peserta
+    return 1.25; // Sangat kecil untuk banyak peserta
   } else if (participantCount > 8) {
-    return 0.65; // Sedang
+    return 1.50; // Sedang
   } else if (participantCount > 4) {
-    return 0.75; // Agak besar
+    return 1.75; // Agak besar
   } else {
-    return 0.85; // Besar untuk sedikit peserta
+    return 2.00; // Besar untuk sedikit peserta
   }
 };
 
@@ -238,43 +238,67 @@ export const exportBracketFromData = async (
     // ✅ Capture bracket with dynamic scale
     const bracketImg = await convertElementToImage(bracketElement, scaleFactor);
 
-    // ✅ Calculate available space
-    const availableWidth = PAGE_WIDTH - MARGIN_LEFT - MARGIN_RIGHT;
-    const availableHeight = PAGE_HEIGHT - HEADER_HEIGHT - FOOTER_HEIGHT - 10;
-
-    console.log('📐 Available space:', { 
-      width: availableWidth, 
-      height: availableHeight 
-    });
-
-    // ✅ Add header and footer
+    // ✅ Add header and footer FIRST
     addHeaderAndFooter(doc, config);
 
-    // ✅ Calculate image dimensions to fit and center
+    // ✅ Calculate available space (space antara header dan footer)
+    const availableWidth = PAGE_WIDTH - MARGIN_LEFT - MARGIN_RIGHT;
+    const availableHeight = PAGE_HEIGHT - HEADER_HEIGHT - FOOTER_HEIGHT - MARGIN_TOP - MARGIN_BOTTOM;
+
+    console.log('📐 Available space:', { 
+      width: availableWidth.toFixed(2), 
+      height: availableHeight.toFixed(2)
+    });
+
+    // ✅ Calculate image dimensions to fit (gunakan 95% dari space untuk margin)
     const imgAspectRatio = bracketImg.width / bracketImg.height;
     
-    let displayWidth = availableWidth;
+    let displayWidth = availableWidth * 0.95; // 95% dari lebar tersedia
     let displayHeight = displayWidth / imgAspectRatio;
 
-    // If height exceeds available space, scale down
-    if (displayHeight > availableHeight) {
-      displayHeight = availableHeight;
+    // If height exceeds available space, scale based on height instead
+    if (displayHeight > availableHeight * 0.95) {
+      displayHeight = availableHeight * 0.95;
       displayWidth = displayHeight * imgAspectRatio;
     }
 
-    // ✅ CENTER the bracket
-    const x = MARGIN_LEFT + (availableWidth - displayWidth) / 2;
-    const y = HEADER_HEIGHT + 5 + (availableHeight - displayHeight) / 2;
+    // ✅ CENTER BOTH HORIZONTALLY AND VERTICALLY
+    const startX = MARGIN_LEFT;
+    const startY = HEADER_HEIGHT + MARGIN_TOP;
+    const endX = PAGE_WIDTH - MARGIN_RIGHT;
+    const endY = PAGE_HEIGHT - FOOTER_HEIGHT - MARGIN_BOTTOM;
 
-    console.log('🎯 Final placement:', {
-      x: x.toFixed(2),
-      y: y.toFixed(2),
-      width: displayWidth.toFixed(2),
-      height: displayHeight.toFixed(2),
-      centered: true
+    const centerX = (startX + endX) / 2;
+    const centerY = (startY + endY) / 2;
+
+    const x = centerX - (displayWidth / 2);
+    const y = centerY - (displayHeight / 2);
+
+    console.log('🎯 Centering calculation:', {
+      availableSpace: {
+        startX: startX.toFixed(2),
+        startY: startY.toFixed(2),
+        endX: endX.toFixed(2),
+        endY: endY.toFixed(2),
+        width: availableWidth.toFixed(2),
+        height: availableHeight.toFixed(2)
+      },
+      center: {
+        x: centerX.toFixed(2),
+        y: centerY.toFixed(2)
+      },
+      image: {
+        width: displayWidth.toFixed(2),
+        height: displayHeight.toFixed(2),
+        aspectRatio: imgAspectRatio.toFixed(3)
+      },
+      finalPosition: {
+        x: x.toFixed(2),
+        y: y.toFixed(2)
+      }
     });
 
-    // ✅ Add bracket image to PDF (centered)
+    // ✅ Add bracket image to PDF (PERFECTLY CENTERED)
     doc.addImage(
       bracketImg.src, 
       'PNG', 
@@ -292,7 +316,7 @@ export const exportBracketFromData = async (
     
     doc.save(filename);
     console.log(`✅ PDF saved: ${filename}`);
-    console.log(`📏 Format: A4 Landscape - Scale: ${scaleFactor} for ${participantCount} participants!`);
+    console.log(`📏 Format: A4 Landscape - Scale: ${scaleFactor}x for ${participantCount} participants!`);
 
   } catch (error) {
     console.error('❌ Error exporting PDF:', error);
