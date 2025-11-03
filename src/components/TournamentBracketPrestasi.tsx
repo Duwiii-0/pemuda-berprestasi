@@ -119,9 +119,8 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
 const CARD_WIDTH = 280;
 const CARD_HEIGHT = 140;
 const ROUND_GAP = 120;
-const BASE_VERTICAL_GAP = 60;  // ✅ Ini pengganti VERTICAL_SPACING
+const BASE_VERTICAL_GAP = 60;
 const CENTER_GAP = 120;
-const LINE_EXTENSION = 40;  // ✅ Kalau masih dipakai  
 
   const showNotification = (
     type: 'success' | 'error' | 'warning' | 'info',
@@ -793,57 +792,6 @@ const handleExportPDF = async () => {
     return leaderboard;
   };
 
-// ✅ FUNGSI HITUNG VERTICAL GAP ANTAR MATCH
-const calculateVerticalGap = (roundIndex: number): number => {
-  const baseSpacing = 280;
-  return baseSpacing * Math.pow(2, roundIndex);
-};
-
-const renderConnectors = (
-  fromMatches: Match[],
-  toMatch: Match,
-  side: 'left' | 'right',
-  roundIndex: number
-) => {
-  const isRight = side === 'right';
-  const verticalGapFrom = BASE_VERTICAL_GAP * Math.pow(2, roundIndex);
-  const verticalGapTo = BASE_VERTICAL_GAP * Math.pow(2, roundIndex + 1);
-  
-  return fromMatches.map((fromMatch, idx) => {
-    const fromY = idx * verticalGapFrom + (CARD_HEIGHT / 2);
-    const toY = Math.floor(idx / 2) * verticalGapTo + (CARD_HEIGHT / 2);
-    const midX = CARD_WIDTH + (ROUND_GAP / 2);
-    
-    return (
-      <svg
-        key={`connector-${fromMatch.id_match}-to-${toMatch.id_match}`}
-        style={{
-          position: 'absolute',
-          left: isRight ? -ROUND_GAP : CARD_WIDTH,
-          top: 0,
-          width: ROUND_GAP,
-          height: '100%',
-          pointerEvents: 'none',
-          zIndex: 5,
-          overflow: 'visible'
-        }}
-      >
-        <path
-          d={`
-            M ${isRight ? ROUND_GAP : 0} ${fromY}
-            L ${midX} ${fromY}
-            L ${midX} ${toY}
-            L ${isRight ? 0 : ROUND_GAP} ${toY}
-          `}
-          stroke="#990D35"
-          strokeWidth="2"
-          fill="none"
-          opacity="0.6"
-        />
-      </svg>
-    );
-  });
-};
 /**
  * 🆕 Render single match card
  */
@@ -996,125 +944,6 @@ return (
 );
 }
 
-const renderCardConnector = (
-  match: Match,
-  matchIndex: number,
-  roundIndex: number,
-  side: 'left' | 'right',
-  hasNextRound: boolean
-) => {
-  if (!hasNextRound) return null;
-  
-  const isRight = side === 'right';
-  const lineLength = ROUND_GAP / 2;
-  
-  return (
-    <svg
-      style={{
-        position: 'absolute',
-        left: isRight ? -lineLength : CARD_WIDTH,
-        top: '50%',
-        width: lineLength,
-        height: 2,
-        pointerEvents: 'none',
-        zIndex: 5,
-        overflow: 'visible'
-      }}
-    >
-      <line
-        x1={isRight ? lineLength : 0}
-        y1="0"
-        x2={isRight ? 0 : lineLength}
-        y2="0"
-        stroke="#990D35"
-        strokeWidth="3"
-        opacity="0.8"
-      />
-    </svg>
-  );
-};
-
-/**
- * Render vertical connector between pairs - FIXED
- */
-const renderVerticalConnector = (
-  matchIndex: number,
-  roundIndex: number,
-  side: 'left' | 'right',
-  matchCount: number
-) => {
-  // Only draw for first match of pair (even index)
-  if (matchIndex % 2 !== 0) return null;
-  if (matchIndex + 1 >= matchCount) return null;
-  
-  const isRight = side === 'right';
-  const verticalGap = BASE_VERTICAL_GAP * Math.pow(2, roundIndex);
-  const lineLength = ROUND_GAP / 2;
-  
-  // Total distance between centers of two cards
-  const totalDistance = verticalGap + CARD_HEIGHT;
-  
-  return (
-    <svg
-      style={{
-        position: 'absolute',
-        left: isRight ? -lineLength : CARD_WIDTH + lineLength,
-        top: '50%',
-        width: 3,
-        height: totalDistance,
-        pointerEvents: 'none',
-        zIndex: 5,
-        overflow: 'visible'
-      }}
-    >
-      <line
-        x1="1.5"
-        y1="0"
-        x2="1.5"
-        y2={totalDistance}
-        stroke="#990D35"
-        strokeWidth="3"
-        opacity="0.8"
-      />
-    </svg>
-  );
-};
-
-/**
- * 🆕 Calculate positions for all matches in bracket
- * Setiap ronde berikutnya akan berada di tengah 2 match parent
- */
-const calculateBracketPositions = (matchesBySide: Match[][]) => {
-  const positions: number[][] = [];
-  
-  // Round pertama - urutan berurutan
-  if (matchesBySide.length > 0 && matchesBySide[0].length > 0) {
-    positions[0] = matchesBySide[0].map((_, i) => i * (CARD_HEIGHT + BASE_VERTICAL_GAP));
-  }
-  
-  // Round selanjutnya - rata-rata posisi dua parent
-  for (let r = 1; r < matchesBySide.length; r++) {
-    positions[r] = [];
-    const prevRoundMatches = matchesBySide[r - 1];
-    const currentRoundMatches = matchesBySide[r];
-    
-    for (let i = 0; i < currentRoundMatches.length; i++) {
-      const parentIndexA = i * 2;
-      const parentIndexB = i * 2 + 1;
-      
-      // Ambil posisi parent
-      const parentTopA = positions[r - 1][parentIndexA] || 0;
-      const parentTopB = positions[r - 1][parentIndexB] || 0;
-      
-      // Hitung titik tengah
-      const mid = (parentTopA + parentTopB + CARD_HEIGHT) / 2;
-      positions[r].push(mid);
-    }
-  }
-  
-  return positions;
-};
-
 /**
  * 🎯 Calculate vertical positions for all rounds
  * Setiap round berikutnya berada TEPAT di tengah 2 parent match
@@ -1182,6 +1011,136 @@ const calculateBracketHeight = (matchesBySide: Match[][]) => {
   const totalHeight = (round1Count * CARD_HEIGHT) + ((round1Count - 1) * BASE_VERTICAL_GAP);
   
   return Math.max(totalHeight + 200, 800); // Minimal 800px
+};
+
+/**
+ * 🆕 Render CENTER FINAL Match
+ */
+const renderCenterFinal = () => {
+  const finalMatch = getFinalMatch();
+  const leftMatches = getLeftMatches();
+  const rightMatches = getRightMatches();
+  
+  // Calculate positions
+  const leftPositions = calculateVerticalPositions(leftMatches);
+  const rightPositions = calculateVerticalPositions(rightMatches);
+  
+  // Get semi-final Y positions
+  const leftSemiY = leftPositions[leftPositions.length - 1]?.[0] || 0;
+  const rightSemiY = rightPositions[rightPositions.length - 1]?.[0] || 0;
+  
+  // Final Y position = rata-rata dari kedua semi-final
+  const finalYPosition = (leftSemiY + rightSemiY) / 2;
+  const lineLength = CENTER_GAP / 2;
+  
+  return (
+    <div 
+      style={{ 
+        position: 'relative',
+        width: `${CARD_WIDTH}px`,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center'
+      }}
+    >
+      {/* Round Header */}
+      <div 
+        className="round-header"
+        style={{
+          width: `${CARD_WIDTH}px`,
+          marginBottom: '20px',
+          textAlign: 'center',
+          position: 'relative',
+          zIndex: 20,
+          background: '#F5FBEF',
+          padding: '8px 12px'
+        }}
+      >
+        <div 
+          className="px-4 py-2 rounded-lg font-bold text-sm shadow-md"
+          style={{ backgroundColor: '#990D35', color: '#F5FBEF' }}
+        >
+          Final
+        </div>
+        <div className="text-xs mt-1" style={{ color: '#050505', opacity: 0.6 }}>
+          Championship Match
+        </div>
+      </div>
+
+      {/* Container untuk card + connectors */}
+      <div style={{ position: 'relative', width: '100%', minHeight: '600px' }}>
+        {/* 🔗 LEFT CONNECTOR ke Final */}
+        <svg
+          style={{
+            position: 'absolute',
+            left: -lineLength,
+            top: `${finalYPosition + 80 + (CARD_HEIGHT / 2)}px`,
+            width: lineLength,
+            height: 2,
+            pointerEvents: 'none',
+            zIndex: 5
+          }}
+        >
+          <line 
+            x1="0" 
+            y1="0" 
+            x2={lineLength} 
+            y2="0" 
+            stroke="#990D35" 
+            strokeWidth="2.5" 
+            opacity="0.8" 
+          />
+        </svg>
+        
+        {/* 🔗 RIGHT CONNECTOR ke Final */}
+        <svg
+          style={{
+            position: 'absolute',
+            right: -lineLength,
+            top: `${finalYPosition + 80 + (CARD_HEIGHT / 2)}px`,
+            width: lineLength,
+            height: 2,
+            pointerEvents: 'none',
+            zIndex: 5
+          }}
+        >
+          <line 
+            x1="0" 
+            y1="0" 
+            x2={lineLength} 
+            y2="0" 
+            stroke="#990D35" 
+            strokeWidth="2.5" 
+            opacity="0.8" 
+          />
+        </svg>
+        
+        {/* Final Match Card */}
+        <div
+          style={{
+            position: 'absolute',
+            top: `${finalYPosition + 80}px`,
+            left: 0,
+            width: `${CARD_WIDTH}px`
+          }}
+        >
+          {finalMatch ? (
+            renderMatchCard(finalMatch, `final-${finalMatch.id_match}`)
+          ) : (
+            <div 
+              className="w-full p-6 rounded-xl border-2 text-center"
+              style={{ borderColor: '#990D35', backgroundColor: 'rgba(153, 13, 53, 0.05)' }}
+            >
+              <Trophy size={48} style={{ color: '#990D35', opacity: 0.3 }} className="mx-auto mb-2" />
+              <p className="text-sm font-medium" style={{ color: '#050505', opacity: 0.6 }}>
+                Waiting for finalists
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 };
 
 const renderBracketSide = (
@@ -1281,262 +1240,106 @@ const renderBracketSide = (
         zIndex: 10,
         margin: 0,
         padding: 0,
-        display: 'block',
-        // ✅ TEMPORARY: Red border untuk debug
-        border: '2px dashed red'
+        display: 'block'
       }}
     >
-      {/* ✅ TEMPORARY: Show Y position */}
-      <div style={{
-        position: 'absolute',
-        top: -20,
-        left: 0,
-        fontSize: '10px',
-        color: 'red',
-        background: 'white',
-        padding: '2px 4px',
-        zIndex: 100
-      }}>
-        Y={yPosition}px
-      </div>
-        {/* ✅ HORIZONTAL LINE ke next round */}
-        {hasNextRound && (
-          <svg
-            style={{
-              position: 'absolute',
-              left: isRight ? -(ROUND_GAP / 2) : CARD_WIDTH,
-              top: CARD_HEIGHT / 2,
-              width: ROUND_GAP / 2,
-              height: 2,
-              pointerEvents: 'none',
-              zIndex: 5,
-              overflow: 'visible'
-            }}
-          >
-            <line
-              x1={isRight ? ROUND_GAP / 2 : 0}
-              y1="0"
-              x2={isRight ? 0 : ROUND_GAP / 2}
-              y2="0"
-              stroke="#990D35"
-              strokeWidth="2"
-              opacity="0.7"
-            />
-          </svg>
-        )}
-        
-        {/* ✅ VERTICAL LINE antara pair */}
-        {hasNextRound && matchIndex % 2 === 0 && matchIndex + 1 < matchCount && (
-          (() => {
-            const nextRoundY = verticalPositions[roundIndex + 1]?.[Math.floor(matchIndex / 2)] || 0;
-            const currentY = yPosition;
-            const lineHeight = Math.abs(nextRoundY - currentY) + CARD_HEIGHT;
-            
-            return (
-              <svg
-                style={{
-                  position: 'absolute',
-                  left: isRight ? -(ROUND_GAP / 2) : CARD_WIDTH + (ROUND_GAP / 2),
-                  top: CARD_HEIGHT / 2,
-                  width: 2,
-                  height: lineHeight,
-                  pointerEvents: 'none',
-                  zIndex: 4,
-                  overflow: 'visible'
-                }}
-              >
-                <line
-                  x1="0"
-                  y1="0"
-                  x2="0"
-                  y2={lineHeight}
-                  stroke="#990D35"
-                  strokeWidth="2"
-                  opacity="0.7"
-                />
-              </svg>
-            );
-          })()
-        )}
-        
-        {/* Match Card */}
-        {renderMatchCard(match, match.id_match)}
-      </div>
-    );
-  })}
+      {/* ============================================
+          🔗 HORIZONTAL LINE ke next round
+          ============================================ */}
+      {hasNextRound && (
+        <svg
+          style={{
+            position: 'absolute',
+            left: isRight ? -(ROUND_GAP / 2) : CARD_WIDTH,
+            top: CARD_HEIGHT / 2,
+            width: ROUND_GAP / 2,
+            height: 2,
+            pointerEvents: 'none',
+            zIndex: 5,
+            overflow: 'visible'
+          }}
+        >
+          <line
+            x1={isRight ? ROUND_GAP / 2 : 0}
+            y1="0"
+            x2={isRight ? 0 : ROUND_GAP / 2}
+            y2="0"
+            stroke="#990D35"
+            strokeWidth="2.5"
+            opacity="0.8"
+          />
+        </svg>
+      )}
+      
+      {/* ============================================
+          🔗 VERTICAL LINE antara pair ke next round
+          Hanya render untuk match GANJIL (0, 2, 4, ...)
+          ============================================ */}
+      {hasNextRound && matchIndex % 2 === 0 && matchIndex + 1 < matchCount && (
+        (() => {
+          // Posisi match saat ini (atas)
+          const currentY = yPosition;
+          
+          // Posisi match berikutnya dalam pair (bawah)
+          const nextMatchY = verticalPositions[roundIndex]?.[matchIndex + 1] || currentY;
+          
+          // Posisi target di next round
+          const targetRoundY = verticalPositions[roundIndex + 1]?.[Math.floor(matchIndex / 2)] || 0;
+          
+          // Hitung koordinat untuk garis
+          const startY = CARD_HEIGHT / 2; // Dari tengah card
+          const middleY = nextMatchY - currentY + (CARD_HEIGHT / 2); // Ke tengah card bawah
+          const endY = targetRoundY - currentY + (CARD_HEIGHT / 2); // Ke target next round
+          const horizontalX = isRight ? -(ROUND_GAP / 2) : CARD_WIDTH + (ROUND_GAP / 2);
+          
+          return (
+            <svg
+              style={{
+                position: 'absolute',
+                left: 0,
+                top: 0,
+                width: isRight ? CARD_WIDTH + (ROUND_GAP / 2) : (CARD_WIDTH + ROUND_GAP),
+                height: Math.max(nextMatchY - currentY + CARD_HEIGHT, targetRoundY - currentY + CARD_HEIGHT),
+                pointerEvents: 'none',
+                zIndex: 4,
+                overflow: 'visible'
+              }}
+            >
+              {/* Garis dari card atas ke horizontal line */}
+              <line
+                x1={horizontalX}
+                y1={startY}
+                x2={horizontalX}
+                y2={endY}
+                stroke="#990D35"
+                strokeWidth="2.5"
+                opacity="0.8"
+              />
+              
+              {/* Garis dari card bawah ke horizontal line */}
+              <line
+                x1={horizontalX}
+                y1={middleY}
+                x2={horizontalX}
+                y2={endY}
+                stroke="#990D35"
+                strokeWidth="2.5"
+                opacity="0.8"
+              />
+            </svg>
+          );
+        })()
+      )}
+      
+      {/* Match Card */}
+      {renderMatchCard(match, match.id_match)}
+    </div>
+  );
+})}
 </div>  
           </div>
         );
       })}
-    </div>
-  );
-};
-
-const renderCenterFinal = () => {
-  const finalMatch = getFinalMatch();
-  const lineLength = CENTER_GAP / 2;
-  
-  // ✅ Hitung posisi Y dari semi-final (harus sama)
-  const leftMatches = getLeftMatches();
-  const leftPositions = calculateVerticalPositions(leftMatches);
-  
-  // Ambil Y position dari semi-final (round terakhir sebelum final)
-  const semiFinalY = leftPositions[leftPositions.length - 1]?.[0] || 0;
-  const finalYPosition = semiFinalY + 60; // +60 untuk header
-  
-  if (!finalMatch) {
-    return (
-      <div 
-        className="center-final"
-        style={{
-          width: `${CARD_WIDTH}px`,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          position: 'relative',
-          minHeight: '800px'
-        }}
-      >
-        {/* Header */}
-        <div 
-          className="px-6 py-3 rounded-lg font-bold text-lg shadow-md mb-4"
-          style={{ 
-            backgroundColor: '#990D35', 
-            color: '#F5FBEF',
-            position: 'sticky',
-            top: 0,
-            zIndex: 20
-          }}
-        >
-          FINAL
-        </div>
-        
-        {/* Container untuk card + connectors */}
-        <div style={{ position: 'relative', width: '100%' }}>
-          {/* Left connector */}
-          <svg
-            style={{
-              position: 'absolute',
-              left: -lineLength,
-              top: `${finalYPosition + CARD_HEIGHT / 2}px`,
-              width: lineLength,
-              height: 2,
-              pointerEvents: 'none',
-              zIndex: 5
-            }}
-          >
-            <line x1="0" y1="0" x2={lineLength} y2="0" stroke="#990D35" strokeWidth="2" opacity="0.6" />
-          </svg>
-          
-          {/* Right connector */}
-          <svg
-            style={{
-              position: 'absolute',
-              right: -lineLength,
-              top: `${finalYPosition + CARD_HEIGHT / 2}px`,
-              width: lineLength,
-              height: 2,
-              pointerEvents: 'none',
-              zIndex: 5
-            }}
-          >
-            <line x1="0" y1="0" x2={lineLength} y2="0" stroke="#990D35" strokeWidth="2" opacity="0.6" />
-          </svg>
-          
-          {/* Empty state card */}
-          <div
-            style={{
-              position: 'absolute',
-              top: `${finalYPosition}px`,
-              left: 0,
-              width: `${CARD_WIDTH}px`
-            }}
-          >
-            <div 
-              className="w-full p-6 rounded-xl border-2 text-center"
-              style={{ borderColor: '#990D35', backgroundColor: 'rgba(153, 13, 53, 0.05)' }}
-            >
-              <Trophy size={48} style={{ color: '#990D35', opacity: 0.3 }} className="mx-auto mb-2" />
-              <p className="text-sm font-medium" style={{ color: '#050505', opacity: 0.6 }}>
-                Waiting for finalists
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-  
-  return (
-    <div 
-      className="center-final"
-      style={{
-        width: `${CARD_WIDTH}px`,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        position: 'relative',
-        minHeight: '800px'
-      }}
-    >
-      {/* Final Header */}
-      <div 
-        className="px-6 py-3 rounded-lg font-bold text-lg shadow-md mb-4"
-        style={{ 
-          backgroundColor: '#FFD700', 
-          color: '#050505',
-          position: 'sticky',
-          top: 0,
-          zIndex: 20
-        }}
-      >
-        🏆 FINAL
-      </div>
-      
-      {/* Container untuk card + connectors */}
-      <div style={{ position: 'relative', width: '100%' }}>
-        {/* Left connector */}
-        <svg
-          style={{
-            position: 'absolute',
-            left: -lineLength,
-            top: `${finalYPosition + CARD_HEIGHT / 2}px`,
-            width: lineLength,
-            height: 2,
-            pointerEvents: 'none',
-            zIndex: 5
-          }}
-        >
-          <line x1="0" y1="0" x2={lineLength} y2="0" stroke="#990D35" strokeWidth="2" opacity="0.8" />
-        </svg>
-        
-        {/* Right connector */}
-        <svg
-          style={{
-            position: 'absolute',
-            right: -lineLength,
-            top: `${finalYPosition + CARD_HEIGHT / 2}px`,
-            width: lineLength,
-            height: 2,
-            pointerEvents: 'none',
-            zIndex: 5
-          }}
-        >
-          <line x1="0" y1="0" x2={lineLength} y2="0" stroke="#990D35" strokeWidth="2" opacity="0.8" />
-        </svg>
-        
-        {/* Final Match Card */}
-        <div
-          style={{
-            position: 'absolute',
-            top: `${finalYPosition}px`,
-            left: 0,
-            width: `${CARD_WIDTH}px`
-          }}
-        >
-          {renderMatchCard(finalMatch, `final-${finalMatch.id_match}`)}
-        </div>
-      </div>
     </div>
   );
 };
