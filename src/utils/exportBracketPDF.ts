@@ -13,23 +13,9 @@ interface ExportConfig {
   totalParticipants: number;
 }
 
-// ✅ DYNAMIC PAGE SIZE based on bracket complexity
-const getOptimalPageSize = (participantCount: number): { width: number; height: number; format: string } => {
-  if (participantCount <= 4) {
-    return { width: 297, height: 210, format: 'A4 Landscape' };
-  } else if (participantCount <= 6) {
-    return { width: 420, height: 297, format: 'A3 Landscape' };
-  } else if (participantCount <= 12) {
-    return { width: 594, height: 420, format: 'A2 Landscape' };
-  } else if (participantCount <= 24) {
-    return { width: 841, height: 594, format: 'A1 Landscape' };
-  } else {
-    return { width: 1189, height: 841, format: 'A0 Landscape' };
-  }
-};
-
-let PAGE_WIDTH = 297;
-let PAGE_HEIGHT = 210;
+// ✅ FIXED A4 LANDSCAPE
+const PAGE_WIDTH = 297;
+const PAGE_HEIGHT = 210;
 const MARGIN_TOP = 15;
 const MARGIN_BOTTOM = 10;
 const MARGIN_LEFT = 10;
@@ -46,16 +32,28 @@ const THEME = {
   white: '#FFFFFF',
 };
 
+// ✅ DYNAMIC SCALE based on participant count
+const getScaleFactor = (participantCount: number): number => {
+  if (participantCount > 16) {
+    return 0.55; // Sangat kecil untuk banyak peserta
+  } else if (participantCount > 8) {
+    return 0.65; // Sedang
+  } else if (participantCount > 4) {
+    return 0.75; // Agak besar
+  } else {
+    return 0.85; // Besar untuk sedikit peserta
+  }
+};
+
 // =================================================================================================
 // HEADER & FOOTER
 // =================================================================================================
 
 const addHeaderAndFooter = (
   doc: jsPDF,
-  config: ExportConfig,
-  pageNumber: number,
-  totalPages: number
+  config: ExportConfig
 ) => {
+  // Header
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(13);
   doc.setTextColor(THEME.text);
@@ -66,6 +64,7 @@ const addHeaderAndFooter = (
   doc.setTextColor(THEME.textSecondary);
   doc.text(config.categoryName, PAGE_WIDTH / 2, MARGIN_TOP + 11, { align: 'center' });
 
+  // Footer
   const footerY = PAGE_HEIGHT - MARGIN_BOTTOM;
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8);
@@ -76,66 +75,19 @@ const addHeaderAndFooter = (
     year: 'numeric',
   });
   doc.text(exportDate, MARGIN_LEFT, footerY);
-  doc.text(`Page ${pageNumber} of ${totalPages}`, PAGE_WIDTH / 2, footerY, { align: 'center' });
-};
-
-// =================================================================================================
-// COVER PAGE
-// =================================================================================================
-
-const addCoverPage = (doc: jsPDF, config: ExportConfig, totalPages: number) => {
-  doc.setFillColor(THEME.background);
-  doc.rect(0, 0, PAGE_WIDTH, PAGE_HEIGHT, 'F');
-
-  doc.setFillColor(THEME.primary);
-  doc.rect(0, 0, PAGE_WIDTH, 40, 'F');
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(32);
-  doc.setTextColor(THEME.white);
-  doc.text(config.eventName.toUpperCase(), PAGE_WIDTH / 2, 25, { align: 'center' });
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(12);
-  doc.text('Competition Bracket', PAGE_WIDTH / 2, 35, { align: 'center' });
-
-  const boxX = PAGE_WIDTH / 2 - 100;
-  const boxY = 70;
-  const boxWidth = 200;
-  const boxHeight = 60;
-
-  doc.setDrawColor(THEME.border);
-  doc.setFillColor(THEME.white);
-  doc.roundedRect(boxX, boxY, boxWidth, boxHeight, 5, 5, 'FD');
-
-  const infoItems = [
-    { label: 'Category', value: config.categoryName },
-    { label: 'Location', value: config.location },
-    { label: 'Date', value: config.dateRange },
-    { label: 'Participants', value: `${config.totalParticipants} Athletes` },
-  ];
-
-  let currentY = boxY + 15;
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(10);
-  infoItems.forEach(item => {
-    doc.setTextColor(THEME.textSecondary);
-    doc.text(item.label, boxX + 15, currentY, { align: 'left' });
-    doc.setTextColor(THEME.text);
-    doc.text(item.value, boxX + boxWidth - 15, currentY, { align: 'right' });
-    currentY += 10;
-  });
-
-  addHeaderAndFooter(doc, config, 1, totalPages);
+  doc.text('Tournament Bracket - Prestasi Category', PAGE_WIDTH / 2, footerY, { align: 'center' });
 };
 
 // =================================================================================================
 // DOM-TO-IMAGE: CLEAN BRACKET CAPTURE
 // =================================================================================================
 
-const convertElementToImage = async (element: HTMLElement): Promise<HTMLImageElement> => {
+const convertElementToImage = async (
+  element: HTMLElement,
+  scaleFactor: number
+): Promise<HTMLImageElement> => {
   console.log('🎯 Starting bracket capture...');
-  console.log('📦 Original element:', element);
+  console.log('📊 Scale factor:', scaleFactor);
   
   let bracketVisual = element.querySelector('.tournament-layout') as HTMLElement;
   
@@ -159,13 +111,8 @@ const convertElementToImage = async (element: HTMLElement): Promise<HTMLImageEle
   }
   
   console.log('✅ Found bracket visual container');
-  console.log('📏 Bracket dimensions:', {
-    scrollWidth: bracketVisual.scrollWidth,
-    offsetWidth: bracketVisual.offsetWidth,
-    scrollHeight: bracketVisual.scrollHeight,
-    offsetHeight: bracketVisual.offsetHeight,
-  });
 
+  // Hide unwanted elements
   const hiddenElements: Array<{ el: HTMLElement; originalDisplay: string; originalVisibility: string }> = [];
   
   const leaderboards = document.querySelectorAll('#prestasi-leaderboard, #pemula-leaderboard, [id$="-leaderboard"]');
@@ -197,11 +144,13 @@ const convertElementToImage = async (element: HTMLElement): Promise<HTMLImageEle
 
   await new Promise(resolve => setTimeout(resolve, 100));
 
-  const width = Math.max(bracketVisual.scrollWidth, bracketVisual.offsetWidth, 2000);
-  const height = Math.max(bracketVisual.scrollHeight, bracketVisual.offsetHeight, 1000);
+  const width = Math.max(bracketVisual.scrollWidth, bracketVisual.offsetWidth);
+  const height = Math.max(bracketVisual.scrollHeight, bracketVisual.offsetHeight);
 
-  console.log('📐 Final dimensions for capture:', { width, height });
+  console.log('📐 Original dimensions:', { width, height });
+  console.log('🔍 Applying scale:', scaleFactor);
 
+  // ✅ CAPTURE dengan scale yang sudah disesuaikan
   console.log('📸 Capturing image...');
   const dataUrl = await htmlToImage.toPng(bracketVisual, {
     quality: 1,
@@ -211,7 +160,7 @@ const convertElementToImage = async (element: HTMLElement): Promise<HTMLImageEle
     backgroundColor: '#FFFFFF',
     cacheBust: true,
     style: {
-      transform: 'scale(0.85)',
+      transform: `scale(${scaleFactor})`,
       transformOrigin: 'top left',
       margin: '0',
     },
@@ -226,6 +175,7 @@ const convertElementToImage = async (element: HTMLElement): Promise<HTMLImageEle
     }
   });
 
+  // Restore hidden elements
   hiddenElements.forEach(({ el, originalDisplay, originalVisibility }) => {
     el.style.display = originalDisplay;
     el.style.visibility = originalVisibility;
@@ -243,90 +193,24 @@ const convertElementToImage = async (element: HTMLElement): Promise<HTMLImageEle
 };
 
 // =================================================================================================
-// ADD IMAGE TO PAGE
+// MAIN EXPORT FUNCTION - SINGLE A4 PAGE
 // =================================================================================================
 
-const addImageToPage = (
-  doc: jsPDF,
-  img: HTMLImageElement,
-  config: ExportConfig,
-  pageNumber: number,
-  totalPages: number,
-  yOffset: number,
-  maxHeight: number
-) => {
-  const availableHeight = PAGE_HEIGHT - HEADER_HEIGHT - FOOTER_HEIGHT - 5;
-  const availableWidth = PAGE_WIDTH - MARGIN_LEFT - MARGIN_RIGHT;
-
-  const canvas = document.createElement('canvas');
-  const ctx = canvas.getContext('2d')!;
-  
-  const sourceY = yOffset;
-  const sourceHeight = Math.min(maxHeight, img.height - yOffset);
-  
-  canvas.width = img.width;
-  canvas.height = sourceHeight;
-  
-  ctx.drawImage(
-    img,
-    0, sourceY,
-    img.width, sourceHeight,
-    0, 0,
-    img.width, sourceHeight
-  );
-
-  const croppedData = canvas.toDataURL('image/jpeg', 0.95);
-
-  doc.setFillColor('#FFFFFF');
-  doc.rect(0, 0, PAGE_WIDTH, PAGE_HEIGHT, 'F');
-
-  addHeaderAndFooter(doc, config, pageNumber, totalPages);
-
-  const originalAspectRatio = canvas.width / canvas.height;
-  
-  let displayWidth = availableWidth;
-  let displayHeight = displayWidth / originalAspectRatio;
-
-  if (displayHeight > availableHeight) {
-    displayHeight = availableHeight;
-    displayWidth = displayHeight * originalAspectRatio;
-    
-    const minWidth = availableWidth * 0.90;
-    if (displayWidth < minWidth) {
-      displayWidth = minWidth;
-      displayHeight = displayWidth / originalAspectRatio;
-    }
-  }
-
-  const x = MARGIN_LEFT;
-  const y = HEADER_HEIGHT + 5;
-
-  console.log(`📄 Page ${pageNumber}:`, {
-    canvas: `${canvas.width}×${canvas.height}px`,
-    available: `${availableWidth.toFixed(0)}×${availableHeight.toFixed(0)}mm`,
-    display: `${displayWidth.toFixed(0)}×${displayHeight.toFixed(0)}mm`,
-    aspectRatio: originalAspectRatio.toFixed(2),
-    widthUsage: `${((displayWidth/availableWidth)*100).toFixed(1)}%`
-  });
-
-  doc.addImage(croppedData, 'JPEG', x, y, displayWidth, displayHeight, undefined, 'FAST');
-};
-
-// =================================================================================================
-// MAIN EXPORT FUNCTION
-// =================================================================================================
-
-export const exportBracketFromData = async (kelasData: any, bracketElement: HTMLElement): Promise<void> => {
-  console.log('🚀 Starting PDF export...');
+export const exportBracketFromData = async (
+  kelasData: any, 
+  bracketElement: HTMLElement
+): Promise<void> => {
+  console.log('🚀 Starting PDF export (A4 Single Page)...');
   
   const approvedParticipants = kelasData.peserta_kompetisi.filter((p: any) => p.status === 'APPROVED');
   const participantCount = approvedParticipants.length;
   
-  const pageSize = getOptimalPageSize(participantCount);
-  PAGE_WIDTH = pageSize.width;
-  PAGE_HEIGHT = pageSize.height;
+  // ✅ Get dynamic scale based on participant count
+  const scaleFactor = getScaleFactor(participantCount);
   
-  console.log(`📄 Selected page format: ${pageSize.format} (${PAGE_WIDTH}x${PAGE_HEIGHT}mm) for ${participantCount} participants`);
+  console.log(`📄 Format: A4 Landscape (${PAGE_WIDTH}x${PAGE_HEIGHT}mm)`);
+  console.log(`👥 Participants: ${participantCount}`);
+  console.log(`📏 Scale factor: ${scaleFactor}`);
   
   const config: ExportConfig = {
     eventName: kelasData.kompetisi.nama_event,
@@ -343,55 +227,72 @@ export const exportBracketFromData = async (kelasData: any, bracketElement: HTML
   };
 
   try {
+    // ✅ Create A4 Landscape PDF
     const doc = new jsPDF({ 
       orientation: 'landscape', 
       unit: 'mm', 
-      format: [PAGE_HEIGHT, PAGE_WIDTH],
+      format: 'a4',
       compress: true 
     });
-    doc.deletePage(1);
 
-    const bracketImg = await convertElementToImage(bracketElement);
+    // ✅ Capture bracket with dynamic scale
+    const bracketImg = await convertElementToImage(bracketElement, scaleFactor);
 
-    const maxHeightPerPage = PAGE_HEIGHT - HEADER_HEIGHT - FOOTER_HEIGHT - MARGIN_TOP - MARGIN_BOTTOM - 10;
-    const pxPerMm = bracketImg.height / maxHeightPerPage;
-    const maxPixelsPerPage = Math.floor(maxHeightPerPage * pxPerMm);
-    
-    const totalSlices = Math.ceil(bracketImg.height / maxPixelsPerPage);
-    const totalPages = totalSlices + 1;
+    // ✅ Calculate available space
+    const availableWidth = PAGE_WIDTH - MARGIN_LEFT - MARGIN_RIGHT;
+    const availableHeight = PAGE_HEIGHT - HEADER_HEIGHT - FOOTER_HEIGHT - 10;
 
-    console.log('📊 PDF Structure:', {
-      imageHeight: bracketImg.height,
-      maxPixelsPerPage,
-      totalSlices,
-      totalPages,
-      pageFormat: pageSize.format
+    console.log('📐 Available space:', { 
+      width: availableWidth, 
+      height: availableHeight 
     });
 
-    doc.addPage();
-    addCoverPage(doc, config, totalPages);
+    // ✅ Add header and footer
+    addHeaderAndFooter(doc, config);
 
-    let yOffset = 0;
-    for (let i = 0; i < totalSlices; i++) {
-      doc.addPage();
-      addImageToPage(
-        doc, 
-        bracketImg, 
-        config, 
-        i + 2,
-        totalPages,
-        yOffset,
-        maxPixelsPerPage
-      );
-      yOffset += maxPixelsPerPage;
+    // ✅ Calculate image dimensions to fit and center
+    const imgAspectRatio = bracketImg.width / bracketImg.height;
+    
+    let displayWidth = availableWidth;
+    let displayHeight = displayWidth / imgAspectRatio;
+
+    // If height exceeds available space, scale down
+    if (displayHeight > availableHeight) {
+      displayHeight = availableHeight;
+      displayWidth = displayHeight * imgAspectRatio;
     }
 
+    // ✅ CENTER the bracket
+    const x = MARGIN_LEFT + (availableWidth - displayWidth) / 2;
+    const y = HEADER_HEIGHT + 5 + (availableHeight - displayHeight) / 2;
+
+    console.log('🎯 Final placement:', {
+      x: x.toFixed(2),
+      y: y.toFixed(2),
+      width: displayWidth.toFixed(2),
+      height: displayHeight.toFixed(2),
+      centered: true
+    });
+
+    // ✅ Add bracket image to PDF (centered)
+    doc.addImage(
+      bracketImg.src, 
+      'PNG', 
+      x, 
+      y, 
+      displayWidth, 
+      displayHeight, 
+      undefined, 
+      'FAST'
+    );
+
+    // ✅ Save PDF
     const dateStr = new Date().toISOString().split('T')[0];
-    const filename = `Bracket_${pageSize.format.replace(/ /g, '_')}_${config.eventName.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_${config.categoryName.replace(/ /g, '_')}_${dateStr}.pdf`;
+    const filename = `Bracket_A4_${config.eventName.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_${config.categoryName.replace(/ /g, '_')}_${dateStr}.pdf`;
     
     doc.save(filename);
     console.log(`✅ PDF saved: ${filename}`);
-    console.log(`📏 Format: ${pageSize.format} - Perfect for ${participantCount} participants!`);
+    console.log(`📏 Format: A4 Landscape - Scale: ${scaleFactor} for ${participantCount} participants!`);
 
   } catch (error) {
     console.error('❌ Error exporting PDF:', error);
