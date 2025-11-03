@@ -1256,19 +1256,19 @@ const renderBracketSide = (
                 return (
                   <React.Fragment key={`connectors-${match.id_match}`}>
                     {/* 1️⃣ HORIZONTAL LINE */}
-                    <svg
-                      style={{
-                        position: 'absolute',
-                        left: isRight ? `-${ROUND_GAP / 2}px` : `${CARD_WIDTH}px`,
-                        top: `${cardCenterY - 1}px`, // -1 to center strokeWidth 2 line
-                        width: ROUND_GAP / 2,
-                        height: 2,
-                        pointerEvents: 'none',
-                        zIndex: 5,
-                        overflow: 'visible',
-                        backgroundColor: 'rgba(255, 0, 0, 0.2)', // Debug: Red for horizontal SVG
-                      }}
-                    >
+<svg
+  style={{
+    position: 'absolute',
+    left: isRight ? `-${ROUND_GAP / 2}px` : `${CARD_WIDTH}px`,
+    top: `${cardCenterY - 1}px`,
+    width: ROUND_GAP / 2,
+    height: 2,
+    pointerEvents: 'none',
+    zIndex: 5,
+    overflow: 'visible',
+    // ✅ HAPUS: backgroundColor: 'rgba(255, 0, 0, 0.2)',
+  }}
+>
                       <line
                         x1={isRight ? ROUND_GAP / 2 : 0}
                         y1="1" // Center of the 2px height SVG
@@ -1282,20 +1282,32 @@ const renderBracketSide = (
 
                     {/* 2️⃣ VERTICAL LINE */}
                     {isFirstInPair && targetY !== undefined && (
-                      <svg
-                        style={{
-                          position: 'absolute',
-                          // Position in the middle of the ROUND_GAP
-                          left: isRight ? `-${ROUND_GAP / 2 + 2}px` : `${CARD_WIDTH + ROUND_GAP / 2 - 2}px`, // -2 for 4px width SVG
-                          top: `${verticalLineMinY}px`,
-                          width: '4px', // Small width for vertical line SVG
-                          height: `${verticalLineMaxY - verticalLineMinY}px`,
-                          pointerEvents: 'none',
-                          zIndex: 5,
-                          overflow: 'visible',
-                          backgroundColor: 'rgba(0, 0, 255, 0.2)', // Debug: Blue for vertical SVG
-                        }}
-                      >
+                      <>
+                          {(() => {
+      console.log(`\n🔵 VERTICAL LINE DEBUG:`);
+      console.log(`  Match: ${match.id_match}`);
+      console.log(`  Side: ${side}`);
+      console.log(`  verticalLineMinY: ${verticalLineMinY}px`);
+      console.log(`  verticalLineMaxY: ${verticalLineMaxY}px`);
+      console.log(`  Height: ${verticalLineMaxY - verticalLineMinY}px`);
+      console.log(`  Left: ${isRight ? `-${ROUND_GAP / 2 + 2}px` : `${CARD_WIDTH + ROUND_GAP / 2 - 2}px`}`);
+      console.log(`  Line Y1: ${cardCenterY - verticalLineMinY}px`);
+      console.log(`  Line Y2: ${verticalLineTargetCenterY - verticalLineMinY}px`);
+      return null;
+    })()}
+<svg
+  style={{
+    position: 'absolute',
+    left: isRight ? `-${ROUND_GAP / 2 + 2}px` : `${CARD_WIDTH + ROUND_GAP / 2 - 2}px`,
+    top: `${verticalLineMinY}px`,
+    width: '4px',
+    height: `${verticalLineMaxY - verticalLineMinY}px`,
+    pointerEvents: 'none',
+    zIndex: 5,
+    overflow: 'visible',
+    // ✅ HAPUS: backgroundColor: 'rgba(0, 0, 255, 0.2)',
+  }}
+>
                         {/* Line from first match to target */}
                         <line
                           x1="2" // Center of the 4px width SVG
@@ -1320,6 +1332,7 @@ const renderBracketSide = (
                           />
                         )}
                       </svg>
+                      </>
                     )}
                   </React.Fragment>
                 );
