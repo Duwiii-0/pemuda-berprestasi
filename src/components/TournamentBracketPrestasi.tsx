@@ -1422,42 +1422,43 @@ const renderBracketSide = (
   const maxY = Math.max(y1, y2, y3);
   const lineX = isRight ? -(ROUND_GAP / 2) : CARD_WIDTH + (ROUND_GAP / 2);
   
-  return (
-    <svg
-      style={{
-        position: 'absolute',
-        left: `${lineX}px`,
-        top: `${minY}px`,
-        width: 2,
-        height: `${maxY - minY}px`,
-        pointerEvents: 'none',
-        zIndex: 4,
-        overflow: 'visible',
-        backgroundColor: 'rgba(255, 0, 255, 0.3)' // BRIGHT PINK untuk debug
-      }}
-    >
+ return (
+  <svg
+    style={{
+      position: 'absolute',
+      left: `${lineX}px`,
+      top: `${minY}px`,
+      width: 10,  // ✅ UBAH dari 2 jadi 10 untuk debug
+      height: `${maxY - minY}px`,
+      pointerEvents: 'none',
+      zIndex: 100,  // ✅ UBAH jadi sangat tinggi
+      overflow: 'visible',
+      backgroundColor: 'rgba(255, 0, 255, 0.5)',  // BRIGHT PINK
+      border: '2px solid cyan'  // ✅ TAMBAH border
+    }}
+  >
+    <line
+      x1="5"  // ✅ UBAH dari 1 jadi 5 (tengah SVG)
+      y1={y1 - minY}
+      x2="5"  // ✅ UBAH dari 1 jadi 5
+      y2={y3 - minY}
+      stroke="#FF0000"  // ✅ UBAH jadi merah terang
+      strokeWidth="8"  // ✅ UBAH jadi sangat tebal
+      opacity="1"
+    />
+    
+    {hasPartner && partnerY !== undefined && (
       <line
-        x1="1"
-        y1={y1 - minY}
-        x2="1"
+        x1="5"
+        y1={y2 - minY}
+        x2="5"
         y2={y3 - minY}
-        stroke="#990D35"
-        strokeWidth="5"
+        stroke="#00FF00"  // ✅ UBAH jadi hijau terang
+        strokeWidth="8"
         opacity="1"
       />
-      
-      {hasPartner && partnerY !== undefined && (
-        <line
-          x1="1"
-          y1={y2 - minY}
-          x2="1"
-          y2={y3 - minY}
-          stroke="#990D35"
-          strokeWidth="5"
-          opacity="1"
-        />
-      )}
-    </svg>
+    )}
+  </svg>
   );
 })()}
       {isFirstInPair && targetY !== undefined && (
