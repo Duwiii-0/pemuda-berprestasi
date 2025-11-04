@@ -323,61 +323,79 @@ const handleExportPDF = async () => {
     setShowParticipantPreview(true);
   };
 
-  const generateBracket = async () => {
-    if (!kelasData) return;
-    
-    console.log('🏆 PRESTASI: Auto-generating bracket');
-    
-    setLoading(true);
-    setShowParticipantPreview(false);
-    
-    try {
-      const kompetisiId = kelasData.kompetisi.id_kompetisi;
-      const kelasKejuaraanId = kelasData.id_kelas_kejuaraan;
+const generateBracket = async () => {
+  if (!kelasData) return;
+  
+  console.log('🏆 PRESTASI: Auto-generating bracket');
+  
+  setLoading(true);
+  setShowParticipantPreview(false);
+  
+  try {
+    const kompetisiId = kelasData.kompetisi.id_kompetisi;
+    const kelasKejuaraanId = kelasData.id_kelas_kejuaraan;
 
-      const endpoint = `${apiBaseUrl}/kompetisi/${kompetisiId}/brackets/generate`;
+    const endpoint = `${apiBaseUrl}/kompetisi/${kompetisiId}/brackets/generate`;
+    
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token && { 'Authorization': `Bearer ${token}` })
+      },
+      body: JSON.stringify({
+        kelasKejuaraanId: kelasKejuaraanId,
+        byeParticipantIds: []
+      })
+    });
+
+    // ✅ Handle "bracket already exists" error
+    if (!response.ok) {
+      const errorData = await response.json();
       
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token && { 'Authorization': `Bearer ${token}` })
-        },
-        body: JSON.stringify({
-          kelasKejuaraanId: kelasKejuaraanId,
-          byeParticipantIds: []
-        })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to generate bracket');
+      // ✅ Jika bracket sudah ada, langsung fetch saja
+      if (errorData.message?.includes('sudah dibuat') || 
+          errorData.message?.includes('already exists')) {
+        console.log('ℹ️ Bracket already exists, fetching existing bracket...');
+        await fetchBracketData(kompetisiId, kelasKejuaraanId);
+        
+        showNotification(
+          'info',
+          'Bracket Sudah Ada',
+          'Bracket untuk kelas ini sudah pernah dibuat sebelumnya.',
+          () => setShowModal(false)
+        );
+        return;
       }
-
-      const result = await response.json();
-      console.log('✅ PRESTASI Bracket generated:', result);
-
-      await fetchBracketData(kompetisiId, kelasKejuaraanId);
       
-      showNotification(
-        'success',
-        'Berhasil!',
-        'Bracket berhasil dibuat secara otomatis!',
-        () => setShowModal(false)
-      );
-      
-    } catch (error: any) {
-      console.error('❌ Error generating PRESTASI bracket:', error);
-      showNotification(
-        'error',
-        'Gagal Membuat Bracket',
-        error.message || 'Terjadi kesalahan saat membuat bracket.',
-        () => setShowModal(false)
-      );
-    } finally {
-      setLoading(false);
+      // Error lainnya
+      throw new Error(errorData.message || 'Failed to generate bracket');
     }
-  };
+
+    const result = await response.json();
+    console.log('✅ PRESTASI Bracket generated:', result);
+
+    await fetchBracketData(kompetisiId, kelasKejuaraanId);
+    
+    showNotification(
+      'success',
+      'Berhasil!',
+      'Bracket berhasil dibuat secara otomatis!',
+      () => setShowModal(false)
+    );
+    
+  } catch (error: any) {
+    console.error('❌ Error generating PRESTASI bracket:', error);
+    showNotification(
+      'error',
+      'Gagal Membuat Bracket',
+      error.message || 'Terjadi kesalahan saat membuat bracket.',
+      () => setShowModal(false)
+    );
+  } finally {
+    setLoading(false);
+  }
+};
 
   const shuffleBracket = async () => {
     if (!kelasData) return;

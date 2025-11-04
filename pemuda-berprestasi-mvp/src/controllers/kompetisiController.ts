@@ -358,6 +358,28 @@ static async generateBrackets(req: Request, res: Response) {
       return sendError(res, 'Parameter tidak valid', 400);
     }
 
+    // ✅ CHECK: Apakah bracket sudah ada?
+    const existingBracket = await prisma.tb_bagan.findFirst({
+      where: {
+        id_kompetisi: kompetisiId,
+        id_kelas_kejuaraan: kelasId
+      }
+    });
+
+    if (existingBracket) {
+      console.log('ℹ️ Bracket already exists, returning existing bracket...');
+      
+      // Return existing bracket instead of error
+      const bracket = await BracketService.getBracket(kompetisiId, kelasId);
+      
+      return sendSuccess(
+        res, 
+        bracket,
+        'Bracket sudah pernah dibuat sebelumnya', 
+        200  // ✅ 200 instead of 201
+      );
+    }
+
     const registrations = await prisma.tb_peserta_kompetisi.findMany({
       where: {
         id_kelas_kejuaraan: kelasId,
@@ -417,11 +439,10 @@ static async generateBrackets(req: Request, res: Response) {
       return sendError(res, 'Tidak memiliki akses untuk membuat bagan', 403);
     }
 
-    // ⭐ Generate bracket (BYE auto-calculated in service)
+    // Generate bracket
     const bracket = await BracketService.generateBracket(
       kompetisiId, 
       kelasId
-      // byeParticipantIds REMOVED
     );
 
     console.log(`✅ Bracket generated with ${bracket.matches.length} matches`);
