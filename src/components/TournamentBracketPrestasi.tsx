@@ -2357,7 +2357,7 @@ const getFinalMatchWithPosition = () => {
       
       {/* Lokasi */}
       <p className="text-sm mb-1" style={{ color: '#050505', opacity: 0.7 }}>
-        {kelasData.kompetisi.lokasi}
+        GOR Ranau JSC Palembang
       </p>
       
       {/* Jumlah Kompetitor */}

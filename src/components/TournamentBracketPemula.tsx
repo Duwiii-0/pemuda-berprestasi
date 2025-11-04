@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Trophy, Edit3, Save, CheckCircle, ArrowLeft, AlertTriangle, RefreshCw, Download, Shuffle } from 'lucide-react';
 import { exportBracketFromData } from '../utils/exportBracketPDF';
 import { useAuth } from '../context/authContext';
+import sriwijaya from "../assets/logo/sriwijaya.png";
+import taekwondo from "../assets/logo/taekwondo.png";
 
 interface Peserta {
   id_peserta_kompetisi: number;
@@ -807,7 +809,32 @@ const handleExportPDF = async () => {
     console.log('   classList:', bracketElement.classList);
     console.log('   children:', bracketElement.children.length);
 
-    await exportBracketFromData(kelasData, bracketElement);
+    // ✅ Ambil tanggal dari input manual
+    const dateInput = document.getElementById('tournament-date-display') as HTMLInputElement;
+    const selectedDate = dateInput?.value 
+      ? new Date(dateInput.value).toLocaleDateString('id-ID', { 
+          day: 'numeric', 
+          month: 'long', 
+          year: 'numeric' 
+        })
+      : new Date(kelasData.kompetisi.tanggal_mulai).toLocaleDateString('id-ID', { 
+          day: 'numeric', 
+          month: 'long', 
+          year: 'numeric' 
+        });
+
+    // ✅ Siapkan metadata untuk PDF header
+    const metadata = {
+      logoPBTI: taekwondo,
+      logoEvent: sriwijaya,
+      namaKejuaraan: kelasData.kompetisi.nama_event,
+      kelas: `${kelasData.kelompok?.nama_kelompok} ${kelasData.kelas_berat?.jenis_kelamin === 'LAKI_LAKI' ? 'Male' : 'Female'} ${kelasData.kelas_berat?.nama_kelas || kelasData.poomsae?.nama_kelas}`,
+      tanggalTanding: selectedDate, // ✅ Pakai tanggal dari input
+      jumlahKompetitor: approvedParticipants.length,
+      lokasi: kelasData.kompetisi.lokasi
+    };
+
+    await exportBracketFromData(kelasData, bracketElement, metadata);
 
     showNotification(
       'success',
@@ -827,6 +854,7 @@ const handleExportPDF = async () => {
     setExportingPDF(false);
   }
 };
+
   const leaderboard = generateLeaderboard();
 
 return (
@@ -962,17 +990,62 @@ return (
           {/* CENTER: Bracket Container */}
           <div className="w-full">    
           <div ref={bracketRef} className="tournament-layout bg-white p-6 rounded-lg">
-            {/* Title for PDF */}
-            <div className="mb-6 text-center">
-              <h2 className="text-2xl font-bold" style={{ color: '#990D35' }}>
-                Tournament Bracket - PEMULA
-              </h2>
-              <p className="text-sm mt-2" style={{ color: '#050505', opacity: 0.7 }}>
-                {kelasData.kelompok?.nama_kelompok} {kelasData.kelas_berat?.jenis_kelamin === 'LAKI_LAKI' ? 'Male' : 'Female'} {kelasData.kelas_berat?.nama_kelas || kelasData.poomsae?.nama_kelas}
-              </p>
-              <p className="text-xs mt-1" style={{ color: '#050505', opacity: 0.6 }}>
-                {kelasData.kompetisi.nama_event} • {kelasData.kompetisi.lokasi}
-              </p>
+            {/* Header Sederhana - Tanpa Border */}
+            <div className="mb-4">
+              {/* Header 3 Kolom - Compact */}
+              <div className="flex items-start justify-between gap-4 mb-3">
+                {/* KOLOM KIRI - Logo PBTI */}
+                <div className="flex-shrink-0 w-20">
+                  <img 
+                    src={taekwondo} 
+                    alt="PBTI Logo" 
+                    className="h-16 w-auto object-contain"
+                  />
+                </div>
+                
+                {/* KOLOM TENGAH - Info Kejuaraan */}
+                <div className="flex-1 text-center px-3">
+                  {/* Nama Kejuaraan */}
+                  <h2 className="text-xl font-bold mb-1" style={{ color: '#990D35' }}>
+                    {kelasData.kompetisi.nama_event}
+                  </h2>
+                  
+                  {/* Detail Kelas */}
+                  <p className="text-base font-semibold mb-1" style={{ color: '#050505' }}>
+                    {kelasData.kelompok?.nama_kelompok}{' '}
+                    {kelasData.kelas_berat?.jenis_kelamin === 'LAKI_LAKI' ? 'Male' : 'Female'}{' '}
+                    {kelasData.kelas_berat?.nama_kelas || kelasData.poomsae?.nama_kelas}
+                  </p>
+                  
+                  {/* Tanggal - Input Manual */}
+                  <input
+                    type="date"
+                    id="tournament-date-display"
+                    defaultValue={new Date(kelasData.kompetisi.tanggal_mulai).toISOString().split('T')[0]}
+                    className="text-sm px-2 py-1 rounded border text-center mb-1"
+                    style={{ borderColor: '#990D35', color: '#050505' }}
+                  />
+                  
+                  {/* Lokasi */}
+                  <p className="text-sm mb-1" style={{ color: '#050505', opacity: 0.7 }}>
+                    {kelasData.kompetisi.lokasi}
+                  </p>
+                  
+                  {/* Jumlah Kompetitor */}
+                  <p className="text-sm font-medium" style={{ color: '#990D35' }}>
+                    {approvedParticipants.length} Kompetitor
+                  </p>
+                </div>
+                
+                {/* KOLOM KANAN - Logo Event */}
+                <div className="flex-shrink-0 w-20">
+                  <img 
+                    src={sriwijaya} 
+                    alt="Event Logo" 
+                    className="h-16 w-auto object-contain"
+                  />
+                </div>
+              </div>
             </div>
 
               {/* ROUND 1 MATCHES */}
