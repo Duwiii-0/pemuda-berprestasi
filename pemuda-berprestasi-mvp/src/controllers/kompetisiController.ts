@@ -358,28 +358,6 @@ static async generateBrackets(req: Request, res: Response) {
       return sendError(res, 'Parameter tidak valid', 400);
     }
 
-    // ✅ CHECK: Apakah bracket sudah ada?
-    const existingBracket = await prisma.tb_bagan.findFirst({
-      where: {
-        id_kompetisi: kompetisiId,
-        id_kelas_kejuaraan: kelasId
-      }
-    });
-
-    if (existingBracket) {
-      console.log('ℹ️ Bracket already exists, returning existing bracket...');
-      
-      // Return existing bracket instead of error
-      const bracket = await BracketService.getBracket(kompetisiId, kelasId);
-      
-      return sendSuccess(
-        res, 
-        bracket,
-        'Bracket sudah pernah dibuat sebelumnya', 
-        200  // ✅ 200 instead of 201
-      );
-    }
-
     const registrations = await prisma.tb_peserta_kompetisi.findMany({
       where: {
         id_kelas_kejuaraan: kelasId,
@@ -439,10 +417,11 @@ static async generateBrackets(req: Request, res: Response) {
       return sendError(res, 'Tidak memiliki akses untuk membuat bagan', 403);
     }
 
-    // Generate bracket
+    // ⭐ Generate bracket (BYE auto-calculated in service)
     const bracket = await BracketService.generateBracket(
       kompetisiId, 
       kelasId
+      // byeParticipantIds REMOVED
     );
 
     console.log(`✅ Bracket generated with ${bracket.matches.length} matches`);
@@ -527,60 +506,13 @@ static async getBracketByClass(req: Request, res: Response) {
       return sendError(res, 'Parameter tidak valid', 400);
     }
 
-    // ✅ FIX: Ambil data kelas dengan relasi kompetisi lengkap
-    const kelasData = await prisma.tb_kelas_kejuaraan.findUnique({
-      where: { id_kelas_kejuaraan: kelasId },
-      include: {
-        kompetisi: {
-          select: {
-            id_kompetisi: true,
-            nama_event: true,        // ✅ PENTING!
-            tanggal_mulai: true,
-            tanggal_selesai: true,
-            lokasi: true,
-            status: true
-          }
-        },
-        kategori_event: true,
-        kelompok: true,
-        kelas_berat: true,
-        poomsae: true,
-        peserta_kompetisi: {
-          where: { status: 'APPROVED' },
-          include: {
-            atlet: {
-              include: {
-                dojang: true
-              }
-            },
-            anggota_tim: {
-              include: {
-                atlet: true
-              }
-            }
-          }
-        }
-      }
-    });
-
-    if (!kelasData) {
-      return sendError(res, 'Kelas kejuaraan tidak ditemukan', 404);
-    }
-
-    // Get bracket
     const bracket = await BracketService.getBracket(kompetisiId, kelasId);
     
     if (!bracket) {
       return sendError(res, 'Bagan tidak ditemukan untuk kelas ini', 404);
     }
 
-    // ✅ Combine kelas data with bracket
-    const response = {
-      ...kelasData,
-      bagan: [bracket] // Keep structure consistent with frontend expectation
-    };
-
-    return sendSuccess(res, response, 'Bagan kelas kejuaraan berhasil diambil');
+    return sendSuccess(res, bracket, 'Bagan kelas kejuaraan berhasil diambil');
   } catch (error: any) {
     console.error('Controller - Error getting bracket by class:', error);
     return sendError(res, error.message || 'Gagal mengambil bagan kelas', 400);
