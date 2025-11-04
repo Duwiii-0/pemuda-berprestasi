@@ -19,12 +19,12 @@ interface ExportConfig {
 // ✅ FIXED A4 LANDSCAPE
 const PAGE_WIDTH = 297;
 const PAGE_HEIGHT = 210;
-const MARGIN_TOP = 15;
-const MARGIN_BOTTOM = 10;
+const MARGIN_TOP = 10;
+const MARGIN_BOTTOM = 8;
 const MARGIN_LEFT = 10;
 const MARGIN_RIGHT = 10;
-const HEADER_HEIGHT = 35; // ✅ INCREASED dari 18 ke 35 untuk accommodate logo
-const FOOTER_HEIGHT = 10;
+const HEADER_HEIGHT = 28; // ✅ INCREASED dari 18 ke 35 untuk accommodate logo
+const FOOTER_HEIGHT = 8;
 
 const THEME = {
   primary: '#990D35',
@@ -70,96 +70,73 @@ const addHeaderAndFooter = async (
   config: ExportConfig
 ) => {
   const headerY = MARGIN_TOP;
-  const logoSize = 20; // mm
-  const logoY = headerY + 2;
+  const logoSize = 18; // ✅ Reduced dari 20
+  const logoY = headerY + 1; // ✅ Reduced spacing
 
-  // ✅ LOGO PBTI (Kiri)
+  // Logo PBTI (Kiri)
   if (config.logoPBTI) {
     try {
       const pbtiImg = await loadImage(config.logoPBTI);
-      doc.addImage(
-        pbtiImg, 
-        'PNG', 
-        MARGIN_LEFT + 5, 
-        logoY, 
-        logoSize, 
-        logoSize, 
-        undefined, 
-        'FAST'
-      );
+      doc.addImage(pbtiImg, 'PNG', MARGIN_LEFT + 3, logoY, logoSize, logoSize, undefined, 'FAST');
       console.log('✅ Logo PBTI added');
     } catch (error) {
       console.warn('⚠️ Failed to load PBTI logo:', error);
     }
   }
 
-  // ✅ LOGO EVENT (Kanan)
+  // Logo Event (Kanan)
   if (config.logoEvent) {
     try {
       const eventImg = await loadImage(config.logoEvent);
-      doc.addImage(
-        eventImg, 
-        'PNG', 
-        PAGE_WIDTH - MARGIN_RIGHT - logoSize - 5, 
-        logoY, 
-        logoSize, 
-        logoSize, 
-        undefined, 
-        'FAST'
-      );
+      doc.addImage(eventImg, 'PNG', PAGE_WIDTH - MARGIN_RIGHT - logoSize - 3, logoY, logoSize, logoSize, undefined, 'FAST');
       console.log('✅ Logo Event added');
     } catch (error) {
       console.warn('⚠️ Failed to load Event logo:', error);
     }
   }
 
-  // ✅ TEXT INFO (Tengah)
+  // TEXT INFO (Tengah) - Compact
   const centerX = PAGE_WIDTH / 2;
-  let textY = headerY + 5;
+  let textY = headerY + 4; // ✅ Reduced spacing
 
   // Nama Event
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(14);
+  doc.setFontSize(13); // ✅ Reduced dari 14
   doc.setTextColor(THEME.primary);
   doc.text(config.eventName, centerX, textY, { align: 'center' });
-  textY += 6;
+  textY += 5; // ✅ Reduced spacing
 
   // Kategori
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(11);
+  doc.setFontSize(10); // ✅ Reduced dari 11
   doc.setTextColor(THEME.text);
   doc.text(config.categoryName, centerX, textY, { align: 'center' });
-  textY += 5;
+  textY += 4; // ✅ Reduced spacing
 
-  // Tanggal & Lokasi
+  // Tanggal (Single line - dari input manual)
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9);
+  doc.setFontSize(8); // ✅ Reduced dari 9
   doc.setTextColor(THEME.textSecondary);
-  doc.text(`📅 ${config.dateRange}`, centerX, textY, { align: 'center' });
-  textY += 4;
-  doc.text(`📍 ${config.location}`, centerX, textY, { align: 'center' });
-  textY += 4;
-  
-  // Jumlah Kompetitor
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(9);
-  doc.setTextColor(THEME.primary);
-  doc.text(`👥 ${config.totalParticipants} Kompetitor`, centerX, textY, { align: 'center' });
+  doc.text(`${config.dateRange}`, centerX, textY, { align: 'center' });
+  textY += 3.5; // ✅ Reduced spacing
 
-  // ✅ FOOTER
-  const footerY = PAGE_HEIGHT - MARGIN_BOTTOM;
+  // Lokasi & Kompetitor (dalam 1 baris)
+  doc.text(`${config.location}  •  ${config.totalParticipants} Kompetitor`, centerX, textY, { align: 'center' });
+
+  // FOOTER - Compact
+  const footerY = PAGE_HEIGHT - MARGIN_BOTTOM + 2;
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8);
+  doc.setFontSize(7); // ✅ Reduced dari 8
   doc.setTextColor(THEME.textSecondary);
   
   const exportDate = new Date().toLocaleDateString('id-ID', {
     day: '2-digit',
-    month: 'long',
+    month: 'short',
     year: 'numeric',
   });
   
   doc.text(exportDate, MARGIN_LEFT, footerY);
-  doc.text('Tournament Bracket - Prestasi Category', PAGE_WIDTH / 2, footerY, { align: 'center' });
+  doc.text('Tournament Bracket - Prestasi', PAGE_WIDTH / 2, footerY, { align: 'center' });
 };
 
 // =================================================================================================
@@ -349,7 +326,7 @@ export const exportBracketFromData = async (
     await addHeaderAndFooter(doc, config);
 
     // ✅ Calculate available space (adjusted for larger header)
-    const contentStartY = HEADER_HEIGHT + MARGIN_TOP + 2; // +2 for spacing
+    const contentStartY = HEADER_HEIGHT + MARGIN_TOP; // +2 for spacing
     const contentEndY = PAGE_HEIGHT - FOOTER_HEIGHT - MARGIN_BOTTOM;
     const maxWidth = PAGE_WIDTH - MARGIN_LEFT - MARGIN_RIGHT;
     const maxHeight = contentEndY - contentStartY;

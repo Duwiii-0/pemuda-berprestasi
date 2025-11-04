@@ -179,18 +179,31 @@ const handleExportPDF = async () => {
       throw new Error('Bracket element not found');
     }
 
+    // ✅ Ambil tanggal dari input manual
+    const dateInput = document.getElementById('tournament-date-display') as HTMLInputElement;
+    const selectedDate = dateInput?.value 
+      ? new Date(dateInput.value).toLocaleDateString('id-ID', { 
+          day: 'numeric', 
+          month: 'long', 
+          year: 'numeric' 
+        })
+      : new Date(kelasData.kompetisi.tanggal_mulai).toLocaleDateString('id-ID', { 
+          day: 'numeric', 
+          month: 'long', 
+          year: 'numeric' 
+        });
+
     // ✅ Siapkan metadata untuk PDF header
     const metadata = {
       logoPBTI: taekwondo,
       logoEvent: sriwijaya,
       namaKejuaraan: kelasData.kompetisi.nama_event,
       kelas: `${kelasData.kelompok?.nama_kelompok} ${kelasData.kelas_berat?.jenis_kelamin === 'LAKI_LAKI' ? 'Male' : 'Female'} ${kelasData.kelas_berat?.nama_kelas || kelasData.poomsae?.nama_kelas}`,
-      tanggalTanding: `${new Date(kelasData.kompetisi.tanggal_mulai).toLocaleDateString('id-ID')} - ${new Date(kelasData.kompetisi.tanggal_selesai).toLocaleDateString('id-ID')}`,
+      tanggalTanding: selectedDate, // ✅ Pakai tanggal dari input
       jumlahKompetitor: approvedParticipants.length,
       lokasi: kelasData.kompetisi.lokasi
     };
 
-    // ✅ Pass metadata ke fungsi export
     await exportBracketFromData(kelasData, bracketElement, metadata);
 
     showNotification(
@@ -2288,72 +2301,59 @@ const getFinalMatchWithPosition = () => {
         <div className="p-6">
           <div id="bracket-export-area">
             {/* Title for PDF */}
-            {/* AFTER - Header Baru dengan Logo */}
-<div className="mb-6">
-  {/* Header dengan Logo - 3 Kolom */}
-  <div className="flex items-center justify-between gap-6 mb-4 pb-4 border-b-2" style={{ borderColor: '#990D35' }}>
+{/* Header Sederhana - Tanpa Border */}
+<div className="mb-4">
+  {/* Header 3 Kolom - Compact */}
+  <div className="flex items-start justify-between gap-4 mb-3">
     {/* KOLOM KIRI - Logo PBTI */}
-    <div className="flex-shrink-0 w-24">
+    <div className="flex-shrink-0 w-20">
       <img 
         src={taekwondo} 
         alt="PBTI Logo" 
-        className="h-20 w-auto object-contain mx-auto"
+        className="h-16 w-auto object-contain"
       />
     </div>
     
     {/* KOLOM TENGAH - Info Kejuaraan */}
-    <div className="flex-1 text-center px-4">
+    <div className="flex-1 text-center px-3">
       {/* Nama Kejuaraan */}
-      <h2 className="text-2xl font-bold mb-3" style={{ color: '#990D35' }}>
+      <h2 className="text-xl font-bold mb-1" style={{ color: '#990D35' }}>
         {kelasData.kompetisi.nama_event}
       </h2>
       
       {/* Detail Kelas */}
-      <div className="space-y-1.5">
-        <p className="text-lg font-semibold" style={{ color: '#050505' }}>
-          {kelasData.kelompok?.nama_kelompok}{' '}
-          {kelasData.kelas_berat?.jenis_kelamin === 'LAKI_LAKI' ? 'Male' : 'Female'}{' '}
-          {kelasData.kelas_berat?.nama_kelas || kelasData.poomsae?.nama_kelas}
-        </p>
-        
-        {/* Tanggal */}
-        <p className="text-sm flex items-center justify-center gap-2" style={{ color: '#050505', opacity: 0.7 }}>
-          <span>📅</span>
-          <span>
-            {new Date(kelasData.kompetisi.tanggal_mulai).toLocaleDateString('id-ID', { 
-              day: '2-digit', 
-              month: 'long', 
-              year: 'numeric' 
-            })}
-            {' - '}
-            {new Date(kelasData.kompetisi.tanggal_selesai).toLocaleDateString('id-ID', { 
-              day: '2-digit', 
-              month: 'long', 
-              year: 'numeric' 
-            })}
-          </span>
-        </p>
-        
-        {/* Lokasi */}
-        <p className="text-sm flex items-center justify-center gap-2" style={{ color: '#050505', opacity: 0.7 }}>
-          <span>📍</span>
-          <span>{kelasData.kompetisi.lokasi}</span>
-        </p>
-        
-        {/* Jumlah Kompetitor */}
-        <p className="text-sm font-medium flex items-center justify-center gap-2" style={{ color: '#990D35' }}>
-          <span>👥</span>
-          <span>{approvedParticipants.length} Kompetitor</span>
-        </p>
-      </div>
+      <p className="text-base font-semibold mb-1" style={{ color: '#050505' }}>
+        {kelasData.kelompok?.nama_kelompok}{' '}
+        {kelasData.kelas_berat?.jenis_kelamin === 'LAKI_LAKI' ? 'Male' : 'Female'}{' '}
+        {kelasData.kelas_berat?.nama_kelas || kelasData.poomsae?.nama_kelas}
+      </p>
+      
+      {/* Tanggal - Input Manual */}
+      <input
+        type="date"
+        id="tournament-date-display"
+        defaultValue={new Date(kelasData.kompetisi.tanggal_mulai).toISOString().split('T')[0]}
+        className="text-sm px-2 py-1 rounded border text-center mb-1"
+        style={{ borderColor: '#990D35', color: '#050505' }}
+      />
+      
+      {/* Lokasi */}
+      <p className="text-sm mb-1" style={{ color: '#050505', opacity: 0.7 }}>
+        {kelasData.kompetisi.lokasi}
+      </p>
+      
+      {/* Jumlah Kompetitor */}
+      <p className="text-sm font-medium" style={{ color: '#990D35' }}>
+        {approvedParticipants.length} Kompetitor
+      </p>
     </div>
     
     {/* KOLOM KANAN - Logo Event */}
-    <div className="flex-shrink-0 w-24">
+    <div className="flex-shrink-0 w-20">
       <img 
         src={sriwijaya} 
         alt="Event Logo" 
-        className="h-20 w-auto object-contain mx-auto"
+        className="h-16 w-auto object-contain"
       />
     </div>
   </div>

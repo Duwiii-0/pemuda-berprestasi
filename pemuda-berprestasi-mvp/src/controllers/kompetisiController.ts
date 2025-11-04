@@ -506,13 +506,60 @@ static async getBracketByClass(req: Request, res: Response) {
       return sendError(res, 'Parameter tidak valid', 400);
     }
 
+    // ✅ FIX: Ambil data kelas dengan relasi kompetisi lengkap
+    const kelasData = await prisma.tb_kelas_kejuaraan.findUnique({
+      where: { id_kelas_kejuaraan: kelasId },
+      include: {
+        kompetisi: {
+          select: {
+            id_kompetisi: true,
+            nama_event: true,        // ✅ PENTING!
+            tanggal_mulai: true,
+            tanggal_selesai: true,
+            lokasi: true,
+            status: true
+          }
+        },
+        kategori_event: true,
+        kelompok: true,
+        kelas_berat: true,
+        poomsae: true,
+        peserta_kompetisi: {
+          where: { status: 'APPROVED' },
+          include: {
+            atlet: {
+              include: {
+                dojang: true
+              }
+            },
+            anggota_tim: {
+              include: {
+                atlet: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    if (!kelasData) {
+      return sendError(res, 'Kelas kejuaraan tidak ditemukan', 404);
+    }
+
+    // Get bracket
     const bracket = await BracketService.getBracket(kompetisiId, kelasId);
     
     if (!bracket) {
       return sendError(res, 'Bagan tidak ditemukan untuk kelas ini', 404);
     }
 
-    return sendSuccess(res, bracket, 'Bagan kelas kejuaraan berhasil diambil');
+    // ✅ Combine kelas data with bracket
+    const response = {
+      ...kelasData,
+      bagan: [bracket] // Keep structure consistent with frontend expectation
+    };
+
+    return sendSuccess(res, response, 'Bagan kelas kejuaraan berhasil diambil');
   } catch (error: any) {
     console.error('Controller - Error getting bracket by class:', error);
     return sendError(res, error.message || 'Gagal mengambil bagan kelas', 400);
