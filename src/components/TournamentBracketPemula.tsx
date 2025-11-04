@@ -989,7 +989,6 @@ return (
         <div className="flex flex-col items-center gap-8 max-w-4xl mx-auto">
           {/* CENTER: Bracket Container */}
           <div className="w-full">    
-          <div ref={bracketRef} className="tournament-layout bg-white p-6 rounded-lg">
             {/* Header Sederhana - Tanpa Border */}
             <div className="mb-4">
               {/* Header 3 Kolom - Compact */}
@@ -1049,6 +1048,7 @@ return (
             </div>
 
               {/* ROUND 1 MATCHES */}
+          <div ref={bracketRef} className="tournament-layout bg-white p-6 rounded-lg">
               <div className="space-y-4">
                 {matches.filter(m => m.ronde === 1).map((match, matchIndex) => (
                   <div
