@@ -11,6 +11,9 @@ interface ExportConfig {
   location: string;
   dateRange: string;
   totalParticipants: number;
+  // ✅ TAMBAHAN untuk logo dan info header
+  logoPBTI?: string;
+  logoEvent?: string;
 }
 
 // ✅ FIXED A4 LANDSCAPE
@@ -20,7 +23,7 @@ const MARGIN_TOP = 15;
 const MARGIN_BOTTOM = 10;
 const MARGIN_LEFT = 10;
 const MARGIN_RIGHT = 10;
-const HEADER_HEIGHT = 18;
+const HEADER_HEIGHT = 35; // ✅ INCREASED dari 18 ke 35 untuk accommodate logo
 const FOOTER_HEIGHT = 10;
 
 const THEME = {
@@ -34,45 +37,127 @@ const THEME = {
 
 const getScaleFactor = (participantCount: number): number => {
   if (participantCount > 16) {
-    return 1.25; // Banyak peserta → sedikit diperbesar
+    return 1.25;
   } else if (participantCount > 8) {
-    return 1.35; // Sedang → lebih besar
+    return 1.35;
   } else if (participantCount > 4) {
-    return 1.45; // Agak besar
+    return 1.45;
   } else {
-    return 1.55; // Sedikit peserta → paling besar
+    return 1.55;
   }
 };
 
 // =================================================================================================
-// HEADER & FOOTER
+// ✅ NEW: LOAD IMAGE HELPER
 // =================================================================================================
 
-const addHeaderAndFooter = (
+const loadImage = (src: string): Promise<HTMLImageElement> => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = src;
+  });
+};
+
+// =================================================================================================
+// HEADER & FOOTER - WITH LOGOS
+// =================================================================================================
+
+const addHeaderAndFooter = async (
   doc: jsPDF,
   config: ExportConfig
 ) => {
-  // Header
+  const headerY = MARGIN_TOP;
+  const logoSize = 20; // mm
+  const logoY = headerY + 2;
+
+  // ✅ LOGO PBTI (Kiri)
+  if (config.logoPBTI) {
+    try {
+      const pbtiImg = await loadImage(config.logoPBTI);
+      doc.addImage(
+        pbtiImg, 
+        'PNG', 
+        MARGIN_LEFT + 5, 
+        logoY, 
+        logoSize, 
+        logoSize, 
+        undefined, 
+        'FAST'
+      );
+      console.log('✅ Logo PBTI added');
+    } catch (error) {
+      console.warn('⚠️ Failed to load PBTI logo:', error);
+    }
+  }
+
+  // ✅ LOGO EVENT (Kanan)
+  if (config.logoEvent) {
+    try {
+      const eventImg = await loadImage(config.logoEvent);
+      doc.addImage(
+        eventImg, 
+        'PNG', 
+        PAGE_WIDTH - MARGIN_RIGHT - logoSize - 5, 
+        logoY, 
+        logoSize, 
+        logoSize, 
+        undefined, 
+        'FAST'
+      );
+      console.log('✅ Logo Event added');
+    } catch (error) {
+      console.warn('⚠️ Failed to load Event logo:', error);
+    }
+  }
+
+  // ✅ TEXT INFO (Tengah)
+  const centerX = PAGE_WIDTH / 2;
+  let textY = headerY + 5;
+
+  // Nama Event
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(13);
+  doc.setFontSize(14);
+  doc.setTextColor(THEME.primary);
+  doc.text(config.eventName, centerX, textY, { align: 'center' });
+  textY += 6;
+
+  // Kategori
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11);
   doc.setTextColor(THEME.text);
-  doc.text(config.eventName, PAGE_WIDTH / 2, MARGIN_TOP + 5, { align: 'center' });
+  doc.text(config.categoryName, centerX, textY, { align: 'center' });
+  textY += 5;
 
+  // Tanggal & Lokasi
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(10);
+  doc.setFontSize(9);
   doc.setTextColor(THEME.textSecondary);
-  doc.text(config.categoryName, PAGE_WIDTH / 2, MARGIN_TOP + 11, { align: 'center' });
+  doc.text(`📅 ${config.dateRange}`, centerX, textY, { align: 'center' });
+  textY += 4;
+  doc.text(`📍 ${config.location}`, centerX, textY, { align: 'center' });
+  textY += 4;
+  
+  // Jumlah Kompetitor
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9);
+  doc.setTextColor(THEME.primary);
+  doc.text(`👥 ${config.totalParticipants} Kompetitor`, centerX, textY, { align: 'center' });
 
-  // Footer
+  // ✅ FOOTER
   const footerY = PAGE_HEIGHT - MARGIN_BOTTOM;
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8);
   doc.setTextColor(THEME.textSecondary);
+  
   const exportDate = new Date().toLocaleDateString('id-ID', {
     day: '2-digit',
     month: 'long',
     year: 'numeric',
   });
+  
   doc.text(exportDate, MARGIN_LEFT, footerY);
   doc.text('Tournament Bracket - Prestasi Category', PAGE_WIDTH / 2, footerY, { align: 'center' });
 };
@@ -114,6 +199,7 @@ const convertElementToImage = async (
   // Hide unwanted elements
   const hiddenElements: Array<{ el: HTMLElement; originalDisplay: string; originalVisibility: string }> = [];
   
+  // ✅ HIDE: Leaderboard
   const leaderboards = document.querySelectorAll('#prestasi-leaderboard, #pemula-leaderboard, [id$="-leaderboard"]');
   leaderboards.forEach(el => {
     const htmlEl = el as HTMLElement;
@@ -126,6 +212,19 @@ const convertElementToImage = async (
     htmlEl.style.visibility = 'hidden';
   });
 
+  // ✅ HIDE: Header dengan logo (karena sudah di PDF header)
+  const headerWithLogos = element.querySelector('.flex.items-center.justify-between.gap-6.mb-4') as HTMLElement;
+  if (headerWithLogos && headerWithLogos.querySelector('img')) {
+    hiddenElements.push({
+      el: headerWithLogos,
+      originalDisplay: headerWithLogos.style.display,
+      originalVisibility: headerWithLogos.style.visibility
+    });
+    headerWithLogos.style.display = 'none';
+    headerWithLogos.style.visibility = 'hidden';
+  }
+
+  // ✅ HIDE: All buttons outside bracket
   const allButtons = document.querySelectorAll('button');
   allButtons.forEach(btn => {
     const htmlBtn = btn as HTMLElement;
@@ -149,18 +248,17 @@ const convertElementToImage = async (
   console.log('📐 Original dimensions:', { width, height });
   console.log('🔍 Applying scale:', scaleFactor);
 
-  // ✅ CAPTURE dengan scale yang sudah disesuaikan
   console.log('📸 Capturing image...');
   const dataUrl = await htmlToImage.toPng(bracketVisual, {
     quality: 1,
-    pixelRatio: 3 * scaleFactor, // ✅ INCREASED dari 2 ke 3 untuk kualitas lebih tajam
+    pixelRatio: 3 * scaleFactor,
     width: width,
     height: height,
     backgroundColor: '#FFFFFF',
     cacheBust: true,
     style: {
       transform: `scale(${1.0})`,
-      transformOrigin: 'center center', // ✅ CHANGED ke center
+      transformOrigin: 'center center',
       margin: '0',
     },
     filter: (node) => {
@@ -192,41 +290,51 @@ const convertElementToImage = async (
 };
 
 // =================================================================================================
-// MAIN EXPORT FUNCTION - SINGLE A4 PAGE
+// ✅ MAIN EXPORT FUNCTION - WITH METADATA SUPPORT
 // =================================================================================================
 
 export const exportBracketFromData = async (
   kelasData: any, 
-  bracketElement: HTMLElement
+  bracketElement: HTMLElement,
+  metadata?: {  // ✅ Parameter ketiga (optional)
+    logoPBTI?: string;
+    logoEvent?: string;
+    namaKejuaraan?: string;
+    kelas?: string;
+    tanggalTanding?: string;
+    jumlahKompetitor?: number;
+    lokasi?: string;
+  }
 ): Promise<void> => {
-  console.log('🚀 Starting PDF export (A4 Single Page)...');
+  console.log('🚀 Starting PDF export (A4 Single Page with Logos)...');
   
   const approvedParticipants = kelasData.peserta_kompetisi.filter((p: any) => p.status === 'APPROVED');
   const participantCount = approvedParticipants.length;
   
-  // ✅ Get dynamic scale based on participant count
   const scaleFactor = getScaleFactor(participantCount);
   
   console.log(`📄 Format: A4 Landscape (${PAGE_WIDTH}x${PAGE_HEIGHT}mm)`);
   console.log(`👥 Participants: ${participantCount}`);
-  console.log(`📏 Scale factor: ${scaleFactor} (smaller = more participants)`);
+  console.log(`📏 Scale factor: ${scaleFactor}`);
   
+  // ✅ Use metadata if provided, otherwise use kelasData
   const config: ExportConfig = {
-    eventName: kelasData.kompetisi.nama_event,
-    categoryName: `${kelasData.kelompok?.nama_kelompok || ''} ${
+    eventName: metadata?.namaKejuaraan || kelasData.kompetisi.nama_event,
+    categoryName: metadata?.kelas || `${kelasData.kelompok?.nama_kelompok || ''} ${
       kelasData.kelas_berat?.jenis_kelamin === 'LAKI_LAKI' ? 'Male' : 'Female'
     } ${kelasData.kelas_berat?.nama_kelas || kelasData.poomsae?.nama_kelas || ''}`.trim(),
-    location: kelasData.kompetisi.lokasi,
-    dateRange: `${new Date(kelasData.kompetisi.tanggal_mulai).toLocaleDateString('id-ID', {
+    location: metadata?.lokasi || kelasData.kompetisi.lokasi,
+    dateRange: metadata?.tanggalTanding || `${new Date(kelasData.kompetisi.tanggal_mulai).toLocaleDateString('id-ID', {
       day: 'numeric', month: 'long', year: 'numeric'
     })} - ${new Date(kelasData.kompetisi.tanggal_selesai).toLocaleDateString('id-ID', {
       day: 'numeric', month: 'long', year: 'numeric'
     })}`,
-    totalParticipants: participantCount,
+    totalParticipants: metadata?.jumlahKompetitor || participantCount,
+    logoPBTI: metadata?.logoPBTI,
+    logoEvent: metadata?.logoEvent,
   };
 
   try {
-    // ✅ Create A4 Landscape PDF
     const doc = new jsPDF({ 
       orientation: 'landscape', 
       unit: 'mm', 
@@ -234,14 +342,14 @@ export const exportBracketFromData = async (
       compress: true 
     });
 
-    // ✅ Capture bracket with dynamic scale
+    // ✅ Capture bracket FIRST
     const bracketImg = await convertElementToImage(bracketElement, scaleFactor);
 
-    // ✅ Add header and footer FIRST
-    addHeaderAndFooter(doc, config);
+    // ✅ Add header with logos AFTER capture (async function now)
+    await addHeaderAndFooter(doc, config);
 
-    // ✅ Calculate MAXIMUM available space
-    const contentStartY = HEADER_HEIGHT + MARGIN_TOP;
+    // ✅ Calculate available space (adjusted for larger header)
+    const contentStartY = HEADER_HEIGHT + MARGIN_TOP + 2; // +2 for spacing
     const contentEndY = PAGE_HEIGHT - FOOTER_HEIGHT - MARGIN_BOTTOM;
     const maxWidth = PAGE_WIDTH - MARGIN_LEFT - MARGIN_RIGHT;
     const maxHeight = contentEndY - contentStartY;
@@ -253,15 +361,14 @@ export const exportBracketFromData = async (
       endY: contentEndY.toFixed(2)
     });
 
-    // ✅ Calculate image dimensions to MAXIMIZE space usage
+    // Calculate image dimensions
     const imgAspectRatio = bracketImg.width / bracketImg.height;
     
-    let displayWidth = maxWidth; // Start with FULL width
+    let displayWidth = maxWidth;
     let displayHeight = displayWidth / imgAspectRatio;
 
-    // If height exceeds, scale based on height instead
     if (displayHeight > maxHeight) {
-      displayHeight = maxHeight; // Use FULL height
+      displayHeight = maxHeight;
       displayWidth = displayHeight * imgAspectRatio;
     }
 
@@ -273,7 +380,7 @@ export const exportBracketFromData = async (
       heightUsage: `${((displayHeight / maxHeight) * 100).toFixed(1)}%`
     });
 
-    // ✅ PERFECT CENTER calculation
+    // Perfect center calculation
     const centerX = MARGIN_LEFT + (maxWidth / 2);
     const centerY = contentStartY + (maxHeight / 2);
 
@@ -282,14 +389,10 @@ export const exportBracketFromData = async (
 
     console.log('🎯 Perfect centering:', {
       pageCenter: { x: centerX.toFixed(2), y: centerY.toFixed(2) },
-      imageTopLeft: { x: x.toFixed(2), y: y.toFixed(2) },
-      imageCenter: { 
-        x: (x + displayWidth / 2).toFixed(2), 
-        y: (y + displayHeight / 2).toFixed(2) 
-      }
+      imageTopLeft: { x: x.toFixed(2), y: y.toFixed(2) }
     });
 
-    // ✅ Add bracket image to PDF (PERFECTLY CENTERED & MAXIMIZED)
+    // Add bracket image to PDF
     doc.addImage(
       bracketImg.src, 
       'PNG', 
@@ -301,13 +404,13 @@ export const exportBracketFromData = async (
       'FAST'
     );
 
-    // ✅ Save PDF
+    // Save PDF
     const dateStr = new Date().toISOString().split('T')[0];
     const filename = `Bracket_A4_${config.eventName.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_${config.categoryName.replace(/ /g, '_')}_${dateStr}.pdf`;
     
     doc.save(filename);
     console.log(`✅ PDF saved: ${filename}`);
-    console.log(`📏 Final: Scale ${scaleFactor}x for ${participantCount} participants - MAXIMIZED & CENTERED!`);
+    console.log(`📏 Final: Scale ${scaleFactor}x for ${participantCount} participants with LOGOS!`);
 
   } catch (error) {
     console.error('❌ Error exporting PDF:', error);
