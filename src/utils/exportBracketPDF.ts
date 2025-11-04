@@ -37,13 +37,13 @@ const THEME = {
 
 const getScaleFactor = (participantCount: number): number => {
   if (participantCount > 16) {
-    return 1.25;
+    return 1.65;
   } else if (participantCount > 8) {
-    return 1.35;
+    return 1.75;
   } else if (participantCount > 4) {
-    return 1.45;
+    return 1.80;
   } else {
-    return 1.55;
+    return 2.00;
   }
 };
 
@@ -122,21 +122,6 @@ const addHeaderAndFooter = async (
 
   // Lokasi & Kompetitor (dalam 1 baris)
   doc.text(`${config.location}  •  ${config.totalParticipants} Kompetitor`, centerX, textY, { align: 'center' });
-
-  // FOOTER - Compact
-  const footerY = PAGE_HEIGHT - MARGIN_BOTTOM + 2;
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(7); // ✅ Reduced dari 8
-  doc.setTextColor(THEME.textSecondary);
-  
-  const exportDate = new Date().toLocaleDateString('id-ID', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  });
-  
-  doc.text(exportDate, MARGIN_LEFT, footerY);
-  doc.text('Tournament Bracket - Prestasi', PAGE_WIDTH / 2, footerY, { align: 'center' });
 };
 
 // =================================================================================================
@@ -150,46 +135,115 @@ const convertElementToImage = async (
   console.log('🎯 Starting bracket capture...');
   console.log('📊 Scale factor:', scaleFactor);
   
-  let bracketVisual = element.querySelector('.tournament-layout') as HTMLElement;
+  let bracketVisual: HTMLElement | null = null;
+  let bracketType: 'PRESTASI' | 'PEMULA' | 'UNKNOWN' = 'UNKNOWN';
   
-  if (!bracketVisual) {
-    bracketVisual = element.querySelector('.relative') as HTMLElement;
+  // ============================================
+  // ✅ STEP 1: Check if element itself has class
+  // ============================================
+  if (element.classList.contains('tournament-layout')) {
+    console.log('✅ Element itself is tournament-layout (PEMULA style)');
+    bracketVisual = element;
+    bracketType = 'PEMULA';
   }
   
+  // ============================================
+  // ✅ STEP 2: Try to find tournament-layout inside
+  // ============================================
+  if (!bracketVisual) {
+    bracketVisual = element.querySelector('.tournament-layout') as HTMLElement;
+    if (bracketVisual) {
+      console.log('✅ Found tournament-layout inside element (PEMULA style)');
+      bracketType = 'PEMULA';
+    }
+  }
+  
+  // ============================================
+  // ✅ STEP 3: Look for PRESTASI bracket (has .relative with SVG)
+  // ============================================
+  if (!bracketVisual) {
+    const relativeContainer = element.querySelector('.relative') as HTMLElement;
+    if (relativeContainer && relativeContainer.querySelector('svg')) {
+      console.log('✅ Found .relative with SVG (PRESTASI style)');
+      bracketVisual = relativeContainer;
+      bracketType = 'PRESTASI';
+    }
+  }
+  
+  // ============================================
+  // ✅ STEP 4: Alternative search for PRESTASI
+  // ============================================
   if (!bracketVisual) {
     const allRelatives = element.querySelectorAll('.relative');
     for (const rel of allRelatives) {
       if (rel.querySelector('svg')) {
         bracketVisual = rel as HTMLElement;
+        bracketType = 'PRESTASI';
+        console.log('✅ Found .relative with SVG (alternative search)');
         break;
       }
     }
   }
   
+  // ============================================
+  // ✅ STEP 5: Fallback - use element directly if has content
+  // ============================================
+  if (!bracketVisual && element.children.length > 0) {
+    console.log('⚠️ Using element directly as fallback');
+    bracketVisual = element;
+    
+    // Detect type based on content
+    if (element.querySelector('svg')) {
+      bracketType = 'PRESTASI';
+    } else if (element.querySelector('.bg-white.rounded-lg')) {
+      bracketType = 'PEMULA';
+    }
+  }
+  
+  // ============================================
+  // ❌ ERROR: Nothing found
+  // ============================================
   if (!bracketVisual) {
     console.error('❌ Bracket visual container not found!');
+    console.error('Element details:', {
+      tagName: element.tagName,
+      classList: Array.from(element.classList),
+      childrenCount: element.children.length,
+      hasContent: element.innerHTML.length > 0
+    });
     throw new Error('Bracket visual container not found');
   }
   
-  console.log('✅ Found bracket visual container');
-
-  // Hide unwanted elements
-  const hiddenElements: Array<{ el: HTMLElement; originalDisplay: string; originalVisibility: string }> = [];
-  
-  // ✅ HIDE: Leaderboard
-  const leaderboards = document.querySelectorAll('#prestasi-leaderboard, #pemula-leaderboard, [id$="-leaderboard"]');
-  leaderboards.forEach(el => {
-    const htmlEl = el as HTMLElement;
-    hiddenElements.push({
-      el: htmlEl,
-      originalDisplay: htmlEl.style.display,
-      originalVisibility: htmlEl.style.visibility
-    });
-    htmlEl.style.display = 'none';
-    htmlEl.style.visibility = 'hidden';
+  console.log(`✅ Found bracket visual container (${bracketType}):`, {
+    tagName: bracketVisual.tagName,
+    classList: Array.from(bracketVisual.classList),
+    childrenCount: bracketVisual.children.length
   });
 
-  // ✅ HIDE: Header dengan logo (karena sudah di PDF header)
+  // ============================================
+  // Hide unwanted elements
+  // ============================================
+  const hiddenElements: Array<{ el: HTMLElement; originalDisplay: string; originalVisibility: string }> = [];
+  
+  // ✅ HIDE: Leaderboard (both types)
+  const leaderboards = document.querySelectorAll(
+    '#prestasi-leaderboard, #pemula-leaderboard, [id$="-leaderboard"], ' +
+    '[class*="leaderboard"], .lg\\:sticky'
+  );
+  leaderboards.forEach(el => {
+    const htmlEl = el as HTMLElement;
+    if (!bracketVisual!.contains(htmlEl)) {
+      hiddenElements.push({
+        el: htmlEl,
+        originalDisplay: htmlEl.style.display,
+        originalVisibility: htmlEl.style.visibility
+      });
+      htmlEl.style.display = 'none';
+      htmlEl.style.visibility = 'hidden';
+    }
+  });
+
+  // ✅ HIDE: Header section with logo (if exists)
   const headerWithLogos = element.querySelector('.flex.items-center.justify-between.gap-6.mb-4') as HTMLElement;
   if (headerWithLogos && headerWithLogos.querySelector('img')) {
     hiddenElements.push({
@@ -205,7 +259,7 @@ const convertElementToImage = async (
   const allButtons = document.querySelectorAll('button');
   allButtons.forEach(btn => {
     const htmlBtn = btn as HTMLElement;
-    if (!bracketVisual.contains(htmlBtn)) {
+    if (!bracketVisual!.contains(htmlBtn)) {
       hiddenElements.push({
         el: htmlBtn,
         originalDisplay: htmlBtn.style.display,
@@ -215,16 +269,36 @@ const convertElementToImage = async (
     }
   });
 
-  console.log(`🙈 Hidden ${hiddenElements.length} elements`);
+  // ✅ HIDE: Edit buttons inside bracket cards (for PEMULA)
+  if (bracketType === 'PEMULA') {
+    const editButtons = bracketVisual.querySelectorAll('button');
+    editButtons.forEach(btn => {
+      const htmlBtn = btn as HTMLElement;
+      hiddenElements.push({
+        el: htmlBtn,
+        originalDisplay: htmlBtn.style.display,
+        originalVisibility: htmlBtn.style.visibility
+      });
+      htmlBtn.style.display = 'none';
+    });
+  }
+
+  console.log(`🙈 Hidden ${hiddenElements.length} elements (Type: ${bracketType})`);
 
   await new Promise(resolve => setTimeout(resolve, 100));
 
+  // ============================================
+  // Capture dimensions
+  // ============================================
   const width = Math.max(bracketVisual.scrollWidth, bracketVisual.offsetWidth);
   const height = Math.max(bracketVisual.scrollHeight, bracketVisual.offsetHeight);
 
-  console.log('📐 Original dimensions:', { width, height });
+  console.log('📐 Original dimensions:', { width, height, type: bracketType });
   console.log('🔍 Applying scale:', scaleFactor);
 
+  // ============================================
+  // Capture image with html-to-image
+  // ============================================
   console.log('📸 Capturing image...');
   const dataUrl = await htmlToImage.toPng(bracketVisual, {
     quality: 1,
@@ -239,17 +313,26 @@ const convertElementToImage = async (
       margin: '0',
     },
     filter: (node) => {
+      // Filter out buttons
       if (node.nodeName === 'BUTTON') {
         return false;
       }
+      // Filter out sticky elements
       if ((node as HTMLElement).classList?.contains('sticky')) {
+        return false;
+      }
+      // Filter out edit icons
+      if ((node as HTMLElement).tagName === 'svg' && 
+          (node as HTMLElement).parentElement?.tagName === 'BUTTON') {
         return false;
       }
       return true;
     }
   });
 
+  // ============================================
   // Restore hidden elements
+  // ============================================
   hiddenElements.forEach(({ el, originalDisplay, originalVisibility }) => {
     el.style.display = originalDisplay;
     el.style.visibility = originalVisibility;
