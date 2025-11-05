@@ -11,19 +11,17 @@ interface ExportConfig {
   location: string;
   dateRange: string;
   totalParticipants: number;
-  // ✅ TAMBAHAN untuk logo dan info header
   logoPBTI?: string;
   logoEvent?: string;
 }
 
-// ✅ FIXED A4 LANDSCAPE
 const PAGE_WIDTH = 297;
 const PAGE_HEIGHT = 210;
 const MARGIN_TOP = 10;
 const MARGIN_BOTTOM = 8;
 const MARGIN_LEFT = 10;
 const MARGIN_RIGHT = 10;
-const HEADER_HEIGHT = 28; // ✅ INCREASED dari 18 ke 35 untuk accommodate logo
+const HEADER_HEIGHT = 28;
 const FOOTER_HEIGHT = 8;
 
 const THEME = {
@@ -36,19 +34,14 @@ const THEME = {
 };
 
 const getScaleFactor = (participantCount: number): number => {
-  if (participantCount > 16) {
-    return 1.65;
-  } else if (participantCount > 8) {
-    return 1.75;
-  } else if (participantCount > 4) {
-    return 1.80;
-  } else {
-    return 2.00;
-  }
+  if (participantCount > 16) return 1.65;
+  else if (participantCount > 8) return 1.75;
+  else if (participantCount > 4) return 1.80;
+  else return 2.00;
 };
 
 // =================================================================================================
-// ✅ NEW: LOAD IMAGE HELPER
+// LOAD IMAGE HELPER
 // =================================================================================================
 
 const loadImage = (src: string): Promise<HTMLImageElement> => {
@@ -62,7 +55,39 @@ const loadImage = (src: string): Promise<HTMLImageElement> => {
 };
 
 // =================================================================================================
-// HEADER & FOOTER - WITH LOGOS
+// ✅ NEW: IMAGE COMPRESSION (PNG → JPEG)
+// =================================================================================================
+
+const compressImage = async (dataUrl: string): Promise<HTMLImageElement> => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d')!;
+      
+      canvas.width = img.width;
+      canvas.height = img.height;
+      
+      // Fill white background
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0);
+      
+      // ✅ Convert to JPEG with 85% quality (sweet spot)
+      const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+      
+      const compressedImg = new Image();
+      compressedImg.onload = () => resolve(compressedImg);
+      compressedImg.onerror = reject;
+      compressedImg.src = compressedDataUrl;
+    };
+    img.onerror = reject;
+    img.src = dataUrl;
+  });
+};
+
+// =================================================================================================
+// HEADER & FOOTER
 // =================================================================================================
 
 const addHeaderAndFooter = async (
@@ -70,15 +95,14 @@ const addHeaderAndFooter = async (
   config: ExportConfig
 ) => {
   const headerY = MARGIN_TOP;
-  const logoSize = 18; // ✅ Reduced dari 20
-  const logoY = headerY + 1; // ✅ Reduced spacing
+  const logoSize = 20;
+  const logoY = headerY + 2;
 
   // Logo PBTI (Kiri)
   if (config.logoPBTI) {
     try {
       const pbtiImg = await loadImage(config.logoPBTI);
-      doc.addImage(pbtiImg, 'PNG', MARGIN_LEFT + 3, logoY, logoSize, logoSize, undefined, 'FAST');
-      console.log('✅ Logo PBTI added');
+      doc.addImage(pbtiImg, 'PNG', MARGIN_LEFT + 2, logoY, logoSize, logoSize, undefined, 'FAST');
     } catch (error) {
       console.warn('⚠️ Failed to load PBTI logo:', error);
     }
@@ -88,44 +112,44 @@ const addHeaderAndFooter = async (
   if (config.logoEvent) {
     try {
       const eventImg = await loadImage(config.logoEvent);
-      doc.addImage(eventImg, 'PNG', PAGE_WIDTH - MARGIN_RIGHT - logoSize - 3, logoY, logoSize, logoSize, undefined, 'FAST');
-      console.log('✅ Logo Event added');
+      doc.addImage(eventImg, 'PNG', PAGE_WIDTH - MARGIN_RIGHT - logoSize - 2, logoY, logoSize, logoSize, undefined, 'FAST');
     } catch (error) {
       console.warn('⚠️ Failed to load Event logo:', error);
     }
   }
 
-  // TEXT INFO (Tengah) - Compact
+  // TEXT INFO (Tengah)
   const centerX = PAGE_WIDTH / 2;
-  let textY = headerY + 4; // ✅ Reduced spacing
+  let textY = headerY + 6;
 
   // Nama Event
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(13); // ✅ Reduced dari 14
+  doc.setFontSize(14);
   doc.setTextColor(THEME.primary);
   doc.text(config.eventName, centerX, textY, { align: 'center' });
-  textY += 5; // ✅ Reduced spacing
+  textY += 6;
 
   // Kategori
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10); // ✅ Reduced dari 11
+  doc.setFontSize(11);
   doc.setTextColor(THEME.text);
   doc.text(config.categoryName, centerX, textY, { align: 'center' });
-  textY += 4; // ✅ Reduced spacing
+  textY += 5;
 
-  // Tanggal (Single line - dari input manual)
+  // ✅ Tanggal (NO prefix)
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8); // ✅ Reduced dari 9
+  doc.setFontSize(9);
   doc.setTextColor(THEME.textSecondary);
-  doc.text(`${config.dateRange}`, centerX, textY, { align: 'center' });
-  textY += 3.5; // ✅ Reduced spacing
+  doc.text(config.dateRange, centerX, textY, { align: 'center' });
+  textY += 4;
 
-  // Lokasi & Kompetitor (dalam 1 baris)
+  // Lokasi & Kompetitor
+  doc.setFontSize(9);
   doc.text(`${config.location}  •  ${config.totalParticipants} Kompetitor`, centerX, textY, { align: 'center' });
 };
 
 // =================================================================================================
-// DOM-TO-IMAGE: CLEAN BRACKET CAPTURE
+// ✅ OPTIMIZED: DOM-TO-IMAGE CAPTURE
 // =================================================================================================
 
 const convertElementToImage = async (
@@ -133,99 +157,56 @@ const convertElementToImage = async (
   scaleFactor: number
 ): Promise<HTMLImageElement> => {
   console.log('🎯 Starting bracket capture...');
-  console.log('📊 Scale factor:', scaleFactor);
   
   let bracketVisual: HTMLElement | null = null;
   let bracketType: 'PRESTASI' | 'PEMULA' | 'UNKNOWN' = 'UNKNOWN';
   
-  // ============================================
-  // ✅ STEP 1: Check if element itself has class
-  // ============================================
+  // Find bracket container
   if (element.classList.contains('tournament-layout')) {
-    console.log('✅ Element itself is tournament-layout (PEMULA style)');
     bracketVisual = element;
     bracketType = 'PEMULA';
   }
   
-  // ============================================
-  // ✅ STEP 2: Try to find tournament-layout inside
-  // ============================================
   if (!bracketVisual) {
     bracketVisual = element.querySelector('.tournament-layout') as HTMLElement;
-    if (bracketVisual) {
-      console.log('✅ Found tournament-layout inside element (PEMULA style)');
-      bracketType = 'PEMULA';
-    }
+    if (bracketVisual) bracketType = 'PEMULA';
   }
   
-  // ============================================
-  // ✅ STEP 3: Look for PRESTASI bracket (has .relative with SVG)
-  // ============================================
   if (!bracketVisual) {
     const relativeContainer = element.querySelector('.relative') as HTMLElement;
     if (relativeContainer && relativeContainer.querySelector('svg')) {
-      console.log('✅ Found .relative with SVG (PRESTASI style)');
       bracketVisual = relativeContainer;
       bracketType = 'PRESTASI';
     }
   }
   
-  // ============================================
-  // ✅ STEP 4: Alternative search for PRESTASI
-  // ============================================
   if (!bracketVisual) {
     const allRelatives = element.querySelectorAll('.relative');
     for (const rel of allRelatives) {
       if (rel.querySelector('svg')) {
         bracketVisual = rel as HTMLElement;
         bracketType = 'PRESTASI';
-        console.log('✅ Found .relative with SVG (alternative search)');
         break;
       }
     }
   }
   
-  // ============================================
-  // ✅ STEP 5: Fallback - use element directly if has content
-  // ============================================
   if (!bracketVisual && element.children.length > 0) {
-    console.log('⚠️ Using element directly as fallback');
     bracketVisual = element;
-    
-    // Detect type based on content
-    if (element.querySelector('svg')) {
-      bracketType = 'PRESTASI';
-    } else if (element.querySelector('.bg-white.rounded-lg')) {
-      bracketType = 'PEMULA';
-    }
+    if (element.querySelector('svg')) bracketType = 'PRESTASI';
+    else if (element.querySelector('.bg-white.rounded-lg')) bracketType = 'PEMULA';
   }
   
-  // ============================================
-  // ❌ ERROR: Nothing found
-  // ============================================
   if (!bracketVisual) {
-    console.error('❌ Bracket visual container not found!');
-    console.error('Element details:', {
-      tagName: element.tagName,
-      classList: Array.from(element.classList),
-      childrenCount: element.children.length,
-      hasContent: element.innerHTML.length > 0
-    });
     throw new Error('Bracket visual container not found');
   }
   
-  console.log(`✅ Found bracket visual container (${bracketType}):`, {
-    tagName: bracketVisual.tagName,
-    classList: Array.from(bracketVisual.classList),
-    childrenCount: bracketVisual.children.length
-  });
+  console.log(`✅ Found bracket (${bracketType})`);
 
-  // ============================================
   // Hide unwanted elements
-  // ============================================
   const hiddenElements: Array<{ el: HTMLElement; originalDisplay: string; originalVisibility: string }> = [];
   
-  // ✅ HIDE: Leaderboard (both types)
+  // Hide leaderboards
   const leaderboards = document.querySelectorAll(
     '#prestasi-leaderboard, #pemula-leaderboard, [id$="-leaderboard"], ' +
     '[class*="leaderboard"], .lg\\:sticky'
@@ -243,9 +224,9 @@ const convertElementToImage = async (
     }
   });
 
-  // ✅ HIDE: Header section with logo (if exists)
-  const headerWithLogos = element.querySelector('.flex.items-center.justify-between.gap-6.mb-4') as HTMLElement;
-  if (headerWithLogos && headerWithLogos.querySelector('img')) {
+  // Hide header with logos
+  const headerWithLogos = element.querySelector('.flex.items-start.justify-between.gap-4.mb-3') as HTMLElement;
+  if (headerWithLogos) {
     hiddenElements.push({
       el: headerWithLogos,
       originalDisplay: headerWithLogos.style.display,
@@ -255,7 +236,7 @@ const convertElementToImage = async (
     headerWithLogos.style.visibility = 'hidden';
   }
 
-  // ✅ HIDE: All buttons outside bracket
+  // Hide all buttons outside bracket
   const allButtons = document.querySelectorAll('button');
   allButtons.forEach(btn => {
     const htmlBtn = btn as HTMLElement;
@@ -269,7 +250,7 @@ const convertElementToImage = async (
     }
   });
 
-  // ✅ HIDE: Edit buttons inside bracket cards (for PEMULA)
+  // Hide edit buttons inside bracket (PEMULA)
   if (bracketType === 'PEMULA') {
     const editButtons = bracketVisual.querySelectorAll('button');
     editButtons.forEach(btn => {
@@ -283,112 +264,93 @@ const convertElementToImage = async (
     });
   }
 
-  console.log(`🙈 Hidden ${hiddenElements.length} elements (Type: ${bracketType})`);
+  console.log(`🙈 Hidden ${hiddenElements.length} elements`);
 
   await new Promise(resolve => setTimeout(resolve, 100));
 
-  // ============================================
-  // Capture dimensions
-  // ============================================
+  // Get dimensions
   const width = Math.max(bracketVisual.scrollWidth, bracketVisual.offsetWidth);
   const height = Math.max(bracketVisual.scrollHeight, bracketVisual.offsetHeight);
 
-  console.log('📐 Original dimensions:', { width, height, type: bracketType });
-  console.log('🔍 Applying scale:', scaleFactor);
+  console.log('📐 Dimensions:', { width, height });
 
-  // ============================================
-  // Capture image with html-to-image
-  // ============================================
-  console.log('📸 Capturing image...');
+  // ✅ OPTIMIZED: Fixed pixel ratio (bukan 3 * scaleFactor)
+  const pixelRatio = 2;
+
+  console.log('📸 Capturing with pixelRatio:', pixelRatio);
+  
   const dataUrl = await htmlToImage.toPng(bracketVisual, {
-    quality: 1,
-    pixelRatio: 3 * scaleFactor,
+    quality: 0.92, // ✅ Reduced dari 1.0
+    pixelRatio: pixelRatio, // ✅ Fixed 2x
     width: width,
     height: height,
     backgroundColor: '#FFFFFF',
     cacheBust: true,
+    skipFonts: true, // ✅ Faster rendering
     style: {
-      transform: `scale(${1.0})`,
+      transform: 'scale(1.0)',
       transformOrigin: 'center center',
       margin: '0',
     },
     filter: (node) => {
-      // Filter out buttons
-      if (node.nodeName === 'BUTTON') {
-        return false;
-      }
-      // Filter out sticky elements
-      if ((node as HTMLElement).classList?.contains('sticky')) {
-        return false;
-      }
-      // Filter out edit icons
+      if (node.nodeName === 'BUTTON') return false;
+      if ((node as HTMLElement).classList?.contains('sticky')) return false;
       if ((node as HTMLElement).tagName === 'svg' && 
-          (node as HTMLElement).parentElement?.tagName === 'BUTTON') {
-        return false;
-      }
+          (node as HTMLElement).parentElement?.tagName === 'BUTTON') return false;
       return true;
     }
   });
 
-  // ============================================
   // Restore hidden elements
-  // ============================================
   hiddenElements.forEach(({ el, originalDisplay, originalVisibility }) => {
     el.style.display = originalDisplay;
     el.style.visibility = originalVisibility;
   });
 
-  console.log('✅ Image captured successfully');
+  console.log('✅ Image captured, compressing...');
 
-  const img = new Image();
-  img.src = dataUrl;
-  await new Promise(resolve => (img.onload = resolve));
+  // ✅ COMPRESS: PNG → JPEG
+  const compressedImg = await compressImage(dataUrl);
+  console.log('✅ Compressed:', { width: compressedImg.width, height: compressedImg.height });
   
-  console.log('🖼️ Image loaded:', { width: img.width, height: img.height });
-  
-  return img;
+  return compressedImg;
 };
 
 // =================================================================================================
-// ✅ MAIN EXPORT FUNCTION - WITH METADATA SUPPORT
+// ✅ MAIN: SINGLE BRACKET EXPORT
 // =================================================================================================
 
 export const exportBracketFromData = async (
   kelasData: any, 
   bracketElement: HTMLElement,
-  metadata?: {  // ✅ Parameter ketiga (optional)
+  metadata?: {
     logoPBTI?: string;
     logoEvent?: string;
     namaKejuaraan?: string;
     kelas?: string;
-    tanggalTanding?: string;
+    tanggalTanding?: string; // ✅ Format: "5 November 2025" (manual input)
     jumlahKompetitor?: number;
     lokasi?: string;
   }
 ): Promise<void> => {
-  console.log('🚀 Starting PDF export (A4 Single Page with Logos)...');
+  console.log('🚀 Starting PDF export (Optimized)...');
   
   const approvedParticipants = kelasData.peserta_kompetisi.filter((p: any) => p.status === 'APPROVED');
   const participantCount = approvedParticipants.length;
-  
   const scaleFactor = getScaleFactor(participantCount);
   
-  console.log(`📄 Format: A4 Landscape (${PAGE_WIDTH}x${PAGE_HEIGHT}mm)`);
-  console.log(`👥 Participants: ${participantCount}`);
-  console.log(`📏 Scale factor: ${scaleFactor}`);
+  console.log(`👥 Participants: ${participantCount}, Scale: ${scaleFactor}`);
   
-  // ✅ Use metadata if provided, otherwise use kelasData
+  // ✅ Config dengan prioritas metadata
   const config: ExportConfig = {
     eventName: metadata?.namaKejuaraan || kelasData.kompetisi.nama_event,
     categoryName: metadata?.kelas || `${kelasData.kelompok?.nama_kelompok || ''} ${
       kelasData.kelas_berat?.jenis_kelamin === 'LAKI_LAKI' ? 'Male' : 'Female'
     } ${kelasData.kelas_berat?.nama_kelas || kelasData.poomsae?.nama_kelas || ''}`.trim(),
     location: metadata?.lokasi || kelasData.kompetisi.lokasi,
-    dateRange: metadata?.tanggalTanding || `${new Date(kelasData.kompetisi.tanggal_mulai).toLocaleDateString('id-ID', {
+    dateRange: metadata?.tanggalTanding || new Date(kelasData.kompetisi.tanggal_mulai).toLocaleDateString('id-ID', {
       day: 'numeric', month: 'long', year: 'numeric'
-    })} - ${new Date(kelasData.kompetisi.tanggal_selesai).toLocaleDateString('id-ID', {
-      day: 'numeric', month: 'long', year: 'numeric'
-    })}`,
+    }),
     totalParticipants: metadata?.jumlahKompetitor || participantCount,
     logoPBTI: metadata?.logoPBTI,
     logoEvent: metadata?.logoEvent,
@@ -402,28 +364,16 @@ export const exportBracketFromData = async (
       compress: true 
     });
 
-    // ✅ Capture bracket FIRST
     const bracketImg = await convertElementToImage(bracketElement, scaleFactor);
-
-    // ✅ Add header with logos AFTER capture (async function now)
     await addHeaderAndFooter(doc, config);
 
-    // ✅ Calculate available space (adjusted for larger header)
-    const contentStartY = HEADER_HEIGHT + MARGIN_TOP; // +2 for spacing
+    // Calculate layout
+    const contentStartY = HEADER_HEIGHT + MARGIN_TOP;
     const contentEndY = PAGE_HEIGHT - FOOTER_HEIGHT - MARGIN_BOTTOM;
     const maxWidth = PAGE_WIDTH - MARGIN_LEFT - MARGIN_RIGHT;
     const maxHeight = contentEndY - contentStartY;
 
-    console.log('📐 Maximum available space:', { 
-      width: maxWidth.toFixed(2), 
-      height: maxHeight.toFixed(2),
-      startY: contentStartY.toFixed(2),
-      endY: contentEndY.toFixed(2)
-    });
-
-    // Calculate image dimensions
     const imgAspectRatio = bracketImg.width / bracketImg.height;
-    
     let displayWidth = maxWidth;
     let displayHeight = displayWidth / imgAspectRatio;
 
@@ -432,30 +382,15 @@ export const exportBracketFromData = async (
       displayWidth = displayHeight * imgAspectRatio;
     }
 
-    console.log('📏 Image sizing:', {
-      originalAspectRatio: imgAspectRatio.toFixed(3),
-      calculatedWidth: displayWidth.toFixed(2),
-      calculatedHeight: displayHeight.toFixed(2),
-      widthUsage: `${((displayWidth / maxWidth) * 100).toFixed(1)}%`,
-      heightUsage: `${((displayHeight / maxHeight) * 100).toFixed(1)}%`
-    });
-
-    // Perfect center calculation
     const centerX = MARGIN_LEFT + (maxWidth / 2);
     const centerY = contentStartY + (maxHeight / 2);
-
     const x = centerX - (displayWidth / 2);
     const y = centerY - (displayHeight / 2);
 
-    console.log('🎯 Perfect centering:', {
-      pageCenter: { x: centerX.toFixed(2), y: centerY.toFixed(2) },
-      imageTopLeft: { x: x.toFixed(2), y: y.toFixed(2) }
-    });
-
-    // Add bracket image to PDF
+    // ✅ Add as JPEG (smaller size)
     doc.addImage(
       bracketImg.src, 
-      'PNG', 
+      'JPEG', 
       x, 
       y, 
       displayWidth, 
@@ -464,16 +399,114 @@ export const exportBracketFromData = async (
       'FAST'
     );
 
-    // Save PDF
     const dateStr = new Date().toISOString().split('T')[0];
-    const filename = `Bracket_A4_${config.eventName.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_${config.categoryName.replace(/ /g, '_')}_${dateStr}.pdf`;
+    const filename = `Bracket_${config.eventName.replace(/[^a-z0-9]/gi, '_')}_${config.categoryName.replace(/ /g, '_')}_${dateStr}.pdf`;
     
     doc.save(filename);
     console.log(`✅ PDF saved: ${filename}`);
-    console.log(`📏 Final: Scale ${scaleFactor}x for ${participantCount} participants with LOGOS!`);
 
   } catch (error) {
     console.error('❌ Error exporting PDF:', error);
     throw error;
   }
+};
+
+// =================================================================================================
+// ✅ NEW: EXPORT MULTIPLE BRACKETS (LAPANGAN)
+// =================================================================================================
+
+export const exportMultipleBrackets = async (
+  brackets: Array<{
+    kelasData: any;
+    element: HTMLElement;
+    metadata?: {
+      kelas?: string;
+      tanggalTanding?: string;
+      jumlahKompetitor?: number;
+      lokasi?: string;
+    };
+  }>,
+  eventMetadata: {
+    logoPBTI?: string;
+    logoEvent?: string;
+    namaKejuaraan: string;
+  }
+): Promise<void> => {
+  console.log(`🚀 Exporting ${brackets.length} brackets...`);
+  
+  const doc = new jsPDF({ 
+    orientation: 'landscape', 
+    unit: 'mm', 
+    format: 'a4',
+    compress: true
+  });
+
+  for (let i = 0; i < brackets.length; i++) {
+    const { kelasData, element, metadata } = brackets[i];
+    
+    console.log(`📄 Processing bracket ${i + 1}/${brackets.length}...`);
+    
+    if (i > 0) {
+      doc.addPage();
+    }
+
+    const approvedParticipants = kelasData.peserta_kompetisi.filter((p: any) => p.status === 'APPROVED');
+    const participantCount = approvedParticipants.length;
+    const scaleFactor = getScaleFactor(participantCount);
+
+    const config: ExportConfig = {
+      eventName: eventMetadata.namaKejuaraan,
+      categoryName: metadata?.kelas || `${kelasData.kelompok?.nama_kelompok || ''} ${
+        kelasData.kelas_berat?.jenis_kelamin === 'LAKI_LAKI' ? 'Male' : 'Female'
+      } ${kelasData.kelas_berat?.nama_kelas || kelasData.poomsae?.nama_kelas || ''}`.trim(),
+      location: metadata?.lokasi || kelasData.kompetisi.lokasi,
+      dateRange: metadata?.tanggalTanding || new Date(kelasData.kompetisi.tanggal_mulai).toLocaleDateString('id-ID', {
+        day: 'numeric', month: 'long', year: 'numeric'
+      }),
+      totalParticipants: metadata?.jumlahKompetitor || participantCount,
+      logoPBTI: eventMetadata.logoPBTI,
+      logoEvent: eventMetadata.logoEvent,
+    };
+
+    const bracketImg = await convertElementToImage(element, scaleFactor);
+    await addHeaderAndFooter(doc, config);
+
+    const contentStartY = HEADER_HEIGHT + MARGIN_TOP;
+    const contentEndY = PAGE_HEIGHT - FOOTER_HEIGHT - MARGIN_BOTTOM;
+    const maxWidth = PAGE_WIDTH - MARGIN_LEFT - MARGIN_RIGHT;
+    const maxHeight = contentEndY - contentStartY;
+
+    const imgAspectRatio = bracketImg.width / bracketImg.height;
+    let displayWidth = maxWidth;
+    let displayHeight = displayWidth / imgAspectRatio;
+
+    if (displayHeight > maxHeight) {
+      displayHeight = maxHeight;
+      displayWidth = displayHeight * imgAspectRatio;
+    }
+
+    const centerX = MARGIN_LEFT + (maxWidth / 2);
+    const centerY = contentStartY + (maxHeight / 2);
+    const x = centerX - (displayWidth / 2);
+    const y = centerY - (displayHeight / 2);
+
+    doc.addImage(
+      bracketImg.src, 
+      'JPEG', 
+      x, 
+      y, 
+      displayWidth, 
+      displayHeight, 
+      undefined, 
+      'FAST'
+    );
+
+    console.log(`✅ Bracket ${i + 1} added`);
+  }
+
+  const dateStr = new Date().toISOString().split('T')[0];
+  const filename = `Brackets_${eventMetadata.namaKejuaraan.replace(/[^a-z0-9]/gi, '_')}_${dateStr}.pdf`;
+  
+  doc.save(filename);
+  console.log(`✅ Saved ${brackets.length} brackets: ${filename}`);
 };
