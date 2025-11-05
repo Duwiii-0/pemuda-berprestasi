@@ -500,10 +500,17 @@ const JadwalPertandingan: React.FC = () => {
       // ROLLBACK UI
       setHariList((prev) =>
         prev.map((hari) =>
-  hari.tanggal === tanggal
-    ? { ...hari, lapangan: [...] }  // Hanya update yang match
-    : hari                            // Sisanya tetap
-)
+          hari.tanggal === tanggal
+            ? {
+                ...hari,
+                lapangan: hari.lapangan.map((lap) =>
+                  lap.id_lapangan === lapanganId
+                    ? { ...lap, kelasDipilih: currentLapangan.kelasDipilih }
+                    : lap
+                ),
+              }
+            : hari
+        )
       );
 
       setTimeout(() => setErrorMessage(""), 3000);
