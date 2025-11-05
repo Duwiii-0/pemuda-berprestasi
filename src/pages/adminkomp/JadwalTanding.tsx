@@ -7,7 +7,7 @@ import {
   ClipboardList,
   Eye,
   GitBranch,
-  Save
+  Save,
 } from "lucide-react";
 import { useKompetisi } from "../../context/KompetisiContext";
 import { useAuth } from "../../context/authContext";
@@ -416,7 +416,6 @@ const JadwalPertandingan: React.FC = () => {
     }
   };
 
-  // FUNGSI BARU: Auto-save saat toggle kelas
   const toggleKelasAndSave = async (
     tanggal: string,
     lapanganId: number,
@@ -433,14 +432,18 @@ const JadwalPertandingan: React.FC = () => {
       return;
     }
 
-    // 2️⃣ HITUNG KELAS BARU SEBELUM UPDATE UI
-    const updatedKelasList = [kelasId];
+    // 2️⃣ HITUNG KELAS BARU SEBELUM UPDATE UI (Toggle: tambah/hapus)
+    const isCurrentlySelected = currentLapangan.kelasDipilih.includes(kelasId);
+    const updatedKelasList = isCurrentlySelected
+      ? currentLapangan.kelasDipilih.filter((id) => id !== kelasId)
+      : [...currentLapangan.kelasDipilih, kelasId];
 
     console.log("🔄 Toggle kelas", {
       kelasId,
       lapanganId,
       before: currentLapangan.kelasDipilih,
       after: updatedKelasList,
+      action: isCurrentlySelected ? "removed" : "added",
     });
 
     // 3️⃣ UPDATE UI (OPTIMISTIC)
@@ -485,9 +488,7 @@ const JadwalPertandingan: React.FC = () => {
 
       if (data.success) {
         console.log("✅ Berhasil disimpan!");
-        setSuccessMessage(
-          `Kelas berhasil ditambahkan ke lapangan`
-        );
+        setSuccessMessage(`Kelas berhasil ditambahkan ke lapangan`);
         setTimeout(() => setSuccessMessage(""), 2000);
       } else {
         throw new Error(data.message || "Gagal menyimpan kelas");
