@@ -2358,13 +2358,13 @@ const getFinalMatchWithPosition = () => {
       {/* Lokasi */}
       <p className="text-sm mb-1" style={{ color: '#050505', opacity: 0.7 }}>
         GOR Ranau JSC Palembang
-        console.log('Lokasi:', kelasData.kompetisi.lokasi)
       </p>
       
       {/* Jumlah Kompetitor */}
       <p className="text-sm font-medium" style={{ color: '#990D35' }}>
         {approvedParticipants.length} Kompetitor
       </p>
+        console.log('Lokasi:', kelasData.kompetisi.lokasi)
     </div>
     
     {/* KOLOM KANAN - Logo Event */}
