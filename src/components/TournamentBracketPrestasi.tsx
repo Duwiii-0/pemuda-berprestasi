@@ -1055,6 +1055,8 @@ const calculateVerticalPositions = (matchesBySide: Match[][]) => {
   positions[0] = [];
 
   console.log(`📐 Calculating positions for ${round1Count} matches in Round 1...`);
+  console.log('Lokasi:', kelasData.kompetisi.lokasi)
+
 
   for (let i = 0; i < round1Count; i++) {
     const yPos = i * (CARD_HEIGHT + BASE_VERTICAL_GAP);
@@ -2364,7 +2366,6 @@ const getFinalMatchWithPosition = () => {
       <p className="text-sm font-medium" style={{ color: '#990D35' }}>
         {approvedParticipants.length} Kompetitor
       </p>
-        console.log('Lokasi:', kelasData.kompetisi.lokasi)
     </div>
     
     {/* KOLOM KANAN - Logo Event */}
