@@ -500,17 +500,10 @@ const JadwalPertandingan: React.FC = () => {
       // ROLLBACK UI
       setHariList((prev) =>
         prev.map((hari) =>
-          hari.tanggal === tanggal
-            ? {
-                ...hari,
-                lapangan: hari.lapangan.map((lap) =>
-                  lap.id_lapangan === lapanganId
-                    ? { ...lap, kelasDipilih: currentLapangan.kelasDipilih }
-                    : lap
-                ),
-              }
-            : hari
-        )
+  hari.tanggal === tanggal
+    ? { ...hari, lapangan: [...] }  // Hanya update yang match
+    : hari                            // Sisanya tetap
+)
       );
 
       setTimeout(() => setErrorMessage(""), 3000);
@@ -920,8 +913,8 @@ const JadwalPertandingan: React.FC = () => {
                                       <div className="flex justify-between items-center">
                                         <div className="flex items-center gap-2">
                                           <input
-                                            type="radio"
-                                            name={`kelas-lapangan-${lap.id_lapangan}`}
+                                            type="checkbox"
+                                            name={`kelas-lapangan-${lap.id_lapangan}-${kelas.id_kelas_kejuaraan}`}
                                             checked={lap.kelasDipilih.includes(
                                               kelas.id_kelas_kejuaraan
                                             )}
