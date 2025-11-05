@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Trophy, Edit3, ArrowLeft, AlertTriangle, RefreshCw, Download, Shuffle, CheckCircle } from 'lucide-react';
-import { exportBracketToPDF, transformBracketDataForPDF } from '../utils/exportBracketPDF';
+import { exportBracketFromData } from '../utils/exportBracketPDF';
 import { useAuth } from '../context/authContext';
+import sriwijaya from "../assets/logo/sriwijaya.png";
+import taekwondo from "../assets/logo/taekwondo.png";
 
 interface Peserta {
   id_peserta_kompetisi: number;
@@ -35,9 +37,11 @@ interface Match {
     nama_venue: string;
   };
   tanggal_pertandingan?: string;  
-  nomor_partai?: string;           
-  nomor_antrian?: number;          
-  nomor_lapangan?: string;         
+  nomor_partai?: string;                   
+  nomor_antrian?: number;                 
+  nomor_lapangan?: string;  
+  positionY?: number;    
+  verticalCenter?: number;          
 }
 
 interface KelasKejuaraan {
@@ -116,11 +120,11 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
     message: '',
   });
 
-  // Layout constants - PRESISI UNTUK GAP KONSISTEN
-  const CARD_WIDTH = 360;
-  const CARD_HEIGHT = 220;
-  const ROUND_GAP = 175;
-  const LINE_EXTENSION = 40;
+const CARD_WIDTH = 280;
+const CARD_HEIGHT = 140;
+const ROUND_GAP = 60;
+const BASE_VERTICAL_GAP = 60;
+const CENTER_GAP = 100;
 
   const showNotification = (
     type: 'success' | 'error' | 'warning' | 'info',
@@ -170,27 +174,42 @@ const handleExportPDF = async () => {
   setExportingPDF(true);
 
   try {
-    // Get DOM elements
     const bracketElement = bracketRef.current;
-    const leaderboardElement = document.getElementById('prestasi-leaderboard');
-
     if (!bracketElement) {
       throw new Error('Bracket element not found');
     }
 
-    const pdfConfig = transformBracketDataForPDF(
-      kelasData,
-      matches,
-      prestasiLeaderboard
-    );
+    // ✅ Ambil tanggal dari input manual
+    const dateInput = document.getElementById('tournament-date-display') as HTMLInputElement;
+    const selectedDate = dateInput?.value 
+      ? new Date(dateInput.value).toLocaleDateString('id-ID', { 
+          day: 'numeric', 
+          month: 'long', 
+          year: 'numeric' 
+        })
+      : new Date(kelasData.kompetisi.tanggal_mulai).toLocaleDateString('id-ID', { 
+          day: 'numeric', 
+          month: 'long', 
+          year: 'numeric' 
+        });
 
-    // Pass DOM elements to export function
-    await exportBracketToPDF(pdfConfig, bracketElement, leaderboardElement || undefined);
+    // ✅ Siapkan metadata untuk PDF header
+    const metadata = {
+      logoPBTI: taekwondo,
+      logoEvent: sriwijaya,
+      namaKejuaraan: kelasData.kompetisi.nama_event,
+      kelas: `${kelasData.kelompok?.nama_kelompok} ${kelasData.kelas_berat?.jenis_kelamin === 'LAKI_LAKI' ? 'Male' : 'Female'} ${kelasData.kelas_berat?.nama_kelas || kelasData.poomsae?.nama_kelas}`,
+      tanggalTanding: selectedDate, // ✅ Pakai tanggal dari input
+      jumlahKompetitor: approvedParticipants.length,
+      lokasi: kelasData.kompetisi.lokasi
+    };
+
+    await exportBracketFromData(kelasData, bracketElement, metadata);
 
     showNotification(
       'success',
       'Berhasil!',
-      'PDF bracket berhasil didownload!',
+      'PDF bracket PRESTASI berhasil didownload!',
       () => setShowModal(false)
     );
   } catch (error: any) {
@@ -304,61 +323,79 @@ const handleExportPDF = async () => {
     setShowParticipantPreview(true);
   };
 
-  const generateBracket = async () => {
-    if (!kelasData) return;
-    
-    console.log('🏆 PRESTASI: Auto-generating bracket');
-    
-    setLoading(true);
-    setShowParticipantPreview(false);
-    
-    try {
-      const kompetisiId = kelasData.kompetisi.id_kompetisi;
-      const kelasKejuaraanId = kelasData.id_kelas_kejuaraan;
+const generateBracket = async () => {
+  if (!kelasData) return;
+  
+  console.log('🏆 PRESTASI: Auto-generating bracket');
+  
+  setLoading(true);
+  setShowParticipantPreview(false);
+  
+  try {
+    const kompetisiId = kelasData.kompetisi.id_kompetisi;
+    const kelasKejuaraanId = kelasData.id_kelas_kejuaraan;
 
-      const endpoint = `${apiBaseUrl}/kompetisi/${kompetisiId}/brackets/generate`;
+    const endpoint = `${apiBaseUrl}/kompetisi/${kompetisiId}/brackets/generate`;
+    
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token && { 'Authorization': `Bearer ${token}` })
+      },
+      body: JSON.stringify({
+        kelasKejuaraanId: kelasKejuaraanId,
+        byeParticipantIds: []
+      })
+    });
+
+    // ✅ Handle "bracket already exists" error
+    if (!response.ok) {
+      const errorData = await response.json();
       
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token && { 'Authorization': `Bearer ${token}` })
-        },
-        body: JSON.stringify({
-          kelasKejuaraanId: kelasKejuaraanId,
-          byeParticipantIds: []
-        })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to generate bracket');
+      // ✅ Jika bracket sudah ada, langsung fetch saja
+      if (errorData.message?.includes('sudah dibuat') || 
+          errorData.message?.includes('already exists')) {
+        console.log('ℹ️ Bracket already exists, fetching existing bracket...');
+        await fetchBracketData(kompetisiId, kelasKejuaraanId);
+        
+        showNotification(
+          'info',
+          'Bracket Sudah Ada',
+          'Bracket untuk kelas ini sudah pernah dibuat sebelumnya.',
+          () => setShowModal(false)
+        );
+        return;
       }
-
-      const result = await response.json();
-      console.log('✅ PRESTASI Bracket generated:', result);
-
-      await fetchBracketData(kompetisiId, kelasKejuaraanId);
       
-      showNotification(
-        'success',
-        'Berhasil!',
-        'Bracket berhasil dibuat secara otomatis!',
-        () => setShowModal(false)
-      );
-      
-    } catch (error: any) {
-      console.error('❌ Error generating PRESTASI bracket:', error);
-      showNotification(
-        'error',
-        'Gagal Membuat Bracket',
-        error.message || 'Terjadi kesalahan saat membuat bracket.',
-        () => setShowModal(false)
-      );
-    } finally {
-      setLoading(false);
+      // Error lainnya
+      throw new Error(errorData.message || 'Failed to generate bracket');
     }
-  };
+
+    const result = await response.json();
+    console.log('✅ PRESTASI Bracket generated:', result);
+
+    await fetchBracketData(kompetisiId, kelasKejuaraanId);
+    
+    showNotification(
+      'success',
+      'Berhasil!',
+      'Bracket berhasil dibuat secara otomatis!',
+      () => setShowModal(false)
+    );
+    
+  } catch (error: any) {
+    console.error('❌ Error generating PRESTASI bracket:', error);
+    showNotification(
+      'error',
+      'Gagal Membuat Bracket',
+      error.message || 'Terjadi kesalahan saat membuat bracket.',
+      () => setShowModal(false)
+    );
+  } finally {
+    setLoading(false);
+  }
+};
 
   const shuffleBracket = async () => {
     if (!kelasData) return;
@@ -730,19 +767,6 @@ const handleExportPDF = async () => {
     return matches.filter(match => match.ronde === round);
   };
 
-  // Fungsi untuk hitung posisi vertikal yang konsisten
-  const calculateVerticalPosition = (roundIndex: number, matchIndex: number, totalMatchesInRound: number): number => {
-    const baseSpacing = 280;
-    const spacingMultiplier = Math.pow(2, roundIndex);
-    const spacing = baseSpacing * spacingMultiplier;
-    
-    // Center alignment untuk ronde
-    const totalHeight = (totalMatchesInRound - 1) * spacing;
-    const startOffset = -totalHeight / 2;
-    
-    return startOffset + (matchIndex * spacing);
-  };
-
   const generatePrestasiLeaderboard = () => {
     if (matches.length === 0) return null;
 
@@ -812,30 +836,1349 @@ const handleExportPDF = async () => {
     return leaderboard;
   };
 
+// 🔗 Fungsi menggambar konektor antar round
+const renderConnectorLines = (
+  matchesBySide: Match[][],
+  roundGap: number,
+  side: 'left' | 'right'
+) => {
+  const lines: React.ReactNode[] = [];
+
+  for (let roundIdx = 0; roundIdx < matchesBySide.length - 1; roundIdx++) {
+    const currentRound = matchesBySide[roundIdx];
+    const nextRound = matchesBySide[roundIdx + 1];
+
+    for (let matchIdx = 0; matchIdx < currentRound.length; matchIdx++) {
+      const match = currentRound[matchIdx];
+
+      const nextIdx = Math.floor(matchIdx / 2);
+      const parentMatch = nextRound[nextIdx];
+      if (!match || !parentMatch) continue;
+
+      const fromX = roundIdx * roundGap + CARD_WIDTH;
+      const fromY = match.verticalCenter ?? 0;
+      const toX = (roundIdx + 1) * roundGap;
+      const toY = parentMatch.verticalCenter ?? 0;
+
+      const direction = side === 'right' ? -1 : 1;
+      const offset = 20 * direction;
+
+      lines.push(
+        <line
+          key={`${side}-connector-${roundIdx}-${matchIdx}`}
+          x1={fromX + offset}
+          y1={fromY}
+          x2={toX - offset}
+          y2={toY}
+          stroke="#aaa"
+          strokeWidth="2"
+        />
+      );
+
+      console.log(
+        `Connector ${side}: Round ${roundIdx + 1} Match ${matchIdx + 1} → Round ${
+          roundIdx + 2
+        } Match ${nextIdx + 1}`
+      );
+    }
+  }
+
+  return lines;
+};
+
+
+/**
+ * 🆕 Render single match card
+ */
+const renderMatchCard = (match: Match, key: string | number) => {
+  const hasScores = match.skor_a > 0 || match.skor_b > 0;
+  const winner = hasScores 
+    ? (match.skor_a > match.skor_b ? match.peserta_a : match.peserta_b)
+    : null;
+  
+return (
+  <div
+    className="match-card bg-white rounded-xl shadow-lg border-2 overflow-hidden hover:shadow-xl transition-all"
+    style={{ 
+      borderColor: winner ? '#22c55e' : '#990D35',
+      width: `${CARD_WIDTH}px`,
+      minHeight: `${CARD_HEIGHT}px`,
+      position: 'relative',    // ✅ TAMBAH
+      zIndex: 10,              // ✅ TAMBAH - Above connectors
+      background: 'white'      // ✅ TAMBAH - Solid background
+    }}
+  >
+      {/* Header */}
+      <div 
+        className="px-3 py-2 border-b flex items-center justify-between"
+        style={{ 
+          backgroundColor: 'rgba(153, 13, 53, 0.05)',
+          borderColor: '#990D35'
+        }}
+      >
+        <div className="flex items-center gap-2">
+          {match.nomor_partai && (
+            <span 
+              className="text-xs px-2 py-1 rounded-full font-bold"
+              style={{ backgroundColor: '#990D35', color: 'white' }}
+            >
+              No. Partai: {match.nomor_partai}
+            </span>
+          )}
+        </div>
+        
+        <div className="flex items-center gap-2">
+          {match.tanggal_pertandingan && (
+            <span className="text-xs" style={{ color: '#050505', opacity: 0.7 }}>
+              {new Date(match.tanggal_pertandingan).toLocaleDateString('id-ID', {
+                day: '2-digit',
+                month: 'short'
+              })}
+            </span>
+          )}
+          <button
+            onClick={() => setEditingMatch(match)}
+            className="p-1 rounded hover:bg-black/5"
+          >
+            <Edit3 size={12} style={{ color: '#050505', opacity: 0.6 }} />
+          </button>
+        </div>
+      </div>
+
+      {/* Participants */}
+      <div className="flex flex-col">
+        {/* Participant A */}
+        <div 
+          className={`flex-1 px-3 py-2 border-b flex items-center justify-between gap-2 ${
+            match.skor_a > match.skor_b && hasScores
+              ? 'bg-gradient-to-r from-green-50 to-green-100' 
+              : ''
+          }`}
+          style={{ minHeight: '70px' }}
+        >
+          {match.peserta_a ? (
+            <>
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-sm leading-tight truncate" style={{ color: '#050505' }}>
+                  {getParticipantName(match.peserta_a)}
+                </p>
+                <p className="text-xs truncate mt-0.5" style={{ color: '#3B82F6', opacity: 0.7 }}>
+                  {getDojoName(match.peserta_a)}
+                </p>
+              </div>
+              {hasScores && (
+                <div 
+                  className="w-10 h-10 rounded-lg flex items-center justify-center font-bold shadow-sm"
+                  style={{ 
+                    backgroundColor: match.skor_a > match.skor_b ? '#22c55e' : '#e5e7eb',
+                    color: match.skor_a > match.skor_b ? 'white' : '#6b7280'
+                  }}
+                >
+                  {match.skor_a}
+                </div>
+              )}
+            </>
+          ) : (
+            <span className="text-sm text-gray-400 w-full text-center">TBD</span>
+          )}
+        </div>
+
+        {/* Participant B */}
+        <div 
+          className={`flex-1 px-3 py-2 flex items-center justify-between gap-2 ${
+            match.skor_b > match.skor_a && hasScores
+              ? 'bg-gradient-to-r from-green-50 to-green-100' 
+              : ''
+          }`}
+          style={{ minHeight: '70px' }}
+        >
+          {match.peserta_b ? (
+            <>
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-sm leading-tight truncate" style={{ color: '#050505' }}>
+                  {getParticipantName(match.peserta_b)}
+                </p>
+                <p className="text-xs truncate mt-0.5" style={{ color: '#EF4444', opacity: 0.7 }}>
+                  {getDojoName(match.peserta_b)}
+                </p>
+              </div>
+              {hasScores && (
+                <div 
+                  className="w-10 h-10 rounded-lg flex items-center justify-center font-bold shadow-sm"
+                  style={{ 
+                    backgroundColor: match.skor_b > match.skor_a ? '#22c55e' : '#e5e7eb',
+                    color: match.skor_b > match.skor_a ? 'white' : '#6b7280'
+                  }}
+                >
+                  {match.skor_b}
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="w-full flex justify-center">
+              {match.ronde === 1 ? (
+                <span 
+                  className="text-xs px-2 py-1 rounded-full font-medium"
+                  style={{ backgroundColor: 'rgba(245, 183, 0, 0.15)', color: '#F5B700' }}
+                >
+                  BYE
+                </span>
+              ) : (
+                <span 
+                  className="text-xs px-2 py-1 rounded-full font-medium"
+                  style={{ backgroundColor: 'rgba(192, 192, 192, 0.15)', color: '#6b7280' }}
+                >
+                  TBD
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+);
+}
+
+/**
+ * 🎯 Calculate vertical positions for all rounds
+ * Setiap round berikutnya berada TEPAT di tengah 2 parent match
+ */
+// 🧩 Fungsi untuk menghitung posisi vertikal setiap match di tiap ronde
+const calculateVerticalPositions = (matchesBySide: Match[][]) => {
+  if (matchesBySide.length === 0) return [];
+
+  // positions[n][m] = posisi Y match ke-m di round ke-n
+  const positions: number[][] = [];
+
+  // 🧱 Round 1 (pertama) — pakai spacing dasar antar card
+  const round1Count = matchesBySide[0].length;
+  positions[0] = [];
+
+  console.log(`📐 Calculating positions for ${round1Count} matches in Round 1...`);
+
+  for (let i = 0; i < round1Count; i++) {
+    const yPos = i * (CARD_HEIGHT + BASE_VERTICAL_GAP);
+    positions[0].push(yPos);
+
+    // ✅ Tambahan penting: simpan posisi vertikal di object match
+    if (matchesBySide[0][i]) {
+      matchesBySide[0][i].positionY = yPos;
+      matchesBySide[0][i].verticalCenter = yPos + CARD_HEIGHT / 2;
+    }
+
+    console.log(`  Match ${i + 1}: Y = ${yPos}px`);
+  }
+
+  // 🌀 Round berikutnya — posisi = titik tengah vertikal dari 2 parent match
+  for (let roundIdx = 1; roundIdx < matchesBySide.length; roundIdx++) {
+    positions[roundIdx] = [];
+    const currentRoundMatches = matchesBySide[roundIdx];
+    const prevRoundMatches = matchesBySide[roundIdx - 1];
+
+    console.log(`\n📐 Calculating positions for ${currentRoundMatches.length} matches in Round ${roundIdx + 1}...`);
+
+    for (let matchIdx = 0; matchIdx < currentRoundMatches.length; matchIdx++) {
+      const parent1Idx = matchIdx * 2;
+      const parent2Idx = matchIdx * 2 + 1;
+
+      const parent1Y = positions[roundIdx - 1][parent1Idx];
+      const parent2Y = positions[roundIdx - 1][parent2Idx];
+
+      if (parent1Y === undefined) {
+        console.warn(`  ⚠️ Warning: parent1Y undefined for match ${matchIdx + 1}`);
+        continue;
+      }
+
+      // 🧩 Handle BYE (jika hanya satu parent)
+      const effectiveParent2Y = parent2Y !== undefined ? parent2Y : parent1Y;
+
+      // 💡 Titik tengah vertikal antar dua parent
+      const centerY =
+        (parent1Y + effectiveParent2Y + CARD_HEIGHT) / 2 - CARD_HEIGHT / 2;
+
+      positions[roundIdx].push(centerY);
+
+      // ✅ Tambahan penting: simpan posisi ke object match
+      if (currentRoundMatches[matchIdx]) {
+        currentRoundMatches[matchIdx].positionY = centerY;
+        currentRoundMatches[matchIdx].verticalCenter = centerY + CARD_HEIGHT / 2;
+      }
+
+      console.log(`  Match ${matchIdx + 1}:`);
+      console.log(`    Parent 1 Y: ${parent1Y.toFixed(2)}px`);
+      console.log(`    Parent 2 Y: ${effectiveParent2Y.toFixed(2)}px`);
+      console.log(`    Calculated Center Y: ${centerY.toFixed(2)}px`);
+    }
+  }
+
+  // 📤 Return hasil posisi untuk referensi eksternal (opsional)
+  return positions;
+};
+
+
+/**
+ * 🎯 Calculate bracket container height
+ */
+const calculateBracketHeight = (matchesBySide: Match[][]) => {
+  if (matchesBySide.length === 0 || matchesBySide[0].length === 0) return 800;
+  
+  const round1Count = matchesBySide[0].length;
+  const totalHeight = (round1Count * CARD_HEIGHT) + ((round1Count - 1) * BASE_VERTICAL_GAP);
+  
+  return Math.max(totalHeight + 200, 800); // Minimal 800px
+};
+
+/**
+ * 🆕 Render CENTER FINAL Match
+ */
+const renderCenterFinal = () => {
+  const finalMatch = getFinalMatch();
+  const leftMatches = getLeftMatches();
+  const rightMatches = getRightMatches();
+  
+  // Calculate positions
+  const leftPositions = calculateVerticalPositions(leftMatches);
+  const rightPositions = calculateVerticalPositions(rightMatches);
+  
+  // Get semi-final Y positions
+  const leftSemiY = leftPositions[leftPositions.length - 1]?.[0] || 0;
+  const rightSemiY = rightPositions[rightPositions.length - 1]?.[0] || 0;
+  
+  // Final Y position = rata-rata dari kedua semi-final
+  const finalYPosition = (leftSemiY + rightSemiY) / 2;
+  const lineLength = CENTER_GAP / 2 + 60;
+  
+  return (
+    <div 
+      style={{ 
+        position: 'relative',
+        width: `${CARD_WIDTH}px`,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center'
+      }}
+    >
+      {/* Round Header */}
+      <div 
+        className="round-header"
+        style={{
+          width: `${CARD_WIDTH}px`,
+          marginBottom: '20px',
+          textAlign: 'center',
+          position: 'relative',
+          zIndex: 20,
+          background: '#F5FBEF',
+          padding: '8px 12px'
+        }}
+      >
+        <div 
+          className="px-4 py-2 rounded-lg font-bold text-sm shadow-md"
+          style={{ backgroundColor: '#990D35', color: '#F5FBEF' }}
+        >
+          Final
+        </div>
+        <div className="text-xs mt-1" style={{ color: '#050505', opacity: 0.6 }}>
+          Championship Match
+        </div>
+      </div>
+
+      {/* Container untuk card + connectors */}
+      <div style={{ position: 'relative', width: '100%', minHeight: '600px' }}>
+{/* 🔗 LEFT CONNECTOR ke Final */}
+<svg
+  style={{
+    position: 'absolute',
+    left: -lineLength,
+    top: `${finalYPosition + (CARD_HEIGHT / 2) - 1}px`,  // Tengah card
+    width: lineLength,
+    height: 2,
+    pointerEvents: 'none',
+    zIndex: 1
+  }}
+>
+  <line 
+    x1="0" 
+    y1="1" 
+    x2={lineLength} 
+    y2="1" 
+    stroke="#990D35" 
+    strokeWidth="2.5" 
+    opacity="0.8" 
+  />
+</svg>
+        
+{/* 🔗 RIGHT CONNECTOR ke Final */}
+<svg
+  style={{
+    position: 'absolute',
+    right: -lineLength,
+    top: `${finalYPosition + (CARD_HEIGHT / 2) - 1}px`,  // Tengah card
+    width: lineLength,
+    height: 2,
+    pointerEvents: 'none',
+    zIndex: 1
+  }}
+>
+  <line 
+    x1="0" 
+    y1="1" 
+    x2={lineLength} 
+    y2="1" 
+    stroke="#990D35" 
+    strokeWidth="2.5" 
+    opacity="0.8" 
+  />
+</svg>
+        
+{/* Final Match Card */}
+<div
+  style={{
+    position: 'absolute',
+    top: `${finalYPosition}px`,  // ✅ HAPUS +80
+    left: 0,
+    width: `${CARD_WIDTH}px`
+  }}
+>
+          {finalMatch ? (
+            renderMatchCard(finalMatch, `final-${finalMatch.id_match}`)
+          ) : (
+            <div 
+              className="w-full p-6 rounded-xl border-2 text-center"
+              style={{ borderColor: '#990D35', backgroundColor: 'rgba(153, 13, 53, 0.05)' }}
+            >
+              <Trophy size={48} style={{ color: '#990D35', opacity: 0.3 }} className="mx-auto mb-2" />
+              <p className="text-sm font-medium" style={{ color: '#050505', opacity: 0.6 }}>
+                Waiting for finalists
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// 🧩 Kode perbaikan fungsi renderBracketSide
+const renderBracketSide = (
+  matchesBySide: Match[][],
+  side: 'left' | 'right',
+  startRound: number = 1
+) => {
+  const isRight = side === 'right';
+  const totalRounds = getTotalRounds();
+
+  // ✅ Hitung semua posisi vertikal untuk tiap match
+  const verticalPositions = calculateVerticalPositions(matchesBySide);
+
+  // ✅ Pastikan nilai tidak undefined sebelum dihitung
+  const validY = verticalPositions.flat().filter((y): y is number => y !== undefined);
+  const maxY = (validY.length > 0 ? Math.max(...validY) : 0) + CARD_HEIGHT + 100;
+
+  return (
+    <div
+      className="bracket-side"
+      style={{
+        display: 'flex',
+        flexDirection: isRight ? 'row-reverse' : 'row',
+        alignItems: 'flex-start',
+        gap: `${ROUND_GAP}px`,
+        position: 'relative',
+        minHeight: `${maxY}px`,
+      }}
+    >
+      {matchesBySide.map((roundMatches, roundIndex) => {
+        if (roundMatches.length === 0) return null;
+
+        const actualRound = startRound + roundIndex;
+        const roundName = getRoundName(actualRound, totalRounds);
+        const matchCount = roundMatches.length;
+        const hasNextRound =
+          roundIndex < matchesBySide.length - 1 && matchesBySide[roundIndex + 1].length > 0;
+
+        return (
+          <div
+            key={`${side}-round-${actualRound}`}
+            style={{
+              position: 'relative',
+              display: 'flex',
+              flexDirection: 'column',
+              minHeight: `${maxY}px`,
+            }}
+          >
+            {/* 🏷️ Round Header */}
+            <div
+              className="round-header"
+              style={{
+                width: `${CARD_WIDTH}px`,
+                marginBottom: '20px',
+                textAlign: 'center',
+                position: 'relative',
+                zIndex: 20,
+                background: '#F5FBEF',
+                padding: '8px 12px',
+              }}
+            >
+              <div
+                className="px-4 py-2 rounded-lg font-bold text-sm shadow-md"
+                style={{ backgroundColor: '#990D35', color: '#F5FBEF' }}
+              >
+                {roundName}
+              </div>
+              <div className="text-xs mt-1" style={{ color: '#050505', opacity: 0.6 }}>
+                {matchCount} {matchCount === 1 ? 'Match' : 'Matches'}
+              </div>
+            </div>
+
+            {/* 🎮 Container untuk match cards dan connector */}
+            <div
+              style={{
+                position: 'relative',
+                width: `${CARD_WIDTH}px`,
+                height: `${maxY}px`,
+                flexGrow: 0,
+                flexShrink: 0,
+              }}
+            >
+              {/* ============================================
+                    🔗 RENDER CONNECTORS (Garis penghubung)
+                  ============================================ */}
+              {hasNextRound && roundMatches.map((match, matchIndex) => {
+  const yPosition = verticalPositions[roundIndex]?.[matchIndex];
+  if (yPosition === undefined) return null;
+
+  const cardCenterY = yPosition + CARD_HEIGHT / 2;
+  const isFirstInPair = matchIndex % 2 === 0;
+  const hasPartner = matchIndex + 1 < matchCount;
+  const targetMatchIdx = Math.floor(matchIndex / 2);
+  const targetY = verticalPositions[roundIndex + 1]?.[targetMatchIdx];
+
+  const halfGap = ROUND_GAP / 2;
+
+  return (
+    <React.Fragment key={`connectors-${match.id_match}`}>
+      {/* ═══════════════════════════════════════════
+          STEP 1: Horizontal line DARI card KE vertical line
+          ═══════════════════════════════════════════ */}
+      <svg
+        style={{
+          position: 'absolute',
+          left: isRight ? `${-halfGap}px` : `${CARD_WIDTH}px`,
+          top: `${cardCenterY - 1}px`,
+          width: halfGap,
+          height: 2,
+          pointerEvents: 'none',
+          zIndex: 5,
+        }}
+      >
+        <line
+          x1={isRight ? halfGap : 0}
+          y1="1"
+          x2={isRight ? 0 : halfGap}
+          y2="1"
+          stroke="#990D35"
+          strokeWidth="2"
+          opacity="0.8"
+        />
+      </svg>
+
+      {/* ═══════════════════════════════════════════
+          STEP 2 & 3: Vertical line + Horizontal BARU ke target
+          Hanya render untuk match PERTAMA dalam pair
+          ═══════════════════════════════════════════ */}
+      {isFirstInPair && hasPartner && targetY !== undefined && (() => {
+        const partnerY = verticalPositions[roundIndex]?.[matchIndex + 1];
+        if (partnerY === undefined) return null;
+
+        const partnerCenterY = partnerY + CARD_HEIGHT / 2;
+        const targetCenterY = targetY + CARD_HEIGHT / 2;
+        
+        // Posisi X vertical line (di tengah gap)
+        const verticalLineX = isRight 
+          ? -halfGap
+          : CARD_WIDTH + halfGap;
+
+        // Y positions untuk vertical line
+        const topY = Math.min(cardCenterY, partnerCenterY);
+        const bottomY = Math.max(cardCenterY, partnerCenterY);
+        const verticalHeight = bottomY - topY;
+        const midPointY = (cardCenterY + partnerCenterY) / 2;
+
+        return (
+          <>
+            {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                VERTICAL LINE menghubungkan 2 horizontal
+                ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+            <svg
+              style={{
+                position: 'absolute',
+                left: `${verticalLineX}px`,
+                top: `${topY}px`,
+                width: 2,
+                height: verticalHeight,
+                pointerEvents: 'none',
+                zIndex: 4,
+              }}
+            >
+              <line
+                x1="1"
+                y1="0"
+                x2="1"
+                y2={verticalHeight}
+                stroke="#990D35"
+                strokeWidth="2"
+                opacity="0.8"
+              />
+            </svg>
+
+            {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                HORIZONTAL BARU dari vertical ke target card
+                ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+            <svg
+              style={{
+                position: 'absolute',
+                left: isRight 
+                  ? `${-ROUND_GAP}px`  // Start dari next card edge
+                  : `${CARD_WIDTH + halfGap}px`,  // Start dari vertical line
+                top: `${midPointY - 1}px`,  // Tengah-tengah vertical line
+                width: halfGap,
+                height: 2,
+                pointerEvents: 'none',
+                zIndex: 5,
+              }}
+            >
+              <line
+                x1={isRight ? halfGap : 0}
+                y1="1"
+                x2={isRight ? 0 : halfGap}
+                y2="1"
+                stroke="#990D35"
+                strokeWidth="2"
+                opacity="0.8"
+              />
+            </svg>
+          </>
+        );
+      })()}
+    </React.Fragment>
+  );
+})}
+
+              {/* ============================================
+                  🧩 RENDER MATCH CARDS (Di atas garis)
+                  ============================================ */}
+              {roundMatches.map((match, matchIndex) => {
+                const yPosition = verticalPositions[roundIndex]?.[matchIndex];
+                if (yPosition === undefined) return null;
+
+                return (
+                  <div
+                    key={`card-${match.id_match}`}
+                    style={{
+                      position: 'absolute',
+                      top: `${yPosition}px`,
+                      left: 0,
+                      width: `${CARD_WIDTH}px`,
+                      zIndex: 10,
+                    }}
+                  >
+                    {renderMatchCard(match, match.id_match)}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+const debugCardPositions = () => {
+/**
+ * Debug: Print bracket structure
+ */
+const debugBracketStructure = () => {
+  console.log('\n🏆 ===== BRACKET STRUCTURE DEBUG =====');
+  console.log('Total Matches:', matches.length);
+  console.log('Total Rounds:', getTotalRounds());
+  console.log('Approved Participants:', approvedParticipants.length);
+  
+  const totalRounds = getTotalRounds();
+  for (let round = 1; round <= totalRounds; round++) {
+    const roundMatches = getMatchesByRound(round);
+    console.log(`\n📍 Round ${round} (${getRoundName(round, totalRounds)}):`);
+    console.log(`  - Match count: ${roundMatches.length}`);
+    roundMatches.forEach((match, idx) => {
+      console.log(`  - Match ${idx + 1}:`, {
+        id: match.id_match,
+        participantA: getParticipantName(match.peserta_a) || 'TBD',
+        participantB: getParticipantName(match.peserta_b) || 'BYE/TBD',
+        scores: `${match.skor_a} - ${match.skor_b}`
+      });
+    });
+  }
+  console.log('=====================================\n');
+};
+
+/**
+ * Debug: Print split structure (left/right/final)
+ */
+const debugSplitStructure = () => {
+  console.log('\n🔀 ===== SPLIT STRUCTURE DEBUG =====');
+  
+  const leftMatches = getLeftMatches();
+  const rightMatches = getRightMatches();
+  const finalMatch = getFinalMatch();
+  
+  console.log('\n📍 LEFT SIDE:');
+  leftMatches.forEach((roundMatches, roundIdx) => {
+    console.log(`  Round ${roundIdx + 1}: ${roundMatches.length} matches`);
+    roundMatches.forEach((match, idx) => {
+      console.log(`    Match ${idx + 1}: ID ${match.id_match}`);
+    });
+  });
+  
+  console.log('\n📍 RIGHT SIDE:');
+  rightMatches.forEach((roundMatches, roundIdx) => {
+    console.log(`  Round ${roundIdx + 1}: ${roundMatches.length} matches`);
+    roundMatches.forEach((match, idx) => {
+      console.log(`    Match ${idx + 1}: ID ${match.id_match}`);
+    });
+  });
+  
+  console.log('\n📍 FINAL:');
+  if (finalMatch) {
+    console.log(`  Match ID: ${finalMatch.id_match}`);
+    console.log(`  Participant A: ${getParticipantName(finalMatch.peserta_a) || 'TBD'}`);
+    console.log(`  Participant B: ${getParticipantName(finalMatch.peserta_b) || 'TBD'}`);
+  } else {
+    console.log('  No final match yet');
+  }
+  
+  console.log('=====================================\n');
+};
+
+/**
+ * Debug: Print vertical positions calculation
+ */
+const debugVerticalPositions = () => {
+  console.log('\n📐 ===== VERTICAL POSITIONS DEBUG =====');
+  
+  const leftMatches = getLeftMatches();
+  const rightMatches = getRightMatches();
+  
+  console.log('\n📍 LEFT SIDE POSITIONS:');
+  const leftPositions = calculateVerticalPositions(leftMatches);
+  leftPositions.forEach((roundPositions, roundIdx) => {
+    console.log(`\n  Round ${roundIdx + 1}:`);
+    roundPositions.forEach((yPos, matchIdx) => {
+      console.log(`    Match ${matchIdx + 1}: Y = ${yPos.toFixed(2)}px`);
+    });
+  });
+  
+  console.log('\n📍 RIGHT SIDE POSITIONS:');
+  const rightPositions = calculateVerticalPositions(rightMatches);
+  rightPositions.forEach((roundPositions, roundIdx) => {
+    console.log(`\n  Round ${roundIdx + 1}:`);
+    roundPositions.forEach((yPos, matchIdx) => {
+      console.log(`    Match ${matchIdx + 1}: Y = ${yPos.toFixed(2)}px`);
+    });
+  });
+  
+  // Check symmetry
+  console.log('\n🔍 SYMMETRY CHECK:');
+  const leftFinalY = leftPositions[leftPositions.length - 1]?.[0] || 0;
+  const rightFinalY = rightPositions[rightPositions.length - 1]?.[0] || 0;
+  console.log(`  Left Semi-Final Y: ${leftFinalY.toFixed(2)}px`);
+  console.log(`  Right Semi-Final Y: ${rightFinalY.toFixed(2)}px`);
+  console.log(`  Difference: ${Math.abs(leftFinalY - rightFinalY).toFixed(2)}px`);
+  console.log(`  Is Symmetric: ${Math.abs(leftFinalY - rightFinalY) < 1 ? '✅ YES' : '❌ NO'}`);
+  
+  console.log('=====================================\n');
+};
+
+/**
+ * Debug: Print connector lines calculation
+ */
+const debugConnectorLines = () => {
+  console.log('\n🔗 ===== CONNECTOR LINES DEBUG =====');
+  
+  const leftMatches = getLeftMatches();
+  const leftPositions = calculateVerticalPositions(leftMatches);
+  
+  console.log('\n📍 LEFT SIDE CONNECTORS:');
+  for (let roundIdx = 0; roundIdx < leftMatches.length - 1; roundIdx++) {
+    const currentRound = leftMatches[roundIdx];
+    const nextRoundPositions = leftPositions[roundIdx + 1];
+    
+    console.log(`\n  From Round ${roundIdx + 1} to Round ${roundIdx + 2}:`);
+    
+    for (let matchIdx = 0; matchIdx < currentRound.length; matchIdx += 2) {
+      const match1Y = leftPositions[roundIdx][matchIdx];
+      const match2Y = leftPositions[roundIdx][matchIdx + 1];
+      const targetY = nextRoundPositions[Math.floor(matchIdx / 2)];
+      
+      console.log(`    Pair ${Math.floor(matchIdx / 2) + 1}:`);
+      console.log(`      Match ${matchIdx + 1} Y: ${match1Y?.toFixed(2) || 'N/A'}px`);
+      console.log(`      Match ${matchIdx + 2} Y: ${match2Y?.toFixed(2) || 'N/A'}px`);
+      console.log(`      Target Next Round Y: ${targetY?.toFixed(2) || 'N/A'}px`);
+      
+      if (match1Y !== undefined && match2Y !== undefined && targetY !== undefined) {
+        const expectedTargetY = (match1Y + match2Y + CARD_HEIGHT) / 2 - (CARD_HEIGHT / 2);
+        console.log(`      Expected Target Y: ${expectedTargetY.toFixed(2)}px`);
+        console.log(`      Difference: ${Math.abs(targetY - expectedTargetY).toFixed(2)}px`);
+        console.log(`      Is Correct: ${Math.abs(targetY - expectedTargetY) < 1 ? '✅ YES' : '❌ NO'}`);
+      }
+    }
+  }
+  
+  console.log('=====================================\n');
+};
+
+/**
+ * Debug: Print bracket dimensions
+ */
+const debugBracketDimensions = () => {
+  console.log('\n📏 ===== BRACKET DIMENSIONS DEBUG =====');
+  console.log('Constants:');
+  console.log(`  CARD_WIDTH: ${CARD_WIDTH}px`);
+  console.log(`  CARD_HEIGHT: ${CARD_HEIGHT}px`);
+  console.log(`  ROUND_GAP: ${ROUND_GAP}px`);
+  console.log(`  BASE_VERTICAL_GAP: ${BASE_VERTICAL_GAP}px`);
+  console.log(`  CENTER_GAP: ${CENTER_GAP}px`);
+  
+  const leftMatches = getLeftMatches();
+  const rightMatches = getRightMatches();
+  const totalRounds = getTotalRounds();
+  
+  console.log('\nCalculated Dimensions:');
+  console.log(`  Total Rounds: ${totalRounds}`);
+  console.log(`  Left Bracket Rounds: ${leftMatches.length}`);
+  console.log(`  Right Bracket Rounds: ${rightMatches.length}`);
+  console.log(`  Total Width: ${((totalRounds - 1) * (CARD_WIDTH + ROUND_GAP) * 2) + CARD_WIDTH + (CENTER_GAP * 2)}px`);
+  console.log(`  Total Height: ${calculateBracketHeight(leftMatches)}px`);
+  
+  console.log('\nRound 1 Spacing:');
+  const round1Count = leftMatches[0]?.length || 0;
+  console.log(`  Match Count: ${round1Count}`);
+  console.log(`  Gap Between Cards: ${BASE_VERTICAL_GAP}px`);
+  console.log(`  Total Height: ${(round1Count * CARD_HEIGHT) + ((round1Count - 1) * BASE_VERTICAL_GAP)}px`);
+  
+  console.log('=====================================\n');
+};
+
+};
+
+const runFullDebug = () => {
+  console.clear();
+  console.log('🚀 ===== FULL BRACKET DEBUG STARTED =====\n');
+  console.log(`Timestamp: ${new Date().toLocaleTimeString()}\n`);
+  
+  // 1. RAW DATA CHECK
+  console.log('📦 ===== RAW DATA CHECK =====');
+  console.log('Total matches array length:', matches.length);
+  console.log('Bracket generated status:', bracketGenerated);
+  console.log('Approved participants:', approvedParticipants.length);
+  console.log('\nAll matches by round:');
+  const totalRounds = getTotalRounds();
+  for (let r = 1; r <= totalRounds; r++) {
+    const roundMatches = getMatchesByRound(r);
+    console.log(`  Round ${r}: ${roundMatches.length} matches`, roundMatches.map(m => m.id_match));
+  }
+  console.log('=====================================\n');
+  
+  // 2. SPLIT LOGIC CHECK
+  console.log('🔀 ===== SPLIT LOGIC CHECK =====');
+  const leftMatches = getLeftMatches();
+  const rightMatches = getRightMatches();
+  const finalMatch = getFinalMatch();
+  
+  console.log('\n📍 LEFT SIDE STRUCTURE:');
+  console.log(`Total rounds in left: ${leftMatches.length}`);
+  leftMatches.forEach((roundMatches, roundIdx) => {
+    console.log(`\n  Round ${roundIdx + 1}:`);
+    console.log(`    Match count: ${roundMatches.length}`);
+    roundMatches.forEach((match, idx) => {
+      console.log(`    Match ${idx + 1}:`, {
+        id: match.id_match,
+        round: match.ronde,
+        participantA: getParticipantName(match.peserta_a) || 'TBD',
+        participantB: getParticipantName(match.peserta_b) || 'BYE/TBD'
+      });
+    });
+  });
+  
+  console.log('\n📍 RIGHT SIDE STRUCTURE:');
+  console.log(`Total rounds in right: ${rightMatches.length}`);
+  rightMatches.forEach((roundMatches, roundIdx) => {
+    console.log(`\n  Round ${roundIdx + 1}:`);
+    console.log(`    Match count: ${roundMatches.length}`);
+    roundMatches.forEach((match, idx) => {
+      console.log(`    Match ${idx + 1}:`, {
+        id: match.id_match,
+        round: match.ronde,
+        participantA: getParticipantName(match.peserta_a) || 'TBD',
+        participantB: getParticipantName(match.peserta_b) || 'BYE/TBD'
+      });
+    });
+  });
+  
+  console.log('\n📍 FINAL MATCH:');
+  if (finalMatch) {
+    console.log(`  ID: ${finalMatch.id_match}, Round: ${finalMatch.ronde}`);
+    console.log(`  Participant A: ${getParticipantName(finalMatch.peserta_a) || 'TBD'}`);
+    console.log(`  Participant B: ${getParticipantName(finalMatch.peserta_b) || 'TBD'}`);
+  } else {
+    console.log('  ❌ No final match found!');
+  }
+  console.log('=====================================\n');
+  
+  // 3. VERTICAL POSITIONS DETAILED
+  console.log('📐 ===== VERTICAL POSITIONS DETAILED =====');
+  
+  console.log('\n🔵 LEFT SIDE CALCULATION:');
+  const leftPositions = calculateVerticalPositions(leftMatches);
+  console.log('Left positions result:', leftPositions);
+  
+  console.log('\n🔴 RIGHT SIDE CALCULATION:');
+  const rightPositions = calculateVerticalPositions(rightMatches);
+  console.log('Right positions result:', rightPositions);
+  
+  // 4. SYMMETRY CHECK
+  console.log('\n🔍 ===== SYMMETRY CHECK =====');
+  
+  // Check if left and right have same structure
+  console.log('\nStructure comparison:');
+  console.log(`  Left rounds: ${leftMatches.length}`);
+  console.log(`  Right rounds: ${rightMatches.length}`);
+  console.log(`  Are equal: ${leftMatches.length === rightMatches.length ? '✅' : '❌'}`);
+  
+  for (let i = 0; i < Math.max(leftMatches.length, rightMatches.length); i++) {
+    const leftCount = leftMatches[i]?.length || 0;
+    const rightCount = rightMatches[i]?.length || 0;
+    console.log(`\n  Round ${i + 1}:`);
+    console.log(`    Left matches: ${leftCount}`);
+    console.log(`    Right matches: ${rightCount}`);
+    console.log(`    Are equal: ${leftCount === rightCount ? '✅' : '❌'}`);
+  }
+  
+  // Check final round positions
+  if (leftPositions.length > 0 && rightPositions.length > 0) {
+    const lastLeftRound = leftPositions[leftPositions.length - 1];
+    const lastRightRound = rightPositions[rightPositions.length - 1];
+    
+    console.log('\nSemi-Final Y positions:');
+    console.log(`  Left Semi Y: ${lastLeftRound[0]?.toFixed(2) || 'N/A'}px`);
+    console.log(`  Right Semi Y: ${lastRightRound[0]?.toFixed(2) || 'N/A'}px`);
+    
+    if (lastLeftRound[0] !== undefined && lastRightRound[0] !== undefined) {
+      const diff = Math.abs(lastLeftRound[0] - lastRightRound[0]);
+      console.log(`  Difference: ${diff.toFixed(2)}px`);
+      console.log(`  Is Symmetric: ${diff < 1 ? '✅ YES' : '❌ NO'}`);
+    }
+  }
+  console.log('=====================================\n');
+  
+  // 5. CONNECTOR VALIDATION
+  console.log('🔗 ===== CONNECTOR VALIDATION =====');
+  
+  console.log('\n🔵 LEFT SIDE CONNECTORS:');
+  for (let roundIdx = 0; roundIdx < leftMatches.length - 1; roundIdx++) {
+    const currentRound = leftMatches[roundIdx];
+    console.log(`\n  Round ${roundIdx + 1} → Round ${roundIdx + 2}:`);
+    console.log(`    Source matches: ${currentRound.length}`);
+    console.log(`    Target matches: ${leftMatches[roundIdx + 1].length}`);
+    console.log(`    Expected pairs: ${Math.ceil(currentRound.length / 2)}`);
+    
+    // Check each pair
+    for (let matchIdx = 0; matchIdx < currentRound.length; matchIdx += 2) {
+      const pairNum = Math.floor(matchIdx / 2);
+      const match1Y = leftPositions[roundIdx]?.[matchIdx];
+      const match2Y = leftPositions[roundIdx]?.[matchIdx + 1];
+      const targetY = leftPositions[roundIdx + 1]?.[pairNum];
+      
+      console.log(`\n    Pair ${pairNum + 1}:`);
+      console.log(`      Source Match ${matchIdx + 1} Y: ${match1Y?.toFixed(2) || 'N/A'}px`);
+      console.log(`      Source Match ${matchIdx + 2} Y: ${match2Y?.toFixed(2) || 'N/A'}px`);
+      console.log(`      Target Match Y: ${targetY?.toFixed(2) || 'N/A'}px`);
+      
+      if (match1Y !== undefined && match2Y !== undefined && targetY !== undefined) {
+        const expectedY = (match1Y + match2Y + CARD_HEIGHT) / 2 - (CARD_HEIGHT / 2);
+        const diff = Math.abs(targetY - expectedY);
+        console.log(`      Expected Target Y: ${expectedY.toFixed(2)}px`);
+        console.log(`      Difference: ${diff.toFixed(2)}px`);
+        console.log(`      Status: ${diff < 1 ? '✅ CORRECT' : '❌ INCORRECT'}`);
+      } else {
+        console.log(`      Status: ⚠️ MISSING DATA`);
+      }
+    }
+  }
+  
+  console.log('\n🔴 RIGHT SIDE CONNECTORS:');
+  for (let roundIdx = 0; roundIdx < rightMatches.length - 1; roundIdx++) {
+    const currentRound = rightMatches[roundIdx];
+    console.log(`\n  Round ${roundIdx + 1} → Round ${roundIdx + 2}:`);
+    console.log(`    Source matches: ${currentRound.length}`);
+    console.log(`    Target matches: ${rightMatches[roundIdx + 1].length}`);
+    
+    for (let matchIdx = 0; matchIdx < currentRound.length; matchIdx += 2) {
+      const pairNum = Math.floor(matchIdx / 2);
+      const match1Y = rightPositions[roundIdx]?.[matchIdx];
+      const match2Y = rightPositions[roundIdx]?.[matchIdx + 1];
+      const targetY = rightPositions[roundIdx + 1]?.[pairNum];
+      
+      console.log(`\n    Pair ${pairNum + 1}:`);
+      console.log(`      Source Match ${matchIdx + 1} Y: ${match1Y?.toFixed(2) || 'N/A'}px`);
+      console.log(`      Source Match ${matchIdx + 2} Y: ${match2Y?.toFixed(2) || 'N/A'}px`);
+      console.log(`      Target Match Y: ${targetY?.toFixed(2) || 'N/A'}px`);
+      
+      if (match1Y !== undefined && match2Y !== undefined && targetY !== undefined) {
+        const expectedY = (match1Y + match2Y + CARD_HEIGHT) / 2 - (CARD_HEIGHT / 2);
+        const diff = Math.abs(targetY - expectedY);
+        console.log(`      Expected Target Y: ${expectedY.toFixed(2)}px`);
+        console.log(`      Difference: ${diff.toFixed(2)}px`);
+        console.log(`      Status: ${diff < 1 ? '✅ CORRECT' : '❌ INCORRECT'}`);
+      }
+    }
+  }
+  console.log('=====================================\n');
+  
+  // 6. DIMENSIONS SUMMARY
+  console.log('📏 ===== DIMENSIONS SUMMARY =====');
+  console.log('Constants:');
+  console.log(`  CARD_WIDTH: ${CARD_WIDTH}px`);
+  console.log(`  CARD_HEIGHT: ${CARD_HEIGHT}px`);
+  console.log(`  ROUND_GAP: ${ROUND_GAP}px`);
+  console.log(`  BASE_VERTICAL_GAP: ${BASE_VERTICAL_GAP}px`);
+  console.log(`  CENTER_GAP: ${CENTER_GAP}px`);
+  
+  console.log('\nCalculated bracket dimensions:');
+  const bracketHeight = calculateBracketHeight(leftMatches);
+  console.log(`  Total height: ${bracketHeight}px`);
+  console.log(`  Total rounds: ${totalRounds}`);
+  console.log(`  Rounds per side: ${totalRounds - 1} (excluding final)`);
+  
+  console.log('=====================================\n');
+  
+  // 7. ISSUES DETECTION
+  console.log('⚠️ ===== ISSUES DETECTION =====');
+  const issues: string[] = [];
+  
+  // Check structure symmetry
+  if (leftMatches.length !== rightMatches.length) {
+    issues.push(`❌ Left and right sides have different round counts (${leftMatches.length} vs ${rightMatches.length})`);
+  }
+  
+  // Check match counts per round
+  for (let i = 0; i < Math.min(leftMatches.length, rightMatches.length); i++) {
+    if (leftMatches[i].length !== rightMatches[i].length) {
+      issues.push(`❌ Round ${i + 1} has different match counts (Left: ${leftMatches[i].length}, Right: ${rightMatches[i].length})`);
+    }
+  }
+  
+  // Check final match
+  if (!finalMatch) {
+    issues.push(`❌ Final match is missing!`);
+  }
+  
+  // Check position symmetry
+  if (leftPositions.length > 0 && rightPositions.length > 0) {
+    const lastLeftY = leftPositions[leftPositions.length - 1]?.[0];
+    const lastRightY = rightPositions[rightPositions.length - 1]?.[0];
+    
+    if (lastLeftY !== undefined && lastRightY !== undefined) {
+      const diff = Math.abs(lastLeftY - lastRightY);
+      if (diff >= 1) {
+        issues.push(`❌ Semi-finals are not aligned (difference: ${diff.toFixed(2)}px)`);
+      }
+    }
+  }
+  
+  if (issues.length === 0) {
+    console.log('✅ No issues detected! Bracket structure looks good.');
+  } else {
+    console.log(`Found ${issues.length} issue(s):\n`);
+    issues.forEach((issue, idx) => {
+      console.log(`${idx + 1}. ${issue}`);
+    });
+  }
+  
+  console.log('=====================================\n');
+  
+  console.log('✅ ===== FULL BRACKET DEBUG COMPLETED =====\n');
+};
+
+// Panggil debug saat component mount
+React.useEffect(() => {
+  if (matches.length > 0) {
+    debugCardPositions();
+  }
+}, [matches]);
+
   const prestasiLeaderboard = generatePrestasiLeaderboard();
   const totalRounds = getTotalRounds();
 
-  // Fungsi untuk hitung dinamis minHeight dan centerOffset
-  const calculateBracketDimensions = () => {
-    if (matches.length === 0) return { minHeight: 1000, centerOffset: 500 };
-    
-    const firstRoundMatches = getMatchesByRound(1).length;
-    const baseSpacing = 280;
-    
-    // Hitung tinggi maksimal yang dibutuhkan oleh ronde pertama
-    const firstRoundHeight = (firstRoundMatches - 1) * baseSpacing + CARD_HEIGHT;
-    
-    // Tambahkan padding atas dan bawah
-    const totalHeight = firstRoundHeight + 400; // 200px padding atas + 200px padding bawah
-    const centerOffset = totalHeight / 2;
-    
-    return { 
-      minHeight: Math.max(1000, totalHeight),
-      centerOffset 
-    };
-  };
+  const calculateCenterOffset = () => {
+  if (matches.length === 0) return 400;
+  
+  const firstRoundMatches = getMatchesByRound(1).length;
+  const baseSpacing = 280;
+  const firstRoundHeight = (firstRoundMatches - 1) * baseSpacing + CARD_HEIGHT;
+  return (firstRoundHeight / 2) + 200;
+};
 
-  const { minHeight, centerOffset } = calculateBracketDimensions();
+const centerOffset = calculateCenterOffset();
+
+
+
+  // 🆕 STEP 7: Inline styles for bracket
+React.useEffect(() => {
+  const style = document.createElement('style');
+  style.innerHTML = `
+    .tournament-layout {
+      position: relative;
+      z-index: 1;
+    }
+
+    .bracket-side {
+      position: relative;
+      z-index: 2;
+    }
+
+    .match-card {
+      transition: all 0.2s ease;
+      cursor: pointer;
+      position: relative !important;  /* ✅ FORCE */
+      z-index: 10;
+      background: white;
+      box-sizing: border-box !important;  /* ✅ FORCE */
+    }
+
+    .match-card:hover {
+      transform: translateY(-2px) !important;  /* ✅ Only Y translation */
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+      z-index: 15;
+    }
+
+    .round-header {
+      position: relative;
+      z-index: 20;
+      background: #F5FBEF;
+      padding: 8px 12px;
+      box-sizing: border-box !important;  /* ✅ FORCE */
+    }
+
+    /* ✅ FORCE no margins/paddings */
+    .bracket-side > div {
+      margin: 0 !important;
+    }
+
+    /* Hide scrollbar but keep functionality */
+    .overflow-x-auto::-webkit-scrollbar {
+      height: 8px;
+    }
+
+    .overflow-x-auto::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 10px;
+    }
+
+    .overflow-x-auto::-webkit-scrollbar-thumb {
+      background: #990D35;
+      border-radius: 10px;
+    }
+
+    .overflow-x-auto::-webkit-scrollbar-thumb:hover {
+      background: #7a0a2a;
+    }
+
+    .overflow-x-auto {
+      scroll-behavior: smooth;
+    }
+  `;
+  document.head.appendChild(style);
+  
+  return () => {
+    document.head.removeChild(style);
+  };
+}, []);
+
+// ============================================================================
+// 🆕 HELPER: Calculate positions for split bracket
+// ============================================================================
+
+/**
+ * Split matches into left and right sides
+ */
+const splitMatchesBySide = (matches: Match[], totalRounds: number) => {
+  const allRounds: { left: Match[]; right: Match[] }[] = [];
+  
+  for (let round = 1; round <= totalRounds; round++) {
+    const roundMatches = getMatchesByRound(round);
+    
+    // Final round stays in center (tidak di-split)
+    if (round === totalRounds) {
+      allRounds.push({ left: [], right: [] });
+      continue;
+    }
+    
+    // Split round matches in half
+    const half = Math.ceil(roundMatches.length / 2);
+    allRounds.push({
+      left: roundMatches.slice(0, half),
+      right: roundMatches.slice(half)
+    });
+  }
+  
+  return allRounds;
+};
+
+/**
+ * Get left matches only (untuk render bracket side)
+ */
+const getLeftMatches = () => {
+  const totalRounds = getTotalRounds();
+  const split = splitMatchesBySide(matches, totalRounds);
+  
+  const result: Match[][] = [];
+  
+  for (let roundIndex = 0; roundIndex < totalRounds - 1; roundIndex++) {
+    result.push(split[roundIndex].left);
+  }
+  
+  return result;
+};
+
+/**
+ * Get right matches only (untuk render bracket side)
+ */
+const getRightMatches = () => {
+  const totalRounds = getTotalRounds();
+  const split = splitMatchesBySide(matches, totalRounds);
+  
+  const result: Match[][] = [];
+  
+  for (let roundIndex = 0; roundIndex < totalRounds - 1; roundIndex++) {
+    result.push(split[roundIndex].right);
+  }
+  
+  return result;
+};
+
+/**
+ * Get final match (untuk render di center)
+ */
+const getFinalMatch = (): Match | null => {
+  const totalRounds = getTotalRounds();
+  const finalMatches = getMatchesByRound(totalRounds);
+  return finalMatches.length > 0 ? finalMatches[0] : null;
+};
+
+/**
+ * Calculate card position for split bracket
+ */
+const calculateCardPosition = (
+  side: 'left' | 'right' | 'final',
+  roundIndex: number,
+  matchIndex: number,
+  totalMatchesInRound: number,
+  centerOffset: number
+): { x: number; y: number } => {
+  
+  if (side === 'final') {
+    // Final card di tengah
+    const totalRounds = getTotalRounds();
+    const finalX = (totalRounds - 1) * (CARD_WIDTH + ROUND_GAP) + 32;
+    return { x: finalX, y: centerOffset - (CARD_HEIGHT / 2) };
+  }
+  
+  const baseSpacing = 280;
+  const spacingMultiplier = Math.pow(2, roundIndex);
+  const spacing = baseSpacing * spacingMultiplier;
+  
+  // Vertical position
+  const totalHeight = (totalMatchesInRound - 1) * spacing;
+  const startOffset = -totalHeight / 2;
+  const y = centerOffset + startOffset + (matchIndex * spacing);
+  
+  // Horizontal position
+  let x: number;
+  if (side === 'left') {
+    x = roundIndex * (CARD_WIDTH + ROUND_GAP) + 32;
+  } else {
+    // Right side: mirror position dari kanan
+    const leftSideWidth = (getTotalRounds() - 1) * (CARD_WIDTH + ROUND_GAP);
+    x = leftSideWidth + (roundIndex * (CARD_WIDTH + ROUND_GAP)) + 32;
+  }
+  
+  return { x, y };
+};
+
+/**
+ * Get left bracket matches (excluding final)
+ */
+const getLeftBracketMatches = () => {
+  const totalRounds = getTotalRounds();
+  const split = splitMatchesBySide(matches, totalRounds);
+  
+  const result: { round: number; matches: Match[]; positions: {x: number; y: number}[] }[] = [];
+  
+  for (let roundIndex = 0; roundIndex < totalRounds - 1; roundIndex++) {
+    const roundMatches = split[roundIndex].left;
+    const positions = roundMatches.map((_, idx) => 
+      calculateCardPosition('left', roundIndex, idx, roundMatches.length, centerOffset)
+    );
+    
+    result.push({
+      round: roundIndex + 1,
+      matches: roundMatches,
+      positions
+    });
+  }
+  
+  return result;
+};
+
+/**
+ * Get right bracket matches (excluding final)
+ */
+const getRightBracketMatches = () => {
+  const totalRounds = getTotalRounds();
+  const split = splitMatchesBySide(matches, totalRounds);
+  
+  const result: { round: number; matches: Match[]; positions: {x: number; y: number}[] }[] = [];
+  
+  for (let roundIndex = 0; roundIndex < totalRounds - 1; roundIndex++) {
+    const roundMatches = split[roundIndex].right;
+    const positions = roundMatches.map((_, idx) => 
+      calculateCardPosition('right', roundIndex, idx, roundMatches.length, centerOffset)
+    );
+    
+    result.push({
+      round: roundIndex + 1,
+      matches: roundMatches,
+      positions
+    });
+  }
+  
+  return result;
+};
+
+/**
+ * Get final match with position
+ */
+const getFinalMatchWithPosition = () => {
+  const totalRounds = getTotalRounds();
+  const finalMatches = getMatchesByRound(totalRounds);
+  
+  if (finalMatches.length === 0) return null;
+  
+  const position = calculateCardPosition('final', totalRounds - 1, 0, 1, centerOffset);
+  
+  return {
+    match: finalMatches[0],
+    position
+  };
+};
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#F5FBEF' }}>
@@ -943,6 +2286,15 @@ const handleExportPDF = async () => {
                   </>
                 )}
               </button>
+              {/* DEBUG BUTTON - Development Only */}
+  <button
+    onClick={runFullDebug}
+    className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all"
+    style={{ backgroundColor: '#8B5CF6', color: '#F5FBEF' }}
+  >
+    <AlertTriangle size={16} />
+    <span>Debug Bracket</span>
+  </button>
             </div>
           </div>
 
@@ -964,457 +2316,234 @@ const handleExportPDF = async () => {
 
       {/* PRESTASI Layout dengan FIXED POSITIONING */}
       {bracketGenerated && matches.length > 0 ? (
-        <div className="p-6" ref={bracketRef}>
-            <div ref={bracketRef} id="bracket-export-area">
+        <div className="p-6">
+          <div id="bracket-export-area">
             {/* Title for PDF */}
-            <div className="mb-6 text-center">
-              <h2 className="text-2xl font-bold" style={{ color: '#990D35' }}>
-                Tournament Bracket - {kelasData.kelompok?.nama_kelompok} {kelasData.kelas_berat?.jenis_kelamin === 'LAKI_LAKI' ? 'Male' : 'Female'} {kelasData.kelas_berat?.nama_kelas || kelasData.poomsae?.nama_kelas}
-              </h2>
-              <p className="text-sm mt-2" style={{ color: '#050505', opacity: 0.7 }}>
-                {kelasData.kompetisi.nama_event} • {kelasData.kompetisi.lokasi}
-              </p>
-            </div>
-          </div>
-          <div className="overflow-x-auto overflow-y-visible pb-8">
-            {/* Round Headers */}
-            <div className="flex gap-0 mb-6 px-8 sticky top-0 z-20 bg-white/95 backdrop-blur-sm py-4 shadow-sm">
-              {Array.from({ length: totalRounds }, (_, roundIndex) => {
-                const round = roundIndex + 1;
-                const roundMatches = getMatchesByRound(round);
-                const roundName = getRoundName(round, totalRounds);
-                
-                return (
-                  <div 
-                    key={`header-${round}`}
-                    className="flex-shrink-0"
-                    style={{ 
-                      width: `${CARD_WIDTH}px`,
-                      marginRight: roundIndex < totalRounds - 1 ? `${ROUND_GAP}px` : '0px'
-                    }}
-                  >
-                    <div 
-                      className="text-center px-6 py-3 rounded-lg font-bold text-lg shadow-md"
-                      style={{ backgroundColor: '#990D35', color: '#F5FBEF' }}
-                    >
-                      {roundName}
+{/* Header Sederhana - Tanpa Border */}
+<div className="mb-4">
+  {/* Header 3 Kolom - Compact */}
+  <div className="flex items-start justify-between gap-4 mb-3">
+    {/* KOLOM KIRI - Logo PBTI */}
+    <div className="flex-shrink-0 w-20">
+      <img 
+        src={taekwondo} 
+        alt="PBTI Logo" 
+        className="h-16 w-auto object-contain"
+      />
+    </div>
+    
+    {/* KOLOM TENGAH - Info Kejuaraan */}
+    <div className="flex-1 text-center px-3">
+      {/* Nama Kejuaraan */}
+      <h2 className="text-xl font-bold mb-1" style={{ color: '#990D35' }}>
+        {kelasData.kompetisi.nama_event}
+      </h2>
+      
+      {/* Detail Kelas */}
+      <p className="text-base font-semibold mb-1" style={{ color: '#050505' }}>
+        {kelasData.kelompok?.nama_kelompok}{' '}
+        {kelasData.kelas_berat?.jenis_kelamin === 'LAKI_LAKI' ? 'Male' : 'Female'}{' '}
+        {kelasData.kelas_berat?.nama_kelas || kelasData.poomsae?.nama_kelas}
+      </p>
+      
+      {/* Tanggal - Input Manual */}
+      <input
+        type="date"
+        id="tournament-date-display"
+        defaultValue={new Date(kelasData.kompetisi.tanggal_mulai).toISOString().split('T')[0]}
+        className="text-sm px-2 py-1 rounded border text-center mb-1"
+        style={{ borderColor: '#990D35', color: '#050505' }}
+      />
+      
+      {/* Lokasi */}
+      <p className="text-sm mb-1" style={{ color: '#050505', opacity: 0.7 }}>
+        GOR Ranau JSC Palembang
+      </p>
+      
+      {/* Jumlah Kompetitor */}
+      <p className="text-sm font-medium" style={{ color: '#990D35' }}>
+        {approvedParticipants.length} Kompetitor
+      </p>
+    </div>
+    
+    {/* KOLOM KANAN - Logo Event */}
+    <div className="flex-shrink-0 w-20">
+      <img 
+        src={sriwijaya} 
+        alt="Event Logo" 
+        className="h-16 w-auto object-contain"
+      />
+    </div>
+  </div>
+</div>
+
+<div ref={bracketRef} className="overflow-x-auto overflow-y-visible pb-8">
+  <div 
+    className="tournament-layout"
+    style={{
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'flex-start', // ✅ PENTING!
+      gap: `${CENTER_GAP}px`,
+      minWidth: 'fit-content',
+      minHeight: '800px', // ✅ Fixed minimum height
+      padding: '60px 40px',
+      position: 'relative'
+    }}
+  >
+    {/* LEFT BRACKET */}
+    {renderBracketSide(getLeftMatches(), 'left', 1)}
+
+    {/* CENTER FINAL */}
+    {renderCenterFinal()}
+
+    {/* RIGHT BRACKET */}
+    {renderBracketSide(getRightMatches(), 'right', 1)}
+  </div>
+</div>
+
+            {/* Leaderboard section tetap di luar export area */}
+            {prestasiLeaderboard && (
+              <div className="mt-8" id="prestasi-leaderboard">
+                <div className="max-w-4xl mx-auto">
+                  <div className="bg-white rounded-lg shadow-lg border-2" style={{ borderColor: '#990D35' }}>
+                    <div className="p-6 border-b" style={{ backgroundColor: 'rgba(153, 13, 53, 0.05)', borderColor: '#990D35' }}>
+                      <div className="flex items-center gap-3 justify-center">
+                        <Trophy size={28} style={{ color: '#990D35' }} />
+                        <h3 className="text-2xl font-bold" style={{ color: '#990D35' }}>
+                          LEADERBOARD
+                        </h3>
+                      </div>
                     </div>
-                    <div className="text-center mt-2 text-sm font-medium" style={{ color: '#050505', opacity: 0.6 }}>
-                      {roundMatches.length} {roundMatches.length === 1 ? 'Match' : 'Matches'}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
 
-              {/* Bracket Visual Container - DYNAMIC HEIGHT */}
-              <div className="relative" style={{ 
-                minHeight: `${minHeight}px`,  // ✅ CHANGED: Dynamic
-                paddingBottom: '200px', 
-                position: 'relative',
-                overflow: 'visible'
-              }}>
-              {/* SVG untuk garis connecting yang konsisten */}
-              <svg 
-                className="absolute top-0 left-8 pointer-events-none" 
-                style={{ 
-                  width: `${totalRounds * (CARD_WIDTH + ROUND_GAP)}px`,
-                  height: '100%'
-                }}
-              >
-                {Array.from({ length: totalRounds }, (_, roundIndex) => {
-                  const round = roundIndex + 1;
-                  const roundMatches = getMatchesByRound(round);
-                  
-                  if (roundIndex >= totalRounds - 1) return null;
-                  
-                  return roundMatches.map((match, matchIndex) => {
-                    const nextRoundMatches = getMatchesByRound(round + 1);
-                    const nextMatchIndex = Math.floor(matchIndex / 2);
-                    
-                  // Posisi kartu saat ini
-                  const x1 = roundIndex * (CARD_WIDTH + ROUND_GAP) + CARD_WIDTH;
-                  const y1 = calculateVerticalPosition(roundIndex, matchIndex, roundMatches.length) + centerOffset + (CARD_HEIGHT / 2);  // ✅ CHANGED
-
-                  // Posisi kartu tujuan di ronde berikutnya
-                  const x2 = (roundIndex + 1) * (CARD_WIDTH + ROUND_GAP);
-                  const y2 = calculateVerticalPosition(roundIndex + 1, nextMatchIndex, nextRoundMatches.length) + centerOffset + (CARD_HEIGHT / 2);  // ✅ CHANGED
-                    
-                    // Titik tengah untuk garis vertikal
-                    const midX = x1 + LINE_EXTENSION;
-                    
-                    return (
-                      <g key={`line-${match.id_match}`}>
-                        {/* Garis horizontal keluar dari kartu */}
-                        <line
-                          x1={x1}
-                          y1={y1}
-                          x2={midX}
-                          y2={y1}
-                          stroke="#990D35"
-                          strokeWidth="2"
-                        />
-                        
-                        {/* Garis vertikal menuju titik tengah */}
-                        <line
-                          x1={midX}
-                          y1={y1}
-                          x2={midX}
-                          y2={y2}
-                          stroke="#990D35"
-                          strokeWidth="2"
-                        />
-                        
-                        {/* Garis horizontal masuk ke kartu berikutnya */}
-                        <line
-                          x1={midX}
-                          y1={y2}
-                          x2={x2}
-                          y2={y2}
-                          stroke="#990D35"
-                          strokeWidth="2"
-                        />
-                      </g>
-                    );
-                  });
-                })}
-              </svg>
-
-              {/* Match Cards dengan ABSOLUTE POSITIONING */}
-              {Array.from({ length: totalRounds }, (_, roundIndex) => {
-                const round = roundIndex + 1;
-                const roundMatches = getMatchesByRound(round);
-                
-                return roundMatches.map((match, matchIndex) => {
-                  const hasScores = match.skor_a > 0 || match.skor_b > 0;
-                  const winner = hasScores 
-                    ? (match.skor_a > match.skor_b ? match.peserta_a : match.peserta_b)
-                    : null;
-                  
-                  const left = roundIndex * (CARD_WIDTH + ROUND_GAP) + 32; // +32 untuk padding kiri
-                  const top = calculateVerticalPosition(roundIndex, matchIndex, roundMatches.length) + centerOffset;
-                  
-                  return (
-                    <div
-                      key={match.id_match}
-                      className="absolute bg-white rounded-xl shadow-lg border-2 overflow-hidden hover:shadow-xl transition-all"
-                      style={{ 
-                        borderColor: winner ? '#22c55e' : '#990D35',
-                        width: `${CARD_WIDTH}px`,
-                        height: `${CARD_HEIGHT}px`,
-                        left: `${left}px`,
-                        top: `${top}px`,
-                        display: 'flex',
-                        flexDirection: 'column'
-                      }}
-                    >
-                      <div 
-                        className="px-4 py-2.5 border-b flex items-center justify-between"
-                        style={{ 
-                          backgroundColor: 'rgba(153, 13, 53, 0.05)',
-                          borderColor: '#990D35'
-                        }}
-                      >
-                        <div className="flex items-center gap-2">
-                          
-                          {/* ⭐ TAMBAHKAN BADGE: NOMOR PARTAI */}
-                          {match.nomor_partai && (
-                            <span 
-                              className="text-xs px-2.5 py-1 rounded-full font-bold shadow-sm"
-                              style={{ backgroundColor: '#990D35', color: 'white' }}
-                            >
-                              No. Partai: {match.nomor_partai}
-                            </span>
-                          )}
-
-                        </div>
-                        
-                        <div className="flex items-center gap-3">
-                          {/* ⭐ TAMBAHKAN DISPLAY TANGGAL */}
-                          {match.tanggal_pertandingan && (
-                            <span className="text-xs flex items-center gap-1" style={{ color: '#050505', opacity: 0.7 }}>
-                              {new Date(match.tanggal_pertandingan).toLocaleDateString('id-ID', {
-                                day: '2-digit',
-                                month: 'short',
-                                year: 'numeric'
-                              })}
-                            </span>
-                          )}
-                          <button
-                            onClick={() => setEditingMatch(match)}
-                            className="p-1.5 rounded-lg hover:bg-black/5 transition-all"
+                    <div className="p-8">
+                      {/* 1st Place */}
+                      {prestasiLeaderboard.first && (
+                        <div className="mb-6">
+                          <div 
+                            className="relative p-6 rounded-xl border-4 shadow-xl"
+                            style={{ 
+                              backgroundColor: 'rgba(255, 215, 0, 0.1)', 
+                              borderColor: '#FFD700'
+                            }}
                           >
-                            <Edit3 size={14} style={{ color: '#050505', opacity: 0.6 }} />
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Participants */}
-                      <div className="flex flex-col">
-                        {/* Participant A */}
-                        <div 
-                          className={`flex-1 px-4 py-3 border-b flex items-center justify-between gap-3 transition-all ${
-                            match.skor_a > match.skor_b && hasScores
-                              ? 'bg-gradient-to-r from-green-50 to-green-100' 
-                              : 'hover:bg-blue-50/30'
-                          }`}
-                          style={{ borderColor: 'rgba(0, 0, 0, 0.05)', minHeight: '85px' }}
-                        >
-                          {match.peserta_a ? (
-                            <>
-                              <div className="flex-1 min-w-0">
-                                <p 
-                                  className="font-bold text-sm leading-tight break-words"
-                                  style={{ 
-                                    color: '#050505',
-                                    wordBreak: 'break-word',
-                                    overflowWrap: 'break-word',
-                                    display: '-webkit-box',
-                                    WebkitLineClamp: 2,
-                                    WebkitBoxOrient: 'vertical',
-                                    overflow: 'hidden'
-                                  }}
-                                >
-                                  {getParticipantName(match.peserta_a)}
-                                </p>
-                                <p className="text-xs truncate mt-0.5" style={{ color: '#3B82F6', opacity: 0.7 }}>
-                                  {getDojoName(match.peserta_a)}
-                                </p>
+                            <div className="flex items-center gap-4">
+                              <div 
+                                className="w-20 h-20 rounded-full flex items-center justify-center flex-shrink-0 shadow-lg"
+                                style={{ backgroundColor: '#FFD700' }}
+                              >
+                                <span className="text-4xl">🥇</span>
                               </div>
-                              {hasScores && (
-                                <div 
-                                  className="w-12 h-12 rounded-lg flex items-center justify-center font-bold text-lg shadow-sm flex-shrink-0"
-                                  style={{ 
-                                    backgroundColor: match.skor_a > match.skor_b ? '#22c55e' : '#e5e7eb',
-                                    color: match.skor_a > match.skor_b ? 'white' : '#6b7280'
-                                  }}
-                                >
-                                  {match.skor_a}
+                              
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <span 
+                                    className="text-xs font-bold px-3 py-1 rounded-full"
+                                    style={{ backgroundColor: '#FFD700', color: 'white' }}
+                                  >
+                                    CHAMPION
+                                  </span>
                                 </div>
-                              )}
-                            </>
-                          ) : (
-                            <span className="text-sm text-gray-400 w-full text-center font-medium">TBD</span>
-                          )}
-                        </div>
-
-                        {/* Participant B */}
-                        <div 
-                          className={`flex-1 px-4 py-3 flex items-center justify-between gap-3 transition-all ${
-                            match.skor_b > match.skor_a && hasScores
-                              ? 'bg-gradient-to-r from-green-50 to-green-100' 
-                              : 'hover:bg-red-50/30'
-                          }`}
-                          style={{ minHeight: '85px' }}
-                        >
-                          {match.peserta_b ? (
-                            <>
-                              <div className="flex-1 min-w-0">
-                                <p 
-                                  className="font-bold text-sm leading-tight break-words"
-                                  style={{ 
-                                    color: '#050505',
-                                    wordBreak: 'break-word',
-                                    overflowWrap: 'break-word',
-                                    display: '-webkit-box',
-                                    WebkitLineClamp: 2,
-                                    WebkitBoxOrient: 'vertical',
-                                    overflow: 'hidden'
-                                  }}
-                                >
-                                  {getParticipantName(match.peserta_b)}
-                                </p>
-                                <p className="text-xs truncate mt-0.5" style={{ color: '#EF4444', opacity: 0.7 }}>
-                                  {getDojoName(match.peserta_b)}
+                                <h4 className="text-2xl font-bold mb-1" style={{ color: '#050505' }}>
+                                  {prestasiLeaderboard.first.name}
+                                </h4>
+                                <p className="text-sm uppercase font-medium" style={{ color: '#050505', opacity: 0.6 }}>
+                                  {prestasiLeaderboard.first.dojo}
                                 </p>
                               </div>
-                              {hasScores && (
-                                <div 
-                                  className="w-12 h-12 rounded-lg flex items-center justify-center font-bold text-lg shadow-sm flex-shrink-0"
-                                  style={{ 
-                                    backgroundColor: match.skor_b > match.skor_a ? '#22c55e' : '#e5e7eb',
-                                    color: match.skor_b > match.skor_a ? 'white' : '#6b7280'
-                                  }}
-                                >
-                                  {match.skor_b}
-                                </div>
-                              )}
-                            </>
-                          ) : (
-                            <div className="w-full flex justify-center">
-                              {match.ronde === 1 ? (
-                                <span 
-                                  className="text-xs px-3 py-1.5 rounded-full font-medium"
-                                  style={{ 
-                                    backgroundColor: 'rgba(245, 183, 0, 0.15)',
-                                    color: '#F5B700'
-                                  }}
-                                >
-                                  BYE
-                                </span>
-                              ) : (
-                                <span 
-                                  className="text-xs px-3 py-1.5 rounded-full font-medium"
-                                  style={{ 
-                                    backgroundColor: 'rgba(192, 192, 192, 0.15)',
-                                    color: '#6b7280'
-                                  }}
-                                >
-                                  TBD
-                                </span>
-                              )}
+                              
+                              <Trophy size={48} style={{ color: '#FFD700' }} className="flex-shrink-0" />
                             </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                });
-              })}
-            </div>
-          </div>
-
-          {/* PRESTASI LEADERBOARD */}
-          {prestasiLeaderboard && (
-            <div className="mt-8" id="prestasi-leaderboard">
-              <div className="max-w-4xl mx-auto">
-                <div className="bg-white rounded-lg shadow-lg border-2" style={{ borderColor: '#990D35' }}>
-                  <div className="p-6 border-b" style={{ backgroundColor: 'rgba(153, 13, 53, 0.05)', borderColor: '#990D35' }}>
-                    <div className="flex items-center gap-3 justify-center">
-                      <Trophy size={28} style={{ color: '#990D35' }} />
-                      <h3 className="text-2xl font-bold" style={{ color: '#990D35' }}>
-                        LEADERBOARD
-                      </h3>
-                    </div>
-                  </div>
-
-                  <div className="p-8">
-                    {/* 1st Place */}
-                    {prestasiLeaderboard.first && (
-                      <div className="mb-6">
-                        <div 
-                          className="relative p-6 rounded-xl border-4 shadow-xl"
-                          style={{ 
-                            backgroundColor: 'rgba(255, 215, 0, 0.1)', 
-                            borderColor: '#FFD700'
-                          }}
-                        >
-                          <div className="flex items-center gap-4">
-                            <div 
-                              className="w-20 h-20 rounded-full flex items-center justify-center flex-shrink-0 shadow-lg"
-                              style={{ backgroundColor: '#FFD700' }}
-                            >
-                              <span className="text-4xl">🥇</span>
-                            </div>
-                            
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-2">
-                                <span 
-                                  className="text-xs font-bold px-3 py-1 rounded-full"
-                                  style={{ backgroundColor: '#FFD700', color: 'white' }}
-                                >
-                                  CHAMPION
-                                </span>
-                              </div>
-                              <h4 className="text-2xl font-bold mb-1" style={{ color: '#050505' }}>
-                                {prestasiLeaderboard.first.name}
-                              </h4>
-                              <p className="text-sm uppercase font-medium" style={{ color: '#050505', opacity: 0.6 }}>
-                                {prestasiLeaderboard.first.dojo}
-                              </p>
-                            </div>
-                            
-                            <Trophy size={48} style={{ color: '#FFD700' }} className="flex-shrink-0" />
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* 2nd & 3rd Places */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      {/* 2nd Place */}
-                      {prestasiLeaderboard.second && (
-                        <div 
-                          className="p-4 rounded-lg border-2 shadow-md col-span-1"
-                          style={{ 
-                            backgroundColor: 'rgba(192, 192, 192, 0.1)', 
-                            borderColor: '#C0C0C0'
-                          }}
-                        >
-                          <div className="flex flex-col items-center text-center">
-                            <div 
-                              className="w-16 h-16 rounded-full flex items-center justify-center mb-3 shadow-md"
-                              style={{ backgroundColor: '#C0C0C0' }}
-                            >
-                              <span className="text-3xl">🥈</span>
-                            </div>
-                            <span 
-                              className="text-xs font-bold px-2 py-1 rounded-full mb-2"
-                              style={{ backgroundColor: '#C0C0C0', color: 'white' }}
-                            >
-                              2ND PLACE
-                            </span>
-                            <h5 className="text-lg font-bold mb-1" style={{ color: '#050505' }}>
-                              {prestasiLeaderboard.second.name}
-                            </h5>
-                            <p className="text-xs uppercase" style={{ color: '#050505', opacity: 0.6 }}>
-                              {prestasiLeaderboard.second.dojo}
-                            </p>
                           </div>
                         </div>
                       )}
 
-                      {/* 3rd Places */}
-                      {prestasiLeaderboard.third.map((participant) => (
-                        <div 
-                          key={participant.id}
-                          className="p-4 rounded-lg border-2 shadow-md col-span-1"
-                          style={{ 
-                            backgroundColor: 'rgba(205, 127, 50, 0.1)', 
-                            borderColor: '#CD7F32'
-                          }}
-                        >
-                          <div className="flex flex-col items-center text-center">
-                            <div 
-                              className="w-16 h-16 rounded-full flex items-center justify-center mb-3 shadow-md"
-                              style={{ backgroundColor: '#CD7F32' }}
-                            >
-                              <span className="text-3xl">🥉</span>
+                      {/* 2nd & 3rd Places */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {/* 2nd Place */}
+                        {prestasiLeaderboard.second && (
+                          <div 
+                            className="p-4 rounded-lg border-2 shadow-md col-span-1"
+                            style={{ 
+                              backgroundColor: 'rgba(192, 192, 192, 0.1)', 
+                              borderColor: '#C0C0C0'
+                            }}
+                          >
+                            <div className="flex flex-col items-center text-center">
+                              <div 
+                                className="w-16 h-16 rounded-full flex items-center justify-center mb-3 shadow-md"
+                                style={{ backgroundColor: '#C0C0C0' }}
+                              >
+                                <span className="text-3xl">🥈</span>
+                              </div>
+                              <span 
+                                className="text-xs font-bold px-2 py-1 rounded-full mb-2"
+                                style={{ backgroundColor: '#C0C0C0', color: 'white' }}
+                              >
+                                2ND PLACE
+                              </span>
+                              <h5 className="text-lg font-bold mb-1" style={{ color: '#050505' }}>
+                                {prestasiLeaderboard.second.name}
+                              </h5>
+                              <p className="text-xs uppercase" style={{ color: '#050505', opacity: 0.6 }}>
+                                {prestasiLeaderboard.second.dojo}
+                              </p>
                             </div>
-                            <span 
-                              className="text-xs font-bold px-2 py-1 rounded-full mb-2"
-                              style={{ backgroundColor: '#CD7F32', color: 'white' }}
-                            >
-                              3RD PLACE
-                            </span>
-                            <h5 className="text-lg font-bold mb-1" style={{ color: '#050505' }}>
-                              {participant.name}
-                            </h5>
-                            <p className="text-xs uppercase" style={{ color: '#050505', opacity: 0.6 }}>
-                              {participant.dojo}
-                            </p>
                           </div>
-                        </div>
-                      ))}
-                    </div>
+                        )}
 
-                    {/* Empty State */}
-                    {!prestasiLeaderboard.first && !prestasiLeaderboard.second && prestasiLeaderboard.third.length === 0 && (
-                      <div className="text-center py-12">
-                        <Trophy size={64} style={{ color: '#990D35', opacity: 0.3 }} className="mx-auto mb-4" />
-                        <p className="text-lg font-semibold mb-2" style={{ color: '#050505' }}>
-                          Belum Ada Hasil
-                        </p>
-                        <p className="text-sm" style={{ color: '#050505', opacity: 0.5 }}>
-                          Leaderboard akan muncul setelah pertandingan dimulai
-                        </p>
+                        {/* 3rd Places */}
+                        {prestasiLeaderboard.third.map((participant) => (
+                          <div 
+                            key={participant.id}
+                            className="p-4 rounded-lg border-2 shadow-md col-span-1"
+                            style={{ 
+                              backgroundColor: 'rgba(205, 127, 50, 0.1)', 
+                              borderColor: '#CD7F32'
+                            }}
+                          >
+                            <div className="flex flex-col items-center text-center">
+                              <div 
+                                className="w-16 h-16 rounded-full flex items-center justify-center mb-3 shadow-md"
+                                style={{ backgroundColor: '#CD7F32' }}
+                              >
+                                <span className="text-3xl">🥉</span>
+                              </div>
+                              <span 
+                                className="text-xs font-bold px-2 py-1 rounded-full mb-2"
+                                style={{ backgroundColor: '#CD7F32', color: 'white' }}
+                              >
+                                3RD PLACE
+                              </span>
+                              <h5 className="text-lg font-bold mb-1" style={{ color: '#050505' }}>
+                                {participant.name}
+                              </h5>
+                              <p className="text-xs uppercase" style={{ color: '#050505', opacity: 0.6 }}>
+                                {participant.dojo}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                    )}
+
+                      {/* Empty State */}
+                      {!prestasiLeaderboard.first && !prestasiLeaderboard.second && prestasiLeaderboard.third.length === 0 && (
+                        <div className="text-center py-12">
+                          <Trophy size={64} style={{ color: '#990D35', opacity: 0.3 }} className="mx-auto mb-4" />
+                          <p className="text-lg font-semibold mb-2" style={{ color: '#050505' }}>
+                            Belum Ada Hasil
+                          </p>
+                          <p className="text-sm" style={{ color: '#050505', opacity: 0.5 }}>
+                            Leaderboard akan muncul setelah pertandingan dimulai
+                          </p>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       ) : (
         <div className="p-6">

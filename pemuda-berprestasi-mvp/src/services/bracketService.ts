@@ -189,6 +189,168 @@ static async generateBracket(
   }
 
   /**
+ * 🎯 Distribute BYE positions for LEFT-RIGHT mirrored bracket
+ * CRITICAL: Untuk bracket yang render kiri-kanan (mirrored)
+ */
+static distributeBYEForMirroredBracket(
+  participantCount: number,
+  targetSize: number
+): number[] {
+  const byesNeeded = targetSize - participantCount;
+  if (byesNeeded <= 0) return [];
+  
+  const totalMatchesR1 = targetSize / 2;
+  const halfSize = totalMatchesR1 / 2; // Split point kiri-kanan
+  
+  console.log(`\n🎯 === BYE DISTRIBUTION (MIRRORED BRACKET) ===`);
+  console.log(`   Participants: ${participantCount}`);
+  console.log(`   Target Size: ${targetSize}`);
+  console.log(`   Total R1 Matches: ${totalMatchesR1}`);
+  console.log(`   Half Size (split point): ${halfSize}`);
+  console.log(`   BYEs Needed: ${byesNeeded}`);
+  
+  const byePositions: number[] = [];
+  
+  // Tracking untuk LEFT (0 to halfSize-1) dan RIGHT (halfSize to totalMatchesR1-1)
+  let leftTop = 0;
+  let leftBottom = halfSize - 1;
+  let rightTop = halfSize;
+  let rightBottom = totalMatchesR1 - 1;
+  
+  // Pattern: LEFT-top, RIGHT-top, LEFT-bottom, RIGHT-bottom (alternating)
+  for (let i = 0; i < byesNeeded; i++) {
+    const side = i % 2 === 0 ? 'LEFT' : 'RIGHT';
+    const isFromTop = Math.floor(i / 2) % 2 === 0;
+    
+    if (side === 'LEFT') {
+      if (isFromTop && leftTop <= leftBottom) {
+        byePositions.push(leftTop);
+        console.log(`   BYE ${i + 1}: LEFT-top position ${leftTop}`);
+        leftTop++;
+      } else if (!isFromTop && leftBottom >= leftTop) {
+        byePositions.push(leftBottom);
+        console.log(`   BYE ${i + 1}: LEFT-bottom position ${leftBottom}`);
+        leftBottom--;
+      } else {
+        // Fallback jika LEFT penuh, masuk RIGHT
+        if (rightTop <= rightBottom) {
+          byePositions.push(rightTop);
+          console.log(`   BYE ${i + 1}: RIGHT-top position ${rightTop} (LEFT full)`);
+          rightTop++;
+        }
+      }
+    } else {
+      if (isFromTop && rightTop <= rightBottom) {
+        byePositions.push(rightTop);
+        console.log(`   BYE ${i + 1}: RIGHT-top position ${rightTop}`);
+        rightTop++;
+      } else if (!isFromTop && rightBottom >= rightTop) {
+        byePositions.push(rightBottom);
+        console.log(`   BYE ${i + 1}: RIGHT-bottom position ${rightBottom}`);
+        rightBottom--;
+      } else {
+        // Fallback jika RIGHT penuh, masuk LEFT
+        if (leftTop <= leftBottom) {
+          byePositions.push(leftTop);
+          console.log(`   BYE ${i + 1}: LEFT-top position ${leftTop} (RIGHT full)`);
+          leftTop++;
+        }
+      }
+    }
+  }
+  
+  // Sort positions untuk processing yang lebih mudah
+  byePositions.sort((a, b) => a - b);
+  
+  console.log(`\n   📊 Final BYE Positions:`, byePositions);
+  console.log(`   LEFT side (0-${halfSize-1}):`, byePositions.filter(p => p < halfSize));
+  console.log(`   RIGHT side (${halfSize}-${totalMatchesR1-1}):`, byePositions.filter(p => p >= halfSize));
+  console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`);
+  
+  return byePositions;
+}
+
+/**
+ * 🆕 Distribute FIGHT positions untuk merata kiri-kanan
+ * Memastikan fight matches tidak menumpuk di satu sisi
+ */
+static distributeFightPositions(
+  fightPositions: number[],
+  totalMatchesR1: number
+): number[] {
+  if (fightPositions.length === 0) return [];
+  
+  const halfSize = totalMatchesR1 / 2;
+  const leftFights: number[] = [];
+  const rightFights: number[] = [];
+  
+  // Pisahkan fight positions berdasarkan sisi
+  fightPositions.forEach(pos => {
+    if (pos < halfSize) {
+      leftFights.push(pos);
+    } else {
+      rightFights.push(pos);
+    }
+  });
+  
+  console.log(`\n   📐 Original fight distribution:`);
+  console.log(`      LEFT fights (${leftFights.length}):`, leftFights);
+  console.log(`      RIGHT fights (${rightFights.length}):`, rightFights);
+  
+  // ⭐ Jika sudah seimbang (±1), keep as is
+  if (Math.abs(leftFights.length - rightFights.length) <= 1) {
+    console.log(`   ✅ Fight distribution already balanced!\n`);
+    return fightPositions;
+  }
+  
+  // ⚠️ Jika tidak seimbang, redistribute
+  console.log(`   ⚠️ Unbalanced (diff: ${Math.abs(leftFights.length - rightFights.length)})! Redistributing...`);
+  
+  const targetPerSide = Math.floor(fightPositions.length / 2);
+  const redistributed: number[] = [];
+  
+  // Ambil semua available positions dan sort
+  const sortedFights = [...fightPositions].sort((a, b) => a - b);
+  
+  // Distribute secara alternating kiri-kanan
+  let leftCount = 0;
+  let rightCount = 0;
+  
+  for (const pos of sortedFights) {
+    const isLeftPos = pos < halfSize;
+    
+    if (isLeftPos && leftCount < targetPerSide) {
+      redistributed.push(pos);
+      leftCount++;
+    } else if (!isLeftPos && rightCount < targetPerSide) {
+      redistributed.push(pos);
+      rightCount++;
+    } else {
+      // Sisa dimasukkan ke yang kurang
+      if (leftCount < rightCount) {
+        redistributed.push(pos);
+        leftCount++;
+      } else {
+        redistributed.push(pos);
+        rightCount++;
+      }
+    }
+  }
+  
+  // Verify hasil
+  const finalLeft = redistributed.filter(p => p < halfSize).length;
+  const finalRight = redistributed.filter(p => p >= halfSize).length;
+  
+  console.log(`   ✅ Redistributed:`);
+  console.log(`      LEFT fights: ${finalLeft}`);
+  console.log(`      RIGHT fights: ${finalRight}`);
+  console.log(`      Positions:`, redistributed.sort((a, b) => a - b));
+  console.log();
+  
+  return redistributed;
+}
+
+  /**
  * Validate and adjust BYE count for bracket generation
  * Returns validation result with optional auto-adjustment
  */
@@ -428,7 +590,10 @@ static async generatePrestasiBracket(
   // 1️⃣ Hitung struktur dasar
   const targetSize = Math.pow(2, Math.ceil(Math.log2(participantCount)));
   const byesNeeded = targetSize - participantCount;
+  const totalMatchesR1 = targetSize / 2; // ✅ TAMBAH INI - PENTING!
+  
   console.log(`📊 PRESTASI: participants=${participantCount}, targetSize=${targetSize}, byesNeeded=${byesNeeded}`);
+  console.log(`   Total R1 matches: ${totalMatchesR1}`);
 
   // 2️⃣ Tentukan peserta BYE
   let byeParticipants: Participant[] = [];
@@ -445,60 +610,56 @@ static async generatePrestasiBracket(
     console.log("   Auto-selected BYE participants:", byeParticipants.map(p => p.name));
   }
 
-  // 3️⃣ Tentukan posisi BYE secara zigzag atas-bawah
-  const totalMatchesR1 = targetSize / 2;
-  const byePositions: number[] = [];
-  let top = 0;
-  let bottom = totalMatchesR1 - 1;
+  // 3️⃣ Tentukan posisi BYE dengan distribusi kiri-kanan
+  const byePositions = this.distributeBYEForMirroredBracket(
+    participantCount,
+    targetSize
+  );
 
-  for (let i = 0; i < byesNeeded; i++) {
-    if (i % 2 === 0) {
-      byePositions.push(top++); // even → dari atas
-    } else {
-      byePositions.push(bottom--); // odd → dari bawah
-    }
-  }
+  console.log(`   🧩 BYE positions:`, byePositions);
 
-  console.log(`   🧩 Zigzag BYE positions (top-bottom):`, byePositions);
+  // 4️⃣ Tentukan posisi FIGHT (yang BUKAN BYE)
+  const allPositions = Array.from({ length: totalMatchesR1 }, (_, i) => i);
+  const fightPositions = allPositions.filter(pos => !byePositions.includes(pos));
 
-  // 4️⃣ Urutan posisi match (campur bye dan aktif zigzag)
-  const activePositions = Array.from({ length: totalMatchesR1 }, (_, i) => i).filter(i => !byePositions.includes(i));
+  console.log(`   ⚔️ FIGHT positions (before distribution):`, fightPositions);
 
-  const orderedPositions: number[] = []; // ✅ tambahkan tipe eksplisit
+  // 5️⃣ DISTRIBUTE fight positions untuk merata kiri-kanan
+  const distributedFightPositions = this.distributeFightPositions(
+    fightPositions,
+    totalMatchesR1
+  );
 
-  let b = 0, a = 0;
-  for (let i = 0; i < totalMatchesR1; i++) {
-    if (i % 2 === 0 && b < byePositions.length) {
-      orderedPositions.push(byePositions[b++]);
-    } else if (a < activePositions.length) {
-      orderedPositions.push(activePositions[a++]);
-    } else if (b < byePositions.length) {
-      orderedPositions.push(byePositions[b++]);
-    }
-  }
+  console.log(`   ✅ FIGHT positions (after distribution):`, distributedFightPositions);
 
-
-  console.log(`   🎯 Ordered R1 positions (zigzag logic):`, orderedPositions);
-
-  // 5️⃣ Shuffle peserta aktif
+  // 6️⃣ Shuffle peserta aktif
   const shuffledActive = this.shuffleArray([...activeParticipants]);
   let pIndex = 0;
   let byeIndex = 0;
 
-  // 6️⃣ Isi match R1 berdasarkan orderedPositions
-  for (const i of orderedPositions) {
+  // 7️⃣ CREATE MATCHES dengan posisi yang sudah didistribusi
+  const allSortedPositions = [...byePositions, ...distributedFightPositions].sort((a, b) => a - b);
+
+  for (const pos of allSortedPositions) {
     let p1: Participant | null = null;
     let p2: Participant | null = null;
     let status: Match["status"] = "pending";
 
-    if (byePositions.includes(i) && byeIndex < byeParticipants.length) {
-      p1 = byeParticipants[byeIndex++];
-      p2 = null;
-      status = "bye";
+    if (byePositions.includes(pos)) {
+      // BYE match
+      if (byeIndex < byeParticipants.length) {
+        p1 = byeParticipants[byeIndex++];
+        p2 = null;
+        status = "bye";
+      }
     } else {
+      // FIGHT match
       p1 = shuffledActive[pIndex++] || null;
       p2 = shuffledActive[pIndex++] || null;
-      if (p1 && !p2) status = "bye";
+      
+      if (p1 && !p2) {
+        status = "bye";
+      }
     }
 
     const created = await prisma.tb_match.create({
@@ -515,7 +676,7 @@ static async generatePrestasiBracket(
     matches.push({
       id: created.id_match,
       round: 1,
-      position: i,
+      position: pos,
       participant1: p1,
       participant2: p2,
       status,
@@ -523,12 +684,16 @@ static async generatePrestasiBracket(
       scoreB: 0,
     });
 
-    console.log(`   🎮 R1 match ${i}: ${p1 ? p1.name : "BYE"} vs ${p2 ? p2.name : "BYE"} (${status})`);
+    console.log(`   🎮 R1 match position ${pos}: ${p1 ? p1.name : "BYE"} vs ${p2 ? p2.name : "BYE"} (${status})`);
   }
 
-  // 7️⃣ Pastikan tidak ada peserta tersisa
+  // 8️⃣ Pastikan tidak ada peserta tersisa (Safety check)
   while (pIndex < shuffledActive.length) {
     const leftover = shuffledActive[pIndex++];
+    
+    console.warn(`   ⚠️ LEFTOVER PARTICIPANT DETECTED: ${leftover.name}`);
+    
+    // Cari slot kosong atau buat match baru
     const created = await prisma.tb_match.create({
       data: {
         id_bagan: baganId,
@@ -543,7 +708,7 @@ static async generatePrestasiBracket(
     matches.push({
       id: created.id_match,
       round: 1,
-      position: totalMatchesR1,
+      position: matches.length, // Append to end
       participant1: leftover,
       participant2: null,
       status: "bye",
@@ -554,7 +719,7 @@ static async generatePrestasiBracket(
     console.log(`   🩹 Added leftover participant as BYE: ${leftover.name}`);
   }
 
-  // 8️⃣ Buat placeholder ronde berikutnya
+  // 9️⃣ Buat placeholder ronde berikutnya
   const totalRounds = Math.log2(targetSize);
   for (let round = 2; round <= totalRounds; round++) {
     const matchesInRound = Math.pow(2, totalRounds - round);
@@ -583,10 +748,10 @@ static async generatePrestasiBracket(
     }
   }
 
-  // 9️⃣ Auto-advance peserta yang BYE
+  // 🔟 Auto-advance peserta yang BYE
   const createdR1Matches = matches.filter(m => m.round === 1);
   for (const m of createdR1Matches) {
-    if (m.participant1 && !m.participant2) {
+    if (m.participant1 && !m.participant2 && m.id) {
       await this.advanceWinnerToNextRound(
         { id_bagan: baganId, ronde: 1, id_match: m.id },
         m.participant1.id
@@ -595,8 +760,8 @@ static async generatePrestasiBracket(
     }
   }
 
-  // 🔟 Debug summary akhir
-  console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+  // 1️⃣1️⃣ Debug summary akhir
+  console.log("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
   console.log("🔍 FINAL DEBUG SUMMARY FOR BRACKET");
   console.log(`🎯 Total peserta: ${participantCount}`);
   console.log(`📦 Total targetSize: ${targetSize}`);
@@ -615,8 +780,10 @@ static async generatePrestasiBracket(
 
   console.log("👥 Semua peserta:", allNames);
   console.log("✅ Yang masuk ke R1:", allUsed);
+  
   if (missing.length > 0) {
     console.log("⚠️ MISSING PESERTA:", missing);
+    console.log("❌ ERROR: Ada peserta yang hilang!");
   } else {
     console.log("🎉 Semua peserta terpakai di R1");
   }
@@ -625,7 +792,14 @@ static async generatePrestasiBracket(
     m => m.round === 1 && (m.status === "bye" || !m.participant2)
   ).length;
   console.log(`🟡 Total BYE matches di R1: ${byeCountR1}`);
-  console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+  
+  // Hitung fight matches
+  const fightCountR1 = matches.filter(
+    m => m.round === 1 && m.participant1 && m.participant2
+  ).length;
+  console.log(`⚔️ Total FIGHT matches di R1: ${fightCountR1}`);
+  
+  console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
 
   return matches;
 }

@@ -90,11 +90,11 @@ export const atletValidation = {
       'number.integer': 'Page harus berupa bilangan bulat',
       'number.min': 'Page minimal 1'
     }),
-    limit: Joi.number().integer().min(1).max(100).default(10).messages({
+    limit: Joi.number().integer().min(1).max(10000).default(10).messages({
       'number.base': 'Limit harus berupa angka',
       'number.integer': 'Limit harus berupa bilangan bulat',
       'number.min': 'Limit minimal 1',
-      'number.max': 'Limit maksimal 100'
+      'number.max': 'Limit maksimal 10000'
     }),
     search: Joi.string().max(255).optional().messages({
       'string.max': 'Search maksimal 255 karakter'

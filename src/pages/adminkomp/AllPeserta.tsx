@@ -28,7 +28,7 @@ const AllPeserta: React.FC = () => {
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(20);
+  const [itemsPerPage] = useState(10000);
 
 
   useEffect(() => {

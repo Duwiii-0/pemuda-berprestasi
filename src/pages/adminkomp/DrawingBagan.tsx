@@ -357,57 +357,55 @@ if (filterKelasUsia !== "ALL") {
 
     // Transform data dengan proper type handling
     const kelasDataForBracket = {
-      id_kelas_kejuaraan: parseInt(selectedKelas.id_kelas_kejuaraan), // ✅ Parse to number
-      cabang: selectedKelas.cabang,
-      kategori_event: selectedKelas.kategori_event,
-      kelompok: selectedKelas.kelompok,
-      kelas_berat: selectedKelas.kelas_berat,
-      poomsae: selectedKelas.poomsae,
-      jenis_kelamin: selectedKelas.jenis_kelamin,
-      kompetisi: {
-        id_kompetisi: kompetisiId!,
-        nama_event:
-          pesertaList[0]?.kelas_kejuaraan?.kompetisi?.nama_event ||
-          "Competition",
-        tanggal_mulai:
-          pesertaList[0]?.kelas_kejuaraan?.kompetisi?.tanggal_mulai ||
-          new Date().toISOString(),
-        tanggal_selesai:
-          pesertaList[0]?.kelas_kejuaraan?.kompetisi?.tanggal_selesai ||
-          new Date().toISOString(),
-        lokasi:
-          pesertaList[0]?.kelas_kejuaraan?.kompetisi?.lokasi || "Location",
-        status:
-          pesertaList[0]?.kelas_kejuaraan?.kompetisi?.status || "PENDAFTARAN",
-      },
-      peserta_kompetisi: pesertaList
-        .filter(
-          (p) =>
-            p.status === "APPROVED" &&
-            String(p.kelas_kejuaraan?.id_kelas_kejuaraan) === selectedKelas.id_kelas_kejuaraan // ⭐ COMPARE as string
-        )
-        .map((p) => ({
-          id_peserta_kompetisi: p.id_peserta_kompetisi,
-          id_atlet: p.atlet?.id_atlet,
-          is_team: p.is_team,
-          status: p.status,
-          atlet: p.atlet
-            ? {
-                id_atlet: p.atlet.id_atlet,
-                nama_atlet: p.atlet.nama_atlet,
-                dojang: {
-                  nama_dojang: p.atlet.dojang?.nama_dojang || "",
-                },
-              }
-            : undefined,
-          anggota_tim: p.anggota_tim?.map((at) => ({
-            atlet: {
-              nama_atlet: at.atlet.nama_atlet,
+  id_kelas_kejuaraan: parseInt(selectedKelas.id_kelas_kejuaraan),
+  cabang: selectedKelas.cabang,
+  kategori_event: selectedKelas.kategori_event,
+  kelompok: selectedKelas.kelompok,
+  // ✅ FIX: Add missing fields
+  kelas_berat: selectedKelas.kelas_berat ? {
+    nama_kelas: selectedKelas.kelas_berat.nama_kelas,
+    batas_min: 0, // Default value
+    batas_max: 999, // Default value
+    jenis_kelamin: selectedKelas.jenis_kelamin
+  } : undefined,
+  poomsae: selectedKelas.poomsae,
+  jenis_kelamin: selectedKelas.jenis_kelamin,
+  kompetisi: {
+    id_kompetisi: kompetisiId!,
+    nama_event: "Sriwijaya Competition",
+    tanggal_mulai: new Date().toISOString(),
+    tanggal_selesai: new Date().toISOString(),
+    lokasi: "Palembang",
+    status: "PENDAFTARAN" as const,
+  },
+  peserta_kompetisi: pesertaList
+    .filter(
+      (p) =>
+        p.status === "APPROVED" &&
+        String(p.kelas_kejuaraan?.id_kelas_kejuaraan) === selectedKelas.id_kelas_kejuaraan
+    )
+    .map((p) => ({
+      id_peserta_kompetisi: p.id_peserta_kompetisi,
+      id_atlet: p.atlet?.id_atlet,
+      is_team: p.is_team,
+      status: p.status,
+      atlet: p.atlet
+        ? {
+            id_atlet: p.atlet.id_atlet,
+            nama_atlet: p.atlet.nama_atlet,
+            dojang: {
+              nama_dojang: p.atlet.dojang?.nama_dojang || "",
             },
-          })),
-        })),
-      bagan: [],
-    };
+          }
+        : undefined,
+      anggota_tim: p.anggota_tim?.map((at) => ({
+        atlet: {
+          nama_atlet: at.atlet.nama_atlet,
+        },
+      })),
+    })),
+  bagan: [],
+};
 
     // DEBUG: Verify transformed data
     console.log('✅ Transformed kelasDataForBracket:', kelasDataForBracket);
