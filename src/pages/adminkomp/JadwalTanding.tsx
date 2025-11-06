@@ -8,10 +8,15 @@ import {
   Eye,
   GitBranch,
   Save,
+  Download,
+  Check
 } from "lucide-react";
 import { useKompetisi } from "../../context/KompetisiContext";
 import { useAuth } from "../../context/authContext";
 import { useNavigate } from "react-router-dom";
+import { exportMultipleBracketsByLapangan } from "../../utils/exportBracketPDF";
+import taekwondo from "../../assets/logo/taekwondo.png";
+import sriwijaya from "../../assets/logo/sriwijaya.png";
 
 interface Lapangan {
   id_lapangan: number;
@@ -78,6 +83,10 @@ const JadwalPertandingan: React.FC = () => {
   const [addingLapanganTo, setAddingLapanganTo] = useState<string | null>(null);
   const [savingKelas, setSavingKelas] = useState<Record<number, boolean>>({});
   const [isSavingAntrian, setIsSavingAntrian] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [selectedExportHari, setSelectedExportHari] = useState<string>("");
+  const [selectedExportLapangan, setSelectedExportLapangan] = useState<number[]>([]);
+  const [exportingPDF, setExportingPDF] = useState(false);
 
   useEffect(() => {
     if (!idKompetisi) return;
@@ -622,6 +631,75 @@ const JadwalPertandingan: React.FC = () => {
     navigate("/admin-kompetisi/drawing-bagan");
   };
 
+const handleExportLapangan = async () => {
+  if (!idKompetisi || selectedExportLapangan.length === 0) return;
+
+  setExportingPDF(true);
+  setErrorMessage('');
+  setSuccessMessage('');
+
+  try {
+    const selectedHari = hariList.find(h => h.tanggal === selectedExportHari);
+    if (!selectedHari) throw new Error('Hari tidak ditemukan');
+
+    const bracketsToExport = [];
+
+    for (const lapanganId of selectedExportLapangan) {
+      const lapangan = selectedHari.lapangan.find(l => l.id_lapangan === lapanganId);
+      if (!lapangan) continue;
+
+      for (const kelasId of lapangan.kelasDipilih) {
+        const kelasData = kelasKejuaraanList.find(k => k.id_kelas_kejuaraan === kelasId);
+        if (!kelasData) continue;
+
+        const response = await fetch(
+          `${import.meta.env.VITE_API_URL}/kompetisi/${idKompetisi}/brackets/${kelasId}`,
+          {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          }
+        );
+
+        if (response.ok) {
+          const result = await response.json();
+          
+          bracketsToExport.push({
+            kelasData: kelasData,
+            bracketData: result.data,
+            lapanganNama: lapangan.nama_lapangan,
+            tanggal: selectedExportHari
+          });
+        }
+      }
+    }
+
+    if (bracketsToExport.length === 0) {
+      throw new Error('Tidak ada bracket yang siap untuk di-export');
+    }
+
+    // ✅ Simple: hardcode atau ambil dari state/props yang ada
+    await exportMultipleBracketsByLapangan(bracketsToExport, {
+      namaKejuaraan: 'Sriwijaya Competition',
+      logoPBTI: taekwondo,
+      logoEvent: sriwijaya,
+    });
+
+    setSuccessMessage(`Berhasil export ${bracketsToExport.length} bracket!`);
+    setShowExportModal(false);
+    setSelectedExportHari('');
+    setSelectedExportLapangan([]);
+    
+    setTimeout(() => setSuccessMessage(''), 3000);
+
+  } catch (err: any) {
+    console.error('❌ Error exporting brackets:', err);
+    setErrorMessage(err.message || 'Gagal export brackets');
+  } finally {
+    setExportingPDF(false);
+  }
+};
+
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#F5FBEF" }}>
       <div className="p-4 sm:p-6 lg:p-8 max-w-full">
@@ -1060,6 +1138,16 @@ const JadwalPertandingan: React.FC = () => {
                     </>
                   )}
                 </button>
+                 {/* 🆕 BUTTON EXPORT PER LAPANGAN */}
+                <button
+                  onClick={() => setShowExportModal(true)}
+                  disabled={hariList.length === 0}
+                  className="flex items-center gap-2 px-4 py-3 rounded-xl font-medium"
+                  style={{ backgroundColor: "#990D35", color: "#F5FBEF" }}
+                >
+                  <Download size={16} />
+                  Export Bracket per Lapangan
+                </button>
               </div>
               {hariAntrianList.length === 0 ? (
                 <div className="text-center py-12">
@@ -1378,6 +1466,147 @@ const JadwalPertandingan: React.FC = () => {
             </>
           )}
       </div>
+      {/* 🆕 MODAL EXPORT PER LAPANGAN */}
+{showExportModal && (
+  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+      <div className="p-6 border-b sticky top-0 bg-white z-10" style={{ borderColor: '#990D35' }}>
+        <h3 className="text-xl font-bold" style={{ color: '#050505' }}>
+          Export Bracket per Lapangan
+        </h3>
+        <p className="text-sm mt-1" style={{ color: '#050505', opacity: 0.6 }}>
+          Pilih hari dan lapangan yang ingin di-export ke PDF
+        </p>
+      </div>
+      
+      <div className="p-6 space-y-4">
+        {/* Pilih Hari */}
+        <div>
+          <label className="block text-sm font-medium mb-2" style={{ color: '#050505' }}>
+            Pilih Hari Pertandingan
+          </label>
+          <select
+            value={selectedExportHari}
+            onChange={(e) => {
+              setSelectedExportHari(e.target.value);
+              setSelectedExportLapangan([]);
+            }}
+            className="w-full px-3 py-2 rounded-lg border"
+            style={{ borderColor: '#990D35' }}
+          >
+            <option value="">-- Pilih Hari --</option>
+            {hariList.map((hari, idx) => (
+              <option key={hari.tanggal} value={hari.tanggal}>
+                Hari ke-{idx + 1} - {new Date(hari.tanggal).toLocaleDateString('id-ID', {
+                  weekday: 'long',
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric'
+                })}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Pilih Lapangan */}
+        {selectedExportHari && (
+          <div>
+            <label className="block text-sm font-medium mb-2" style={{ color: '#050505' }}>
+              Pilih Lapangan (bisa pilih lebih dari 1)
+            </label>
+            <div className="space-y-2 max-h-64 overflow-y-auto border rounded-lg p-3" style={{ backgroundColor: '#F5FBEF' }}>
+              {hariList
+                .find(h => h.tanggal === selectedExportHari)
+                ?.lapangan.map((lap) => {
+                  const isSelected = selectedExportLapangan.includes(lap.id_lapangan);
+                  const kelasCount = lap.kelasDipilih.length;
+                  
+                  return (
+                    <label
+                      key={lap.id_lapangan}
+                      className={`flex items-center justify-between p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                        isSelected ? 'bg-white' : 'hover:bg-white'
+                      }`}
+                      style={{
+                        borderColor: isSelected ? '#990D35' : 'rgba(153,13,53,0.3)',
+                      }}
+                    >
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedExportLapangan([...selectedExportLapangan, lap.id_lapangan]);
+                            } else {
+                              setSelectedExportLapangan(
+                                selectedExportLapangan.filter(id => id !== lap.id_lapangan)
+                              );
+                            }
+                          }}
+                          className="w-5 h-5 accent-[#990D35]"
+                        />
+                        <div>
+                          <p className="font-bold" style={{ color: '#050505' }}>
+                            Lapangan {lap.nama_lapangan}
+                          </p>
+                          <p className="text-xs" style={{ color: '#050505', opacity: 0.6 }}>
+                            {kelasCount} Kelas Kejuaraan
+                          </p>
+                        </div>
+                      </div>
+                      {isSelected && <Check size={20} style={{ color: '#990D35' }} />}
+                    </label>
+                  );
+                })}
+            </div>
+          </div>
+        )}
+
+        {/* Info terpilih */}
+        {selectedExportLapangan.length > 0 && (
+          <div className="p-3 rounded-lg" style={{ backgroundColor: 'rgba(153,13,53,0.1)' }}>
+            <p className="text-sm font-medium" style={{ color: '#990D35' }}>
+              {selectedExportLapangan.length} lapangan terpilih
+            </p>
+          </div>
+        )}
+      </div>
+      
+      <div className="p-6 border-t flex gap-3 sticky bottom-0 bg-white z-10">
+        <button
+          onClick={() => {
+            setShowExportModal(false);
+            setSelectedExportHari('');
+            setSelectedExportLapangan([]);
+          }}
+          className="flex-1 py-3 px-4 rounded-lg border-2 font-medium"
+          style={{ borderColor: '#990D35', color: '#990D35' }}
+        >
+          Batal
+        </button>
+        <button
+          onClick={handleExportLapangan}
+          disabled={selectedExportLapangan.length === 0 || exportingPDF}
+          className="flex-1 py-3 px-4 rounded-lg font-medium disabled:opacity-50"
+          style={{ backgroundColor: '#990D35', color: '#F5FBEF' }}
+        >
+          {exportingPDF ? (
+            <>
+              <Loader size={16} className="animate-spin inline mr-2" />
+              Generating PDF...
+            </>
+          ) : (
+            <>
+              <Download size={16} className="inline mr-2" />
+              Export PDF
+            </>
+          )}
+        </button>
+      </div>
+    </div>
+  </div>
+)}
     </div>
   );
 };

@@ -510,3 +510,137 @@ export const exportMultipleBrackets = async (
   doc.save(filename);
   console.log(`✅ Saved ${brackets.length} brackets: ${filename}`);
 };
+
+export const exportMultipleBracketsByLapangan = async (
+  brackets: Array<{
+    kelasData: any;
+    bracketData: any;
+    lapanganNama: string;
+    tanggal: string;
+  }>,
+  eventMetadata: {
+    logoPBTI?: string;
+    logoEvent?: string;
+    namaKejuaraan: string;
+  }
+): Promise<void> => {
+  console.log(`🚀 Exporting ${brackets.length} brackets by lapangan...`);
+  
+  const doc = new jsPDF({ 
+    orientation: 'landscape', 
+    unit: 'mm', 
+    format: 'a4',
+    compress: true
+  });
+
+  for (let i = 0; i < brackets.length; i++) {
+    const { kelasData, bracketData, lapanganNama, tanggal } = brackets[i];
+    
+    console.log(`📄 Processing bracket ${i + 1}/${brackets.length} - Lapangan ${lapanganNama}...`);
+    
+    if (i > 0) {
+      doc.addPage();
+    }
+
+    // Render bracket component ke temporary div
+    const tempDiv = document.createElement('div');
+    tempDiv.style.position = 'absolute';
+    tempDiv.style.left = '-9999px';
+    tempDiv.style.top = '0';
+    document.body.appendChild(tempDiv);
+
+    // Render bracket menggunakan React (perlu import React)
+    // Atau bisa gunakan HTML manual untuk simple bracket
+    const isPemula = kelasData.kategori_event?.nama_kategori === 'Pemula';
+    
+    // Generate HTML bracket
+    const bracketHTML = generateBracketHTML(bracketData, kelasData, isPemula);
+    tempDiv.innerHTML = bracketHTML;
+
+    // Wait for render
+    await new Promise(resolve => setTimeout(resolve, 300));
+
+    const approvedParticipants = kelasData.peserta_kompetisi?.filter((p: any) => p.status === 'APPROVED') || [];
+    const participantCount = approvedParticipants.length;
+    const scaleFactor = getScaleFactor(participantCount);
+
+    const config: ExportConfig = {
+      eventName: eventMetadata.namaKejuaraan,
+      categoryName: `${kelasData.kelompok?.nama_kelompok || ''} ${
+        kelasData.kelas_berat?.jenis_kelamin === 'LAKI_LAKI' ? 'Male' : 'Female'
+      } ${kelasData.kelas_berat?.nama_kelas || kelasData.poomsae?.nama_kelas || ''}`.trim(),
+      location: kelasData.kompetisi?.lokasi || '-',
+      dateRange: new Date(tanggal).toLocaleDateString('id-ID', {
+        day: 'numeric', month: 'long', year: 'numeric'
+      }),
+      totalParticipants: participantCount,
+      logoPBTI: eventMetadata.logoPBTI,
+      logoEvent: eventMetadata.logoEvent,
+    };
+
+    const bracketImg = await convertElementToImage(tempDiv, scaleFactor);
+    await addHeaderAndFooter(doc, config);
+
+    // Add "Lapangan X" indicator
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(THEME.primary);
+    doc.text(`Lapangan ${lapanganNama}`, PAGE_WIDTH - MARGIN_RIGHT - 20, HEADER_HEIGHT + 5, { align: 'right' });
+
+    const contentStartY = HEADER_HEIGHT + MARGIN_TOP;
+    const contentEndY = PAGE_HEIGHT - FOOTER_HEIGHT - MARGIN_BOTTOM;
+    const maxWidth = PAGE_WIDTH - MARGIN_LEFT - MARGIN_RIGHT;
+    const maxHeight = contentEndY - contentStartY;
+
+    const imgAspectRatio = bracketImg.width / bracketImg.height;
+    let displayWidth = maxWidth;
+    let displayHeight = displayWidth / imgAspectRatio;
+
+    if (displayHeight > maxHeight) {
+      displayHeight = maxHeight;
+      displayWidth = displayHeight * imgAspectRatio;
+    }
+
+    const centerX = MARGIN_LEFT + (maxWidth / 2);
+    const centerY = contentStartY + (maxHeight / 2);
+    const x = centerX - (displayWidth / 2);
+    const y = centerY - (displayHeight / 2);
+
+    doc.addImage(
+      bracketImg.src, 
+      'JPEG', 
+      x, 
+      y, 
+      displayWidth, 
+      displayHeight, 
+      undefined, 
+      'FAST'
+    );
+
+    // Cleanup
+    document.body.removeChild(tempDiv);
+
+    console.log(`✅ Bracket ${i + 1} (Lapangan ${lapanganNama}) added`);
+  }
+
+  const dateStr = new Date().toISOString().split('T')[0];
+  const filename = `Brackets_Lapangan_${eventMetadata.namaKejuaraan.replace(/[^a-z0-9]/gi, '_')}_${dateStr}.pdf`;
+  
+  doc.save(filename);
+  console.log(`✅ Saved ${brackets.length} brackets: ${filename}`);
+};
+
+// Helper function untuk generate HTML bracket
+const generateBracketHTML = (bracketData: any, kelasData: any, isPemula: boolean): string => {
+  // Simplified HTML generation - sesuaikan dengan struktur bracket Anda
+  return `
+    <div class="tournament-layout" style="background: white; padding: 40px;">
+      <!-- Generate HTML sesuai struktur bracket Pemula/Prestasi -->
+      <!-- Contoh simple, sesuaikan dengan kebutuhan -->
+      <div style="text-align: center; margin-bottom: 20px;">
+        <h2 style="color: #990D35;">${isPemula ? 'Bracket Pemula' : 'Bracket Prestasi'}</h2>
+      </div>
+      <!-- Tambahkan HTML bracket detail di sini -->
+    </div>
+  `;
+};
