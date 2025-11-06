@@ -74,6 +74,9 @@ const JadwalPertandingan: React.FC = () => {
   const [baganInfoMap, setBaganInfoMap] = useState<Record<number, BaganInfo>>(
     {}
   );
+  const [sortedKelasKejuaraanList, setSortedKelasKejuaraanList] = useState<
+    any[]
+  >([]);
 
   const [loadingHari, setLoadingHari] = useState(false);
   const [loadingBagan, setLoadingBagan] = useState(false);
@@ -260,6 +263,21 @@ const JadwalPertandingan: React.FC = () => {
 
     setApprovedPesertaByKelas(map);
   }, [pesertaList]);
+
+  useEffect(() => {
+    if (kelasKejuaraanList.length > 0) {
+      const sortedList = [...kelasKejuaraanList].sort((a, b) => {
+        const countA =
+          (approvedPesertaByKelas[a.id_kelas_kejuaraan] || []).length;
+        const countB =
+          (approvedPesertaByKelas[b.id_kelas_kejuaraan] || []).length;
+        return countB - countA;
+      });
+      setSortedKelasKejuaraanList(sortedList);
+    } else {
+      setSortedKelasKejuaraanList([]);
+    }
+  }, [kelasKejuaraanList, approvedPesertaByKelas]);
 
   // Sync antrian list
   useEffect(() => {
@@ -977,9 +995,9 @@ const handleExportLapangan = async () => {
                               className="max-h-64 overflow-y-auto space-y-2 border p-3 rounded-lg"
                               style={{ backgroundColor: "#F5FBEF" }}
                             >
-                              {kelasKejuaraanList &&
-                              kelasKejuaraanList.length > 0 ? (
-                                kelasKejuaraanList.map((kelas) => {
+                              {sortedKelasKejuaraanList &&
+                              sortedKelasKejuaraanList.length > 0 ? (
+                                sortedKelasKejuaraanList.map((kelas) => {
                                   const approvedPeserta =
                                     approvedPesertaByKelas[
                                       kelas.id_kelas_kejuaraan
@@ -998,8 +1016,8 @@ const handleExportLapangan = async () => {
                                       <div className="flex justify-between items-center">
                                         <div className="flex items-center gap-2">
                                           <input
-                                            type="radio"
-                                            name={`kelas-lapangan-${lap.id_lapangan}`}
+                                            type="checkbox"
+                                            name={`kelas-lapangan-${lap.id_lapangan}-${kelas.id_kelas_kejuaraan}`}
                                             checked={lap.kelasDipilih.includes(
                                               kelas.id_kelas_kejuaraan
                                             )}
