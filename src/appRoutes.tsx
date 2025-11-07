@@ -21,11 +21,19 @@ import NotFound from "./pages/notFound";
 import TutorialPage from "./pages/landingPage/tutorial";
 import LapanganLiveView from "./lombaLayout/pertandingan";
 import LiveStreaming from "./lombaLayout/liveStreaming";
+import MedalTally from "./lombaLayout/medalTally"; // ✅ NEW IMPORT
 
 const LapanganLiveViewWrapper = () => {
   const { idKompetisi } = useParams<{ idKompetisi: string }>();
   const id = idKompetisi ? parseInt(idKompetisi, 10) : undefined;
   return <LapanganLiveView idKompetisi={id} />;
+};
+
+// ✅ NEW: Medal Tally Wrapper
+const MedalTallyWrapper = () => {
+  const { idKompetisi } = useParams<{ idKompetisi: string }>();
+  const id = idKompetisi ? parseInt(idKompetisi, 10) : undefined;
+  return <MedalTally idKompetisi={id} />;
 };
 
 // Dashboard
@@ -317,7 +325,7 @@ export default function AppRoutes() {
           />
         </Route>
 
-        {/* Lomba pages */}
+        {/* ✅ Lomba pages - PUBLIC ACCESS */}
         <Route path="/event" element={<LombaLayout />}>
           <Route index element={<Navigate to="/event/home" replace />} />
           <Route path="home" element={<LandingPage />} />
@@ -327,6 +335,11 @@ export default function AppRoutes() {
           <Route
             path="pertandingan/:idKompetisi"
             element={<LapanganLiveViewWrapper />}
+          />
+          {/* ✅ NEW: Medal Tally Route */}
+          <Route
+            path="medal-tally/:idKompetisi"
+            element={<MedalTallyWrapper />}
           />
         </Route>
 
