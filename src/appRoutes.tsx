@@ -188,6 +188,7 @@ export default function AppRoutes() {
           <Route path="statistik" element={<StatistikAdminKomp />} />
           <Route path="bukti-pembayaran" element={<BuktiTfkomp />} />
           <Route path="drawing-bagan" element={<DrawingBagan />} />
+          <Route path="drawing-bagan/:kelasId?" element={<DrawingBagan />} />
           <Route path="jadwal-tanding" element={<JadwalPertandingan />} />
         </Route>
 

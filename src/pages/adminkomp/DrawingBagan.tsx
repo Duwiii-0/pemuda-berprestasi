@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../../context/authContext";
 import { useKompetisi } from "../../context/KompetisiContext";
+import { useParams } from 'react-router-dom';
 import { kelasBeratOptionsMap } from "../../dummy/beratOptions";
 import TournamentBracketPemula from '../../components/TournamentBracketPemula';
 import TournamentBracketPrestasi from '../../components/TournamentBracketPrestasi';
@@ -39,6 +40,7 @@ interface KelasKejuaraan {
 }
 
 const DrawingBagan: React.FC = () => {
+  const { kelasId } = useParams<{ kelasId?: string }>(); 
   const { token, user } = useAuth();
   const { pesertaList, fetchAtletByKompetisi, loadingAtlet } = useKompetisi();
   const [selectedKelas, setSelectedKelas] = useState<KelasKejuaraan | null>(null);
@@ -269,6 +271,19 @@ if (filterKelasUsia !== "ALL") {
   filterKelasBerat, // TAMBAHKAN ini
   filterStatus,
 ]);
+
+  useEffect(() => {
+    if (kelasId && kelasKejuaraan.length > 0 && !showBracket) {
+      const kelas = kelasKejuaraan.find(k => k.id_kelas_kejuaraan === kelasId);
+      if (kelas) {
+        console.log(`🎯 Auto-opening bracket for kelas ${kelasId}`);
+        setSelectedKelas(kelas);
+        setShowBracket(true);
+      } else {
+        console.warn(`⚠️ Kelas ${kelasId} tidak ditemukan`);
+      }
+    }
+  }, [kelasId, kelasKejuaraan, showBracket]);
 
   const getStatusBadge = (status: KelasKejuaraan["bracket_status"]) => {
     const statusConfig = {

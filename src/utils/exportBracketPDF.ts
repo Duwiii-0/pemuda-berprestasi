@@ -1,5 +1,9 @@
 import jsPDF from 'jspdf';
 import * as htmlToImage from 'html-to-image';
+import ReactDOM from 'react-dom/client';
+import React from 'react';
+import BracketRenderer from '../components/BracketRenderer';
+import { components } from 'react-select';
 
 // =================================================================================================
 // CONFIGURATION & CONSTANTS
@@ -463,7 +467,7 @@ export const exportMultipleBracketsByLapangan = async (
     namaKejuaraan: string;
   }
 ): Promise<void> => {
-  console.log(`🚀 Starting export for ${brackets.length} brackets...`);
+  console.log(`🚀 Starting bulk export for ${brackets.length} brackets...`);
   
   const doc = new jsPDF({ 
     orientation: 'landscape', 
@@ -472,7 +476,7 @@ export const exportMultipleBracketsByLapangan = async (
     compress: true
   });
 
-  // ✅ Group brackets by lapangan untuk better organization
+  // Group by lapangan
   const bracketsByLapangan = brackets.reduce((acc, bracket) => {
     if (!acc[bracket.lapanganNama]) {
       acc[bracket.lapanganNama] = [];
@@ -481,15 +485,13 @@ export const exportMultipleBracketsByLapangan = async (
     return acc;
   }, {} as Record<string, typeof brackets>);
 
-  console.log('📋 Brackets grouped by lapangan:', Object.keys(bracketsByLapangan));
-
   let pageIndex = 0;
 
   for (const [lapanganNama, lapanganBrackets] of Object.entries(bracketsByLapangan)) {
     console.log(`\n📍 Processing Lapangan ${lapanganNama} (${lapanganBrackets.length} brackets)...`);
 
     for (let i = 0; i < lapanganBrackets.length; i++) {
-      const { kelasData, bracketData, tanggal, namaKelas } = lapanganBrackets[i];
+      const { kelasData, isPemula, tanggal, namaKelas } = lapanganBrackets[i];
       
       console.log(`  📄 Bracket ${i + 1}/${lapanganBrackets.length}: ${namaKelas}`);
       
@@ -498,28 +500,42 @@ export const exportMultipleBracketsByLapangan = async (
       }
       pageIndex++;
 
-      // ✅ Render placeholder bracket HTML
-      const tempDiv = document.createElement('div');
-      tempDiv.style.position = 'absolute';
-      tempDiv.style.left = '-9999px';
-      tempDiv.style.top = '0';
-      tempDiv.style.width = '1400px';
-      tempDiv.style.background = 'white';
-      tempDiv.style.padding = '40px';
-      document.body.appendChild(tempDiv);
+      // ✅ Create container for React component
+      const tempContainer = document.createElement('div');
+      tempContainer.id = `bracket-container-${pageIndex}`;
+      document.body.appendChild(tempContainer);
 
       try {
-        // ✅ Generate simplified bracket HTML (karena data sudah ada dari API)
-        const bracketHTML = generateBracketHTML(bracketData, kelasData, kelasData.kategori_event.nama_kategori.toLowerCase().includes('pemula'));
-        tempDiv.innerHTML = bracketHTML;
+        // ✅ Render React component and wait for completion
+        const bracketElement = await new Promise<HTMLElement>((resolve, reject) => {
+          const root = ReactDOM.createRoot(tempContainer);
+          
+          const handleRenderComplete = (element: HTMLElement) => {
+            console.log('  ✅ Bracket render complete');
+            resolve(element);
+          };
 
-        // Wait for render
-        await new Promise(resolve => setTimeout(resolve, 500));
+          root.render(
+            React.createElement(BracketRenderer, {
+              kelasData: kelasData,
+              isPemula: isPemula,
+              onRenderComplete: handleRenderComplete
+            })
+          );
+
+          // Timeout fallback
+          setTimeout(() => {
+            reject(new Error('Render timeout'));
+          }, 5000);
+        });
+
+        console.log('  📸 Capturing bracket screenshot...');
 
         const approvedParticipants = kelasData.peserta_kompetisi?.filter((p: any) => p.status === 'APPROVED') || [];
         const participantCount = approvedParticipants.length;
         const scaleFactor = getScaleFactor(participantCount);
 
+        // Config for PDF header
         const config: ExportConfig = {
           eventName: eventMetadata.namaKejuaraan,
           categoryName: namaKelas,
@@ -532,10 +548,13 @@ export const exportMultipleBracketsByLapangan = async (
           logoEvent: eventMetadata.logoEvent,
         };
 
-        const bracketImg = await convertElementToImage(tempDiv, scaleFactor);
+        // Capture image
+        const bracketImg = await convertElementToImage(bracketElement, scaleFactor);
+        
+        // Add header
         await addHeaderAndFooter(doc, config);
 
-        // ✅ Add Lapangan indicator (TOP RIGHT)
+        // Add Lapangan indicator
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(12);
         doc.setTextColor(THEME.primary);
@@ -561,6 +580,7 @@ export const exportMultipleBracketsByLapangan = async (
         const x = centerX - (displayWidth / 2);
         const y = centerY - (displayHeight / 2);
 
+        // Add image to PDF
         doc.addImage(
           bracketImg.src, 
           'JPEG', 
@@ -572,21 +592,21 @@ export const exportMultipleBracketsByLapangan = async (
           'FAST'
         );
 
-        // Cleanup
-        document.body.removeChild(tempDiv);
-
         console.log(`  ✅ Added to PDF`);
 
       } catch (error) {
         console.error(`  ❌ Error rendering bracket:`, error);
-        if (document.body.contains(tempDiv)) {
-          document.body.removeChild(tempDiv);
-        }
         throw error;
+      } finally {
+        // ✅ Cleanup
+        if (document.body.contains(tempContainer)) {
+          document.body.removeChild(tempContainer);
+        }
       }
     }
   }
 
+  // Save PDF
   const dateStr = new Date().toISOString().split('T')[0];
   const filename = `Brackets_Lapangan_${eventMetadata.namaKejuaraan.replace(/[^a-z0-9]/gi, '_')}_${dateStr}.pdf`;
   

@@ -836,57 +836,6 @@ const generateBracket = async () => {
     return leaderboard;
   };
 
-// 🔗 Fungsi menggambar konektor antar round
-const renderConnectorLines = (
-  matchesBySide: Match[][],
-  roundGap: number,
-  side: 'left' | 'right'
-) => {
-  const lines: React.ReactNode[] = [];
-
-  for (let roundIdx = 0; roundIdx < matchesBySide.length - 1; roundIdx++) {
-    const currentRound = matchesBySide[roundIdx];
-    const nextRound = matchesBySide[roundIdx + 1];
-
-    for (let matchIdx = 0; matchIdx < currentRound.length; matchIdx++) {
-      const match = currentRound[matchIdx];
-
-      const nextIdx = Math.floor(matchIdx / 2);
-      const parentMatch = nextRound[nextIdx];
-      if (!match || !parentMatch) continue;
-
-      const fromX = roundIdx * roundGap + CARD_WIDTH;
-      const fromY = match.verticalCenter ?? 0;
-      const toX = (roundIdx + 1) * roundGap;
-      const toY = parentMatch.verticalCenter ?? 0;
-
-      const direction = side === 'right' ? -1 : 1;
-      const offset = 20 * direction;
-
-      lines.push(
-        <line
-          key={`${side}-connector-${roundIdx}-${matchIdx}`}
-          x1={fromX + offset}
-          y1={fromY}
-          x2={toX - offset}
-          y2={toY}
-          stroke="#aaa"
-          strokeWidth="2"
-        />
-      );
-
-      console.log(
-        `Connector ${side}: Round ${roundIdx + 1} Match ${matchIdx + 1} → Round ${
-          roundIdx + 2
-        } Match ${nextIdx + 1}`
-      );
-    }
-  }
-
-  return lines;
-};
-
-
 /**
  * 🆕 Render single match card
  */
@@ -1054,10 +1003,6 @@ const calculateVerticalPositions = (matchesBySide: Match[][]) => {
   const round1Count = matchesBySide[0].length;
   positions[0] = [];
 
-  console.log(`📐 Calculating positions for ${round1Count} matches in Round 1...`);
-  console.log('Lokasi:', kelasData.kompetisi.lokasi)
-
-
   for (let i = 0; i < round1Count; i++) {
     const yPos = i * (CARD_HEIGHT + BASE_VERTICAL_GAP);
     positions[0].push(yPos);
@@ -1068,7 +1013,6 @@ const calculateVerticalPositions = (matchesBySide: Match[][]) => {
       matchesBySide[0][i].verticalCenter = yPos + CARD_HEIGHT / 2;
     }
 
-    console.log(`  Match ${i + 1}: Y = ${yPos}px`);
   }
 
   // 🌀 Round berikutnya — posisi = titik tengah vertikal dari 2 parent match
@@ -1077,7 +1021,6 @@ const calculateVerticalPositions = (matchesBySide: Match[][]) => {
     const currentRoundMatches = matchesBySide[roundIdx];
     const prevRoundMatches = matchesBySide[roundIdx - 1];
 
-    console.log(`\n📐 Calculating positions for ${currentRoundMatches.length} matches in Round ${roundIdx + 1}...`);
 
     for (let matchIdx = 0; matchIdx < currentRoundMatches.length; matchIdx++) {
       const parent1Idx = matchIdx * 2;
@@ -1106,28 +1049,11 @@ const calculateVerticalPositions = (matchesBySide: Match[][]) => {
         currentRoundMatches[matchIdx].verticalCenter = centerY + CARD_HEIGHT / 2;
       }
 
-      console.log(`  Match ${matchIdx + 1}:`);
-      console.log(`    Parent 1 Y: ${parent1Y.toFixed(2)}px`);
-      console.log(`    Parent 2 Y: ${effectiveParent2Y.toFixed(2)}px`);
-      console.log(`    Calculated Center Y: ${centerY.toFixed(2)}px`);
     }
   }
 
   // 📤 Return hasil posisi untuk referensi eksternal (opsional)
   return positions;
-};
-
-
-/**
- * 🎯 Calculate bracket container height
- */
-const calculateBracketHeight = (matchesBySide: Match[][]) => {
-  if (matchesBySide.length === 0 || matchesBySide[0].length === 0) return 800;
-  
-  const round1Count = matchesBySide[0].length;
-  const totalHeight = (round1Count * CARD_HEIGHT) + ((round1Count - 1) * BASE_VERTICAL_GAP);
-  
-  return Math.max(totalHeight + 200, 800); // Minimal 800px
 };
 
 /**
@@ -1495,421 +1421,9 @@ const renderBracketSide = (
   );
 };
 const debugCardPositions = () => {
-/**
- * Debug: Print bracket structure
- */
-const debugBracketStructure = () => {
-  console.log('\n🏆 ===== BRACKET STRUCTURE DEBUG =====');
-  console.log('Total Matches:', matches.length);
-  console.log('Total Rounds:', getTotalRounds());
-  console.log('Approved Participants:', approvedParticipants.length);
-  
-  const totalRounds = getTotalRounds();
-  for (let round = 1; round <= totalRounds; round++) {
-    const roundMatches = getMatchesByRound(round);
-    console.log(`\n📍 Round ${round} (${getRoundName(round, totalRounds)}):`);
-    console.log(`  - Match count: ${roundMatches.length}`);
-    roundMatches.forEach((match, idx) => {
-      console.log(`  - Match ${idx + 1}:`, {
-        id: match.id_match,
-        participantA: getParticipantName(match.peserta_a) || 'TBD',
-        participantB: getParticipantName(match.peserta_b) || 'BYE/TBD',
-        scores: `${match.skor_a} - ${match.skor_b}`
-      });
-    });
-  }
-  console.log('=====================================\n');
 };
 
-/**
- * Debug: Print split structure (left/right/final)
- */
-const debugSplitStructure = () => {
-  console.log('\n🔀 ===== SPLIT STRUCTURE DEBUG =====');
-  
-  const leftMatches = getLeftMatches();
-  const rightMatches = getRightMatches();
-  const finalMatch = getFinalMatch();
-  
-  console.log('\n📍 LEFT SIDE:');
-  leftMatches.forEach((roundMatches, roundIdx) => {
-    console.log(`  Round ${roundIdx + 1}: ${roundMatches.length} matches`);
-    roundMatches.forEach((match, idx) => {
-      console.log(`    Match ${idx + 1}: ID ${match.id_match}`);
-    });
-  });
-  
-  console.log('\n📍 RIGHT SIDE:');
-  rightMatches.forEach((roundMatches, roundIdx) => {
-    console.log(`  Round ${roundIdx + 1}: ${roundMatches.length} matches`);
-    roundMatches.forEach((match, idx) => {
-      console.log(`    Match ${idx + 1}: ID ${match.id_match}`);
-    });
-  });
-  
-  console.log('\n📍 FINAL:');
-  if (finalMatch) {
-    console.log(`  Match ID: ${finalMatch.id_match}`);
-    console.log(`  Participant A: ${getParticipantName(finalMatch.peserta_a) || 'TBD'}`);
-    console.log(`  Participant B: ${getParticipantName(finalMatch.peserta_b) || 'TBD'}`);
-  } else {
-    console.log('  No final match yet');
-  }
-  
-  console.log('=====================================\n');
-};
 
-/**
- * Debug: Print vertical positions calculation
- */
-const debugVerticalPositions = () => {
-  console.log('\n📐 ===== VERTICAL POSITIONS DEBUG =====');
-  
-  const leftMatches = getLeftMatches();
-  const rightMatches = getRightMatches();
-  
-  console.log('\n📍 LEFT SIDE POSITIONS:');
-  const leftPositions = calculateVerticalPositions(leftMatches);
-  leftPositions.forEach((roundPositions, roundIdx) => {
-    console.log(`\n  Round ${roundIdx + 1}:`);
-    roundPositions.forEach((yPos, matchIdx) => {
-      console.log(`    Match ${matchIdx + 1}: Y = ${yPos.toFixed(2)}px`);
-    });
-  });
-  
-  console.log('\n📍 RIGHT SIDE POSITIONS:');
-  const rightPositions = calculateVerticalPositions(rightMatches);
-  rightPositions.forEach((roundPositions, roundIdx) => {
-    console.log(`\n  Round ${roundIdx + 1}:`);
-    roundPositions.forEach((yPos, matchIdx) => {
-      console.log(`    Match ${matchIdx + 1}: Y = ${yPos.toFixed(2)}px`);
-    });
-  });
-  
-  // Check symmetry
-  console.log('\n🔍 SYMMETRY CHECK:');
-  const leftFinalY = leftPositions[leftPositions.length - 1]?.[0] || 0;
-  const rightFinalY = rightPositions[rightPositions.length - 1]?.[0] || 0;
-  console.log(`  Left Semi-Final Y: ${leftFinalY.toFixed(2)}px`);
-  console.log(`  Right Semi-Final Y: ${rightFinalY.toFixed(2)}px`);
-  console.log(`  Difference: ${Math.abs(leftFinalY - rightFinalY).toFixed(2)}px`);
-  console.log(`  Is Symmetric: ${Math.abs(leftFinalY - rightFinalY) < 1 ? '✅ YES' : '❌ NO'}`);
-  
-  console.log('=====================================\n');
-};
-
-/**
- * Debug: Print connector lines calculation
- */
-const debugConnectorLines = () => {
-  console.log('\n🔗 ===== CONNECTOR LINES DEBUG =====');
-  
-  const leftMatches = getLeftMatches();
-  const leftPositions = calculateVerticalPositions(leftMatches);
-  
-  console.log('\n📍 LEFT SIDE CONNECTORS:');
-  for (let roundIdx = 0; roundIdx < leftMatches.length - 1; roundIdx++) {
-    const currentRound = leftMatches[roundIdx];
-    const nextRoundPositions = leftPositions[roundIdx + 1];
-    
-    console.log(`\n  From Round ${roundIdx + 1} to Round ${roundIdx + 2}:`);
-    
-    for (let matchIdx = 0; matchIdx < currentRound.length; matchIdx += 2) {
-      const match1Y = leftPositions[roundIdx][matchIdx];
-      const match2Y = leftPositions[roundIdx][matchIdx + 1];
-      const targetY = nextRoundPositions[Math.floor(matchIdx / 2)];
-      
-      console.log(`    Pair ${Math.floor(matchIdx / 2) + 1}:`);
-      console.log(`      Match ${matchIdx + 1} Y: ${match1Y?.toFixed(2) || 'N/A'}px`);
-      console.log(`      Match ${matchIdx + 2} Y: ${match2Y?.toFixed(2) || 'N/A'}px`);
-      console.log(`      Target Next Round Y: ${targetY?.toFixed(2) || 'N/A'}px`);
-      
-      if (match1Y !== undefined && match2Y !== undefined && targetY !== undefined) {
-        const expectedTargetY = (match1Y + match2Y + CARD_HEIGHT) / 2 - (CARD_HEIGHT / 2);
-        console.log(`      Expected Target Y: ${expectedTargetY.toFixed(2)}px`);
-        console.log(`      Difference: ${Math.abs(targetY - expectedTargetY).toFixed(2)}px`);
-        console.log(`      Is Correct: ${Math.abs(targetY - expectedTargetY) < 1 ? '✅ YES' : '❌ NO'}`);
-      }
-    }
-  }
-  
-  console.log('=====================================\n');
-};
-
-/**
- * Debug: Print bracket dimensions
- */
-const debugBracketDimensions = () => {
-  console.log('\n📏 ===== BRACKET DIMENSIONS DEBUG =====');
-  console.log('Constants:');
-  console.log(`  CARD_WIDTH: ${CARD_WIDTH}px`);
-  console.log(`  CARD_HEIGHT: ${CARD_HEIGHT}px`);
-  console.log(`  ROUND_GAP: ${ROUND_GAP}px`);
-  console.log(`  BASE_VERTICAL_GAP: ${BASE_VERTICAL_GAP}px`);
-  console.log(`  CENTER_GAP: ${CENTER_GAP}px`);
-  
-  const leftMatches = getLeftMatches();
-  const rightMatches = getRightMatches();
-  const totalRounds = getTotalRounds();
-  
-  console.log('\nCalculated Dimensions:');
-  console.log(`  Total Rounds: ${totalRounds}`);
-  console.log(`  Left Bracket Rounds: ${leftMatches.length}`);
-  console.log(`  Right Bracket Rounds: ${rightMatches.length}`);
-  console.log(`  Total Width: ${((totalRounds - 1) * (CARD_WIDTH + ROUND_GAP) * 2) + CARD_WIDTH + (CENTER_GAP * 2)}px`);
-  console.log(`  Total Height: ${calculateBracketHeight(leftMatches)}px`);
-  
-  console.log('\nRound 1 Spacing:');
-  const round1Count = leftMatches[0]?.length || 0;
-  console.log(`  Match Count: ${round1Count}`);
-  console.log(`  Gap Between Cards: ${BASE_VERTICAL_GAP}px`);
-  console.log(`  Total Height: ${(round1Count * CARD_HEIGHT) + ((round1Count - 1) * BASE_VERTICAL_GAP)}px`);
-  
-  console.log('=====================================\n');
-};
-
-};
-
-const runFullDebug = () => {
-  console.clear();
-  console.log('🚀 ===== FULL BRACKET DEBUG STARTED =====\n');
-  console.log(`Timestamp: ${new Date().toLocaleTimeString()}\n`);
-  
-  // 1. RAW DATA CHECK
-  console.log('📦 ===== RAW DATA CHECK =====');
-  console.log('Total matches array length:', matches.length);
-  console.log('Bracket generated status:', bracketGenerated);
-  console.log('Approved participants:', approvedParticipants.length);
-  console.log('\nAll matches by round:');
-  const totalRounds = getTotalRounds();
-  for (let r = 1; r <= totalRounds; r++) {
-    const roundMatches = getMatchesByRound(r);
-    console.log(`  Round ${r}: ${roundMatches.length} matches`, roundMatches.map(m => m.id_match));
-  }
-  console.log('=====================================\n');
-  
-  // 2. SPLIT LOGIC CHECK
-  console.log('🔀 ===== SPLIT LOGIC CHECK =====');
-  const leftMatches = getLeftMatches();
-  const rightMatches = getRightMatches();
-  const finalMatch = getFinalMatch();
-  
-  console.log('\n📍 LEFT SIDE STRUCTURE:');
-  console.log(`Total rounds in left: ${leftMatches.length}`);
-  leftMatches.forEach((roundMatches, roundIdx) => {
-    console.log(`\n  Round ${roundIdx + 1}:`);
-    console.log(`    Match count: ${roundMatches.length}`);
-    roundMatches.forEach((match, idx) => {
-      console.log(`    Match ${idx + 1}:`, {
-        id: match.id_match,
-        round: match.ronde,
-        participantA: getParticipantName(match.peserta_a) || 'TBD',
-        participantB: getParticipantName(match.peserta_b) || 'BYE/TBD'
-      });
-    });
-  });
-  
-  console.log('\n📍 RIGHT SIDE STRUCTURE:');
-  console.log(`Total rounds in right: ${rightMatches.length}`);
-  rightMatches.forEach((roundMatches, roundIdx) => {
-    console.log(`\n  Round ${roundIdx + 1}:`);
-    console.log(`    Match count: ${roundMatches.length}`);
-    roundMatches.forEach((match, idx) => {
-      console.log(`    Match ${idx + 1}:`, {
-        id: match.id_match,
-        round: match.ronde,
-        participantA: getParticipantName(match.peserta_a) || 'TBD',
-        participantB: getParticipantName(match.peserta_b) || 'BYE/TBD'
-      });
-    });
-  });
-  
-  console.log('\n📍 FINAL MATCH:');
-  if (finalMatch) {
-    console.log(`  ID: ${finalMatch.id_match}, Round: ${finalMatch.ronde}`);
-    console.log(`  Participant A: ${getParticipantName(finalMatch.peserta_a) || 'TBD'}`);
-    console.log(`  Participant B: ${getParticipantName(finalMatch.peserta_b) || 'TBD'}`);
-  } else {
-    console.log('  ❌ No final match found!');
-  }
-  console.log('=====================================\n');
-  
-  // 3. VERTICAL POSITIONS DETAILED
-  console.log('📐 ===== VERTICAL POSITIONS DETAILED =====');
-  
-  console.log('\n🔵 LEFT SIDE CALCULATION:');
-  const leftPositions = calculateVerticalPositions(leftMatches);
-  console.log('Left positions result:', leftPositions);
-  
-  console.log('\n🔴 RIGHT SIDE CALCULATION:');
-  const rightPositions = calculateVerticalPositions(rightMatches);
-  console.log('Right positions result:', rightPositions);
-  
-  // 4. SYMMETRY CHECK
-  console.log('\n🔍 ===== SYMMETRY CHECK =====');
-  
-  // Check if left and right have same structure
-  console.log('\nStructure comparison:');
-  console.log(`  Left rounds: ${leftMatches.length}`);
-  console.log(`  Right rounds: ${rightMatches.length}`);
-  console.log(`  Are equal: ${leftMatches.length === rightMatches.length ? '✅' : '❌'}`);
-  
-  for (let i = 0; i < Math.max(leftMatches.length, rightMatches.length); i++) {
-    const leftCount = leftMatches[i]?.length || 0;
-    const rightCount = rightMatches[i]?.length || 0;
-    console.log(`\n  Round ${i + 1}:`);
-    console.log(`    Left matches: ${leftCount}`);
-    console.log(`    Right matches: ${rightCount}`);
-    console.log(`    Are equal: ${leftCount === rightCount ? '✅' : '❌'}`);
-  }
-  
-  // Check final round positions
-  if (leftPositions.length > 0 && rightPositions.length > 0) {
-    const lastLeftRound = leftPositions[leftPositions.length - 1];
-    const lastRightRound = rightPositions[rightPositions.length - 1];
-    
-    console.log('\nSemi-Final Y positions:');
-    console.log(`  Left Semi Y: ${lastLeftRound[0]?.toFixed(2) || 'N/A'}px`);
-    console.log(`  Right Semi Y: ${lastRightRound[0]?.toFixed(2) || 'N/A'}px`);
-    
-    if (lastLeftRound[0] !== undefined && lastRightRound[0] !== undefined) {
-      const diff = Math.abs(lastLeftRound[0] - lastRightRound[0]);
-      console.log(`  Difference: ${diff.toFixed(2)}px`);
-      console.log(`  Is Symmetric: ${diff < 1 ? '✅ YES' : '❌ NO'}`);
-    }
-  }
-  console.log('=====================================\n');
-  
-  // 5. CONNECTOR VALIDATION
-  console.log('🔗 ===== CONNECTOR VALIDATION =====');
-  
-  console.log('\n🔵 LEFT SIDE CONNECTORS:');
-  for (let roundIdx = 0; roundIdx < leftMatches.length - 1; roundIdx++) {
-    const currentRound = leftMatches[roundIdx];
-    console.log(`\n  Round ${roundIdx + 1} → Round ${roundIdx + 2}:`);
-    console.log(`    Source matches: ${currentRound.length}`);
-    console.log(`    Target matches: ${leftMatches[roundIdx + 1].length}`);
-    console.log(`    Expected pairs: ${Math.ceil(currentRound.length / 2)}`);
-    
-    // Check each pair
-    for (let matchIdx = 0; matchIdx < currentRound.length; matchIdx += 2) {
-      const pairNum = Math.floor(matchIdx / 2);
-      const match1Y = leftPositions[roundIdx]?.[matchIdx];
-      const match2Y = leftPositions[roundIdx]?.[matchIdx + 1];
-      const targetY = leftPositions[roundIdx + 1]?.[pairNum];
-      
-      console.log(`\n    Pair ${pairNum + 1}:`);
-      console.log(`      Source Match ${matchIdx + 1} Y: ${match1Y?.toFixed(2) || 'N/A'}px`);
-      console.log(`      Source Match ${matchIdx + 2} Y: ${match2Y?.toFixed(2) || 'N/A'}px`);
-      console.log(`      Target Match Y: ${targetY?.toFixed(2) || 'N/A'}px`);
-      
-      if (match1Y !== undefined && match2Y !== undefined && targetY !== undefined) {
-        const expectedY = (match1Y + match2Y + CARD_HEIGHT) / 2 - (CARD_HEIGHT / 2);
-        const diff = Math.abs(targetY - expectedY);
-        console.log(`      Expected Target Y: ${expectedY.toFixed(2)}px`);
-        console.log(`      Difference: ${diff.toFixed(2)}px`);
-        console.log(`      Status: ${diff < 1 ? '✅ CORRECT' : '❌ INCORRECT'}`);
-      } else {
-        console.log(`      Status: ⚠️ MISSING DATA`);
-      }
-    }
-  }
-  
-  console.log('\n🔴 RIGHT SIDE CONNECTORS:');
-  for (let roundIdx = 0; roundIdx < rightMatches.length - 1; roundIdx++) {
-    const currentRound = rightMatches[roundIdx];
-    console.log(`\n  Round ${roundIdx + 1} → Round ${roundIdx + 2}:`);
-    console.log(`    Source matches: ${currentRound.length}`);
-    console.log(`    Target matches: ${rightMatches[roundIdx + 1].length}`);
-    
-    for (let matchIdx = 0; matchIdx < currentRound.length; matchIdx += 2) {
-      const pairNum = Math.floor(matchIdx / 2);
-      const match1Y = rightPositions[roundIdx]?.[matchIdx];
-      const match2Y = rightPositions[roundIdx]?.[matchIdx + 1];
-      const targetY = rightPositions[roundIdx + 1]?.[pairNum];
-      
-      console.log(`\n    Pair ${pairNum + 1}:`);
-      console.log(`      Source Match ${matchIdx + 1} Y: ${match1Y?.toFixed(2) || 'N/A'}px`);
-      console.log(`      Source Match ${matchIdx + 2} Y: ${match2Y?.toFixed(2) || 'N/A'}px`);
-      console.log(`      Target Match Y: ${targetY?.toFixed(2) || 'N/A'}px`);
-      
-      if (match1Y !== undefined && match2Y !== undefined && targetY !== undefined) {
-        const expectedY = (match1Y + match2Y + CARD_HEIGHT) / 2 - (CARD_HEIGHT / 2);
-        const diff = Math.abs(targetY - expectedY);
-        console.log(`      Expected Target Y: ${expectedY.toFixed(2)}px`);
-        console.log(`      Difference: ${diff.toFixed(2)}px`);
-        console.log(`      Status: ${diff < 1 ? '✅ CORRECT' : '❌ INCORRECT'}`);
-      }
-    }
-  }
-  console.log('=====================================\n');
-  
-  // 6. DIMENSIONS SUMMARY
-  console.log('📏 ===== DIMENSIONS SUMMARY =====');
-  console.log('Constants:');
-  console.log(`  CARD_WIDTH: ${CARD_WIDTH}px`);
-  console.log(`  CARD_HEIGHT: ${CARD_HEIGHT}px`);
-  console.log(`  ROUND_GAP: ${ROUND_GAP}px`);
-  console.log(`  BASE_VERTICAL_GAP: ${BASE_VERTICAL_GAP}px`);
-  console.log(`  CENTER_GAP: ${CENTER_GAP}px`);
-  
-  console.log('\nCalculated bracket dimensions:');
-  const bracketHeight = calculateBracketHeight(leftMatches);
-  console.log(`  Total height: ${bracketHeight}px`);
-  console.log(`  Total rounds: ${totalRounds}`);
-  console.log(`  Rounds per side: ${totalRounds - 1} (excluding final)`);
-  
-  console.log('=====================================\n');
-  
-  // 7. ISSUES DETECTION
-  console.log('⚠️ ===== ISSUES DETECTION =====');
-  const issues: string[] = [];
-  
-  // Check structure symmetry
-  if (leftMatches.length !== rightMatches.length) {
-    issues.push(`❌ Left and right sides have different round counts (${leftMatches.length} vs ${rightMatches.length})`);
-  }
-  
-  // Check match counts per round
-  for (let i = 0; i < Math.min(leftMatches.length, rightMatches.length); i++) {
-    if (leftMatches[i].length !== rightMatches[i].length) {
-      issues.push(`❌ Round ${i + 1} has different match counts (Left: ${leftMatches[i].length}, Right: ${rightMatches[i].length})`);
-    }
-  }
-  
-  // Check final match
-  if (!finalMatch) {
-    issues.push(`❌ Final match is missing!`);
-  }
-  
-  // Check position symmetry
-  if (leftPositions.length > 0 && rightPositions.length > 0) {
-    const lastLeftY = leftPositions[leftPositions.length - 1]?.[0];
-    const lastRightY = rightPositions[rightPositions.length - 1]?.[0];
-    
-    if (lastLeftY !== undefined && lastRightY !== undefined) {
-      const diff = Math.abs(lastLeftY - lastRightY);
-      if (diff >= 1) {
-        issues.push(`❌ Semi-finals are not aligned (difference: ${diff.toFixed(2)}px)`);
-      }
-    }
-  }
-  
-  if (issues.length === 0) {
-    console.log('✅ No issues detected! Bracket structure looks good.');
-  } else {
-    console.log(`Found ${issues.length} issue(s):\n`);
-    issues.forEach((issue, idx) => {
-      console.log(`${idx + 1}. ${issue}`);
-    });
-  }
-  
-  console.log('=====================================\n');
-  
-  console.log('✅ ===== FULL BRACKET DEBUG COMPLETED =====\n');
-};
-
-// Panggil debug saat component mount
 React.useEffect(() => {
   if (matches.length > 0) {
     debugCardPositions();
@@ -1932,7 +1446,6 @@ const centerOffset = calculateCenterOffset();
 
 
 
-  // 🆕 STEP 7: Inline styles for bracket
 React.useEffect(() => {
   const style = document.createElement('style');
   style.innerHTML = `
@@ -2115,73 +1628,6 @@ const calculateCardPosition = (
   return { x, y };
 };
 
-/**
- * Get left bracket matches (excluding final)
- */
-const getLeftBracketMatches = () => {
-  const totalRounds = getTotalRounds();
-  const split = splitMatchesBySide(matches, totalRounds);
-  
-  const result: { round: number; matches: Match[]; positions: {x: number; y: number}[] }[] = [];
-  
-  for (let roundIndex = 0; roundIndex < totalRounds - 1; roundIndex++) {
-    const roundMatches = split[roundIndex].left;
-    const positions = roundMatches.map((_, idx) => 
-      calculateCardPosition('left', roundIndex, idx, roundMatches.length, centerOffset)
-    );
-    
-    result.push({
-      round: roundIndex + 1,
-      matches: roundMatches,
-      positions
-    });
-  }
-  
-  return result;
-};
-
-/**
- * Get right bracket matches (excluding final)
- */
-const getRightBracketMatches = () => {
-  const totalRounds = getTotalRounds();
-  const split = splitMatchesBySide(matches, totalRounds);
-  
-  const result: { round: number; matches: Match[]; positions: {x: number; y: number}[] }[] = [];
-  
-  for (let roundIndex = 0; roundIndex < totalRounds - 1; roundIndex++) {
-    const roundMatches = split[roundIndex].right;
-    const positions = roundMatches.map((_, idx) => 
-      calculateCardPosition('right', roundIndex, idx, roundMatches.length, centerOffset)
-    );
-    
-    result.push({
-      round: roundIndex + 1,
-      matches: roundMatches,
-      positions
-    });
-  }
-  
-  return result;
-};
-
-/**
- * Get final match with position
- */
-const getFinalMatchWithPosition = () => {
-  const totalRounds = getTotalRounds();
-  const finalMatches = getMatchesByRound(totalRounds);
-  
-  if (finalMatches.length === 0) return null;
-  
-  const position = calculateCardPosition('final', totalRounds - 1, 0, 1, centerOffset);
-  
-  return {
-    match: finalMatches[0],
-    position
-  };
-};
-
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#F5FBEF' }}>
       {/* Header */}
@@ -2288,15 +1734,6 @@ const getFinalMatchWithPosition = () => {
                   </>
                 )}
               </button>
-              {/* DEBUG BUTTON - Development Only */}
-  <button
-    onClick={runFullDebug}
-    className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all"
-    style={{ backgroundColor: '#8B5CF6', color: '#F5FBEF' }}
-  >
-    <AlertTriangle size={16} />
-    <span>Debug Bracket</span>
-  </button>
             </div>
           </div>
 
