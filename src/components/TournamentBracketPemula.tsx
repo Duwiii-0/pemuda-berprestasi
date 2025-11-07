@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Trophy, Edit3, Save, CheckCircle, ArrowLeft, AlertTriangle, RefreshCw, Download, Shuffle } from 'lucide-react';
+import { Trophy, Edit3, CheckCircle, ArrowLeft, AlertTriangle, RefreshCw, Download, Shuffle } from 'lucide-react';
 import { exportBracketFromData } from '../utils/exportBracketPDF';
 import { useAuth } from '../context/authContext';
 import sriwijaya from "../assets/logo/sriwijaya.png";
@@ -97,7 +97,6 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
   const [editingMatch, setEditingMatch] = useState<Match | null>(null);
   const [loading, setLoading] = useState(false);
   const [bracketGenerated, setBracketGenerated] = useState(false);
-  const [saving, setSaving] = useState(false);
   const [exportingPDF, setExportingPDF] = useState(false); // ✅ NEW
   const [clearing, setClearing] = useState(false);
   const [deleting, setDeleting] = useState(false);

@@ -5,6 +5,7 @@ import React from 'react';
 import BracketRenderer from '../components/BracketRenderer';
 import { AuthProvider } from '../context/authContext';
 import { KompetisiProvider } from '../context/KompetisiContext';
+import BracketExportWrapper from '../components/BracketExportWrapper';
 import { components } from 'react-select';
 
 // =================================================================================================
@@ -510,30 +511,28 @@ export const exportMultipleBracketsByLapangan = async (
       try {
         // ✅ Render React component and wait for completion
         const bracketElement = await new Promise<HTMLElement>((resolve, reject) => {
-        const root = ReactDOM.createRoot(tempContainer);
-        
-        const handleRenderComplete = (element: HTMLElement) => {
-          console.log('  ✅ Bracket render complete');
-          resolve(element);
-        };
+  const root = ReactDOM.createRoot(tempContainer);
+  
+  const handleRenderComplete = (element: HTMLElement) => {
+    console.log('  ✅ Bracket render complete');
+    resolve(element);
+  };
 
-        // ✅ WRAP dengan providers
-        root.render(
-          React.createElement(AuthProvider, null,
-            React.createElement(KompetisiProvider, null,
-              React.createElement(BracketRenderer, {
-                kelasData: kelasData,
-                isPemula: isPemula,
-                onRenderComplete: handleRenderComplete
-              })
-            )
-          )
-        );
+  // ✅ WRAP dengan BracketExportWrapper
+  root.render(
+    React.createElement(BracketExportWrapper, null,
+      React.createElement(BracketRenderer, {
+        kelasData: kelasData,
+        isPemula: isPemula,
+        onRenderComplete: handleRenderComplete
+      })
+    )
+  );
 
-        // ✅ Timeout diperbesar jadi 10 detik
-        setTimeout(() => {
-          reject(new Error('Render timeout'));
-        }, 10000); // Dari 5000 jadi 10000
+  // ✅ Timeout diperbesar jadi 15 detik (karena ada banyak context)
+  setTimeout(() => {
+    reject(new Error('Render timeout'));
+  }, 10000); // Dari 10000 jadi 15000
       });
         console.log('  📸 Capturing bracket screenshot...');
 
