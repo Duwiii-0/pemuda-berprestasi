@@ -1638,16 +1638,14 @@ const calculateCardPosition = (
         <div className="p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-4">
-              {onBack && (
-                <button
-                  onClick={() => {
-                    onBack(); 
-                  }}
-                  className="p-2 rounded-lg hover:bg-black/5 transition-all"
-                >
-                  <ArrowLeft size={20} style={{ color: '#990D35' }} />
-                </button>
-              )}
+            {onBack && (
+              <button
+  onClick={() => navigate("/admin-kompetisi/drawing-bagan")}
+  className="p-2 rounded-lg hover:bg-black/5 transition-all"
+>
+  <ArrowLeft size={20} style={{ color: '#990D35' }} />
+</button>
+            )}
               <div className="w-16 h-16 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#990D35' }}>
                 <Trophy size={32} style={{ color: '#F5FBEF' }} />
               </div>
