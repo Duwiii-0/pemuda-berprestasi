@@ -1095,8 +1095,7 @@ if (filterKelasUsia !== "ALL") {
                 onClick={() => {
                   setSelectedKelas(kelas);
                   setShowBracket(true);
-                  // Navigasi ke halaman bracket dengan kelasId
-                  navigate(`/admin-kompetisi/drawing-bagan/${kelasId}`);
+                  navigate(`/admin-kompetisi/drawing-bagan/${kelas.Id}`);
                 }}
                 className="w-full flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg transform hover:scale-[1.02]"
                 style={{

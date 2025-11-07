@@ -1642,7 +1642,6 @@ const calculateCardPosition = (
                 <button
                   onClick={() => {
                     onBack(); 
-                    navigate("/admin-kompetisi/drawing-bagan");
                   }}
                   className="p-2 rounded-lg hover:bg-black/5 transition-all"
                 >
