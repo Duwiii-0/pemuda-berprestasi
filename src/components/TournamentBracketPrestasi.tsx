@@ -1640,7 +1640,10 @@ const calculateCardPosition = (
             <div className="flex items-center gap-4">
               {onBack && (
                 <button
-                  onClick={onBack}
+                  onClick={() => {
+                    onBack(); 
+                    navigate("/admin-kompetisi/drawing-bagan");
+                  }}
                   className="p-2 rounded-lg hover:bg-black/5 transition-all"
                 >
                   <ArrowLeft size={20} style={{ color: '#990D35' }} />

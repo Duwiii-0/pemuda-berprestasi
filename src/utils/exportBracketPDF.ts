@@ -3,6 +3,8 @@ import * as htmlToImage from 'html-to-image';
 import ReactDOM from 'react-dom/client';
 import React from 'react';
 import BracketRenderer from '../components/BracketRenderer';
+import { AuthProvider } from '../context/authContext';
+import { KompetisiProvider } from '../context/KompetisiContext';
 import { components } from 'react-select';
 
 // =================================================================================================
@@ -508,27 +510,31 @@ export const exportMultipleBracketsByLapangan = async (
       try {
         // ✅ Render React component and wait for completion
         const bracketElement = await new Promise<HTMLElement>((resolve, reject) => {
-          const root = ReactDOM.createRoot(tempContainer);
-          
-          const handleRenderComplete = (element: HTMLElement) => {
-            console.log('  ✅ Bracket render complete');
-            resolve(element);
-          };
+        const root = ReactDOM.createRoot(tempContainer);
+        
+        const handleRenderComplete = (element: HTMLElement) => {
+          console.log('  ✅ Bracket render complete');
+          resolve(element);
+        };
 
-          root.render(
-            React.createElement(BracketRenderer, {
-              kelasData: kelasData,
-              isPemula: isPemula,
-              onRenderComplete: handleRenderComplete
-            })
-          );
+        // ✅ WRAP dengan providers
+        root.render(
+          React.createElement(AuthProvider, null,
+            React.createElement(KompetisiProvider, null,
+              React.createElement(BracketRenderer, {
+                kelasData: kelasData,
+                isPemula: isPemula,
+                onRenderComplete: handleRenderComplete
+              })
+            )
+          )
+        );
 
-          // Timeout fallback
-          setTimeout(() => {
-            reject(new Error('Render timeout'));
-          }, 5000);
-        });
-
+        // ✅ Timeout diperbesar jadi 10 detik
+        setTimeout(() => {
+          reject(new Error('Render timeout'));
+        }, 10000); // Dari 5000 jadi 10000
+      });
         console.log('  📸 Capturing bracket screenshot...');
 
         const approvedParticipants = kelasData.peserta_kompetisi?.filter((p: any) => p.status === 'APPROVED') || [];

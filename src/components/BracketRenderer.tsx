@@ -21,19 +21,18 @@ const BracketRenderer: React.FC<BracketRendererProps> = ({
   }, []);
 
   useEffect(() => {
-    if (mounted && containerRef.current && onRenderComplete) {
-      // Wait for bracket to fully render
-      setTimeout(() => {
-        if (containerRef.current) {
-          const bracketElement = containerRef.current.querySelector('.tournament-layout') as HTMLElement;
-          if (bracketElement) {
-            console.log('✅ Bracket rendered, calling onRenderComplete');
-            onRenderComplete(bracketElement);
-          }
+  if (mounted && containerRef.current && onRenderComplete) {
+    setTimeout(() => {
+      if (containerRef.current) {
+        const bracketElement = containerRef.current.querySelector('.tournament-layout') as HTMLElement;
+        if (bracketElement) {
+          console.log('✅ Bracket rendered, calling onRenderComplete');
+          onRenderComplete(bracketElement);
         }
-      }, 2000); // Wait 2 seconds for full render
-    }
-  }, [mounted, onRenderComplete]);
+      }
+    }, 3000);
+  }
+}, [mounted, onRenderComplete]);
 
   if (!mounted) return null;
 
