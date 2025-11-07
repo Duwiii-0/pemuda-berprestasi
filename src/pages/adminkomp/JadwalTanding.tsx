@@ -661,54 +661,151 @@ const handleExportLapangan = async () => {
     if (!selectedHari) throw new Error('Hari tidak ditemukan');
 
     const bracketsToExport = [];
+    const failedKelas: string[] = [];
 
     for (const lapanganId of selectedExportLapangan) {
       const lapangan = selectedHari.lapangan.find(l => l.id_lapangan === lapanganId);
       if (!lapangan) continue;
 
+      console.log(`📍 Processing Lapangan ${lapangan.nama_lapangan}...`);
+
+      // Loop setiap kelas di lapangan ini
       for (const kelasId of lapangan.kelasDipilih) {
         const kelasData = kelasKejuaraanList.find(k => k.id_kelas_kejuaraan === kelasId);
         if (!kelasData) continue;
 
-        const response = await fetch(
-          `${import.meta.env.VITE_API_URL}/kompetisi/${idKompetisi}/brackets/${kelasId}`,
-          {
-            headers: {
-              'Authorization': `Bearer ${token}`
+        try {
+          // ✅ Fetch bracket data (yang sudah ada nomor_antrian & nomor_partai dari input manual)
+          const response = await fetch(
+            `${import.meta.env.VITE_API_URL}/kompetisi/${idKompetisi}/brackets/${kelasId}`,
+            {
+              headers: {
+                'Authorization': `Bearer ${token}`
+              }
             }
-          }
-        );
+          );
 
-        if (response.ok) {
+          if (response.status === 404) {
+            const namaKelas = generateNamaKelas(kelasData);
+            failedKelas.push(`${namaKelas} (Lapangan ${lapangan.nama_lapangan})`);
+            console.warn(`⚠️ Bracket belum dibuat untuk kelas ${kelasId}`);
+            continue;
+          }
+
+          if (!response.ok) {
+            throw new Error(`Failed to fetch bracket for kelas ${kelasId}`);
+          }
+
           const result = await response.json();
           
+          if (!result.data || !result.data.matches || result.data.matches.length === 0) {
+            const namaKelas = generateNamaKelas(kelasData);
+            failedKelas.push(`${namaKelas} (Lapangan ${lapangan.nama_lapangan})`);
+            console.warn(`⚠️ Bracket kosong untuk kelas ${kelasId}`);
+            continue;
+          }
+
+          console.log(`✅ Bracket kelas ${kelasId} berhasil di-fetch (${result.data.matches.length} matches)`);
+
+          // ✅ Transform peserta data
+          const pesertaKelas = pesertaList.filter(
+            p => p.status === 'APPROVED' && 
+            p.kelas_kejuaraan?.id_kelas_kejuaraan === kelasId
+          );
+
+          // ✅ Siapkan data lengkap untuk export
           bracketsToExport.push({
-            kelasData: kelasData,
-            bracketData: result.data,
+            kelasData: {
+              id_kelas_kejuaraan: kelasId,
+              cabang: kelasData.cabang,
+              kategori_event: kelasData.kategori_event,
+              kelompok: kelasData.kelompok,
+              kelas_berat: kelasData.kelas_berat,
+              poomsae: kelasData.poomsae,
+              kompetisi: {
+                id_kompetisi: idKompetisi,
+                nama_event: "Sriwijaya Competition",
+                tanggal_mulai: selectedExportHari,
+                tanggal_selesai: selectedExportHari,
+                lokasi: "GOR Ranau JSC Palembang",
+                status: "SEDANG_DIMULAI" as const,
+              },
+              peserta_kompetisi: pesertaKelas.map(p => ({
+                id_peserta_kompetisi: p.id_peserta_kompetisi,
+                id_atlet: p.atlet?.id_atlet,
+                is_team: p.is_team,
+                status: p.status,
+                atlet: p.atlet ? {
+                  id_atlet: p.atlet.id_atlet,
+                  nama_atlet: p.atlet.nama_atlet,
+                  dojang: {
+                    nama_dojang: p.atlet.dojang?.nama_dojang || "",
+                  },
+                } : undefined,
+                anggota_tim: p.anggota_tim?.map(at => ({
+                  atlet: {
+                    nama_atlet: at.atlet.nama_atlet,
+                  },
+                })),
+              })),
+              bagan: [{
+                id_bagan: result.data.id_bagan || 1,
+                match: result.data.matches || [],
+                drawing_seed: result.data.drawing_seed || []
+              }],
+            },
+            bracketData: result.data, // ✅ Data asli dari API (sudah ada nomor_antrian & nomor_partai)
             lapanganNama: lapangan.nama_lapangan,
-            tanggal: selectedExportHari
+            tanggal: selectedExportHari,
+            isPemula: kelasData.kategori_event.nama_kategori.toLowerCase().includes('pemula'),
+            namaKelas: generateNamaKelas(kelasData)
           });
+
+        } catch (kelasError: any) {
+          console.error(`❌ Error fetching bracket kelas ${kelasId}:`, kelasError);
+          const namaKelas = generateNamaKelas(kelasData);
+          failedKelas.push(`${namaKelas} (Lapangan ${lapangan.nama_lapangan})`);
         }
       }
     }
 
+    // ✅ Validasi
     if (bracketsToExport.length === 0) {
-      throw new Error('Tidak ada bracket yang siap untuk di-export');
+      if (failedKelas.length > 0) {
+        throw new Error(
+          `Tidak ada bracket yang siap untuk di-export.\n\n` +
+          `Kelas yang belum dibuat bracket:\n${failedKelas.slice(0, 5).join('\n')}` +
+          (failedKelas.length > 5 ? `\n... dan ${failedKelas.length - 5} lainnya` : '')
+        );
+      } else {
+        throw new Error('Tidak ada bracket yang siap untuk di-export');
+      }
     }
 
-    // ✅ Simple: hardcode atau ambil dari state/props yang ada
+    console.log(`📦 Total brackets to export: ${bracketsToExport.length}`);
+    if (failedKelas.length > 0) {
+      console.warn(`⚠️ ${failedKelas.length} kelas di-skip`);
+    }
+
+    // ✅ Export PDF
     await exportMultipleBracketsByLapangan(bracketsToExport, {
       namaKejuaraan: 'Sriwijaya Competition',
       logoPBTI: taekwondo,
       logoEvent: sriwijaya,
     });
 
-    setSuccessMessage(`Berhasil export ${bracketsToExport.length} bracket!`);
+    // ✅ Success message
+    let message = `✅ Berhasil export ${bracketsToExport.length} bracket!`;
+    if (failedKelas.length > 0) {
+      message += `\n\n⚠️ ${failedKelas.length} kelas di-skip karena bracket belum dibuat`;
+    }
+
+    setSuccessMessage(message);
     setShowExportModal(false);
     setSelectedExportHari('');
     setSelectedExportLapangan([]);
     
-    setTimeout(() => setSuccessMessage(''), 3000);
+    setTimeout(() => setSuccessMessage(''), 5000);
 
   } catch (err: any) {
     console.error('❌ Error exporting brackets:', err);
@@ -1138,6 +1235,7 @@ const handleExportLapangan = async () => {
           !loadingHari && (
             <>
               <div className="mb-6">
+                <div className="mb-6">
                 <button
                   onClick={saveAllAntrian}
                   disabled={isSavingAntrian}
@@ -1156,6 +1254,7 @@ const handleExportLapangan = async () => {
                     </>
                   )}
                 </button>
+                </div>
                  {/* 🆕 BUTTON EXPORT PER LAPANGAN */}
                 <button
                   onClick={() => setShowExportModal(true)}
