@@ -18,6 +18,7 @@ import TournamentBracketPemula from '../../components/TournamentBracketPemula';
 import TournamentBracketPrestasi from '../../components/TournamentBracketPrestasi';
 
 interface KelasKejuaraan {
+  id: number;
   id_kelas_kejuaraan: string;
   cabang: "KYORUGI" | "POOMSAE";
   kategori_event: {
@@ -97,13 +98,14 @@ useEffect(() => {
           existing.peserta_count += 1;
         } else {
           kelasMap.set(key, {
+            id: kelas.id_kelas_kejuaraan, // ← Ganti dari kelas.id ke kelas.id_kelas_kejuaraan
             id_kelas_kejuaraan: String(kelas.id_kelas_kejuaraan),
             cabang: kelas.cabang,
             kategori_event: kelas.kategori_event,
             kelompok: kelas.kelompok,
             kelas_berat: kelas.kelas_berat,
             poomsae: kelas.poomsae,
-            jenis_kelamin: jenisKelamin || "LAKI_LAKI", // ← GUNAKAN jenis_kelamin dari atlet, default LAKI_LAKI
+            jenis_kelamin: jenisKelamin || "LAKI_LAKI",
             peserta_count: 1,
             bracket_status: "not_created",
           });
@@ -1095,7 +1097,6 @@ if (filterKelasUsia !== "ALL") {
                 onClick={() => {
                   setSelectedKelas(kelas);
                   setShowBracket(true);
-                  // Navigasi ke halaman bracket dengan kelasId
                   navigate(`/admin-kompetisi/drawing-bagan/${kelasId}`);
                 }}
                 className="w-full flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg transform hover:scale-[1.02]"
