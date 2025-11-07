@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Trophy, Edit3, ArrowLeft, AlertTriangle, RefreshCw, Download, Shuffle, CheckCircle } from 'lucide-react';
 import { exportBracketFromData } from '../utils/exportBracketPDF';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/authContext';
 import sriwijaya from "../assets/logo/sriwijaya.png";
 import taekwondo from "../assets/logo/taekwondo.png";
@@ -159,6 +160,8 @@ const CENTER_GAP = 100;
     });
     setShowModal(true);
   };
+
+const navigate = useNavigate();
 
 const handleExportPDF = async () => {
   if (!kelasData || matches.length === 0) {
@@ -1637,7 +1640,10 @@ const calculateCardPosition = (
             <div className="flex items-center gap-4">
               {onBack && (
                 <button
-                  onClick={onBack}
+                  onClick={() => {
+                    onBack(); 
+                    navigate("/admin-kompetisi/drawing-bagan");
+                  }}
                   className="p-2 rounded-lg hover:bg-black/5 transition-all"
                 >
                   <ArrowLeft size={20} style={{ color: '#990D35' }} />

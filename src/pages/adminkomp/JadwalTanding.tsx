@@ -646,7 +646,7 @@ const JadwalPertandingan: React.FC = () => {
 
   const handleLihatBagan = (kelasId: number) => {
     console.log(`🔗 Navigating to drawing bagan for kelas ${kelasId}`);
-  navigate(`/admin-kompetisi/bracket/${kelasId}`);
+  navigate(`/admin-kompetisi/drawing-bagan/${kelasId}`);
   };
 
 const handleExportLapangan = async () => {

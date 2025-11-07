@@ -12,6 +12,7 @@ import {
 import { useAuth } from "../../context/authContext";
 import { useKompetisi } from "../../context/KompetisiContext";
 import { useParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { kelasBeratOptionsMap } from "../../dummy/beratOptions";
 import TournamentBracketPemula from '../../components/TournamentBracketPemula';
 import TournamentBracketPrestasi from '../../components/TournamentBracketPrestasi';
@@ -284,6 +285,8 @@ if (filterKelasUsia !== "ALL") {
       }
     }
   }, [kelasId, kelasKejuaraan, showBracket]);
+
+  const navigate = useNavigate();
 
   const getStatusBadge = (status: KelasKejuaraan["bracket_status"]) => {
     const statusConfig = {
@@ -1088,32 +1091,34 @@ if (filterKelasUsia !== "ALL") {
               {/* Actions */}
               <div className="p-5 pt-0">
                 <button
-                  disabled={kelas.peserta_count < 4}
-                      onClick={() => {
-                      setSelectedKelas(kelas);
-                      setShowBracket(true);
-                    }}
-                  className="w-full flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg transform hover:scale-[1.02]"
-                  style={{
-                    background:
-                      kelas.bracket_status === "not_created"
-                        ? "linear-gradient(135deg, #F5B700 0%, #D19B00 100%)"
-                        : "linear-gradient(135deg, #990D35 0%, #7A0A2B 100%)",
-                    color: "white",
-                  }}
-                >
-                  {kelas.bracket_status === "not_created" ? (
-                    <>
-                      <GitBranch size={18} />
-                      <span>Buat Bracket</span>
-                    </>
-                  ) : (
-                    <>
-                      <Eye size={18} />
-                      <span>Lihat Bracket</span>
-                    </>
-                  )}
-                </button>
+                disabled={kelas.peserta_count < 4}
+                onClick={() => {
+                  setSelectedKelas(kelas);
+                  setShowBracket(true);
+                  // Navigasi ke halaman bracket dengan kelasId
+                  navigate(`/admin-kompetisi/drawing-bagan/${kelasId}`);
+                }}
+                className="w-full flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg transform hover:scale-[1.02]"
+                style={{
+                  background:
+                    kelas.bracket_status === "not_created"
+                      ? "linear-gradient(135deg, #F5B700 0%, #D19B00 100%)"
+                      : "linear-gradient(135deg, #990D35 0%, #7A0A2B 100%)",
+                  color: "white",
+                }}
+              >
+                {kelas.bracket_status === "not_created" ? (
+                  <>
+                    <GitBranch size={18} />
+                    <span>Buat Bracket</span>
+                  </>
+                ) : (
+                  <>
+                    <Eye size={18} />
+                    <span>Lihat Bracket</span>
+                  </>
+                )}
+              </button>
               </div>
             </div>
           ))}
