@@ -55,7 +55,7 @@ export const beltOptions = [
   { value: "biru", label: "Biru/Geup 5" },
   { value: "biruMerah", label: "Biru strip Merah/Geup 4" },
   { value: "merah", label: "Merah/Geup 3" },
-  { value: "merahHitam1", label: "Merah strip Hitam 1/Geup 2" },
+  { value: "merahHitam1", label: "Merah strip Hitam 1/Geup 2j" },
   { value: "merahHitam2", label: "Merah strip Hitam 2/Geup 1" },
   { value: "hitam1", label: "Hitam/Dan 1" },
   { value: "hitam2", label: "Hitam/Dan 2" },
