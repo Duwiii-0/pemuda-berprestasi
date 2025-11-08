@@ -61,45 +61,45 @@ const fetchMedalData = async () => {
   try {
     setLoading(true);
     
-    console.log('🔍 Fetching medal data for kompetisi:', idKompetisi);
+    console.log('Fetching medal data for kompetisi:', idKompetisi);
     
-    // ✅ STEP 1: Fetch dari PUBLIC endpoint (NO AUTH!)
+    // Fetch dari PUBLIC endpoint (NO AUTH!)
     const response = await fetch(`/api/public/kompetisi/${idKompetisi}/medal-tally`);
     
-    console.log('📊 Response status:', response.status);
+    console.log('Response status:', response.status);
     
     if (!response.ok) {
       throw new Error(`Failed to fetch medal data: ${response.status} ${response.statusText}`);
     }
     
     const result = await response.json();
-    console.log('📊 Medal data response:', result);
+    console.log('Medal data response:', result);
     
     if (!result.success) {
       throw new Error('Failed to fetch medal data');
     }
 
-    // ✅ STEP 2: Set kompetisi info
+    // Set kompetisi info
     if (result.data.kompetisi) {
       setKompetisi(result.data.kompetisi);
     }
 
-    // ✅ STEP 3: Process kelas data dengan bracket
+    // Process kelas data dengan bracket
     const kelasWithLeaderboard = result.data.kelas
-      .filter((kelas: any) => kelas.bracket && kelas.bracket.matches.length > 0) // Filter hanya yang ada bracket
+      .filter((kelas: any) => kelas.bracket && kelas.bracket.matches.length > 0)
       .map((kelas: any) => {
-        console.log(`\n📋 Processing kelas: ${kelas.id_kelas_kejuaraan}`);
+        console.log(`Processing kelas: ${kelas.id_kelas_kejuaraan}`);
         
         // Detect kategori (PEMULA atau PRESTASI)
         const isPemula = kelas.kategori_event?.nama_kategori?.toLowerCase().includes('pemula') || false;
         
-        console.log(`   Type: ${isPemula ? 'PEMULA' : 'PRESTASI'}`);
-        console.log(`   Total matches: ${kelas.bracket.matches.length}`);
+        console.log(`Type: ${isPemula ? 'PEMULA' : 'PRESTASI'}`);
+        console.log(`Total matches: ${kelas.bracket.matches.length}`);
         
         // Transform leaderboard
         const leaderboard = transformLeaderboard(kelas.bracket.matches, isPemula);
         
-        console.log(`   Leaderboard:`, leaderboard);
+        console.log(`Leaderboard:`, leaderboard);
         
         return {
           id_kelas_kejuaraan: kelas.id_kelas_kejuaraan,
@@ -113,11 +113,11 @@ const fetchMedalData = async () => {
         };
       });
 
-    console.log(`\n✅ Total kelas dengan medali: ${kelasWithLeaderboard.length}`);
+    console.log(`Total kelas dengan medali: ${kelasWithLeaderboard.length}`);
     setKelasList(kelasWithLeaderboard);
 
   } catch (err: any) {
-    console.error('❌ Error fetching medal data:', err);
+    console.error('Error fetching medal data:', err);
     setError(err.message || 'Gagal memuat data perolehan medali');
   } finally {
     setLoading(false);
@@ -125,7 +125,7 @@ const fetchMedalData = async () => {
 };
 
   /**
-   * 🔄 Transform bracket data menjadi leaderboard
+   * Transform bracket data menjadi leaderboard
    */
 const transformLeaderboard = (matches: any[], isPemula: boolean) => {
   const leaderboard = {
@@ -144,8 +144,9 @@ const transformLeaderboard = (matches: any[], isPemula: boolean) => {
     return transformPrestasiLeaderboard(matches);
   }
 };
+
   /**
-   * 🥋 Transform PEMULA leaderboard
+   * Transform PEMULA leaderboard
    */
 const transformPemulaLeaderboard = (matches: any[]) => {
   const leaderboard = {
@@ -162,10 +163,10 @@ const transformPemulaLeaderboard = (matches: any[]) => {
   const round2Matches = matches.filter(m => m.round === 2);
   const hasAdditionalMatch = round2Matches.length > 0;
 
-  console.log(`   Round 1: ${round1Matches.length}, Round 2: ${round2Matches.length}`);
+  console.log(`Round 1: ${round1Matches.length}, Round 2: ${round2Matches.length}`);
 
   if (!hasAdditionalMatch) {
-    // ⭐ GENAP SCENARIO
+    // GENAP SCENARIO
     round1Matches.forEach(match => {
       if ((match.scoreA > 0 || match.scoreB > 0) && match.participant1 && match.participant2) {
         const winner = match.scoreA > match.scoreB ? match.participant1 : match.participant2;
@@ -191,7 +192,7 @@ const transformPemulaLeaderboard = (matches: any[]) => {
       }
     });
   } else {
-    // ⭐ GANJIL SCENARIO
+    // GANJIL SCENARIO
     const additionalMatch = round2Matches[0];
     const lastRound1Match = round1Matches[round1Matches.length - 1];
 
@@ -270,7 +271,7 @@ const transformPemulaLeaderboard = (matches: any[]) => {
 };
 
   /**
-   * 🏆 Transform PRESTASI leaderboard
+   * Transform PRESTASI leaderboard
    */
 const transformPrestasiLeaderboard = (matches: any[]) => {
   const leaderboard = {
@@ -330,7 +331,7 @@ const transformPrestasiLeaderboard = (matches: any[]) => {
 };
 
   /**
-   * 📊 Aggregate semua leaderboard jadi satu
+   * Aggregate semua leaderboard jadi satu
    */
   const getAggregatedLeaderboard = (): AggregatedLeaderboard => {
     const aggregated: AggregatedLeaderboard = {
@@ -436,35 +437,35 @@ const transformPrestasiLeaderboard = (matches: any[]) => {
     : `${kompetisi.nama_event} - ${generateNamaKelas(kelasList.find(k => k.id_kelas_kejuaraan === selectedView)!)}`;
 
   return (
-    <section className="relative w-full min-h-screen overflow-hidden py-12 md:py-16 pt-24 sm:pt-28 md:pt-32 lg:pt-36" style={{ backgroundColor: '#F5FBEF' }}>
-      <div className="container mx-auto px-4 relative z-10">
+    <section className="relative w-full min-h-screen overflow-hidden py-8 md:py-12 pt-24 sm:pt-28" style={{ backgroundColor: '#F5FBEF' }}>
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl relative z-10">
         {/* Header Section */}
-        <div className="text-center space-y-4 sm:space-y-6 md:space-y-8 mb-12">
+        <div className="text-center space-y-4 sm:space-y-6 mb-8 sm:mb-12">
           <div className="hidden lg:inline-block group">
-            <span className="text-red font-plex font-semibold text-xs sm:text-sm uppercase tracking-[0.2em] border-l-4 border-red pl-3 sm:pl-4 md:pl-6 relative">
+            <span className="font-semibold text-xs sm:text-sm uppercase tracking-[0.2em] border-l-4 pl-3 sm:pl-4 md:pl-6 relative" style={{ color: '#990D35', borderColor: '#990D35' }}>
               Perolehan Medali
-              <div className="absolute -left-1 top-0 bottom-0 w-1 bg-red/20 group-hover:bg-red/40 transition-colors duration-300"></div>
+              <div className="absolute -left-1 top-0 bottom-0 w-1 transition-colors duration-300" style={{ backgroundColor: 'rgba(153, 13, 53, 0.2)' }}></div>
             </span>
           </div>
 
           <div className="relative">
-            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bebas leading-[0.85] tracking-wide">
-              <span className="bg-gradient-to-r from-red via-red/90 to-red/80 bg-clip-text text-transparent">
-                Medal Tally
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bebas leading-[0.85] tracking-wide">
+              <span className="bg-gradient-to-r from-red via-red/90 to-red/80 bg-clip-text text-transparent" style={{ color: '#990D35' }}>
+                MEDAL TALLY
               </span>
             </h1>
-            <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-12 sm:w-16 md:w-20 h-0.5 sm:h-1 bg-gradient-to-r from-red to-red/60 rounded-full"></div>
+            <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-12 sm:w-16 md:w-20 h-0.5 sm:h-1 rounded-full" style={{ background: 'linear-gradient(to right, #990D35, rgba(153, 13, 53, 0.6))' }}></div>
           </div>
 
           {/* Event Info Card */}
-          <div className="max-w-3xl mx-auto bg-white rounded-2xl shadow-lg border-2 p-6" style={{ borderColor: '#990D35' }}>
-            <h2 className="text-2xl font-bebas mb-4" style={{ color: '#990D35' }}>
+          <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-lg border-2 p-4 sm:p-6" style={{ borderColor: '#990D35' }}>
+            <h2 className="text-xl sm:text-2xl font-bebas mb-3 sm:mb-4" style={{ color: '#990D35' }}>
               {kompetisi.nama_event}
             </h2>
-            <div className="flex flex-wrap items-center justify-center gap-4 text-sm" style={{ color: '#050505', opacity: 0.7 }}>
+            <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 text-xs sm:text-sm" style={{ color: '#050505', opacity: 0.7 }}>
               <div className="flex items-center gap-2">
-                <Calendar size={16} />
-                <span>
+                <Calendar size={14} className="sm:w-4 sm:h-4" />
+                <span className="text-xs sm:text-sm">
                   {new Date(kompetisi.tanggal_mulai).toLocaleDateString('id-ID', {
                     day: 'numeric',
                     month: 'long',
@@ -478,77 +479,54 @@ const transformPrestasiLeaderboard = (matches: any[]) => {
                   })}
                 </span>
               </div>
-              <span>•</span>
+              <span className="hidden sm:inline">•</span>
               <div className="flex items-center gap-2">
-                <MapPin size={16} />
-                <span>{kompetisi.lokasi}</span>
+                <MapPin size={14} className="sm:w-4 sm:h-4" />
+                <span className="text-xs sm:text-sm">{kompetisi.lokasi}</span>
               </div>
-              <span>•</span>
+              <span className="hidden sm:inline">•</span>
               <div className="flex items-center gap-2">
-                <Award size={16} />
-                <span>{kelasList.length} Kelas</span>
+                <Award size={14} className="sm:w-4 sm:h-4" />
+                <span className="text-xs sm:text-sm">{kelasList.length} Kelas</span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* View Tabs */}
-        <div className="mb-8 overflow-x-auto pb-2">
-          <div className="flex gap-3 min-w-max">
-            {/* Overall Tab */}
-            <button
-              onClick={() => setSelectedView('overall')}
-              className={`px-6 py-4 rounded-xl font-medium transition-all whitespace-nowrap ${
-                selectedView === 'overall'
-                  ? 'shadow-lg transform scale-105'
-                  : 'opacity-60 hover:opacity-100 hover:transform hover:scale-102'
-              }`}
+        {/* View Selector - Dropdown Style */}
+        <div className="mb-6 sm:mb-8 max-w-4xl mx-auto">
+          <label className="block text-sm font-semibold mb-3" style={{ color: '#990D35' }}>
+            Pilih Kategori Lomba:
+          </label>
+          <div className="relative">
+            <select
+              value={selectedView}
+              onChange={(e) => setSelectedView(e.target.value === 'overall' ? 'overall' : Number(e.target.value))}
+              className="w-full px-4 sm:px-6 py-3 sm:py-4 rounded-xl font-medium text-sm sm:text-base appearance-none cursor-pointer shadow-lg focus:outline-none focus:ring-2 transition-all"
               style={{
-                backgroundColor: selectedView === 'overall' ? '#990D35' : '#fff',
-                color: selectedView === 'overall' ? '#F5FBEF' : '#990D35',
-                border: `2px solid ${selectedView === 'overall' ? '#990D35' : 'rgba(153, 13, 53, 0.2)'}`,
+                backgroundColor: '#990D35',
+                color: '#F5FBEF',
+                border: '2px solid #990D35',
               }}
             >
-              <div className="text-base font-semibold mb-1">
-                📊 Overall - Semua Kelas
-              </div>
-              <div className="text-xs opacity-80">
-                Total Medali Keseluruhan
-              </div>
-            </button>
-
-            {/* Per-Kelas Tabs */}
-            {kelasList.map((kelas) => (
-              <button
-                key={kelas.id_kelas_kejuaraan}
-                onClick={() => setSelectedView(kelas.id_kelas_kejuaraan)}
-                className={`px-6 py-4 rounded-xl font-medium transition-all whitespace-nowrap ${
-                  selectedView === kelas.id_kelas_kejuaraan
-                    ? 'shadow-lg transform scale-105'
-                    : 'opacity-60 hover:opacity-100 hover:transform hover:scale-102'
-                }`}
-                style={{
-                  backgroundColor: selectedView === kelas.id_kelas_kejuaraan ? '#990D35' : '#fff',
-                  color: selectedView === kelas.id_kelas_kejuaraan ? '#F5FBEF' : '#990D35',
-                  border: `2px solid ${selectedView === kelas.id_kelas_kejuaraan ? '#990D35' : 'rgba(153, 13, 53, 0.2)'}`,
-                }}
-              >
-                <div className="text-base font-semibold mb-1">
-                  {generateNamaKelas(kelas)}
-                </div>
-                <div className="text-xs opacity-80">
-                  🥇 {kelas.leaderboard.gold.length} · 
-                  🥈 {kelas.leaderboard.silver.length} · 
-                  🥉 {kelas.leaderboard.bronze.length}
-                </div>
-              </button>
-            ))}
+              <option value="overall">Overall - Semua Kelas (Total Medali Keseluruhan)</option>
+              {kelasList.map((kelas) => (
+                <option key={kelas.id_kelas_kejuaraan} value={kelas.id_kelas_kejuaraan}>
+                  {generateNamaKelas(kelas)} - Emas: {kelas.leaderboard.gold.length}, Perak: {kelas.leaderboard.silver.length}, Perunggu: {kelas.leaderboard.bronze.length}
+                </option>
+              ))}
+            </select>
+            <div className="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M5 7.5L10 12.5L15 7.5" stroke="#F5FBEF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
           </div>
         </div>
 
         {/* Medal Table */}
         {currentLeaderboard && (
-          <div className="max-w-6xl mx-auto">
+          <div className="max-w-5xl mx-auto">
             <DojangMedalTable
               leaderboard={currentLeaderboard}
               eventName={currentEventName}

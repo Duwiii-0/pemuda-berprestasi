@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Trophy, Download, Save, Medal } from 'lucide-react';
+import React, { useState } from 'react';
+import { Trophy, Download, Save, Medal, Award } from 'lucide-react';
 
 // Fungsi untuk menghitung medali per dojang dari data leaderboard
 const calculateDojangMedals = (leaderboard: any) => {
@@ -72,7 +72,7 @@ const exportToCSV = (sortedDojangs: any[], eventName: string) => {
   const url = URL.createObjectURL(blob);
   
   link.setAttribute('href', url);
-  link.setAttribute('download', `Medal_Tally_${eventName}_${Date.now()}.csv`);
+  link.setAttribute('download', `Medal_Tally_${eventName.replace(/[^a-zA-Z0-9]/g, '_')}_${Date.now()}.csv`);
   link.style.visibility = 'hidden';
   document.body.appendChild(link);
   link.click();
@@ -92,7 +92,7 @@ const exportToJSON = (sortedDojangs: any[], eventName: string) => {
   const url = URL.createObjectURL(blob);
   
   link.setAttribute('href', url);
-  link.setAttribute('download', `Medal_Tally_${eventName}_${Date.now()}.json`);
+  link.setAttribute('download', `Medal_Tally_${eventName.replace(/[^a-zA-Z0-9]/g, '_')}_${Date.now()}.json`);
   link.style.visibility = 'hidden';
   document.body.appendChild(link);
   link.click();
@@ -117,10 +117,10 @@ const DojangMedalTable: React.FC<{
     setSaving(true);
     try {
       await onSave(sortedDojangs);
-      setSavedMessage('✅ Data berhasil disimpan!');
+      setSavedMessage('Data berhasil disimpan!');
       setTimeout(() => setSavedMessage(''), 3000);
     } catch (error) {
-      setSavedMessage('❌ Gagal menyimpan data');
+      setSavedMessage('Gagal menyimpan data');
       setTimeout(() => setSavedMessage(''), 3000);
     } finally {
       setSaving(false);
@@ -128,41 +128,46 @@ const DojangMedalTable: React.FC<{
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto p-4">
-      <div className="bg-white rounded-xl shadow-lg border-2" style={{ borderColor: '#990D35' }}>
-        {/* Header */}
-        <div className="px-6 py-4 border-b-2" style={{ backgroundColor: '#FFF5F5', borderColor: '#990D35' }}>
-          <div className="flex items-center justify-between">
+    <div className="w-full mx-auto">
+      <div className="bg-white rounded-2xl shadow-2xl border-2 overflow-hidden" style={{ borderColor: '#990D35' }}>
+        {/* Header with Gradient */}
+        <div className="relative px-4 sm:px-6 py-5 sm:py-6 border-b-2" style={{ 
+          background: 'linear-gradient(135deg, #990D35 0%, #7A0A2B 100%)',
+          borderColor: '#990D35' 
+        }}>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex items-center gap-3">
-              <Medal size={28} style={{ color: '#990D35' }} />
+              <div className="p-2 sm:p-3 rounded-xl bg-white/10 backdrop-blur-sm">
+                <Trophy size={24} className="sm:w-7 sm:h-7" style={{ color: '#FFD700' }} />
+              </div>
               <div>
-                <h3 className="text-xl font-bold" style={{ color: '#990D35' }}>
+                <h3 className="text-lg sm:text-xl font-bold text-white tracking-wide">
                   PEROLEHAN MEDALI PER DOJANG
                 </h3>
-                <p className="text-sm" style={{ color: '#050505', opacity: 0.6 }}>
+                <p className="text-xs sm:text-sm text-white/80 mt-0.5">
                   {eventName}
                 </p>
               </div>
             </div>
             
             {/* Action Buttons */}
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               {onSave && (
                 <button
                   onClick={handleSave}
                   disabled={saving}
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50 hover:opacity-90"
+                  className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg font-medium text-xs sm:text-sm transition-all disabled:opacity-50 hover:shadow-lg hover:scale-105"
                   style={{ backgroundColor: '#10B981', color: 'white' }}
                 >
                   {saving ? (
                     <>
                       <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
-                      <span>Menyimpan...</span>
+                      <span className="hidden sm:inline">Menyimpan...</span>
                     </>
                   ) : (
                     <>
                       <Save size={16} />
-                      <span>Simpan</span>
+                      <span className="hidden sm:inline">Simpan</span>
                     </>
                   )}
                 </button>
@@ -170,7 +175,7 @@ const DojangMedalTable: React.FC<{
               
               <button
                 onClick={() => exportToCSV(sortedDojangs, eventName)}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all hover:opacity-90"
+                className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg font-medium text-xs sm:text-sm transition-all hover:shadow-lg hover:scale-105"
                 style={{ backgroundColor: '#6366F1', color: 'white' }}
               >
                 <Download size={16} />
@@ -179,8 +184,8 @@ const DojangMedalTable: React.FC<{
               
               <button
                 onClick={() => exportToJSON(sortedDojangs, eventName)}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all hover:opacity-90"
-                style={{ backgroundColor: '#990D35', color: 'white' }}
+                className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg font-medium text-xs sm:text-sm transition-all hover:shadow-lg hover:scale-105"
+                style={{ backgroundColor: '#F59E0B', color: 'white' }}
               >
                 <Download size={16} />
                 <span>JSON</span>
@@ -190,10 +195,11 @@ const DojangMedalTable: React.FC<{
           
           {/* Save Message */}
           {savedMessage && (
-            <div className="mt-3 p-2 rounded-lg text-center text-sm font-medium" style={{
-              backgroundColor: savedMessage.includes('✅') ? '#D1FAE5' : '#FEE2E2',
-              color: savedMessage.includes('✅') ? '#065F46' : '#991B1B'
-            }}>
+            <div className={`mt-3 p-3 rounded-lg text-center text-xs sm:text-sm font-medium ${
+              savedMessage.includes('berhasil') 
+                ? 'bg-green-100 text-green-800 border border-green-300' 
+                : 'bg-red-100 text-red-800 border border-red-300'
+            }`}>
               {savedMessage}
             </div>
           )}
@@ -203,89 +209,124 @@ const DojangMedalTable: React.FC<{
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr style={{ backgroundColor: '#FFF5F5' }}>
-                <th className="px-4 py-3 text-left text-sm font-bold" style={{ color: '#990D35' }}>
-                  Peringkat
+              <tr style={{ backgroundColor: '#FFF5F7' }}>
+                <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-bold uppercase tracking-wider border-b-2" style={{ color: '#990D35', borderColor: '#990D35' }}>
+                  <div className="flex items-center gap-2">
+                    <Award size={16} />
+                    <span>Peringkat</span>
+                  </div>
                 </th>
-                <th className="px-4 py-3 text-left text-sm font-bold" style={{ color: '#990D35' }}>
+                <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-bold uppercase tracking-wider border-b-2" style={{ color: '#990D35', borderColor: '#990D35' }}>
                   Nama Dojang
                 </th>
-                <th className="px-4 py-3 text-center text-sm font-bold" style={{ color: '#990D35' }}>
-                  🥇 Emas
+                <th className="px-3 sm:px-4 py-3 sm:py-4 text-center text-xs sm:text-sm font-bold uppercase tracking-wider border-b-2" style={{ color: '#990D35', borderColor: '#990D35' }}>
+                  <div className="flex flex-col items-center gap-1">
+                    <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-600"></div>
+                    <span>Emas</span>
+                  </div>
                 </th>
-                <th className="px-4 py-3 text-center text-sm font-bold" style={{ color: '#990D35' }}>
-                  🥈 Perak
+                <th className="px-3 sm:px-4 py-3 sm:py-4 text-center text-xs sm:text-sm font-bold uppercase tracking-wider border-b-2" style={{ color: '#990D35', borderColor: '#990D35' }}>
+                  <div className="flex flex-col items-center gap-1">
+                    <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-gradient-to-br from-gray-300 to-gray-500"></div>
+                    <span>Perak</span>
+                  </div>
                 </th>
-                <th className="px-4 py-3 text-center text-sm font-bold" style={{ color: '#990D35' }}>
-                  🥉 Perunggu
+                <th className="px-3 sm:px-4 py-3 sm:py-4 text-center text-xs sm:text-sm font-bold uppercase tracking-wider border-b-2" style={{ color: '#990D35', borderColor: '#990D35' }}>
+                  <div className="flex flex-col items-center gap-1">
+                    <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-gradient-to-br from-orange-400 to-orange-700"></div>
+                    <span>Perunggu</span>
+                  </div>
                 </th>
-                <th className="px-4 py-3 text-center text-sm font-bold" style={{ color: '#990D35' }}>
+                <th className="px-3 sm:px-4 py-3 sm:py-4 text-center text-xs sm:text-sm font-bold uppercase tracking-wider border-b-2" style={{ color: '#990D35', borderColor: '#990D35' }}>
                   Total
                 </th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-gray-200">
               {sortedDojangs.map((item, index) => (
                 <tr 
                   key={item.dojang}
-                  className="border-b hover:bg-gray-50 transition-colors"
+                  className="transition-all duration-200 hover:shadow-lg"
                   style={{ 
-                    backgroundColor: index < 3 ? 'rgba(245, 183, 0, 0.05)' : 'transparent'
+                    backgroundColor: index === 0 
+                      ? 'rgba(255, 215, 0, 0.08)' 
+                      : index === 1 
+                      ? 'rgba(192, 192, 192, 0.08)' 
+                      : index === 2 
+                      ? 'rgba(205, 127, 50, 0.08)' 
+                      : 'white'
                   }}
                 >
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      {index === 0 && <span className="text-xl">🥇</span>}
-                      {index === 1 && <span className="text-xl">🥈</span>}
-                      {index === 2 && <span className="text-xl">🥉</span>}
-                      <span className="font-bold" style={{ color: '#050505' }}>
-                        {index + 1}
-                      </span>
+                  <td className="px-3 sm:px-6 py-3 sm:py-4">
+                    <div className="flex items-center gap-2 sm:gap-3">
+                      {index < 3 && (
+                        <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-bold text-white text-sm sm:text-base shadow-lg ${
+                          index === 0 ? 'bg-gradient-to-br from-yellow-400 to-yellow-600' :
+                          index === 1 ? 'bg-gradient-to-br from-gray-300 to-gray-500' :
+                          'bg-gradient-to-br from-orange-400 to-orange-700'
+                        }`}>
+                          {index + 1}
+                        </div>
+                      )}
+                      {index >= 3 && (
+                        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-bold text-sm sm:text-base border-2" style={{ 
+                          borderColor: '#990D35', 
+                          color: '#990D35' 
+                        }}>
+                          {index + 1}
+                        </div>
+                      )}
                     </div>
                   </td>
-                  <td className="px-4 py-3">
-                    <span className="font-semibold" style={{ color: '#050505' }}>
+                  <td className="px-3 sm:px-6 py-3 sm:py-4">
+                    <span className="font-bold text-sm sm:text-base" style={{ color: '#050505' }}>
                       {item.dojang}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-center">
+                  <td className="px-3 sm:px-4 py-3 sm:py-4 text-center">
                     <span 
-                      className="inline-block px-3 py-1 rounded-full font-bold text-sm"
+                      className="inline-flex items-center justify-center min-w-[2.5rem] sm:min-w-[3rem] px-3 py-1.5 sm:py-2 rounded-full font-bold text-xs sm:text-sm shadow-md transition-transform hover:scale-110"
                       style={{ 
-                        backgroundColor: item.gold > 0 ? '#FFFBEA' : '#F5F5F5',
-                        color: item.gold > 0 ? '#F5B700' : '#9CA3AF'
+                        background: item.gold > 0 
+                          ? 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)' 
+                          : '#F3F4F6',
+                        color: item.gold > 0 ? 'white' : '#9CA3AF'
                       }}
                     >
                       {item.gold}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-center">
+                  <td className="px-3 sm:px-4 py-3 sm:py-4 text-center">
                     <span 
-                      className="inline-block px-3 py-1 rounded-full font-bold text-sm"
+                      className="inline-flex items-center justify-center min-w-[2.5rem] sm:min-w-[3rem] px-3 py-1.5 sm:py-2 rounded-full font-bold text-xs sm:text-sm shadow-md transition-transform hover:scale-110"
                       style={{ 
-                        backgroundColor: item.silver > 0 ? '#F5F5F5' : '#FAFAFA',
-                        color: item.silver > 0 ? '#9CA3AF' : '#D1D5DB'
+                        background: item.silver > 0 
+                          ? 'linear-gradient(135deg, #C0C0C0 0%, #808080 100%)' 
+                          : '#F3F4F6',
+                        color: item.silver > 0 ? 'white' : '#9CA3AF'
                       }}
                     >
                       {item.silver}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-center">
+                  <td className="px-3 sm:px-4 py-3 sm:py-4 text-center">
                     <span 
-                      className="inline-block px-3 py-1 rounded-full font-bold text-sm"
+                      className="inline-flex items-center justify-center min-w-[2.5rem] sm:min-w-[3rem] px-3 py-1.5 sm:py-2 rounded-full font-bold text-xs sm:text-sm shadow-md transition-transform hover:scale-110"
                       style={{ 
-                        backgroundColor: item.bronze > 0 ? '#FFF8F0' : '#FAFAFA',
-                        color: item.bronze > 0 ? '#CD7F32' : '#D1D5DB'
+                        background: item.bronze > 0 
+                          ? 'linear-gradient(135deg, #CD7F32 0%, #8B4513 100%)' 
+                          : '#F3F4F6',
+                        color: item.bronze > 0 ? 'white' : '#9CA3AF'
                       }}
                     >
                       {item.bronze}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-center">
+                  <td className="px-3 sm:px-4 py-3 sm:py-4 text-center">
                     <span 
-                      className="inline-block px-4 py-1 rounded-full font-bold"
+                      className="inline-flex items-center justify-center min-w-[3rem] sm:min-w-[3.5rem] px-4 py-1.5 sm:py-2 rounded-full font-bold text-sm sm:text-base shadow-lg"
                       style={{ 
-                        backgroundColor: '#990D35',
+                        background: 'linear-gradient(135deg, #990D35 0%, #7A0A2B 100%)',
                         color: 'white'
                       }}
                     >
@@ -296,21 +337,31 @@ const DojangMedalTable: React.FC<{
               ))}
             </tbody>
             <tfoot>
-              <tr style={{ backgroundColor: '#FFF5F5', fontWeight: 'bold' }}>
-                <td colSpan={2} className="px-4 py-3 text-right" style={{ color: '#990D35' }}>
-                  TOTAL KESELURUHAN:
+              <tr style={{ 
+                background: 'linear-gradient(135deg, #990D35 0%, #7A0A2B 100%)'
+              }}>
+                <td colSpan={2} className="px-3 sm:px-6 py-3 sm:py-4 text-right font-bold text-xs sm:text-sm uppercase tracking-wider text-white">
+                  Total Keseluruhan
                 </td>
-                <td className="px-4 py-3 text-center" style={{ color: '#F5B700' }}>
-                  {sortedDojangs.reduce((sum, item) => sum + item.gold, 0)}
+                <td className="px-3 sm:px-4 py-3 sm:py-4 text-center">
+                  <span className="inline-flex items-center justify-center min-w-[2.5rem] sm:min-w-[3rem] px-3 py-1.5 sm:py-2 rounded-full font-bold text-xs sm:text-sm bg-white/20 text-white backdrop-blur-sm">
+                    {sortedDojangs.reduce((sum, item) => sum + item.gold, 0)}
+                  </span>
                 </td>
-                <td className="px-4 py-3 text-center" style={{ color: '#9CA3AF' }}>
-                  {sortedDojangs.reduce((sum, item) => sum + item.silver, 0)}
+                <td className="px-3 sm:px-4 py-3 sm:py-4 text-center">
+                  <span className="inline-flex items-center justify-center min-w-[2.5rem] sm:min-w-[3rem] px-3 py-1.5 sm:py-2 rounded-full font-bold text-xs sm:text-sm bg-white/20 text-white backdrop-blur-sm">
+                    {sortedDojangs.reduce((sum, item) => sum + item.silver, 0)}
+                  </span>
                 </td>
-                <td className="px-4 py-3 text-center" style={{ color: '#CD7F32' }}>
-                  {sortedDojangs.reduce((sum, item) => sum + item.bronze, 0)}
+                <td className="px-3 sm:px-4 py-3 sm:py-4 text-center">
+                  <span className="inline-flex items-center justify-center min-w-[2.5rem] sm:min-w-[3rem] px-3 py-1.5 sm:py-2 rounded-full font-bold text-xs sm:text-sm bg-white/20 text-white backdrop-blur-sm">
+                    {sortedDojangs.reduce((sum, item) => sum + item.bronze, 0)}
+                  </span>
                 </td>
-                <td className="px-4 py-3 text-center" style={{ color: '#990D35' }}>
-                  {sortedDojangs.reduce((sum, item) => sum + item.total, 0)}
+                <td className="px-3 sm:px-4 py-3 sm:py-4 text-center">
+                  <span className="inline-flex items-center justify-center min-w-[3rem] sm:min-w-[3.5rem] px-4 py-1.5 sm:py-2 rounded-full font-bold text-sm sm:text-base bg-white shadow-lg" style={{ color: '#990D35' }}>
+                    {sortedDojangs.reduce((sum, item) => sum + item.total, 0)}
+                  </span>
                 </td>
               </tr>
             </tfoot>
@@ -319,10 +370,15 @@ const DojangMedalTable: React.FC<{
 
         {/* Empty State */}
         {sortedDojangs.length === 0 && (
-          <div className="p-12 text-center">
-            <Trophy size={48} style={{ color: '#990D35', opacity: 0.3 }} className="mx-auto mb-3" />
-            <p className="text-sm" style={{ color: '#050505', opacity: 0.5 }}>
-              Belum ada data medali
+          <div className="p-12 sm:p-16 text-center">
+            <div className="inline-flex p-4 sm:p-6 rounded-full bg-red-50 mb-4">
+              <Medal size={48} className="sm:w-16 sm:h-16" style={{ color: '#990D35', opacity: 0.3 }} />
+            </div>
+            <p className="text-base sm:text-lg font-medium mb-2" style={{ color: '#990D35' }}>
+              Belum Ada Data Medali
+            </p>
+            <p className="text-xs sm:text-sm" style={{ color: '#050505', opacity: 0.5 }}>
+              Data perolehan medali akan ditampilkan setelah pertandingan selesai
             </p>
           </div>
         )}
