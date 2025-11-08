@@ -10,6 +10,16 @@ interface Atlet {
   dojang_name?: string;
   kelas_berat?: string;
   belt?: string;
+  // Tambahan struktur nested jika data dari API berbeda
+  dojang?: {
+    nama_dojang?: string;
+    id_dojang?: number;
+  };
+  kelas_kejuaraan?: {
+    kelas_berat?: {
+      nama_kelas?: string;
+    };
+  };
 }
 
 interface IDCardGeneratorProps {
@@ -24,7 +34,7 @@ const OVERLAY_COORDS = {
   // Photo box (kotak besar kiri) - koordinat FIXED berdasarkan template
   photo: {
     x: 25.5,           // Posisi X foto
-    y: 95.5,           // Posisi Y foto (dari atas)
+    y: 95.7,           // Posisi Y foto (dari atas)
     width: 77,       // Lebar foto FIXED
     height: 108,      // Tinggi foto FIXED
   },
@@ -106,8 +116,19 @@ const loadImageAsBase64 = async (url: string, rounded = false): Promise<string> 
     console.log("=== DEBUG ATLET DATA ===");
     console.log("Full atlet object:", atlet);
     console.log("nama_atlet:", atlet.nama_atlet);
-    console.log("kelas_berat:", atlet.kelas_berat);
-    console.log("dojang_name:", atlet.dojang_name);
+    
+    // ✅ Ambil kelas_berat dari berbagai kemungkinan struktur data
+    const kelasBerat = atlet.kelas_berat || 
+                       atlet.kelas_kejuaraan?.kelas_berat?.nama_kelas || 
+                       "-";
+    
+    // ✅ Ambil dojang_name dari berbagai kemungkinan struktur data
+    const dojangName = atlet.dojang_name || 
+                       atlet.dojang?.nama_dojang || 
+                       "-";
+    
+    console.log("kelas_berat (extracted):", kelasBerat);
+    console.log("dojang_name (extracted):", dojangName);
     console.log("========================");
 
     try {
@@ -203,11 +224,11 @@ const loadImageAsBase64 = async (url: string, rounded = false): Promise<string> 
       // Nama
       pdf.text(atlet.nama_atlet, c.nama.x, c.nama.y);
 
-      // Kelas
-      pdf.text(atlet.kelas_berat || "-", c.kelas.x, c.kelas.y);
+      // Kelas - gunakan variable yang sudah di-extract
+      pdf.text(kelasBerat, c.kelas.x, c.kelas.y);
 
-      // Kontingen
-      pdf.text(atlet.dojang_name || "-", c.kontingen.x, c.kontingen.y);
+      // Kontingen - gunakan variable yang sudah di-extract
+      pdf.text(dojangName, c.kontingen.x, c.kontingen.y);
 
       // ========== METADATA untuk ekstraksi ==========
       pdf.setProperties({
@@ -217,9 +238,9 @@ const loadImageAsBase64 = async (url: string, rounded = false): Promise<string> 
         keywords: JSON.stringify({
           nama: atlet.nama_atlet,
           nama_coords: { x: c.nama.x, y: c.nama.y },
-          kelas: atlet.kelas_berat || "",
+          kelas: kelasBerat,
           kelas_coords: { x: c.kelas.x, y: c.kelas.y },
-          kontingen: atlet.dojang_name || "",
+          kontingen: dojangName,
           kontingen_coords: { x: c.kontingen.x, y: c.kontingen.y },
           foto_path: atlet.pas_foto_path || "",
           foto_coords: { x: c.photo.x, y: c.photo.y, w: c.photo.width, h: c.photo.height },
