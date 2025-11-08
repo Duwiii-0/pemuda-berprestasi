@@ -148,7 +148,7 @@ Memproses kelas: ${oldKelas.poomsae.nama_kelas} (ID Lama: ${oldKelas.id_kelas_ke
     }
   });
 
-  console.log("Migrasi data selesai.");
+  console.log(" Migrasi data selesai.");
   console.log(
     "Semua peserta Poomsae telah dipindahkan ke kelas berdasarkan gender."
   );

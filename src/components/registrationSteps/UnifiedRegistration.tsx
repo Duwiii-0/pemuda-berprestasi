@@ -123,21 +123,21 @@ useEffect(() => {
     }
   }, [formData.selectedAge, formData.selectedGender, formData.styleType, fetchWeightOptions]);
 
-  // ✅ UPDATED: fetch kelas poomsae jika styleType POOMSAE dan sudah pilih kelas umur
+  // ✅ UPDATED: fetch kelas poomsae jika styleType POOMSAE dan sudah pilih kelas umur dan gender
   useEffect(() => {
-  if (formData.styleType === "POOMSAE") {
-    let kelompokId = formData.selectedAge ? Number(formData.selectedAge.value) : undefined;
+    if (formData.styleType === "POOMSAE" && formData.selectedGender) {
+      let kelompokId = formData.selectedAge ? Number(formData.selectedAge.value) : undefined;
 
-    // Otomatis pakai kelompokId 4 untuk pemula
-    if (formData.categoryType === "pemula") {
-      kelompokId = 4;
-    }
+      // Otomatis pakai kelompokId 4 untuk pemula
+      if (formData.categoryType === "pemula") {
+        kelompokId = 4;
+      }
 
-    if (kelompokId) {
-      fetchKelasPoomsae(kelompokId);
+      if (kelompokId && formData.selectedGender.value) {
+        fetchKelasPoomsae(kelompokId, formData.selectedGender.value as "LAKI_LAKI" | "PEREMPUAN");
+      }
     }
-  }
-}, [formData.styleType, formData.selectedAge, formData.categoryType, fetchKelasPoomsae]);
+  }, [formData.styleType, formData.selectedAge, formData.categoryType, formData.selectedGender, fetchKelasPoomsae]);
 
 
 
