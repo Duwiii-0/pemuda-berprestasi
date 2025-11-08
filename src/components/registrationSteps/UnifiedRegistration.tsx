@@ -187,8 +187,12 @@ const UnifiedRegistration = ({
     )
       return;
 
-    // Untuk POOMSAE, pastikan poomsae terpilih
-    if (formData.styleType === "POOMSAE" && !formData.selectedPoomsae) return;
+    // ✅ UPDATED: Untuk POOMSAE, pastikan poomsae DAN GENDER terpilih
+    if (
+      formData.styleType === "POOMSAE" &&
+      (!formData.selectedPoomsae || !formData.selectedGender)
+    )
+      return;
 
     const kelasFilter: any = {
       styleType: formData.styleType,
@@ -219,8 +223,10 @@ const UnifiedRegistration = ({
     if (kelompokId) kelasFilter.kelompokId = kelompokId;
     if (formData.selectedWeight)
       kelasFilter.kelasBeratId = Number(formData.selectedWeight.value);
+
+    // ✅ UPDATED: Kirim poomsaeName, bukan poomsaeId
     if (formData.selectedPoomsae)
-      kelasFilter.poomsaeId = Number(formData.selectedPoomsae.value);
+      kelasFilter.poomsaeName = formData.selectedPoomsae.value;
 
     (async () => {
       try {

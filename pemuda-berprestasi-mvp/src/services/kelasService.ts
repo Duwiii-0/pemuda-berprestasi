@@ -38,6 +38,7 @@ export const kelasService = {
       kelompokId?: number;
       kelasBeratId?: number;
       poomsaeId?: number;
+      poomsaeName?: string; // ✅ ADDED: To filter by name
     }
   ) => {
     try {
@@ -102,13 +103,23 @@ export const kelasService = {
       } else if (
         filter.styleType === "POOMSAE" &&
         filter.gender &&
-        filter.poomsaeId
+        (filter.poomsaeId || filter.poomsaeName) // ✅ UPDATED: Check for ID or Name
       ) {
-        whereCondition.poomsae = {
-          id_poomsae: filter.poomsaeId,
+        const poomsaeFilter: any = {
           jenis_kelamin: filter.gender,
         };
-        delete whereCondition.id_poomsae;
+
+        if (filter.poomsaeId) {
+          poomsaeFilter.id_poomsae = filter.poomsaeId;
+        } else if (filter.poomsaeName) {
+          poomsaeFilter.nama_kelas = filter.poomsaeName;
+        }
+
+        whereCondition.poomsae = poomsaeFilter;
+        
+        if (whereCondition.id_poomsae) {
+            delete whereCondition.id_poomsae;
+        }
       }
 
       console.log(
