@@ -19,7 +19,7 @@ const API_VERSION = '/api';
 
 // ⭐ CRITICAL: Public routes HARUS di atas protected routes
 // Karena Express router matching dari atas ke bawah
-router.use(`${API_VERSION}/public`, publicRoutes);
+router.use(`${API_VERSION}/public`, publicRoutes); // ✅ FIX: Tambah kurung buka (
 
 // Developer A routes (Authentication & Foundation)
 router.use(`${API_VERSION}/auth`, authRoutes);
@@ -47,7 +47,7 @@ router.get('/docs', (req, res) => {
     version: '1.0.0',
     description: 'API untuk sistem manajemen perlombaan taekwondo',
     endpoints: {
-      // ✅ TAMBAH: Public endpoints
+      // ✅ Public endpoints
       public: {
         prefix: `${API_VERSION}/public`,
         description: 'Endpoints yang bisa diakses tanpa autentikasi',
