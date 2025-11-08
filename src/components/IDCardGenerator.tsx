@@ -23,22 +23,22 @@ const OVERLAY_COORDS = {
   
   // Photo box (kotak besar kiri) - koordinat FIXED berdasarkan template
   photo: {
-    x: 27,           // Posisi X foto
-    y: 80,           // Posisi Y foto (dari atas)
-    width: 77,       // Lebar foto FIXED
-    height: 120,      // Tinggi foto FIXED
+    x: 25,           // Posisi X foto
+    y: 85,           // Posisi Y foto (dari atas)
+    width: 75,       // Lebar foto FIXED
+    height: 110,      // Tinggi foto FIXED
   },
   
   nama: {
-    x: 58,           // Setelah "Nama :"
+    x: 56,           // Setelah "Nama :"
     y: 220,          // Baris Nama
   },
   kelas: {
-    x: 58,           // Setelah "Kelas :"
+    x: 56,           // Setelah "Kelas :"
     y: 233,          // Baris Kelas
   },
   kontingen: {
-    x: 58,           // Setelah "Kontingen :"
+    x: 56,           // Setelah "Kontingen :"
     y: 246,          // Baris Kontingen
   },
 };
@@ -189,9 +189,9 @@ const loadImageAsBase64 = async (url: string, rounded = false): Promise<string> 
       }
 
       // ========== OVERLAY DATA ATLET ==========
-      pdf.setFont("helvetica", "normal");
+      pdf.setFont("helvetica", "bold");
       pdf.setFontSize(14);        // Font size disesuaikan dengan template
-      pdf.setTextColor(0, 0, 0);  // Black text
+      pdf.setTextColor(255, 255, 255);  // Black text
 
       // Nama
       pdf.text(atlet.nama_atlet, c.nama.x, c.nama.y);
