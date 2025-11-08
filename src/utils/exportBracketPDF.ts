@@ -457,17 +457,17 @@ let zoom = 1.0;
 
 if (isPrestasi) {
   // Zoom dinamis untuk PRESTASI (zoom in)
-  if (totalPeserta <= 8) zoom = 2.0;
-  else if (totalPeserta <= 16) zoom = 1.6;
-  else if (totalPeserta <= 32) zoom = 1.4;
-  else zoom = 1.2;
-  console.log('📏 PRESTASI zoom:', zoom);
-} else {
-  // ✅ Zoom diperkecil untuk PEMULA (zoom out)
-  if (totalPeserta <= 8) zoom = 0.85;
+  if (totalPeserta <= 8) zoom = 0.82;
   else if (totalPeserta <= 16) zoom = 0.75;
   else if (totalPeserta <= 32) zoom = 0.65;
   else zoom = 0.55;
+  console.log('📏 PRESTASI zoom:', zoom);
+} else {
+  // ✅ Zoom diperkecil untuk PEMULA (zoom out)
+  if (totalPeserta <= 8) zoom = 2.00;
+  else if (totalPeserta <= 16) zoom = 1.6;
+  else if (totalPeserta <= 32) zoom = 1.4;
+  else zoom = 1.2;
   console.log('📏 PEMULA zoom:', zoom);
 }
 
