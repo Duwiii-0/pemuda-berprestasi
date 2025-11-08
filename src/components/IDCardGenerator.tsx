@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Download, Eye, FileText } from "lucide-react";
 import jsPDF from "jspdf";
+import templateImg from "../assets/photos/e-idcard_sriwijaya.jpg";
 
 interface Atlet {
   nama_atlet: string;
