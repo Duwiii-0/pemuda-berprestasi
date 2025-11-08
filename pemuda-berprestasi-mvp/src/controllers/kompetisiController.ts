@@ -1162,5 +1162,99 @@ static async conductDraw(req: Request, res: Response) {
   }
 }
 
+static async getMedalTally(req: Request, res: Response) {
+  try {
+    const idKompetisi = parseInt(req.params.id);
+
+    if (isNaN(idKompetisi)) {
+      return sendError(res, 'ID kompetisi tidak valid', 400);
+    }
+
+    // 🔹 STEP 1: Fetch kompetisi info
+    const kompetisi = await prisma.tb_kompetisi.findUnique({
+      where: { id_kompetisi: idKompetisi },
+      select: {
+        id_kompetisi: true,
+        nama_event: true,
+        tanggal_mulai: true,
+        tanggal_selesai: true,
+        lokasi: true,
+        status: true,
+      }
+    });
+
+    if (!kompetisi) {
+      return sendError(res, 'Kompetisi tidak ditemukan', 404);
+    }
+
+    // 🔹 STEP 2: Fetch all kelas with brackets
+    const kelasList = await prisma.tb_kelas_kejuaraan.findMany({
+      where: { id_kompetisi: idKompetisi },
+      include: {
+        kategori_event: true,
+        kelompok: true,
+        kelas_berat: true,
+        poomsae: true,
+        bagan: {
+          include: {
+            match: {
+              include: {
+                peserta_a: {
+                  include: {
+                    atlet: {
+                      include: {
+                        dojang: true
+                      }
+                    },
+                    anggota_tim: {
+                      include: {
+                        atlet: {
+                          include: {
+                            dojang: true
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                peserta_b: {
+                  include: {
+                    atlet: {
+                      include: {
+                        dojang: true
+                      }
+                    },
+                    anggota_tim: {
+                      include: {
+                        atlet: {
+                          include: {
+                            dojang: true
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    });
+
+    console.log(`📊 Medal Tally Request - Kompetisi: ${kompetisi.nama_event}`);
+    console.log(`   Total Kelas: ${kelasList.length}`);
+
+    return sendSuccess(res, {
+      kompetisi,
+      kelas: kelasList
+    }, 'Data medal tally berhasil diambil');
+
+  } catch (error: any) {
+    console.error('❌ Error fetching medal tally:', error);
+    return sendError(res, error.message || 'Gagal mengambil data medal tally', 500);
+  }
+}
+
 }
 

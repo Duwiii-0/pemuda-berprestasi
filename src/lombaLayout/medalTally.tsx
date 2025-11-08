@@ -66,7 +66,7 @@ const MedalTallyPage: React.FC<{ idKompetisi?: number }> = ({ idKompetisi }) => 
       console.log('🔑 Token value:', token ? `${token.substring(0, 20)}...` : 'NO TOKEN');
       
       // 🔹 STEP 1: Fetch kompetisi info
-      const kompRes = await fetch(`/api/kompetisi/${idKompetisi}`, {
+      const kompRes = await fetch(`/api/public/kompetisi/${idKompetisi}/medal-tally`, {
         headers: {
           'Content-Type': 'application/json',
           ...(token && { 'Authorization': `Bearer ${token}` })
@@ -86,7 +86,7 @@ const MedalTallyPage: React.FC<{ idKompetisi?: number }> = ({ idKompetisi }) => 
       }
 
       // 🔹 STEP 2: Fetch all kelas kejuaraan
-      const kelasRes = await fetch(`/api/kompetisi/${idKompetisi}/kelas-kejuaraan`, {
+      const kelasRes = await fetch(`/api/public/kompetisi/${idKompetisi}/kelas-kejuaraan`, {
         headers: {
           'Content-Type': 'application/json',
           ...(token && { 'Authorization': `Bearer ${token}` })

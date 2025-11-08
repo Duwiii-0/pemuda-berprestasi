@@ -9,10 +9,17 @@ import dojangRoutes from './dojang';
 import atletRoutes from './atlet';
 import kompetisiRoutes from './kompetisi';
 
+// ✅ Import PUBLIC routes (NO AUTH)
+import publicRoutes from './public';
+
 const router = Router();
 
 // API version prefix
 const API_VERSION = '/api';
+
+// ⭐ CRITICAL: Public routes HARUS di atas protected routes
+// Karena Express router matching dari atas ke bawah
+router.use(`${API_VERSION}/public`, publicRoutes);
 
 // Developer A routes (Authentication & Foundation)
 router.use(`${API_VERSION}/auth`, authRoutes);
@@ -40,6 +47,17 @@ router.get('/docs', (req, res) => {
     version: '1.0.0',
     description: 'API untuk sistem manajemen perlombaan taekwondo',
     endpoints: {
+      // ✅ TAMBAH: Public endpoints
+      public: {
+        prefix: `${API_VERSION}/public`,
+        description: 'Endpoints yang bisa diakses tanpa autentikasi',
+        endpoints: [
+          'GET /kompetisi - Get all published competitions',
+          'GET /kompetisi/:id - Get competition details',
+          'GET /kompetisi/:id/medal-tally - Get medal tally (leaderboard)',
+          'GET /kompetisi/:id/brackets/:kelasKejuaraanId - Get bracket (read-only)'
+        ]
+      },
       authentication: {
         prefix: `${API_VERSION}/auth`,
         endpoints: [
