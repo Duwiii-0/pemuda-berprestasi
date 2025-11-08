@@ -25,21 +25,21 @@ const OVERLAY_COORDS = {
   photo: {
     x: 25,           // Posisi X foto
     y: 34,           // Posisi Y foto (dari atas)
-    width: 55,       // Lebar foto FIXED
-    height: 70,      // Tinggi foto FIXED
+    width: 70,       // Lebar foto FIXED
+    height: 90,      // Tinggi foto FIXED
   },
   
   nama: {
-    x: 37,           // Setelah "Nama :"
-    y: 200,          // Baris Nama
+    x: 45,           // Setelah "Nama :"
+    y: 220,          // Baris Nama
   },
   kelas: {
-    x: 37,           // Setelah "Kelas :"
-    y: 210,          // Baris Kelas
+    x: 45,           // Setelah "Kelas :"
+    y: 230,          // Baris Kelas
   },
   kontingen: {
-    x: 37,           // Setelah "Kontingen :"
-    y: 220,          // Baris Kontingen
+    x: 45,           // Setelah "Kontingen :"
+    y: 240,          // Baris Kontingen
   },
 };
 
@@ -70,8 +70,14 @@ const loadImageAsBase64 = async (url: string, rounded = false): Promise<string> 
       canvas.height = h;
 
       if (rounded) {
-        const radius = Math.min(w, h) * 0.1; // 10% dari ukuran jadi radius
+        const radius = Math.min(w, h) * 0.1; // radius 10% dari ukuran gambar
         ctx.clearRect(0, 0, w, h);
+
+        // 💡 Tambahkan background putih
+        ctx.fillStyle = "#FFFFFF";
+        ctx.fillRect(0, 0, w, h);
+
+        // 🟢 Buat path rounded dan clip
         ctx.beginPath();
         ctx.moveTo(radius, 0);
         ctx.lineTo(w - radius, 0);
@@ -86,6 +92,7 @@ const loadImageAsBase64 = async (url: string, rounded = false): Promise<string> 
         ctx.clip();
       }
 
+      // 🖼️ Gambar foto di atas background putih + clip
       ctx.drawImage(img, 0, 0, w, h);
       resolve(canvas.toDataURL("image/jpeg", 0.95));
     };
@@ -93,7 +100,6 @@ const loadImageAsBase64 = async (url: string, rounded = false): Promise<string> 
     img.src = url;
   });
 };
-
 
   const generateIDCard = async () => {
     setIsGenerating(true);
@@ -184,7 +190,7 @@ const loadImageAsBase64 = async (url: string, rounded = false): Promise<string> 
 
       // ========== OVERLAY DATA ATLET ==========
       pdf.setFont("helvetica", "normal");
-      pdf.setFontSize(10);        // Font size disesuaikan dengan template
+      pdf.setFontSize(14);        // Font size disesuaikan dengan template
       pdf.setTextColor(0, 0, 0);  // Black text
 
       // Nama
