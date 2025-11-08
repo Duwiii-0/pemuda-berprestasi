@@ -23,10 +23,10 @@ const OVERLAY_COORDS = {
   
   // Photo box (kotak besar kiri) - koordinat FIXED berdasarkan template
   photo: {
-    x: 25,           // Posisi X foto
+    x: 26,           // Posisi X foto
     y: 85,           // Posisi Y foto (dari atas)
-    width: 75,       // Lebar foto FIXED
-    height: 110,      // Tinggi foto FIXED
+    width: 77,       // Lebar foto FIXED
+    height: 115,      // Tinggi foto FIXED
   },
   
   nama: {
@@ -70,7 +70,7 @@ const loadImageAsBase64 = async (url: string, rounded = false): Promise<string> 
       canvas.height = h;
 
       if (rounded) {
-        const radius = Math.min(w, h) * 0.1; // radius 10% dari ukuran gambar
+        const radius = Math.min(w, h) * 0.15; // radius 10% dari ukuran gambar
         ctx.clearRect(0, 0, w, h);
 
         // 💡 Tambahkan background putih
@@ -191,7 +191,7 @@ const loadImageAsBase64 = async (url: string, rounded = false): Promise<string> 
       // ========== OVERLAY DATA ATLET ==========
       pdf.setFont("helvetica", "bold");
       pdf.setFontSize(14);        // Font size disesuaikan dengan template
-      pdf.setTextColor(255, 255, 255);  // Black text
+      pdf.setTextColor(10, 34, 104);
 
       // Nama
       pdf.text(atlet.nama_atlet, c.nama.x, c.nama.y);
