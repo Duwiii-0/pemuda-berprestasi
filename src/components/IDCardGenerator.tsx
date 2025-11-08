@@ -17,30 +17,30 @@ interface IDCardGeneratorProps {
   isEditing: boolean;
 }
 
-// Koordinat PRESISI untuk overlay pada template
+// Koordinat PRESISI untuk overlay pada template (disesuaikan dengan template asli)
 const OVERLAY_COORDS = {
   page: { width: 210, height: 297 },
   
-  // Photo box (kotak besar kiri) - koordinat untuk paste foto atlet
+  // Photo box (kotak besar kiri) - koordinat FIXED berdasarkan template
   photo: {
-    x: 30,
-    y: 200,
-    width: 100,
-    height: 135,
+    x: 25,           // Posisi X foto
+    y: 93,           // Posisi Y foto (dari atas)
+    width: 60,       // Lebar foto FIXED
+    height: 80,      // Tinggi foto FIXED
   },
   
-  // Data atlet - koordinat untuk text overlay
+  // Data atlet - koordinat untuk text overlay (dari screenshot)
   nama: {
-    x: 75,
-    y: 350,
+    x: 95,           // Setelah "Nama :"
+    y: 163,          // Baris Nama
   },
   kelas: {
-    x: 75,
-    y: 365,
+    x: 95,           // Setelah "Kelas :"
+    y: 171,          // Baris Kelas
   },
   kontingen: {
-    x: 75,
-    y: 380,
+    x: 95,           // Setelah "Kontingen :"
+    y: 179,          // Baris Kontingen
   },
 };
 
@@ -90,8 +90,8 @@ export const IDCardGenerator = ({ atlet, isEditing }: IDCardGeneratorProps) => {
       // ========== LOAD TEMPLATE BACKGROUND ==========
       try {
         // Load template dari assets
-        const templateImg = "/templates/e-idcard_sriwijaya.jpg";
-        const templateBase64 = await loadImageAsBase64(templateImg);
+        const templatePath = "/src/assets/photos/e-idcard_sriwijaya.jpg";
+        const templateBase64 = await loadImageAsBase64(templatePath);
         
         // Paste template sebagai background (full page A4)
         pdf.addImage(
@@ -122,14 +122,15 @@ export const IDCardGenerator = ({ atlet, isEditing }: IDCardGeneratorProps) => {
           const photoUrl = getPhotoUrl(atlet.pas_foto_path);
           const base64Photo = await loadImageAsBase64(photoUrl);
           
-          // Paste foto atlet di koordinat yang sudah ditentukan
+          // Paste foto atlet dengan ukuran FIXED di koordinat yang sudah ditentukan
+          // Menggunakan "FAST" compression untuk hasil optimal
           pdf.addImage(
             base64Photo,
             "JPEG",
             c.photo.x,
             c.photo.y,
-            c.photo.width,
-            c.photo.height,
+            c.photo.width,    // Fixed width
+            c.photo.height,   // Fixed height
             undefined,
             "FAST"
           );
@@ -138,12 +139,12 @@ export const IDCardGenerator = ({ atlet, isEditing }: IDCardGeneratorProps) => {
           // Fallback: kotak abu-abu dengan initial
           pdf.setFillColor(220, 220, 220);
           pdf.rect(c.photo.x, c.photo.y, c.photo.width, c.photo.height, "F");
-          pdf.setFontSize(60);
+          pdf.setFontSize(40);
           pdf.setTextColor(150, 150, 150);
           pdf.text(
             atlet.nama_atlet.charAt(0).toUpperCase(),
             c.photo.x + c.photo.width / 2,
-            c.photo.y + c.photo.height / 2,
+            c.photo.y + c.photo.height / 2 + 10,
             { align: "center" }
           );
         }
@@ -151,20 +152,20 @@ export const IDCardGenerator = ({ atlet, isEditing }: IDCardGeneratorProps) => {
         // Tidak ada foto - tampilkan placeholder
         pdf.setFillColor(240, 240, 240);
         pdf.rect(c.photo.x, c.photo.y, c.photo.width, c.photo.height, "F");
-        pdf.setFontSize(48);
+        pdf.setFontSize(36);
         pdf.setTextColor(180, 180, 180);
         pdf.text(
           atlet.nama_atlet.charAt(0).toUpperCase(),
           c.photo.x + c.photo.width / 2,
-          c.photo.y + c.photo.height / 2,
+          c.photo.y + c.photo.height / 2 + 10,
           { align: "center" }
         );
       }
 
       // ========== OVERLAY DATA ATLET ==========
       pdf.setFont("helvetica", "normal");
-      pdf.setFontSize(14);
-      pdf.setTextColor(0, 0, 0); // Black text
+      pdf.setFontSize(10);        // Font size disesuaikan dengan template
+      pdf.setTextColor(0, 0, 0);  // Black text
 
       // Nama
       pdf.text(atlet.nama_atlet, c.nama.x, c.nama.y);
