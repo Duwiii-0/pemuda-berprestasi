@@ -863,11 +863,11 @@ const UnifiedRegistration = ({
                     placeholder="Pilih jenis kelamin..."
                     isSearchable={false}
                     classNames={selectClassNames}
-                    disabled={
-                      formData.styleType === "POOMSAE" &&
-                      formData.categoryType === "prestasi" &&
-                      !formData.selectedPoomsae
-                    }
+                    // disabled={
+                    //   formData.styleType === "POOMSAE" &&
+                    //   formData.categoryType === "prestasi" &&
+                    //   !formData.selectedPoomsae
+                    // }
                     message={
                       formData.styleType === "POOMSAE"
                         ? "Harap pilih kelas poomsae terlebih dahulu"
