@@ -1,25 +1,40 @@
 import { Router } from 'express';
+import { KompetisiController } from '../controllers/kompetisiController';
 
-// Import routes yang dibuat Developer A (auth & foundation)
+// Import routes
 import authRoutes from './auth';
 import pelatihRoutes from './pelatih';
-
-// Import routes yang dibuat Developer B (business logic)
 import dojangRoutes from './dojang';
 import atletRoutes from './atlet';
 import kompetisiRoutes from './kompetisi';
-
-// ✅ Import PUBLIC routes (NO AUTH)
 import publicRoutes from './public';
 
 const router = Router();
-
-// API version prefix
 const API_VERSION = '/api';
 
-// ⭐ CRITICAL: Public routes HARUS di atas protected routes
-// Karena Express router matching dari atas ke bawah
-router.use(`${API_VERSION}/public`, publicRoutes); // ✅ FIX: Tambah kurung buka (
+// ⭐ ADD GLOBAL LOGGING
+router.use((req, res, next) => {
+  console.log(`📍 Route Hit: ${req.method} ${req.originalUrl}`);
+  next();
+});
+
+console.log('🔧 Registering public routes...');
+
+// ⭐ DIRECT MOUNT - Bypassing potential import issues
+router.get(`${API_VERSION}/public/kompetisi/:id/medal-tally`, (req, res) => {
+  console.log(`🏅 DIRECT Medal Tally Hit: ${req.params.id}`);
+  KompetisiController.getMedalTally(req, res);
+});
+
+router.get(`${API_VERSION}/public/kompetisi/:id`, (req, res) => {
+  console.log(`ℹ️ DIRECT Kompetisi Detail Hit: ${req.params.id}`);
+  KompetisiController.getById(req, res);
+});
+
+// Original public route (keep for debugging)
+router.use(`${API_VERSION}/public`, publicRoutes);
+
+console.log('✅ Public routes registered');
 
 // Developer A routes (Authentication & Foundation)
 router.use(`${API_VERSION}/auth`, authRoutes);
