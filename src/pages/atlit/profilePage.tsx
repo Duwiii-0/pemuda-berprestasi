@@ -13,23 +13,23 @@ import { calculateAge } from "../../context/AtlitContext";
 import toast from "react-hot-toast";
 import { useAuth } from "../../context/authContext";
 import { AtletDocumentUploader } from "../../components/atletUploads";
+import { IDCardGenerator } from "../../components/IDCardGenerator"; // IMPORT BARU
 
 // Extend Atlet type untuk include file fields
 interface AtletWithFiles extends Omit<Atlet, 'akte_kelahiran' | 'pas_foto' | 'sertifikat_belt' | 'ktp'> {
-  // File objects untuk upload (temporary)
   akte_kelahiran?: File | null;
   pas_foto?: File | null;
   sertifikat_belt?: File | null;
   ktp?: File | null;
   
-  // Path fields untuk existing files (dari database)
   akte_kelahiran_path?: string;
   pas_foto_path?: string;
   sertifikat_belt_path?: string;
   ktp_path?: string;
   
-  // Tambahan field kota
   kota?: string;
+  dojang_name?: string; // TAMBAHAN untuk ID Card
+  kelas_berat?: string; // TAMBAHAN untuk ID Card
 }
 
 const provinsiKotaData: Record<string, string[]> = {
@@ -83,7 +83,6 @@ const getPhotoUrl = (filename: string): string | null => {
   return `${process.env.REACT_APP_API_BASE_URL || 'http://cjvmanagementevent.com'}/uploads/atlet/pas_foto/${filename}`;
 };
 
-
 function toInputDateFormat(dateStr: string): string {
   if (!dateStr) return "";
   return dateStr.slice(0, 10);
@@ -97,34 +96,32 @@ const Profile = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { user } = useAuth();
 
-const { fetchAtletById, updateAtlet } = useAtletContext();
+  const { fetchAtletById, updateAtlet } = useAtletContext();
 
-useEffect(() => {
-  if (id) {
-    const atletId = Number(id);
-    fetchAtletById(atletId).then((data) => {
-      if (data) {
-        console.log("📋 RAW ATLET DATA:", data);
-        
-const dataWithFiles: AtletWithFiles = {
-  ...data,
-  // HANYA SIMPAN FILENAME SAJA, JANGAN TAMBAH PATH
-  akte_kelahiran_path: data.akte_kelahiran || undefined,
-  pas_foto_path: data.pas_foto || undefined,
-  sertifikat_belt_path: data.sertifikat_belt || undefined,
-  ktp_path: data.ktp || undefined,
-  // File objects null
-  akte_kelahiran: null,
-  pas_foto: null,
-  sertifikat_belt: null,
-  ktp: null,
-};
-        setFormData(dataWithFiles);
-        setOriginalData(dataWithFiles);
-      }
-    });
-  }
-}, [id, fetchAtletById]);
+  useEffect(() => {
+    if (id) {
+      const atletId = Number(id);
+      fetchAtletById(atletId).then((data) => {
+        if (data) {
+          console.log("📋 RAW ATLET DATA:", data);
+          
+          const dataWithFiles: AtletWithFiles = {
+            ...data,
+            akte_kelahiran_path: data.akte_kelahiran || undefined,
+            pas_foto_path: data.pas_foto || undefined,
+            sertifikat_belt_path: data.sertifikat_belt || undefined,
+            ktp_path: data.ktp || undefined,
+            akte_kelahiran: null,
+            pas_foto: null,
+            sertifikat_belt: null,
+            ktp: null,
+          };
+          setFormData(dataWithFiles);
+          setOriginalData(dataWithFiles);
+        }
+      });
+    }
+  }, [id, fetchAtletById]);
 
   const handleCancel = () => {
     if (originalData) {
@@ -138,147 +135,131 @@ const dataWithFiles: AtletWithFiles = {
     }
     setIsEditing(false);
   };
-const handleUpdate = async () => {
-  if (!formData || isSubmitting) return;
-  
+
+  const handleUpdate = async () => {
+    if (!formData || isSubmitting) return;
+    
     console.log(`🔍 Current formData.nama_atlet before FormData:`, formData.nama_atlet);
 
-
-  setIsSubmitting(true);
-  
-  try {
-    const formDataSend = new FormData();
+    setIsSubmitting(true);
     
-    // Required fields
-    formDataSend.append("nama_atlet", formData.nama_atlet);
-    formDataSend.append("jenis_kelamin", formData.jenis_kelamin);
-    formDataSend.append("tanggal_lahir", formData.tanggal_lahir);
-    
-    // Optional fields
-    if (formData.nik?.trim()) formDataSend.append('nik', formData.nik.trim());
-    if (formData.no_telp?.trim()) formDataSend.append('no_telp', formData.no_telp.trim());
-    if (formData.alamat?.trim()) formDataSend.append('alamat', formData.alamat.trim());
-    if (formData.provinsi?.trim()) formDataSend.append('provinsi', formData.provinsi.trim());
-    if (formData.kota?.trim()) formDataSend.append('kota', formData.kota.trim());
-    if (formData.belt?.trim()) formDataSend.append('belt', formData.belt.trim());
-    
-    // Numeric fields
-    if (formData.tinggi_badan) {
-      const height = parseFloat(String(formData.tinggi_badan));
-      if (!isNaN(height) && height > 0) {
-        formDataSend.append('tinggi_badan', String(height));
-      }
-    }
-    
-    if (formData.berat_badan) {
-      const weight = parseFloat(String(formData.berat_badan));
-      if (!isNaN(weight) && weight > 0) {
-        formDataSend.append('berat_badan', String(weight));
-      }
-    }
-
-    // Files
-    if (formData.akte_kelahiran) formDataSend.append('akte_kelahiran', formData.akte_kelahiran);
-    if (formData.pas_foto) formDataSend.append('pas_foto', formData.pas_foto);
-    if (formData.sertifikat_belt) formDataSend.append('sertifikat_belt', formData.sertifikat_belt);
-    if (formData.ktp) formDataSend.append('ktp', formData.ktp);
-
-    console.log("📋 All FormData contents:");
-    for (let [key, value] of formDataSend.entries()) {
-      console.log(`  ${key}: ${value}`);
-    }
-
-
-    // FIX: Use updateAtlet and assign to result variable
-const result = await updateAtlet(Number(id), formDataSend);
-
-console.log("📋 Update result:", result);
-console.log("📋 Update result type:", typeof result);
-console.log("📋 Update result keys:", Object.keys(result || {}));
-    
-    if (result) {
-      // Use the response data directly instead of fetching again
-      const updatedAtlet = result; // This is the fresh data from the server
-        
-      const updatedData: AtletWithFiles = {
-  ...updatedAtlet,
-  // HANYA SIMPAN FILENAME SAJA
-  akte_kelahiran_path: updatedAtlet.akte_kelahiran || undefined,
-  pas_foto_path: updatedAtlet.pas_foto || undefined,
-  sertifikat_belt_path: updatedAtlet.sertifikat_belt || undefined,
-  ktp_path: updatedAtlet.ktp || undefined,
-  // Reset file objects to null after save
-  akte_kelahiran: null,
-  pas_foto: null,
-  sertifikat_belt: null,
-  ktp: null,
-};
+    try {
+      const formDataSend = new FormData();
       
-      setFormData(updatedData);
-      setOriginalData(updatedData);
-      setIsEditing(false);
-      toast.success("Data atlet berhasil diperbarui ✅");
+      formDataSend.append("nama_atlet", formData.nama_atlet);
+      formDataSend.append("jenis_kelamin", formData.jenis_kelamin);
+      formDataSend.append("tanggal_lahir", formData.tanggal_lahir);
+      
+      if (formData.nik?.trim()) formDataSend.append('nik', formData.nik.trim());
+      if (formData.no_telp?.trim()) formDataSend.append('no_telp', formData.no_telp.trim());
+      if (formData.alamat?.trim()) formDataSend.append('alamat', formData.alamat.trim());
+      if (formData.provinsi?.trim()) formDataSend.append('provinsi', formData.provinsi.trim());
+      if (formData.kota?.trim()) formDataSend.append('kota', formData.kota.trim());
+      if (formData.belt?.trim()) formDataSend.append('belt', formData.belt.trim());
+      
+      if (formData.tinggi_badan) {
+        const height = parseFloat(String(formData.tinggi_badan));
+        if (!isNaN(height) && height > 0) {
+          formDataSend.append('tinggi_badan', String(height));
+        }
+      }
+      
+      if (formData.berat_badan) {
+        const weight = parseFloat(String(formData.berat_badan));
+        if (!isNaN(weight) && weight > 0) {
+          formDataSend.append('berat_badan', String(weight));
+        }
+      }
+
+      if (formData.akte_kelahiran) formDataSend.append('akte_kelahiran', formData.akte_kelahiran);
+      if (formData.pas_foto) formDataSend.append('pas_foto', formData.pas_foto);
+      if (formData.sertifikat_belt) formDataSend.append('sertifikat_belt', formData.sertifikat_belt);
+      if (formData.ktp) formDataSend.append('ktp', formData.ktp);
+
+      console.log("📋 All FormData contents:");
+      for (let [key, value] of formDataSend.entries()) {
+        console.log(`  ${key}: ${value}`);
+      }
+
+      const result = await updateAtlet(Number(id), formDataSend);
+
+      console.log("📋 Update result:", result);
+      console.log("📋 Update result type:", typeof result);
+      console.log("📋 Update result keys:", Object.keys(result || {}));
+      
+      if (result) {
+        const updatedAtlet = result;
+          
+        const updatedData: AtletWithFiles = {
+          ...updatedAtlet,
+          akte_kelahiran_path: updatedAtlet.akte_kelahiran || undefined,
+          pas_foto_path: updatedAtlet.pas_foto || undefined,
+          sertifikat_belt_path: updatedAtlet.sertifikat_belt || undefined,
+          ktp_path: updatedAtlet.ktp || undefined,
+          akte_kelahiran: null,
+          pas_foto: null,
+          sertifikat_belt: null,
+          ktp: null,
+        };
+        
+        setFormData(updatedData);
+        setOriginalData(updatedData);
+        setIsEditing(false);
+        toast.success("Data atlet berhasil diperbarui ✅");
+      }
+    } catch (err: any) {
+      console.error("❌ Gagal update atlet:", err);
+      
+      if (err.message.includes('File size')) {
+        toast.error("File terlalu besar. Maksimal 5MB per file.");
+      } else if (err.message.includes('Invalid file')) {
+        toast.error("Format file tidak didukung. Gunakan JPG, PNG, atau PDF.");
+      } else if (err.message.includes('wajib diisi')) {
+        toast.error("Ada field wajib yang belum diisi: " + err.message);
+      } else {
+        toast.error(err.message || "Gagal memperbarui data atlet");
+      }
+    } finally {
+      setIsSubmitting(false);
     }
-  } catch (err: any) {
+  };
 
-    console.error("❌ Gagal update atlet:", err);
-    
-    if (err.message.includes('File size')) {
-      toast.error("File terlalu besar. Maksimal 5MB per file.");
-    } else if (err.message.includes('Invalid file')) {
-      toast.error("Format file tidak didukung. Gunakan JPG, PNG, atau PDF.");
-    } else if (err.message.includes('wajib diisi')) {
-      toast.error("Ada field wajib yang belum diisi: " + err.message);
-    } else {
-      toast.error(err.message || "Gagal memperbarui data atlet");
+  const handleInputChange = (field: keyof AtletWithFiles, value: any) => {
+    if (!formData) return;
+    let updatedData = { ...formData, [field]: value };
+
+    if (field === "tanggal_lahir" && typeof value === "string") {
+      updatedData.tanggal_lahir = value;
+      updatedData.umur = calculateAge(updatedData.tanggal_lahir);
     }
-  } finally {
-    setIsSubmitting(false);
-  }
-};
 
-const handleInputChange = (field: keyof AtletWithFiles, value: any) => {
-  if (!formData) return;
-  let updatedData = { ...formData, [field]: value };
+    setFormData(updatedData);
+  };
 
-  if (field === "tanggal_lahir" && typeof value === "string") {
-    updatedData.tanggal_lahir = value;
-    updatedData.umur = calculateAge(updatedData.tanggal_lahir);
-  }
+  const handleProvinsiChange = (selectedOption: { value: string; label: string } | null) => {
+    const newProvinsi = selectedOption?.value || "";
+    handleInputChange('provinsi', newProvinsi);
+    if (formData && newProvinsi !== formData.provinsi) {
+      handleInputChange('kota', '');
+    }
+  };
 
-  setFormData(updatedData);
-};
-
-const handleProvinsiChange = (selectedOption: { value: string; label: string } | null) => {
-  const newProvinsi = selectedOption?.value || "";
-  handleInputChange('provinsi', newProvinsi);
-  // Reset kota ketika provinsi berubah
-  if (formData && newProvinsi !== formData.provinsi) {
-    handleInputChange('kota', '');
-  }
-};
-
-  // Handler untuk file upload
   const handleFileChange = (field: keyof AtletWithFiles, file: File | null) => {
-  if (!formData) return;
-  setFormData({ ...formData, [field]: file });
-};
+    if (!formData) return;
+    setFormData({ ...formData, [field]: file });
+  };
 
-
-  // Handler untuk menghapus file
-const handleFileRemove = (field: keyof AtletWithFiles) => {
-  if (!formData) return;
-  
-  // Type assertion untuk memastikan field_path exists
-  const pathField = `${String(field)}_path` as keyof AtletWithFiles;
-  
-  setFormData({ 
-    ...formData, 
-    [field]: null,
-    [pathField]: undefined
-  });
-};
-
+  const handleFileRemove = (field: keyof AtletWithFiles) => {
+    if (!formData) return;
+    
+    const pathField = `${String(field)}_path` as keyof AtletWithFiles;
+    
+    setFormData({ 
+      ...formData, 
+      [field]: null,
+      [pathField]: undefined
+    });
+  };
 
   if (!formData) {
     return (
@@ -307,19 +288,15 @@ const handleFileRemove = (field: keyof AtletWithFiles) => {
 
         {/* Profile Card */}
         <div className="bg-white/60 backdrop-blur-sm rounded-2xl lg:rounded-3xl p-4 sm:p-6 lg:p-8 shadow-xl border-2 border-gray-200">
-          {/* Avatar Section */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 lg:gap-6 mb-6 lg:mb-8 pb-6 lg:pb-0 border-b border-white/30">
-            {/* Avatar and Info */}
             <div className="flex items-center gap-4 lg:gap-6 flex-1">
               <div className="w-20 h-20 lg:w-24 lg:h-24 rounded-full bg-gradient-to-br from-red to-red/80 flex items-center justify-center text-white font-bebas text-2xl lg:text-3xl shadow-lg flex-shrink-0">
-                {/* disini */}
                 {formData.pas_foto_path ? (
                   <img 
                     src={getPhotoUrl(formData.pas_foto_path)} 
                     alt={`Foto ${formData.nama_atlet}`}
                     className="w-full h-full object-cover rounded-full"
                     onError={(e) => {
-                      // Fallback ke initial jika gambar gagal load
                       const target = e.target as HTMLImageElement;
                       target.style.display = 'none';
                       const sibling = target.nextElementSibling as HTMLElement;
@@ -344,7 +321,7 @@ const handleFileRemove = (field: keyof AtletWithFiles) => {
                       ? "bg-blue-100 text-blue-600"
                       : "bg-pink-100 text-pink-600"
                   }`}>
-                  {formData.jenis_kelamin === "LAKI_LAKI" ? "Laki-laki" : "Perempuan"}
+                    {formData.jenis_kelamin === "LAKI_LAKI" ? "Laki-laki" : "Perempuan"}
                   </span>
                   <span className="px-2 lg:px-3 py-1 rounded-full text-xs font-plex font-medium bg-yellow/20 text-yellow/80">
                     Sabuk {formData.belt || 'Tidak Ada'}
@@ -358,8 +335,8 @@ const handleFileRemove = (field: keyof AtletWithFiles) => {
 
             {/* Action Buttons */}
             <div className="flex gap-2 lg:gap-3 w-full sm:w-auto">
-             {(user?.role === 'ADMIN' || user?.role === 'ADMIN_KOMPETISI') ? (
-                <></> // kosongkan tombol untuk admin
+              {(user?.role === 'ADMIN' || user?.role === 'ADMIN_KOMPETISI') ? (
+                <></> 
               ) : (
                 !isEditing ? (
                   <GeneralButton
@@ -387,28 +364,28 @@ const handleFileRemove = (field: keyof AtletWithFiles) => {
             </div>
           </div>
 
-          {/* Form Grid - sama seperti sebelumnya */}
+          {/* Form Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
             {/* Nama */}
             <div className="space-y-2">
               <label className="block font-plex font-medium text-black/70 text-sm lg:text-base">Nama Lengkap</label>
               <div className="relative">
-              <TextInput
-                className="h-10 lg:h-12 border-red/20 bg-white/50 backdrop-blur-sm rounded-xl focus:border-red transition-all duration-300 text-sm lg:text-base"
-                onChange={(e) => handleInputChange('nama_atlet', e.target.value)}
-                disabled={!isEditing}
-                value={formData?.nama_atlet}
-                placeholder="Nama"
-                icon={<User className="text-red" size={18} />}
-              />
-              {!isEditing && <div className="absolute inset-0 bg-gray-100/50 rounded-xl" />}
+                <TextInput
+                  className="h-10 lg:h-12 border-red/20 bg-white/50 backdrop-blur-sm rounded-xl focus:border-red transition-all duration-300 text-sm lg:text-base"
+                  onChange={(e) => handleInputChange('nama_atlet', e.target.value)}
+                  disabled={!isEditing}
+                  value={formData?.nama_atlet}
+                  placeholder="Nama"
+                  icon={<User className="text-red" size={18} />}
+                />
+                {!isEditing && <div className="absolute inset-0 bg-gray-100/50 rounded-xl" />}
               </div>
             </div>
 
             {/* No HP */}
             <div className="space-y-2">
               <label className="block font-plex font-medium text-black/70 text-sm lg:text-base">No. Telepon</label>
-                <div className="relative">
+              <div className="relative">
                 <TextInput
                   className="h-10 lg:h-12 border-red/20 bg-white/50 backdrop-blur-sm rounded-xl focus:border-red transition-all duration-300 text-sm lg:text-base"
                   onChange={(e) => handleInputChange('no_telp', e.target.value)}
@@ -425,143 +402,142 @@ const handleFileRemove = (field: keyof AtletWithFiles) => {
             <div className="space-y-2 lg:col-span-2">
               <label className="block font-plex font-medium text-black/70 text-sm lg:text-base">Alamat</label>
               <div className="relative">
-              <TextInput
-                className="h-10 lg:h-12 border-red/20 bg-white/50 backdrop-blur-sm rounded-xl focus:border-red transition-all duration-300 text-sm lg:text-base"
-                onChange={(e) => handleInputChange('alamat', e.target.value)}
-                disabled={!isEditing}
-                value={formData.alamat || ''}
-                placeholder="Alamat"
-                icon={<MapPinned className="text-red" size={18} />}
-              />
-              {!isEditing && <div className="absolute inset-0 bg-gray-100/50 rounded-xl" />}
+                <TextInput
+                  className="h-10 lg:h-12 border-red/20 bg-white/50 backdrop-blur-sm rounded-xl focus:border-red transition-all duration-300 text-sm lg:text-base"
+                  onChange={(e) => handleInputChange('alamat', e.target.value)}
+                  disabled={!isEditing}
+                  value={formData.alamat || ''}
+                  placeholder="Alamat"
+                  icon={<MapPinned className="text-red" size={18} />}
+                />
+                {!isEditing && <div className="absolute inset-0 bg-gray-100/50 rounded-xl" />}
               </div>
             </div>
 
-           {/* Provinsi - GANTI DARI TextInput KE Select */}
-<div className="space-y-2">
-  <label className="block font-plex font-medium text-black/70 text-sm lg:text-base">Provinsi</label>
-  <div className="relative">
-    <Select
-      unstyled
-      menuPortalTarget={document.body}
-      styles={{
-        menuPortal: base => ({ ...base, zIndex: 10 })
-      }}
-      isDisabled={!isEditing}
-      value={Object.keys(provinsiKotaData).map(provinsi => ({
-        value: provinsi,
-        label: provinsi
-      })).find(opt => opt.value === formData?.provinsi) || null}
-      onChange={(selected) =>
-        setFormData({
-          ...formData,
-          provinsi: selected?.value || "",
-        })
-      }
-      options={provinsiOptions}
-      placeholder="Pilih provinsi"
-      classNames={{
-        control: () =>
-          "z-10 border-2 border-red/20 bg-white/50 backdrop-blur-sm rounded-xl h-10 lg:h-12 px-3 lg:px-4 font-plex hover:border-red/40 focus-within:border-red transition-all duration-300 text-sm lg:text-base",
-        valueContainer: () => "px-1 lg:px-2",
-        placeholder: () => "text-red/50 font-plex text-sm lg:text-base",
-        menu: () => "max-h-64 border border-red bg-white rounded-lg shadow-lg mt-1 overflow-hidden z-10",
-        menuList: () => "z-10 max-h-40 overflow-y-auto bg-white",
-        option: ({ isFocused, isSelected }) =>
-          [
-            "px-3 lg:px-4 py-2 lg:py-3 cursor-pointer font-plex transition-all duration-200 text-sm lg:text-base",
-            isFocused ? "bg-red/10 text-black" : "text-black",
-            isSelected ? "bg-red text-black" : "text-black"
-          ].join(" "),
-      }}
-    />
-    {!isEditing && <div className="absolute inset-0 bg-gray-100/50 rounded-xl z-50" />}
-  </div>
-</div>
+            {/* Provinsi */}
+            <div className="space-y-2">
+              <label className="block font-plex font-medium text-black/70 text-sm lg:text-base">Provinsi</label>
+              <div className="relative">
+                <Select
+                  unstyled
+                  menuPortalTarget={document.body}
+                  styles={{
+                    menuPortal: base => ({ ...base, zIndex: 10 })
+                  }}
+                  isDisabled={!isEditing}
+                  value={Object.keys(provinsiKotaData).map(provinsi => ({
+                    value: provinsi,
+                    label: provinsi
+                  })).find(opt => opt.value === formData?.provinsi) || null}
+                  onChange={(selected) =>
+                    setFormData({
+                      ...formData,
+                      provinsi: selected?.value || "",
+                    })
+                  }
+                  options={provinsiOptions}
+                  placeholder="Pilih provinsi"
+                  classNames={{
+                    control: () =>
+                      "z-10 border-2 border-red/20 bg-white/50 backdrop-blur-sm rounded-xl h-10 lg:h-12 px-3 lg:px-4 font-plex hover:border-red/40 focus-within:border-red transition-all duration-300 text-sm lg:text-base",
+                    valueContainer: () => "px-1 lg:px-2",
+                    placeholder: () => "text-red/50 font-plex text-sm lg:text-base",
+                    menu: () => "max-h-64 border border-red bg-white rounded-lg shadow-lg mt-1 overflow-hidden z-10",
+                    menuList: () => "z-10 max-h-40 overflow-y-auto bg-white",
+                    option: ({ isFocused, isSelected }) =>
+                      [
+                        "px-3 lg:px-4 py-2 lg:py-3 cursor-pointer font-plex transition-all duration-200 text-sm lg:text-base",
+                        isFocused ? "bg-red/10 text-black" : "text-black",
+                        isSelected ? "bg-red text-black" : "text-black"
+                      ].join(" "),
+                  }}
+                />
+                {!isEditing && <div className="absolute inset-0 bg-gray-100/50 rounded-xl z-50" />}
+              </div>
+            </div>
 
-{/* TAMBAHKAN FIELD KOTA SETELAH PROVINSI */}
-{/* Kota */}
-<div className="space-y-2">
-  <label className="block font-plex font-medium text-black/70 text-sm lg:text-base">Kota</label>
-  <div className="relative">
-    <Select
-      unstyled
-      menuPortalTarget={document.body}
-      styles={{
-        menuPortal: base => ({ ...base, zIndex: 10 })
-      }}
-      isDisabled={!isEditing || !formData?.provinsi}
-      value={
-        formData?.provinsi && formData?.kota 
-          ? provinsiKotaData[formData.provinsi]?.map((kota: string) => ({
-              value: kota, 
-              label: kota
-            })).find((opt: { value: string; label: string }) => opt.value === formData.kota) || null 
-          : null
-      }
-      onChange={(selected: { value: string; label: string } | null) => 
-        handleInputChange('kota', selected?.value || '')
-      }
-      options={
-        formData?.provinsi 
-          ? provinsiKotaData[formData.provinsi]?.map((kota: string) => ({
-              value: kota, 
-              label: kota
-            })) || [] 
-          : []
-      }
-      placeholder={formData?.provinsi ? "Pilih kota" : "Pilih provinsi dulu"}
-      classNames={{
-        control: () =>
-          "z-10 border-2 border-red/20 bg-white/50 backdrop-blur-sm rounded-xl h-10 lg:h-12 px-3 lg:px-4 font-plex hover:border-red/40 focus-within:border-red transition-all duration-300 text-sm lg:text-base",
-        valueContainer: () => "px-1 lg:px-2",
-        placeholder: () => "text-red/50 font-plex text-sm lg:text-base",
-        menu: () => "max-h-64 border border-red bg-white rounded-lg shadow-lg mt-1 overflow-hidden z-10",
-        menuList: () => "z-10 max-h-40 overflow-y-auto bg-white",
-        option: ({ isFocused, isSelected }) =>
-          [
-            "px-3 lg:px-4 py-2 lg:py-3 cursor-pointer font-plex transition-all duration-200 text-sm lg:text-base",
-            isFocused ? "bg-red/10 text-black" : "text-black",
-            isSelected ? "bg-red text-black" : "text-black"
-          ].join(" "),
-      }}
-    />
-    {!isEditing && <div className="absolute inset-0 bg-gray-100/50 rounded-xl z-50" />}
-  </div>
-</div>
+            {/* Kota */}
+            <div className="space-y-2">
+              <label className="block font-plex font-medium text-black/70 text-sm lg:text-base">Kota</label>
+              <div className="relative">
+                <Select
+                  unstyled
+                  menuPortalTarget={document.body}
+                  styles={{
+                    menuPortal: base => ({ ...base, zIndex: 10 })
+                  }}
+                  isDisabled={!isEditing || !formData?.provinsi}
+                  value={
+                    formData?.provinsi && formData?.kota 
+                      ? provinsiKotaData[formData.provinsi]?.map((kota: string) => ({
+                          value: kota, 
+                          label: kota
+                        })).find((opt: { value: string; label: string }) => opt.value === formData.kota) || null 
+                      : null
+                  }
+                  onChange={(selected: { value: string; label: string } | null) => 
+                    handleInputChange('kota', selected?.value || '')
+                  }
+                  options={
+                    formData?.provinsi 
+                      ? provinsiKotaData[formData.provinsi]?.map((kota: string) => ({
+                          value: kota, 
+                          label: kota
+                        })) || [] 
+                      : []
+                  }
+                  placeholder={formData?.provinsi ? "Pilih kota" : "Pilih provinsi dulu"}
+                  classNames={{
+                    control: () =>
+                      "z-10 border-2 border-red/20 bg-white/50 backdrop-blur-sm rounded-xl h-10 lg:h-12 px-3 lg:px-4 font-plex hover:border-red/40 focus-within:border-red transition-all duration-300 text-sm lg:text-base",
+                    valueContainer: () => "px-1 lg:px-2",
+                    placeholder: () => "text-red/50 font-plex text-sm lg:text-base",
+                    menu: () => "max-h-64 border border-red bg-white rounded-lg shadow-lg mt-1 overflow-hidden z-10",
+                    menuList: () => "z-10 max-h-40 overflow-y-auto bg-white",
+                    option: ({ isFocused, isSelected }) =>
+                      [
+                        "px-3 lg:px-4 py-2 lg:py-3 cursor-pointer font-plex transition-all duration-200 text-sm lg:text-base",
+                        isFocused ? "bg-red/10 text-black" : "text-black",
+                        isSelected ? "bg-red text-black" : "text-black"
+                      ].join(" "),
+                  }}
+                />
+                {!isEditing && <div className="absolute inset-0 bg-gray-100/50 rounded-xl z-50" />}
+              </div>
+            </div>
 
             {/* Gender */}
             <div className="space-y-2">
               <label className="block font-plex font-medium text-black/70 text-sm lg:text-base">Gender</label>
               <div className="relative">
-              <Select
-                unstyled
-                menuPortalTarget={document.body}
-                styles={{
-                  menuPortal: base => ({ ...base, zIndex: 10 })
-                }}
-                isDisabled={!isEditing}
-                value={genderOptions.find(opt => opt.value === formData?.jenis_kelamin)}
-                onChange={(selected) =>
-                  handleInputChange('jenis_kelamin', selected?.value as "LAKI_LAKI" | "PEREMPUAN")
-                }
-                options={genderOptions}
-                classNames={{
-                  control: () =>
-                    "z-10 border-2 border-red/20 bg-white/50 backdrop-blur-sm rounded-xl h-10 lg:h-12 px-3 lg:px-4 font-plex hover:border-red/40 focus-within:border-red transition-all duration-300 text-sm lg:text-base",
-                  valueContainer: () => "px-1 lg:px-2",
-                  placeholder: () => "text-red/50 font-plex text-sm lg:text-base",
-                  menu: () => "max-h-64 border border-red bg-white rounded-lg shadow-lg mt-1 overflow-hidden z-10",
-                  menuList: () => "z-10 max-h-40 overflow-y-auto bg-white",
-                  option: ({ isFocused, isSelected }) =>
-                    [
-                      "px-3 lg:px-4 py-2 lg:py-3 cursor-pointer font-plex transition-all duration-200 text-sm lg:text-base",
-                      isFocused ? "bg-red/10 text-black" : "text-black",
-                      isSelected ? "bg-red text-black" : "text-black"
-                    ].join(" "),
-                }}
-              />
-              {!isEditing && <div className="absolute inset-0 bg-gray-100/50 rounded-xl z-50" />}
+                <Select
+                  unstyled
+                  menuPortalTarget={document.body}
+                  styles={{
+                    menuPortal: base => ({ ...base, zIndex: 10 })
+                  }}
+                  isDisabled={!isEditing}
+                  value={genderOptions.find(opt => opt.value === formData?.jenis_kelamin)}
+                  onChange={(selected) =>
+                    handleInputChange('jenis_kelamin', selected?.value as "LAKI_LAKI" | "PEREMPUAN")
+                  }
+                  options={genderOptions}
+                  classNames={{
+                    control: () =>
+                      "z-10 border-2 border-red/20 bg-white/50 backdrop-blur-sm rounded-xl h-10 lg:h-12 px-3 lg:px-4 font-plex hover:border-red/40 focus-within:border-red transition-all duration-300 text-sm lg:text-base",
+                    valueContainer: () => "px-1 lg:px-2",
+                    placeholder: () => "text-red/50 font-plex text-sm lg:text-base",
+                    menu: () => "max-h-64 border border-red bg-white rounded-lg shadow-lg mt-1 overflow-hidden z-10",
+                    menuList: () => "z-10 max-h-40 overflow-y-auto bg-white",
+                    option: ({ isFocused, isSelected }) =>
+                      [
+                        "px-3 lg:px-4 py-2 lg:py-3 cursor-pointer font-plex transition-all duration-200 text-sm lg:text-base",
+                        isFocused ? "bg-red/10 text-black" : "text-black",
+                        isSelected ? "bg-red text-black" : "text-black"
+                      ].join(" "),
+                  }}
+                />
+                {!isEditing && <div className="absolute inset-0 bg-gray-100/50 rounded-xl z-50" />}
               </div>
             </div>
 
@@ -569,34 +545,34 @@ const handleFileRemove = (field: keyof AtletWithFiles) => {
             <div className="space-y-2">
               <label className="block font-plex font-medium text-black/70 text-sm lg:text-base">Sabuk</label>
               <div className="relative">
-              <Select
-                unstyled
-                menuPortalTarget={document.body}
-                styles={{
-                  menuPortal: base => ({ ...base, zIndex: 10 })
-                }}
-                isDisabled={!isEditing}
-                value={beltOptions.find(opt => opt.value === formData.belt) || null}
-                onChange={(selected) =>
-                  handleInputChange('belt', selected?.value || '')
-                }
-                options={beltOptions}
-                classNames={{
-                  control: () =>
-                    "z-50 border-2 border-red/20 hover:border-red/40 bg-white/50 rounded-xl h-10 lg:h-12 px-3 lg:px-4 font-plex hover:border-red/40 focus-within:border-red transition-all duration-300 text-sm lg:text-base",
-                  valueContainer: () => "px-1 lg:px-2",
-                  placeholder: () => "text-red/50 font-plex text-sm lg:text-base",
-                  menu: () => "max-h-64 border border-red bg-white rounded-lg shadow-lg mt-1 overflow-hidden z-20",
-                  menuList: () => "z-20 max-h-40 overflow-y-auto",
-                  option: ({ isFocused, isSelected }) =>
-                    [
-                      "px-3 lg:px-4 py-2 lg:py-3 cursor-pointer font-plex transition-all duration-200 text-sm lg:text-base",
-                      isFocused ? "bg-red/10 text-black" : "text-black",
-                      isSelected ? "bg-red text-black" : ""
-                    ].join(" "),
-                }}
-              />
-              {!isEditing && <div className="absolute inset-0 bg-gray-100/50 rounded-xl z-50" />}
+                <Select
+                  unstyled
+                  menuPortalTarget={document.body}
+                  styles={{
+                    menuPortal: base => ({ ...base, zIndex: 10 })
+                  }}
+                  isDisabled={!isEditing}
+                  value={beltOptions.find(opt => opt.value === formData.belt) || null}
+                  onChange={(selected) =>
+                    handleInputChange('belt', selected?.value || '')
+                  }
+                  options={beltOptions}
+                  classNames={{
+                    control: () =>
+                      "z-50 border-2 border-red/20 hover:border-red/40 bg-white/50 rounded-xl h-10 lg:h-12 px-3 lg:px-4 font-plex hover:border-red/40 focus-within:border-red transition-all duration-300 text-sm lg:text-base",
+                    valueContainer: () => "px-1 lg:px-2",
+                    placeholder: () => "text-red/50 font-plex text-sm lg:text-base",
+                    menu: () => "max-h-64 border border-red bg-white rounded-lg shadow-lg mt-1 overflow-hidden z-20",
+                    menuList: () => "z-20 max-h-40 overflow-y-auto",
+                    option: ({ isFocused, isSelected }) =>
+                      [
+                        "px-3 lg:px-4 py-2 lg:py-3 cursor-pointer font-plex transition-all duration-200 text-sm lg:text-base",
+                        isFocused ? "bg-red/10 text-black" : "text-black",
+                        isSelected ? "bg-red text-black" : ""
+                      ].join(" "),
+                  }}
+                />
+                {!isEditing && <div className="absolute inset-0 bg-gray-100/50 rounded-xl z-50" />}
               </div>
             </div>
 
@@ -604,16 +580,16 @@ const handleFileRemove = (field: keyof AtletWithFiles) => {
             <div className="space-y-2">
               <label className="block font-plex font-medium text-black/70 text-sm lg:text-base">Tanggal Lahir</label>
               <div className="relative">
-              <TextInput
-                type="date"
-                className="h-10 lg:h-12 border-red/20 bg-white/50 backdrop-blur-sm rounded-xl focus:border-red transition-all duration-300 text-sm lg:text-base"
-                onChange={(e) => handleInputChange('tanggal_lahir', e.target.value)}
-                disabled={!isEditing}
-                value={toInputDateFormat(formData.tanggal_lahir) || ''}
-                placeholder="Tanggal Lahir"
-                icon={<CalendarFold className="text-red" size={18} />}
-              />
-              {!isEditing && <div className="absolute inset-0 bg-gray-100/50 rounded-xl" />}
+                <TextInput
+                  type="date"
+                  className="h-10 lg:h-12 border-red/20 bg-white/50 backdrop-blur-sm rounded-xl focus:border-red transition-all duration-300 text-sm lg:text-base"
+                  onChange={(e) => handleInputChange('tanggal_lahir', e.target.value)}
+                  disabled={!isEditing}
+                  value={toInputDateFormat(formData.tanggal_lahir) || ''}
+                  placeholder="Tanggal Lahir"
+                  icon={<CalendarFold className="text-red" size={18} />}
+                />
+                {!isEditing && <div className="absolute inset-0 bg-gray-100/50 rounded-xl" />}
               </div>
               {formData.tanggal_lahir && (
                 <p className="text-green-600 text-xs lg:text-sm font-plex">
@@ -626,16 +602,16 @@ const handleFileRemove = (field: keyof AtletWithFiles) => {
             <div className="space-y-2">
               <label className="block font-plex font-medium text-black/70 text-sm lg:text-base">Berat Badan (kg)</label>
               <div className="relative">
-              <TextInput
-                type="number"
-                className="h-10 lg:h-12 border-red/20 bg-white/50 backdrop-blur-sm rounded-xl focus:border-red transition-all duration-300 text-sm lg:text-base"
-                onChange={(e) => handleInputChange('berat_badan', Number(e.target.value))}
-                disabled={!isEditing}
-                value={formData.berat_badan?.toString() || ''}
-                placeholder="Berat Badan"
-                icon={<Scale className="text-red" size={18} />}
-              />
-              {!isEditing && <div className="absolute inset-0 bg-gray-100/50 rounded-xl" />}
+                <TextInput
+                  type="number"
+                  className="h-10 lg:h-12 border-red/20 bg-white/50 backdrop-blur-sm rounded-xl focus:border-red transition-all duration-300 text-sm lg:text-base"
+                  onChange={(e) => handleInputChange('berat_badan', Number(e.target.value))}
+                  disabled={!isEditing}
+                  value={formData.berat_badan?.toString() || ''}
+                  placeholder="Berat Badan"
+                  icon={<Scale className="text-red" size={18} />}
+                />
+                {!isEditing && <div className="absolute inset-0 bg-gray-100/50 rounded-xl" />}
               </div>
             </div>
 
@@ -643,16 +619,16 @@ const handleFileRemove = (field: keyof AtletWithFiles) => {
             <div className="space-y-2">
               <label className="block font-plex font-medium text-black/70 text-sm lg:text-base">Tinggi Badan (cm)</label>
               <div className="relative">
-              <TextInput
-                type="number"
-                className="h-10 lg:h-12 border-red/20 bg-white/50 backdrop-blur-sm rounded-xl focus:border-red transition-all duration-300 text-sm lg:text-base"
-                onChange={(e) => handleInputChange('tinggi_badan', Number(e.target.value))}
-                disabled={!isEditing}
-                value={formData.tinggi_badan?.toString() || ''}
-                placeholder="Tinggi Badan"
-                icon={<Ruler className="text-red" size={18} />}
-              />
-              {!isEditing && <div className="absolute inset-0 bg-gray-100/50 rounded-xl" />}
+                <TextInput
+                  type="number"
+                  className="h-10 lg:h-12 border-red/20 bg-white/50 backdrop-blur-sm rounded-xl focus:border-red transition-all duration-300 text-sm lg:text-base"
+                  onChange={(e) => handleInputChange('tinggi_badan', Number(e.target.value))}
+                  disabled={!isEditing}
+                  value={formData.tinggi_badan?.toString() || ''}
+                  placeholder="Tinggi Badan"
+                  icon={<Ruler className="text-red" size={18} />}
+                />
+                {!isEditing && <div className="absolute inset-0 bg-gray-100/50 rounded-xl" />}
               </div>
             </div>
 
@@ -660,19 +636,25 @@ const handleFileRemove = (field: keyof AtletWithFiles) => {
             <div className="space-y-2">
               <label className="block font-plex font-medium text-black/70 text-sm lg:text-base">NIK</label>
               <div className="relative">
-              <TextInput
-                className="h-10 lg:h-12 border-red/20 bg-white/50 backdrop-blur-sm rounded-xl focus:border-red transition-all duration-300 text-sm lg:text-base"
-                onChange={(e) => handleInputChange('nik', e.target.value)}
-                disabled={!isEditing}
-                value={formData.nik || ''}
-                placeholder="NIK"
-                icon={<IdCard className="text-red" size={18} />}
-              />
-              {!isEditing && <div className="absolute inset-0 bg-gray-100/50 rounded-xl" />}
+                <TextInput
+                  className="h-10 lg:h-12 border-red/20 bg-white/50 backdrop-blur-sm rounded-xl focus:border-red transition-all duration-300 text-sm lg:text-base"
+                  onChange={(e) => handleInputChange('nik', e.target.value)}
+                  disabled={!isEditing}
+                  value={formData.nik || ''}
+                  placeholder="NIK"
+                  icon={<IdCard className="text-red" size={18} />}
+                />
+                {!isEditing && <div className="absolute inset-0 bg-gray-100/50 rounded-xl" />}
               </div>
             </div>
           </div>
         </div>
+
+        {/* TAMBAHKAN ID CARD GENERATOR COMPONENT DI SINI */}
+        <IDCardGenerator 
+          atlet={formData} 
+          isEditing={isEditing}
+        />
 
         <AtletDocumentUploader
           formData={formData}
@@ -680,32 +662,6 @@ const handleFileRemove = (field: keyof AtletWithFiles) => {
           onFileChange={handleFileChange}
           onFileRemove={handleFileRemove}
         />
-
-        {/* Debug Section (remove in production) */}
-        {process.env.NODE_ENV === 'development' && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
-            <h3 className="font-semibold text-yellow-800 mb-2">Debug Info:</h3>
-            <pre className="text-xs text-yellow-700 overflow-auto">
-              {JSON.stringify({
-                id,
-                isEditing,
-                isSubmitting,
-                hasFiles: {
-                  akte_kelahiran: !!formData.akte_kelahiran,
-                  pas_foto: !!formData.pas_foto,
-                  sertifikat_belt: !!formData.sertifikat_belt,
-                  ktp: !!formData.ktp,
-                },
-                existingPaths: {
-                  akte_kelahiran_path: formData.akte_kelahiran_path,
-                  pas_foto_path: formData.pas_foto_path,
-                  sertifikat_belt_path: formData.sertifikat_belt_path,
-                  ktp_path: formData.ktp_path,
-                }
-              }, null, 2)}
-            </pre>
-          </div>
-        )}
       </div>
     </div>
   );
