@@ -84,6 +84,7 @@ export const kelasController = {
         kelompokId,
         kelasBeratId,
         poomsaeId,
+        poomsaeName, // ✅ ADDED
       } = req.body;
 
       console.log("🔹 Request params:", req.params);
@@ -107,6 +108,7 @@ export const kelasController = {
         kelompokId: kelompokId ? Number(kelompokId) : undefined,
         kelasBeratId: kelasBeratId ? Number(kelasBeratId) : undefined,
         poomsaeId: poomsaeId ? Number(poomsaeId) : undefined,
+        poomsaeName, // ✅ ADDED
       };
 
       console.log("🔹 Processed filter:", filter);
