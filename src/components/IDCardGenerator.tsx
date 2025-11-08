@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Download, Eye, FileText } from "lucide-react";
 import jsPDF from "jspdf";
-import templateImg from "../assets/photos/e-idcard_sriwijaya.jpg";
 
 interface Atlet {
   nama_atlet: string;
@@ -91,8 +90,8 @@ export const IDCardGenerator = ({ atlet, isEditing }: IDCardGeneratorProps) => {
       // ========== LOAD TEMPLATE BACKGROUND ==========
       try {
         // Load template dari assets
-        const templatePath = "/src/assets/photos/e-idcard_sriwijaya.jpg";
-        const templateBase64 = await loadImageAsBase64(templatePath);
+        const templateImg = "/templates/e-idcard_sriwijaya.jpg";
+        const templateBase64 = await loadImageAsBase64(templateImg);
         
         // Paste template sebagai background (full page A4)
         pdf.addImage(
