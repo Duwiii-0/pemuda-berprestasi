@@ -3,6 +3,6 @@ import { getPertandinganInfo } from '../controllers/pertandinganController';
 
 const router = Router();
 
-router.get('/kompetisi/:id_kompetisi', getPertandinganInfo);
+router.get('/', getPertandinganInfo);
 
 export default router;
