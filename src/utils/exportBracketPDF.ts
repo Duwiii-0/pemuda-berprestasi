@@ -214,22 +214,22 @@ const convertElementToImage = async (
   const hiddenElements: Array<{ el: HTMLElement; originalDisplay: string; originalVisibility: string }> = [];
   
   // Hide leaderboards
-  const leaderboards = document.querySelectorAll(
-    '#prestasi-leaderboard, #pemula-leaderboard, [id$="-leaderboard"], ' +
-    '[class*="leaderboard"], .lg\\:sticky'
-  );
-  leaderboards.forEach(el => {
-    const htmlEl = el as HTMLElement;
-    if (!bracketVisual!.contains(htmlEl)) {
-      hiddenElements.push({
-        el: htmlEl,
-        originalDisplay: htmlEl.style.display,
-        originalVisibility: htmlEl.style.visibility
-      });
-      htmlEl.style.display = 'none';
-      htmlEl.style.visibility = 'hidden';
-    }
-  });
+ const leaderboards = document.querySelectorAll(
+  '#prestasi-leaderboard, #pemula-leaderboard, [id$="-leaderboard"], ' +
+  '[class*="leaderboard"], .lg\\:sticky'
+);
+leaderboards.forEach(el => {
+  const htmlEl = el as HTMLElement;
+  if (!bracketVisual!.contains(htmlEl)) {  // ✅ KEY: Only hide if OUTSIDE bracket
+    hiddenElements.push({
+      el: htmlEl,
+      originalDisplay: htmlEl.style.display,
+      originalVisibility: htmlEl.style.visibility
+    });
+    htmlEl.style.display = 'none';
+    htmlEl.style.visibility = 'hidden';
+  }
+});
 
   // Hide header with logos
   const headerWithLogos = element.querySelector('.flex.items-start.justify-between.gap-4.mb-3') as HTMLElement;
