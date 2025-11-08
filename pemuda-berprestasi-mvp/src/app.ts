@@ -12,7 +12,8 @@ import atletRoutes from "./routes/atlet";
 import kelasRoutes from "./routes/kelas";
 import kompetisiRoutes from "./routes/kompetisi";
 import buktiTransferRoutes from "./routes/buktiTransfer";
-import lapanganRoutes from "./routes/lapangan"; // ✅ Tambahan baru
+import lapanganRoutes from "./routes/lapangan";
+import publicRoutes from "./routes/public"; // ✅ ADD THIS
 
 // Import middleware
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler";
@@ -38,6 +39,12 @@ app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 // Static file serving for uploads
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
+// ⭐ REQUEST LOGGING (for debugging)
+app.use((req, res, next) => {
+  console.log(`📍 ${req.method} ${req.originalUrl}`);
+  next();
+});
+
 // Health check endpoint
 app.get("/health", (req, res) => {
   res.json({
@@ -62,14 +69,21 @@ app.get("/api", (req, res) => {
       "GET /api/kompetisi",
       "GET /api/kelas",
       "POST /api/bukti-transfer",
-      "POST /api/lapangan/tambah-hari", // ✅ Tambahan endpoint info
+      "POST /api/lapangan/tambah-hari",
       "GET /api/lapangan/kompetisi/:id_kompetisi",
       "DELETE /api/lapangan/hapus-hari",
+      "GET /api/public/kompetisi/:id/medal-tally", // ✅ ADD
+      "GET /api/public/kompetisi/:id", // ✅ ADD
     ],
   });
 });
 
-// API routes
+// ⭐ PUBLIC ROUTES (NO AUTH) - MUST BE FIRST
+console.log('🔧 Registering public routes...');
+app.use("/api/public", publicRoutes); // ✅ ADD THIS
+console.log('✅ Public routes registered');
+
+// PROTECTED API ROUTES (dengan auth middleware di masing-masing route)
 app.use("/api/auth", authRoutes);
 app.use("/api/pelatih", pelatihRoutes);
 app.use("/api/dojang", dojangRoutes);
@@ -77,12 +91,12 @@ app.use("/api/atlet", atletRoutes);
 app.use("/api/kompetisi", kompetisiRoutes);
 app.use("/api/kelas", kelasRoutes);
 app.use("/api/bukti-transfer", buktiTransferRoutes);
-app.use("/api/lapangan", lapanganRoutes); // ✅ Tambahkan route lapangan
+app.use("/api/lapangan", lapanganRoutes);
 
-// 404 handler
+// 404 handler (MUST BE AFTER ALL ROUTES)
 app.use(notFoundHandler);
 
-// Global error handler
+// Global error handler (MUST BE LAST)
 app.use(errorHandler);
 
 // Start server

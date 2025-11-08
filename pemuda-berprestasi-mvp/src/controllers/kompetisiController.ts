@@ -1162,5 +1162,176 @@ static async conductDraw(req: Request, res: Response) {
   }
 }
 
+static async getMedalTally(req: Request, res: Response) {
+    try {
+    const idKompetisi = parseInt(req.params.id);
+
+    if (isNaN(idKompetisi)) {
+      return sendError(res, 'ID kompetisi tidak valid', 400);
+    }
+
+    // 🔹 STEP 1: Fetch kompetisi info
+    const kompetisi = await prisma.tb_kompetisi.findUnique({
+      where: { id_kompetisi: idKompetisi },
+      select: {
+        id_kompetisi: true,
+        nama_event: true,
+        tanggal_mulai: true,
+        tanggal_selesai: true,
+        lokasi: true,
+        status: true,
+      }
+    });
+
+    if (!kompetisi) {
+      return sendError(res, 'Kompetisi tidak ditemukan', 404);
+    }
+
+    // 🔹 STEP 2: Fetch all kelas with brackets
+    const kelasList = await prisma.tb_kelas_kejuaraan.findMany({
+      where: { id_kompetisi: idKompetisi },
+      include: {
+        kategori_event: true,
+        kelompok: true,
+        kelas_berat: true,
+        poomsae: true,
+        bagan: {
+          include: {
+            match: {
+              orderBy: {
+                ronde: 'asc'
+              },
+              include: {
+                peserta_a: {
+                  include: {
+                    atlet: {
+                      include: {
+                        dojang: true
+                      }
+                    },
+                    anggota_tim: {
+                      include: {
+                        atlet: {
+                          include: {
+                            dojang: true
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                peserta_b: {
+                  include: {
+                    atlet: {
+                      include: {
+                        dojang: true
+                      }
+                    },
+                    anggota_tim: {
+                      include: {
+                        atlet: {
+                          include: {
+                            dojang: true
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    });
+
+    // 🔹 STEP 3: Transform data untuk frontend
+    const transformedKelas = kelasList.map(kelas => {
+      const bagan = kelas.bagan[0]; // Ambil bagan pertama (seharusnya cuma 1)
+      
+      if (!bagan || !bagan.match || bagan.match.length === 0) {
+        // Kelas belum ada bracket atau belum ada match
+        return {
+          ...kelas,
+          bracket: null,
+          matches: []
+        };
+      }
+
+      // Transform matches ke format yang expected frontend
+      const matches = bagan.match.map(match => {
+        // Helper untuk get participant name
+        const getParticipantName = (peserta: any) => {
+          if (!peserta) return '';
+          if (peserta.is_team) {
+            return peserta.anggota_tim?.map((t: any) => t.atlet.nama_atlet).join(', ') || 'Team';
+          }
+          return peserta.atlet?.nama_atlet || '';
+        };
+
+        // Helper untuk get dojang name
+        const getDojangName = (peserta: any) => {
+          if (!peserta) return '';
+          return peserta.atlet?.dojang?.nama_dojang || '';
+        };
+
+        return {
+          id: match.id_match,
+          round: match.ronde,
+          scoreA: match.skor_a,
+          scoreB: match.skor_b,
+          participant1: match.peserta_a ? {
+            id: match.peserta_a.id_peserta_kompetisi,
+            atletId: match.peserta_a.id_atlet,
+            name: getParticipantName(match.peserta_a),
+            dojang: getDojangName(match.peserta_a),
+            dojo: getDojangName(match.peserta_a),
+            isTeam: match.peserta_a.is_team,
+            teamMembers: match.peserta_a.is_team 
+              ? match.peserta_a.anggota_tim?.map((t: any) => t.atlet.nama_atlet) || []
+              : undefined
+          } : null,
+          participant2: match.peserta_b ? {
+            id: match.peserta_b.id_peserta_kompetisi,
+            atletId: match.peserta_b.id_atlet,
+            name: getParticipantName(match.peserta_b),
+            dojang: getDojangName(match.peserta_b),
+            dojo: getDojangName(match.peserta_b),
+            isTeam: match.peserta_b.is_team,
+            teamMembers: match.peserta_b.is_team 
+              ? match.peserta_b.anggota_tim?.map((t: any) => t.atlet.nama_atlet) || []
+              : undefined
+          } : null,
+          tanggalPertandingan: match.tanggal_pertandingan,
+          nomorPartai: match.nomor_partai,
+          nomorAntrian: match.nomor_antrian,
+          nomorLapangan: match.nomor_lapangan
+        };
+      });
+
+      return {
+        ...kelas,
+        bracket: {
+          matches: matches,
+          totalRounds: Math.max(...matches.map(m => m.round), 0)
+        }
+      };
+    });
+
+    console.log(`📊 Medal Tally Request - Kompetisi: ${kompetisi.nama_event}`);
+    console.log(`   Total Kelas: ${transformedKelas.length}`);
+    console.log(`   Kelas dengan bracket: ${transformedKelas.filter(k => k.bracket).length}`);
+
+    return sendSuccess(res, {
+      kompetisi,
+      kelas: transformedKelas
+    }, 'Data medal tally berhasil diambil');
+
+  } catch (error: any) {
+    console.error('❌ Error fetching medal tally:', error);
+    return sendError(res, error.message || 'Gagal mengambil data medal tally', 500);
+  }
+}
+
 }
 

@@ -6,6 +6,7 @@ import {
   Settings,
   LogOut,
   Home,
+  Medal,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
@@ -18,6 +19,19 @@ const NavbarLomba = ({ onLogoutRequest }: { onLogoutRequest: () => void }) => {
   const [isBurgerOpen, setIsBurgerOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // ✅ NEW: Extract idKompetisi from URL for Medal Tally link
+  const getKompetisiId = () => {
+    // Try to extract from current URL path
+    const match = location.pathname.match(/\/event\/(?:pertandingan|medal-tally)\/(\d+)/);
+    if (match) return match[1];
+    
+    // Fallback: get from localStorage or default
+    const storedId = localStorage.getItem('currentKompetisiId');
+    return storedId || '1'; // Default to 1 if not found
+  };
+
+  const idKompetisi = getKompetisiId();
 
   // Handle scroll effect for navbar background
   useEffect(() => {
@@ -60,13 +74,14 @@ const NavbarLomba = ({ onLogoutRequest }: { onLogoutRequest: () => void }) => {
     };
   }, [isBurgerOpen]);
 
-  // Navigation items
-  const navItems = [
-    { to: "/event/home", label: "Beranda" },
-    { to: "/event/timeline", label: "Timeline" },
-    { to: "/event/faq", label: "FAQ" },
-    { to: "/event/live-streaming", label: "Live Streaming" },
-  ];
+  // ✅ UPDATED: Navigation items with Medal Tally
+const navItems = [
+  { to: "/event/home", label: "Beranda" },
+  { to: "/event/timeline", label: "Timeline" },
+  { to: "/event/faq", label: "FAQ" },
+  { to: "/event/live-streaming", label: "Live Streaming" },
+  // { to: `/event/medal-tally/${idKompetisi}`, label: "Medal Tally", icon: Medal }, // ✅ COMMENTED - Akan diaktifkan nanti
+];
 
   const getDashboardLink = () => {
     if (user?.role === "PELATIH")
@@ -120,7 +135,7 @@ const NavbarLomba = ({ onLogoutRequest }: { onLogoutRequest: () => void }) => {
 
             {/* Desktop Navigation */}
             <div className="hidden lg:flex items-center space-x-8">
-              {navItems.map(({ to, label }) => (
+              {navItems.map(({ to, label, icon: Icon }) => (
                 <Link
                   key={to}
                   to={to}
@@ -135,7 +150,10 @@ const NavbarLomba = ({ onLogoutRequest }: { onLogoutRequest: () => void }) => {
                     window.scrollTo({ top: 0, behavior: "smooth" });
                   }}
                 >
-                  {label}
+                  <span className="flex items-center gap-2">
+                    {Icon && <Icon size={18} />}
+                    {label}
+                  </span>
                   {/* Animated underline */}
                   <span
                     className={`absolute bottom-0 left-1/2 transform -translate-x-1/2 h-0.5 bg-yellow transition-all duration-300 ease-out ${
@@ -277,11 +295,11 @@ const NavbarLomba = ({ onLogoutRequest }: { onLogoutRequest: () => void }) => {
           <div className="px-4 py-5 max-h-[calc(100vh-6rem)] overflow-y-auto">
             {/* Mobile Navigation Links */}
             <div className="space-y-1 mb-5">
-              {navItems.map(({ to, label }, index) => (
+              {navItems.map(({ to, label, icon: Icon }, index) => (
                 <Link
                   key={to}
                   to={to}
-                  className={`block px-4 py-3 text-base font-plex font-medium rounded-lg transition-all duration-300 ease-out hover:scale-[1.02] hover:shadow-md ${
+                  className={`flex items-center gap-2 px-4 py-3 text-base font-plex font-medium rounded-lg transition-all duration-300 ease-out hover:scale-[1.02] hover:shadow-md ${
                     location.pathname === to
                       ? "bg-red text-white shadow-lg"
                       : "text-red hover:bg-red hover:text-white"
@@ -294,6 +312,7 @@ const NavbarLomba = ({ onLogoutRequest }: { onLogoutRequest: () => void }) => {
                     transitionDelay: isBurgerOpen ? `${index * 100}ms` : "0ms",
                   }}
                 >
+                  {Icon && <Icon size={18} />}
                   {label}
                 </Link>
               ))}

@@ -1,5 +1,12 @@
 import jsPDF from 'jspdf';
 import * as htmlToImage from 'html-to-image';
+import ReactDOM from 'react-dom/client';
+import React from 'react';
+import BracketRenderer from '../components/BracketRenderer';
+import { AuthProvider } from '../context/authContext';
+import { KompetisiProvider } from '../context/KompetisiContext';
+import BracketExportWrapper from '../components/BracketExportWrapper';
+import { components } from 'react-select';
 
 // =================================================================================================
 // CONFIGURATION & CONSTANTS
@@ -208,12 +215,15 @@ const convertElementToImage = async (
   
   // Hide leaderboards
   const leaderboards = document.querySelectorAll(
-    '#prestasi-leaderboard, #pemula-leaderboard, [id$="-leaderboard"], ' +
-    '[class*="leaderboard"], .lg\\:sticky'
+    '[id$="-leaderboard"]'
   );
   leaderboards.forEach(el => {
     const htmlEl = el as HTMLElement;
-    if (!bracketVisual!.contains(htmlEl)) {
+    // ✅ HANYA hide jika BENAR-BENAR di luar bracketVisual
+    const isInsideBracket = bracketVisual!.contains(htmlEl);
+    const isInsideExportArea = document.getElementById('bracket-export-area')?.contains(htmlEl);
+    
+    if (!isInsideBracket && !isInsideExportArea) {
       hiddenElements.push({
         el: htmlEl,
         originalDisplay: htmlEl.style.display,
@@ -316,6 +326,43 @@ const convertElementToImage = async (
   return compressedImg;
 };
 
+// Helper: Render React component to DOM element
+const renderBracketComponent = async (
+  kelasData: any,
+  isPemula: boolean,
+  containerDiv: HTMLDivElement
+): Promise<void> => {
+  return new Promise((resolve, reject) => {
+    try {
+      // Import React dan ReactDOM
+      import('react').then((React) => {
+        import('react-dom/client').then((ReactDOM) => {
+          // Dynamic import component
+          const Component = isPemula 
+            ? require('../../components/TournamentBracketPemula').default
+            : require('../../components/TournamentBracketPrestasi').default;
+
+          // Render component
+          const root = ReactDOM.createRoot(containerDiv);
+          root.render(
+            React.createElement(Component, {
+              kelasData: kelasData,
+              apiBaseUrl: import.meta.env.VITE_API_URL || '/api'
+            })
+          );
+
+          // Wait for render
+          setTimeout(() => {
+            resolve();
+          }, 2000);
+        });
+      });
+    } catch (error) {
+      reject(error);
+    }
+  });
+};
+
 // =================================================================================================
 // ✅ MAIN: SINGLE BRACKET EXPORT
 // =================================================================================================
@@ -328,7 +375,7 @@ export const exportBracketFromData = async (
     logoEvent?: string;
     namaKejuaraan?: string;
     kelas?: string;
-    tanggalTanding?: string; // ✅ Format: "5 November 2025" (manual input)
+    tanggalTanding?: string; 
     jumlahKompetitor?: number;
     lokasi?: string;
   }
@@ -377,27 +424,76 @@ export const exportBracketFromData = async (
     let displayWidth = maxWidth;
     let displayHeight = displayWidth / imgAspectRatio;
 
-    if (displayHeight > maxHeight) {
-      displayHeight = maxHeight;
-      displayWidth = displayHeight * imgAspectRatio;
-    }
+// Hitung total peserta dalam bracket
+const totalPeserta = kelasData?.peserta_kompetisi?.length || 0;
 
-    const centerX = MARGIN_LEFT + (maxWidth / 2);
-    const centerY = contentStartY + (maxHeight / 2);
-    const x = centerX - (displayWidth / 2);
-    const y = centerY - (displayHeight / 2);
+// 🔍 DEBUG: Lihat struktur data kelasData
+console.log('🔍 DEBUG kelasData:', {
+  kelompok: kelasData?.kelompok,
+  kelas_berat: kelasData?.kelas_berat,
+  poomsae: kelasData?.poomsae,
+  kompetisi: kelasData?.kompetisi,
+  fullData: kelasData
+});
 
-    // ✅ Add as JPEG (smaller size)
-    doc.addImage(
-      bracketImg.src, 
-      'JPEG', 
-      x, 
-      y, 
-      displayWidth, 
-      displayHeight, 
-      undefined, 
-      'FAST'
-    );
+// ✅ Deteksi bracket Prestasi dengan berbagai cara
+const isPrestasi = 
+  // Cek dari kelompok
+  kelasData?.kelompok?.nama_kelompok?.toLowerCase().includes('prestasi') ||
+  kelasData?.kelompok?.nama_kelompok?.toLowerCase().includes('poomsae') ||
+  // Cek dari kelas_berat
+  kelasData?.kelas_berat?.kategori?.toLowerCase().includes('prestasi') ||
+  // Cek jika ada data poomsae (berarti prestasi)
+  (kelasData?.poomsae !== null && kelasData?.poomsae !== undefined) ||
+  // Cek dari kompetisi
+  kelasData?.kompetisi?.jenis_kompetisi?.toLowerCase().includes('prestasi') ||
+  // Fallback: jika tidak ada kelas_berat tapi ada poomsae
+  (!kelasData?.kelas_berat && kelasData?.poomsae);
+
+console.log('✅ isPrestasi:', isPrestasi);
+
+// ✅ ZOOM LOGIC: Hanya zoom in untuk PRESTASI, Pemula diperkecil
+let zoom = 1.0;
+
+if (isPrestasi) {
+  // Zoom dinamis untuk PRESTASI (zoom in)
+  if (totalPeserta <= 8) zoom = 0.35;
+  else if (totalPeserta <= 16) zoom = 0.25;
+  else if (totalPeserta <= 32) zoom = 0.15;
+  else zoom = 0.10;
+  console.log('📏 PRESTASI zoom:', zoom);
+} else {
+  // ✅ Zoom diperkecil untuk PEMULA (zoom out)
+  if (totalPeserta <= 8) zoom = 1.15;
+  else if (totalPeserta <= 16) zoom = 1.05;
+  else if (totalPeserta <= 32) zoom = 1;
+  else zoom = 0.9;
+  console.log('📏 PEMULA zoom:', zoom);
+}
+
+// Margin bawah header
+const HEADER_MARGIN_BOTTOM = 15;
+
+// --- Hitung ulang ukuran gambar ---
+displayWidth *= zoom;
+displayHeight *= zoom;
+
+// Posisi tengah halaman
+const x = (PAGE_WIDTH - displayWidth) / 2;
+const y = HEADER_HEIGHT + HEADER_MARGIN_BOTTOM;
+
+// Tambahkan gambar ke PDF
+doc.addImage(
+  bracketImg.src,
+  'JPEG',
+  x,
+  y,
+  displayWidth,
+  displayHeight,
+  undefined,
+  'FAST'
+);
+
 
     const dateStr = new Date().toISOString().split('T')[0];
     const filename = `Bracket_${config.eventName.replace(/[^a-z0-9]/gi, '_')}_${config.categoryName.replace(/ /g, '_')}_${dateStr}.pdf`;
@@ -411,20 +507,14 @@ export const exportBracketFromData = async (
   }
 };
 
-// =================================================================================================
-// ✅ NEW: EXPORT MULTIPLE BRACKETS (LAPANGAN)
-// =================================================================================================
-
-export const exportMultipleBrackets = async (
+export const exportMultipleBracketsByLapangan = async (
   brackets: Array<{
     kelasData: any;
-    element: HTMLElement;
-    metadata?: {
-      kelas?: string;
-      tanggalTanding?: string;
-      jumlahKompetitor?: number;
-      lokasi?: string;
-    };
+    bracketData: any;
+    lapanganNama: string;
+    tanggal: string;
+    isPemula: boolean;
+    namaKelas: string;
   }>,
   eventMetadata: {
     logoPBTI?: string;
@@ -432,7 +522,7 @@ export const exportMultipleBrackets = async (
     namaKejuaraan: string;
   }
 ): Promise<void> => {
-  console.log(`🚀 Exporting ${brackets.length} brackets...`);
+  console.log(`🚀 Starting bulk export for ${brackets.length} brackets...`);
   
   const doc = new jsPDF({ 
     orientation: 'landscape', 
@@ -441,72 +531,350 @@ export const exportMultipleBrackets = async (
     compress: true
   });
 
-  for (let i = 0; i < brackets.length; i++) {
-    const { kelasData, element, metadata } = brackets[i];
-    
-    console.log(`📄 Processing bracket ${i + 1}/${brackets.length}...`);
-    
-    if (i > 0) {
-      doc.addPage();
+  // Group by lapangan
+  const bracketsByLapangan = brackets.reduce((acc, bracket) => {
+    if (!acc[bracket.lapanganNama]) {
+      acc[bracket.lapanganNama] = [];
     }
+    acc[bracket.lapanganNama].push(bracket);
+    return acc;
+  }, {} as Record<string, typeof brackets>);
 
-    const approvedParticipants = kelasData.peserta_kompetisi.filter((p: any) => p.status === 'APPROVED');
-    const participantCount = approvedParticipants.length;
-    const scaleFactor = getScaleFactor(participantCount);
+  let pageIndex = 0;
 
-    const config: ExportConfig = {
-      eventName: eventMetadata.namaKejuaraan,
-      categoryName: metadata?.kelas || `${kelasData.kelompok?.nama_kelompok || ''} ${
-        kelasData.kelas_berat?.jenis_kelamin === 'LAKI_LAKI' ? 'Male' : 'Female'
-      } ${kelasData.kelas_berat?.nama_kelas || kelasData.poomsae?.nama_kelas || ''}`.trim(),
-      location: metadata?.lokasi || kelasData.kompetisi.lokasi,
-      dateRange: metadata?.tanggalTanding || new Date(kelasData.kompetisi.tanggal_mulai).toLocaleDateString('id-ID', {
-        day: 'numeric', month: 'long', year: 'numeric'
-      }),
-      totalParticipants: metadata?.jumlahKompetitor || participantCount,
-      logoPBTI: eventMetadata.logoPBTI,
-      logoEvent: eventMetadata.logoEvent,
-    };
+  for (const [lapanganNama, lapanganBrackets] of Object.entries(bracketsByLapangan)) {
+    console.log(`\n📍 Processing Lapangan ${lapanganNama} (${lapanganBrackets.length} brackets)...`);
 
-    const bracketImg = await convertElementToImage(element, scaleFactor);
-    await addHeaderAndFooter(doc, config);
+    for (let i = 0; i < lapanganBrackets.length; i++) {
+      const { kelasData, isPemula, tanggal, namaKelas } = lapanganBrackets[i];
+      
+      console.log(`  📄 Bracket ${i + 1}/${lapanganBrackets.length}: ${namaKelas}`);
+      
+      if (pageIndex > 0) {
+        doc.addPage();
+      }
+      pageIndex++;
 
-    const contentStartY = HEADER_HEIGHT + MARGIN_TOP;
-    const contentEndY = PAGE_HEIGHT - FOOTER_HEIGHT - MARGIN_BOTTOM;
-    const maxWidth = PAGE_WIDTH - MARGIN_LEFT - MARGIN_RIGHT;
-    const maxHeight = contentEndY - contentStartY;
+      // ✅ Create container for React component
+      const tempContainer = document.createElement('div');
+      tempContainer.id = `bracket-container-${pageIndex}`;
+      document.body.appendChild(tempContainer);
 
-    const imgAspectRatio = bracketImg.width / bracketImg.height;
-    let displayWidth = maxWidth;
-    let displayHeight = displayWidth / imgAspectRatio;
+      try {
+        // ✅ Render React component and wait for completion
+        const bracketElement = await new Promise<HTMLElement>((resolve, reject) => {
+  const root = ReactDOM.createRoot(tempContainer);
+  
+  const handleRenderComplete = (element: HTMLElement) => {
+    console.log('  ✅ Bracket render complete');
+    resolve(element);
+  };
 
-    if (displayHeight > maxHeight) {
-      displayHeight = maxHeight;
-      displayWidth = displayHeight * imgAspectRatio;
+  // ✅ WRAP dengan BracketExportWrapper
+  root.render(
+    React.createElement(BracketExportWrapper, null,
+      React.createElement(BracketRenderer, {
+        kelasData: kelasData,
+        isPemula: isPemula,
+        onRenderComplete: handleRenderComplete
+      })
+    )
+  );
+
+  // ✅ Timeout diperbesar jadi 15 detik (karena ada banyak context)
+  setTimeout(() => {
+    reject(new Error('Render timeout'));
+  }, 10000); // Dari 10000 jadi 15000
+      });
+        console.log('  📸 Capturing bracket screenshot...');
+
+        const approvedParticipants = kelasData.peserta_kompetisi?.filter((p: any) => p.status === 'APPROVED') || [];
+        const participantCount = approvedParticipants.length;
+        const scaleFactor = getScaleFactor(participantCount);
+
+        // Config for PDF header
+        const config: ExportConfig = {
+          eventName: eventMetadata.namaKejuaraan,
+          categoryName: namaKelas,
+          location: kelasData.kompetisi?.lokasi || 'GOR Ranau JSC Palembang',
+          dateRange: new Date(tanggal).toLocaleDateString('id-ID', {
+            day: 'numeric', month: 'long', year: 'numeric'
+          }),
+          totalParticipants: participantCount,
+          logoPBTI: eventMetadata.logoPBTI,
+          logoEvent: eventMetadata.logoEvent,
+        };
+
+        // Capture image
+        const bracketImg = await convertElementToImage(bracketElement, scaleFactor);
+        
+        // Add header
+        await addHeaderAndFooter(doc, config);
+
+        // Add Lapangan indicator
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(12);
+        doc.setTextColor(THEME.primary);
+        doc.text(`Lapangan ${lapanganNama}`, PAGE_WIDTH - MARGIN_RIGHT - 25, HEADER_HEIGHT + 5, { align: 'right' });
+
+        // Calculate positioning
+        const contentStartY = HEADER_HEIGHT + MARGIN_TOP;
+        const contentEndY = PAGE_HEIGHT - FOOTER_HEIGHT - MARGIN_BOTTOM;
+        const maxWidth = PAGE_WIDTH - MARGIN_LEFT - MARGIN_RIGHT;
+        const maxHeight = contentEndY - contentStartY;
+
+        const imgAspectRatio = bracketImg.width / bracketImg.height;
+        let displayWidth = maxWidth;
+        let displayHeight = displayWidth / imgAspectRatio;
+
+        if (displayHeight > maxHeight) {
+          displayHeight = maxHeight;
+          displayWidth = displayHeight * imgAspectRatio;
+        }
+
+        const centerX = MARGIN_LEFT + (maxWidth / 2);
+        const centerY = contentStartY + (maxHeight / 2);
+        const x = centerX - (displayWidth / 2);
+        const y = centerY - (displayHeight / 2);
+
+        // Add image to PDF
+        doc.addImage(
+          bracketImg.src, 
+          'JPEG', 
+          x, 
+          y, 
+          displayWidth, 
+          displayHeight, 
+          undefined, 
+          'FAST'
+        );
+
+        console.log(`  ✅ Added to PDF`);
+
+      } catch (error) {
+        console.error(`  ❌ Error rendering bracket:`, error);
+        throw error;
+      } finally {
+        // ✅ Cleanup
+        if (document.body.contains(tempContainer)) {
+          document.body.removeChild(tempContainer);
+        }
+      }
     }
-
-    const centerX = MARGIN_LEFT + (maxWidth / 2);
-    const centerY = contentStartY + (maxHeight / 2);
-    const x = centerX - (displayWidth / 2);
-    const y = centerY - (displayHeight / 2);
-
-    doc.addImage(
-      bracketImg.src, 
-      'JPEG', 
-      x, 
-      y, 
-      displayWidth, 
-      displayHeight, 
-      undefined, 
-      'FAST'
-    );
-
-    console.log(`✅ Bracket ${i + 1} added`);
   }
 
+  // Save PDF
   const dateStr = new Date().toISOString().split('T')[0];
-  const filename = `Brackets_${eventMetadata.namaKejuaraan.replace(/[^a-z0-9]/gi, '_')}_${dateStr}.pdf`;
+  const filename = `Brackets_Lapangan_${eventMetadata.namaKejuaraan.replace(/[^a-z0-9]/gi, '_')}_${dateStr}.pdf`;
   
   doc.save(filename);
-  console.log(`✅ Saved ${brackets.length} brackets: ${filename}`);
+  console.log(`\n✅ PDF saved: ${filename} (${pageIndex} pages)`);
+};
+
+// ✅ Generate simplified bracket HTML
+const generateBracketHTML = (bracketData: any, kelasData: any, isPemula: boolean): string => {
+  const matches = bracketData.matches || [];
+  
+  if (matches.length === 0) {
+    return `
+      <div style="text-align: center; padding: 100px 0;">
+        <h2 style="color: #990D35; margin-bottom: 20px;">
+          ${isPemula ? 'Bracket Pemula' : 'Bracket Prestasi'}
+        </h2>
+        <p style="color: #6b7280;">Bracket belum memiliki pertandingan</p>
+      </div>
+    `;
+  }
+
+  // ✅ Group matches by round
+  const rounds = matches.reduce((acc: any, match: any) => {
+    if (!acc[match.round]) acc[match.round] = [];
+    acc[match.round].push(match);
+    return acc;
+  }, {});
+
+  const totalRounds = Object.keys(rounds).length;
+  
+  // ✅ Generate HTML untuk setiap round
+  let roundsHTML = '';
+  for (let round = 1; round <= totalRounds; round++) {
+    const roundMatches = rounds[round] || [];
+    const roundName = getRoundName(round, totalRounds);
+    
+    let matchesHTML = roundMatches.map((match: any) => {
+      const p1Name = match.participant1?.name || 'TBD';
+      const p1Dojo = match.participant1?.dojang || '';
+      const p2Name = match.participant2?.name || (round === 1 ? 'BYE' : 'TBD');
+      const p2Dojo = match.participant2?.dojang || '';
+      
+      const hasScores = match.scoreA > 0 || match.scoreB > 0;
+      const winner = hasScores ? (match.scoreA > match.scoreB ? 'p1' : 'p2') : null;
+
+      // ✅ Format nomor lapangan: {nomor_antrian}{nomor_partai}
+      let nomorLapanganDisplay = '';
+      if (match.nomorAntrian && match.nomorPartai) {
+        nomorLapanganDisplay = `${match.nomorAntrian}${match.nomorPartai}`;
+      }
+
+      return `
+        <div style="
+          border: 2px solid ${winner ? '#22c55e' : '#990D35'};
+          border-radius: 12px;
+          background: white;
+          margin-bottom: 20px;
+          overflow: hidden;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        ">
+          <!-- Header -->
+          <div style="
+            background: rgba(153, 13, 53, 0.05);
+            padding: 8px 12px;
+            border-bottom: 1px solid #990D35;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+          ">
+            ${nomorLapanganDisplay ? `
+              <span style="
+                background: #990D35;
+                color: white;
+                padding: 4px 12px;
+                border-radius: 20px;
+                font-size: 12px;
+                font-weight: bold;
+              ">No: ${nomorLapanganDisplay}</span>
+            ` : '<span></span>'}
+            ${match.tanggalPertandingan ? `
+              <span style="font-size: 11px; color: #6b7280;">
+                ${new Date(match.tanggalPertandingan).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' })}
+              </span>
+            ` : ''}
+          </div>
+
+          <!-- Participant 1 -->
+          <div style="
+            padding: 12px;
+            ${winner === 'p1' ? 'background: linear-gradient(to right, rgba(34, 197, 94, 0.1), rgba(34, 197, 94, 0.2));' : ''}
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+          ">
+            <div style="flex: 1; min-width: 0;">
+              <div style="font-weight: bold; font-size: 14px; color: #050505; margin-bottom: 4px;">
+                ${p1Name}
+              </div>
+              <div style="font-size: 11px; color: #3B82F6; opacity: 0.7;">
+                ${p1Dojo}
+              </div>
+            </div>
+            ${hasScores ? `
+              <div style="
+                width: 40px;
+                height: 40px;
+                border-radius: 8px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: bold;
+                font-size: 16px;
+                background: ${winner === 'p1' ? '#22c55e' : '#e5e7eb'};
+                color: ${winner === 'p1' ? 'white' : '#6b7280'};
+              ">
+                ${match.scoreA}
+              </div>
+            ` : ''}
+          </div>
+
+          <!-- Participant 2 -->
+          <div style="
+            padding: 12px;
+            ${winner === 'p2' ? 'background: linear-gradient(to right, rgba(34, 197, 94, 0.1), rgba(34, 197, 94, 0.2));' : ''}
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+          ">
+            ${p2Name === 'BYE' || p2Name === 'TBD' ? `
+              <div style="width: 100%; text-align: center;">
+                <span style="
+                  background: ${p2Name === 'BYE' ? 'rgba(245, 183, 0, 0.15)' : 'rgba(192, 192, 192, 0.15)'};
+                  color: ${p2Name === 'BYE' ? '#F5B700' : '#6b7280'};
+                  padding: 4px 12px;
+                  border-radius: 20px;
+                  font-size: 11px;
+                  font-weight: 600;
+                ">${p2Name}</span>
+              </div>
+            ` : `
+              <div style="flex: 1; min-width: 0;">
+                <div style="font-weight: bold; font-size: 14px; color: #050505; margin-bottom: 4px;">
+                  ${p2Name}
+                </div>
+                <div style="font-size: 11px; color: #EF4444; opacity: 0.7;">
+                  ${p2Dojo}
+                </div>
+              </div>
+              ${hasScores ? `
+                <div style="
+                  width: 40px;
+                  height: 40px;
+                  border-radius: 8px;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  font-weight: bold;
+                  font-size: 16px;
+                  background: ${winner === 'p2' ? '#22c55e' : '#e5e7eb'};
+                  color: ${winner === 'p2' ? 'white' : '#6b7280'};
+                ">
+                  ${match.scoreB}
+                </div>
+              ` : ''}
+            `}
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    roundsHTML += `
+      <div style="margin-right: 40px; min-width: 280px;">
+        <div style="
+          background: #990D35;
+          color: white;
+          padding: 12px;
+          border-radius: 8px;
+          text-align: center;
+          margin-bottom: 20px;
+          font-weight: bold;
+          font-size: 14px;
+        ">
+          ${roundName}
+          <div style="font-size: 11px; font-weight: normal; margin-top: 4px; opacity: 0.8;">
+            ${roundMatches.length} Match${roundMatches.length > 1 ? 'es' : ''}
+          </div>
+        </div>
+        ${matchesHTML}
+      </div>
+    `;
+  }
+
+  return `
+    <div style="background: white; padding: 40px; min-height: 600px;">
+      <div style="display: flex; gap: 40px; overflow-x: auto;">
+        ${roundsHTML}
+      </div>
+    </div>
+  `;
+};
+
+// Helper: Get round name
+const getRoundName = (round: number, totalRounds: number): string => {
+  const fromEnd = totalRounds - round;
+  
+  switch (fromEnd) {
+    case 0: return 'Final';
+    case 1: return 'Semi Final';
+    case 2: return 'Quarter Final';
+    default: return `Round ${round}`;
+  }
 };
