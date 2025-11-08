@@ -457,10 +457,10 @@ let zoom = 1.0;
 
 if (isPrestasi) {
   // Zoom dinamis untuk PRESTASI (zoom in)
-  if (totalPeserta <= 8) zoom = 0.55;
-  else if (totalPeserta <= 16) zoom = 0.35;
-  else if (totalPeserta <= 32) zoom = 0.25;
-  else zoom = 0.15;
+  if (totalPeserta <= 8) zoom = 0.35;
+  else if (totalPeserta <= 16) zoom = 0.25;
+  else if (totalPeserta <= 32) zoom = 0.15;
+  else zoom = 0.10;
   console.log('📏 PRESTASI zoom:', zoom);
 } else {
   // ✅ Zoom diperkecil untuk PEMULA (zoom out)
