@@ -287,12 +287,12 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
                           Bertanding
                         </span>
                         {bertandingMatch ? (
-                          <div className="text-center mt-2">
-                            <p>{bertandingMatch.nama_atlet_a || "Nama peserta tidak tersedia"}</p>
-                            <p>{bertandingMatch.nama_atlet_b || "Nama peserta tidak tersedia"}</p>
+                          <div className="text-center mt-2 text-lg font-medium">
+                            <p>Peserta 1: {bertandingMatch.nama_atlet_a || "Nama peserta tidak tersedia"}</p>
+                            <p>Peserta 2: {bertandingMatch.nama_atlet_b || "Nama peserta tidak tersedia"}</p>
                           </div>
                         ) : (
-                          <div className="text-center mt-2">
+                          <div className="text-center mt-2 text-lg font-medium">
                             <p>Nama peserta tidak tersedia</p>
                           </div>
                         )}
@@ -305,12 +305,12 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
                           Persiapan
                         </span>
                         {persiapanMatch ? (
-                          <div className="text-center mt-2">
-                            <p>{persiapanMatch.nama_atlet_a || "Nama peserta tidak tersedia"}</p>
-                            <p>{persiapanMatch.nama_atlet_b || "Nama peserta tidak tersedia"}</p>
+                          <div className="text-center mt-2 text-lg font-medium">
+                            <p>Peserta 1: {persiapanMatch.nama_atlet_a || "Nama peserta tidak tersedia"}</p>
+                            <p>Peserta 2: {persiapanMatch.nama_atlet_b || "Nama peserta tidak tersedia"}</p>
                           </div>
                         ) : (
-                          <div className="text-center mt-2">
+                          <div className="text-center mt-2 text-lg font-medium">
                             <p>Nama peserta tidak tersedia</p>
                           </div>
                         )}
@@ -323,12 +323,12 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
                           Pemanasan
                         </span>
                         {pemanasanMatch ? (
-                          <div className="text-center mt-2">
-                            <p>{pemanasanMatch.nama_atlet_a || "Nama peserta tidak tersedia"}</p>
-                            <p>{pemanasanMatch.nama_atlet_b || "Nama peserta tidak tersedia"}</p>
+                          <div className="text-center mt-2 text-lg font-medium">
+                            <p>Peserta 1: {pemanasanMatch.nama_atlet_a || "Nama peserta tidak tersedia"}</p>
+                            <p>Peserta 2: {pemanasanMatch.nama_atlet_b || "Nama peserta tidak tersedia"}</p>
                           </div>
                         ) : (
-                          <div className="text-center mt-2">
+                          <div className="text-center mt-2 text-lg font-medium">
                             <p>Nama peserta tidak tersedia</p>
                           </div>
                         )}
