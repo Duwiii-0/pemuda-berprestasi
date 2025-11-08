@@ -24,7 +24,7 @@ const OVERLAY_COORDS = {
   // Photo box (kotak besar kiri) - koordinat FIXED berdasarkan template
   photo: {
     x: 25.5,           // Posisi X foto
-    y: 92,           // Posisi Y foto (dari atas)
+    y: 95,           // Posisi Y foto (dari atas)
     width: 77,       // Lebar foto FIXED
     height: 110,      // Tinggi foto FIXED
   },
@@ -70,7 +70,7 @@ const loadImageAsBase64 = async (url: string, rounded = false): Promise<string> 
       canvas.height = h;
 
       if (rounded) {
-        const radius = Math.min(w, h) * 0.15; // radius 15% dari ukuran gambar
+        const radius = Math.min(w, h) * 0.10; // radius 15% dari ukuran gambar
         ctx.clearRect(0, 0, w, h);
 
         // 🟢 Buat path rounded dan clip TANPA background putih
