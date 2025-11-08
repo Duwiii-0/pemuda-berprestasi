@@ -221,7 +221,7 @@ model tb_kelas_poomsae {
   id_poomsae    Int                @id @default(autoincrement())
   id_kelompok   Int
   nama_kelas    String             @db.VarChar(50)
-  jenis_kelamin JenisKelamin
+  jenis_kelamin JenisKelamin?
 
   kelompok        tb_kelompok_usia   @relation(fields: [id_kelompok], references: [id_kelompok])
   kelas_kejuaraan tb_kelas_kejuaraan[]

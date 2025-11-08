@@ -83,30 +83,29 @@ export class LapanganController {
 
   async simpanAntrian(req: Request, res: Response) {
     try {
-        const { id_lapangan, bertanding, persiapan, pemanasan } = req.body;
+      const { id_lapangan, bertanding, persiapan, pemanasan } = req.body;
 
-        if (!id_lapangan) {
-            return res.status(400).json({
-                success: false,
-                message: "id_lapangan is required",
-            });
-        }
-
-        const result = await lapanganService.simpanAntrian({
-            id_lapangan: parseInt(id_lapangan),
-            bertanding: parseInt(bertanding),
-            persiapan: parseInt(persiapan),
-            pemanasan: parseInt(pemanasan),
+      if (!id_lapangan) {
+        return res.status(400).json({
+          success: false,
+          message: "id_lapangan is required",
         });
+      }
 
-        return res.status(200).json(result);
+      const result = await lapanganService.simpanAntrian({
+        id_lapangan: parseInt(id_lapangan),
+        bertanding: parseInt(bertanding),
+        persiapan: parseInt(persiapan),
+        pemanasan: parseInt(pemanasan),
+      });
+
+      return res.status(200).json(result);
     } catch (error: any) {
-        console.error("Error saving antrian:", error);
-        return res.status(500).json({
-            success: false,
-            message:
-                error.message || "Terjadi kesalahan saat menyimpan antrian",
-        });
+      console.error("Error saving antrian:", error);
+      return res.status(500).json({
+        success: false,
+        message: error.message || "Terjadi kesalahan saat menyimpan antrian",
+      });
     }
   }
 
