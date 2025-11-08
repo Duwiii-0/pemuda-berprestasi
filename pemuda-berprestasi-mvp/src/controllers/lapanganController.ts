@@ -135,6 +135,7 @@ export class LapanganController {
 
   async getHariLapanganByKompetisi(req: Request, res: Response) {
     try {
+      console.log("<<<<< TESTING NODEMON: Lapangan controller is being hit >>>>>");
       const { id_kompetisi } = req.params;
 
       if (!id_kompetisi) {
