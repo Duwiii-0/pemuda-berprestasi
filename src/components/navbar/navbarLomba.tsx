@@ -1,12 +1,4 @@
-import {
-  ChevronDown,
-  Menu,
-  X,
-  User,
-  Settings,
-  LogOut,
-  Home,
-} from "lucide-react";
+import { ChevronDown, Menu, X, User, Settings, LogOut, Home, Medal } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../../context/authContext";
@@ -19,11 +11,25 @@ const NavbarLomba = ({ onLogoutRequest }: { onLogoutRequest: () => void }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  // ✅ NEW: Extract idKompetisi from URL for Medal Tally link
+  const getKompetisiId = () => {
+    // Try to extract from current URL path
+    const match = location.pathname.match(/\/event\/(?:pertandingan|medal-tally)\/(\d+)/);
+    if (match) return match[1];
+    
+    // Fallback: get from localStorage or default
+    const storedId = localStorage.getItem('currentKompetisiId');
+    return storedId || '1'; // Default to 1 if not found
+  };
+
+  const idKompetisi = getKompetisiId();
+
   // Handle scroll effect for navbar background
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 50);
     };
+
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
@@ -38,6 +44,7 @@ const NavbarLomba = ({ onLogoutRequest }: { onLogoutRequest: () => void }) => {
         setShowDropdown(false);
       }
     };
+
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
@@ -55,17 +62,19 @@ const NavbarLomba = ({ onLogoutRequest }: { onLogoutRequest: () => void }) => {
     } else {
       document.body.style.overflow = "unset";
     }
+
     return () => {
       document.body.style.overflow = "unset";
     };
   }, [isBurgerOpen]);
 
-  // Navigation items
+  // ✅ UPDATED: Navigation items with Medal Tally
   const navItems = [
     { to: "/event/home", label: "Beranda" },
     { to: "/event/timeline", label: "Timeline" },
     { to: "/event/faq", label: "FAQ" },
     { to: "/event/live-streaming", label: "Live Streaming" },
+    { to: `/event/medal-tally/${idKompetisi}`, label: "Medal Tally", icon: Medal }, // ✅ NEW
   ];
 
   const getDashboardLink = () => {
@@ -75,7 +84,7 @@ const NavbarLomba = ({ onLogoutRequest }: { onLogoutRequest: () => void }) => {
       return { to: "/admin/validasi-peserta", label: "Dashboard", icon: Home };
     if (user?.role === "ADMIN_KOMPETISI")
       return { to: "/admin-kompetisi", label: "Dashboard", icon: Home };
-    return { to: "/", label: "Dashboard", icon: Home }; // fallback
+    return { to: "/", label: "Dashboard", icon: Home };
   };
 
   const userMenuItems = [
@@ -83,10 +92,11 @@ const NavbarLomba = ({ onLogoutRequest }: { onLogoutRequest: () => void }) => {
     { to: "/settings", label: "Settings", icon: Settings },
   ];
 
-  // Styling yang konsisten dengan warna merah
   const getNavbarStyles = () => {
     return {
-      bg: isScrolled ? "bg-red/95 backdrop-blur-md shadow-lg" : "bg-red",
+      bg: isScrolled
+        ? "bg-red/95 backdrop-blur-md shadow-lg"
+        : "bg-red",
       text: "text-white",
       logo: "text-yellow drop-shadow-lg",
       buttonBorder: "border-white/80",
@@ -105,43 +115,42 @@ const NavbarLomba = ({ onLogoutRequest }: { onLogoutRequest: () => void }) => {
       <nav
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ease-out ${styles.bg}`}
       >
-        <div className="w-full px-[5%] sm:px-[8%] lg:px-[10%] py-4 md:py-6">
-          <div className="flex justify-between items-center h-16 md:h-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16 lg:h-20">
             {/* Logo */}
             <Link
-              to="/"
-              className={`text-xl sm:text-2xl lg:text-4xl ${styles.logo} font-bebas tracking-wider uppercase transition-all duration-300 ease-out hover:scale-105`}
+              to="/event/home"
               onClick={() => {
                 window.scrollTo({ top: 0, behavior: "smooth" });
               }}
+              className="flex items-center space-x-2 group"
             >
-              CJV Management
+              <span
+                className={`text-2xl xl:text-3xl font-bebas ${styles.logo} transition-all duration-300 ease-out group-hover:scale-110 group-hover:drop-shadow-2xl`}
+              >
+                CJV Management
+              </span>
             </Link>
 
             {/* Desktop Navigation */}
-            <div className="hidden lg:flex items-center space-x-8">
-              {navItems.map(({ to, label }) => (
+            <div className="hidden lg:flex items-center space-x-1 xl:space-x-2">
+              {navItems.map(({ to, label, icon: Icon }) => (
                 <Link
                   key={to}
                   to={to}
-                  className={`text-xl relative px-4 py-2 ${
-                    styles.text
-                  } font-plex font-medium transition-all duration-300 ease-out ${
-                    location.pathname === to
-                      ? "text-yellow font-semibold"
-                      : styles.hoverText
-                  } group`}
                   onClick={() => {
                     window.scrollTo({ top: 0, behavior: "smooth" });
                   }}
+                  className={`relative px-3 xl:px-4 py-2 text-md xl:text-2xl ${styles.text} font-plex transition-all duration-300 ease-out ${styles.hoverText} group`}
                 >
-                  {label}
+                  <span className="flex items-center gap-2">
+                    {Icon && <Icon size={18} />}
+                    {label}
+                  </span>
                   {/* Animated underline */}
                   <span
-                    className={`absolute bottom-0 left-1/2 transform -translate-x-1/2 h-0.5 bg-yellow transition-all duration-300 ease-out ${
-                      location.pathname === to
-                        ? "w-full"
-                        : "w-0 group-hover:w-full"
+                    className={`absolute bottom-0 left-0 w-0 h-0.5 bg-yellow transition-all duration-300 ease-out group-hover:w-full ${
+                      location.pathname === to ? "w-full" : ""
                     }`}
                   />
                 </Link>
@@ -149,9 +158,9 @@ const NavbarLomba = ({ onLogoutRequest }: { onLogoutRequest: () => void }) => {
             </div>
 
             {/* Desktop Auth Section */}
-            <div className="hidden lg:flex items-center">
+            <div className="hidden lg:flex items-center space-x-4">
               {!user ? (
-                <div className="flex items-center space-x-4">
+                <>
                   <Link
                     to="/register"
                     className={`px-6 py-2.5 text-md xl:text-2xl border-2 ${styles.buttonBorder} ${styles.buttonText} font-plex rounded-lg transition-all duration-300 ease-out hover:bg-white hover:text-red hover:scale-105 hover:shadow-lg`}
@@ -160,11 +169,11 @@ const NavbarLomba = ({ onLogoutRequest }: { onLogoutRequest: () => void }) => {
                   </Link>
                   <Link
                     to="/login"
-                    className={`px-8 py-2.5 text-md xl:text-2xl border-2 ${styles.buttonBorder} ${styles.buttonBg} font-plex rounded-lg transition-all duration-300 ease-out hover:shadow-lg`}
+                    className={`px-6 py-2.5 text-md xl:text-2xl ${styles.buttonBg} font-plex rounded-lg transition-all duration-300 ease-out shadow-md hover:shadow-xl`}
                   >
                     Login
                   </Link>
-                </div>
+                </>
               ) : (
                 <div className="relative" ref={dropdownRef}>
                   <button
@@ -172,35 +181,33 @@ const NavbarLomba = ({ onLogoutRequest }: { onLogoutRequest: () => void }) => {
                     className={`flex items-center space-x-2 px-4 py-2.5 text-md xl:text-2xl border-2 ${styles.buttonBorder} ${styles.buttonText} font-plex rounded-lg transition-all duration-300 ease-out hover:bg-white hover:text-red hover:scale-105 hover:shadow-lg group`}
                   >
                     <User
-                      size={24}
-                      className="transition-transform duration-300 group-hover:scale-110"
+                      size={20}
+                      className="transition-transform duration-300 ease-out group-hover:rotate-12"
                     />
-                    <span className="max-w-48 truncate">
-                      {user?.pelatih?.nama_pelatih ?? "User"}
-                    </span>
+                    <span>{user?.pelatih?.nama_pelatih ?? "User"}</span>
                     <ChevronDown
                       size={18}
-                      className={`transition-all duration-300 ease-out ${
+                      className={`transition-transform duration-300 ease-out ${
                         showDropdown ? "rotate-180" : ""
-                      } group-hover:scale-110`}
+                      }`}
                     />
                   </button>
 
                   {/* User Dropdown */}
                   {showDropdown && (
                     <div
-                      className={`absolute right-0 mt-2 w-52 ${styles.dropdownBg} rounded-xl border border-gray-200/50 shadow-2xl overflow-hidden z-50 transform transition-all duration-300 ease-out animate-in fade-in slide-in-from-top-2`}
+                      className={`absolute right-0 mt-2 w-56 ${styles.dropdownBg} rounded-xl shadow-xl border border-gray-200 overflow-hidden animate-slideDown`}
                     >
                       {userMenuItems.map(({ to, label, icon: Icon }) => (
                         <Link
                           key={to}
                           to={to}
-                          className="text-xl flex items-center space-x-3 px-4 py-3 text-red font-plex transition-all duration-200 ease-out hover:bg-red hover:text-white group"
                           onClick={() => setShowDropdown(false)}
+                          className="text-xl flex items-center space-x-3 w-full px-4 py-3 text-red font-plex transition-all duration-200 ease-out hover:bg-red hover:text-white group"
                         >
                           <Icon
-                            size={16}
-                            className="transition-transform duration-200 group-hover:scale-110"
+                            size={20}
+                            className="transition-transform duration-200 ease-out group-hover:scale-110"
                           />
                           <span>{label}</span>
                         </Link>
@@ -213,8 +220,8 @@ const NavbarLomba = ({ onLogoutRequest }: { onLogoutRequest: () => void }) => {
                         className="text-xl flex items-center space-x-3 w-full px-4 py-3 text-red font-plex transition-all duration-200 ease-out hover:bg-red hover:text-white group"
                       >
                         <LogOut
-                          size={16}
-                          className="transition-transform duration-200 group-hover:scale-110"
+                          size={20}
+                          className="transition-transform duration-200 ease-out group-hover:scale-110"
                         />
                         <span>Logout</span>
                       </button>
@@ -229,24 +236,11 @@ const NavbarLomba = ({ onLogoutRequest }: { onLogoutRequest: () => void }) => {
               onClick={() => setIsBurgerOpen(!isBurgerOpen)}
               className={`lg:hidden p-3 ${styles.text} hover:bg-white hover:text-red rounded-xl transition-all duration-300 ease-out hover:scale-110 hover:shadow-lg group`}
             >
-              <div className="relative w-6 h-6">
-                <Menu
-                  size={24}
-                  className={`absolute inset-0 transition-all duration-300 ease-out ${
-                    isBurgerOpen
-                      ? "opacity-0 rotate-180 scale-75"
-                      : "opacity-100 rotate-0 scale-100"
-                  }`}
-                />
-                <X
-                  size={24}
-                  className={`absolute inset-0 transition-all duration-300 ease-out ${
-                    isBurgerOpen
-                      ? "opacity-100 rotate-0 scale-100"
-                      : "opacity-0 rotate-180 scale-75"
-                  }`}
-                />
-              </div>
+              {isBurgerOpen ? (
+                <X size={24} className="transition-transform duration-300 ease-out group-hover:rotate-90" />
+              ) : (
+                <Menu size={24} className="transition-transform duration-300 ease-out group-hover:scale-110" />
+              )}
             </button>
           </div>
         </div>
@@ -254,46 +248,43 @@ const NavbarLomba = ({ onLogoutRequest }: { onLogoutRequest: () => void }) => {
 
       {/* Mobile Menu Overlay */}
       <div
-        className={`fixed inset-0 z-40 lg:hidden transition-all duration-500 ease-out ${
-          isBurgerOpen ? "opacity-100 visible" : "opacity-0 invisible"
+        className={`lg:hidden fixed inset-0 z-40 transition-all duration-500 ease-out ${
+          isBurgerOpen
+            ? "visible opacity-100"
+            : "invisible opacity-0 pointer-events-none"
         }`}
       >
         {/* Background overlay */}
         <div
-          className={`absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-500 ease-out ${
-            isBurgerOpen ? "opacity-100" : "opacity-0"
-          }`}
+          className="absolute inset-0 bg-black/60 backdrop-blur-sm"
           onClick={() => setIsBurgerOpen(false)}
         />
 
         {/* Mobile menu panel */}
         <div
-          className={`absolute top-30 md:top-24 left-4 right-4 sm:left-8 sm:right-8 bg-white rounded-xl shadow-2xl transform transition-all duration-500 ease-out ${
-            isBurgerOpen
-              ? "translate-y-0 opacity-100"
-              : "-translate-y-full opacity-0"
+          className={`absolute top-16 lg:top-20 right-0 w-full sm:w-96 h-[calc(100vh-4rem)] lg:h-[calc(100vh-5rem)] bg-white shadow-2xl transform transition-all duration-500 ease-out ${
+            isBurgerOpen ? "translate-x-0" : "translate-x-full"
           }`}
         >
-          <div className="px-4 py-5 max-h-[calc(100vh-6rem)] overflow-y-auto">
+          <div className="h-full overflow-y-auto p-6 space-y-6">
             {/* Mobile Navigation Links */}
-            <div className="space-y-1 mb-5">
-              {navItems.map(({ to, label }, index) => (
+            <div className="space-y-2">
+              {navItems.map(({ to, label, icon: Icon }, index) => (
                 <Link
                   key={to}
                   to={to}
-                  className={`block px-4 py-3 text-base font-plex font-medium rounded-lg transition-all duration-300 ease-out hover:scale-[1.02] hover:shadow-md ${
-                    location.pathname === to
-                      ? "bg-red text-white shadow-lg"
-                      : "text-red hover:bg-red hover:text-white"
-                  }`}
                   onClick={() => {
                     setIsBurgerOpen(false);
                     window.scrollTo({ top: 0, behavior: "smooth" });
                   }}
+                  className={`flex items-center gap-3 w-full px-4 py-3 text-lg text-red font-plex rounded-lg transition-all duration-300 ease-out hover:bg-red hover:text-white hover:scale-[1.02] hover:shadow-md transform ${
+                    isBurgerOpen ? "translate-x-0 opacity-100" : "translate-x-full opacity-0"
+                  } ${location.pathname === to ? "bg-red text-white" : ""}`}
                   style={{
                     transitionDelay: isBurgerOpen ? `${index * 100}ms` : "0ms",
                   }}
                 >
+                  {Icon && <Icon size={20} />}
                   {label}
                 </Link>
               ))}
@@ -305,48 +296,45 @@ const NavbarLomba = ({ onLogoutRequest }: { onLogoutRequest: () => void }) => {
                 <div className="space-y-3">
                   <Link
                     to="/register"
-                    className="block w-full py-4 text-lg text-center border-2 border-red text-red font-plex font-semibold rounded-xl hover:bg-red hover:text-white transition-all duration-300 ease-out hover:scale-[1.02] hover:shadow-lg"
                     onClick={() => setIsBurgerOpen(false)}
+                    className="block w-full px-6 py-3 text-center text-lg border-2 border-red text-red font-plex rounded-lg transition-all duration-300 ease-out hover:bg-red hover:text-white hover:scale-[1.02] hover:shadow-md"
                   >
                     Register
                   </Link>
                   <Link
                     to="/login"
-                    className="block w-full py-4 text-lg text-center border-2 border-red bg-red text-white font-plex font-semibold rounded-xl hover:bg-red/90 transition-all duration-300 ease-out hover:scale-[1.02] hover:shadow-lg"
                     onClick={() => setIsBurgerOpen(false)}
+                    className="block w-full px-6 py-3 text-center text-lg bg-red text-white font-plex rounded-lg transition-all duration-300 ease-out hover:bg-red/90 hover:scale-[1.02] hover:shadow-md"
                   >
                     Login
                   </Link>
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {/* User Info */}
-                  <div className="flex items-center space-x-3 px-4 py-3 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg border border-gray-200">
-                    <div className="w-8 h-8 bg-red rounded-full flex items-center justify-center shadow-md">
-                      <User size={16} className="text-white" />
+                  <div className="flex items-center space-x-3 px-4 py-3 bg-red/5 rounded-lg">
+                    <div className="w-12 h-12 rounded-full bg-red flex items-center justify-center text-white font-bold text-lg shadow-md">
+                      {(user?.pelatih?.nama_pelatih ?? "U").charAt(0)}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-plex font-semibold text-red truncate text-sm">
+                      <p className="font-semibold text-red font-plex truncate">
                         {user?.pelatih?.nama_pelatih ?? "User"}
                       </p>
-                      <p className="text-xs text-gray-500">Logged in</p>
+                      <p className="text-sm text-gray-500 font-plex">Logged in</p>
                     </div>
                   </div>
 
                   {/* User Menu Items */}
-                  <div className="space-y-1">
+                  <div className="space-y-2">
                     {userMenuItems.map(({ to, label, icon: Icon }) => (
                       <Link
                         key={to}
                         to={to}
-                        className="flex items-center space-x-3 px-4 py-3 text-red font-plex rounded-lg hover:bg-red hover:text-white transition-all duration-300 ease-out hover:scale-[1.02] hover:shadow-md group"
                         onClick={() => setIsBurgerOpen(false)}
+                        className="flex items-center space-x-3 w-full px-4 py-3 text-red font-plex rounded-lg hover:bg-red hover:text-white transition-all duration-300 ease-out hover:scale-[1.02] hover:shadow-md"
                       >
-                        <Icon
-                          size={16}
-                          className="transition-transform duration-300 group-hover:scale-110"
-                        />
-                        <span className="text-base">{label}</span>
+                        <Icon size={20} />
+                        <span>{label}</span>
                       </Link>
                     ))}
 
@@ -359,10 +347,10 @@ const NavbarLomba = ({ onLogoutRequest }: { onLogoutRequest: () => void }) => {
                       className="flex items-center space-x-3 w-full px-4 py-3 text-red font-plex rounded-lg hover:bg-red hover:text-white transition-all duration-300 ease-out hover:scale-[1.02] hover:shadow-md border-t border-gray-200 mt-4 pt-3 group"
                     >
                       <LogOut
-                        size={16}
-                        className="transition-transform duration-200 group-hover:scale-110"
+                        size={20}
+                        className="transition-transform duration-200 ease-out group-hover:scale-110"
                       />
-                      <span className="text-base">Logout</span>
+                      <span>Logout</span>
                     </button>
                   </div>
                 </div>
