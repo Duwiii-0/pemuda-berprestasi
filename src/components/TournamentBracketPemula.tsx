@@ -672,16 +672,7 @@ const generateLeaderboard = () => {
     const round2Matches = matches.filter(m => m.ronde === 2);
     const hasAdditionalMatch = round2Matches.length > 0;
 
-    console.log(`\n🏅 Generating PEMULA Leaderboard:`);
-    console.log(`   Round 1 matches: ${round1Matches.length}`);
-    console.log(`   Round 2 matches: ${round2Matches.length}`);
-    console.log(`   Has Additional Match: ${hasAdditionalMatch}`);
-
-    // ========================================
-    // SCENARIO 1: GENAP (No Additional Match)
-    // ========================================
     if (!hasAdditionalMatch) {
-      console.log(`   📊 GENAP Scenario`);
       
       round1Matches.forEach((match, index) => {
         const hasScore = match.skor_a > 0 || match.skor_b > 0;
@@ -701,7 +692,6 @@ const generateLeaderboard = () => {
               id: winnerId
             });
             processedGold.add(winnerId);
-            console.log(`      Match ${index + 1} Winner → GOLD: ${getParticipantName(winner)}`);
           }
           
           // Loser → SILVER
@@ -712,7 +702,6 @@ const generateLeaderboard = () => {
               id: loserId
             });
             processedSilver.add(loserId);
-            console.log(`      Match ${index + 1} Loser → SILVER: ${getParticipantName(loser)}`);
           }
         }
       });
@@ -721,7 +710,6 @@ const generateLeaderboard = () => {
     // SCENARIO 2: GANJIL (Ada Additional Match)
     // ========================================
 else {
-  console.log(`   📊 GANJIL Scenario (Additional Match exists)`);
   
   const additionalMatch = round2Matches[0];
   const lastRound1Match = round1Matches[round1Matches.length - 1];
@@ -743,7 +731,6 @@ else {
         id: winner.id_peserta_kompetisi
       });
       processedGold.add(winner.id_peserta_kompetisi);
-      console.log(`      Additional Match Winner → GOLD: ${getParticipantName(winner)}`);
     }
     
     // Additional Match Loser → SILVER
@@ -754,7 +741,6 @@ else {
         id: loser.id_peserta_kompetisi
       });
       processedSilver.add(loser.id_peserta_kompetisi);
-      console.log(`      Additional Match Loser → SILVER: ${getParticipantName(loser)}`);
     }
   }
   
@@ -781,9 +767,7 @@ else {
             id: loserId
           });
           processedBronze.add(loserId);
-          console.log(`      Match ${index + 1} (Last) Loser → BRONZE: ${getParticipantName(loser)}`);
         }
-        console.log(`      Match ${index + 1} (Last) Winner → Goes to Additional Match: ${getParticipantName(winner)}`);
       } else {
         // ⭐ OTHER MATCHES (Match A, etc.)
         // Winner → GOLD (if not already processed)
@@ -794,7 +778,6 @@ else {
             id: winnerId
           });
           processedGold.add(winnerId);
-          console.log(`      Match ${index + 1} Winner → GOLD: ${getParticipantName(winner)}`);
         }
         
         // Loser → SILVER (if not already processed)
@@ -805,17 +788,11 @@ else {
             id: loserId
           });
           processedSilver.add(loserId);
-          console.log(`      Match ${index + 1} Loser → SILVER: ${getParticipantName(loser)}`);
         }
       }
     }
   });
 }
-
-    console.log(`\n   ✅ Final Leaderboard:`);
-    console.log(`      GOLD: ${leaderboard.gold.length}`);
-    console.log(`      SILVER: ${leaderboard.silver.length}`);
-    console.log(`      BRONZE: ${leaderboard.bronze.length}\n`);
     
     return leaderboard;
   };
@@ -858,13 +835,8 @@ const handleExportPDF = async () => {
     }
 
     if (!bracketElement) {
-      console.error('❌ Could not find bracket element with any method!');
       throw new Error('Bracket element not found. Please refresh and try again.');
     }
-
-    console.log('✅ Bracket element found:', bracketElement);
-    console.log('   classList:', bracketElement.classList);
-    console.log('   children:', bracketElement.children.length);
 
     // ✅ Ambil tanggal dari input manual
     const dateInput = document.getElementById('tournament-date-display') as HTMLInputElement;
@@ -1441,7 +1413,7 @@ return (
                 );
               })()}
               </div>
-                        <div className="w-full">
+                        <div className="w-full mt-10">
               <div className="bg-white rounded-lg shadow-md border overflow-hidden" style={{ borderColor: '#DC143C', maxWidth: '500px', margin: '0 auto' }}>
               <div className="px-4 py-3 border-b" style={{ backgroundColor: '#FFF5F5', borderColor: '#DC143C' }}>
                 <div className="flex items-center gap-2 justify-center">
