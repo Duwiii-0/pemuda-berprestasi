@@ -437,7 +437,7 @@ const transformPrestasiLeaderboard = (matches: any[]) => {
     : `${kompetisi.nama_event} - ${generateNamaKelas(kelasList.find(k => k.id_kelas_kejuaraan === selectedView)!)}`;
 
   return (
-    <section className="relative w-full min-h-screen overflow-hidden py-8 md:py-12 pt-24 sm:pt-28" style={{ backgroundColor: '#F5FBEF' }}>
+    <section className="relative w-full min-h-screen overflow-hidden py-8 md:py-12 pt-32 sm:pt-36 md:pt-40" style={{ backgroundColor: '#F5FBEF' }}>
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl relative z-10">
         {/* Header Section */}
         <div className="text-center space-y-4 sm:space-y-6 mb-8 sm:mb-12">
