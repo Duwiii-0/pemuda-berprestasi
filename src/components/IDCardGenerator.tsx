@@ -137,9 +137,19 @@ export const IDCardGenerator = ({ atlet, isEditing }: IDCardGeneratorProps) => {
     // Debug setiap peserta kompetisi
     if (atlet.peserta_kompetisi && atlet.peserta_kompetisi.length > 0) {
       atlet.peserta_kompetisi.forEach((peserta, index) => {
-        console.log(`Peserta ${index}:`, peserta);
+        console.log(`\n📋 Peserta ${index}:`);
+        console.log("Full peserta object:", peserta);
         console.log(`- Status: ${peserta.status}`);
         console.log(`- kelas_kejuaraan:`, peserta.kelas_kejuaraan);
+        
+        // Deep debug kelas_kejuaraan
+        if (peserta.kelas_kejuaraan) {
+          console.log(`  - cabang:`, peserta.kelas_kejuaraan.cabang);
+          console.log(`  - kelompok:`, peserta.kelas_kejuaraan.kelompok);
+          console.log(`  - kelas_berat:`, peserta.kelas_kejuaraan.kelas_berat);
+          console.log(`  - poomsae:`, peserta.kelas_kejuaraan.poomsae);
+          console.log(`  - kategori_event:`, peserta.kelas_kejuaraan.kategori_event);
+        }
       });
     }
     
