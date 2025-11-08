@@ -26,10 +26,18 @@ interface HariData {
   lapangan: LapanganData[];
 }
 
+interface MatchData {
+  nomor_antrian: number;
+  nomor_lapangan: string;
+  nama_atlet_a: string;
+  nama_atlet_b: string;
+}
+
 const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
   idKompetisi,
 }) => {
   const [hariList, setHariList] = useState<HariData[]>([]);
+  const [matchData, setMatchData] = useState<MatchData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selectedHari, setSelectedHari] = useState<string | null>(null);
@@ -62,9 +70,13 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
   useEffect(() => {
     if (!idKompetisi) return;
     fetchLiveData();
+    fetchMatchData();
 
     // Auto refresh setiap 10 detik
-    const interval = setInterval(fetchLiveData, 10000);
+    const interval = setInterval(() => {
+      fetchLiveData();
+      fetchMatchData();
+    }, 10000);
     return () => clearInterval(interval);
   }, [idKompetisi]);
 
@@ -114,6 +126,19 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchMatchData = async () => {
+    if (!idKompetisi) return;
+    try {
+      const res = await fetch(`/api/pertandingan/kompetisi/${idKompetisi}`);
+      const data = await res.json();
+      if (data.success) {
+        setMatchData(data.data);
+      }
+    } catch (error) {
+      console.error("Error fetching match data:", error);
     }
   };
 
@@ -217,9 +242,22 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
         {currentHari && currentHari.lapangan.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16 w-full">
             {currentHari.lapangan.map((lap) => {
-              const bertandingClass = lap.kelas_kejuaraan.find(
-                (kelas) => kelas.status_antrian === "bertanding"
+              const bertandingMatch = matchData.find(
+                (m) =>
+                  m.nomor_lapangan === lap.nama_lapangan &&
+                  m.nomor_antrian === lap.antrian?.bertanding
               );
+              const persiapanMatch = matchData.find(
+                (m) =>
+                  m.nomor_lapangan === lap.nama_lapangan &&
+                  m.nomor_antrian === lap.antrian?.persiapan
+              );
+              const pemanasanMatch = matchData.find(
+                (m) =>
+                  m.nomor_lapangan === lap.nama_lapangan &&
+                  m.nomor_antrian === lap.antrian?.pemanasan
+              );
+
               return (
                 <div
                   key={lap.id_lapangan}
@@ -248,6 +286,12 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
                         <span className="text-2xl font-semibold">
                           Bertanding
                         </span>
+                        {bertandingMatch && (
+                          <div className="text-center mt-2">
+                            <p>{bertandingMatch.nama_atlet_a}</p>
+                            <p>{bertandingMatch.nama_atlet_b}</p>
+                          </div>
+                        )}
                       </div>
                       <div className="flex flex-col items-center justify-center w-full text-orange-700 bg-orange-100 px-4 py-4 rounded-lg">
                         <span className="text-5xl font-bold mb-2">
@@ -256,6 +300,12 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
                         <span className="text-2xl font-semibold">
                           Persiapan
                         </span>
+                        {persiapanMatch && (
+                          <div className="text-center mt-2">
+                            <p>{persiapanMatch.nama_atlet_a}</p>
+                            <p>{persiapanMatch.nama_atlet_b}</p>
+                          </div>
+                        )}
                       </div>
                       <div className="flex flex-col items-center justify-center w-full text-yellow-700 bg-yellow-100 px-4 py-4 rounded-lg">
                         <span className="text-5xl font-bold mb-2">
@@ -264,6 +314,12 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
                         <span className="text-2xl font-semibold">
                           Pemanasan
                         </span>
+                        {pemanasanMatch && (
+                          <div className="text-center mt-2">
+                            <p>{pemanasanMatch.nama_atlet_a}</p>
+                            <p>{pemanasanMatch.nama_atlet_b}</p>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}

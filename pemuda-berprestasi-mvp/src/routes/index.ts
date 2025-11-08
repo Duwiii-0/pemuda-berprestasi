@@ -8,6 +8,7 @@ import dojangRoutes from './dojang';
 import atletRoutes from './atlet';
 import kompetisiRoutes from './kompetisi';
 import publicRoutes from './public';
+import pertandinganRoutes from './pertandingan';
 
 const router = Router();
 const API_VERSION = '/api';
@@ -44,6 +45,7 @@ router.use(`${API_VERSION}/pelatih`, pelatihRoutes);
 router.use(`${API_VERSION}/dojang`, dojangRoutes);
 router.use(`${API_VERSION}/atlet`, atletRoutes);
 router.use(`${API_VERSION}/kompetisi`, kompetisiRoutes);
+router.use(`${API_VERSION}/pertandingan`, pertandinganRoutes);
 
 // Health check endpoint
 router.get('/health', (req, res) => {
