@@ -375,7 +375,7 @@ export const exportBracketFromData = async (
     logoEvent?: string;
     namaKejuaraan?: string;
     kelas?: string;
-    tanggalTanding?: string; // ✅ Format: "5 November 2025" (manual input)
+    tanggalTanding?: string; 
     jumlahKompetitor?: number;
     lokasi?: string;
   }
@@ -424,15 +424,25 @@ export const exportBracketFromData = async (
     let displayWidth = maxWidth;
     let displayHeight = displayWidth / imgAspectRatio;
 
-const zoom = 1.4;
+// Hitung total peserta dalam bracket
+const totalPeserta = kelasData?.peserta_kompetisi?.length || 0;
 
+// Tentukan zoom factor dinamis
+let zoom = 1.0;
+if (totalPeserta <= 8) zoom = 1.6;
+else if (totalPeserta <= 16) zoom = 1.5;
+else if (totalPeserta <= 32) zoom = 1.3;
+else zoom = 1.2;
+
+// --- Hitung ulang ukuran gambar ---
 displayWidth *= zoom;
 displayHeight *= zoom;
 
-// Recalculate posisi biar tetap di tengah
+// Posisi tengah halaman
 const x = (PAGE_WIDTH - displayWidth) / 2;
 const y = (PAGE_HEIGHT - displayHeight) / 2;
 
+// Tambahkan gambar ke PDF
 doc.addImage(
   bracketImg.src,
   'JPEG',
