@@ -424,28 +424,51 @@ export const exportBracketFromData = async (
     let displayWidth = maxWidth;
     let displayHeight = displayWidth / imgAspectRatio;
 
+// Hitung total peserta dalam bracket
 const totalPeserta = kelasData?.peserta_kompetisi?.length || 0;
 
-// ✅ Deteksi apakah ini bracket Prestasi (cek dari kelompok)
-const isPrestasi = kelasData?.kelompok?.nama_kelompok?.toLowerCase().includes('prestasi') 
-  || kelasData?.kelompok?.nama_kelompok?.toLowerCase() === 'poomsae'
-  || kelasData?.kelompok?.tipe_pertandingan === 'POOMSAE';
+// 🔍 DEBUG: Lihat struktur data kelasData
+console.log('🔍 DEBUG kelasData:', {
+  kelompok: kelasData?.kelompok,
+  kelas_berat: kelasData?.kelas_berat,
+  poomsae: kelasData?.poomsae,
+  kompetisi: kelasData?.kompetisi,
+  fullData: kelasData
+});
 
-// ✅ ZOOM LOGIC: Hanya zoom in untuk PRESTASI, Pemula tetap 1.0
+// ✅ Deteksi bracket Prestasi dengan berbagai cara
+const isPrestasi = 
+  // Cek dari kelompok
+  kelasData?.kelompok?.nama_kelompok?.toLowerCase().includes('prestasi') ||
+  kelasData?.kelompok?.nama_kelompok?.toLowerCase().includes('poomsae') ||
+  // Cek dari kelas_berat
+  kelasData?.kelas_berat?.kategori?.toLowerCase().includes('prestasi') ||
+  // Cek jika ada data poomsae (berarti prestasi)
+  (kelasData?.poomsae !== null && kelasData?.poomsae !== undefined) ||
+  // Cek dari kompetisi
+  kelasData?.kompetisi?.jenis_kompetisi?.toLowerCase().includes('prestasi') ||
+  // Fallback: jika tidak ada kelas_berat tapi ada poomsae
+  (!kelasData?.kelas_berat && kelasData?.poomsae);
+
+console.log('✅ isPrestasi:', isPrestasi);
+
+// ✅ ZOOM LOGIC: Hanya zoom in untuk PRESTASI, Pemula diperkecil
 let zoom = 1.0;
 
 if (isPrestasi) {
-  // Zoom dinamis untuk PRESTASI
+  // Zoom dinamis untuk PRESTASI (zoom in)
   if (totalPeserta <= 8) zoom = 2.0;
   else if (totalPeserta <= 16) zoom = 1.6;
   else if (totalPeserta <= 32) zoom = 1.4;
   else zoom = 1.2;
+  console.log('📏 PRESTASI zoom:', zoom);
 } else {
-  // ✅ Zoom diperkecil untuk PEMULA (agar lebih banyak terlihat)
+  // ✅ Zoom diperkecil untuk PEMULA (zoom out)
   if (totalPeserta <= 8) zoom = 0.85;
   else if (totalPeserta <= 16) zoom = 0.75;
   else if (totalPeserta <= 32) zoom = 0.65;
   else zoom = 0.55;
+  console.log('📏 PEMULA zoom:', zoom);
 }
 
 // Margin bawah header
