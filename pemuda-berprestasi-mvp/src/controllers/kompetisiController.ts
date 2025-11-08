@@ -1163,7 +1163,7 @@ static async conductDraw(req: Request, res: Response) {
 }
 
 static async getMedalTally(req: Request, res: Response) {
-  try {
+    try {
     const idKompetisi = parseInt(req.params.id);
 
     if (isNaN(idKompetisi)) {
@@ -1259,43 +1259,55 @@ static async getMedalTally(req: Request, res: Response) {
       }
 
       // Transform matches ke format yang expected frontend
-      const matches = bagan.match.map(match => ({
-        id: match.id_match,
-        round: match.ronde,
-        scoreA: match.skor_a,
-        scoreB: match.skor_b,
-        participant1: match.peserta_a ? {
-          id: match.peserta_a.id_peserta_kompetisi,
-          atletId: match.peserta_a.id_atlet,
-          name: match.peserta_a.is_team 
-            ? match.peserta_a.anggota_tim?.map(t => t.atlet.nama_atlet).join(', ') || 'Team'
-            : match.peserta_a.atlet?.nama_atlet || '',
-          dojang: match.peserta_a.atlet?.dojang?.nama_dojang || '',
-          dojo: match.peserta_a.atlet?.dojang?.nama_dojang || '',
-          isTeam: match.peserta_a.is_team,
-          teamMembers: match.peserta_a.is_team 
-            ? match.peserta_a.anggota_tim?.map(t => t.atlet.nama_atlet) || []
-            : undefined
-        } : null,
-        participant2: match.peserta_b ? {
-          id: match.peserta_b.id_peserta_kompetisi,
-          atletId: match.peserta_b.id_atlet,
-          name: match.peserta_b.is_team 
-            ? match.peserta_b.anggota_tim?.map(t => t.atlet.nama_atlet).join(', ') || 'Team'
-            : match.peserta_b.atlet?.nama_atlet || '',
-          dojang: match.peserta_b.atlet?.dojang?.nama_dojang || '',
-          dojo: match.peserta_b.atlet?.dojang?.nama_dojang || '',
-          isTeam: match.peserta_b.is_team,
-          teamMembers: match.peserta_b.is_team 
-            ? match.peserta_b.anggota_tim?.map(t => t.atlet.nama_atlet) || []
-            : undefined
-        } : null,
-        tanggalPertandingan: match.tanggal_pertandingan,
-        nomorPartai: match.nomor_partai,
-        nomorAntrian: match.nomor_antrian,
-        nomorLapangan: match.nomor_lapangan,
-        venue: match.venue ? match.venue.nama_venue : null
-      }));
+      const matches = bagan.match.map(match => {
+        // Helper untuk get participant name
+        const getParticipantName = (peserta: any) => {
+          if (!peserta) return '';
+          if (peserta.is_team) {
+            return peserta.anggota_tim?.map((t: any) => t.atlet.nama_atlet).join(', ') || 'Team';
+          }
+          return peserta.atlet?.nama_atlet || '';
+        };
+
+        // Helper untuk get dojang name
+        const getDojangName = (peserta: any) => {
+          if (!peserta) return '';
+          return peserta.atlet?.dojang?.nama_dojang || '';
+        };
+
+        return {
+          id: match.id_match,
+          round: match.ronde,
+          scoreA: match.skor_a,
+          scoreB: match.skor_b,
+          participant1: match.peserta_a ? {
+            id: match.peserta_a.id_peserta_kompetisi,
+            atletId: match.peserta_a.id_atlet,
+            name: getParticipantName(match.peserta_a),
+            dojang: getDojangName(match.peserta_a),
+            dojo: getDojangName(match.peserta_a),
+            isTeam: match.peserta_a.is_team,
+            teamMembers: match.peserta_a.is_team 
+              ? match.peserta_a.anggota_tim?.map((t: any) => t.atlet.nama_atlet) || []
+              : undefined
+          } : null,
+          participant2: match.peserta_b ? {
+            id: match.peserta_b.id_peserta_kompetisi,
+            atletId: match.peserta_b.id_atlet,
+            name: getParticipantName(match.peserta_b),
+            dojang: getDojangName(match.peserta_b),
+            dojo: getDojangName(match.peserta_b),
+            isTeam: match.peserta_b.is_team,
+            teamMembers: match.peserta_b.is_team 
+              ? match.peserta_b.anggota_tim?.map((t: any) => t.atlet.nama_atlet) || []
+              : undefined
+          } : null,
+          tanggalPertandingan: match.tanggal_pertandingan,
+          nomorPartai: match.nomor_partai,
+          nomorAntrian: match.nomor_antrian,
+          nomorLapangan: match.nomor_lapangan
+        };
+      });
 
       return {
         ...kelas,
