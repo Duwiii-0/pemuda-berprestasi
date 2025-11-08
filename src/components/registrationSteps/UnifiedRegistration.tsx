@@ -197,6 +197,7 @@ const UnifiedRegistration = ({
     const kelasFilter: any = {
       styleType: formData.styleType,
       categoryType: formData.categoryType,
+      ...(formData.selectedPoomsae ? { poomsaeName: formData.selectedPoomsae.value } : {}), // ✅ ADDED: Explicitly include poomsaeName
     };
 
     // Tentukan kelompokId otomatis jika POOMSAE pemula
