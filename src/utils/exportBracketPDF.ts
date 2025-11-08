@@ -424,27 +424,25 @@ export const exportBracketFromData = async (
     let displayWidth = maxWidth;
     let displayHeight = displayWidth / imgAspectRatio;
 
-    if (displayHeight > maxHeight) {
-      displayHeight = maxHeight;
-      displayWidth = displayHeight * imgAspectRatio;
-    }
+const zoom = 1.4;
 
-    const centerX = MARGIN_LEFT + (maxWidth / 2);
-    const centerY = contentStartY + (maxHeight / 2);
-    const x = centerX - (displayWidth / 2);
-    const y = centerY - (displayHeight / 2);
+displayWidth *= zoom;
+displayHeight *= zoom;
 
-    // ✅ Add as JPEG (smaller size)
-    doc.addImage(
-      bracketImg.src, 
-      'JPEG', 
-      x, 
-      y, 
-      displayWidth, 
-      displayHeight, 
-      undefined, 
-      'FAST'
-    );
+// Recalculate posisi biar tetap di tengah
+const x = (PAGE_WIDTH - displayWidth) / 2;
+const y = (PAGE_HEIGHT - displayHeight) / 2;
+
+doc.addImage(
+  bracketImg.src,
+  'JPEG',
+  x,
+  y,
+  displayWidth,
+  displayHeight,
+  undefined,
+  'FAST'
+);
 
     const dateStr = new Date().toISOString().split('T')[0];
     const filename = `Bracket_${config.eventName.replace(/[^a-z0-9]/gi, '_')}_${config.categoryName.replace(/ /g, '_')}_${dateStr}.pdf`;
