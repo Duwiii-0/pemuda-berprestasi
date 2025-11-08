@@ -49,6 +49,7 @@ const MedalTallyPage: React.FC<{ idKompetisi?: number }> = ({ idKompetisi }) => 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedView, setSelectedView] = useState<'overall' | number>('overall');
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
   useEffect(() => {
     if (!idKompetisi) return;
@@ -436,6 +437,14 @@ const transformPrestasiLeaderboard = (matches: any[]) => {
     ? `${kompetisi.nama_event} - Overall`
     : `${kompetisi.nama_event} - ${generateNamaKelas(kelasList.find(k => k.id_kelas_kejuaraan === selectedView)!)}`;
 
+  const handleViewChange = (newView: 'overall' | number) => {
+    setIsTransitioning(true);
+    setTimeout(() => {
+      setSelectedView(newView);
+      setIsTransitioning(false);
+    }, 150);
+  };
+
   return (
     <section className="relative w-full min-h-screen overflow-hidden py-8 md:py-12 pt-32 sm:pt-36 md:pt-40" style={{ backgroundColor: '#F5FBEF' }}>
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl relative z-10">
@@ -501,7 +510,7 @@ const transformPrestasiLeaderboard = (matches: any[]) => {
           <div className="relative">
             <select
               value={selectedView}
-              onChange={(e) => setSelectedView(e.target.value === 'overall' ? 'overall' : Number(e.target.value))}
+              onChange={(e) => handleViewChange(e.target.value === 'overall' ? 'overall' : Number(e.target.value))}
               className="w-full px-4 sm:px-6 py-3 sm:py-4 rounded-xl font-medium text-sm sm:text-base appearance-none cursor-pointer shadow-lg focus:outline-none focus:ring-2 transition-all"
               style={{
                 backgroundColor: '#990D35',
@@ -524,9 +533,15 @@ const transformPrestasiLeaderboard = (matches: any[]) => {
           </div>
         </div>
 
-        {/* Medal Table */}
+        {/* Medal Table with Animation */}
         {currentLeaderboard && (
-          <div className="max-w-5xl mx-auto">
+          <div 
+            className={`max-w-5xl mx-auto mb-12 transition-all duration-300 ${
+              isTransitioning 
+                ? 'opacity-0 transform scale-95' 
+                : 'opacity-100 transform scale-100'
+            }`}
+          >
             <DojangMedalTable
               leaderboard={currentLeaderboard}
               eventName={currentEventName}

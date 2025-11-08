@@ -75,13 +75,13 @@ const NavbarLomba = ({ onLogoutRequest }: { onLogoutRequest: () => void }) => {
   }, [isBurgerOpen]);
 
   // ✅ UPDATED: Navigation items with Medal Tally
-  const navItems = [
-    { to: "/event/home", label: "Beranda" },
-    { to: "/event/timeline", label: "Timeline" },
-    { to: "/event/faq", label: "FAQ" },
-    { to: "/event/live-streaming", label: "Live Streaming" },
-    { to: `/event/medal-tally/${idKompetisi}`, label: "Medal Tally", icon: Medal }, // ✅ NEW
-  ];
+const navItems = [
+  { to: "/event/home", label: "Beranda" },
+  { to: "/event/timeline", label: "Timeline" },
+  { to: "/event/faq", label: "FAQ" },
+  { to: "/event/live-streaming", label: "Live Streaming" },
+  // { to: `/event/medal-tally/${idKompetisi}`, label: "Medal Tally", icon: Medal }, // ✅ COMMENTED - Akan diaktifkan nanti
+];
 
   const getDashboardLink = () => {
     if (user?.role === "PELATIH")
