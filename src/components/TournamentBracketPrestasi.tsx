@@ -1150,7 +1150,6 @@ const renderCenterFinal = () => {
         className="round-header"
         style={{
           width: `${CARD_WIDTH}px`,
-          marginBottom: '20px',
           textAlign: 'center',
           position: 'relative',
           zIndex: 20,
@@ -1248,7 +1247,7 @@ const renderCenterFinal = () => {
           id="prestasi-leaderboard"
           style={{
             width: '400px', // ✅ Lebih lebar dari CARD_WIDTH (280px)
-            marginTop: `${finalYPosition + CARD_HEIGHT - 320}px`, // ✅ 60px di bawah final card
+            marginTop: `${finalYPosition + CARD_HEIGHT - 420}px`, // ✅ 60px di bawah final card
             position: 'relative',
             zIndex: 20
           }}
