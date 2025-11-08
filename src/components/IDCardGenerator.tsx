@@ -23,10 +23,10 @@ const OVERLAY_COORDS = {
   
   // Photo box (kotak besar kiri) - koordinat FIXED berdasarkan template
   photo: {
-    x: 26,           // Posisi X foto
+    x: 25.5,           // Posisi X foto
     y: 85,           // Posisi Y foto (dari atas)
     width: 77,       // Lebar foto FIXED
-    height: 115,      // Tinggi foto FIXED
+    height: 117,      // Tinggi foto FIXED
   },
   
   nama: {
@@ -70,14 +70,10 @@ const loadImageAsBase64 = async (url: string, rounded = false): Promise<string> 
       canvas.height = h;
 
       if (rounded) {
-        const radius = Math.min(w, h) * 0.15; // radius 10% dari ukuran gambar
+        const radius = Math.min(w, h) * 0.10; // radius 15% dari ukuran gambar
         ctx.clearRect(0, 0, w, h);
 
-        // 💡 Tambahkan background putih
-        ctx.fillStyle = "#FFFFFF";
-        ctx.fillRect(0, 0, w, h);
-
-        // 🟢 Buat path rounded dan clip
+        // 🟢 Buat path rounded dan clip TANPA background putih
         ctx.beginPath();
         ctx.moveTo(radius, 0);
         ctx.lineTo(w - radius, 0);
@@ -92,14 +88,17 @@ const loadImageAsBase64 = async (url: string, rounded = false): Promise<string> 
         ctx.clip();
       }
 
-      // 🖼️ Gambar foto di atas background putih + clip
+      // 🖼️ Gambar foto di atas canvas transparan
       ctx.drawImage(img, 0, 0, w, h);
-      resolve(canvas.toDataURL("image/jpeg", 0.95));
+
+      // 👉 Gunakan PNG biar transparansi tidak hilang
+      resolve(canvas.toDataURL("image/png"));
     };
     img.onerror = () => reject(new Error(`Failed to load image: ${url}`));
     img.src = url;
   });
 };
+
 
   const generateIDCard = async () => {
     setIsGenerating(true);
