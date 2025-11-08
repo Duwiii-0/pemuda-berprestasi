@@ -18,14 +18,23 @@ interface Atlet {
     provinsi?: string;
   };
   peserta_kompetisi?: Array<{
+    id_peserta_kompetisi?: number;
+    status?: string;
     kelas_kejuaraan?: {
+      cabang?: string;
+      kelompok?: {
+        nama_kelompok?: string;
+      };
       kelas_berat?: {
         nama_kelas?: string;
       };
+      poomsae?: {
+        nama_kelas?: string;
+      };
+      kategori_event?: {
+        nama_kategori?: string;
+      };
     };
-    kelas_berat?: {
-      nama_kelas?: string;
-    } | string;
   }>;
 }
 
@@ -125,29 +134,89 @@ export const IDCardGenerator = ({ atlet, isEditing }: IDCardGeneratorProps) => {
     console.log("dojang object:", atlet.dojang);
     console.log("peserta_kompetisi:", atlet.peserta_kompetisi);
     
+    // Debug setiap peserta kompetisi
+    if (atlet.peserta_kompetisi && atlet.peserta_kompetisi.length > 0) {
+      atlet.peserta_kompetisi.forEach((peserta, index) => {
+        console.log(`Peserta ${index}:`, peserta);
+        console.log(`- Status: ${peserta.status}`);
+        console.log(`- kelas_kejuaraan:`, peserta.kelas_kejuaraan);
+      });
+    }
+    
     // ✅ Ambil dojang_name (sudah ada di nested object)
     const dojangName = atlet.dojang_name || 
                        atlet.dojang?.nama_dojang || 
                        "-";
     
-    // ✅ Ambil kelas_berat dari peserta_kompetisi (kompetisi terakhir/terbaru)
-    let kelasBerat = atlet.kelas_berat || "-";
+    // ✅ Ambil kelas dari peserta_kompetisi yang APPROVED (prioritas tertinggi)
+    let kelasInfo = "";
     
-    // Jika ada peserta_kompetisi, ambil dari sana
     if (atlet.peserta_kompetisi && atlet.peserta_kompetisi.length > 0) {
-      // Ambil kompetisi terakhir
-      const latestPeserta = atlet.peserta_kompetisi[atlet.peserta_kompetisi.length - 1];
+      // Prioritas: APPROVED > PENDING > REJECTED
+      // Cari yang APPROVED dulu
+      let targetPeserta = atlet.peserta_kompetisi.find(p => p.status === 'APPROVED');
       
-      // Coba ambil dari berbagai struktur
-      kelasBerat = latestPeserta.kelas_kejuaraan?.kelas_berat?.nama_kelas ||
-                   (typeof latestPeserta.kelas_berat === 'object' 
-                     ? latestPeserta.kelas_berat?.nama_kelas 
-                     : latestPeserta.kelas_berat) ||
-                   "-";
+      // Jika tidak ada APPROVED, ambil PENDING
+      if (!targetPeserta) {
+        targetPeserta = atlet.peserta_kompetisi.find(p => p.status === 'PENDING');
+      }
+      
+      // Jika tidak ada PENDING, ambil yang terakhir (REJECTED)
+      if (!targetPeserta) {
+        targetPeserta = atlet.peserta_kompetisi[atlet.peserta_kompetisi.length - 1];
+      }
+      
+      if (targetPeserta && targetPeserta.kelas_kejuaraan) {
+        const kj = targetPeserta.kelas_kejuaraan;
+        const cabang = kj.cabang || "";
+        
+        // Ambil kelompok usia
+        const kelompokUsia = kj.kelompok?.nama_kelompok || "";
+        
+        // Ambil kategori event (pemula/prestasi)
+        const kategoriEvent = kj.kategori_event?.nama_kategori || "";
+        
+        // Ambil kelas berat (untuk KYORUGI) atau kelas poomsae (untuk POOMSAE)
+        let kelasDetail = "";
+        if (cabang === "KYORUGI") {
+          kelasDetail = kj.kelas_berat?.nama_kelas || "";
+        } else if (cabang === "POOMSAE") {
+          kelasDetail = kj.poomsae?.nama_kelas || "";
+        }
+        
+        // Format: Kelompok Usia - Kategori - Kelas Detail
+        // Contoh: "Super pracadet - Pemula - Under 19 kg"
+        // Contoh: "Senior - Prestasi - Individu"
+        const parts = [];
+        if (kelompokUsia && kelompokUsia.toLowerCase() !== 'pemula') {
+          parts.push(kelompokUsia);
+        }
+        if (kategoriEvent) {
+          parts.push(kategoriEvent);
+        }
+        if (kelasDetail) {
+          parts.push(kelasDetail);
+        }
+        
+        kelasInfo = parts.join(" - ") || "-";
+        
+        console.log("=== EXTRACTED CLASS INFO ===");
+        console.log("Selected Peserta Status:", targetPeserta.status);
+        console.log("Cabang:", cabang);
+        console.log("Kelompok Usia:", kelompokUsia);
+        console.log("Kategori Event:", kategoriEvent);
+        console.log("Kelas Detail:", kelasDetail);
+        console.log("Final kelasInfo:", kelasInfo);
+      }
     }
     
-    console.log("kelas_berat (extracted):", kelasBerat);
+    // Fallback jika tidak ada peserta kompetisi
+    if (!kelasInfo || kelasInfo === "") {
+      kelasInfo = atlet.kelas_berat || "-";
+    }
+    
     console.log("dojang_name (extracted):", dojangName);
+    console.log("kelas_info (final):", kelasInfo);
     console.log("========================");
 
     try {
@@ -241,8 +310,8 @@ export const IDCardGenerator = ({ atlet, isEditing }: IDCardGeneratorProps) => {
       // Nama
       pdf.text(atlet.nama_atlet, c.nama.x, c.nama.y);
 
-      // Kelas - gunakan variable yang sudah di-extract
-      pdf.text(kelasBerat, c.kelas.x, c.kelas.y);
+      // Kelas - gunakan kelasInfo yang sudah di-extract
+      pdf.text(kelasInfo, c.kelas.x, c.kelas.y);
 
       // Kontingen - gunakan variable yang sudah di-extract
       pdf.text(dojangName, c.kontingen.x, c.kontingen.y);
@@ -255,16 +324,16 @@ export const IDCardGenerator = ({ atlet, isEditing }: IDCardGeneratorProps) => {
         keywords: JSON.stringify({
           nama: atlet.nama_atlet,
           nama_coords: { x: c.nama.x, y: c.nama.y },
-          kelas: kelasBerat,
+          kelas: kelasInfo,
           kelas_coords: { x: c.kelas.x, y: c.kelas.y },
           kontingen: dojangName,
           kontingen_coords: { x: c.kontingen.x, y: c.kontingen.y },
           foto_path: atlet.pas_foto_path || "",
           foto_coords: { x: c.photo.x, y: c.photo.y, w: c.photo.width, h: c.photo.height },
           template: "e-idcard_sriwijaya.jpg",
-          version: "3.1"
+          version: "3.2"
         }),
-        creator: "ID Card Generator v3.1",
+        creator: "ID Card Generator v3.2",
       });
 
       // Preview & Download
