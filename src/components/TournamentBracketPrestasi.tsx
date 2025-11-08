@@ -1845,11 +1845,9 @@ const calculateCardPosition = (
     {/* RIGHT BRACKET */}
     {renderBracketSide(getRightMatches(), 'right', 1)}
   </div>
-</div>
-
-            {/* Leaderboard section tetap di luar export area */}
+  {/* Leaderboard section tetap di luar export area */}
             {prestasiLeaderboard && (
-              <div className="mt-8" id="prestasi-leaderboard">
+              <div className="mt-10" id="prestasi-leaderboard">
                 <div className="max-w-4xl mx-auto">
                   <div className="bg-white rounded-lg shadow-lg border-2" style={{ borderColor: '#990D35' }}>
                     <div className="p-6 border-b" style={{ backgroundColor: 'rgba(153, 13, 53, 0.05)', borderColor: '#990D35' }}>
@@ -1988,6 +1986,7 @@ const calculateCardPosition = (
                 </div>
               </div>
             )}
+</div>
           </div>
         </div>
       ) : (
