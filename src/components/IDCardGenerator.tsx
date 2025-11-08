@@ -26,7 +26,7 @@ const OVERLAY_COORDS = {
     x: 25.5,           // Posisi X foto
     y: 103,           // Posisi Y foto (dari atas)
     width: 77,       // Lebar foto FIXED
-    height: 107,      // Tinggi foto FIXED
+    height: 109,      // Tinggi foto FIXED
   },
   
   nama: {
