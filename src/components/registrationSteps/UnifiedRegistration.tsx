@@ -819,7 +819,6 @@ const UnifiedRegistration = ({
                       setFormData({
                         ...formData,
                         selectedPoomsae: value,
-                        selectedGender: null, // Reset gender when poomsae changes
                         selectedAtlit: null,
                         selectedAtlit2: null, // ✅ ADDED
                       })
