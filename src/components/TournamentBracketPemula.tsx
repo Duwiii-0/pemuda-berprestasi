@@ -1444,7 +1444,7 @@ return (
             </div>
             {/* BOTTOM: Leaderboard */}
           <div className="w-full">
-            <div ref={leaderboardRef} className="bg-white rounded-lg shadow-md border overflow-hidden" style={{ borderColor: '#DC143C', maxWidth: '500px', margin: '0 auto' }}>
+            <div className="bg-white rounded-lg shadow-md border overflow-hidden" style={{ borderColor: '#DC143C', maxWidth: '500px', margin: '0 auto' }}>
               <div className="px-4 py-3 border-b" style={{ backgroundColor: '#FFF5F5', borderColor: '#DC143C' }}>
                 <div className="flex items-center gap-2 justify-center">
                   <Trophy size={24} style={{ color: '#DC143C' }} />
