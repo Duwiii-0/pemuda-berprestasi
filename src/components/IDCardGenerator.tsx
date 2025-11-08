@@ -10,16 +10,23 @@ interface Atlet {
   dojang_name?: string;
   kelas_berat?: string;
   belt?: string;
-  // Tambahan struktur nested jika data dari API berbeda
+  // Tambahan struktur nested dari API
   dojang?: {
-    nama_dojang?: string;
     id_dojang?: number;
+    nama_dojang?: string;
+    kota?: string;
+    provinsi?: string;
   };
-  kelas_kejuaraan?: {
+  peserta_kompetisi?: Array<{
+    kelas_kejuaraan?: {
+      kelas_berat?: {
+        nama_kelas?: string;
+      };
+    };
     kelas_berat?: {
       nama_kelas?: string;
-    };
-  };
+    } | string;
+  }>;
 }
 
 interface IDCardGeneratorProps {
@@ -64,51 +71,50 @@ export const IDCardGenerator = ({ atlet, isEditing }: IDCardGeneratorProps) => {
     return `${process.env.REACT_APP_API_BASE_URL || 'http://cjvmanagementevent.com'}/uploads/atlet/pas_foto/${filename}`;
   };
 
-const loadImageAsBase64 = async (url: string, rounded = false): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.onload = () => {
-      const canvas = document.createElement("canvas");
-      const ctx = canvas.getContext("2d");
+  const loadImageAsBase64 = async (url: string, rounded = false): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
 
-      if (!ctx) return reject(new Error("Canvas context not available"));
+        if (!ctx) return reject(new Error("Canvas context not available"));
 
-      const w = img.width;
-      const h = img.height;
-      canvas.width = w;
-      canvas.height = h;
+        const w = img.width;
+        const h = img.height;
+        canvas.width = w;
+        canvas.height = h;
 
-      if (rounded) {
-        const radius = Math.min(w, h) * 0.10; // radius 15% dari ukuran gambar
-        ctx.clearRect(0, 0, w, h);
+        if (rounded) {
+          const radius = Math.min(w, h) * 0.10; // radius 10% dari ukuran gambar
+          ctx.clearRect(0, 0, w, h);
 
-        // 🟢 Buat path rounded dan clip TANPA background putih
-        ctx.beginPath();
-        ctx.moveTo(radius, 0);
-        ctx.lineTo(w - radius, 0);
-        ctx.quadraticCurveTo(w, 0, w, radius);
-        ctx.lineTo(w, h - radius);
-        ctx.quadraticCurveTo(w, h, w - radius, h);
-        ctx.lineTo(radius, h);
-        ctx.quadraticCurveTo(0, h, 0, h - radius);
-        ctx.lineTo(0, radius);
-        ctx.quadraticCurveTo(0, 0, radius, 0);
-        ctx.closePath();
-        ctx.clip();
-      }
+          // Buat path rounded dan clip TANPA background putih
+          ctx.beginPath();
+          ctx.moveTo(radius, 0);
+          ctx.lineTo(w - radius, 0);
+          ctx.quadraticCurveTo(w, 0, w, radius);
+          ctx.lineTo(w, h - radius);
+          ctx.quadraticCurveTo(w, h, w - radius, h);
+          ctx.lineTo(radius, h);
+          ctx.quadraticCurveTo(0, h, 0, h - radius);
+          ctx.lineTo(0, radius);
+          ctx.quadraticCurveTo(0, 0, radius, 0);
+          ctx.closePath();
+          ctx.clip();
+        }
 
-      // 🖼️ Gambar foto di atas canvas transparan
-      ctx.drawImage(img, 0, 0, w, h);
+        // Gambar foto di atas canvas transparan
+        ctx.drawImage(img, 0, 0, w, h);
 
-      // 👉 Gunakan PNG biar transparansi tidak hilang
-      resolve(canvas.toDataURL("image/png"));
-    };
-    img.onerror = () => reject(new Error(`Failed to load image: ${url}`));
-    img.src = url;
-  });
-};
-
+        // Gunakan PNG biar transparansi tidak hilang
+        resolve(canvas.toDataURL("image/png"));
+      };
+      img.onerror = () => reject(new Error(`Failed to load image: ${url}`));
+      img.src = url;
+    });
+  };
 
   const generateIDCard = async () => {
     setIsGenerating(true);
@@ -116,16 +122,29 @@ const loadImageAsBase64 = async (url: string, rounded = false): Promise<string> 
     console.log("=== DEBUG ATLET DATA ===");
     console.log("Full atlet object:", atlet);
     console.log("nama_atlet:", atlet.nama_atlet);
+    console.log("dojang object:", atlet.dojang);
+    console.log("peserta_kompetisi:", atlet.peserta_kompetisi);
     
-    // ✅ Ambil kelas_berat dari berbagai kemungkinan struktur data
-    const kelasBerat = atlet.kelas_berat || 
-                       atlet.kelas_kejuaraan?.kelas_berat?.nama_kelas || 
-                       "-";
-    
-    // ✅ Ambil dojang_name dari berbagai kemungkinan struktur data
+    // ✅ Ambil dojang_name (sudah ada di nested object)
     const dojangName = atlet.dojang_name || 
                        atlet.dojang?.nama_dojang || 
                        "-";
+    
+    // ✅ Ambil kelas_berat dari peserta_kompetisi (kompetisi terakhir/terbaru)
+    let kelasBerat = atlet.kelas_berat || "-";
+    
+    // Jika ada peserta_kompetisi, ambil dari sana
+    if (atlet.peserta_kompetisi && atlet.peserta_kompetisi.length > 0) {
+      // Ambil kompetisi terakhir
+      const latestPeserta = atlet.peserta_kompetisi[atlet.peserta_kompetisi.length - 1];
+      
+      // Coba ambil dari berbagai struktur
+      kelasBerat = latestPeserta.kelas_kejuaraan?.kelas_berat?.nama_kelas ||
+                   (typeof latestPeserta.kelas_berat === 'object' 
+                     ? latestPeserta.kelas_berat?.nama_kelas 
+                     : latestPeserta.kelas_berat) ||
+                   "-";
+    }
     
     console.log("kelas_berat (extracted):", kelasBerat);
     console.log("dojang_name (extracted):", dojangName);
@@ -144,7 +163,6 @@ const loadImageAsBase64 = async (url: string, rounded = false): Promise<string> 
       try {
         const templateImg = "/templates/e-idcard_sriwijaya.jpg";
         const templateBase64 = await loadImageAsBase64(templateImg);
-        
         
         // Paste template sebagai background (full page A4)
         pdf.addImage(
@@ -175,12 +193,11 @@ const loadImageAsBase64 = async (url: string, rounded = false): Promise<string> 
           const photoUrl = getPhotoUrl(atlet.pas_foto_path);
           const base64Photo = await loadImageAsBase64(photoUrl, true); // true => aktifkan rounded
 
-          
           // Paste foto atlet dengan ukuran FIXED di koordinat yang sudah ditentukan
           // Menggunakan "FAST" compression untuk hasil optimal
           pdf.addImage(
             base64Photo,
-            "JPEG",
+            "PNG",
             c.photo.x,
             c.photo.y,
             c.photo.width,    // Fixed width
@@ -245,9 +262,9 @@ const loadImageAsBase64 = async (url: string, rounded = false): Promise<string> 
           foto_path: atlet.pas_foto_path || "",
           foto_coords: { x: c.photo.x, y: c.photo.y, w: c.photo.width, h: c.photo.height },
           template: "e-idcard_sriwijaya.jpg",
-          version: "3.0"
+          version: "3.1"
         }),
-        creator: "ID Card Generator v3.0",
+        creator: "ID Card Generator v3.1",
       });
 
       // Preview & Download
