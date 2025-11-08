@@ -424,23 +424,28 @@ export const exportBracketFromData = async (
     let displayWidth = maxWidth;
     let displayHeight = displayWidth / imgAspectRatio;
 
-// Hitung total peserta dalam bracket
 const totalPeserta = kelasData?.peserta_kompetisi?.length || 0;
 
-// Deteksi apakah ini bracket Prestasi
-const isPrestasi = kelasData?.tipe?.toLowerCase() === 'prestasi' 
-  || kelasData?.kategori?.toLowerCase() === 'prestasi'
-  || kelasData?.jenis === 'PRESTASI';
+// ✅ Deteksi apakah ini bracket Prestasi (cek dari kelompok)
+const isPrestasi = kelasData?.kelompok?.nama_kelompok?.toLowerCase().includes('prestasi') 
+  || kelasData?.kelompok?.nama_kelompok?.toLowerCase() === 'poomsae'
+  || kelasData?.kelompok?.tipe_pertandingan === 'POOMSAE';
 
-// Default zoom
+// ✅ ZOOM LOGIC: Hanya zoom in untuk PRESTASI, Pemula tetap 1.0
 let zoom = 1.0;
 
-// ✅ Terapkan zoom dinamis hanya untuk PRESTASI
 if (isPrestasi) {
+  // Zoom dinamis untuk PRESTASI
   if (totalPeserta <= 8) zoom = 2.0;
   else if (totalPeserta <= 16) zoom = 1.6;
   else if (totalPeserta <= 32) zoom = 1.4;
   else zoom = 1.2;
+} else {
+  // ✅ Zoom diperkecil untuk PEMULA (agar lebih banyak terlihat)
+  if (totalPeserta <= 8) zoom = 0.85;
+  else if (totalPeserta <= 16) zoom = 0.75;
+  else if (totalPeserta <= 32) zoom = 0.65;
+  else zoom = 0.55;
 }
 
 // Margin bawah header
