@@ -140,15 +140,21 @@ export const IDCardGenerator = ({ atlet, isEditing }: IDCardGeneratorProps) => {
         console.log(`\n📋 Peserta ${index}:`);
         console.log("Full peserta object:", peserta);
         console.log(`- Status: ${peserta.status}`);
-        console.log(`- kelas_kejuaraan:`, peserta.kelas_kejuaraan);
+        console.log(`- kelas_kejuaraan FULL:`, peserta.kelas_kejuaraan);
         
-        // Deep debug kelas_kejuaraan
+        // Deep debug kelas_kejuaraan - lihat SEMUA keys yang ada
         if (peserta.kelas_kejuaraan) {
+          console.log(`  🔍 All kelas_kejuaraan keys:`, Object.keys(peserta.kelas_kejuaraan));
           console.log(`  - cabang:`, peserta.kelas_kejuaraan.cabang);
           console.log(`  - kelompok:`, peserta.kelas_kejuaraan.kelompok);
           console.log(`  - kelas_berat:`, peserta.kelas_kejuaraan.kelas_berat);
           console.log(`  - poomsae:`, peserta.kelas_kejuaraan.poomsae);
           console.log(`  - kategori_event:`, peserta.kelas_kejuaraan.kategori_event);
+          
+          // Coba akses field lain yang mungkin ada
+          console.log(`  - id_kelas_berat:`, (peserta.kelas_kejuaraan as any).id_kelas_berat);
+          console.log(`  - id_kelompok:`, (peserta.kelas_kejuaraan as any).id_kelompok);
+          console.log(`  - nama_kelas:`, (peserta.kelas_kejuaraan as any).nama_kelas);
         }
       });
     }
