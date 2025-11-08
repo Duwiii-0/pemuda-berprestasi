@@ -23,23 +23,23 @@ const OVERLAY_COORDS = {
   
   // Photo box (kotak besar kiri) - koordinat FIXED berdasarkan template
   photo: {
-    x: 25,           // Posisi X foto
-    y: 54,           // Posisi Y foto (dari atas)
-    width: 75,       // Lebar foto FIXED
-    height: 110,      // Tinggi foto FIXED
+    x: 27,           // Posisi X foto
+    y: 80,           // Posisi Y foto (dari atas)
+    width: 77,       // Lebar foto FIXED
+    height: 120,      // Tinggi foto FIXED
   },
   
   nama: {
-    x: 60,           // Setelah "Nama :"
+    x: 58,           // Setelah "Nama :"
     y: 220,          // Baris Nama
   },
   kelas: {
-    x: 60,           // Setelah "Kelas :"
-    y: 235,          // Baris Kelas
+    x: 58,           // Setelah "Kelas :"
+    y: 233,          // Baris Kelas
   },
   kontingen: {
-    x: 60,           // Setelah "Kontingen :"
-    y: 250,          // Baris Kontingen
+    x: 58,           // Setelah "Kontingen :"
+    y: 246,          // Baris Kontingen
   },
 };
 
