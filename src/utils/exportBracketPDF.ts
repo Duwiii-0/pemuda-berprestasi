@@ -429,7 +429,7 @@ const totalPeserta = kelasData?.peserta_kompetisi?.length || 0;
 
 // Tentukan zoom factor dinamis
 let zoom = 1.0;
-if (totalPeserta <= 8) zoom = 1.8;
+if (totalPeserta <= 8) zoom = 2.0;
 else if (totalPeserta <= 16) zoom = 1.6;
 else if (totalPeserta <= 32) zoom = 1.4;
 else zoom = 1.2;
@@ -442,7 +442,7 @@ displayHeight *= zoom;
 
 // Posisi tengah halaman
 const x = (PAGE_WIDTH - displayWidth) / 2;
-const y = HEADER_HEIGHT + MARGIN_TOP + HEADER_MARGIN_BOTTOM;
+const y = HEADER_HEIGHT + HEADER_MARGIN_BOTTOM;
 
 // Tambahkan gambar ke PDF
 doc.addImage(

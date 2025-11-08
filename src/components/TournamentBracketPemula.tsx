@@ -362,7 +362,7 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
     }
   };
 
-  const exportPesertaToExcel = () => {
+const exportPesertaToExcel = () => {
   if (!approvedParticipants?.length) {
     showNotification(
       'warning',
@@ -377,7 +377,6 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
 
   approvedParticipants.forEach((p: any, index: number) => {
     if (p.is_team && p.anggota_tim?.length) {
-      // Kalau peserta berupa tim
       p.anggota_tim.forEach((anggota: { atlet: { nama_atlet: string } }, i: number) => {
         rows.push({
           No: `${index + 1}.${i + 1}`,
@@ -389,7 +388,6 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
         });
       });
     } else {
-      // Kalau peserta individu
       rows.push({
         No: index + 1,
         Jenis: 'Individu',
@@ -401,13 +399,12 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
     }
   });
 
-  // Buat workbook & worksheet
   const ws = XLSX.utils.json_to_sheet(rows);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Peserta');
 
-  // Nama file otomatis
-  const eventName = kompetisiData?.nama?.replace(/\s+/g, '_') || 'Turnamen_Pemula';
+  // fix: ganti kompetisiData jadi string fallback
+  const eventName = 'Kompetisi_Pemula';
   const fileName = `Data_Peserta_${eventName}.xlsx`;
 
   XLSX.writeFile(wb, fileName);
@@ -419,6 +416,7 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
     () => setShowModal(false)
   );
 };
+
 
 
   const clearBracketResults = async () => {
