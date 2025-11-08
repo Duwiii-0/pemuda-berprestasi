@@ -24,7 +24,7 @@ const OVERLAY_COORDS = {
   // Photo box (kotak besar kiri) - koordinat FIXED berdasarkan template
   photo: {
     x: 25.5,           // Posisi X foto
-    y: 95,           // Posisi Y foto (dari atas)
+    y: 98,           // Posisi Y foto (dari atas)
     width: 77,       // Lebar foto FIXED
     height: 107,      // Tinggi foto FIXED
   },
