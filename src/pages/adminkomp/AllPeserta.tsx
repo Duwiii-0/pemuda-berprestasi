@@ -1,6 +1,6 @@
 // src/pages/adminkomp/AllPeserta.tsx
 import React, { useEffect, useState } from "react";
-import { CheckCircle, XCircle, Loader, Search, Users, AlertTriangle, ChevronLeft, ChevronRight } from "lucide-react";
+import { CheckCircle, XCircle, Loader, Search, Users, AlertTriangle, ChevronLeft, ChevronRight, Download } from "lucide-react";
 import { useAuth } from "../../context/authContext";
 import { useKompetisi } from "../../context/KompetisiContext";
 import { apiClient } from "../../config/api";
@@ -8,6 +8,7 @@ import { useNavigate } from "react-router-dom";
 import SelectTeamMemberModal from "../../components/selectTeamModal";
 import { useDojang } from "../../context/dojangContext";
 import { kelasBeratOptionsMap } from "../../dummy/beratOptions";
+import * as XLSX from 'xlsx';
 
 const AllPeserta: React.FC = () => {
   const { token, user } = useAuth();
@@ -29,7 +30,7 @@ const AllPeserta: React.FC = () => {
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10000);
-
+  const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
     refreshDojang();
@@ -53,6 +54,131 @@ const AllPeserta: React.FC = () => {
   useEffect(() => {
     if (kompetisiId) fetchAtletByKompetisi(kompetisiId);
   }, [kompetisiId]);
+
+  // Export Excel Function
+  const handleExportExcel = () => {
+    setIsExporting(true);
+    
+    try {
+      // Prepare data for export
+      const exportData = displayedPesertas.map((peserta: any, index: number) => {
+        const isTeam = peserta.is_team;
+        
+        const namaPeserta = isTeam
+          ? peserta.anggota_tim?.map((m: any) => m.atlet.nama_atlet).join(", ")
+          : peserta.atlet?.nama_atlet || "-";
+        
+        const cabang = peserta.kelas_kejuaraan?.cabang || "-";
+        const levelEvent = peserta.kelas_kejuaraan?.kategori_event?.nama_kategori || "-";
+        
+        const kelasBerat = cabang === "KYORUGI"
+          ? peserta.kelas_kejuaraan?.kelas_berat?.nama_kelas || "-"
+          : "-";
+        
+        const kelasPoomsae = cabang === "POOMSAE"
+          ? peserta.kelas_kejuaraan?.poomsae?.nama_kelas || "-"
+          : "-";
+        
+        const kelasUsia = peserta.kelas_kejuaraan?.kelompok?.nama_kelompok || "-";
+        
+        const jenisKelamin = !isTeam 
+          ? (peserta.atlet?.jenis_kelamin === "LAKI_LAKI" ? "Laki-Laki" : peserta.atlet?.jenis_kelamin === "PEREMPUAN" ? "Perempuan" : "-")
+          : "-";
+        
+        const dojang = isTeam && peserta.anggota_tim?.length
+          ? peserta.anggota_tim[0]?.atlet?.dojang?.nama_dojang || "-"
+          : peserta.atlet?.dojang?.nama_dojang || "-";
+        
+        const tanggalLahir = !isTeam 
+          ? peserta.atlet?.tanggal_lahir || "-"
+          : "-";
+        
+        const beratBadan = !isTeam 
+          ? peserta.atlet?.berat_badan ? `${peserta.atlet.berat_badan} kg` : "-"
+          : "-";
+        
+        const tingiBadan = !isTeam 
+          ? peserta.atlet?.tinggi_badan ? `${peserta.atlet.tinggi_badan} cm` : "-"
+          : "-";
+        
+        const sabuk = !isTeam 
+          ? peserta.atlet?.sabuk?.nama_sabuk || "-"
+          : "-";
+
+        // Team members detail
+        const anggotaTimDetail = isTeam && peserta.anggota_tim?.length
+          ? peserta.anggota_tim.map((m: any, i: number) => 
+              `${i + 1}. ${m.atlet.nama_atlet} (${m.atlet.dojang?.nama_dojang || "-"})`
+            ).join("; ")
+          : "-";
+
+        return {
+          "No": index + 1,
+          "ID Peserta": peserta.id_peserta_kompetisi,
+          "Nama Peserta": namaPeserta,
+          "Tipe": isTeam ? "Tim" : "Individu",
+          "Kategori": cabang,
+          "Level": levelEvent,
+          "Kelas Berat": kelasBerat,
+          "Kelas Poomsae": kelasPoomsae,
+          "Kelompok Usia": kelasUsia,
+          "Jenis Kelamin": jenisKelamin,
+          "Tanggal Lahir": tanggalLahir,
+          "Berat Badan": beratBadan,
+          "Tinggi Badan": tingiBadan,
+          "Sabuk": sabuk,
+          "Dojang": dojang,
+          "Status": peserta.status,
+          "Anggota Tim": anggotaTimDetail,
+          "Tanggal Daftar": peserta.created_at ? new Date(peserta.created_at).toLocaleDateString('id-ID') : "-",
+        };
+      });
+
+      // Create workbook and worksheet
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      const workbook = XLSX.utils.book_new();
+      
+      // Set column widths
+      const columnWidths = [
+        { wch: 5 },   // No
+        { wch: 12 },  // ID Peserta
+        { wch: 30 },  // Nama Peserta
+        { wch: 10 },  // Tipe
+        { wch: 12 },  // Kategori
+        { wch: 10 },  // Level
+        { wch: 15 },  // Kelas Berat
+        { wch: 15 },  // Kelas Poomsae
+        { wch: 18 },  // Kelompok Usia
+        { wch: 15 },  // Jenis Kelamin
+        { wch: 15 },  // Tanggal Lahir
+        { wch: 12 },  // Berat Badan
+        { wch: 12 },  // Tinggi Badan
+        { wch: 15 },  // Sabuk
+        { wch: 25 },  // Dojang
+        { wch: 12 },  // Status
+        { wch: 50 },  // Anggota Tim
+        { wch: 15 },  // Tanggal Daftar
+      ];
+      worksheet['!cols'] = columnWidths;
+
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Data Peserta");
+
+      // Generate filename with timestamp
+      const timestamp = new Date().toISOString().split('T')[0];
+      const fileName = `Data_Peserta_Sriwijaya_Cup_${timestamp}.xlsx`;
+
+      // Export file
+      XLSX.writeFile(workbook, fileName);
+
+      // Show success message (optional - you can add a toast notification here)
+      console.log('Export berhasil!');
+    } catch (error) {
+      console.error('Error exporting to Excel:', error);
+      alert('Terjadi kesalahan saat mengekspor data');
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   if (user?.role !== "ADMIN_KOMPETISI") {
     return (
@@ -253,20 +379,57 @@ const AllPeserta: React.FC = () => {
         
         {/* HEADER */}
         <div className="mb-6">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
-            <Users 
-              size={28} 
-              className="sm:w-8 sm:h-8 lg:w-10 lg:h-10 flex-shrink-0" 
-              style={{ color: '#990D35' }}
-            />
-            <div className="flex-1 min-w-0">
-              <h1 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-bebas leading-tight" style={{ color: '#050505' }}>
-                Daftar Peserta Sriwijaya Cup
-              </h1>
-              <p className="text-sm sm:text-base mt-1" style={{ color: '#050505', opacity: 0.6 }}>
-                Kelola semua peserta kompetisi Sriwijaya kompetisi
-              </p>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+            <div className="flex items-start sm:items-center gap-3 sm:gap-4">
+              <Users 
+                size={28} 
+                className="sm:w-8 sm:h-8 lg:w-10 lg:h-10 flex-shrink-0" 
+                style={{ color: '#990D35' }}
+              />
+              <div className="flex-1 min-w-0">
+                <h1 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-bebas leading-tight" style={{ color: '#050505' }}>
+                  Daftar Peserta Sriwijaya Cup
+                </h1>
+                <p className="text-sm sm:text-base mt-1" style={{ color: '#050505', opacity: 0.6 }}>
+                  Kelola semua peserta kompetisi Sriwijaya kompetisi
+                </p>
+              </div>
             </div>
+            
+            {/* Export Button */}
+            <button
+              onClick={handleExportExcel}
+              disabled={isExporting || displayedPesertas.length === 0}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl border shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition-all text-sm font-medium whitespace-nowrap"
+              style={{ 
+                backgroundColor: '#990D35',
+                color: '#F5FBEF',
+                borderColor: '#990D35'
+              }}
+              onMouseEnter={(e) => {
+                if (!e.currentTarget.disabled) {
+                  e.currentTarget.style.backgroundColor = 'rgba(153, 13, 53, 0.9)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!e.currentTarget.disabled) {
+                  e.currentTarget.style.backgroundColor = '#990D35';
+                }
+              }}
+            >
+              {isExporting ? (
+                <>
+                  <Loader size={18} className="animate-spin" />
+                  <span>Exporting...</span>
+                </>
+              ) : (
+                <>
+                  <Download size={18} />
+                  <span className="hidden sm:inline">Export Excel</span>
+                  <span className="sm:hidden">Export</span>
+                </>
+              )}
+            </button>
           </div>
         </div>
 
@@ -651,7 +814,7 @@ const AllPeserta: React.FC = () => {
                           <td className="py-3 px-4 text-sm" style={{ color: '#050505', opacity: 0.7 }}>{cabang}</td>
                           <td className="py-3 px-4 text-sm" style={{ color: '#050505', opacity: 0.7 }}>{levelEvent}</td>
                           <td className="py-3 px-4 text-sm" style={{ color: '#050505', opacity: 0.7 }}>{kelasBerat}</td>
-                          {/* 🔥 Kelas Poomsae */}
+                          {/* Kelas Poomsae */}
                           <td className="py-3 px-4 text-sm" style={{ color: '#050505', opacity: 0.7 }}>
                             {peserta.kelas_kejuaraan?.cabang === "POOMSAE"
                               ? peserta.kelas_kejuaraan?.poomsae?.nama_kelas || "-"
