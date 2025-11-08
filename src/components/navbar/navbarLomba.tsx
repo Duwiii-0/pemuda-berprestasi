@@ -74,7 +74,7 @@ const NavbarLomba = ({ onLogoutRequest }: { onLogoutRequest: () => void }) => {
     { to: "/event/timeline", label: "Timeline" },
     { to: "/event/faq", label: "FAQ" },
     { to: "/event/live-streaming", label: "Live Streaming" },
-    { to: `/event/medal-tally/${idKompetisi}`, label: "Medal Tally" }, // ✅ NEW (tanpa icon di sini)
+    { to: `/event/medal-tally/${idKompetisi}`, label: "Perolehan Medali" }, // ✅ NEW (tanpa icon di sini)
   ];
 
   const getDashboardLink = () => {

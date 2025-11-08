@@ -61,13 +61,25 @@ const MedalTallyPage: React.FC<{ idKompetisi?: number }> = ({ idKompetisi }) => 
     try {
       setLoading(true);
       
+      // 🔍 DEBUG: Check token
+      console.log('🔑 Token available:', !!token);
+      console.log('🔑 Token value:', token ? `${token.substring(0, 20)}...` : 'NO TOKEN');
+      
       // 🔹 STEP 1: Fetch kompetisi info
       const kompRes = await fetch(`/api/kompetisi/${idKompetisi}`, {
         headers: {
+          'Content-Type': 'application/json',
           ...(token && { 'Authorization': `Bearer ${token}` })
         }
       });
       const kompData = await kompRes.json();
+      
+      console.log('📊 Kompetisi response status:', kompRes.status);
+      console.log('📊 Kompetisi response:', kompData);
+      
+      if (!kompRes.ok) {
+        throw new Error(`Failed to fetch kompetisi: ${kompRes.status} ${kompRes.statusText}`);
+      }
       
       if (kompData.success) {
         setKompetisi(kompData.data);
@@ -76,10 +88,18 @@ const MedalTallyPage: React.FC<{ idKompetisi?: number }> = ({ idKompetisi }) => 
       // 🔹 STEP 2: Fetch all kelas kejuaraan
       const kelasRes = await fetch(`/api/kompetisi/${idKompetisi}/kelas-kejuaraan`, {
         headers: {
+          'Content-Type': 'application/json',
           ...(token && { 'Authorization': `Bearer ${token}` })
         }
       });
       const kelasData = await kelasRes.json();
+      
+      console.log('📋 Kelas response status:', kelasRes.status);
+      console.log('📋 Kelas response:', kelasData);
+      
+      if (!kelasRes.ok) {
+        throw new Error(`Failed to fetch kelas kejuaraan: ${kelasRes.status} ${kelasRes.statusText}`);
+      }
       
       if (!kelasData.success) {
         throw new Error('Failed to fetch kelas kejuaraan');
