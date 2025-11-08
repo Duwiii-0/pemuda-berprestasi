@@ -13,8 +13,10 @@ import kelasRoutes from "./routes/kelas";
 import kompetisiRoutes from "./routes/kompetisi";
 import buktiTransferRoutes from "./routes/buktiTransfer";
 import lapanganRoutes from "./routes/lapangan";
-import pertandinganRoutes from "./routes/pertandingan";
+// import pertandinganRoutes from "./routes/pertandingan"; // Commented out for testing
 import publicRoutes from "./routes/public"; // ✅ ADD THIS
+import { getPertandinganInfo } from "./controllers/pertandinganController";
+
 
 // Import middleware
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler";
@@ -93,7 +95,11 @@ app.use("/api/kompetisi", kompetisiRoutes);
 app.use("/api/kelas", kelasRoutes);
 app.use("/api/bukti-transfer", buktiTransferRoutes);
 app.use("/api/lapangan", lapanganRoutes);
-app.use("/api/pertandingan", pertandinganRoutes);
+// app.use("/api/pertandingan", pertandinganRoutes); // Commented out for testing
+
+// DIRECTLY REGISTER THE TEST ROUTE
+app.get("/api/pertandingan/kompetisi/:id_kompetisi", getPertandinganInfo);
+
 
 // 404 handler (MUST BE AFTER ALL ROUTES)
 app.use(notFoundHandler);
