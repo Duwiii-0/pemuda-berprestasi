@@ -54,51 +54,26 @@ export const IDCardGenerator = ({ atlet, isEditing }: IDCardGeneratorProps) => {
     return `${process.env.REACT_APP_API_BASE_URL || 'http://cjvmanagementevent.com'}/uploads/atlet/pas_foto/${filename}`;
   };
 
-const loadImageAsBase64 = async (url: string, rounded = false): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.onload = () => {
-      const canvas = document.createElement("canvas");
-      const ctx = canvas.getContext("2d");
-
-      if (!ctx) return reject(new Error("Canvas context not available"));
-
-      const w = img.width;
-      const h = img.height;
-      canvas.width = w;
-      canvas.height = h;
-
-      if (rounded) {
-        const radius = Math.min(w, h) * 0.10; // radius 15% dari ukuran gambar
-        ctx.clearRect(0, 0, w, h);
-
-        // 🟢 Buat path rounded dan clip TANPA background putih
-        ctx.beginPath();
-        ctx.moveTo(radius, 0);
-        ctx.lineTo(w - radius, 0);
-        ctx.quadraticCurveTo(w, 0, w, radius);
-        ctx.lineTo(w, h - radius);
-        ctx.quadraticCurveTo(w, h, w - radius, h);
-        ctx.lineTo(radius, h);
-        ctx.quadraticCurveTo(0, h, 0, h - radius);
-        ctx.lineTo(0, radius);
-        ctx.quadraticCurveTo(0, 0, radius, 0);
-        ctx.closePath();
-        ctx.clip();
-      }
-
-      // 🖼️ Gambar foto di atas canvas transparan
-      ctx.drawImage(img, 0, 0, w, h);
-
-      // 👉 Gunakan PNG biar transparansi tidak hilang
-      resolve(canvas.toDataURL("image/png"));
-    };
-    img.onerror = () => reject(new Error(`Failed to load image: ${url}`));
-    img.src = url;
-  });
-};
-
+  const loadImageAsBase64 = async (url: string): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.drawImage(img, 0, 0);
+          resolve(canvas.toDataURL("image/jpeg", 0.95));
+        } else {
+          reject(new Error("Canvas context not available"));
+        }
+      };
+      img.onerror = () => reject(new Error(`Failed to load image: ${url}`));
+      img.src = url;
+    });
+  };
 
   const generateIDCard = async () => {
     setIsGenerating(true);
@@ -113,9 +88,9 @@ const loadImageAsBase64 = async (url: string, rounded = false): Promise<string> 
 
       // ========== LOAD TEMPLATE BACKGROUND ==========
       try {
-        const templateImg = "/templates/e-idcard_sriwijaya.jpg";
-        const templateBase64 = await loadImageAsBase64(templateImg);
-        
+        // Load template dari assets
+        const templatePath = "/src/assets/photos/e-idcard_sriwijaya.jpg";
+        const templateBase64 = await loadImageAsBase64(templatePath);
         
         // Paste template sebagai background (full page A4)
         pdf.addImage(
@@ -144,8 +119,7 @@ const loadImageAsBase64 = async (url: string, rounded = false): Promise<string> 
       if (atlet.pas_foto_path) {
         try {
           const photoUrl = getPhotoUrl(atlet.pas_foto_path);
-          const base64Photo = await loadImageAsBase64(photoUrl, true); // true => aktifkan rounded
-
+          const base64Photo = await loadImageAsBase64(photoUrl);
           
           // Paste foto atlet dengan ukuran FIXED di koordinat yang sudah ditentukan
           // Menggunakan "FAST" compression untuk hasil optimal
@@ -188,9 +162,9 @@ const loadImageAsBase64 = async (url: string, rounded = false): Promise<string> 
       }
 
       // ========== OVERLAY DATA ATLET ==========
-      pdf.setFont("helvetica", "bold");
-      pdf.setFontSize(14);        // Font size disesuaikan dengan template
-      pdf.setTextColor(10, 34, 104);
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(10);        // Font size disesuaikan dengan template
+      pdf.setTextColor(0, 0, 0);  // Black text
 
       // Nama
       pdf.text(atlet.nama_atlet, c.nama.x, c.nama.y);
@@ -283,6 +257,24 @@ const loadImageAsBase64 = async (url: string, rounded = false): Promise<string> 
           </p>
         </div>
       )}
+
+      {/* Info Struktur Koordinat */}
+      <div className="mt-4 bg-blue-50 border border-blue-200 rounded-xl p-4">
+        <h4 className="font-semibold text-blue-900 mb-2 text-sm">📍 Koordinat Overlay pada Template:</h4>
+        <ul className="text-xs text-blue-800 space-y-1 font-mono">
+          <li>• Template: /assets/photos/e-idcard_sriwijaya.jpg</li>
+          <li>• Foto Atlet: x={OVERLAY_COORDS.photo.x}mm, y={OVERLAY_COORDS.photo.y}mm ({OVERLAY_COORDS.photo.width}x{OVERLAY_COORDS.photo.height}mm)</li>
+          <li>• Nama: x={OVERLAY_COORDS.nama.x}mm, y={OVERLAY_COORDS.nama.y}mm</li>
+          <li>• Kelas: x={OVERLAY_COORDS.kelas.x}mm, y={OVERLAY_COORDS.kelas.y}mm</li>
+          <li>• Kontingen: x={OVERLAY_COORDS.kontingen.x}mm, y={OVERLAY_COORDS.kontingen.y}mm</li>
+        </ul>
+        <p className="text-xs text-blue-600 mt-2">
+          📄 PDF menggunakan template asli + overlay data atlet
+        </p>
+        <p className="text-xs text-blue-600">
+          🔍 Koordinat tersimpan dalam PDF metadata untuk ekstraksi
+        </p>
+      </div>
 
       {/* Preview Modal */}
       {showPreview && previewUrl && (
