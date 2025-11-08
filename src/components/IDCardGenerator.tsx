@@ -21,9 +21,13 @@ interface Atlet {
     id_peserta_kompetisi?: number;
     status?: string;
     kelas_kejuaraan?: {
+      id_kelas_kejuaraan?: number;
       cabang?: string;
       kelompok?: {
+        id_kelompok?: number;
         nama_kelompok?: string;
+        usia_min?: number;
+        usia_max?: number;
       };
       kelas_berat?: {
         nama_kelas?: string;
@@ -34,6 +38,7 @@ interface Atlet {
       kategori_event?: {
         nama_kategori?: string;
       };
+      jenis_kelamin?: string;
     };
   }>;
 }
@@ -134,31 +139,6 @@ export const IDCardGenerator = ({ atlet, isEditing }: IDCardGeneratorProps) => {
     console.log("dojang object:", atlet.dojang);
     console.log("peserta_kompetisi:", atlet.peserta_kompetisi);
     
-    // Debug setiap peserta kompetisi
-    if (atlet.peserta_kompetisi && atlet.peserta_kompetisi.length > 0) {
-      atlet.peserta_kompetisi.forEach((peserta, index) => {
-        console.log(`\n📋 Peserta ${index}:`);
-        console.log("Full peserta object:", peserta);
-        console.log(`- Status: ${peserta.status}`);
-        console.log(`- kelas_kejuaraan FULL:`, peserta.kelas_kejuaraan);
-        
-        // Deep debug kelas_kejuaraan - lihat SEMUA keys yang ada
-        if (peserta.kelas_kejuaraan) {
-          console.log(`  🔍 All kelas_kejuaraan keys:`, Object.keys(peserta.kelas_kejuaraan));
-          console.log(`  - cabang:`, peserta.kelas_kejuaraan.cabang);
-          console.log(`  - kelompok:`, peserta.kelas_kejuaraan.kelompok);
-          console.log(`  - kelas_berat:`, peserta.kelas_kejuaraan.kelas_berat);
-          console.log(`  - poomsae:`, peserta.kelas_kejuaraan.poomsae);
-          console.log(`  - kategori_event:`, peserta.kelas_kejuaraan.kategori_event);
-          
-          // Coba akses field lain yang mungkin ada
-          console.log(`  - id_kelas_berat:`, (peserta.kelas_kejuaraan as any).id_kelas_berat);
-          console.log(`  - id_kelompok:`, (peserta.kelas_kejuaraan as any).id_kelompok);
-          console.log(`  - nama_kelas:`, (peserta.kelas_kejuaraan as any).nama_kelas);
-        }
-      });
-    }
-    
     // ✅ Ambil dojang_name (sudah ada di nested object)
     const dojangName = atlet.dojang_name || 
                        atlet.dojang?.nama_dojang || 
@@ -168,42 +148,47 @@ export const IDCardGenerator = ({ atlet, isEditing }: IDCardGeneratorProps) => {
     let kelasInfo = "";
     
     if (atlet.peserta_kompetisi && atlet.peserta_kompetisi.length > 0) {
+      console.log("📊 Processing peserta_kompetisi...");
+      
       // Prioritas: APPROVED > PENDING > REJECTED
-      // Cari yang APPROVED dulu
       let targetPeserta = atlet.peserta_kompetisi.find(p => p.status === 'APPROVED');
       
-      // Jika tidak ada APPROVED, ambil PENDING
       if (!targetPeserta) {
         targetPeserta = atlet.peserta_kompetisi.find(p => p.status === 'PENDING');
       }
       
-      // Jika tidak ada PENDING, ambil yang terakhir (REJECTED)
       if (!targetPeserta) {
         targetPeserta = atlet.peserta_kompetisi[atlet.peserta_kompetisi.length - 1];
       }
       
+      console.log("🎯 Selected peserta:", targetPeserta);
+      
       if (targetPeserta && targetPeserta.kelas_kejuaraan) {
         const kj = targetPeserta.kelas_kejuaraan;
+        
+        console.log("📋 Full kelas_kejuaraan:", kj);
+        console.log("  - cabang:", kj.cabang);
+        console.log("  - kelompok:", kj.kelompok);
+        console.log("  - kelas_berat:", kj.kelas_berat);
+        console.log("  - poomsae:", kj.poomsae);
+        console.log("  - kategori_event:", kj.kategori_event);
+        
         const cabang = kj.cabang || "";
-        
-        // Ambil kelompok usia
         const kelompokUsia = kj.kelompok?.nama_kelompok || "";
-        
-        // Ambil kategori event (pemula/prestasi)
         const kategoriEvent = kj.kategori_event?.nama_kategori || "";
         
-        // Ambil kelas berat (untuk KYORUGI) atau kelas poomsae (untuk POOMSAE)
+        // Ambil kelas detail berdasarkan cabang
         let kelasDetail = "";
-        if (cabang === "KYORUGI") {
-          kelasDetail = kj.kelas_berat?.nama_kelas || "";
-        } else if (cabang === "POOMSAE") {
-          kelasDetail = kj.poomsae?.nama_kelas || "";
+        if (cabang === "KYORUGI" && kj.kelas_berat?.nama_kelas) {
+          kelasDetail = kj.kelas_berat.nama_kelas;
+        } else if (cabang === "POOMSAE" && kj.poomsae?.nama_kelas) {
+          kelasDetail = kj.poomsae.nama_kelas;
         }
         
-        // ✅ Format: Kategori - Cabang - Kelompok Usia (atau Kelas Detail)
-        // Contoh KYORUGI: "Prestasi - KYORUGI - Under 19 kg"
+        // ✅ Format: Kategori - Cabang - (Kelompok Usia ATAU Kelas Detail)
+        // Contoh KYORUGI dengan usia: "Prestasi - KYORUGI - Senior"
+        // Contoh KYORUGI tanpa usia: "Prestasi - KYORUGI - Under 87 kg"
         // Contoh POOMSAE: "Pemula - POOMSAE - Individu"
-        // Contoh dengan Usia: "Prestasi - KYORUGI - Super pracadet"
         const parts = [];
         
         // 1. Kategori Event (Pemula/Prestasi)
@@ -216,7 +201,7 @@ export const IDCardGenerator = ({ atlet, isEditing }: IDCardGeneratorProps) => {
           parts.push(cabang);
         }
         
-        // 3. Kelompok Usia ATAU Kelas Detail
+        // 3. Kelompok Usia (jika ada dan bukan "pemula") ATAU Kelas Detail
         // Prioritas: Kelompok Usia > Kelas Detail
         if (kelompokUsia && kelompokUsia.toLowerCase() !== 'pemula') {
           parts.push(kelompokUsia);
@@ -357,9 +342,9 @@ export const IDCardGenerator = ({ atlet, isEditing }: IDCardGeneratorProps) => {
           foto_path: atlet.pas_foto_path || "",
           foto_coords: { x: c.photo.x, y: c.photo.y, w: c.photo.width, h: c.photo.height },
           template: "e-idcard_sriwijaya.jpg",
-          version: "3.2"
+          version: "4.0"
         }),
-        creator: "ID Card Generator v3.2",
+        creator: "ID Card Generator v4.0",
       });
 
       // Preview & Download
