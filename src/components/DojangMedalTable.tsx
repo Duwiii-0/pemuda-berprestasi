@@ -212,7 +212,6 @@ const DojangMedalTable: React.FC<{
               <tr style={{ backgroundColor: '#F9FAFB' }}>
                 <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-bold uppercase tracking-wider border-b-2" style={{ color: '#374151', borderColor: '#E5E7EB' }}>
                   <div className="flex items-center gap-2">
-                    <Award size={16} style={{ color: '#990D35' }} />
                     <span>Peringkat</span>
                   </div>
                 </th>
@@ -221,19 +220,16 @@ const DojangMedalTable: React.FC<{
                 </th>
                 <th className="px-3 sm:px-4 py-3 sm:py-4 text-center text-xs sm:text-sm font-bold uppercase tracking-wider border-b-2" style={{ color: '#374151', borderColor: '#E5E7EB' }}>
                   <div className="flex flex-col items-center gap-1">
-                    <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full" style={{ background: 'linear-gradient(135deg, #FCD34D 0%, #F59E0B 100%)' }}></div>
                     <span>Emas</span>
                   </div>
                 </th>
                 <th className="px-3 sm:px-4 py-3 sm:py-4 text-center text-xs sm:text-sm font-bold uppercase tracking-wider border-b-2" style={{ color: '#374151', borderColor: '#E5E7EB' }}>
                   <div className="flex flex-col items-center gap-1">
-                    <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full" style={{ background: 'linear-gradient(135deg, #D1D5DB 0%, #9CA3AF 100%)' }}></div>
                     <span>Perak</span>
                   </div>
                 </th>
                 <th className="px-3 sm:px-4 py-3 sm:py-4 text-center text-xs sm:text-sm font-bold uppercase tracking-wider border-b-2" style={{ color: '#374151', borderColor: '#E5E7EB' }}>
                   <div className="flex flex-col items-center gap-1">
-                    <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full" style={{ background: 'linear-gradient(135deg, #FB923C 0%, #EA580C 100%)' }}></div>
                     <span>Perunggu</span>
                   </div>
                 </th>
@@ -344,7 +340,7 @@ const DojangMedalTable: React.FC<{
                 backgroundColor: '#F3F4F6',
                 borderTop: '2px solid #E5E7EB'
               }}>
-                <td colSpan={2} className="px-3 sm:px-6 py-3 sm:py-4 text-right font-bold text-xs sm:text-sm uppercase tracking-wider" style={{ color: '#374151' }}>
+                <td colSpan={2} className="px-3 sm:px-6 py-3 sm:py-4 text-left font-bold text-xs sm:text-sm uppercase tracking-wider" style={{ color: '#374151' }}>
                   Total Keseluruhan
                 </td>
                 <td className="px-3 sm:px-4 py-3 sm:py-4 text-center">
