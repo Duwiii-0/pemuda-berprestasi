@@ -427,13 +427,23 @@ export const exportBracketFromData = async (
 // Hitung total peserta dalam bracket
 const totalPeserta = kelasData?.peserta_kompetisi?.length || 0;
 
-// Tentukan zoom factor dinamis
-let zoom = 1.0;
-if (totalPeserta <= 8) zoom = 2.0;
-else if (totalPeserta <= 16) zoom = 1.6;
-else if (totalPeserta <= 32) zoom = 1.4;
-else zoom = 1.2;
+// Deteksi apakah ini bracket Prestasi
+const isPrestasi = kelasData?.tipe?.toLowerCase() === 'prestasi' 
+  || kelasData?.kategori?.toLowerCase() === 'prestasi'
+  || kelasData?.jenis === 'PRESTASI';
 
+// Default zoom
+let zoom = 1.0;
+
+// ✅ Terapkan zoom dinamis hanya untuk PRESTASI
+if (isPrestasi) {
+  if (totalPeserta <= 8) zoom = 2.0;
+  else if (totalPeserta <= 16) zoom = 1.6;
+  else if (totalPeserta <= 32) zoom = 1.4;
+  else zoom = 1.2;
+}
+
+// Margin bawah header
 const HEADER_MARGIN_BOTTOM = 15;
 
 // --- Hitung ulang ukuran gambar ---
@@ -455,6 +465,7 @@ doc.addImage(
   undefined,
   'FAST'
 );
+
 
     const dateStr = new Date().toISOString().split('T')[0];
     const filename = `Bracket_${config.eventName.replace(/[^a-z0-9]/gi, '_')}_${config.categoryName.replace(/ /g, '_')}_${dateStr}.pdf`;
