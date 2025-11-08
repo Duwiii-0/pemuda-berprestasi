@@ -1,91 +1,229 @@
-// src/components/IDCardGenerator.tsx
 import { useState } from "react";
 import { Download, Eye, FileText } from "lucide-react";
-import html2canvas from "html2canvas";
-import type { Atlet } from "../context/AtlitContext";
+import jsPDF from "jspdf";
+
+interface Atlet {
+  nama_atlet: string;
+  jenis_kelamin: "LAKI_LAKI" | "PEREMPUAN";
+  tanggal_lahir: string;
+  pas_foto_path?: string;
+  dojang_name?: string;
+  kelas_berat?: string;
+  belt?: string;
+}
 
 interface IDCardGeneratorProps {
-  atlet: Atlet & {
-    pas_foto_path?: string;
-    dojang_name?: string;
-    kelas_berat?: string;
-  };
+  atlet: Atlet;
   isEditing: boolean;
 }
+
+// Koordinat PRESISI untuk overlay pada template
+const OVERLAY_COORDS = {
+  page: { width: 210, height: 297 },
+  
+  // Photo box (kotak besar kiri) - koordinat untuk paste foto atlet
+  photo: {
+    x: 30,
+    y: 200,
+    width: 100,
+    height: 135,
+  },
+  
+  // Data atlet - koordinat untuk text overlay
+  nama: {
+    x: 75,
+    y: 350,
+  },
+  kelas: {
+    x: 75,
+    y: 365,
+  },
+  kontingen: {
+    x: 75,
+    y: 380,
+  },
+};
 
 export const IDCardGenerator = ({ atlet, isEditing }: IDCardGeneratorProps) => {
   const [hasGenerated, setHasGenerated] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string>("");
 
   const getPhotoUrl = (filename: string): string => {
     if (!filename) return "";
     return `${process.env.REACT_APP_API_BASE_URL || 'http://cjvmanagementevent.com'}/uploads/atlet/pas_foto/${filename}`;
   };
 
+  const loadImageAsBase64 = async (url: string): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.drawImage(img, 0, 0);
+          resolve(canvas.toDataURL("image/jpeg", 0.95));
+        } else {
+          reject(new Error("Canvas context not available"));
+        }
+      };
+      img.onerror = () => reject(new Error(`Failed to load image: ${url}`));
+      img.src = url;
+    });
+  };
+
   const generateIDCard = async () => {
     setIsGenerating(true);
     try {
-      // Tunggu sebentar untuk memastikan preview di-render
-      setShowPreview(true);
-      await new Promise(resolve => setTimeout(resolve, 100));
-
-      const element = document.getElementById('id-card-preview');
-      if (!element) {
-        throw new Error('ID Card element not found');
-      }
-
-      // Generate canvas dari element
-      const canvas = await html2canvas(element, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#ffffff'
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
       });
 
-      // Convert ke blob dan download
-      canvas.toBlob((blob) => {
-        if (blob) {
-          const url = URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = `ID-Card-${atlet.nama_atlet.replace(/\s/g, '-')}.png`;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          URL.revokeObjectURL(url);
-          
-          setHasGenerated(true);
-          setShowPreview(false);
-        }
-      }, 'image/png');
+      const c = OVERLAY_COORDS;
 
+      // ========== LOAD TEMPLATE BACKGROUND ==========
+      try {
+        // Load template dari assets
+        const templatePath = "/src/assets/photos/e-idcard_sriwijaya.jpg";
+        const templateBase64 = await loadImageAsBase64(templatePath);
+        
+        // Paste template sebagai background (full page A4)
+        pdf.addImage(
+          templateBase64,
+          "JPEG",
+          0,
+          0,
+          c.page.width,
+          c.page.height,
+          undefined,
+          "FAST"
+        );
+      } catch (error) {
+        console.error("Failed to load template:", error);
+        // Fallback: white background jika template gagal load
+        pdf.setFillColor(255, 255, 255);
+        pdf.rect(0, 0, c.page.width, c.page.height, "F");
+        
+        // Tampilkan error message
+        pdf.setFontSize(12);
+        pdf.setTextColor(255, 0, 0);
+        pdf.text("Error: Template tidak dapat dimuat", 105, 20, { align: "center" });
+      }
+
+      // ========== OVERLAY FOTO ATLET ==========
+      if (atlet.pas_foto_path) {
+        try {
+          const photoUrl = getPhotoUrl(atlet.pas_foto_path);
+          const base64Photo = await loadImageAsBase64(photoUrl);
+          
+          // Paste foto atlet di koordinat yang sudah ditentukan
+          pdf.addImage(
+            base64Photo,
+            "JPEG",
+            c.photo.x,
+            c.photo.y,
+            c.photo.width,
+            c.photo.height,
+            undefined,
+            "FAST"
+          );
+        } catch (error) {
+          console.error("Failed to load athlete photo:", error);
+          // Fallback: kotak abu-abu dengan initial
+          pdf.setFillColor(220, 220, 220);
+          pdf.rect(c.photo.x, c.photo.y, c.photo.width, c.photo.height, "F");
+          pdf.setFontSize(60);
+          pdf.setTextColor(150, 150, 150);
+          pdf.text(
+            atlet.nama_atlet.charAt(0).toUpperCase(),
+            c.photo.x + c.photo.width / 2,
+            c.photo.y + c.photo.height / 2,
+            { align: "center" }
+          );
+        }
+      } else {
+        // Tidak ada foto - tampilkan placeholder
+        pdf.setFillColor(240, 240, 240);
+        pdf.rect(c.photo.x, c.photo.y, c.photo.width, c.photo.height, "F");
+        pdf.setFontSize(48);
+        pdf.setTextColor(180, 180, 180);
+        pdf.text(
+          atlet.nama_atlet.charAt(0).toUpperCase(),
+          c.photo.x + c.photo.width / 2,
+          c.photo.y + c.photo.height / 2,
+          { align: "center" }
+        );
+      }
+
+      // ========== OVERLAY DATA ATLET ==========
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(14);
+      pdf.setTextColor(0, 0, 0); // Black text
+
+      // Nama
+      pdf.text(atlet.nama_atlet, c.nama.x, c.nama.y);
+
+      // Kelas
+      pdf.text(atlet.kelas_berat || "-", c.kelas.x, c.kelas.y);
+
+      // Kontingen
+      pdf.text(atlet.dojang_name || "-", c.kontingen.x, c.kontingen.y);
+
+      // ========== METADATA untuk ekstraksi ==========
+      pdf.setProperties({
+        title: `ID-Card-${atlet.nama_atlet}`,
+        subject: "ID Card Atlet Sriwijaya Championship 2025",
+        author: "Sriwijaya International Taekwondo Championship",
+        keywords: JSON.stringify({
+          nama: atlet.nama_atlet,
+          nama_coords: { x: c.nama.x, y: c.nama.y },
+          kelas: atlet.kelas_berat || "",
+          kelas_coords: { x: c.kelas.x, y: c.kelas.y },
+          kontingen: atlet.dojang_name || "",
+          kontingen_coords: { x: c.kontingen.x, y: c.kontingen.y },
+          foto_path: atlet.pas_foto_path || "",
+          foto_coords: { x: c.photo.x, y: c.photo.y, w: c.photo.width, h: c.photo.height },
+          template: "e-idcard_sriwijaya.jpg",
+          version: "3.0"
+        }),
+        creator: "ID Card Generator v3.0",
+      });
+
+      // Preview & Download
+      const pdfBlob = pdf.output("blob");
+      const url = URL.createObjectURL(pdfBlob);
+      setPreviewUrl(url);
+      pdf.save(`ID-Card-${atlet.nama_atlet.replace(/\s/g, "-")}.pdf`);
+
+      setHasGenerated(true);
     } catch (error) {
-      console.error('Error generating ID card:', error);
-      alert('Gagal generate ID Card');
+      console.error("Error generating ID card:", error);
+      alert("Gagal generate ID Card: " + (error as Error).message);
     } finally {
       setIsGenerating(false);
     }
   };
 
-  const handleViewIDCard = () => {
-    setShowPreview(true);
-  };
-
   return (
     <div className="bg-white/60 backdrop-blur-sm rounded-2xl lg:rounded-3xl p-4 sm:p-6 lg:p-8 shadow-xl border-2 border-gray-200">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
         <h3 className="font-bebas text-2xl lg:text-3xl text-black/80 tracking-wide">
           ID CARD ATLET
         </h3>
-        
+
         {!isEditing && (
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             {!hasGenerated ? (
               <button
                 onClick={generateIDCard}
                 disabled={isGenerating || !atlet.pas_foto_path}
-                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-red to-red/80 hover:from-red/90 hover:to-red/70 text-white rounded-xl font-plex text-sm lg:text-base transition-all duration-300 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white rounded-xl font-medium text-sm lg:text-base transition-all duration-300 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <FileText size={18} />
                 {isGenerating ? "Generating..." : "Generate ID Card"}
@@ -93,15 +231,15 @@ export const IDCardGenerator = ({ atlet, isEditing }: IDCardGeneratorProps) => {
             ) : (
               <>
                 <button
-                  onClick={handleViewIDCard}
-                  className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl font-plex text-sm lg:text-base transition-all duration-300 shadow-lg"
+                  onClick={() => setShowPreview(true)}
+                  className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl font-medium text-sm lg:text-base transition-all duration-300 shadow-lg"
                 >
                   <Eye size={18} />
-                  Lihat ID Card
+                  Lihat Preview
                 </button>
                 <button
                   onClick={generateIDCard}
-                  className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-xl font-plex text-sm lg:text-base transition-all duration-300 shadow-lg"
+                  className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-xl font-medium text-sm lg:text-base transition-all duration-300 shadow-lg"
                 >
                   <Download size={18} />
                   Download Ulang
@@ -114,177 +252,54 @@ export const IDCardGenerator = ({ atlet, isEditing }: IDCardGeneratorProps) => {
 
       {!atlet.pas_foto_path && (
         <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
-          <p className="text-yellow-800 font-plex text-sm">
+          <p className="text-yellow-800 font-medium text-sm">
             ⚠️ Foto atlet belum tersedia. Upload foto terlebih dahulu untuk generate ID Card.
           </p>
         </div>
       )}
 
+      {/* Info Struktur Koordinat */}
+      <div className="mt-4 bg-blue-50 border border-blue-200 rounded-xl p-4">
+        <h4 className="font-semibold text-blue-900 mb-2 text-sm">📍 Koordinat Overlay pada Template:</h4>
+        <ul className="text-xs text-blue-800 space-y-1 font-mono">
+          <li>• Template: /assets/photos/e-idcard_sriwijaya.jpg</li>
+          <li>• Foto Atlet: x={OVERLAY_COORDS.photo.x}mm, y={OVERLAY_COORDS.photo.y}mm ({OVERLAY_COORDS.photo.width}x{OVERLAY_COORDS.photo.height}mm)</li>
+          <li>• Nama: x={OVERLAY_COORDS.nama.x}mm, y={OVERLAY_COORDS.nama.y}mm</li>
+          <li>• Kelas: x={OVERLAY_COORDS.kelas.x}mm, y={OVERLAY_COORDS.kelas.y}mm</li>
+          <li>• Kontingen: x={OVERLAY_COORDS.kontingen.x}mm, y={OVERLAY_COORDS.kontingen.y}mm</li>
+        </ul>
+        <p className="text-xs text-blue-600 mt-2">
+          📄 PDF menggunakan template asli + overlay data atlet
+        </p>
+        <p className="text-xs text-blue-600">
+          🔍 Koordinat tersimpan dalam PDF metadata untuk ekstraksi
+        </p>
+      </div>
+
       {/* Preview Modal */}
-      {showPreview && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl p-6 max-w-2xl w-full max-h-[90vh] overflow-auto">
+      {showPreview && previewUrl && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl p-6 max-w-4xl w-full max-h-[90vh] overflow-auto">
             <div className="flex justify-between items-center mb-4">
               <h4 className="font-bebas text-2xl text-black/80">Preview ID Card</h4>
               <button
                 onClick={() => setShowPreview(false)}
-                className="text-gray-500 hover:text-gray-700 text-2xl font-bold"
+                className="text-gray-500 hover:text-gray-700 text-3xl font-bold leading-none"
               >
                 ×
               </button>
             </div>
             
             <div className="flex justify-center">
-              <IDCardPreview atlet={atlet} getPhotoUrl={getPhotoUrl} />
+              <iframe
+                src={previewUrl}
+                className="w-full h-[70vh] border-2 border-gray-300 rounded-lg"
+                title="ID Card Preview"
+              />
             </div>
           </div>
         </div>
       )}
-
-      {/* Hidden preview for canvas generation */}
-      <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
-        <IDCardPreview atlet={atlet} getPhotoUrl={getPhotoUrl} />
-      </div>
-    </div>
-  );
-};
-
-// Komponen terpisah untuk preview ID Card
-interface IDCardPreviewProps {
-  atlet: Atlet & {
-    pas_foto_path?: string;
-    dojang_name?: string;
-    kelas_berat?: string;
-  };
-  getPhotoUrl: (filename: string) => string;
-}
-
-const IDCardPreview = ({ atlet, getPhotoUrl }: IDCardPreviewProps) => {
-  return (
-    <div
-      id="id-card-preview"
-      className="relative bg-gradient-to-br from-yellow-50 to-orange-50"
-      style={{
-        width: '744px',
-        height: '1052px',
-        padding: '40px',
-      }}
-    >
-      {/* Header with Logos */}
-      <div className="flex justify-between items-start mb-8">
-        <div className="flex gap-4">
-          {/* Logo placeholders - ganti dengan logo asli */}
-          <div className="w-16 h-16 bg-red-600 rounded-full"></div>
-          <div className="w-16 h-16 bg-green-600 rounded-full"></div>
-          <div className="w-16 h-16 bg-blue-600 rounded-full"></div>
-        </div>
-        <div className="w-24 h-16 bg-blue-500 rounded"></div>
-      </div>
-
-      {/* Crown Image */}
-      <div className="flex justify-center mb-4">
-        <div className="w-32 h-32 bg-gradient-to-br from-yellow-600 to-orange-600 rounded-full"></div>
-      </div>
-
-      {/* Title */}
-      <div className="text-center mb-8">
-        <h1 className="font-bebas text-6xl text-transparent bg-clip-text bg-gradient-to-r from-yellow-600 to-orange-600 tracking-wider mb-2">
-          SRIWIJAYA
-        </h1>
-        <p className="font-bebas text-2xl text-gray-700 tracking-wide">
-          INTERNATIONAL TAEKWONDO
-        </p>
-        <p className="font-bebas text-2xl text-gray-700 tracking-wide">
-          CHAMPIONSHIP 2025
-        </p>
-      </div>
-
-      {/* Main Content */}
-      <div className="flex gap-8 mb-8">
-        {/* Photo */}
-        <div className="w-80 h-96 border-4 border-yellow-600 rounded-2xl overflow-hidden bg-white flex items-center justify-center">
-          {atlet.pas_foto_path ? (
-            <img
-              src={getPhotoUrl(atlet.pas_foto_path)}
-              alt={atlet.nama_atlet}
-              className="w-full h-full object-cover"
-              crossOrigin="anonymous"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center bg-gray-200">
-              <span className="text-6xl text-gray-400 font-bebas">
-                {atlet.nama_atlet.charAt(0)}
-              </span>
-            </div>
-          )}
-        </div>
-
-        {/* No. Partai & Color Boxes */}
-        <div className="flex flex-col gap-4 flex-1">
-          <div className="bg-yellow-400 rounded-2xl p-6 text-center">
-            <div className="text-5xl font-bebas text-gray-800">1</div>
-            <div className="text-xl font-plex text-gray-700">No. Partai</div>
-          </div>
-          <div className="bg-gradient-to-r from-red-500 to-red-600 rounded-2xl p-6 text-center">
-            <div className="text-5xl font-bebas text-white">2</div>
-            <div className="text-xl font-plex text-white">Biru / Merah</div>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="h-24 border-4 border-yellow-600 rounded-xl bg-white"></div>
-            <div className="h-24 border-4 border-yellow-600 rounded-xl bg-white"></div>
-          </div>
-        </div>
-      </div>
-
-      {/* Athlete Info */}
-      <div className="space-y-3 mb-8">
-        <div className="flex items-center gap-4">
-          <span className="font-bebas text-2xl text-blue-800 w-32">Nama</span>
-          <span className="font-bebas text-2xl text-blue-800">:</span>
-          <div className="flex-1 border-b-2 border-gray-400 pb-1">
-            <span className="font-plex text-xl text-gray-800">{atlet.nama_atlet}</span>
-          </div>
-        </div>
-        
-        <div className="flex items-center gap-4">
-          <span className="font-bebas text-2xl text-blue-800 w-32">Kelas</span>
-          <span className="font-bebas text-2xl text-blue-800">:</span>
-          <div className="flex-1 border-b-2 border-gray-400 pb-1">
-            <span className="font-plex text-xl text-gray-800">{atlet.kelas_berat || '-'}</span>
-          </div>
-        </div>
-        
-        <div className="flex items-center gap-4">
-          <span className="font-bebas text-2xl text-blue-800 w-32">Kontingen</span>
-          <span className="font-bebas text-2xl text-blue-800">:</span>
-          <div className="flex-1 border-b-2 border-gray-400 pb-1">
-            <span className="font-plex text-xl text-gray-800">{atlet.dojang_name || '-'}</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Footer */}
-      <div className="absolute bottom-8 left-8 right-8 flex justify-between items-end">
-        <div className="flex gap-4">
-          <div className="w-20 h-24 bg-gradient-to-b from-yellow-400 to-yellow-600 rounded-t-full"></div>
-          <div className="w-20 h-24 bg-gradient-to-b from-gray-400 to-gray-600 rounded-t-full"></div>
-          <div className="w-20 h-24 bg-gradient-to-b from-yellow-600 to-yellow-800 rounded-t-full"></div>
-        </div>
-        
-        <div className="text-right">
-          <div className="font-bebas text-6xl text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-blue-800">
-            ATLET
-          </div>
-          <div className="flex items-center gap-2 justify-end mt-2">
-            <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-            <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-            <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-            <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-          </div>
-          <div className="text-sm text-gray-600 font-plex mt-1">Ruang Pemanasan</div>
-          <div className="text-sm text-gray-600 font-plex">Arena Pertandingan</div>
-        </div>
-      </div>
     </div>
   );
 };
