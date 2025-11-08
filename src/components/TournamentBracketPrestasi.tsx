@@ -5,6 +5,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/authContext';
 import sriwijaya from "../assets/logo/sriwijaya.png";
 import taekwondo from "../assets/logo/taekwondo.png";
+import * as XLSX from 'xlsx';
+
 
 interface Peserta {
   id_peserta_kompetisi: number;
@@ -706,6 +708,60 @@ const generateBracket = async () => {
     }
   };
 
+const exportPesertaToExcel = () => {
+  if (!kelasData?.peserta_kompetisi?.length) {
+    showNotification(
+      'warning',
+      'Export Peserta',
+      'Tidak ada data peserta untuk diexport',
+      () => setShowModal(false)
+    );
+    return;
+  }
+
+  const rows: any[] = [];
+
+  kelasData.peserta_kompetisi.forEach((p: Peserta, index: number) => {
+    if (p.is_team && p.anggota_tim?.length) {
+      p.anggota_tim.forEach((anggota: { atlet: { nama_atlet: string } }, i: number) => {
+        rows.push({
+          No: `${index + 1}.${i + 1}`,
+          Jenis: 'Tim',
+          Nama_Atlet: anggota.atlet.nama_atlet,
+          Nama_Tim: p.atlet?.nama_atlet || '-',
+          Dojang: p.atlet?.dojang?.nama_dojang || '-',
+          Status: p.status,
+        });
+      });
+    } else {
+      rows.push({
+        No: index + 1,
+        Jenis: 'Individu',
+        Nama_Atlet: p.atlet?.nama_atlet || '-',
+        Nama_Tim: '-',
+        Dojang: p.atlet?.dojang?.nama_dojang || '-',
+        Status: p.status,
+      });
+    }
+  });
+
+  const ws = XLSX.utils.json_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Peserta');
+
+  const eventName = kelasData.kompetisi?.nama_event?.replace(/\s+/g, '_') || 'Turnamen';
+  const fileName = `Data_Peserta_${eventName}.xlsx`;
+
+  XLSX.writeFile(wb, fileName);
+
+  showNotification(
+    'success',
+    'Export Peserta',
+    'Data peserta berhasil diexport ke spreadsheet',
+    () => setShowModal(false)
+  );
+};
+
   const getParticipantName = (peserta?: Peserta) => {
     if (!peserta) return '';
     if (peserta.is_team) {
@@ -1192,7 +1248,7 @@ const renderCenterFinal = () => {
           id="prestasi-leaderboard"
           style={{
             width: '400px', // ✅ Lebih lebar dari CARD_WIDTH (280px)
-            marginTop: '10px', // ✅ 60px di bawah final card
+            marginTop: `${finalYPosition + CARD_HEIGHT}px`, // ✅ 60px di bawah final card
             position: 'relative',
             zIndex: 20
           }}
@@ -1816,6 +1872,14 @@ const calculateCardPosition = (
             </div>
 
             <div className="flex gap-3">
+              <button
+                onClick={exportPesertaToExcel}
+                className="py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-all"
+                style={{ backgroundColor: '#16a34a', color: '#F5FBEF' }}
+              >
+                📗 Export Peserta
+              </button>
+
               <button
                 onClick={shuffleBracket}
                 disabled={loading || approvedParticipants.length < 2 || !bracketGenerated}
