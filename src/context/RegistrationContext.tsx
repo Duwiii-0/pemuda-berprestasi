@@ -268,6 +268,7 @@
       kelompokId?: number;
       kelasBeratId?: number;
       poomsaeId?: number;
+      poomsaeName?: string; // ✅ ADD THIS
     }
   ) => {
     try {
@@ -290,6 +291,10 @@
 
       if (filter.poomsaeId) {
         payload.poomsaeId = filter.poomsaeId;
+      }
+      
+      if (filter.poomsaeName) { // ✅ ADD THIS
+        payload.poomsaeName = filter.poomsaeName;
       }
 
       const res = await apiClient.post(`/kelas/kejuaraan/${kompetisiId}/filter`, payload);
