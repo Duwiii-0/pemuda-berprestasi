@@ -1192,7 +1192,7 @@ const renderCenterFinal = () => {
           id="prestasi-leaderboard"
           style={{
             width: '400px', // ✅ Lebih lebar dari CARD_WIDTH (280px)
-            marginTop: `${finalYPosition + CARD_HEIGHT + 60}px`, // ✅ 60px di bawah final card
+            marginTop: '10px', // ✅ 60px di bawah final card
             position: 'relative',
             zIndex: 20
           }}
