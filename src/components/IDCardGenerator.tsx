@@ -184,17 +184,27 @@ export const IDCardGenerator = ({ atlet, isEditing }: IDCardGeneratorProps) => {
           kelasDetail = kj.poomsae?.nama_kelas || "";
         }
         
-        // Format: Kelompok Usia - Kategori - Kelas Detail
-        // Contoh: "Super pracadet - Pemula - Under 19 kg"
-        // Contoh: "Senior - Prestasi - Individu"
+        // ✅ Format: Kategori - Cabang - Kelompok Usia (atau Kelas Detail)
+        // Contoh KYORUGI: "Prestasi - KYORUGI - Under 19 kg"
+        // Contoh POOMSAE: "Pemula - POOMSAE - Individu"
+        // Contoh dengan Usia: "Prestasi - KYORUGI - Super pracadet"
         const parts = [];
-        if (kelompokUsia && kelompokUsia.toLowerCase() !== 'pemula') {
-          parts.push(kelompokUsia);
-        }
+        
+        // 1. Kategori Event (Pemula/Prestasi)
         if (kategoriEvent) {
           parts.push(kategoriEvent);
         }
-        if (kelasDetail) {
+        
+        // 2. Cabang (KYORUGI/POOMSAE)
+        if (cabang) {
+          parts.push(cabang);
+        }
+        
+        // 3. Kelompok Usia ATAU Kelas Detail
+        // Prioritas: Kelompok Usia > Kelas Detail
+        if (kelompokUsia && kelompokUsia.toLowerCase() !== 'pemula') {
+          parts.push(kelompokUsia);
+        } else if (kelasDetail) {
           parts.push(kelasDetail);
         }
         
