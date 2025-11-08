@@ -286,10 +286,14 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
                         <span className="text-2xl font-semibold">
                           Bertanding
                         </span>
-                        {bertandingMatch && (
+                        {bertandingMatch ? (
                           <div className="text-center mt-2">
-                            <p>{bertandingMatch.nama_atlet_a}</p>
-                            <p>{bertandingMatch.nama_atlet_b}</p>
+                            <p>{bertandingMatch.nama_atlet_a || "Nama peserta tidak tersedia"}</p>
+                            <p>{bertandingMatch.nama_atlet_b || "Nama peserta tidak tersedia"}</p>
+                          </div>
+                        ) : (
+                          <div className="text-center mt-2">
+                            <p>Nama peserta tidak tersedia</p>
                           </div>
                         )}
                       </div>
@@ -300,10 +304,14 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
                         <span className="text-2xl font-semibold">
                           Persiapan
                         </span>
-                        {persiapanMatch && (
+                        {persiapanMatch ? (
                           <div className="text-center mt-2">
-                            <p>{persiapanMatch.nama_atlet_a}</p>
-                            <p>{persiapanMatch.nama_atlet_b}</p>
+                            <p>{persiapanMatch.nama_atlet_a || "Nama peserta tidak tersedia"}</p>
+                            <p>{persiapanMatch.nama_atlet_b || "Nama peserta tidak tersedia"}</p>
+                          </div>
+                        ) : (
+                          <div className="text-center mt-2">
+                            <p>Nama peserta tidak tersedia</p>
                           </div>
                         )}
                       </div>
@@ -314,10 +322,14 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
                         <span className="text-2xl font-semibold">
                           Pemanasan
                         </span>
-                        {pemanasanMatch && (
+                        {pemanasanMatch ? (
                           <div className="text-center mt-2">
-                            <p>{pemanasanMatch.nama_atlet_a}</p>
-                            <p>{pemanasanMatch.nama_atlet_b}</p>
+                            <p>{pemanasanMatch.nama_atlet_a || "Nama peserta tidak tersedia"}</p>
+                            <p>{pemanasanMatch.nama_atlet_b || "Nama peserta tidak tersedia"}</p>
+                          </div>
+                        ) : (
+                          <div className="text-center mt-2">
+                            <p>Nama peserta tidak tersedia</p>
                           </div>
                         )}
                       </div>
