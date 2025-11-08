@@ -1198,6 +1198,9 @@ static async getMedalTally(req: Request, res: Response) {
         bagan: {
           include: {
             match: {
+              orderBy: {
+                ronde: 'asc'
+              },
               include: {
                 peserta_a: {
                   include: {
@@ -1242,12 +1245,74 @@ static async getMedalTally(req: Request, res: Response) {
       }
     });
 
+    // 🔹 STEP 3: Transform data untuk frontend
+    const transformedKelas = kelasList.map(kelas => {
+      const bagan = kelas.bagan[0]; // Ambil bagan pertama (seharusnya cuma 1)
+      
+      if (!bagan || !bagan.match || bagan.match.length === 0) {
+        // Kelas belum ada bracket atau belum ada match
+        return {
+          ...kelas,
+          bracket: null,
+          matches: []
+        };
+      }
+
+      // Transform matches ke format yang expected frontend
+      const matches = bagan.match.map(match => ({
+        id: match.id_match,
+        round: match.ronde,
+        scoreA: match.skor_a,
+        scoreB: match.skor_b,
+        participant1: match.peserta_a ? {
+          id: match.peserta_a.id_peserta_kompetisi,
+          atletId: match.peserta_a.id_atlet,
+          name: match.peserta_a.is_team 
+            ? match.peserta_a.anggota_tim?.map(t => t.atlet.nama_atlet).join(', ') || 'Team'
+            : match.peserta_a.atlet?.nama_atlet || '',
+          dojang: match.peserta_a.atlet?.dojang?.nama_dojang || '',
+          dojo: match.peserta_a.atlet?.dojang?.nama_dojang || '',
+          isTeam: match.peserta_a.is_team,
+          teamMembers: match.peserta_a.is_team 
+            ? match.peserta_a.anggota_tim?.map(t => t.atlet.nama_atlet) || []
+            : undefined
+        } : null,
+        participant2: match.peserta_b ? {
+          id: match.peserta_b.id_peserta_kompetisi,
+          atletId: match.peserta_b.id_atlet,
+          name: match.peserta_b.is_team 
+            ? match.peserta_b.anggota_tim?.map(t => t.atlet.nama_atlet).join(', ') || 'Team'
+            : match.peserta_b.atlet?.nama_atlet || '',
+          dojang: match.peserta_b.atlet?.dojang?.nama_dojang || '',
+          dojo: match.peserta_b.atlet?.dojang?.nama_dojang || '',
+          isTeam: match.peserta_b.is_team,
+          teamMembers: match.peserta_b.is_team 
+            ? match.peserta_b.anggota_tim?.map(t => t.atlet.nama_atlet) || []
+            : undefined
+        } : null,
+        tanggalPertandingan: match.tanggal_pertandingan,
+        nomorPartai: match.nomor_partai,
+        nomorAntrian: match.nomor_antrian,
+        nomorLapangan: match.nomor_lapangan,
+        venue: match.venue ? match.venue.nama_venue : null
+      }));
+
+      return {
+        ...kelas,
+        bracket: {
+          matches: matches,
+          totalRounds: Math.max(...matches.map(m => m.round), 0)
+        }
+      };
+    });
+
     console.log(`📊 Medal Tally Request - Kompetisi: ${kompetisi.nama_event}`);
-    console.log(`   Total Kelas: ${kelasList.length}`);
+    console.log(`   Total Kelas: ${transformedKelas.length}`);
+    console.log(`   Kelas dengan bracket: ${transformedKelas.filter(k => k.bracket).length}`);
 
     return sendSuccess(res, {
       kompetisi,
-      kelas: kelasList
+      kelas: transformedKelas
     }, 'Data medal tally berhasil diambil');
 
   } catch (error: any) {

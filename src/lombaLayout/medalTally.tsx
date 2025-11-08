@@ -55,177 +55,200 @@ const MedalTallyPage: React.FC<{ idKompetisi?: number }> = ({ idKompetisi }) => 
     fetchMedalData();
   }, [idKompetisi]);
 
-  const fetchMedalData = async () => {
-    if (!idKompetisi) return;
+const fetchMedalData = async () => {
+  if (!idKompetisi) return;
 
-    try {
-      setLoading(true);
-      
-      // 🔍 DEBUG: Check token
-      console.log('🔑 Token available:', !!token);
-      console.log('🔑 Token value:', token ? `${token.substring(0, 20)}...` : 'NO TOKEN');
-      
-      // 🔹 STEP 1: Fetch kompetisi info
-      const kompRes = await fetch(`/api/public/kompetisi/${idKompetisi}/medal-tally`, {
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token && { 'Authorization': `Bearer ${token}` })
-        }
-      });
-      const kompData = await kompRes.json();
-      
-      console.log('📊 Kompetisi response status:', kompRes.status);
-      console.log('📊 Kompetisi response:', kompData);
-      
-      if (!kompRes.ok) {
-        throw new Error(`Failed to fetch kompetisi: ${kompRes.status} ${kompRes.statusText}`);
-      }
-      
-      if (kompData.success) {
-        setKompetisi(kompData.data);
-      }
-
-      // 🔹 STEP 2: Fetch all kelas kejuaraan
-      const kelasRes = await fetch(`/api/public/kompetisi/${idKompetisi}/kelas-kejuaraan`, {
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token && { 'Authorization': `Bearer ${token}` })
-        }
-      });
-      const kelasData = await kelasRes.json();
-      
-      console.log('📋 Kelas response status:', kelasRes.status);
-      console.log('📋 Kelas response:', kelasData);
-      
-      if (!kelasRes.ok) {
-        throw new Error(`Failed to fetch kelas kejuaraan: ${kelasRes.status} ${kelasRes.statusText}`);
-      }
-      
-      if (!kelasData.success) {
-        throw new Error('Failed to fetch kelas kejuaraan');
-      }
-
-      // 🔹 STEP 3: Fetch leaderboard untuk SETIAP kelas
-      const kelasWithLeaderboard = await Promise.all(
-        kelasData.data.map(async (kelas: any) => {
-          try {
-            const bracketRes = await fetch(
-              `/api/kompetisi/${idKompetisi}/brackets/${kelas.id_kelas_kejuaraan}`,
-              {
-                headers: {
-                  ...(token && { 'Authorization': `Bearer ${token}` })
-                }
-              }
-            );
-            
-            if (!bracketRes.ok) {
-              console.log(`⚠️ No bracket for kelas ${kelas.id_kelas_kejuaraan}`);
-              return {
-                ...kelas,
-                leaderboard: { gold: [], silver: [], bronze: [] }
-              };
-            }
-
-            const bracketData = await bracketRes.json();
-            
-            if (!bracketData.success || !bracketData.data) {
-              return {
-                ...kelas,
-                leaderboard: { gold: [], silver: [], bronze: [] }
-              };
-            }
-
-            // 🔹 STEP 4: Transform leaderboard berdasarkan kategori
-            const isPemula = kelas.kategori_event?.nama_kategori === 'Pemula';
-            const leaderboard = transformLeaderboard(bracketData.data, isPemula);
-
-            console.log(`✅ Leaderboard untuk ${generateNamaKelas(kelas)}:`, leaderboard);
-
-            return {
-              ...kelas,
-              leaderboard
-            };
-          } catch (err) {
-            console.error(`❌ Error fetching leaderboard for kelas ${kelas.id_kelas_kejuaraan}:`, err);
-            return {
-              ...kelas,
-              leaderboard: { gold: [], silver: [], bronze: [] }
-            };
-          }
-        })
-      );
-
-      // 🔹 STEP 5: Filter hanya kelas yang punya medali
-      const kelasWithMedals = kelasWithLeaderboard.filter(
-        k => k.leaderboard.gold.length > 0 || 
-             k.leaderboard.silver.length > 0 || 
-             k.leaderboard.bronze.length > 0
-      );
-
-      console.log(`📊 Total kelas dengan medali: ${kelasWithMedals.length}`);
-      setKelasList(kelasWithMedals);
-
-    } catch (err: any) {
-      console.error('❌ Error fetching medal data:', err);
-      setError(err.message || 'Gagal memuat data perolehan medali');
-    } finally {
-      setLoading(false);
+  try {
+    setLoading(true);
+    
+    console.log('🔍 Fetching medal data for kompetisi:', idKompetisi);
+    
+    // ✅ STEP 1: Fetch dari PUBLIC endpoint (NO AUTH!)
+    const response = await fetch(`/api/public/kompetisi/${idKompetisi}/medal-tally`);
+    
+    console.log('📊 Response status:', response.status);
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch medal data: ${response.status} ${response.statusText}`);
     }
-  };
+    
+    const result = await response.json();
+    console.log('📊 Medal data response:', result);
+    
+    if (!result.success) {
+      throw new Error('Failed to fetch medal data');
+    }
+
+    // ✅ STEP 2: Set kompetisi info
+    if (result.data.kompetisi) {
+      setKompetisi(result.data.kompetisi);
+    }
+
+    // ✅ STEP 3: Process kelas data dengan bracket
+    const kelasWithLeaderboard = result.data.kelas
+      .filter((kelas: any) => kelas.bracket && kelas.bracket.matches.length > 0) // Filter hanya yang ada bracket
+      .map((kelas: any) => {
+        console.log(`\n📋 Processing kelas: ${kelas.id_kelas_kejuaraan}`);
+        
+        // Detect kategori (PEMULA atau PRESTASI)
+        const isPemula = kelas.kategori_event?.nama_kategori?.toLowerCase().includes('pemula') || false;
+        
+        console.log(`   Type: ${isPemula ? 'PEMULA' : 'PRESTASI'}`);
+        console.log(`   Total matches: ${kelas.bracket.matches.length}`);
+        
+        // Transform leaderboard
+        const leaderboard = transformLeaderboard(kelas.bracket.matches, isPemula);
+        
+        console.log(`   Leaderboard:`, leaderboard);
+        
+        return {
+          id_kelas_kejuaraan: kelas.id_kelas_kejuaraan,
+          nama_kelas: kelas.nama_kelas,
+          cabang: kelas.cabang,
+          kategori_event: kelas.kategori_event,
+          kelompok: kelas.kelompok,
+          kelas_berat: kelas.kelas_berat,
+          poomsae: kelas.poomsae,
+          leaderboard
+        };
+      });
+
+    console.log(`\n✅ Total kelas dengan medali: ${kelasWithLeaderboard.length}`);
+    setKelasList(kelasWithLeaderboard);
+
+  } catch (err: any) {
+    console.error('❌ Error fetching medal data:', err);
+    setError(err.message || 'Gagal memuat data perolehan medali');
+  } finally {
+    setLoading(false);
+  }
+};
 
   /**
    * 🔄 Transform bracket data menjadi leaderboard
    */
-  const transformLeaderboard = (bracketData: any, isPemula: boolean) => {
-    const leaderboard = {
-      gold: [] as Array<{ id: number; name: string; dojo: string }>,
-      silver: [] as Array<{ id: number; name: string; dojo: string }>,
-      bronze: [] as Array<{ id: number; name: string; dojo: string }>
-    };
-
-    if (!bracketData.matches || bracketData.matches.length === 0) {
-      return leaderboard;
-    }
-
-    if (isPemula) {
-      // 🥋 PEMULA Logic
-      return transformPemulaLeaderboard(bracketData.matches);
-    } else {
-      // 🏆 PRESTASI Logic
-      return transformPrestasiLeaderboard(bracketData.matches);
-    }
+const transformLeaderboard = (matches: any[], isPemula: boolean) => {
+  const leaderboard = {
+    gold: [] as Array<{ id: number; name: string; dojo: string }>,
+    silver: [] as Array<{ id: number; name: string; dojo: string }>,
+    bronze: [] as Array<{ id: number; name: string; dojo: string }>
   };
 
+  if (!matches || matches.length === 0) {
+    return leaderboard;
+  }
+
+  if (isPemula) {
+    return transformPemulaLeaderboard(matches);
+  } else {
+    return transformPrestasiLeaderboard(matches);
+  }
+};
   /**
    * 🥋 Transform PEMULA leaderboard
    */
-  const transformPemulaLeaderboard = (matches: any[]) => {
-    const leaderboard = {
-      gold: [] as Array<{ id: number; name: string; dojo: string }>,
-      silver: [] as Array<{ id: number; name: string; dojo: string }>,
-      bronze: [] as Array<{ id: number; name: string; dojo: string }>
-    };
+const transformPemulaLeaderboard = (matches: any[]) => {
+  const leaderboard = {
+    gold: [] as Array<{ id: number; name: string; dojo: string }>,
+    silver: [] as Array<{ id: number; name: string; dojo: string }>,
+    bronze: [] as Array<{ id: number; name: string; dojo: string }>
+  };
 
-    const processedGold = new Set<number>();
-    const processedSilver = new Set<number>();
-    const processedBronze = new Set<number>();
+  const processedGold = new Set<number>();
+  const processedSilver = new Set<number>();
+  const processedBronze = new Set<number>();
 
-    const round1Matches = matches.filter(m => m.round === 1);
-    const round2Matches = matches.filter(m => m.round === 2);
-    const hasAdditionalMatch = round2Matches.length > 0;
+  const round1Matches = matches.filter(m => m.round === 1);
+  const round2Matches = matches.filter(m => m.round === 2);
+  const hasAdditionalMatch = round2Matches.length > 0;
 
-    if (!hasAdditionalMatch) {
-      // GENAP: Semua round 1 winner = GOLD, loser = SILVER
-      round1Matches.forEach(match => {
-        if ((match.scoreA > 0 || match.scoreB > 0) && match.participant1 && match.participant2) {
-          const winner = match.scoreA > match.scoreB ? match.participant1 : match.participant2;
-          const loser = match.scoreA > match.scoreB ? match.participant2 : match.participant1;
+  console.log(`   Round 1: ${round1Matches.length}, Round 2: ${round2Matches.length}`);
 
+  if (!hasAdditionalMatch) {
+    // ⭐ GENAP SCENARIO
+    round1Matches.forEach(match => {
+      if ((match.scoreA > 0 || match.scoreB > 0) && match.participant1 && match.participant2) {
+        const winner = match.scoreA > match.scoreB ? match.participant1 : match.participant2;
+        const loser = match.scoreA > match.scoreB ? match.participant2 : match.participant1;
+
+        if (!processedGold.has(winner.id)) {
+          leaderboard.gold.push({
+            id: winner.id,
+            name: winner.name,
+            dojo: winner.dojo || ''
+          });
+          processedGold.add(winner.id);
+        }
+
+        if (!processedSilver.has(loser.id)) {
+          leaderboard.silver.push({
+            id: loser.id,
+            name: loser.name,
+            dojo: loser.dojo || ''
+          });
+          processedSilver.add(loser.id);
+        }
+      }
+    });
+  } else {
+    // ⭐ GANJIL SCENARIO
+    const additionalMatch = round2Matches[0];
+    const lastRound1Match = round1Matches[round1Matches.length - 1];
+
+    // Additional match
+    if (additionalMatch && (additionalMatch.scoreA > 0 || additionalMatch.scoreB > 0)) {
+      const winner = additionalMatch.scoreA > additionalMatch.scoreB 
+        ? additionalMatch.participant1 
+        : additionalMatch.participant2;
+      const loser = additionalMatch.scoreA > additionalMatch.scoreB 
+        ? additionalMatch.participant2 
+        : additionalMatch.participant1;
+
+      if (winner) {
+        leaderboard.gold.push({
+          id: winner.id,
+          name: winner.name,
+          dojo: winner.dojo || ''
+        });
+        processedGold.add(winner.id);
+      }
+
+      if (loser) {
+        leaderboard.silver.push({
+          id: loser.id,
+          name: loser.name,
+          dojo: loser.dojo || ''
+        });
+        processedSilver.add(loser.id);
+      }
+    }
+
+    // Round 1 matches
+    round1Matches.forEach(match => {
+      const isLastMatch = match.id === lastRound1Match?.id;
+      const hasScore = match.scoreA > 0 || match.scoreB > 0;
+
+      if (hasScore && match.participant1 && match.participant2) {
+        const winner = match.scoreA > match.scoreB ? match.participant1 : match.participant2;
+        const loser = match.scoreA > match.scoreB ? match.participant2 : match.participant1;
+
+        if (isLastMatch) {
+          // Last match loser = BRONZE
+          if (!processedBronze.has(loser.id)) {
+            leaderboard.bronze.push({
+              id: loser.id,
+              name: loser.name,
+              dojo: loser.dojo || ''
+            });
+            processedBronze.add(loser.id);
+          }
+        } else {
+          // Other matches
           if (!processedGold.has(winner.id)) {
             leaderboard.gold.push({
               id: winner.id,
               name: winner.name,
-              dojo: winner.dojang || winner.dojo || ''
+              dojo: winner.dojo || ''
             });
             processedGold.add(winner.id);
           }
@@ -234,150 +257,77 @@ const MedalTallyPage: React.FC<{ idKompetisi?: number }> = ({ idKompetisi }) => 
             leaderboard.silver.push({
               id: loser.id,
               name: loser.name,
-              dojo: loser.dojang || loser.dojo || ''
+              dojo: loser.dojo || ''
             });
             processedSilver.add(loser.id);
           }
         }
-      });
-    } else {
-      // GANJIL: Ada additional match
-      const additionalMatch = round2Matches[0];
-      const lastRound1Match = round1Matches[round1Matches.length - 1];
-
-      // Additional match winner = GOLD, loser = SILVER
-      if (additionalMatch && (additionalMatch.scoreA > 0 || additionalMatch.scoreB > 0)) {
-        const winner = additionalMatch.scoreA > additionalMatch.scoreB 
-          ? additionalMatch.participant1 
-          : additionalMatch.participant2;
-        const loser = additionalMatch.scoreA > additionalMatch.scoreB 
-          ? additionalMatch.participant2 
-          : additionalMatch.participant1;
-
-        if (winner) {
-          leaderboard.gold.push({
-            id: winner.id,
-            name: winner.name,
-            dojo: winner.dojang || winner.dojo || ''
-          });
-          processedGold.add(winner.id);
-        }
-
-        if (loser) {
-          leaderboard.silver.push({
-            id: loser.id,
-            name: loser.name,
-            dojo: loser.dojang || loser.dojo || ''
-          });
-          processedSilver.add(loser.id);
-        }
       }
+    });
+  }
 
-      // Process Round 1 matches
-      round1Matches.forEach(match => {
-        const isLastMatch = match.id === lastRound1Match?.id;
-        const hasScore = match.scoreA > 0 || match.scoreB > 0;
-
-        if (hasScore && match.participant1 && match.participant2) {
-          const winner = match.scoreA > match.scoreB ? match.participant1 : match.participant2;
-          const loser = match.scoreA > match.scoreB ? match.participant2 : match.participant1;
-
-          if (isLastMatch) {
-            // Last match loser = BRONZE
-            if (!processedBronze.has(loser.id)) {
-              leaderboard.bronze.push({
-                id: loser.id,
-                name: loser.name,
-                dojo: loser.dojang || loser.dojo || ''
-              });
-              processedBronze.add(loser.id);
-            }
-          } else {
-            // Other matches: winner = GOLD, loser = SILVER
-            if (!processedGold.has(winner.id)) {
-              leaderboard.gold.push({
-                id: winner.id,
-                name: winner.name,
-                dojo: winner.dojang || winner.dojo || ''
-              });
-              processedGold.add(winner.id);
-            }
-
-            if (!processedSilver.has(loser.id)) {
-              leaderboard.silver.push({
-                id: loser.id,
-                name: loser.name,
-                dojo: loser.dojang || loser.dojo || ''
-              });
-              processedSilver.add(loser.id);
-            }
-          }
-        }
-      });
-    }
-
-    return leaderboard;
-  };
+  return leaderboard;
+};
 
   /**
    * 🏆 Transform PRESTASI leaderboard
    */
-  const transformPrestasiLeaderboard = (matches: any[]) => {
-    const leaderboard = {
-      gold: [] as Array<{ id: number; name: string; dojo: string }>,
-      silver: [] as Array<{ id: number; name: string; dojo: string }>,
-      bronze: [] as Array<{ id: number; name: string; dojo: string }>
-    };
+const transformPrestasiLeaderboard = (matches: any[]) => {
+  const leaderboard = {
+    gold: [] as Array<{ id: number; name: string; dojo: string }>,
+    silver: [] as Array<{ id: number; name: string; dojo: string }>,
+    bronze: [] as Array<{ id: number; name: string; dojo: string }>
+  };
 
-    const totalRounds = Math.max(...matches.map(m => m.round));
-    const finalMatch = matches.find(m => m.round === totalRounds);
+  const totalRounds = Math.max(...matches.map(m => m.round));
+  const finalMatch = matches.find(m => m.round === totalRounds);
 
-    // Final match winner = GOLD, loser = SILVER
-    if (finalMatch && (finalMatch.scoreA > 0 || finalMatch.scoreB > 0)) {
-      const winner = finalMatch.scoreA > finalMatch.scoreB 
-        ? finalMatch.participant1 
-        : finalMatch.participant2;
-      const loser = finalMatch.scoreA > finalMatch.scoreB 
-        ? finalMatch.participant2 
-        : finalMatch.participant1;
+  // Final match winner = GOLD, loser = SILVER
+  if (finalMatch && (finalMatch.scoreA > 0 || finalMatch.scoreB > 0)) {
+    const winner = finalMatch.scoreA > finalMatch.scoreB 
+      ? finalMatch.participant1 
+      : finalMatch.participant2;
+    const loser = finalMatch.scoreA > finalMatch.scoreB 
+      ? finalMatch.participant2 
+      : finalMatch.participant1;
 
-      if (winner) {
-        leaderboard.gold.push({
-          id: winner.id,
-          name: winner.name,
-          dojo: winner.dojang || winner.dojo || ''
-        });
-      }
+    if (winner) {
+      leaderboard.gold.push({
+        id: winner.id,
+        name: winner.name,
+        dojo: winner.dojo || ''
+      });
+    }
 
-      if (loser) {
-        leaderboard.silver.push({
+    if (loser) {
+      leaderboard.silver.push({
+        id: loser.id,
+        name: loser.name,
+        dojo: loser.dojo || ''
+      });
+    }
+  }
+
+  // Semi-final losers = BRONZE
+  const semiRound = totalRounds - 1;
+  const semiMatches = matches.filter(m => m.round === semiRound);
+
+  semiMatches.forEach(match => {
+    if ((match.scoreA > 0 || match.scoreB > 0) && match.participant1 && match.participant2) {
+      const loser = match.scoreA > match.scoreB ? match.participant2 : match.participant1;
+
+      if (loser && !leaderboard.bronze.find(p => p.id === loser.id)) {
+        leaderboard.bronze.push({
           id: loser.id,
           name: loser.name,
-          dojo: loser.dojang || loser.dojo || ''
+          dojo: loser.dojo || ''
         });
       }
     }
+  });
 
-    // Semi-final losers = BRONZE
-    const semiRound = totalRounds - 1;
-    const semiMatches = matches.filter(m => m.round === semiRound);
-
-    semiMatches.forEach(match => {
-      if ((match.scoreA > 0 || match.scoreB > 0) && match.participant1 && match.participant2) {
-        const loser = match.scoreA > match.scoreB ? match.participant2 : match.participant1;
-
-        if (loser && !leaderboard.bronze.find(p => p.id === loser.id)) {
-          leaderboard.bronze.push({
-            id: loser.id,
-            name: loser.name,
-            dojo: loser.dojang || loser.dojo || ''
-          });
-        }
-      }
-    });
-
-    return leaderboard;
-  };
+  return leaderboard;
+};
 
   /**
    * 📊 Aggregate semua leaderboard jadi satu
