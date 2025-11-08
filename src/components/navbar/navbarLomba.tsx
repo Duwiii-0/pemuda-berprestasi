@@ -74,7 +74,7 @@ const NavbarLomba = ({ onLogoutRequest }: { onLogoutRequest: () => void }) => {
     { to: "/event/timeline", label: "Timeline" },
     { to: "/event/faq", label: "FAQ" },
     { to: "/event/live-streaming", label: "Live Streaming" },
-    { to: `/event/medal-tally/${idKompetisi}`, label: "Medal Tally", icon: Medal }, // ✅ NEW
+    { to: `/event/medal-tally/${idKompetisi}`, label: "Medal Tally" }, // ✅ NEW (tanpa icon di sini)
   ];
 
   const getDashboardLink = () => {
@@ -134,7 +134,7 @@ const NavbarLomba = ({ onLogoutRequest }: { onLogoutRequest: () => void }) => {
 
             {/* Desktop Navigation */}
             <div className="hidden lg:flex items-center space-x-1 xl:space-x-2">
-              {navItems.map(({ to, label, icon: Icon }) => (
+              {navItems.map(({ to, label }) => (
                 <Link
                   key={to}
                   to={to}
@@ -143,10 +143,7 @@ const NavbarLomba = ({ onLogoutRequest }: { onLogoutRequest: () => void }) => {
                   }}
                   className={`relative px-3 xl:px-4 py-2 text-md xl:text-2xl ${styles.text} font-plex transition-all duration-300 ease-out ${styles.hoverText} group`}
                 >
-                  <span className="flex items-center gap-2">
-                    {Icon && <Icon size={18} />}
-                    {label}
-                  </span>
+                  {label}
                   {/* Animated underline */}
                   <span
                     className={`absolute bottom-0 left-0 w-0 h-0.5 bg-yellow transition-all duration-300 ease-out group-hover:w-full ${
@@ -269,7 +266,7 @@ const NavbarLomba = ({ onLogoutRequest }: { onLogoutRequest: () => void }) => {
           <div className="h-full overflow-y-auto p-6 space-y-6">
             {/* Mobile Navigation Links */}
             <div className="space-y-2">
-              {navItems.map(({ to, label, icon: Icon }, index) => (
+              {navItems.map(({ to, label }, index) => (
                 <Link
                   key={to}
                   to={to}
@@ -284,7 +281,6 @@ const NavbarLomba = ({ onLogoutRequest }: { onLogoutRequest: () => void }) => {
                     transitionDelay: isBurgerOpen ? `${index * 100}ms` : "0ms",
                   }}
                 >
-                  {Icon && <Icon size={20} />}
                   {label}
                 </Link>
               ))}

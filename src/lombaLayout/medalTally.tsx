@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Loader, Trophy, Medal, Calendar, MapPin, Award } from 'lucide-react';
 import DojangMedalTable from '../components/DojangMedalTable';
+import { useAuth } from '../context/authContext';
 
 interface Kompetisi {
   id_kompetisi: number;
@@ -42,6 +43,7 @@ interface AggregatedLeaderboard {
 }
 
 const MedalTallyPage: React.FC<{ idKompetisi?: number }> = ({ idKompetisi }) => {
+  const { token } = useAuth();
   const [kompetisi, setKompetisi] = useState<Kompetisi | null>(null);
   const [kelasList, setKelasList] = useState<KelasKejuaraan[]>([]);
   const [loading, setLoading] = useState(true);
@@ -60,7 +62,11 @@ const MedalTallyPage: React.FC<{ idKompetisi?: number }> = ({ idKompetisi }) => 
       setLoading(true);
       
       // 🔹 STEP 1: Fetch kompetisi info
-      const kompRes = await fetch(`/api/kompetisi/${idKompetisi}`);
+      const kompRes = await fetch(`/api/kompetisi/${idKompetisi}`, {
+        headers: {
+          ...(token && { 'Authorization': `Bearer ${token}` })
+        }
+      });
       const kompData = await kompRes.json();
       
       if (kompData.success) {
@@ -68,7 +74,11 @@ const MedalTallyPage: React.FC<{ idKompetisi?: number }> = ({ idKompetisi }) => 
       }
 
       // 🔹 STEP 2: Fetch all kelas kejuaraan
-      const kelasRes = await fetch(`/api/kompetisi/${idKompetisi}/kelas-kejuaraan`);
+      const kelasRes = await fetch(`/api/kompetisi/${idKompetisi}/kelas-kejuaraan`, {
+        headers: {
+          ...(token && { 'Authorization': `Bearer ${token}` })
+        }
+      });
       const kelasData = await kelasRes.json();
       
       if (!kelasData.success) {
@@ -80,7 +90,12 @@ const MedalTallyPage: React.FC<{ idKompetisi?: number }> = ({ idKompetisi }) => 
         kelasData.data.map(async (kelas: any) => {
           try {
             const bracketRes = await fetch(
-              `/api/kompetisi/${idKompetisi}/brackets/${kelas.id_kelas_kejuaraan}`
+              `/api/kompetisi/${idKompetisi}/brackets/${kelas.id_kelas_kejuaraan}`,
+              {
+                headers: {
+                  ...(token && { 'Authorization': `Bearer ${token}` })
+                }
+              }
             );
             
             if (!bracketRes.ok) {
