@@ -13,6 +13,7 @@ import kelasRoutes from "./routes/kelas";
 import kompetisiRoutes from "./routes/kompetisi";
 import buktiTransferRoutes from "./routes/buktiTransfer";
 import lapanganRoutes from "./routes/lapangan";
+import pertandinganRoutes from "./routes/pertandingan";
 import publicRoutes from "./routes/public"; // ✅ ADD THIS
 
 // Import middleware
@@ -92,6 +93,7 @@ app.use("/api/kompetisi", kompetisiRoutes);
 app.use("/api/kelas", kelasRoutes);
 app.use("/api/bukti-transfer", buktiTransferRoutes);
 app.use("/api/lapangan", lapanganRoutes);
+app.use("/api/pertandingan", pertandinganRoutes);
 
 // 404 handler (MUST BE AFTER ALL ROUTES)
 app.use(notFoundHandler);
