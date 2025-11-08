@@ -30,15 +30,15 @@ const OVERLAY_COORDS = {
   },
   
   nama: {
-    x: 56,           // Setelah "Nama :"
+    x: 55,           // Setelah "Nama :"
     y: 220,          // Baris Nama
   },
   kelas: {
-    x: 56,           // Setelah "Kelas :"
+    x: 55,           // Setelah "Kelas :"
     y: 233,          // Baris Kelas
   },
   kontingen: {
-    x: 56,           // Setelah "Kontingen :"
+    x: 55,           // Setelah "Kontingen :"
     y: 246,          // Baris Kontingen
   },
 };
