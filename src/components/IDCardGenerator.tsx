@@ -82,7 +82,8 @@ export const IDCardGenerator = ({ atlet, isEditing }: IDCardGeneratorProps) => {
 
   const getPhotoUrl = (filename: string): string => {
     if (!filename) return "";
-    return `${process.env.REACT_APP_API_BASE_URL || 'http://cjvmanagementevent.com'}/uploads/atlet/pas_foto/${filename}`;
+    const baseUrl = process.env.REACT_APP_API_BASE_URL || 'https://cjvmanagementevent.com';
+    return `${baseUrl}/uploads/atlet/pas_foto/${filename}`;
   };
 
   const loadImageAsBase64 = async (url: string, rounded = false): Promise<string> => {
@@ -180,10 +181,12 @@ export const IDCardGenerator = ({ atlet, isEditing }: IDCardGeneratorProps) => {
         
         // 🔥 FETCH DATA JIKA HANYA ADA ID
         try {
+          const apiBaseUrl = process.env.REACT_APP_API_BASE_URL || 'https://cjvmanagementevent.com';
+          
           // Fetch kelompok usia jika hanya ada id_kelompok
           if (!kelompokUsia && (kj as any).id_kelompok) {
             const kelompokResponse = await fetch(
-              `${process.env.REACT_APP_API_BASE_URL || 'http://cjvmanagementevent.com'}/api/kelompok-usia/${(kj as any).id_kelompok}`
+              `${apiBaseUrl}/api/kelompok-usia/${(kj as any).id_kelompok}`
             );
             if (kelompokResponse.ok) {
               const kelompokData = await kelompokResponse.json();
@@ -195,7 +198,7 @@ export const IDCardGenerator = ({ atlet, isEditing }: IDCardGeneratorProps) => {
           // Fetch kelas berat jika cabang KYORUGI dan hanya ada id_kelas_berat
           if (cabang === "KYORUGI" && !kj.kelas_berat?.nama_kelas && (kj as any).id_kelas_berat) {
             const beratResponse = await fetch(
-              `${process.env.REACT_APP_API_BASE_URL || 'http://cjvmanagementevent.com'}/api/kelas-berat/${(kj as any).id_kelas_berat}`
+              `${apiBaseUrl}/api/kelas-berat/${(kj as any).id_kelas_berat}`
             );
             if (beratResponse.ok) {
               const beratData = await beratResponse.json();
@@ -207,7 +210,7 @@ export const IDCardGenerator = ({ atlet, isEditing }: IDCardGeneratorProps) => {
           // Fetch kelas poomsae jika cabang POOMSAE dan hanya ada id_poomsae
           if (cabang === "POOMSAE" && !kj.poomsae?.nama_kelas && (kj as any).id_poomsae) {
             const poomsaeResponse = await fetch(
-              `${process.env.REACT_APP_API_BASE_URL || 'http://cjvmanagementevent.com'}/api/kelas-poomsae/${(kj as any).id_poomsae}`
+              `${apiBaseUrl}/api/kelas-poomsae/${(kj as any).id_poomsae}`
             );
             if (poomsaeResponse.ok) {
               const poomsaeData = await poomsaeResponse.json();
@@ -381,9 +384,9 @@ export const IDCardGenerator = ({ atlet, isEditing }: IDCardGeneratorProps) => {
           foto_path: atlet.pas_foto_path || "",
           foto_coords: { x: c.photo.x, y: c.photo.y, w: c.photo.width, h: c.photo.height },
           template: "e-idcard_sriwijaya.jpg",
-          version: "4.0"
+          version: "4.1"
         }),
-        creator: "ID Card Generator v4.0",
+        creator: "ID Card Generator v4.1",
       });
 
       // Preview & Download
