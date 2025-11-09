@@ -739,26 +739,30 @@ const exportPesertaToExcel = () => {
     });
     
     const headerInfo = [
-      ['LAPORAN DATA PESERTA KOMPETISI'],
+      ['LAPORAN DATA PESERTA KOMPETISI - KATEGORI PRESTASI'],
       ['Nama Event', kelasData.kompetisi?.nama_event || 'Sriwijaya International Taekwondo Championship 2025'],
       ['Kelas', `${kelasData.kelompok?.nama_kelompok} ${kelasData.kelas_berat?.jenis_kelamin === 'LAKI_LAKI' ? 'Male' : 'Female'} ${kelasData.kelas_berat?.nama_kelas || kelasData.poomsae?.nama_kelas}`],
       ['Lokasi', kelasData.kompetisi?.lokasi || 'GOR Ranau JSC Palembang'],
       ['Tanggal Export', currentDate],
-      ['Total Peserta', kelasData.peserta_kompetisi.length.toString()],
+      ['Total Peserta', approvedParticipants.length.toString()],
       [], // Baris kosong
     ];
 
     const rows: any[] = [];
 
-    kelasData.peserta_kompetisi.forEach((p: Peserta, index: number) => {
-      const isTeam = p.is_team;
+    // ✅ PERBAIKAN: Akses data dari kelasData.peserta_kompetisi (bukan approvedParticipants)
+    const pesertaList = kelasData.peserta_kompetisi.filter((p: any) => p.status === 'APPROVED');
+    
+    pesertaList.forEach((peserta: any, index: number) => {
+      const isTeam = peserta.is_team;
       
+      // ✅ Handle nama peserta untuk tim dan individu
       const namaPeserta = isTeam
-        ? p.anggota_tim?.map((m) => m.atlet.nama_atlet).join(", ")
-        : p.atlet?.nama_atlet || "-";
+        ? peserta.anggota_tim?.map((m: any) => m.atlet.nama_atlet).join(", ")
+        : peserta.atlet?.nama_atlet || "-";
       
       const cabang = kelasData.cabang || "-";
-      const levelEvent = kelasData.kategori_event?.nama_kategori || "-";
+      const levelEvent = kelasData.kategori_event?.nama_kategori || "PEMULA";
       
       const kelasBerat = cabang === "KYORUGI"
         ? kelasData.kelas_berat?.nama_kelas || "-"
@@ -770,39 +774,37 @@ const exportPesertaToExcel = () => {
       
       const kelasUsia = kelasData.kelompok?.nama_kelompok || "-";
       
-      // ✅ PERBAIKAN: Type-safe access ke jenis_kelamin
-      const jenisKelamin = !isTeam && p.atlet?.jenis_kelamin
-        ? (p.atlet.jenis_kelamin === "LAKI_LAKI" ? "Laki-Laki" : "Perempuan")
+      // ✅ PERBAIKAN: Jenis kelamin - langsung dari data peserta
+      const jenisKelamin = !isTeam 
+        ? (peserta.atlet?.jenis_kelamin === "LAKI_LAKI" ? "Laki-Laki" : peserta.atlet?.jenis_kelamin === "PEREMPUAN" ? "Perempuan" : "-")
         : "-";
       
-      // ✅ PERBAIKAN: Safe access untuk dojang
-      const dojang = isTeam && p.anggota_tim?.length
-        ? p.anggota_tim[0]?.atlet?.dojang?.nama_dojang || "-"
-        : p.atlet?.dojang?.nama_dojang || "-";
+      // ✅ PERBAIKAN: Dojang - langsung dari data peserta
+      const dojang = isTeam && peserta.anggota_tim?.length
+        ? peserta.anggota_tim[0]?.atlet?.dojang?.nama_dojang || "-"
+        : peserta.atlet?.dojang?.nama_dojang || "-";
       
-      // ✅ PERBAIKAN: Safe access untuk tanggal_lahir
-      const tanggalLahir = !isTeam && p.atlet?.tanggal_lahir
-        ? p.atlet.tanggal_lahir
+      // ✅ PERBAIKAN: Data detail - langsung dari data peserta
+      const tanggalLahir = !isTeam 
+        ? peserta.atlet?.tanggal_lahir || "-"
         : "-";
       
-      // ✅ PERBAIKAN: Safe access untuk berat_badan
-      const beratBadan = !isTeam && p.atlet?.berat_badan
-        ? `${p.atlet.berat_badan} kg`
+      const beratBadan = !isTeam 
+        ? peserta.atlet?.berat_badan ? `${peserta.atlet.berat_badan} kg` : "-"
         : "-";
       
-      // ✅ PERBAIKAN: Safe access untuk tinggi_badan
-      const tingiBadan = !isTeam && p.atlet?.tinggi_badan
-        ? `${p.atlet.tinggi_badan} cm`
+      const tingiBadan = !isTeam 
+        ? peserta.atlet?.tinggi_badan ? `${peserta.atlet.tinggi_badan} cm` : "-"
         : "-";
       
-      // ✅ PERBAIKAN: Safe access untuk sabuk dengan fallback ke belt
-      const sabuk = !isTeam && p.atlet
-        ? (p.atlet.sabuk?.nama_sabuk || p.atlet.belt || "-")
+      // ✅ PERBAIKAN: Sabuk - langsung dari data peserta dengan fallback
+      const sabuk = !isTeam 
+        ? (peserta.atlet?.sabuk?.nama_sabuk || peserta.atlet?.belt || "-")
         : "-";
 
-      // Team members detail
-      const anggotaTimDetail = isTeam && p.anggota_tim?.length
-        ? p.anggota_tim.map((m, i) => 
+      // ✅ Detail anggota tim
+      const anggotaTimDetail = isTeam && peserta.anggota_tim?.length
+        ? peserta.anggota_tim.map((m: any, i: number) => 
             `${i + 1}. ${m.atlet.nama_atlet} (${m.atlet.dojang?.nama_dojang || "-"})`
           ).join("; ")
         : "-";
@@ -822,7 +824,7 @@ const exportPesertaToExcel = () => {
         "Tinggi Badan": tingiBadan,
         "Sabuk": sabuk,
         "Dojang": dojang,
-        "Status": p.status,
+        "Status": peserta.status,
         "Anggota Tim": anggotaTimDetail,
       });
     });
@@ -862,19 +864,19 @@ const exportPesertaToExcel = () => {
 
     XLSX.utils.book_append_sheet(workbook, worksheet, "Data Peserta");
 
-    // Generate filename with timestamp
+    // ✅ Generate filename dengan timestamp
     const timestamp = new Date().toISOString().split('T')[0];
     const eventName = kelasData.kompetisi?.nama_event?.replace(/\s+/g, '_') || 'Turnamen';
     const kelasName = `${kelasData.kelompok?.nama_kelompok}_${kelasData.kelas_berat?.nama_kelas || kelasData.poomsae?.nama_kelas}`.replace(/\s+/g, '_');
-    const fileName = `Data_Peserta_${eventName}_${kelasName}_${timestamp}.xlsx`;
+    const fileName = `Data_Peserta_PRESTASI_${eventName}_${kelasName}_${timestamp}.xlsx`;
 
-    // Export file
+    // ✅ Export file
     XLSX.writeFile(workbook, fileName);
 
     showNotification(
       'success',
       'Export Peserta',
-      'Data peserta berhasil diexport ke spreadsheet',
+      'Data peserta PRESTASI berhasil diexport ke spreadsheet',
       () => setShowModal(false)
     );
   } catch (error) {

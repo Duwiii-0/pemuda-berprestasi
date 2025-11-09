@@ -373,7 +373,6 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
     }
   };
 
-// ✅ STEP 2: Function Export Excel yang Diperbaiki
 const exportPesertaToExcel = () => {
   if (!kelasData?.peserta_kompetisi?.length) {
     showNotification(
@@ -405,13 +404,16 @@ const exportPesertaToExcel = () => {
 
     const rows: any[] = [];
 
-    approvedParticipants.forEach((p: Peserta, index: number) => {
-      const isTeam = p.is_team;
+    // ✅ PERBAIKAN: Akses data dari kelasData.peserta_kompetisi (bukan approvedParticipants)
+    const pesertaList = kelasData.peserta_kompetisi.filter((p: any) => p.status === 'APPROVED');
+    
+    pesertaList.forEach((peserta: any, index: number) => {
+      const isTeam = peserta.is_team;
       
       // ✅ Handle nama peserta untuk tim dan individu
-      const namaPeserta = isTeam && p.anggota_tim?.length
-        ? p.anggota_tim.map((m) => m.atlet.nama_atlet).join(", ")
-        : p.atlet?.nama_atlet || "-";
+      const namaPeserta = isTeam
+        ? peserta.anggota_tim?.map((m: any) => m.atlet.nama_atlet).join(", ")
+        : peserta.atlet?.nama_atlet || "-";
       
       const cabang = kelasData.cabang || "-";
       const levelEvent = kelasData.kategori_event?.nama_kategori || "PEMULA";
@@ -426,37 +428,37 @@ const exportPesertaToExcel = () => {
       
       const kelasUsia = kelasData.kelompok?.nama_kelompok || "-";
       
-      // ✅ Jenis kelamin - hanya untuk individu
-      const jenisKelamin = !isTeam && p.atlet?.jenis_kelamin
-        ? (p.atlet.jenis_kelamin === "LAKI_LAKI" ? "Laki-Laki" : "Perempuan")
+      // ✅ PERBAIKAN: Jenis kelamin - langsung dari data peserta
+      const jenisKelamin = !isTeam 
+        ? (peserta.atlet?.jenis_kelamin === "LAKI_LAKI" ? "Laki-Laki" : peserta.atlet?.jenis_kelamin === "PEREMPUAN" ? "Perempuan" : "-")
         : "-";
       
-      // ✅ Dojang - ambil dari peserta pertama jika tim
-      const dojang = isTeam && p.anggota_tim?.length
-        ? p.anggota_tim[0]?.atlet?.dojang?.nama_dojang || "-"
-        : p.atlet?.dojang?.nama_dojang || "-";
+      // ✅ PERBAIKAN: Dojang - langsung dari data peserta
+      const dojang = isTeam && peserta.anggota_tim?.length
+        ? peserta.anggota_tim[0]?.atlet?.dojang?.nama_dojang || "-"
+        : peserta.atlet?.dojang?.nama_dojang || "-";
       
-      // ✅ Data detail - hanya untuk individu
-      const tanggalLahir = !isTeam && p.atlet?.tanggal_lahir
-        ? p.atlet.tanggal_lahir
+      // ✅ PERBAIKAN: Data detail - langsung dari data peserta
+      const tanggalLahir = !isTeam 
+        ? peserta.atlet?.tanggal_lahir || "-"
         : "-";
       
-      const beratBadan = !isTeam && p.atlet?.berat_badan
-        ? `${p.atlet.berat_badan} kg`
+      const beratBadan = !isTeam 
+        ? peserta.atlet?.berat_badan ? `${peserta.atlet.berat_badan} kg` : "-"
         : "-";
       
-      const tingiBadan = !isTeam && p.atlet?.tinggi_badan
-        ? `${p.atlet.tinggi_badan} cm`
+      const tingiBadan = !isTeam 
+        ? peserta.atlet?.tinggi_badan ? `${peserta.atlet.tinggi_badan} cm` : "-"
         : "-";
       
-      // ✅ Sabuk dengan fallback
-      const sabuk = !isTeam && p.atlet
-        ? (p.atlet.sabuk?.nama_sabuk || p.atlet.belt || "-")
+      // ✅ PERBAIKAN: Sabuk - langsung dari data peserta dengan fallback
+      const sabuk = !isTeam 
+        ? (peserta.atlet?.sabuk?.nama_sabuk || peserta.atlet?.belt || "-")
         : "-";
 
       // ✅ Detail anggota tim
-      const anggotaTimDetail = isTeam && p.anggota_tim?.length
-        ? p.anggota_tim.map((m, i) => 
+      const anggotaTimDetail = isTeam && peserta.anggota_tim?.length
+        ? peserta.anggota_tim.map((m: any, i: number) => 
             `${i + 1}. ${m.atlet.nama_atlet} (${m.atlet.dojang?.nama_dojang || "-"})`
           ).join("; ")
         : "-";
@@ -476,7 +478,7 @@ const exportPesertaToExcel = () => {
         "Tinggi Badan": tingiBadan,
         "Sabuk": sabuk,
         "Dojang": dojang,
-        "Status": p.status,
+        "Status": peserta.status,
         "Anggota Tim": anggotaTimDetail,
       });
     });
