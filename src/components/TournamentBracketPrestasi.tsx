@@ -123,9 +123,9 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
     message: '',
   });
 
-const CARD_WIDTH = 280;
+const CARD_WIDTH = 310;
 const CARD_HEIGHT = 140;
-const ROUND_GAP = 60;
+const ROUND_GAP = 70;
 const BASE_VERTICAL_GAP = 60;
 const CENTER_GAP = 100;
 

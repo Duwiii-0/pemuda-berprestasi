@@ -1136,7 +1136,7 @@ return (
                           <>
                             <div className="flex-1 min-w-0">
                               <p 
-                                className="font-bold text-sm leading-tight mb-1"
+                                className="font-bold text-lg leading-tight mb-1"
                                 style={{ 
                                   color: '#000',
                                   wordBreak: 'break-word'
@@ -1145,7 +1145,7 @@ return (
                                 {getParticipantName(match.peserta_a)}
                               </p>
                               <p 
-                                className="text-xs leading-tight"
+                                className="text-base leading-tight"
                                 style={{ 
                                   color: '#DC143C',
                                   opacity: 0.7
@@ -1185,7 +1185,7 @@ return (
                           <div className="w-full flex items-start justify-between gap-2">
                             <div className="flex-1 min-w-0">
                               <p 
-                                className="font-bold text-sm leading-tight mb-1"
+                                className="font-bold text-lg leading-tight mb-1"
                                 style={{ 
                                   color: '#000',
                                   wordBreak: 'break-word'
@@ -1194,7 +1194,7 @@ return (
                                 {getParticipantName(match.peserta_b)}
                               </p>
                               <p 
-                                className="text-xs leading-tight"
+                                className="text-base leading-tight"
                                 style={{ 
                                   color: '#EF4444',
                                   opacity: 0.7
@@ -1306,7 +1306,7 @@ return (
                           <>
                             <div className="flex-1 min-w-0">
                               <p 
-                                className="font-bold text-sm leading-tight mb-1"
+                                className="font-bold text-lg leading-tight mb-1"
                                 style={{ 
                                   color: '#000',
                                   wordBreak: 'break-word'
@@ -1315,7 +1315,7 @@ return (
                                 {getParticipantName(additionalMatch.peserta_a)}
                               </p>
                               <p 
-                                className="text-xs leading-tight"
+                                className="text-base leading-tight"
                                 style={{ 
                                   color: '#DC143C',
                                   opacity: 0.7
@@ -1356,7 +1356,7 @@ return (
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 mb-1">
                                   <p 
-                                    className="font-bold text-sm leading-tight"
+                                    className="font-bold text-lg leading-tight"
                                     style={{ 
                                       color: '#000',
                                       wordBreak: 'break-word'
@@ -1372,7 +1372,7 @@ return (
                                   </span>
                                 </div>
                                 <p 
-                                  className="text-xs leading-tight"
+                                  className="text-base leading-tight"
                                   style={{ 
                                     color: '#EF4444',
                                     opacity: 0.7
@@ -1595,11 +1595,11 @@ return (
                       {index + 1}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-bold text-base mb-1 break-words" style={{ color: '#050505' }}>
+                      <p className="font-bold text-lg mb-1 break-words" style={{ color: '#050505' }}>
                         {getParticipantName(peserta)}
                       </p>
                       <p 
-                        className="text-sm break-words" 
+                        className="text-base break-words" 
                         style={{ 
                           color: '#050505', 
                           opacity: 0.6,
@@ -1712,7 +1712,7 @@ return (
 
               {editingMatch.peserta_a && (
                 <div className="mb-3">
-                  <label className="block text-sm font-medium mb-2">
+                  <label className="block text-lg font-medium mb-2">
                     🔵 {getParticipantName(editingMatch.peserta_a)}
                   </label>
                   <input
@@ -1729,7 +1729,7 @@ return (
               
               {editingMatch.peserta_b && (
                 <div>
-                  <label className="block text-sm font-medium mb-2">
+                  <label className="block text-lg font-medium mb-2">
                     🔴 {getParticipantName(editingMatch.peserta_b)}
                   </label>
                   <input

@@ -464,7 +464,7 @@ if (isPrestasi) {
   console.log('📏 PRESTASI zoom:', zoom);
 } else {
   // ✅ Zoom diperkecil untuk PEMULA (zoom out)
-  if (totalPeserta <= 8) zoom = 1.15;
+  if (totalPeserta <= 8) zoom = 1.1;
   else if (totalPeserta <= 16) zoom = 1.05;
   else if (totalPeserta <= 32) zoom = 1;
   else zoom = 0.9;
