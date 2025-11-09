@@ -119,7 +119,7 @@ const AdminKompetisiLayout: React.FC = () => {
                   className="text-sm font-medium"
                   style={{ color: "#050505", opacity: 0.7 }}
                 >
-                  Sriwijaya Competition 
+                  Sriwijaya International Taekwondo Championship 2025
                 </p>
               </div>
             </div>

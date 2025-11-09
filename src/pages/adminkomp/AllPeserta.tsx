@@ -61,6 +61,9 @@ const handleExportExcel = () => {
   setIsExporting(true);
   
   try {
+    // ✅ Ambil info kompetisi dari user atau peserta pertama
+    const kompetisiInfo = user?.admin_kompetisi || pesertaList[0]?.kelas_kejuaraan?.kompetisi;
+    
     // ✅ Siapkan data header informasi kejuaraan
     const currentDate = new Date().toLocaleDateString('id-ID', { 
       day: 'numeric', 
@@ -70,8 +73,8 @@ const handleExportExcel = () => {
     
     const headerInfo = [
       ['LAPORAN DATA PESERTA KOMPETISI'],
-      ['Nama Event', kelasData?.kompetisi?.nama_event || 'Sriwijaya Cup'],
-      ['Lokasi', kelasData?.kompetisi?.lokasi || 'GOR Ranau JSC Palembang'],
+      ['Nama Event', kompetisiInfo?.nama_event || 'Sriwijaya International Taekwondo Championship 2025'],
+      ['Lokasi', kompetisiInfo?.lokasi || 'GOR Ranau JSC Palembang'],
       ['Tanggal Export', currentDate],
       ['Total Peserta', displayedPesertas.length.toString()],
       [], // Baris kosong
@@ -182,15 +185,6 @@ const handleExportExcel = () => {
       { wch: 50 },  // Anggota Tim
     ];
     worksheet['!cols'] = columnWidths;
-
-    // ✅ Style untuk header info (bold)
-    const headerRange = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
-    for (let row = 0; row < headerInfo.length - 1; row++) {
-      const cellAddress = XLSX.utils.encode_cell({ r: row, c: 0 });
-      if (worksheet[cellAddress]) {
-        worksheet[cellAddress].s = { font: { bold: true } };
-      }
-    }
 
     XLSX.utils.book_append_sheet(workbook, worksheet, "Data Peserta");
 
@@ -416,10 +410,10 @@ const handleExportExcel = () => {
               />
               <div className="flex-1 min-w-0">
                 <h1 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-bebas leading-tight" style={{ color: '#050505' }}>
-                  Daftar Peserta Sriwijaya Cup
+                  Daftar Peserta Sriwijaya International Taekwondo Championship 2025
                 </h1>
                 <p className="text-sm sm:text-base mt-1" style={{ color: '#050505', opacity: 0.6 }}>
-                  Kelola semua peserta kompetisi Sriwijaya kompetisi
+                  Kelola semua peserta kompetisi Sriwijaya International Taekwondo Championship 2025
                 </p>
               </div>
             </div>

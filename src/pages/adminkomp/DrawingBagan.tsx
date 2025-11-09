@@ -392,7 +392,7 @@ if (filterKelasUsia !== "ALL") {
   jenis_kelamin: selectedKelas.jenis_kelamin,
   kompetisi: {
     id_kompetisi: kompetisiId!,
-    nama_event: "Sriwijaya Competition",
+    nama_event: "Sriwijaya International Taekwondo Championship 2025",
     tanggal_mulai: new Date().toISOString(),
     tanggal_selesai: new Date().toISOString(),
     lokasi: "Palembang",

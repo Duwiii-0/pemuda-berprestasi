@@ -724,7 +724,7 @@ const handleExportLapangan = async () => {
               poomsae: kelasData.poomsae,
               kompetisi: {
                 id_kompetisi: idKompetisi,
-                nama_event: "Sriwijaya Competition",
+                nama_event: "Sriwijaya International Taekwondo Championship 2025",
                 tanggal_mulai: selectedExportHari,
                 tanggal_selesai: selectedExportHari,
                 lokasi: "GOR Ranau JSC Palembang",
@@ -789,7 +789,7 @@ const handleExportLapangan = async () => {
 
     // ✅ Export PDF
     await exportMultipleBracketsByLapangan(bracketsToExport, {
-      namaKejuaraan: 'Sriwijaya Competition',
+      namaKejuaraan: 'Sriwijaya International Taekwondo Championship 2025',
       logoPBTI: taekwondo,
       logoEvent: sriwijaya,
     });
