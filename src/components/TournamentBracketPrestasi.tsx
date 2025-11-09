@@ -720,6 +720,7 @@ const generateBracket = async () => {
   };
 
 const exportPesertaToExcel = () => {
+  // ✅ PERBAIKAN KRUSIAL: Gunakan data ASLI dari kelasData, BUKAN dari state matches!
   if (!kelasData?.peserta_kompetisi?.length) {
     showNotification(
       'warning',
@@ -731,6 +732,19 @@ const exportPesertaToExcel = () => {
   }
 
   try {
+    // ✅ Filter hanya APPROVED dari data ORIGINAL
+    const approvedList = kelasData.peserta_kompetisi.filter((p: any) => p.status === 'APPROVED');
+
+    if (approvedList.length === 0) {
+      showNotification(
+        'warning',
+        'Export Peserta',
+        'Tidak ada peserta yang sudah di-approve',
+        () => setShowModal(false)
+      );
+      return;
+    }
+
     // ✅ Siapkan data header informasi kejuaraan
     const currentDate = new Date().toLocaleDateString('id-ID', { 
       day: 'numeric', 
@@ -744,16 +758,14 @@ const exportPesertaToExcel = () => {
       ['Kelas', `${kelasData.kelompok?.nama_kelompok} ${kelasData.kelas_berat?.jenis_kelamin === 'LAKI_LAKI' ? 'Male' : 'Female'} ${kelasData.kelas_berat?.nama_kelas || kelasData.poomsae?.nama_kelas}`],
       ['Lokasi', kelasData.kompetisi?.lokasi || 'GOR Ranau JSC Palembang'],
       ['Tanggal Export', currentDate],
-      ['Total Peserta', approvedParticipants.length.toString()],
+      ['Total Peserta', approvedList.length.toString()],
       [], // Baris kosong
     ];
 
     const rows: any[] = [];
 
-    // ✅ PERBAIKAN: Akses data dari kelasData.peserta_kompetisi (bukan approvedParticipants)
-    const pesertaList = kelasData.peserta_kompetisi.filter((p: any) => p.status === 'APPROVED');
-    
-    pesertaList.forEach((peserta: any, index: number) => {
+    // ✅ LOOP PAKAI DATA ORIGINAL - Ini yang penting!
+    approvedList.forEach((peserta: any, index: number) => {
       const isTeam = peserta.is_team;
       
       // ✅ Handle nama peserta untuk tim dan individu
