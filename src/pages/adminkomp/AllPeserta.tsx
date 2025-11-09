@@ -56,129 +56,157 @@ const AllPeserta: React.FC = () => {
   }, [kompetisiId]);
 
   // Export Excel Function
-  const handleExportExcel = () => {
-    setIsExporting(true);
+// Export Excel Function
+const handleExportExcel = () => {
+  setIsExporting(true);
+  
+  try {
+    // ✅ Siapkan data header informasi kejuaraan
+    const currentDate = new Date().toLocaleDateString('id-ID', { 
+      day: 'numeric', 
+      month: 'long', 
+      year: 'numeric' 
+    });
     
-    try {
-      // Prepare data for export
-      const exportData = displayedPesertas.map((peserta: any, index: number) => {
-        const isTeam = peserta.is_team;
-        
-        const namaPeserta = isTeam
-          ? peserta.anggota_tim?.map((m: any) => m.atlet.nama_atlet).join(", ")
-          : peserta.atlet?.nama_atlet || "-";
-        
-        const cabang = peserta.kelas_kejuaraan?.cabang || "-";
-        const levelEvent = peserta.kelas_kejuaraan?.kategori_event?.nama_kategori || "-";
-        
-        const kelasBerat = cabang === "KYORUGI"
-          ? peserta.kelas_kejuaraan?.kelas_berat?.nama_kelas || "-"
-          : "-";
-        
-        const kelasPoomsae = cabang === "POOMSAE"
-          ? peserta.kelas_kejuaraan?.poomsae?.nama_kelas || "-"
-          : "-";
-        
-        const kelasUsia = peserta.kelas_kejuaraan?.kelompok?.nama_kelompok || "-";
-        
-        const jenisKelamin = !isTeam 
-          ? (peserta.atlet?.jenis_kelamin === "LAKI_LAKI" ? "Laki-Laki" : peserta.atlet?.jenis_kelamin === "PEREMPUAN" ? "Perempuan" : "-")
-          : "-";
-        
-        const dojang = isTeam && peserta.anggota_tim?.length
-          ? peserta.anggota_tim[0]?.atlet?.dojang?.nama_dojang || "-"
-          : peserta.atlet?.dojang?.nama_dojang || "-";
-        
-        const tanggalLahir = !isTeam 
-          ? peserta.atlet?.tanggal_lahir || "-"
-          : "-";
-        
-        const beratBadan = !isTeam 
-          ? peserta.atlet?.berat_badan ? `${peserta.atlet.berat_badan} kg` : "-"
-          : "-";
-        
-        const tingiBadan = !isTeam 
-          ? peserta.atlet?.tinggi_badan ? `${peserta.atlet.tinggi_badan} cm` : "-"
-          : "-";
-        
-        const sabuk = !isTeam 
-          ? peserta.atlet?.sabuk?.nama_sabuk || "-"
-          : "-";
+    const headerInfo = [
+      ['LAPORAN DATA PESERTA KOMPETISI'],
+      ['Nama Event', kelasData?.kompetisi?.nama_event || 'Sriwijaya Cup'],
+      ['Lokasi', kelasData?.kompetisi?.lokasi || 'GOR Ranau JSC Palembang'],
+      ['Tanggal Export', currentDate],
+      ['Total Peserta', displayedPesertas.length.toString()],
+      [], // Baris kosong
+    ];
 
-        // Team members detail
-        const anggotaTimDetail = isTeam && peserta.anggota_tim?.length
-          ? peserta.anggota_tim.map((m: any, i: number) => 
-              `${i + 1}. ${m.atlet.nama_atlet} (${m.atlet.dojang?.nama_dojang || "-"})`
-            ).join("; ")
-          : "-";
-
-        return {
-          "No": index + 1,
-          "ID Peserta": peserta.id_peserta_kompetisi,
-          "Nama Peserta": namaPeserta,
-          "Tipe": isTeam ? "Tim" : "Individu",
-          "Kategori": cabang,
-          "Level": levelEvent,
-          "Kelas Berat": kelasBerat,
-          "Kelas Poomsae": kelasPoomsae,
-          "Kelompok Usia": kelasUsia,
-          "Jenis Kelamin": jenisKelamin,
-          "Tanggal Lahir": tanggalLahir,
-          "Berat Badan": beratBadan,
-          "Tinggi Badan": tingiBadan,
-          "Sabuk": sabuk,
-          "Dojang": dojang,
-          "Status": peserta.status,
-          "Anggota Tim": anggotaTimDetail,
-          "Tanggal Daftar": peserta.created_at ? new Date(peserta.created_at).toLocaleDateString('id-ID') : "-",
-        };
-      });
-
-      // Create workbook and worksheet
-      const worksheet = XLSX.utils.json_to_sheet(exportData);
-      const workbook = XLSX.utils.book_new();
+    // Prepare data for export
+    const exportData = displayedPesertas.map((peserta: any, index: number) => {
+      const isTeam = peserta.is_team;
       
-      // Set column widths
-      const columnWidths = [
-        { wch: 5 },   // No
-        { wch: 12 },  // ID Peserta
-        { wch: 30 },  // Nama Peserta
-        { wch: 10 },  // Tipe
-        { wch: 12 },  // Kategori
-        { wch: 10 },  // Level
-        { wch: 15 },  // Kelas Berat
-        { wch: 15 },  // Kelas Poomsae
-        { wch: 18 },  // Kelompok Usia
-        { wch: 15 },  // Jenis Kelamin
-        { wch: 15 },  // Tanggal Lahir
-        { wch: 12 },  // Berat Badan
-        { wch: 12 },  // Tinggi Badan
-        { wch: 15 },  // Sabuk
-        { wch: 25 },  // Dojang
-        { wch: 12 },  // Status
-        { wch: 50 },  // Anggota Tim
-        { wch: 15 },  // Tanggal Daftar
-      ];
-      worksheet['!cols'] = columnWidths;
+      const namaPeserta = isTeam
+        ? peserta.anggota_tim?.map((m: any) => m.atlet.nama_atlet).join(", ")
+        : peserta.atlet?.nama_atlet || "-";
+      
+      const cabang = peserta.kelas_kejuaraan?.cabang || "-";
+      const levelEvent = peserta.kelas_kejuaraan?.kategori_event?.nama_kategori || "-";
+      
+      const kelasBerat = cabang === "KYORUGI"
+        ? peserta.kelas_kejuaraan?.kelas_berat?.nama_kelas || "-"
+        : "-";
+      
+      const kelasPoomsae = cabang === "POOMSAE"
+        ? peserta.kelas_kejuaraan?.poomsae?.nama_kelas || "-"
+        : "-";
+      
+      const kelasUsia = peserta.kelas_kejuaraan?.kelompok?.nama_kelompok || "-";
+      
+      const jenisKelamin = !isTeam 
+        ? (peserta.atlet?.jenis_kelamin === "LAKI_LAKI" ? "Laki-Laki" : peserta.atlet?.jenis_kelamin === "PEREMPUAN" ? "Perempuan" : "-")
+        : "-";
+      
+      const dojang = isTeam && peserta.anggota_tim?.length
+        ? peserta.anggota_tim[0]?.atlet?.dojang?.nama_dojang || "-"
+        : peserta.atlet?.dojang?.nama_dojang || "-";
+      
+      const tanggalLahir = !isTeam 
+        ? peserta.atlet?.tanggal_lahir || "-"
+        : "-";
+      
+      const beratBadan = !isTeam 
+        ? peserta.atlet?.berat_badan ? `${peserta.atlet.berat_badan} kg` : "-"
+        : "-";
+      
+      const tingiBadan = !isTeam 
+        ? peserta.atlet?.tinggi_badan ? `${peserta.atlet.tinggi_badan} cm` : "-"
+        : "-";
+      
+      // ✅ PERBAIKAN: Ambil sabuk dari relasi yang benar
+      const sabuk = !isTeam 
+        ? (peserta.atlet?.sabuk?.nama_sabuk || peserta.atlet?.belt || "-")
+        : "-";
 
-      XLSX.utils.book_append_sheet(workbook, worksheet, "Data Peserta");
+      // Team members detail
+      const anggotaTimDetail = isTeam && peserta.anggota_tim?.length
+        ? peserta.anggota_tim.map((m: any, i: number) => 
+            `${i + 1}. ${m.atlet.nama_atlet} (${m.atlet.dojang?.nama_dojang || "-"})`
+          ).join("; ")
+        : "-";
 
-      // Generate filename with timestamp
-      const timestamp = new Date().toISOString().split('T')[0];
-      const fileName = `Data_Peserta_Sriwijaya_Cup_${timestamp}.xlsx`;
+      return {
+        "No": index + 1,
+        "Nama Peserta": namaPeserta,
+        "Tipe": isTeam ? "Tim" : "Individu",
+        "Kategori": cabang,
+        "Level": levelEvent,
+        "Kelas Berat": kelasBerat,
+        "Kelas Poomsae": kelasPoomsae,
+        "Kelompok Usia": kelasUsia,
+        "Jenis Kelamin": jenisKelamin,
+        "Tanggal Lahir": tanggalLahir,
+        "Berat Badan": beratBadan,
+        "Tinggi Badan": tingiBadan,
+        "Sabuk": sabuk,
+        "Dojang": dojang,
+        "Status": peserta.status,
+        "Anggota Tim": anggotaTimDetail,
+      };
+    });
 
-      // Export file
-      XLSX.writeFile(workbook, fileName);
+    // ✅ Create workbook dengan header info
+    const workbook = XLSX.utils.book_new();
+    
+    // ✅ Buat worksheet dengan header info dulu
+    const worksheet = XLSX.utils.aoa_to_sheet(headerInfo);
+    
+    // ✅ Tambahkan data peserta ke worksheet yang sama
+    XLSX.utils.sheet_add_json(worksheet, exportData, { 
+      origin: `A${headerInfo.length + 1}`, // Mulai setelah header info
+      skipHeader: false 
+    });
+    
+    // ✅ Set column widths
+    const columnWidths = [
+      { wch: 5 },   // No
+      { wch: 30 },  // Nama Peserta
+      { wch: 10 },  // Tipe
+      { wch: 12 },  // Kategori
+      { wch: 10 },  // Level
+      { wch: 15 },  // Kelas Berat
+      { wch: 15 },  // Kelas Poomsae
+      { wch: 18 },  // Kelompok Usia
+      { wch: 15 },  // Jenis Kelamin
+      { wch: 15 },  // Tanggal Lahir
+      { wch: 12 },  // Berat Badan
+      { wch: 12 },  // Tinggi Badan
+      { wch: 15 },  // Sabuk
+      { wch: 25 },  // Dojang
+      { wch: 12 },  // Status
+      { wch: 50 },  // Anggota Tim
+    ];
+    worksheet['!cols'] = columnWidths;
 
-      // Show success message (optional - you can add a toast notification here)
-      console.log('Export berhasil!');
-    } catch (error) {
-      console.error('Error exporting to Excel:', error);
-      alert('Terjadi kesalahan saat mengekspor data');
-    } finally {
-      setIsExporting(false);
+    // ✅ Style untuk header info (bold)
+    const headerRange = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
+    for (let row = 0; row < headerInfo.length - 1; row++) {
+      const cellAddress = XLSX.utils.encode_cell({ r: row, c: 0 });
+      if (worksheet[cellAddress]) {
+        worksheet[cellAddress].s = { font: { bold: true } };
+      }
     }
-  };
+
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Data Peserta");
+
+    // Generate filename with timestamp
+    const timestamp = new Date().toISOString().split('T')[0];
+    const fileName = `Data_Peserta_Sriwijaya_Cup_${timestamp}.xlsx`;
+
+    // Export file
+    XLSX.writeFile(workbook, fileName);
+
+  } catch (error) {   
+    console.error('Error exporting to Excel:', error);
+  } finally {
+    setIsExporting(false);
+  }
+};
 
   if (user?.role !== "ADMIN_KOMPETISI") {
     return (
