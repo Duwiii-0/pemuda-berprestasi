@@ -967,10 +967,10 @@ return (
           {match.peserta_a ? (
             <>
               <div className="flex-1 min-w-0">
-                <p className="font-bold text-base leading-tight truncate" style={{ color: '#050505' }}>
+                <p className="font-bold text-xl leading-tight truncate" style={{ color: '#050505' }}>
                   {getParticipantName(match.peserta_a)}
                 </p>
-                <p className="text-sm truncate mt-0.5" style={{ color: '#3B82F6', opacity: 0.7 }}>
+                <p className="text-lg truncate mt-0.5" style={{ color: '#3B82F6', opacity: 0.7 }}>
                   {getDojoName(match.peserta_a)}
                 </p>
               </div>
@@ -1003,10 +1003,10 @@ return (
           {match.peserta_b ? (
             <>
               <div className="flex-1 min-w-0">
-                <p className="font-bold text-base leading-tight truncate" style={{ color: '#050505' }}>
+                <p className="font-bold text-xl leading-tight truncate" style={{ color: '#050505' }}>
                   {getParticipantName(match.peserta_b)}
                 </p>
-                <p className="text-sm truncate mt-0.5" style={{ color: '#EF4444', opacity: 0.7 }}>
+                <p className="text-lg truncate mt-0.5" style={{ color: '#EF4444', opacity: 0.7 }}>
                   {getDojoName(match.peserta_b)}
                 </p>
               </div>
@@ -1162,9 +1162,6 @@ const renderCenterFinal = () => {
           style={{ backgroundColor: '#990D35', color: '#F5FBEF' }}
         >
           Final
-        </div>
-        <div className="text-xs mt-1" style={{ color: '#050505', opacity: 0.6 }}>
-          Championship Match
         </div>
       </div>
 
@@ -1456,7 +1453,7 @@ const renderBracketSide = (
               }}
             >
               <div
-                className="px-4 py-2 rounded-lg font-bold text-sm shadow-md"
+                className="px-4 py-2 rounded-lg font-bold text-sm shadow-md mb-5"
                 style={{ backgroundColor: '#990D35', color: '#F5FBEF' }}
               >
                 {roundName}
@@ -2115,7 +2112,7 @@ const calculateCardPosition = (
                         {index + 1}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-bold text-base mb-1 break-words" style={{ color: '#050505' }}>
+                        <p className="font-bold text-xl mb-1 break-words" style={{ color: '#050505' }}>
                           {getParticipantName(peserta)}
                         </p>
                         <p 
@@ -2232,7 +2229,7 @@ const calculateCardPosition = (
 
                 {editingMatch.peserta_a && (
                   <div className="mb-3">
-                    <label className="block text-base font-medium mb-2">
+                    <label className="block text-xl font-medium mb-2">
                       🔵 {getParticipantName(editingMatch.peserta_a)}
                     </label>
                     <input
@@ -2249,7 +2246,7 @@ const calculateCardPosition = (
                 
                 {editingMatch.peserta_b && (
                   <div>
-                    <label className="block text-base font-medium mb-2">
+                    <label className="block text-xl font-medium mb-2">
                       🔴 {getParticipantName(editingMatch.peserta_b)}
                     </label>
                     <input
