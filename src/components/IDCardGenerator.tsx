@@ -174,21 +174,61 @@ export const IDCardGenerator = ({ atlet, isEditing }: IDCardGeneratorProps) => {
         console.log("  - kategori_event:", kj.kategori_event);
         
         const cabang = kj.cabang || "";
-        const kelompokUsia = kj.kelompok?.nama_kelompok || "";
+        let kelompokUsia = kj.kelompok?.nama_kelompok || "";
         const kategoriEvent = kj.kategori_event?.nama_kategori || "";
-        
-        // Ambil kelas detail berdasarkan cabang
         let kelasDetail = "";
-        if (cabang === "KYORUGI" && kj.kelas_berat?.nama_kelas) {
-          kelasDetail = kj.kelas_berat.nama_kelas;
-        } else if (cabang === "POOMSAE" && kj.poomsae?.nama_kelas) {
-          kelasDetail = kj.poomsae.nama_kelas;
+        
+        // 🔥 FETCH DATA JIKA HANYA ADA ID
+        try {
+          // Fetch kelompok usia jika hanya ada id_kelompok
+          if (!kelompokUsia && (kj as any).id_kelompok) {
+            const kelompokResponse = await fetch(
+              `${process.env.REACT_APP_API_BASE_URL || 'http://cjvmanagementevent.com'}/api/kelompok-usia/${(kj as any).id_kelompok}`
+            );
+            if (kelompokResponse.ok) {
+              const kelompokData = await kelompokResponse.json();
+              kelompokUsia = kelompokData.data?.nama_kelompok || "";
+              console.log("✅ Fetched kelompok:", kelompokUsia);
+            }
+          }
+          
+          // Fetch kelas berat jika cabang KYORUGI dan hanya ada id_kelas_berat
+          if (cabang === "KYORUGI" && !kj.kelas_berat?.nama_kelas && (kj as any).id_kelas_berat) {
+            const beratResponse = await fetch(
+              `${process.env.REACT_APP_API_BASE_URL || 'http://cjvmanagementevent.com'}/api/kelas-berat/${(kj as any).id_kelas_berat}`
+            );
+            if (beratResponse.ok) {
+              const beratData = await beratResponse.json();
+              kelasDetail = beratData.data?.nama_kelas || "";
+              console.log("✅ Fetched kelas_berat:", kelasDetail);
+            }
+          }
+          
+          // Fetch kelas poomsae jika cabang POOMSAE dan hanya ada id_poomsae
+          if (cabang === "POOMSAE" && !kj.poomsae?.nama_kelas && (kj as any).id_poomsae) {
+            const poomsaeResponse = await fetch(
+              `${process.env.REACT_APP_API_BASE_URL || 'http://cjvmanagementevent.com'}/api/kelas-poomsae/${(kj as any).id_poomsae}`
+            );
+            if (poomsaeResponse.ok) {
+              const poomsaeData = await poomsaeResponse.json();
+              kelasDetail = poomsaeData.data?.nama_kelas || "";
+              console.log("✅ Fetched poomsae:", kelasDetail);
+            }
+          }
+        } catch (fetchError) {
+          console.error("❌ Error fetching kelas data:", fetchError);
+        }
+        
+        // Jika masih belum ada kelasDetail, coba dari object yang sudah ada
+        if (!kelasDetail) {
+          if (cabang === "KYORUGI" && kj.kelas_berat?.nama_kelas) {
+            kelasDetail = kj.kelas_berat.nama_kelas;
+          } else if (cabang === "POOMSAE" && kj.poomsae?.nama_kelas) {
+            kelasDetail = kj.poomsae.nama_kelas;
+          }
         }
         
         // ✅ Format: Kategori - Cabang - (Kelompok Usia ATAU Kelas Detail)
-        // Contoh KYORUGI dengan usia: "Prestasi - KYORUGI - Senior"
-        // Contoh KYORUGI tanpa usia: "Prestasi - KYORUGI - Under 87 kg"
-        // Contoh POOMSAE: "Pemula - POOMSAE - Individu"
         const parts = [];
         
         // 1. Kategori Event (Pemula/Prestasi)
@@ -202,7 +242,6 @@ export const IDCardGenerator = ({ atlet, isEditing }: IDCardGeneratorProps) => {
         }
         
         // 3. Kelompok Usia (jika ada dan bukan "pemula") ATAU Kelas Detail
-        // Prioritas: Kelompok Usia > Kelas Detail
         if (kelompokUsia && kelompokUsia.toLowerCase() !== 'pemula') {
           parts.push(kelompokUsia);
         } else if (kelasDetail) {
