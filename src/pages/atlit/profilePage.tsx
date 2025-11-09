@@ -1,7 +1,7 @@
 // src/pages/Profile.tsx
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { Phone, User, CalendarFold, IdCard, MapPinned, Scale, Ruler } from "lucide-react";
+import { Phone, User, CalendarFold, IdCard, MapPinned, Scale, Ruler, ArrowLeft } from "lucide-react";
 import TextInput from "../../components/textInput";
 import Select from "react-select";
 import { GeneralButton } from "../dashboard/dataDojang";
@@ -13,7 +13,7 @@ import { calculateAge } from "../../context/AtlitContext";
 import toast from "react-hot-toast";
 import { useAuth } from "../../context/authContext";
 import { AtletDocumentUploader } from "../../components/atletUploads";
-import { IDCardGenerator } from "../../components/IDCardGenerator"; // IMPORT BARU
+import { IDCardGenerator } from "../../components/IDCardGenerator";
 
 // Extend Atlet type untuk include file fields
 interface AtletWithFiles extends Omit<Atlet, 'akte_kelahiran' | 'pas_foto' | 'sertifikat_belt' | 'ktp'> {
@@ -28,8 +28,8 @@ interface AtletWithFiles extends Omit<Atlet, 'akte_kelahiran' | 'pas_foto' | 'se
   ktp_path?: string;
   
   kota?: string;
-  dojang_name?: string; // TAMBAHAN untuk ID Card
-  kelas_berat?: string; // TAMBAHAN untuk ID Card
+  dojang_name?: string;
+  kelas_berat?: string;
 }
 
 const provinsiKotaData: Record<string, string[]> = {
@@ -90,6 +90,7 @@ function toInputDateFormat(dateStr: string): string {
 
 const Profile = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [originalData, setOriginalData] = useState<AtletWithFiles | null>(null);
   const [formData, setFormData] = useState<AtletWithFiles | null>();
   const [isEditing, setIsEditing] = useState(false);
@@ -284,6 +285,15 @@ const Profile = () => {
               Detail informasi {formData.nama_atlet}
             </p>
           </div>
+          
+          {/* Tombol Kembali */}
+          <button
+            onClick={() => navigate(-1)}
+            className="text-red bg-white hover:bg-red/5 border-2 border-red/30 hover:border-red/50 shadow-lg flex items-center justify-center gap-2 w-full sm:w-auto text-sm lg:text-base px-4 lg:px-6 py-2.5 lg:py-3 rounded-xl font-plex font-medium transition-all duration-300"
+          >
+            <ArrowLeft size={18} />
+            Kembali
+          </button>
         </div>
 
         {/* Profile Card */}
@@ -650,12 +660,13 @@ const Profile = () => {
           </div>
         </div>
 
-        {/* TAMBAHKAN ID CARD GENERATOR COMPONENT DI SINI */}
+        {/* ID Card Generator */}
         <IDCardGenerator 
           atlet={formData} 
           isEditing={isEditing}
         />
 
+        {/* Document Uploader */}
         <AtletDocumentUploader
           formData={formData}
           isEditing={isEditing}
