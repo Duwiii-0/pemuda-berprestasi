@@ -179,57 +179,16 @@ export const IDCardGenerator = ({ atlet, isEditing }: IDCardGeneratorProps) => {
         const kategoriEvent = kj.kategori_event?.nama_kategori || "";
         let kelasDetail = "";
         
-        // 🔥 FETCH DATA JIKA HANYA ADA ID
-        try {
-          const apiBaseUrl = process.env.REACT_APP_API_BASE_URL || 'https://cjvmanagementevent.com';
-          
-          // Fetch kelompok usia jika hanya ada id_kelompok
-          if (!kelompokUsia && (kj as any).id_kelompok) {
-            const kelompokResponse = await fetch(
-              `${apiBaseUrl}/api/kelompok-usia/${(kj as any).id_kelompok}`
-            );
-            if (kelompokResponse.ok) {
-              const kelompokData = await kelompokResponse.json();
-              kelompokUsia = kelompokData.data?.nama_kelompok || "";
-              console.log("✅ Fetched kelompok:", kelompokUsia);
-            }
-          }
-          
-          // Fetch kelas berat jika cabang KYORUGI dan hanya ada id_kelas_berat
-          if (cabang === "KYORUGI" && !kj.kelas_berat?.nama_kelas && (kj as any).id_kelas_berat) {
-            const beratResponse = await fetch(
-              `${apiBaseUrl}/api/kelas-berat/${(kj as any).id_kelas_berat}`
-            );
-            if (beratResponse.ok) {
-              const beratData = await beratResponse.json();
-              kelasDetail = beratData.data?.nama_kelas || "";
-              console.log("✅ Fetched kelas_berat:", kelasDetail);
-            }
-          }
-          
-          // Fetch kelas poomsae jika cabang POOMSAE dan hanya ada id_poomsae
-          if (cabang === "POOMSAE" && !kj.poomsae?.nama_kelas && (kj as any).id_poomsae) {
-            const poomsaeResponse = await fetch(
-              `${apiBaseUrl}/api/kelas-poomsae/${(kj as any).id_poomsae}`
-            );
-            if (poomsaeResponse.ok) {
-              const poomsaeData = await poomsaeResponse.json();
-              kelasDetail = poomsaeData.data?.nama_kelas || "";
-              console.log("✅ Fetched poomsae:", kelasDetail);
-            }
-          }
-        } catch (fetchError) {
-          console.error("❌ Error fetching kelas data:", fetchError);
+        // ✅ Langsung ambil dari nested object yang sudah ada
+        if (cabang === "KYORUGI" && kj.kelas_berat?.nama_kelas) {
+          kelasDetail = kj.kelas_berat.nama_kelas;
+        } else if (cabang === "POOMSAE" && kj.poomsae?.nama_kelas) {
+          kelasDetail = kj.poomsae.nama_kelas;
         }
         
-        // Jika masih belum ada kelasDetail, coba dari object yang sudah ada
-        if (!kelasDetail) {
-          if (cabang === "KYORUGI" && kj.kelas_berat?.nama_kelas) {
-            kelasDetail = kj.kelas_berat.nama_kelas;
-          } else if (cabang === "POOMSAE" && kj.poomsae?.nama_kelas) {
-            kelasDetail = kj.poomsae.nama_kelas;
-          }
-        }
+        console.log("📊 Direct extraction:");
+        console.log("  - kelompokUsia:", kelompokUsia);
+        console.log("  - kelasDetail:", kelasDetail);
         
         // ✅ Format: Kategori - Cabang - (Kelompok Usia ATAU Kelas Detail)
         const parts = [];
