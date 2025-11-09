@@ -87,7 +87,7 @@
       kompetisiId: number,
       filter: KelasKejuaraanFilter & { dojangId: number }
     ) => Promise<void>;
-    fetchKelasPoomsae: (kelompokId: number) => Promise<void>;
+    fetchKelasPoomsae: (kelompokId: number, gender: 'LAKI_LAKI' | 'PEREMPUAN') => Promise<void>;
     
     // Registration functions
     validateRegistration: (kelasKejuaraanId: number | null, selectedAthletes: Atlit[]) => ValidationResult;
@@ -229,16 +229,16 @@
       }
     }, []);
 
-    const fetchKelasPoomsae = useCallback(async (kelompokId: number) => {
+    const fetchKelasPoomsae = useCallback(async (kelompokId: number, gender: 'LAKI_LAKI' | 'PEREMPUAN') => {
       try {
         setIsLoading(true);
-        if (!kelompokId) {
+        if (!kelompokId || !gender) {
           setPoomsaeOptions([]);
           return;
         }
 
-        const data: { id_poomsae: number; nama_kelas: string }[] =
-          await apiClient.get(`/kelas/poomsae?kelompokId=${kelompokId}`);
+        const data: { id_poomsae: number; nama_kelas: string, jenis_kelamin: 'LAKI_LAKI' | 'PEREMPUAN' }[] =
+          await apiClient.get(`/kelas/poomsae?kelompokId=${kelompokId}&jenis_kelamin=${gender}`);
 
         if (!data || data.length === 0) {
           setPoomsaeOptions([]);
@@ -248,7 +248,7 @@
         setPoomsaeOptions(
           data.map((kp) => ({
             value: kp.id_poomsae.toString(),
-            label: kp.nama_kelas,
+            label: `${kp.nama_kelas} - ${kp.jenis_kelamin === 'LAKI_LAKI' ? 'Putra' : 'Putri'}`,
           }))
         );
       } catch (err) {
@@ -268,6 +268,7 @@
       kelompokId?: number;
       kelasBeratId?: number;
       poomsaeId?: number;
+      poomsaeName?: string; // ✅ ADD THIS
     }
   ) => {
     try {
@@ -290,6 +291,10 @@
 
       if (filter.poomsaeId) {
         payload.poomsaeId = filter.poomsaeId;
+      }
+      
+      if (filter.poomsaeName) { // ✅ ADD THIS
+        payload.poomsaeName = filter.poomsaeName;
       }
 
       const res = await apiClient.post(`/kelas/kejuaraan/${kompetisiId}/filter`, payload);

@@ -20,9 +20,12 @@ export const kelasService = {
     });
   },
 
-  getKelasPoomsae: async (kelompokId: number) => {
+  getKelasPoomsae: async (kelompokId: number, jenisKelamin: JenisKelamin) => {
     return prisma.tb_kelas_poomsae.findMany({
-      where: { id_kelompok: kelompokId },
+      where: {
+        id_kelompok: kelompokId,
+        jenis_kelamin: jenisKelamin,
+      },
     });
   },
 
@@ -35,6 +38,7 @@ export const kelasService = {
       kelompokId?: number;
       kelasBeratId?: number;
       poomsaeId?: number;
+      poomsaeName?: string; // ✅ ADDED: To filter by name
     }
   ) => {
     try {
@@ -85,21 +89,37 @@ export const kelasService = {
         }
       }
 
-      // ✅ NEW: Handle gender filtering for kelas_berat
-      // For KYORUGI, we need to filter kelas_berat by gender
-      // For team POOMSAE, we skip gender filtering to get mixed gender class
+      // ✅ NEW: Handle gender filtering for kelas_berat and poomsae
       if (
         filter.styleType === "KYORUGI" &&
         filter.gender &&
         filter.kelasBeratId
       ) {
-        // Add gender constraint through kelas_berat relation
         whereCondition.kelas_berat = {
           id_kelas_berat: filter.kelasBeratId,
           jenis_kelamin: filter.gender,
         };
-        // Remove the direct id_kelas_berat since we're using relation
         delete whereCondition.id_kelas_berat;
+      } else if (
+        filter.styleType === "POOMSAE" &&
+        filter.gender &&
+        (filter.poomsaeId || filter.poomsaeName) // ✅ UPDATED: Check for ID or Name
+      ) {
+        const poomsaeFilter: any = {
+          jenis_kelamin: filter.gender,
+        };
+
+        if (filter.poomsaeId) {
+          poomsaeFilter.id_poomsae = filter.poomsaeId;
+        } else if (filter.poomsaeName) {
+          poomsaeFilter.nama_kelas = filter.poomsaeName;
+        }
+
+        whereCondition.poomsae = poomsaeFilter;
+        
+        if (whereCondition.id_poomsae) {
+            delete whereCondition.id_poomsae;
+        }
       }
 
       console.log(

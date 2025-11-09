@@ -48,8 +48,23 @@ export const kelasController = {
 
   async getKelasPoomsae(req: Request, res: Response) {
     try {
-      const { kelompokId } = req.query;
-      const data = await kelasService.getKelasPoomsae(Number(kelompokId));
+      const { kelompokId, jenis_kelamin } = req.query;
+
+      if (
+        !jenis_kelamin ||
+        !["LAKI_LAKI", "PEREMPUAN"].includes(jenis_kelamin as string)
+      ) {
+        return res.status(400).json({ message: "Invalid gender value" });
+      }
+
+      if (!kelompokId) {
+        return res.status(400).json({ message: "kelompokId is required" });
+      }
+
+      const data = await kelasService.getKelasPoomsae(
+        Number(kelompokId),
+        jenis_kelamin as JenisKelamin
+      );
       res.json(data);
     } catch (err) {
       res
@@ -69,6 +84,7 @@ export const kelasController = {
         kelompokId,
         kelasBeratId,
         poomsaeId,
+        poomsaeName, // ✅ ADDED
       } = req.body;
 
       console.log("🔹 Request params:", req.params);
@@ -92,6 +108,7 @@ export const kelasController = {
         kelompokId: kelompokId ? Number(kelompokId) : undefined,
         kelasBeratId: kelasBeratId ? Number(kelasBeratId) : undefined,
         poomsaeId: poomsaeId ? Number(poomsaeId) : undefined,
+        poomsaeName, // ✅ ADDED
       };
 
       console.log("🔹 Processed filter:", filter);
