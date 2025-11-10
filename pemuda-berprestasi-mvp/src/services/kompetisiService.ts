@@ -448,10 +448,18 @@ static async getAvailableClassesForParticipant(
 static async getAtletsByKompetisi(
   kompetisiId: number, 
   page: number, 
-  limit: number, 
+  limit?: number, 
   idDojang?: number // <-- tambahkan optional filter
 ) {
-  const skip = (page - 1) * limit;
+  const queryOptions: {
+    skip?: number;
+    take?: number;
+  } = {};
+
+  if (limit && page) {
+    queryOptions.skip = (page - 1) * limit;
+    queryOptions.take = limit;
+  }
 
   const peserta = await prisma.tb_peserta_kompetisi.findMany({
   where: {
@@ -493,8 +501,7 @@ static async getAtletsByKompetisi(
       },
     },
   },
-  skip,
-  take: limit,
+  ...queryOptions,
 });
 
 
