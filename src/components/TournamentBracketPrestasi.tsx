@@ -1274,6 +1274,9 @@ const renderCenterFinal = () => {
   const leftMatches = getLeftMatches();
   const rightMatches = getRightMatches();
   
+  // ✅ PERBAIKAN: Deteksi jika hanya 2 peserta (langsung final)
+  const isDirectFinal = approvedParticipants.length === 2;
+  
   // Calculate positions
   const leftPositions = calculateVerticalPositions(leftMatches);
   const rightPositions = calculateVerticalPositions(rightMatches);
@@ -1309,7 +1312,7 @@ const renderCenterFinal = () => {
         }}
       >
         <div 
-          className="px-4 py-2 rounded-lg font-bold text-sm shadow-md"
+          className="px-4 py-2 rounded-lg font-bold text-sm shadow-md mb-5"
           style={{ backgroundColor: '#990D35', color: '#F5FBEF' }}
         >
           Final
@@ -1318,51 +1321,56 @@ const renderCenterFinal = () => {
 
       {/* Container untuk card + connectors */}
       <div style={{ position: 'relative', width: '100%', minHeight: '600px' }}>
-        {/* LEFT CONNECTOR ke Final */}
-        <svg
-          style={{
-            position: 'absolute',
-            left: -lineLength,
-            top: `${finalYPosition + (CARD_HEIGHT / 2) - 1}px`,
-            width: lineLength,
-            height: 2,
-            pointerEvents: 'none',
-            zIndex: 1
-          }}
-        >
-          <line 
-            x1="0" 
-            y1="1" 
-            x2={lineLength} 
-            y2="1" 
-            stroke="#990D35" 
-            strokeWidth="2.5" 
-            opacity="0.8" 
-          />
-        </svg>
-        
-        {/* RIGHT CONNECTOR ke Final */}
-        <svg
-          style={{
-            position: 'absolute',
-            right: -lineLength,
-            top: `${finalYPosition + (CARD_HEIGHT / 2) - 1}px`,
-            width: lineLength,
-            height: 2,
-            pointerEvents: 'none',
-            zIndex: 1
-          }}
-        >
-          <line 
-            x1="0" 
-            y1="1" 
-            x2={lineLength} 
-            y2="1" 
-            stroke="#990D35" 
-            strokeWidth="2.5" 
-            opacity="0.8" 
-          />
-        </svg>
+        {/* ✅ HANYA RENDER CONNECTOR JIKA BUKAN DIRECT FINAL (> 2 peserta) */}
+        {!isDirectFinal && (
+          <>
+            {/* LEFT CONNECTOR ke Final */}
+            <svg
+              style={{
+                position: 'absolute',
+                left: -lineLength,
+                top: `${finalYPosition + (CARD_HEIGHT / 2) - 1}px`,
+                width: lineLength,
+                height: 2,
+                pointerEvents: 'none',
+                zIndex: 1
+              }}
+            >
+              <line 
+                x1="0" 
+                y1="1" 
+                x2={lineLength} 
+                y2="1" 
+                stroke="#990D35" 
+                strokeWidth="2.5" 
+                opacity="0.8" 
+              />
+            </svg>
+            
+            {/* RIGHT CONNECTOR ke Final */}
+            <svg
+              style={{
+                position: 'absolute',
+                right: -lineLength,
+                top: `${finalYPosition + (CARD_HEIGHT / 2) - 1}px`,
+                width: lineLength,
+                height: 2,
+                pointerEvents: 'none',
+                zIndex: 1
+              }}
+            >
+              <line 
+                x1="0" 
+                y1="1" 
+                x2={lineLength} 
+                y2="1" 
+                stroke="#990D35" 
+                strokeWidth="2.5" 
+                opacity="0.8" 
+              />
+            </svg>
+          </>
+        )}
         
         {/* Final Match Card */}
         <div
@@ -1389,13 +1397,13 @@ const renderCenterFinal = () => {
         </div>
       </div>
 
-      {/* ✅ LEADERBOARD - LANGSUNG DI BAWAH FINAL MATCH */}
+      {/* ✅ LEADERBOARD - DENGAN GAP YANG LEBIH BESAR UNTUK DIRECT FINAL */}
       {prestasiLeaderboard && (
         <div 
           id="prestasi-leaderboard"
           style={{
-            width: '400px', // ✅ Lebih lebar dari CARD_WIDTH (280px)
-            marginTop: `${finalYPosition + CARD_HEIGHT - 420}px`, // ✅ 60px di bawah final card
+            width: '400px',
+            marginTop: `${finalYPosition + CARD_HEIGHT + (isDirectFinal ? 40 : -420)}px`, // ✅ Gap lebih besar jika direct final
             position: 'relative',
             zIndex: 20
           }}
