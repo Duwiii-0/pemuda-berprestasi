@@ -45,6 +45,7 @@ router.get(
 
 router.put(
   "/:id/peserta/:participantId",
+  validateRequest(kompetisiValidation.updateParticipantClass), // ✅ Tambah ini
   KompetisiController.updateParticipantClass
 );
 
@@ -62,6 +63,7 @@ router.get(
   authenticate,
   KompetisiController.getAvailableClassesSimple
 );
+
 router.put(
   "/:id/participants/:participantId/status",
   validateRequest(kompetisiValidation.updateStatus),
