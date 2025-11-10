@@ -2016,7 +2016,12 @@ const calculateCardPosition = (
               {onBack && (
                 <button
                   onClick={() => {
-                    navigate("/admin-kompetisi/drawing-bagan");
+                    // ✅ Method 1: Full page reload with redirect
+                    window.location.href = '/admin-kompetisi/drawing-bagan';
+                    
+                    // ❌ ATAU jika Method 1 tidak work, gunakan:
+                    // navigate("/admin-kompetisi/drawing-bagan");
+                    // window.location.reload();
                   }}
                   className="p-2 rounded-lg hover:bg-black/5 transition-all"
                 >
