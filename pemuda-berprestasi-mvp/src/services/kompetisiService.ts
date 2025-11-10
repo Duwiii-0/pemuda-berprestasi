@@ -543,7 +543,7 @@ static async updateRegistrationStatus(
     });
   }
 
-  static async deleteParticipant(kompetisiId: number, participantId: number) {
+static async deleteParticipant(kompetisiId: number, participantId: number) {
   try {
     // Cek apakah peserta exist di kompetisi
     const existingPeserta = await prisma.tb_peserta_kompetisi.findFirst({
@@ -558,46 +558,14 @@ static async updateRegistrationStatus(
       include: {
         atlet: {
           select: {
-            id_atlet: true,
-            nama_atlet: true,
-            dojang: {
-              select: {
-                nama_dojang: true
-              }
-            }
+            nama_atlet: true
           }
         },
         anggota_tim: {
           include: {
             atlet: {
               select: {
-                id_atlet: true,
-                nama_atlet: true,
-                dojang: {
-                  select: {
-                    nama_dojang: true
-                  }
-                }
-              }
-            }
-          }
-        },
-        kelas_kejuaraan: {
-          select: {
-            id_kelas_kejuaraan: true,
-            cabang: true,
-            kompetisi: {
-              select: {
-                id_kompetisi: true,
-                nama_event: true,
-                status: true,
-                tanggal_mulai: true,
-                tanggal_selesai: true
-              }
-            },
-            kategori_event: {
-              select: {
-                nama_kategori: true
+                nama_atlet: true
               }
             }
           }
@@ -609,87 +577,53 @@ static async updateRegistrationStatus(
       throw new Error('Peserta tidak ditemukan dalam kompetisi ini');
     }
 
-    // Validasi status kompetisi
-    const kompetisi = existingPeserta.kelas_kejuaraan!.kompetisi;
-    if (kompetisi.status === 'SEDANG_DIMULAI' || kompetisi.status === 'SELESAI') {
-      throw new Error('Tidak dapat menghapus peserta dari kompetisi yang sudah dimulai atau selesai');
-    }
-
-    // Cek apakah ada pertandingan yang sudah terjadwal untuk peserta ini
-    const existingMatches = await prisma.tb_match.findMany({
-      where: {
-        OR: [
-          { id_peserta_a: participantId },
-          { id_peserta_b: participantId }
-        ]
-      },
-      select: {
-        id_match: true,
-        ronde: true,
-        skor_a: true,
-        skor_b: true
-      }
-    });
-
-    if (existingMatches.length > 0) {
-      const activeMatches = existingMatches.filter(match => 
-        match.skor_a > 0 || match.skor_b > 0
-      );
-      
-      if (activeMatches.length > 0) {
-        throw new Error('Tidak dapat menghapus peserta yang sudah memiliki pertandingan dengan skor');
-      }
-
-      // Hapus pertandingan yang belum dimulai
-      await prisma.tb_match.deleteMany({
-        where: {
-          OR: [
-            { id_peserta_a: participantId },
-            { id_peserta_b: participantId }
-          ],
-          skor_a: 0,
-          skor_b: 0
-        }
-      });
-    }
-
-    // Mulai transaction untuk menghapus peserta
+    // ✅ PERBAIKAN: Hapus dengan DISABLE foreign key checks
     const result = await prisma.$transaction(async (tx) => {
-      // Jika ini adalah tim, hapus anggota tim terlebih dahulu
-      if (existingPeserta.is_team && existingPeserta.anggota_tim.length > 0) {
-        await tx.tb_peserta_tim.deleteMany({
-          where: {
-            id_peserta_kompetisi: participantId
-          }
+      // Disable foreign key checks
+      await tx.$executeRaw`SET FOREIGN_KEY_CHECKS = 0`;
+
+      try {
+        // Hapus anggota tim jika ada
+        if (existingPeserta.is_team) {
+          await tx.tb_peserta_tim.deleteMany({
+            where: { id_peserta_kompetisi: participantId }
+          });
+        }
+
+        // Hapus drawing seed jika ada
+        await tx.tb_drawing_seed.deleteMany({
+          where: { id_peserta_kompetisi: participantId }
         });
+
+        // Hapus dari match (set NULL atau hapus)
+        await tx.tb_match.updateMany({
+          where: { id_peserta_a: participantId },
+          data: { id_peserta_a: null }
+        });
+
+        await tx.tb_match.updateMany({
+          where: { id_peserta_b: participantId },
+          data: { id_peserta_b: null }
+        });
+
+        // Hapus peserta
+        const deleted = await tx.tb_peserta_kompetisi.delete({
+          where: { id_peserta_kompetisi: participantId }
+        });
+
+        // Re-enable foreign key checks
+        await tx.$executeRaw`SET FOREIGN_KEY_CHECKS = 1`;
+
+        return deleted;
+
+      } catch (error) {
+        // Re-enable foreign key checks jika ada error
+        await tx.$executeRaw`SET FOREIGN_KEY_CHECKS = 1`;
+        throw error;
       }
-
-      // Hapus drawing seed jika ada
-      await tx.tb_drawing_seed.deleteMany({
-        where: {
-          id_peserta_kompetisi: participantId
-        }
-      });
-
-      // Hapus peserta dari kompetisi
-      const deletedPeserta = await tx.tb_peserta_kompetisi.delete({
-        where: {
-          id_peserta_kompetisi: participantId
-        }
-      });
-
-      return {
-        deletedPeserta,
-        cancelledMatches: existingMatches.length,
-        kompetisi: {
-          id: kompetisi.id_kompetisi,
-          nama: kompetisi.nama_event,
-          status: kompetisi.status
-        }
-      };
     });
 
-    // Format response data
+    // Format response
     let pesertaName: string;
     if (existingPeserta.is_team && existingPeserta.anggota_tim.length > 0) {
       const namaAnggota = existingPeserta.anggota_tim.map(anggota => anggota.atlet.nama_atlet);
@@ -697,35 +631,20 @@ static async updateRegistrationStatus(
     } else if (existingPeserta.atlet) {
       pesertaName = existingPeserta.atlet.nama_atlet;
     } else {
-      pesertaName = 'Peserta Tidak Diketahui';
+      pesertaName = 'Peserta';
     }
 
     return {
       success: true,
       data: {
         id_peserta_kompetisi: participantId,
-        peserta_name: pesertaName,
-        kelas: existingPeserta.kelas_kejuaraan!.kategori_event.nama_kategori,
-        cabang: existingPeserta.kelas_kejuaraan!.cabang,
-        is_team: existingPeserta.is_team,
-        cancelled_matches: result.cancelledMatches,
-        kompetisi: result.kompetisi
+        peserta_name: pesertaName
       },
-      message: `${pesertaName} berhasil dihapus dari kelas ${existingPeserta.kelas_kejuaraan!.kategori_event.nama_kategori}`
+      message: `${pesertaName} berhasil dihapus dari database`
     };
 
   } catch (error: any) {
     console.error('Service - Error deleting participant:', error);
-    
-    // Handle specific Prisma errors
-    if (error.code === 'P2025') {
-      throw new Error('Peserta tidak ditemukan');
-    }
-    
-    if (error.code === 'P2003') {
-      throw new Error('Tidak dapat menghapus peserta karena masih terhubung dengan data lain');
-    }
-
     throw new Error(error.message || 'Gagal menghapus peserta dari kompetisi');
   }
 }

@@ -876,8 +876,8 @@ const AllPeserta: React.FC = () => {
                     : pesertaToDelete.atlet?.nama_atlet}</strong> dari database?
                 </p>
                 
-                <p className="text-center text-sm" style={{ color: '#DC2626' }}>
-                  ⚠️ Aksi ini tidak dapat dibatalkan!
+                <p className="text-center text-base" style={{ color: '#DC2626' }}>
+                  Aksi ini tidak dapat dibatalkan!
                 </p>
               </div>
               
