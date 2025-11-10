@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -26,7 +26,7 @@ async function main() {
   console.log(`✅ Found ${poomsaeClassesToSeed.length} Poomsae classes to process.`);
 
   // 2. Prepare the new competition classes data
-  const newCompetitionClasses = [];
+  const newCompetitionClasses: Prisma.tb_kelas_kejuaraanCreateManyInput[] = [];
 
   for (const poomsaeClass of poomsaeClassesToSeed) {
     // For each Poomsae class, create two competition classes: one for recognized, one for freestyle
