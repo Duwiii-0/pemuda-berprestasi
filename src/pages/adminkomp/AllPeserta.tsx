@@ -11,7 +11,7 @@ import { kelasBeratOptionsMap } from "../../dummy/beratOptions";
 import * as XLSX from 'xlsx';
 
 const AllPeserta: React.FC = () => {
-  const { user } = useAuth(); // ✅ Hapus token yang tidak digunakan
+  const { user } = useAuth();
   const { pesertaList, fetchAtletByKompetisi, updatePesertaStatus, loadingAtlet } = useKompetisi();
   const navigate = useNavigate();
   const [teamModalOpen, setTeamModalOpen] = useState(false);
@@ -23,17 +23,16 @@ const AllPeserta: React.FC = () => {
   const [filterStatus, setFilterStatus] = useState<"ALL" | "PENDING" | "APPROVED" | "REJECTED">("ALL");
   const [filterCategory, setFilterCategory] = useState<"ALL" | "KYORUGI" | "POOMSAE">("ALL");
   const [filterKelasBerat, setFilterKelasBerat] = useState<string>("ALL");
-  const [filterKelasUsia, setFilterKelasUsia] = useState<"ALL" | "Super pracadet" | "Pracadet" | "Cadet" | "Junior" | "Senior" >("ALL");
+  const [filterKelasUsia, setFilterKelasUsia] = useState<"ALL" | "Super pracadet" | "Pracadet" | "Cadet" | "Junior" | "Senior">("ALL");
   const [filterLevel, setFilterLevel] = useState<"pemula" | "prestasi" | null>(null);
   const [filterDojang, setFilterDojang] = useState<string>("ALL");
-  const { dojangOptions, refreshDojang } = useDojang(); // ✅ Hapus isLoading
+  const { dojangOptions, refreshDojang } = useDojang();
 
-  // ✅ PERBAIKAN: Pagination states dengan opsi yang bisa diatur
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(25);
   const [isExporting, setIsExporting] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // ✅ Modal konfirmasi delete
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [pesertaToDelete, setPesertaToDelete] = useState<any>(null);
 
@@ -56,49 +55,103 @@ const AllPeserta: React.FC = () => {
     if (kompetisiId) fetchAtletByKompetisi(kompetisiId);
   }, [kompetisiId]);
 
-  // ✅ FUNGSI DELETE PESERTA
   const handleDeletePeserta = async (peserta: any) => {
     setPesertaToDelete(peserta);
     setShowDeleteModal(true);
   };
 
-  // ✅ PERBAIKAN: Fix confirmDelete dengan type assertion
   const confirmDelete = async () => {
     if (!pesertaToDelete || !kompetisiId) return;
 
-    setDeleting(pesertaToDelete.id_peserta_kompetisi);
-    
+    const pesertaId = pesertaToDelete.id_peserta_kompetisi;
+    const pesertaName = pesertaToDelete.is_team
+      ? pesertaToDelete.anggota_tim?.map((m: any) => m.atlet.nama_atlet).join(", ")
+      : pesertaToDelete.atlet?.nama_atlet;
+
+    setDeleting(pesertaId);
+
+    const rowElement = document.querySelector(`[data-peserta-id="${pesertaId}"]`);
+    if (rowElement) {
+      rowElement.classList.add('row-removing');
+    }
+
     try {
       console.log('🗑️ Deleting peserta:', {
         kompetisiId,
-        participantId: pesertaToDelete.id_peserta_kompetisi,
-        endpoint: `/kompetisi/${kompetisiId}/peserta/${pesertaToDelete.id_peserta_kompetisi}`
+        participantId: pesertaId,
+        endpoint: `/kompetisi/${kompetisiId}/peserta/${pesertaId}`
       });
 
       const response = await apiClient.delete(
-        `/kompetisi/${kompetisiId}/peserta/${pesertaToDelete.id_peserta_kompetisi}`
+        `/kompetisi/${kompetisiId}/peserta/${pesertaId}`
       );
 
       console.log('✅ Delete response:', response);
 
-      // ✅ Type assertion untuk response
-      if ((response as any).status === 200 || response.status === 200) {
-        await fetchAtletByKompetisi(kompetisiId);
-        alert('✅ Peserta berhasil dihapus dari database');
+      if (response.status === 200) {
+        setShowDeleteModal(false);
+        setPesertaToDelete(null);
+
+        const notification = document.createElement('div');
+        notification.className = 'fixed top-4 right-4 z-50 bg-green-500 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 animate-slide-in';
+        notification.style.maxWidth = '400px';
+        notification.innerHTML = `
+          <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+          </svg>
+          <div class="flex-1">
+            <p class="font-semibold">Berhasil Dihapus!</p>
+            <p class="text-sm opacity-90">${pesertaName}</p>
+          </div>
+        `;
+        document.body.appendChild(notification);
+
+        setTimeout(() => {
+          notification.style.opacity = '0';
+          notification.style.transform = 'translateX(100%)';
+          notification.style.transition = 'all 0.3s ease-out';
+          setTimeout(() => notification.remove(), 300);
+        }, 3000);
+
+        setTimeout(async () => {
+          setIsRefreshing(true);
+          await fetchAtletByKompetisi(kompetisiId);
+          setIsRefreshing(false);
+          console.log('✅ Data refreshed successfully via AJAX');
+        }, 300);
       }
     } catch (error: any) {
-      console.error('❌ Error deleting peserta:', {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status
-      });
-      
-      const errorMessage = error.response?.data?.message 
-        || error.response?.data?.error 
-        || error.message 
+      console.error('❌ Error deleting peserta:', error);
+
+      if (rowElement) {
+        rowElement.classList.remove('row-removing');
+      }
+
+      const errorMessage = error.response?.data?.message
+        || error.response?.data?.error
+        || error.message
         || 'Gagal menghapus peserta';
-      
-      alert(`❌ ${errorMessage}`);
+
+      const notification = document.createElement('div');
+      notification.className = 'fixed top-4 right-4 z-50 bg-red-500 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 animate-slide-in';
+      notification.style.maxWidth = '400px';
+      notification.innerHTML = `
+        <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+        <div class="flex-1">
+          <p class="font-semibold">Gagal Menghapus!</p>
+          <p class="text-sm opacity-90">${errorMessage}</p>
+        </div>
+      `;
+      document.body.appendChild(notification);
+
+      setTimeout(() => {
+        notification.style.opacity = '0';
+        notification.style.transform = 'translateX(100%)';
+        notification.style.transition = 'all 0.3s ease-out';
+        setTimeout(() => notification.remove(), 300);
+      }, 4000);
     } finally {
       setDeleting(null);
       setShowDeleteModal(false);
@@ -106,20 +159,54 @@ const AllPeserta: React.FC = () => {
     }
   };
 
-  // ✅ PERBAIKAN: Fix handleExportExcel
+  const handleManualRefresh = async () => {
+    if (!kompetisiId || isRefreshing) return;
+
+    setIsRefreshing(true);
+    try {
+      await fetchAtletByKompetisi(kompetisiId);
+
+      const notification = document.createElement('div');
+      notification.className = 'fixed top-4 right-4 z-50 bg-blue-500 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 animate-slide-in';
+      notification.style.maxWidth = '400px';
+      notification.innerHTML = `
+        <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+        </svg>
+        <div class="flex-1">
+          <p class="font-semibold">Data Diperbarui!</p>
+          <p class="text-sm opacity-90">Data peserta telah di-refresh</p>
+        </div>
+      `;
+      document.body.appendChild(notification);
+
+      setTimeout(() => {
+        notification.style.opacity = '0';
+        notification.style.transform = 'translateX(100%)';
+        notification.style.transition = 'all 0.3s ease-out';
+        setTimeout(() => notification.remove(), 300);
+      }, 2000);
+
+      console.log('✅ Manual refresh completed');
+    } catch (error) {
+      console.error('❌ Error refreshing data:', error);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
   const handleExportExcel = () => {
     setIsExporting(true);
-    
+
     try {
-      // ✅ Fix: Ambil kompetisi info dari user saja
-      const kompetisiInfo = user?.admin_kompetisi;
-      
-      const currentDate = new Date().toLocaleDateString('id-ID', { 
-        day: 'numeric', 
-        month: 'long', 
-        year: 'numeric' 
+      const kompetisiInfo = user?.admin_kompetisi as any;
+
+      const currentDate = new Date().toLocaleDateString('id-ID', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
       });
-      
+
       const headerInfo = [
         ['LAPORAN DATA PESERTA KOMPETISI'],
         ['Nama Event', kompetisiInfo?.nama_event || 'Sriwijaya International Taekwondo Championship 2025'],
@@ -131,52 +218,52 @@ const AllPeserta: React.FC = () => {
 
       const exportData = displayedPesertas.map((peserta: any, index: number) => {
         const isTeam = peserta.is_team;
-        
+
         const namaPeserta = isTeam
           ? peserta.anggota_tim?.map((m: any) => m.atlet.nama_atlet).join(", ")
           : peserta.atlet?.nama_atlet || "-";
-        
+
         const cabang = peserta.kelas_kejuaraan?.cabang || "-";
         const levelEvent = peserta.kelas_kejuaraan?.kategori_event?.nama_kategori || "-";
-        
+
         const kelasBerat = cabang === "KYORUGI"
           ? peserta.kelas_kejuaraan?.kelas_berat?.nama_kelas || "-"
           : "-";
-        
+
         const kelasPoomsae = cabang === "POOMSAE"
           ? peserta.kelas_kejuaraan?.poomsae?.nama_kelas || "-"
           : "-";
-        
+
         const kelasUsia = peserta.kelas_kejuaraan?.kelompok?.nama_kelompok || "-";
-        
-        const jenisKelamin = !isTeam 
+
+        const jenisKelamin = !isTeam
           ? (peserta.atlet?.jenis_kelamin === "LAKI_LAKI" ? "Laki-Laki" : peserta.atlet?.jenis_kelamin === "PEREMPUAN" ? "Perempuan" : "-")
           : "-";
-        
+
         const dojang = isTeam && peserta.anggota_tim?.length
           ? peserta.anggota_tim[0]?.atlet?.dojang?.nama_dojang || "-"
           : peserta.atlet?.dojang?.nama_dojang || "-";
-        
-        const tanggalLahir = !isTeam 
+
+        const tanggalLahir = !isTeam
           ? peserta.atlet?.tanggal_lahir || "-"
           : "-";
-        
-        const beratBadan = !isTeam 
+
+        const beratBadan = !isTeam
           ? peserta.atlet?.berat_badan ? `${peserta.atlet.berat_badan} kg` : "-"
           : "-";
-        
-        const tingiBadan = !isTeam 
+
+        const tingiBadan = !isTeam
           ? peserta.atlet?.tinggi_badan ? `${peserta.atlet.tinggi_badan} cm` : "-"
           : "-";
-        
-        const sabuk = !isTeam 
+
+        const sabuk = !isTeam
           ? (peserta.atlet?.sabuk?.nama_sabuk || peserta.atlet?.belt || "-")
           : "-";
 
         const anggotaTimDetail = isTeam && peserta.anggota_tim?.length
-          ? peserta.anggota_tim.map((m: any, i: number) => 
-              `${i + 1}. ${m.atlet.nama_atlet} (${m.atlet.dojang?.nama_dojang || "-"})`
-            ).join("; ")
+          ? peserta.anggota_tim.map((m: any, i: number) =>
+            `${i + 1}. ${m.atlet.nama_atlet} (${m.atlet.dojang?.nama_dojang || "-"})`
+          ).join("; ")
           : "-";
 
         return {
@@ -201,12 +288,12 @@ const AllPeserta: React.FC = () => {
 
       const workbook = XLSX.utils.book_new();
       const worksheet = XLSX.utils.aoa_to_sheet(headerInfo);
-      
-      XLSX.utils.sheet_add_json(worksheet, exportData, { 
+
+      XLSX.utils.sheet_add_json(worksheet, exportData, {
         origin: `A${headerInfo.length + 1}`,
-        skipHeader: false 
+        skipHeader: false
       });
-      
+
       const columnWidths = [
         { wch: 5 }, { wch: 30 }, { wch: 10 }, { wch: 12 }, { wch: 10 },
         { wch: 15 }, { wch: 15 }, { wch: 18 }, { wch: 15 }, { wch: 15 },
@@ -221,7 +308,7 @@ const AllPeserta: React.FC = () => {
 
       XLSX.writeFile(workbook, fileName);
 
-    } catch (error) {   
+    } catch (error) {
       console.error('Error exporting to Excel:', error);
       alert('Gagal export data ke Excel');
     } finally {
@@ -261,6 +348,27 @@ const AllPeserta: React.FC = () => {
     setProcessing(id);
     try {
       await updatePesertaStatus(kompetisiId, id, "APPROVED");
+
+      const notification = document.createElement('div');
+      notification.className = 'fixed top-4 right-4 z-50 bg-green-500 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 animate-slide-in';
+      notification.style.maxWidth = '400px';
+      notification.innerHTML = `
+        <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        <div class="flex-1">
+          <p class="font-semibold">Peserta Disetujui!</p>
+          <p class="text-sm opacity-90">Status berhasil diubah</p>
+        </div>
+      `;
+      document.body.appendChild(notification);
+
+      setTimeout(() => {
+        notification.style.opacity = '0';
+        notification.style.transform = 'translateX(100%)';
+        notification.style.transition = 'all 0.3s ease-out';
+        setTimeout(() => notification.remove(), 300);
+      }, 2000);
     } finally {
       setProcessing(null);
     }
@@ -271,6 +379,28 @@ const AllPeserta: React.FC = () => {
     setProcessing(id);
     try {
       await updatePesertaStatus(kompetisiId, id, "REJECTED");
+
+      const notification = document.createElement('div');
+      notification.className = 'fixed top-4 right-4 z-50 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 animate-slide-in';
+      notification.style.maxWidth = '400px';
+      notification.style.backgroundColor = '#990D35';
+      notification.innerHTML = `
+        <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        <div class="flex-1">
+          <p class="font-semibold">Peserta Ditolak</p>
+          <p class="text-sm opacity-90">Status berhasil diubah</p>
+        </div>
+      `;
+      document.body.appendChild(notification);
+
+      setTimeout(() => {
+        notification.style.opacity = '0';
+        notification.style.transform = 'translateX(100%)';
+        notification.style.transition = 'all 0.3s ease-out';
+        setTimeout(() => notification.remove(), 300);
+      }, 2000);
     } finally {
       setProcessing(null);
     }
@@ -300,13 +430,11 @@ const AllPeserta: React.FC = () => {
     return matchesSearch && matchesStatus && matchesCategory && matchesKelasBerat && matchesKelasUsia && matchesLevel && matchesDojang;
   });
 
-  // ✅ PERBAIKAN: Pagination logic
   const totalPages = Math.ceil(displayedPesertas.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const currentPesertas = displayedPesertas.slice(startIndex, endIndex);
 
-  // Reset to first page when filters or items per page change
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, filterStatus, filterCategory, filterKelasBerat, filterKelasUsia, filterLevel, filterDojang, itemsPerPage]);
@@ -339,7 +467,6 @@ const AllPeserta: React.FC = () => {
     { value: "Senior", label: "Senior (2007 ke atas)" },
   ];
 
-  // ✅ PERBAIKAN: Opsi items per page
   const itemsPerPageOptions = [
     { value: 25, label: "25 per halaman" },
     { value: 50, label: "50 per halaman" },
@@ -353,7 +480,7 @@ const AllPeserta: React.FC = () => {
       REJECTED: { bg: 'rgba(153, 13, 53, 0.1)', text: '#990D35' },
     };
     const colors = statusMap[status as keyof typeof statusMap] || statusMap.PENDING;
-    
+
     return (
       <span
         className="px-2 py-1 rounded-full text-xs font-medium"
@@ -371,7 +498,7 @@ const AllPeserta: React.FC = () => {
   const getPageNumbers = () => {
     const pageNumbers = [];
     const maxVisiblePages = 5;
-    
+
     if (totalPages <= maxVisiblePages) {
       for (let i = 1; i <= totalPages; i++) {
         pageNumbers.push(i);
@@ -399,7 +526,7 @@ const AllPeserta: React.FC = () => {
         pageNumbers.push(totalPages);
       }
     }
-    
+
     return pageNumbers;
   };
 
@@ -415,536 +542,594 @@ const AllPeserta: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#F5FBEF' }}>
-      <div className="p-4 sm:p-6 lg:p-8 max-w-full">
+    <>
+      <style>{`
+        @keyframes slide-in {
+          from {
+            transform: translateX(100%);
+            opacity: 0;
+          }
+          to {
+            transform: translateX(0);
+            opacity: 1;
+          }
+        }
         
-        {/* HEADER */}
-        <div className="mb-6">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
-            <div className="flex items-start sm:items-center gap-3 sm:gap-4">
-              <Users 
-                size={28} 
-                className="sm:w-8 sm:h-8 lg:w-10 lg:h-10 flex-shrink-0" 
-                style={{ color: '#990D35' }}
-              />
-              <div className="flex-1 min-w-0">
-                <h1 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-bebas leading-tight" style={{ color: '#050505' }}>
-                  Daftar Peserta Sriwijaya International Taekwondo Championship 2025
-                </h1>
-                <p className="text-sm sm:text-base mt-1" style={{ color: '#050505', opacity: 0.6 }}>
-                  Kelola semua peserta kompetisi Sriwijaya International Taekwondo Championship 2025
-                </p>
-              </div>
-            </div>
-            
-            <button
-              onClick={handleExportExcel}
-              disabled={isExporting || displayedPesertas.length === 0}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl border shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition-all text-sm font-medium whitespace-nowrap"
-              style={{ 
-                backgroundColor: '#990D35',
-                color: '#F5FBEF',
-                borderColor: '#990D35'
-              }}
-            >
-              {isExporting ? (
-                <>
-                  <Loader size={18} className="animate-spin" />
-                  <span>Exporting...</span>
-                </>
-              ) : (
-                <>
-                  <Download size={18} />
-                  <span className="hidden sm:inline">Export Excel</span>
-                  <span className="sm:hidden">Export</span>
-                </>
-              )}
-            </button>
-          </div>
-        </div>
+        .animate-slide-in {
+          animation: slide-in 0.3s ease-out forwards;
+        }
 
-        {/* FILTER + SEARCH */}
-        <div className="rounded-xl shadow-sm border p-4 sm:p-6 mb-6" style={{ backgroundColor: '#F5FBEF', borderColor: '#990D35' }}>
-          <div className="space-y-4">
-            <div className="w-full">
-              <div className="relative">
-                <Search
-                  className="absolute left-3 top-1/2 -translate-y-1/2"
-                  style={{ color: '#050505', opacity: 0.4 }}
-                  size={18}
+        .row-removing {
+          animation: fadeOut 0.3s ease-out forwards;
+        }
+
+        @keyframes fadeOut {
+          from {
+            opacity: 1;
+            transform: scale(1);
+          }
+          to {
+            opacity: 0;
+            transform: scale(0.95);
+          }
+        }
+      `}</style>
+
+      <div className="min-h-screen" style={{ backgroundColor: '#F5FBEF' }}>
+        <div className="p-4 sm:p-6 lg:p-8 max-w-full">
+
+          {/* HEADER */}
+          <div className="mb-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+              <div className="flex items-start sm:items-center gap-3 sm:gap-4">
+                <Users
+                  size={28}
+                  className="sm:w-8 sm:h-8 lg:w-10 lg:h-10 flex-shrink-0"
+                  style={{ color: '#990D35' }}
                 />
-                <input
-                  type="text"
-                  placeholder="Cari peserta..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 rounded-xl border shadow-sm focus:ring-2 focus:border-transparent text-sm placeholder-gray-400 transition-colors"
-                  style={{ 
-                    borderColor: '#990D35', 
+                <div className="flex-1 min-w-0">
+                  <h1 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-bebas leading-tight" style={{ color: '#050505' }}>
+                    Daftar Peserta Sriwijaya International Taekwondo Championship 2025
+                  </h1>
+                  <p className="text-sm sm:text-base mt-1" style={{ color: '#050505', opacity: 0.6 }}>
+                    Kelola semua peserta kompetisi Sriwijaya International Taekwondo Championship 2025
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 sm:gap-3">
+                <button
+                  onClick={handleManualRefresh}
+                  disabled={isRefreshing || loadingAtlet}
+                  className="flex items-center gap-2 px-3 sm:px-4 py-2.5 rounded-xl border shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition-all text-sm font-medium whitespace-nowrap"
+                  style={{
                     backgroundColor: '#F5FBEF',
-                    color: '#050505'
+                    color: '#990D35',
+                    borderColor: '#990D35'
                   }}
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
-              <div className="col-span-2 sm:col-span-1">
-                <label className="block text-xs mb-2 font-medium" style={{ color: '#050505', opacity: 0.6 }}>Status</label>
-                <select
-                  value={filterStatus}
-                  onChange={(e) => setFilterStatus(e.target.value as any)}
-                  className="w-full px-3 py-2.5 rounded-xl border shadow-sm focus:ring-2 focus:border-transparent text-sm transition-colors"
-                  style={{ borderColor: '#990D35', backgroundColor: '#F5FBEF', color: '#050505' }}
+                  title="Refresh data peserta"
                 >
-                  {statusOptions.map((opt) => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="col-span-2 sm:col-span-1">
-                <label className="block text-xs mb-2 font-medium" style={{ color: '#050505', opacity: 0.6 }}>Kategori</label>
-                <select
-                  value={filterCategory}
-                  onChange={(e) => setFilterCategory(e.target.value as any)}
-                  className="w-full px-3 py-2.5 rounded-xl border shadow-sm focus:ring-2 focus:border-transparent text-sm transition-colors"
-                  style={{ borderColor: '#990D35', backgroundColor: '#F5FBEF', color: '#050505' }}
-                >
-                  {categoryOptions.map((opt) => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="col-span-2 sm:col-span-1">
-                <label className="block text-xs mb-2 font-medium" style={{ color: '#050505', opacity: 0.6 }}>Level</label>
-                <select
-                  value={filterLevel || ""}
-                  onChange={(e) => setFilterLevel(e.target.value as "pemula" | "prestasi" | null || null)}
-                  className="w-full px-3 py-2.5 rounded-xl border shadow-sm focus:ring-2 focus:border-transparent text-sm transition-colors"
-                  style={{ borderColor: '#990D35', backgroundColor: '#F5FBEF', color: '#050505' }}
-                >
-                  {levelOptions.map((opt) => (
-                    <option key={opt.value || "null"} value={opt.value || ""}>{opt.label}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="col-span-2 sm:col-span-1">
-                <label className="block text-xs mb-2 font-medium" style={{ color: '#050505', opacity: 0.6 }}>Usia</label>
-                <select
-                  value={filterKelasUsia}
-                  onChange={(e) => setFilterKelasUsia(e.target.value as any)}
-                  className="w-full px-3 py-2.5 rounded-xl border shadow-sm focus:ring-2 focus:border-transparent text-sm transition-colors"
-                  style={{ borderColor: '#990D35', backgroundColor: '#F5FBEF', color: '#050505' }}
-                >
-                  {ageOptions.map((opt) => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="col-span-4 sm:col-span-3 lg:col-span-1">
-                <label className="block text-xs mb-2 font-medium" style={{ color: '#050505', opacity: 0.6 }}>Dojang</label>
-                <select
-                  value={filterDojang}
-                  onChange={(e) => setFilterDojang(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl border shadow-sm focus:ring-2 focus:border-transparent text-sm transition-colors"
-                  style={{ borderColor: '#990D35', backgroundColor: '#F5FBEF', color: '#050505' }}
-                >
-                  <option value="ALL">Semua Dojang</option>
-                  {dojangOptions.map((opt) => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="col-span-2 sm:col-span-1">
-                <label className="block text-xs mb-2 font-medium" style={{ color: '#050505', opacity: 0.6 }}>Kelas Berat</label>
-                <select
-                  value={filterKelasBerat}
-                  onChange={(e) => setFilterKelasBerat(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl border shadow-sm focus:ring-2 focus:border-transparent text-sm transition-colors"
-                  style={{ borderColor: '#990D35', backgroundColor: '#F5FBEF', color: '#050505' }}
-                >
-                  {kelasBeratOptionsMap[filterKelasUsia || "ALL"].map((opt) => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {/* ✅ PERBAIKAN: Info hasil dengan items per page selector */}
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 pt-2 border-t" style={{ borderColor: 'rgba(153, 13, 53, 0.2)' }}>
-              <div className="flex items-center gap-3">
-                <p className="text-sm" style={{ color: '#050505', opacity: 0.6 }}>
-                  Menampilkan <span className="font-semibold">{startIndex + 1}-{Math.min(endIndex, displayedPesertas.length)}</span> dari <span className="font-semibold">{displayedPesertas.length}</span> peserta
-                </p>
-              </div>
-              
-              {/* Items per page selector */}
-              <div className="flex items-center gap-2">
-                <label className="text-xs font-medium" style={{ color: '#050505', opacity: 0.6 }}>Tampilkan:</label>
-                <select
-                  value={itemsPerPage}
-                  onChange={(e) => setItemsPerPage(Number(e.target.value))}
-                  className="px-3 py-1.5 rounded-lg border shadow-sm text-sm transition-colors"
-                  style={{ borderColor: '#990D35', backgroundColor: '#F5FBEF', color: '#050505' }}
-                >
-                  {itemsPerPageOptions.map((opt) => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* CONTENT */}
-        <>
-          {/* Mobile Cards View */}
-          <div className="block lg:hidden space-y-4">
-            {currentPesertas.map((peserta: any) => {
-              const isTeam = peserta.is_team;
-              const namaPeserta = isTeam
-                ? peserta.anggota_tim?.map((m: any) => m.atlet.nama_atlet).join(", ")
-                : peserta.atlet?.nama_atlet || "-";
-
-              const cabang = peserta.kelas_kejuaraan?.cabang || "-";
-              const levelEvent = peserta.kelas_kejuaraan?.kategori_event?.nama_kategori || "-";
-              const kelasUsia = peserta.kelas_kejuaraan?.kelompok?.nama_kelompok || "-";
-              const dojang = isTeam && peserta.anggota_tim?.length
-                ? peserta.anggota_tim[0]?.atlet?.dojang?.nama_dojang || "-"
-                : peserta.atlet?.dojang?.nama_dojang || "-";
-
-              return (
-                <div
-                  key={peserta.id_peserta_kompetisi}
-                  className="rounded-xl shadow-sm border overflow-hidden hover:shadow-md transition-shadow"
-                  style={{ backgroundColor: '#F5FBEF', borderColor: '#990D35' }}
-                >
-                  <div 
-                    className="p-4 cursor-pointer"
-                    onClick={() => handleRowClick(peserta)}
-                  >
-                    <div className="flex justify-between items-start mb-3">
-                      <div className="flex-1 min-w-0 pr-3">
-                        <h3 className="font-semibold text-base leading-tight" style={{ color: '#050505' }}>
-                          {namaPeserta}
-                        </h3>
-                        <p className="text-sm mt-1" style={{ color: '#050505', opacity: 0.6 }}>
-                          {cabang} - {levelEvent}
-                        </p>
-                      </div>
-                      <div className="flex-shrink-0">
-                        {getStatusBadge(peserta.status)}
-                      </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-3 text-xs">
-                      <div>
-                        <span style={{ color: '#050505', opacity: 0.5 }}>Kelas:</span>
-                        <p className="font-medium" style={{ color: '#050505' }}>{kelasUsia}</p>
-                      </div>
-                      <div>
-                        <span style={{ color: '#050505', opacity: 0.5 }}>Dojang:</span>
-                        <p className="font-medium truncate" style={{ color: '#050505' }}>{dojang}</p>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* ✅ PERBAIKAN: Action Buttons dengan Delete */}
-                  <div className="flex gap-2 p-4 pt-0">
-                    <button
-                      onClick={(e) => { e.stopPropagation(); handleApproval(peserta.id_peserta_kompetisi); }}
-                      disabled={processing === peserta.id_peserta_kompetisi}
-                      className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50 transition-all text-sm font-medium"
-                    >
-                      {processing === peserta.id_peserta_kompetisi ? <Loader size={16} className="animate-spin" /> : <CheckCircle size={16} />}
-                      <span className="hidden xs:inline">Setujui</span>
-                    </button>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); handleRejection(peserta.id_peserta_kompetisi); }}
-                      disabled={processing === peserta.id_peserta_kompetisi}
-                      className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 text-white rounded-lg hover:shadow-md disabled:opacity-50 transition-all text-sm font-medium"
-                      style={{ backgroundColor: '#990D35' }}
-                    >
-                      {processing === peserta.id_peserta_kompetisi ? <Loader size={16} className="animate-spin" /> : <XCircle size={16} />}
-                      <span className="hidden xs:inline">Tolak</span>
-                    </button>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); handleDeletePeserta(peserta); }}
-                      disabled={deleting === peserta.id_peserta_kompetisi}
-                      className="flex items-center justify-center gap-2 px-3 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition-all text-sm font-medium"
-                    >
-                      {deleting === peserta.id_peserta_kompetisi ? <Loader size={16} className="animate-spin" /> : <Trash2 size={16} />}
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Desktop Table View */}
-          <div className="hidden lg:block">
-            <div className="rounded-xl shadow-sm border overflow-hidden" style={{ backgroundColor: '#F5FBEF', borderColor: '#990D35' }}>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead style={{ backgroundColor: '#F5B700' }}>
-                    <tr>
-                      {[
-                        "Nama Peserta",
-                        "Kategori", 
-                        "Level",
-                        "Kelas Berat",
-                        "Kelas Poomsae",
-                        "Kelompok Usia",
-                        "Jenis Kelamin",
-                        "Dojang",
-                        "Status",
-                        "Aksi",
-                      ].map((header) => (
-                        <th
-                          key={header}
-                          className={`py-3 px-4 font-semibold text-sm ${
-                            ["Dojang","Usia/Kelompok", "Jenis Kelamin", "Status", "Aksi"].includes(header) ? "text-center" : "text-left"
-                          }`}
-                          style={{ color: '#050505' }}
-                        >
-                          {header}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y" style={{ borderColor: '#990D35' }}>
-                    {currentPesertas.map((peserta: any) => {
-                      const isTeam = peserta.is_team;
-                      const namaPeserta = isTeam
-                        ? peserta.anggota_tim?.map((m: any) => m.atlet.nama_atlet).join(", ")
-                        : peserta.atlet?.nama_atlet || "-";
-                      const cabang = peserta.kelas_kejuaraan?.cabang || "-";
-                      const levelEvent = peserta.kelas_kejuaraan?.kategori_event?.nama_kategori || "-";
-                      const kelasBerat = cabang === "KYORUGI"
-                        ? peserta.kelas_kejuaraan?.kelas_berat?.nama_kelas || "-"
-                        : "-";
-                      const kelasUsia = peserta.kelas_kejuaraan?.kelompok?.nama_kelompok || "-";
-                      const jenisKelamin = !isTeam ? peserta.atlet?.jenis_kelamin || "-" : "-";
-                      const dojang = isTeam && peserta.anggota_tim?.length
-                        ? peserta.anggota_tim[0]?.atlet?.dojang?.nama_dojang || "-"
-                        : peserta.atlet?.dojang?.nama_dojang || "-";
-
-                      return (
-                        <tr
-                          key={peserta.id_peserta_kompetisi}
-                          className="transition-colors cursor-pointer"
-                          onClick={() => handleRowClick(peserta)}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.backgroundColor = 'rgba(245, 183, 0, 0.1)';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.backgroundColor = 'transparent';
-                          }}
-                        >
-                          <td className="py-3 px-4 font-medium text-sm" style={{ color: '#050505' }}>
-                            <div className="max-w-[200px] truncate" title={namaPeserta}>
-                              {namaPeserta}
-                            </div>
-                          </td>
-                          <td className="py-3 px-4 text-sm" style={{ color: '#050505', opacity: 0.7 }}>{cabang}</td>
-                          <td className="py-3 px-4 text-sm" style={{ color: '#050505', opacity: 0.7 }}>{levelEvent}</td>
-                          <td className="py-3 px-4 text-sm" style={{ color: '#050505', opacity: 0.7 }}>{kelasBerat}</td>
-                          <td className="py-3 px-4 text-sm" style={{ color: '#050505', opacity: 0.7 }}>
-                            {peserta.kelas_kejuaraan?.cabang === "POOMSAE"
-                              ? peserta.kelas_kejuaraan?.poomsae?.nama_kelas || "-"
-                              : "-"}
-                          </td>
-                          <td className="py-3 px-4 text-center text-sm" style={{ color: '#050505', opacity: 0.7 }}>{kelasUsia}</td>
-                          <td className="py-3 px-4 text-center text-sm" style={{ color: '#050505', opacity: 0.7 }}>{jenisKelamin === "LAKI_LAKI" ? "Laki-Laki" : jenisKelamin === "PEREMPUAN" ? "Perempuan" : "-"}</td>
-                          <td className="py-3 px-4 text-sm text-center" style={{ color: '#050505', opacity: 0.7 }}>
-                            <div className="max-w-[150px] truncate" title={dojang}>
-                              {dojang}
-                            </div>
-                          </td>
-                          <td className="py-3 px-4 text-center">{getStatusBadge(peserta.status)}</td>
-                          <td className="py-3 px-4 text-center">
-                            <div className="flex gap-2 justify-center">
-                              <button
-                                onClick={(e) => { e.stopPropagation(); handleApproval(peserta.id_peserta_kompetisi); }}
-                                disabled={processing === peserta.id_peserta_kompetisi}
-                                className="inline-flex items-center gap-1 px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50 transition-all text-sm font-medium"
-                                title="Setujui peserta"
-                              >
-                                {processing === peserta.id_peserta_kompetisi ? <Loader size={16} className="animate-spin" /> : <CheckCircle size={16} />}
-                                <span className="hidden xl:inline">Setujui</span>
-                              </button>
-                              <button
-                                onClick={(e) => { e.stopPropagation(); handleRejection(peserta.id_peserta_kompetisi); }}
-                                disabled={processing === peserta.id_peserta_kompetisi}
-                                className="inline-flex items-center gap-1 px-3 py-2 text-white rounded-lg hover:shadow-md disabled:opacity-50 transition-all text-sm font-medium"
-                                style={{ backgroundColor: '#990D35' }}
-                                title="Tolak peserta"
-                              >
-                                {processing === peserta.id_peserta_kompetisi ? <Loader size={16} className="animate-spin" /> : <XCircle size={16} />}
-                                <span className="hidden xl:inline">Tolak</span>
-                              </button>
-                              {/* ✅ PERBAIKAN: Tombol Delete */}
-                              <button
-                                onClick={(e) => { e.stopPropagation(); handleDeletePeserta(peserta); }}
-                                disabled={deleting === peserta.id_peserta_kompetisi}
-                                className="inline-flex items-center gap-1 px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition-all text-sm font-medium"
-                                title="Hapus peserta"
-                              >
-                                {deleting === peserta.id_peserta_kompetisi ? <Loader size={16} className="animate-spin" /> : <Trash2 size={16} />}
-                                <span className="hidden xl:inline">Hapus</span>
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-
-          {/* Empty State */}
-          {displayedPesertas.length === 0 && (
-            <div className="py-16 text-center" style={{ color: '#050505', opacity: 0.4 }}>
-              <Users size={52} className="mx-auto mb-4" />
-              <p className="text-lg">Tidak ada peserta yang ditemukan</p>
-              {(searchTerm || filterStatus !== "ALL" || filterCategory !== "ALL" || filterKelasUsia !== "ALL" || filterLevel || filterDojang !== "ALL") && (
-                <p className="text-sm mt-2">Coba ubah filter pencarian Anda</p>
-              )}
-            </div>
-          )}
-        </>
-
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 rounded-xl shadow-sm border p-4 sm:p-6 mt-6" style={{ backgroundColor: '#F5FBEF', borderColor: '#990D35' }}>
-            <div className="text-sm order-2 sm:order-1" style={{ color: '#050505', opacity: 0.6 }}>
-              Menampilkan {startIndex + 1} - {Math.min(endIndex, displayedPesertas.length)} dari {displayedPesertas.length} hasil
-            </div>
-
-            <div className="flex items-center gap-1 sm:gap-2 order-1 sm:order-2">
-              <button
-                onClick={() => handlePageChange(currentPage - 1)}
-                disabled={currentPage === 1}
-                className="flex items-center gap-1 px-2 sm:px-3 py-2 rounded-lg border hover:shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
-                style={{ borderColor: '#990D35', backgroundColor: '#F5FBEF', color: '#050505' }}
-              >
-                <ChevronLeft size={16} />
-                <span className="hidden sm:inline">Prev</span>
-              </button>
-
-              <div className="flex items-center gap-1">
-                {getPageNumbers().map((pageNum, index) => (
-                  pageNum === '...' ? (
-                    <span key={`ellipsis-${index}`} className="px-2 py-2 text-sm" style={{ color: '#050505', opacity: 0.4 }}>...</span>
+                  {isRefreshing ? (
+                    <Loader size={18} className="animate-spin" />
                   ) : (
-                    <button
-                      key={pageNum}
-                      onClick={() => handlePageChange(pageNum as number)}
-                      className={`px-2 sm:px-3 py-2 rounded-lg transition-colors text-sm min-w-[32px] sm:min-w-[40px]`}
-                      style={{
-                        backgroundColor: currentPage === pageNum ? '#990D35' : '#F5FBEF',
-                        color: currentPage === pageNum ? '#F5FBEF' : '#050505',
-                        border: currentPage === pageNum ? 'none' : `1px solid #990D35`
-                      }}
-                    >
-                      {pageNum}
-                    </button>
-                  )
-                ))}
-              </div>
-
-              <button
-                onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage === totalPages}
-                className="flex items-center gap-1 px-2 sm:px-3 py-2 rounded-lg border hover:shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
-                style={{ borderColor: '#990D35', backgroundColor: '#F5FBEF', color: '#050505' }}
-              >
-                <span className="hidden sm:inline">Next</span>
-                <ChevronRight size={16} />
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* ✅ MODAL DELETE CONFIRMATION */}
-        {showDeleteModal && pesertaToDelete && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden">
-              <div className="p-6 flex flex-col items-center" style={{ backgroundColor: 'rgba(220, 38, 38, 0.1)' }}>
-                <div
-                  className="w-20 h-20 rounded-full flex items-center justify-center mb-4"
-                  style={{ backgroundColor: '#DC2626' }}
-                >
-                  <Trash2 size={40} style={{ color: 'white' }} />
-                </div>
-                
-                <h3 className="text-2xl font-bold text-center mb-2" style={{ color: '#050505' }}>
-                  Hapus Peserta?
-                </h3>
-                
-                <p className="text-center text-base leading-relaxed mb-4" style={{ color: '#050505', opacity: 0.7 }}>
-                  Apakah Anda yakin ingin menghapus peserta <strong>{pesertaToDelete.is_team 
-                    ? pesertaToDelete.anggota_tim?.map((m: any) => m.atlet.nama_atlet).join(", ")
-                    : pesertaToDelete.atlet?.nama_atlet}</strong> dari database?
-                </p>
-                
-                <p className="text-center text-base" style={{ color: '#DC2626' }}>
-                  Aksi ini tidak dapat dibatalkan!
-                </p>
-              </div>
-              
-              <div className="p-6 bg-gray-50 flex gap-3">
-                <button
-                  onClick={() => {
-                    setShowDeleteModal(false);
-                    setPesertaToDelete(null);
-                  }}
-                  className="flex-1 py-3 px-4 rounded-xl font-semibold transition-all hover:bg-white border-2"
-                  style={{ borderColor: '#990D35', color: '#990D35', backgroundColor: 'white' }}
-                >
-                  Batal
+                    <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                  )}
+                  <span className="hidden sm:inline">Refresh</span>
                 </button>
+
                 <button
-                  onClick={confirmDelete}
-                  disabled={deleting !== null}
-                  className="flex-1 py-3 px-4 rounded-xl font-semibold transition-all hover:opacity-90 shadow-lg disabled:opacity-50 flex items-center justify-center gap-2"
-                  style={{ backgroundColor: '#DC2626', color: 'white' }}
+                  onClick={handleExportExcel}
+                  disabled={isExporting || displayedPesertas.length === 0}
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl border shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition-all text-sm font-medium whitespace-nowrap"
+                  style={{
+                    backgroundColor: '#990D35',
+                    color: '#F5FBEF',
+                    borderColor: '#990D35'
+                  }}
                 >
-                  {deleting !== null ? (
+                  {isExporting ? (
                     <>
                       <Loader size={18} className="animate-spin" />
-                      <span>Menghapus...</span>
+                      <span>Exporting...</span>
                     </>
                   ) : (
                     <>
-                      <Trash2 size={18} />
-                      <span>Ya, Hapus</span>
+                      <Download size={18} />
+                      <span className="hidden sm:inline">Export Excel</span>
+                      <span className="sm:hidden">Export</span>
                     </>
                   )}
                 </button>
               </div>
             </div>
           </div>
-        )}
 
-        <SelectTeamMemberModal
-          isOpen={teamModalOpen}
-          anggotaTim={selectedTeam}
-          onClose={() => setTeamModalOpen(false)}
-          onSelect={(atlet) => {
-            navigate(`/dashboard/atlit/${atlet.id_atlet}`);
-            setTeamModalOpen(false);
-          }}
-        />
+          {/* FILTER + SEARCH */}
+          <div className="rounded-xl shadow-sm border p-4 sm:p-6 mb-6" style={{ backgroundColor: '#F5FBEF', borderColor: '#990D35' }}>
+            <div className="space-y-4">
+              <div className="w-full">
+                <div className="relative">
+                  <Search
+                    className="absolute left-3 top-1/2 -translate-y-1/2"
+                    style={{ color: '#050505', opacity: 0.4 }}
+                    size={18}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Cari peserta..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 rounded-xl border shadow-sm focus:ring-2 focus:border-transparent text-sm placeholder-gray-400 transition-colors"
+                    style={{
+                      borderColor: '#990D35',
+                      backgroundColor: '#F5FBEF',
+                      color: '#050505'
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
+                <div className="col-span-2 sm:col-span-1">
+                  <label className="block text-xs mb-2 font-medium" style={{ color: '#050505', opacity: 0.6 }}>Status</label>
+                  <select
+                    value={filterStatus}
+                    onChange={(e) => setFilterStatus(e.target.value as any)}
+                    className="w-full px-3 py-2.5 rounded-xl border shadow-sm focus:ring-2 focus:border-transparent text-sm transition-colors"
+                    style={{ borderColor: '#990D35', backgroundColor: '#F5FBEF', color: '#050505' }}
+                  >
+                    {statusOptions.map((opt) => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="col-span-2 sm:col-span-1">
+                  <label className="block text-xs mb-2 font-medium" style={{ color: '#050505', opacity: 0.6 }}>Kategori</label>
+                  <select
+                    value={filterCategory}
+                    onChange={(e) => setFilterCategory(e.target.value as any)}
+                    className="w-full px-3 py-2.5 rounded-xl border shadow-sm focus:ring-2 focus:border-transparent text-sm transition-colors"
+                    style={{ borderColor: '#990D35', backgroundColor: '#F5FBEF', color: '#050505' }}
+                  >
+                    {categoryOptions.map((opt) => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="col-span-2 sm:col-span-1">
+                  <label className="block text-xs mb-2 font-medium" style={{ color: '#050505', opacity: 0.6 }}>Level</label>
+                  <select
+                    value={filterLevel || ""}
+                    onChange={(e) => setFilterLevel(e.target.value as "pemula" | "prestasi" | null || null)}
+                    className="w-full px-3 py-2.5 rounded-xl border shadow-sm focus:ring-2 focus:border-transparent text-sm transition-colors"
+                    style={{ borderColor: '#990D35', backgroundColor: '#F5FBEF', color: '#050505' }}
+                  >
+                    {levelOptions.map((opt) => (
+                      <option key={opt.value || "null"} value={opt.value || ""}>{opt.label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="col-span-2 sm:col-span-1">
+                  <label className="block text-xs mb-2 font-medium" style={{ color: '#050505', opacity: 0.6 }}>Usia</label>
+                  <select
+                    value={filterKelasUsia}
+                    onChange={(e) => setFilterKelasUsia(e.target.value as any)}
+                    className="w-full px-3 py-2.5 rounded-xl border shadow-sm focus:ring-2 focus:border-transparent text-sm transition-colors"
+                    style={{ borderColor: '#990D35', backgroundColor: '#F5FBEF', color: '#050505' }}
+                  >
+                    {ageOptions.map((opt) => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="col-span-4 sm:col-span-3 lg:col-span-1">
+                  <label className="block text-xs mb-2 font-medium" style={{ color: '#050505', opacity: 0.6 }}>Dojang</label>
+                  <select
+                    value={filterDojang}
+                    onChange={(e) => setFilterDojang(e.target.value)}
+                    className="w-full px-3 py-2.5 rounded-xl border shadow-sm focus:ring-2 focus:border-transparent text-sm transition-colors"
+                    style={{ borderColor: '#990D35', backgroundColor: '#F5FBEF', color: '#050505' }}
+                  >
+                    <option value="ALL">Semua Dojang</option>
+                    {dojangOptions.map((opt) => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="col-span-2 sm:col-span-1">
+                  <label className="block text-xs mb-2 font-medium" style={{ color: '#050505', opacity: 0.6 }}>Kelas Berat</label>
+                  <select
+                    value={filterKelasBerat}
+                    onChange={(e) => setFilterKelasBerat(e.target.value)}
+                    className="w-full px-3 py-2.5 rounded-xl border shadow-sm focus:ring-2 focus:border-transparent text-sm transition-colors"
+                    style={{ borderColor: '#990D35', backgroundColor: '#F5FBEF', color: '#050505' }}
+                  >
+                    {kelasBeratOptionsMap[filterKelasUsia || "ALL"].map((opt) => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 pt-2 border-t" style={{ borderColor: 'rgba(153, 13, 53, 0.2)' }}>
+                <div className="flex items-center gap-3">
+                  <p className="text-sm" style={{ color: '#050505', opacity: 0.6 }}>
+                    Menampilkan <span className="font-semibold">{startIndex + 1}-{Math.min(endIndex, displayedPesertas.length)}</span> dari <span className="font-semibold">{displayedPesertas.length}</span> peserta
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <label className="text-xs font-medium" style={{ color: '#050505', opacity: 0.6 }}>Tampilkan:</label>
+                  <select
+                    value={itemsPerPage}
+                    onChange={(e) => setItemsPerPage(Number(e.target.value))}
+                    className="px-3 py-1.5 rounded-lg border shadow-sm text-sm transition-colors"
+                    style={{ borderColor: '#990D35', backgroundColor: '#F5FBEF', color: '#050505' }}
+                  >
+                    {itemsPerPageOptions.map((opt) => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* CONTENT */}
+          <>
+            {isRefreshing && (
+              <div className="fixed top-20 right-4 z-50 bg-blue-500 text-white px-4 py-3 rounded-xl shadow-xl flex items-center gap-3 animate-slide-in">
+                <Loader className="animate-spin" size={20} />
+                <span className="text-sm font-medium">Memperbarui data...</span>
+              </div>
+            )}
+
+            {/* Mobile Cards View */}
+            <div className="block lg:hidden space-y-4">
+              {currentPesertas.map((peserta: any) => {
+                const isTeam = peserta.is_team;
+                const namaPeserta = isTeam
+                  ? peserta.anggota_tim?.map((m: any) => m.atlet.nama_atlet).join(", ")
+                  : peserta.atlet?.nama_atlet || "-";
+
+                const cabang = peserta.kelas_kejuaraan?.cabang || "-";
+                const levelEvent = peserta.kelas_kejuaraan?.kategori_event?.nama_kategori || "-";
+                const kelasUsia = peserta.kelas_kejuaraan?.kelompok?.nama_kelompok || "-";
+                const dojang = isTeam && peserta.anggota_tim?.length
+                  ? peserta.anggota_tim[0]?.atlet?.dojang?.nama_dojang || "-"
+                  : peserta.atlet?.dojang?.nama_dojang || "-";
+
+                return (
+                  <div
+                    key={peserta.id_peserta_kompetisi}
+                    data-peserta-id={peserta.id_peserta_kompetisi}
+                    className="rounded-xl shadow-sm border overflow-hidden hover:shadow-md transition-shadow"
+                    style={{ backgroundColor: '#F5FBEF', borderColor: '#990D35' }}
+                  >
+                    <div
+                      className="p-4 cursor-pointer"
+                      onClick={() => handleRowClick(peserta)}
+                    >
+                      <div className="flex justify-between items-start mb-3">
+                        <div className="flex-1 min-w-0 pr-3">
+                          <h3 className="font-semibold text-base leading-tight" style={{ color: '#050505' }}>
+                            {namaPeserta}
+                          </h3>
+                          <p className="text-sm mt-1" style={{ color: '#050505', opacity: 0.6 }}>
+                            {cabang} - {levelEvent}
+                          </p>
+                        </div>
+                        <div className="flex-shrink-0">
+                          {getStatusBadge(peserta.status)}
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3 text-xs">
+                        <div>
+                          <span style={{ color: '#050505', opacity: 0.5 }}>Kelas:</span>
+                          <p className="font-medium" style={{ color: '#050505' }}>{kelasUsia}</p>
+                        </div>
+                        <div>
+                          <span style={{ color: '#050505', opacity: 0.5 }}>Dojang:</span>
+                          <p className="font-medium truncate" style={{ color: '#050505' }}>{dojang}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2 p-4 pt-0">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleApproval(peserta.id_peserta_kompetisi); }}
+                        disabled={processing === peserta.id_peserta_kompetisi}
+                        className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50 transition-all text-sm font-medium"
+                      >
+                        {processing === peserta.id_peserta_kompetisi ? <Loader size={16} className="animate-spin" /> : <CheckCircle size={16} />}
+                        <span className="hidden xs:inline">Setujui</span>
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleRejection(peserta.id_peserta_kompetisi); }}
+                        disabled={processing === peserta.id_peserta_kompetisi}
+                        className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 text-white rounded-lg hover:shadow-md disabled:opacity-50 transition-all text-sm font-medium"
+                        style={{ backgroundColor: '#990D35' }}
+                      >
+                        {processing === peserta.id_peserta_kompetisi ? <Loader size={16} className="animate-spin" /> : <XCircle size={16} />}
+                        <span className="hidden xs:inline">Tolak</span>
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleDeletePeserta(peserta); }}
+                        disabled={deleting === peserta.id_peserta_kompetisi}
+                        className="flex items-center justify-center gap-2 px-3 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition-all text-sm font-medium"
+                      >
+                        {deleting === peserta.id_peserta_kompetisi ? <Loader size={16} className="animate-spin" /> : <Trash2 size={16} />}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Desktop Table View */}
+            <div className="hidden lg:block">
+              <div className="rounded-xl shadow-sm border overflow-hidden" style={{ backgroundColor: '#F5FBEF', borderColor: '#990D35' }}>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead style={{ backgroundColor: '#F5B700' }}>
+                      <tr>
+                        {[
+                          "Nama Peserta",
+                          "Kategori",
+                          "Level",
+                          "Kelas Berat",
+                          "Kelas Poomsae",
+                          "Kelompok Usia",
+                          "Jenis Kelamin",
+                          "Dojang",
+                          "Status",
+                          "Aksi",
+                        ].map((header) => (
+                          <th
+                            key={header}
+                            className={`py-3 px-4 font-semibold text-sm ${["Dojang", "Usia/Kelompok", "Jenis Kelamin", "Status", "Aksi"].includes(header) ? "text-center" : "text-left"
+                              }`}
+                            style={{ color: '#050505' }}
+                          >
+                            {header}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y" style={{ borderColor: '#990D35' }}>
+                      {currentPesertas.map((peserta: any) => {
+                        const isTeam = peserta.is_team;
+                        const namaPeserta = isTeam
+                          ? peserta.anggota_tim?.map((m: any) => m.atlet.nama_atlet).join(", ")
+                          : peserta.atlet?.nama_atlet || "-";
+                        const cabang = peserta.kelas_kejuaraan?.cabang || "-";
+                        const levelEvent = peserta.kelas_kejuaraan?.kategori_event?.nama_kategori || "-";
+                        const kelasBerat = cabang === "KYORUGI"
+                          ? peserta.kelas_kejuaraan?.kelas_berat?.nama_kelas || "-"
+                          : "-";
+                        const kelasUsia = peserta.kelas_kejuaraan?.kelompok?.nama_kelompok || "-";
+                        const jenisKelamin = !isTeam ? peserta.atlet?.jenis_kelamin || "-" : "-";
+                        const dojang = isTeam && peserta.anggota_tim?.length
+                          ? peserta.anggota_tim[0]?.atlet?.dojang?.nama_dojang || "-"
+                          : peserta.atlet?.dojang?.nama_dojang || "-";
+
+                        return (
+                          <tr
+                            key={peserta.id_peserta_kompetisi}
+                            data-peserta-id={peserta.id_peserta_kompetisi}
+                            className="transition-colors cursor-pointer"
+                            onClick={() => handleRowClick(peserta)}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor = 'rgba(245, 183, 0, 0.1)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = 'transparent';
+                            }}
+                          >
+                            <td className="py-3 px-4 font-medium text-sm" style={{ color: '#050505' }}>
+                              <div className="max-w-[200px] truncate" title={namaPeserta}>
+                                {namaPeserta}
+                              </div>
+                            </td>
+                            <td className="py-3 px-4 text-sm" style={{ color: '#050505', opacity: 0.7 }}>{cabang}</td>
+                            <td className="py-3 px-4 text-sm" style={{ color: '#050505', opacity: 0.7 }}>{levelEvent}</td>
+                            <td className="py-3 px-4 text-sm" style={{ color: '#050505', opacity: 0.7 }}>{kelasBerat}</td>
+                            <td className="py-3 px-4 text-sm" style={{ color: '#050505', opacity: 0.7 }}>
+                              {peserta.kelas_kejuaraan?.cabang === "POOMSAE"
+                                ? peserta.kelas_kejuaraan?.poomsae?.nama_kelas || "-"
+                                : "-"}
+                            </td>
+                            <td className="py-3 px-4 text-center text-sm" style={{ color: '#050505', opacity: 0.7 }}>{kelasUsia}</td>
+                            <td className="py-3 px-4 text-center text-sm" style={{ color: '#050505', opacity: 0.7 }}>{jenisKelamin === "LAKI_LAKI" ? "Laki-Laki" : jenisKelamin === "PEREMPUAN" ? "Perempuan" : "-"}</td>
+                            <td className="py-3 px-4 text-sm text-center" style={{ color: '#050505', opacity: 0.7 }}>
+                              <div className="max-w-[150px] truncate" title={dojang}>
+                                {dojang}
+                              </div>
+                            </td>
+                            <td className="py-3 px-4 text-center">{getStatusBadge(peserta.status)}</td>
+                            <td className="py-3 px-4 text-center">
+                              <div className="flex gap-2 justify-center">
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); handleApproval(peserta.id_peserta_kompetisi); }}
+                                  disabled={processing === peserta.id_peserta_kompetisi}
+                                  className="inline-flex items-center gap-1 px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50 transition-all text-sm font-medium"
+                                  title="Setujui peserta"
+                                >
+                                  {processing === peserta.id_peserta_kompetisi ? <Loader size={16} className="animate-spin" /> : <CheckCircle size={16} />}
+                                  <span className="hidden xl:inline">Setujui</span>
+                                </button>
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); handleRejection(peserta.id_peserta_kompetisi); }}
+                                  disabled={processing === peserta.id_peserta_kompetisi}
+                                  className="inline-flex items-center gap-1 px-3 py-2 text-white rounded-lg hover:shadow-md disabled:opacity-50 transition-all text-sm font-medium"
+                                  style={{ backgroundColor: '#990D35' }}
+                                  title="Tolak peserta"
+                                >
+                                  {processing === peserta.id_peserta_kompetisi ? <Loader size={16} className="animate-spin" /> : <XCircle size={16} />}
+                                  <span className="hidden xl:inline">Tolak</span>
+                                </button>
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); handleDeletePeserta(peserta); }}
+                                  disabled={deleting === peserta.id_peserta_kompetisi}
+                                  className="inline-flex items-center gap-1 px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition-all text-sm font-medium"
+                                  title="Hapus peserta"
+                                >
+                                  {deleting === peserta.id_peserta_kompetisi ? <Loader size={16} className="animate-spin" /> : <Trash2 size={16} />}
+                                  <span className="hidden xl:inline">Hapus</span>
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            {displayedPesertas.length === 0 && (
+              <div className="py-16 text-center" style={{ color: '#050505', opacity: 0.4 }}>
+                <Users size={52} className="mx-auto mb-4" />
+                <p className="text-lg">Tidak ada peserta yang ditemukan</p>
+                {(searchTerm || filterStatus !== "ALL" || filterCategory !== "ALL" || filterKelasUsia !== "ALL" || filterLevel || filterDojang !== "ALL") && (
+                  <p className="text-sm mt-2">Coba ubah filter pencarian Anda</p>
+                )}
+              </div>
+            )}
+          </>
+
+          {totalPages > 1 && (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 rounded-xl shadow-sm border p-4 sm:p-6 mt-6" style={{ backgroundColor: '#F5FBEF', borderColor: '#990D35' }}>
+              <div className="text-sm order-2 sm:order-1" style={{ color: '#050505', opacity: 0.6 }}>
+                Menampilkan {startIndex + 1} - {Math.min(endIndex, displayedPesertas.length)} dari {displayedPesertas.length} hasil
+              </div>
+
+              <div className="flex items-center gap-1 sm:gap-2 order-1 sm:order-2">
+                <button
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="flex items-center gap-1 px-2 sm:px-3 py-2 rounded-lg border hover:shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
+                  style={{ borderColor: '#990D35', backgroundColor: '#F5FBEF', color: '#050505' }}
+                >
+                  <ChevronLeft size={16} />
+                  <span className="hidden sm:inline">Prev</span>
+                </button>
+
+                <div className="flex items-center gap-1">
+                  {getPageNumbers().map((pageNum, index) => (
+                    pageNum === '...' ? (
+                      <span key={`ellipsis-${index}`} className="px-2 py-2 text-sm" style={{ color: '#050505', opacity: 0.4 }}>...</span>
+                    ) : (
+                      <button
+                        key={pageNum}
+                        onClick={() => handlePageChange(pageNum as number)}
+                        className={`px-2 sm:px-3 py-2 rounded-lg transition-colors text-sm min-w-[32px] sm:min-w-[40px]`}
+                        style={{
+                          backgroundColor: currentPage === pageNum ? '#990D35' : '#F5FBEF',
+                          color: currentPage === pageNum ? '#F5FBEF' : '#050505',
+                          border: currentPage === pageNum ? 'none' : `1px solid #990D35`
+                        }}
+                      >
+                        {pageNum}
+                      </button>
+                    )
+                  ))}
+                </div>
+
+                <button
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className="flex items-center gap-1 px-2 sm:px-3 py-2 rounded-lg border hover:shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
+                  style={{ borderColor: '#990D35', backgroundColor: '#F5FBEF', color: '#050505' }}
+                >
+                  <span className="hidden sm:inline">Next</span>
+                  <ChevronRight size={16} />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {showDeleteModal && pesertaToDelete && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden">
+                <div className="p-6 flex flex-col items-center" style={{ backgroundColor: 'rgba(220, 38, 38, 0.1)' }}>
+                  <div
+                    className="w-20 h-20 rounded-full flex items-center justify-center mb-4"
+                    style={{ backgroundColor: '#DC2626' }}
+                  >
+                    <Trash2 size={40} style={{ color: 'white' }} />
+                  </div>
+
+                  <h3 className="text-2xl font-bold text-center mb-2" style={{ color: '#050505' }}>
+                    Hapus Peserta?
+                  </h3>
+
+                  <p className="text-center text-base leading-relaxed mb-4" style={{ color: '#050505', opacity: 0.7 }}>
+                    Apakah Anda yakin ingin menghapus peserta <strong>{pesertaToDelete.is_team
+                      ? pesertaToDelete.anggota_tim?.map((m: any) => m.atlet.nama_atlet).join(", ")
+                      : pesertaToDelete.atlet?.nama_atlet}</strong> dari database?
+                  </p>
+
+                  <p className="text-center text-base" style={{ color: '#DC2626' }}>
+                    Aksi ini tidak dapat dibatalkan!
+                  </p>
+                </div>
+
+                <div className="p-6 bg-gray-50 flex gap-3">
+                  <button
+                    onClick={() => {
+                      setShowDeleteModal(false);
+                      setPesertaToDelete(null);
+                    }}
+                    className="flex-1 py-3 px-4 rounded-xl font-semibold transition-all hover:bg-white border-2"
+                    style={{ borderColor: '#990D35', color: '#990D35', backgroundColor: 'white' }}
+                  >
+                    Batal
+                  </button>
+                  <button
+                    onClick={confirmDelete}
+                    disabled={deleting !== null}
+                    className="flex-1 py-3 px-4 rounded-xl font-semibold transition-all hover:opacity-90 shadow-lg disabled:opacity-50 flex items-center justify-center gap-2"
+                    style={{ backgroundColor: '#DC2626', color: 'white' }}
+                  >
+                    {deleting !== null ? (
+                      <>
+                        <Loader size={18} className="animate-spin" />
+                        <span>Menghapus...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Trash2 size={18} />
+                        <span>Ya, Hapus</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <SelectTeamMemberModal
+            isOpen={teamModalOpen}
+            anggotaTim={selectedTeam}
+            onClose={() => setTeamModalOpen(false)}
+            onSelect={(atlet) => {
+              navigate(`/dashboard/atlit/${atlet.id_atlet}`);
+              setTeamModalOpen(false);
+            }}
+          />
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 
