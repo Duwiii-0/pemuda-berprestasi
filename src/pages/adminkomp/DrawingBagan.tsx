@@ -1012,7 +1012,7 @@ if (filterKelasUsia !== "ALL") {
                       color: "white",
                     }}
                   >
-                    {isPemula(kelas) ? "🥋 PEMULA" : "🏆 PRESTASI"}
+                    {isPemula(kelas) ? "PEMULA" : "PRESTASI"}
                   </span>
                 </div>
               </div>

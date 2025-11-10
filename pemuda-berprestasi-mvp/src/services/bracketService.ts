@@ -670,8 +670,7 @@ static async generatePrestasiBracket(
     
     const shuffled = this.shuffleArray([...participants]);
     
-    // Round 1: 1 BYE + 1 Match
-    // Match 1: Participant 1 vs Participant 2
+    // Round 1: 1 match
     const round1Match = await prisma.tb_match.create({
       data: {
         id_bagan: baganId,
@@ -723,7 +722,7 @@ static async generatePrestasiBracket(
     return matches;
   }
 
-  // ✅ EXISTING LOGIC for 4+ participants (tetap sama)
+  // ✅ EXISTING LOGIC for 4+ participants
   const targetSize = Math.pow(2, Math.ceil(Math.log2(participantCount)));
   const byesNeeded = targetSize - participantCount;
   const totalMatchesR1 = targetSize / 2;
