@@ -69,62 +69,50 @@ const AllPeserta: React.FC = () => {
       : pesertaToDelete.atlet?.nama_atlet;
 
     setDeleting(pesertaId);
+    setShowDeleteModal(false);
+    setPesertaToDelete(null);
 
     try {
       console.log('🗑️ Deleting peserta:', {
         kompetisiId,
-        participantId: pesertaId,
-        endpoint: `/kompetisi/${kompetisiId}/peserta/${pesertaId}`
+        participantId: pesertaId
       });
 
+      // Call API delete
       const response = await apiClient.delete(
-        `/kompetisi/${kompetisiId}/peserta/${pesertaId}`
+        `/kompetisi/${kompetisiId}/participants/${pesertaId}`
       );
 
       console.log('✅ Delete response:', response);
 
-      if (response.status === 200) {
-        // Close modal first
-        setShowDeleteModal(false);
-        setPesertaToDelete(null);
-        
-        // Show success notification
-        const notification = document.createElement('div');
-        notification.className = 'fixed top-4 right-4 z-50 bg-green-500 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 animate-slide-in';
-        notification.style.maxWidth = '400px';
-        notification.innerHTML = `
-          <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-          </svg>
-          <div class="flex-1">
-            <p class="font-semibold">Berhasil Dihapus!</p>
-            <p class="text-sm opacity-90">${pesertaName}</p>
-          </div>
-        `;
-        document.body.appendChild(notification);
+      // Show success notification
+      const notification = document.createElement('div');
+      notification.className = 'fixed top-4 right-4 z-50 bg-green-500 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 animate-slide-in';
+      notification.style.maxWidth = '400px';
+      notification.innerHTML = `
+        <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+        </svg>
+        <div class="flex-1">
+          <p class="font-semibold">Berhasil Dihapus!</p>
+          <p class="text-sm opacity-90">${pesertaName}</p>
+        </div>
+      `;
+      document.body.appendChild(notification);
 
-        setTimeout(() => {
-          notification.style.opacity = '0';
-          notification.style.transform = 'translateX(100%)';
-          notification.style.transition = 'all 0.3s ease-out';
-          setTimeout(() => notification.remove(), 300);
-        }, 3000);
+      setTimeout(() => {
+        notification.style.opacity = '0';
+        notification.style.transform = 'translateX(100%)';
+        notification.style.transition = 'all 0.3s ease-out';
+        setTimeout(() => notification.remove(), 300);
+      }, 3000);
 
-        // Force refresh data from server
-        console.log('🔄 Force refreshing data from server...');
-        setIsRefreshing(true);
-        
-        try {
-          await fetchAtletByKompetisi(kompetisiId);
-          console.log('✅ Data refreshed successfully after delete');
-        } catch (refreshError) {
-          console.error('❌ Error refreshing data:', refreshError);
-          // Even if refresh fails, try reloading the page as fallback
-          window.location.reload();
-        } finally {
-          setIsRefreshing(false);
-        }
-      }
+      // FORCE RELOAD PAGE after successful delete
+      console.log('🔄 Reloading page to refresh table...');
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
+
     } catch (error: any) {
       console.error('❌ Error deleting peserta:', error);
 
@@ -155,8 +143,6 @@ const AllPeserta: React.FC = () => {
       }, 4000);
     } finally {
       setDeleting(null);
-      setShowDeleteModal(false);
-      setPesertaToDelete(null);
     }
   };
 
