@@ -70,11 +70,6 @@ const AllPeserta: React.FC = () => {
 
     setDeleting(pesertaId);
 
-    const rowElement = document.querySelector(`[data-peserta-id="${pesertaId}"]`);
-    if (rowElement) {
-      rowElement.classList.add('row-removing');
-    }
-
     try {
       console.log('🗑️ Deleting peserta:', {
         kompetisiId,
@@ -89,14 +84,11 @@ const AllPeserta: React.FC = () => {
       console.log('✅ Delete response:', response);
 
       if (response.status === 200) {
-        // Refresh data immediately
-        setIsRefreshing(true);
-        await fetchAtletByKompetisi(kompetisiId);
-        setIsRefreshing(false);
-        
+        // Close modal first
         setShowDeleteModal(false);
         setPesertaToDelete(null);
-
+        
+        // Show success notification
         const notification = document.createElement('div');
         notification.className = 'fixed top-4 right-4 z-50 bg-green-500 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 animate-slide-in';
         notification.style.maxWidth = '400px';
@@ -118,14 +110,23 @@ const AllPeserta: React.FC = () => {
           setTimeout(() => notification.remove(), 300);
         }, 3000);
 
-        console.log('✅ Data refreshed successfully after delete');
+        // Force refresh data from server
+        console.log('🔄 Force refreshing data from server...');
+        setIsRefreshing(true);
+        
+        try {
+          await fetchAtletByKompetisi(kompetisiId);
+          console.log('✅ Data refreshed successfully after delete');
+        } catch (refreshError) {
+          console.error('❌ Error refreshing data:', refreshError);
+          // Even if refresh fails, try reloading the page as fallback
+          window.location.reload();
+        } finally {
+          setIsRefreshing(false);
+        }
       }
     } catch (error: any) {
       console.error('❌ Error deleting peserta:', error);
-
-      if (rowElement) {
-        rowElement.classList.remove('row-removing');
-      }
 
       const errorMessage = error.response?.data?.message
         || error.response?.data?.error
