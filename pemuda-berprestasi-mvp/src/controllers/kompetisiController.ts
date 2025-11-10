@@ -378,8 +378,8 @@ static async generateBrackets(req: Request, res: Response) {
     const kategori = registrations[0]?.kelas_kejuaraan?.kategori_event?.nama_kategori?.toLowerCase() || '';
     const isPemula = kategori.includes('pemula');
 
-    if (!isPemula && participantCount < 4) {
-      return sendError(res, 'Minimal 4 peserta diperlukan untuk bracket prestasi', 400);
+    if (!isPemula && participantCount < 2) {
+      return sendError(res, 'Minimal 2 peserta diperlukan untuk bracket prestasi', 400);
     }
 
     // Check authorization
