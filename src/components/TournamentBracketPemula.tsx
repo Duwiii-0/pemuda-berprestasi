@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Trophy, Edit3, CheckCircle, ArrowLeft, AlertTriangle, RefreshCw, Download, Shuffle } from 'lucide-react';
 import { exportBracketFromData } from '../utils/exportBracketPDF';
 import { useAuth } from '../context/authContext';
+import { useNavigate } from 'react-router-dom';
 import sriwijaya from "../assets/logo/sriwijaya.png";
 import taekwondo from "../assets/logo/taekwondo.png";
 import * as XLSX from 'xlsx';
@@ -258,6 +259,8 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
       };
     }
   };
+
+  const navigate = useNavigate();
 
   const openParticipantPreview = () => {
       setShowParticipantPreview(true);
@@ -1032,7 +1035,9 @@ return (
           <div className="flex items-center gap-4">
             {onBack && (
               <button
-                onClick={onBack}
+                onClick={() => {
+                  navigate("/admin-kompetisi/drawing-bagan");
+                }}
                 className="p-2 rounded-lg hover:bg-black/5 transition-all"
               >
                 <ArrowLeft size={20} style={{ color: '#990D35' }} />
