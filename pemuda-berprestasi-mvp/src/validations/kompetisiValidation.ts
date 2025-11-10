@@ -93,6 +93,14 @@ export const kompetisiValidation = {
       'number.integer': 'ID poomsae harus bilangan bulat',
       'number.positive': 'ID poomsae harus positif',
       'any.required': 'ID poomsae wajib untuk cabang POOMSAE'
+    }),
+    poomsae_type: Joi.string().valid('recognized', 'freestyle').when('cabang', {
+      is: 'POOMSAE',
+      then: Joi.optional(),
+      otherwise: Joi.forbidden()
+    }).messages({
+      'any.only': 'Tipe Poomsae harus recognized atau freestyle',
+      'any.forbidden': 'Tipe Poomsae hanya untuk cabang POOMSAE'
     })
   }),
 
