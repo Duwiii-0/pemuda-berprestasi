@@ -1,6 +1,6 @@
 // src/pages/adminkomp/AllPeserta.tsx
 import React, { useEffect, useState } from "react";
-import { CheckCircle, XCircle, Loader, Search, Users, AlertTriangle, ChevronLeft, ChevronRight, Download } from "lucide-react";
+import { CheckCircle, XCircle, Loader, Search, Users, AlertTriangle, ChevronLeft, ChevronRight, Download, Trash2 } from "lucide-react";
 import { useAuth } from "../../context/authContext";
 import { useKompetisi } from "../../context/KompetisiContext";
 import { apiClient } from "../../config/api";
@@ -18,6 +18,7 @@ const AllPeserta: React.FC = () => {
   const [selectedTeam, setSelectedTeam] = useState<any[]>([]);
 
   const [processing, setProcessing] = useState<number | null>(null);
+  const [deleting, setDeleting] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState<"ALL" | "PENDING" | "APPROVED" | "REJECTED">("ALL");
   const [filterCategory, setFilterCategory] = useState<"ALL" | "KYORUGI" | "POOMSAE">("ALL");
@@ -27,10 +28,14 @@ const AllPeserta: React.FC = () => {
   const [filterDojang, setFilterDojang] = useState<string>("ALL");
   const { dojangOptions, refreshDojang, isLoading } = useDojang();
 
-  // Pagination states
+  // ✅ PERBAIKAN: Pagination states dengan opsi yang bisa diatur
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(10000);
+  const [itemsPerPage, setItemsPerPage] = useState(25); // ✅ Default 25
   const [isExporting, setIsExporting] = useState(false);
+
+  // ✅ Modal konfirmasi delete
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [pesertaToDelete, setPesertaToDelete] = useState<any>(null);
 
   useEffect(() => {
     refreshDojang();
@@ -48,159 +53,162 @@ const AllPeserta: React.FC = () => {
   };
 
   useEffect(() => {
-    // Token handled by apiClient automatically
-  }, [token]);
-
-  useEffect(() => {
     if (kompetisiId) fetchAtletByKompetisi(kompetisiId);
   }, [kompetisiId]);
 
+  // ✅ FUNGSI DELETE PESERTA
+  const handleDeletePeserta = async (peserta: any) => {
+    setPesertaToDelete(peserta);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!pesertaToDelete || !kompetisiId) return;
+
+    setDeleting(pesertaToDelete.id_peserta_kompetisi);
+    
+    try {
+      const response = await apiClient.delete(
+        `/kompetisi/${kompetisiId}/peserta/${pesertaToDelete.id_peserta_kompetisi}`
+      );
+
+      if (response.status === 200) {
+        // Refresh data setelah delete
+        await fetchAtletByKompetisi(kompetisiId);
+        
+        // Show success notification (you can use your notification system)
+        alert('Peserta berhasil dihapus dari database');
+      }
+    } catch (error: any) {
+      console.error('Error deleting peserta:', error);
+      alert(error.response?.data?.message || 'Gagal menghapus peserta');
+    } finally {
+      setDeleting(null);
+      setShowDeleteModal(false);
+      setPesertaToDelete(null);
+    }
+  };
+
   // Export Excel Function
-// Export Excel Function
-const handleExportExcel = () => {
-  setIsExporting(true);
-  
-  try {
-    // ✅ Ambil info kompetisi dari user atau peserta pertama
-    const kompetisiInfo = user?.admin_kompetisi || pesertaList[0]?.kelas_kejuaraan?.kompetisi;
+  const handleExportExcel = () => {
+    setIsExporting(true);
     
-    // ✅ Siapkan data header informasi kejuaraan
-    const currentDate = new Date().toLocaleDateString('id-ID', { 
-      day: 'numeric', 
-      month: 'long', 
-      year: 'numeric' 
-    });
-    
-    const headerInfo = [
-      ['LAPORAN DATA PESERTA KOMPETISI'],
-      ['Nama Event', kompetisiInfo?.nama_event || 'Sriwijaya International Taekwondo Championship 2025'],
-      ['Lokasi', kompetisiInfo?.lokasi || 'GOR Ranau JSC Palembang'],
-      ['Tanggal Export', currentDate],
-      ['Total Peserta', displayedPesertas.length.toString()],
-      [], // Baris kosong
-    ];
+    try {
+      const kompetisiInfo = user?.admin_kompetisi || pesertaList[0]?.kelas_kejuaraan?.kompetisi;
+      
+      const currentDate = new Date().toLocaleDateString('id-ID', { 
+        day: 'numeric', 
+        month: 'long', 
+        year: 'numeric' 
+      });
+      
+      const headerInfo = [
+        ['LAPORAN DATA PESERTA KOMPETISI'],
+        ['Nama Event', kompetisiInfo?.nama_event || 'Sriwijaya International Taekwondo Championship 2025'],
+        ['Lokasi', kompetisiInfo?.lokasi || 'GOR Ranau JSC Palembang'],
+        ['Tanggal Export', currentDate],
+        ['Total Peserta', displayedPesertas.length.toString()],
+        [],
+      ];
 
-    // Prepare data for export
-    const exportData = displayedPesertas.map((peserta: any, index: number) => {
-      const isTeam = peserta.is_team;
-      
-      const namaPeserta = isTeam
-        ? peserta.anggota_tim?.map((m: any) => m.atlet.nama_atlet).join(", ")
-        : peserta.atlet?.nama_atlet || "-";
-      
-      const cabang = peserta.kelas_kejuaraan?.cabang || "-";
-      const levelEvent = peserta.kelas_kejuaraan?.kategori_event?.nama_kategori || "-";
-      
-      const kelasBerat = cabang === "KYORUGI"
-        ? peserta.kelas_kejuaraan?.kelas_berat?.nama_kelas || "-"
-        : "-";
-      
-      const kelasPoomsae = cabang === "POOMSAE"
-        ? peserta.kelas_kejuaraan?.poomsae?.nama_kelas || "-"
-        : "-";
-      
-      const kelasUsia = peserta.kelas_kejuaraan?.kelompok?.nama_kelompok || "-";
-      
-      const jenisKelamin = !isTeam 
-        ? (peserta.atlet?.jenis_kelamin === "LAKI_LAKI" ? "Laki-Laki" : peserta.atlet?.jenis_kelamin === "PEREMPUAN" ? "Perempuan" : "-")
-        : "-";
-      
-      const dojang = isTeam && peserta.anggota_tim?.length
-        ? peserta.anggota_tim[0]?.atlet?.dojang?.nama_dojang || "-"
-        : peserta.atlet?.dojang?.nama_dojang || "-";
-      
-      const tanggalLahir = !isTeam 
-        ? peserta.atlet?.tanggal_lahir || "-"
-        : "-";
-      
-      const beratBadan = !isTeam 
-        ? peserta.atlet?.berat_badan ? `${peserta.atlet.berat_badan} kg` : "-"
-        : "-";
-      
-      const tingiBadan = !isTeam 
-        ? peserta.atlet?.tinggi_badan ? `${peserta.atlet.tinggi_badan} cm` : "-"
-        : "-";
-      
-      // ✅ PERBAIKAN: Ambil sabuk dari relasi yang benar
-      const sabuk = !isTeam 
-        ? (peserta.atlet?.sabuk?.nama_sabuk || peserta.atlet?.belt || "-")
-        : "-";
+      const exportData = displayedPesertas.map((peserta: any, index: number) => {
+        const isTeam = peserta.is_team;
+        
+        const namaPeserta = isTeam
+          ? peserta.anggota_tim?.map((m: any) => m.atlet.nama_atlet).join(", ")
+          : peserta.atlet?.nama_atlet || "-";
+        
+        const cabang = peserta.kelas_kejuaraan?.cabang || "-";
+        const levelEvent = peserta.kelas_kejuaraan?.kategori_event?.nama_kategori || "-";
+        
+        const kelasBerat = cabang === "KYORUGI"
+          ? peserta.kelas_kejuaraan?.kelas_berat?.nama_kelas || "-"
+          : "-";
+        
+        const kelasPoomsae = cabang === "POOMSAE"
+          ? peserta.kelas_kejuaraan?.poomsae?.nama_kelas || "-"
+          : "-";
+        
+        const kelasUsia = peserta.kelas_kejuaraan?.kelompok?.nama_kelompok || "-";
+        
+        const jenisKelamin = !isTeam 
+          ? (peserta.atlet?.jenis_kelamin === "LAKI_LAKI" ? "Laki-Laki" : peserta.atlet?.jenis_kelamin === "PEREMPUAN" ? "Perempuan" : "-")
+          : "-";
+        
+        const dojang = isTeam && peserta.anggota_tim?.length
+          ? peserta.anggota_tim[0]?.atlet?.dojang?.nama_dojang || "-"
+          : peserta.atlet?.dojang?.nama_dojang || "-";
+        
+        const tanggalLahir = !isTeam 
+          ? peserta.atlet?.tanggal_lahir || "-"
+          : "-";
+        
+        const beratBadan = !isTeam 
+          ? peserta.atlet?.berat_badan ? `${peserta.atlet.berat_badan} kg` : "-"
+          : "-";
+        
+        const tingiBadan = !isTeam 
+          ? peserta.atlet?.tinggi_badan ? `${peserta.atlet.tinggi_badan} cm` : "-"
+          : "-";
+        
+        const sabuk = !isTeam 
+          ? (peserta.atlet?.sabuk?.nama_sabuk || peserta.atlet?.belt || "-")
+          : "-";
 
-      // Team members detail
-      const anggotaTimDetail = isTeam && peserta.anggota_tim?.length
-        ? peserta.anggota_tim.map((m: any, i: number) => 
-            `${i + 1}. ${m.atlet.nama_atlet} (${m.atlet.dojang?.nama_dojang || "-"})`
-          ).join("; ")
-        : "-";
+        const anggotaTimDetail = isTeam && peserta.anggota_tim?.length
+          ? peserta.anggota_tim.map((m: any, i: number) => 
+              `${i + 1}. ${m.atlet.nama_atlet} (${m.atlet.dojang?.nama_dojang || "-"})`
+            ).join("; ")
+          : "-";
 
-      return {
-        "No": index + 1,
-        "Nama Peserta": namaPeserta,
-        "Tipe": isTeam ? "Tim" : "Individu",
-        "Kategori": cabang,
-        "Level": levelEvent,
-        "Kelas Berat": kelasBerat,
-        "Kelas Poomsae": kelasPoomsae,
-        "Kelompok Usia": kelasUsia,
-        "Jenis Kelamin": jenisKelamin,
-        "Tanggal Lahir": tanggalLahir,
-        "Berat Badan": beratBadan,
-        "Tinggi Badan": tingiBadan,
-        "Sabuk": sabuk,
-        "Dojang": dojang,
-        "Status": peserta.status,
-        "Anggota Tim": anggotaTimDetail,
-      };
-    });
+        return {
+          "No": index + 1,
+          "Nama Peserta": namaPeserta,
+          "Tipe": isTeam ? "Tim" : "Individu",
+          "Kategori": cabang,
+          "Level": levelEvent,
+          "Kelas Berat": kelasBerat,
+          "Kelas Poomsae": kelasPoomsae,
+          "Kelompok Usia": kelasUsia,
+          "Jenis Kelamin": jenisKelamin,
+          "Tanggal Lahir": tanggalLahir,
+          "Berat Badan": beratBadan,
+          "Tinggi Badan": tingiBadan,
+          "Sabuk": sabuk,
+          "Dojang": dojang,
+          "Status": peserta.status,
+          "Anggota Tim": anggotaTimDetail,
+        };
+      });
 
-    // ✅ Create workbook dengan header info
-    const workbook = XLSX.utils.book_new();
-    
-    // ✅ Buat worksheet dengan header info dulu
-    const worksheet = XLSX.utils.aoa_to_sheet(headerInfo);
-    
-    // ✅ Tambahkan data peserta ke worksheet yang sama
-    XLSX.utils.sheet_add_json(worksheet, exportData, { 
-      origin: `A${headerInfo.length + 1}`, // Mulai setelah header info
-      skipHeader: false 
-    });
-    
-    // ✅ Set column widths
-    const columnWidths = [
-      { wch: 5 },   // No
-      { wch: 30 },  // Nama Peserta
-      { wch: 10 },  // Tipe
-      { wch: 12 },  // Kategori
-      { wch: 10 },  // Level
-      { wch: 15 },  // Kelas Berat
-      { wch: 15 },  // Kelas Poomsae
-      { wch: 18 },  // Kelompok Usia
-      { wch: 15 },  // Jenis Kelamin
-      { wch: 15 },  // Tanggal Lahir
-      { wch: 12 },  // Berat Badan
-      { wch: 12 },  // Tinggi Badan
-      { wch: 15 },  // Sabuk
-      { wch: 25 },  // Dojang
-      { wch: 12 },  // Status
-      { wch: 50 },  // Anggota Tim
-    ];
-    worksheet['!cols'] = columnWidths;
+      const workbook = XLSX.utils.book_new();
+      const worksheet = XLSX.utils.aoa_to_sheet(headerInfo);
+      
+      XLSX.utils.sheet_add_json(worksheet, exportData, { 
+        origin: `A${headerInfo.length + 1}`,
+        skipHeader: false 
+      });
+      
+      const columnWidths = [
+        { wch: 5 }, { wch: 30 }, { wch: 10 }, { wch: 12 }, { wch: 10 },
+        { wch: 15 }, { wch: 15 }, { wch: 18 }, { wch: 15 }, { wch: 15 },
+        { wch: 12 }, { wch: 12 }, { wch: 15 }, { wch: 25 }, { wch: 12 }, { wch: 50 },
+      ];
+      worksheet['!cols'] = columnWidths;
 
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Data Peserta");
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Data Peserta");
 
-    // Generate filename with timestamp
-    const timestamp = new Date().toISOString().split('T')[0];
-    const fileName = `Data_Peserta_Sriwijaya_Cup_${timestamp}.xlsx`;
+      const timestamp = new Date().toISOString().split('T')[0];
+      const fileName = `Data_Peserta_Sriwijaya_Cup_${timestamp}.xlsx`;
 
-    // Export file
-    XLSX.writeFile(workbook, fileName);
+      XLSX.writeFile(workbook, fileName);
 
-  } catch (error) {   
-    console.error('Error exporting to Excel:', error);
-  } finally {
-    setIsExporting(false);
-  }
-};
+    } catch (error) {   
+      console.error('Error exporting to Excel:', error);
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   if (user?.role !== "ADMIN_KOMPETISI") {
     return (
@@ -250,53 +258,39 @@ const handleExportExcel = () => {
   };
 
   const displayedPesertas = pesertaList.filter((peserta: any) => {
-    // Nama peserta (team atau individu)
     const namaPeserta = peserta.is_team
       ? peserta.anggota_tim?.map((a: any) => a.atlet.nama_atlet).join(" ") || ""
       : peserta.atlet?.nama_atlet || "";
 
     const matchesSearch = namaPeserta.toLowerCase().includes(searchTerm.toLowerCase());
-
-    // Status
     const pesertaStatus = peserta.status?.toUpperCase() || "";
     const matchesStatus = filterStatus === "ALL" || pesertaStatus === filterStatus.toUpperCase();
-
-    // Kategori / cabang
     const kategori = peserta.kelas_kejuaraan?.cabang?.toUpperCase() || "";
     const matchesCategory = filterCategory === "ALL" || kategori === filterCategory.toUpperCase();
-
-    // Kelas berat
     const kelasBerat = peserta.kelas_kejuaraan?.kelas_berat?.nama_kelas?.toUpperCase() || "";
     const matchesKelasBerat = filterKelasBerat === "ALL" || kelasBerat === filterKelasBerat.toUpperCase();
-
-    // Kelas usia / kelompok
     const kelasUsia = peserta.kelas_kejuaraan?.kelompok?.nama_kelompok?.toUpperCase() || "";
     const matchesKelasUsia = filterKelasUsia === "ALL" || kelasUsia === filterKelasUsia.toUpperCase();
-
-    // Level / kategori event
     const level = peserta.kelas_kejuaraan?.kategori_event?.nama_kategori?.toUpperCase() || "";
     const matchesLevel = !filterLevel || level === filterLevel.toUpperCase();
-
-    // Dojang
     const pesertaDojang = peserta.is_team
       ? peserta.anggota_tim?.[0]?.atlet?.dojang?.id_dojang?.toString() || ""
       : peserta.atlet?.dojang?.id_dojang?.toString() || "";
-
     const matchesDojang = filterDojang === "ALL" || pesertaDojang === filterDojang;
 
     return matchesSearch && matchesStatus && matchesCategory && matchesKelasBerat && matchesKelasUsia && matchesLevel && matchesDojang;
   });
 
-  // Pagination logic
+  // ✅ PERBAIKAN: Pagination logic
   const totalPages = Math.ceil(displayedPesertas.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const currentPesertas = displayedPesertas.slice(startIndex, endIndex);
 
-  // Reset to first page when filters change
+  // Reset to first page when filters or items per page change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, filterStatus, filterCategory, filterKelasBerat, filterKelasUsia, filterLevel, filterDojang]);
+  }, [searchTerm, filterStatus, filterCategory, filterKelasBerat, filterKelasUsia, filterLevel, filterDojang, itemsPerPage]);
 
   const statusOptions = [
     { value: "ALL", label: "Semua Status" },
@@ -324,6 +318,13 @@ const handleExportExcel = () => {
     { value: "Cadet", label: "Cadet (2011-2013)" },
     { value: "Junior", label: "Junior (2008-2010)" },
     { value: "Senior", label: "Senior (2007 ke atas)" },
+  ];
+
+  // ✅ PERBAIKAN: Opsi items per page
+  const itemsPerPageOptions = [
+    { value: 25, label: "25 per halaman" },
+    { value: 50, label: "50 per halaman" },
+    { value: 100, label: "100 per halaman" },
   ];
 
   const getStatusBadge = (status: string) => {
@@ -396,7 +397,6 @@ const handleExportExcel = () => {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#F5FBEF' }}>
-      {/* CONTAINER - Disesuaikan untuk layout dengan sidebar */}
       <div className="p-4 sm:p-6 lg:p-8 max-w-full">
         
         {/* HEADER */}
@@ -418,7 +418,6 @@ const handleExportExcel = () => {
               </div>
             </div>
             
-            {/* Export Button */}
             <button
               onClick={handleExportExcel}
               disabled={isExporting || displayedPesertas.length === 0}
@@ -427,16 +426,6 @@ const handleExportExcel = () => {
                 backgroundColor: '#990D35',
                 color: '#F5FBEF',
                 borderColor: '#990D35'
-              }}
-              onMouseEnter={(e) => {
-                if (!e.currentTarget.disabled) {
-                  e.currentTarget.style.backgroundColor = 'rgba(153, 13, 53, 0.9)';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!e.currentTarget.disabled) {
-                  e.currentTarget.style.backgroundColor = '#990D35';
-                }
               }}
             >
               {isExporting ? (
@@ -458,7 +447,6 @@ const handleExportExcel = () => {
         {/* FILTER + SEARCH */}
         <div className="rounded-xl shadow-sm border p-4 sm:p-6 mb-6" style={{ backgroundColor: '#F5FBEF', borderColor: '#990D35' }}>
           <div className="space-y-4">
-            {/* Search - Full width */}
             <div className="w-full">
               <div className="relative">
                 <Search
@@ -477,199 +465,119 @@ const handleExportExcel = () => {
                     backgroundColor: '#F5FBEF',
                     color: '#050505'
                   }}
-                  onFocus={(e) => {
-                    e.target.style.outline = 'none';
-                    e.target.style.boxShadow = '0 0 0 2px rgba(153, 13, 53, 0.2)';
-                  }}
-                  onBlur={(e) => {
-                    e.target.style.boxShadow = '';
-                  }}
                 />
               </div>
             </div>
 
-            {/* Filter dalam grid responsif */}
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
-              {/* Filter Status */}
               <div className="col-span-2 sm:col-span-1">
                 <label className="block text-xs mb-2 font-medium" style={{ color: '#050505', opacity: 0.6 }}>Status</label>
                 <select
                   value={filterStatus}
                   onChange={(e) => setFilterStatus(e.target.value as any)}
                   className="w-full px-3 py-2.5 rounded-xl border shadow-sm focus:ring-2 focus:border-transparent text-sm transition-colors"
-                  style={{ 
-                    borderColor: '#990D35', 
-                    backgroundColor: '#F5FBEF',
-                    color: '#050505'
-                  }}
-                  onFocus={(e) => {
-                    e.target.style.outline = 'none';
-                    e.target.style.boxShadow = '0 0 0 2px rgba(153, 13, 53, 0.2)';
-                  }}
-                  onBlur={(e) => {
-                    e.target.style.boxShadow = '';
-                  }}
+                  style={{ borderColor: '#990D35', backgroundColor: '#F5FBEF', color: '#050505' }}
                 >
                   {statusOptions.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
                   ))}
                 </select>
               </div>
 
-              {/* Filter Kategori */}
               <div className="col-span-2 sm:col-span-1">
                 <label className="block text-xs mb-2 font-medium" style={{ color: '#050505', opacity: 0.6 }}>Kategori</label>
                 <select
                   value={filterCategory}
                   onChange={(e) => setFilterCategory(e.target.value as any)}
                   className="w-full px-3 py-2.5 rounded-xl border shadow-sm focus:ring-2 focus:border-transparent text-sm transition-colors"
-                  style={{ 
-                    borderColor: '#990D35', 
-                    backgroundColor: '#F5FBEF',
-                    color: '#050505'
-                  }}
-                  onFocus={(e) => {
-                    e.target.style.outline = 'none';
-                    e.target.style.boxShadow = '0 0 0 2px rgba(153, 13, 53, 0.2)';
-                  }}
-                  onBlur={(e) => {
-                    e.target.style.boxShadow = '';
-                  }}
+                  style={{ borderColor: '#990D35', backgroundColor: '#F5FBEF', color: '#050505' }}
                 >
                   {categoryOptions.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
                   ))}
                 </select>
               </div>
 
-              {/* Filter Level */}
               <div className="col-span-2 sm:col-span-1">
                 <label className="block text-xs mb-2 font-medium" style={{ color: '#050505', opacity: 0.6 }}>Level</label>
                 <select
                   value={filterLevel || ""}
                   onChange={(e) => setFilterLevel(e.target.value as "pemula" | "prestasi" | null || null)}
                   className="w-full px-3 py-2.5 rounded-xl border shadow-sm focus:ring-2 focus:border-transparent text-sm transition-colors"
-                  style={{ 
-                    borderColor: '#990D35', 
-                    backgroundColor: '#F5FBEF',
-                    color: '#050505'
-                  }}
-                  onFocus={(e) => {
-                    e.target.style.outline = 'none';
-                    e.target.style.boxShadow = '0 0 0 2px rgba(153, 13, 53, 0.2)';
-                  }}
-                  onBlur={(e) => {
-                    e.target.style.boxShadow = '';
-                  }}
+                  style={{ borderColor: '#990D35', backgroundColor: '#F5FBEF', color: '#050505' }}
                 >
                   {levelOptions.map((opt) => (
-                    <option key={opt.value || "null"} value={opt.value || ""}>
-                      {opt.label}
-                    </option>
+                    <option key={opt.value || "null"} value={opt.value || ""}>{opt.label}</option>
                   ))}
                 </select>
               </div>
 
-              {/* Filter Kelompok Usia */}
               <div className="col-span-2 sm:col-span-1">
                 <label className="block text-xs mb-2 font-medium" style={{ color: '#050505', opacity: 0.6 }}>Usia</label>
                 <select
                   value={filterKelasUsia}
                   onChange={(e) => setFilterKelasUsia(e.target.value as any)}
                   className="w-full px-3 py-2.5 rounded-xl border shadow-sm focus:ring-2 focus:border-transparent text-sm transition-colors"
-                  style={{ 
-                    borderColor: '#990D35', 
-                    backgroundColor: '#F5FBEF',
-                    color: '#050505'
-                  }}
-                  onFocus={(e) => {
-                    e.target.style.outline = 'none';
-                    e.target.style.boxShadow = '0 0 0 2px rgba(153, 13, 53, 0.2)';
-                  }}
-                  onBlur={(e) => {
-                    e.target.style.boxShadow = '';
-                  }}
+                  style={{ borderColor: '#990D35', backgroundColor: '#F5FBEF', color: '#050505' }}
                 >
                   {ageOptions.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
                   ))}
                 </select>
               </div>
 
-              {/* Filter Dojang */}
               <div className="col-span-4 sm:col-span-3 lg:col-span-1">
                 <label className="block text-xs mb-2 font-medium" style={{ color: '#050505', opacity: 0.6 }}>Dojang</label>
                 <select
                   value={filterDojang}
                   onChange={(e) => setFilterDojang(e.target.value)}
                   className="w-full px-3 py-2.5 rounded-xl border shadow-sm focus:ring-2 focus:border-transparent text-sm transition-colors"
-                  style={{ 
-                    borderColor: '#990D35', 
-                    backgroundColor: '#F5FBEF',
-                    color: '#050505'
-                  }}
-                  onFocus={(e) => {
-                    e.target.style.outline = 'none';
-                    e.target.style.boxShadow = '0 0 0 2px rgba(153, 13, 53, 0.2)';
-                  }}
-                  onBlur={(e) => {
-                    e.target.style.boxShadow = '';
-                  }}
+                  style={{ borderColor: '#990D35', backgroundColor: '#F5FBEF', color: '#050505' }}
                 >
                   <option value="ALL">Semua Dojang</option>
                   {dojangOptions.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
                   ))}
                 </select>
               </div>
 
-              {/* Filter Kelas Berat */}
               <div className="col-span-2 sm:col-span-1">
-                <label className="block text-xs mb-2 font-medium" style={{ color: '#050505', opacity: 0.6 }}>
-                  Kelas Berat
-                </label>
+                <label className="block text-xs mb-2 font-medium" style={{ color: '#050505', opacity: 0.6 }}>Kelas Berat</label>
                 <select
                   value={filterKelasBerat}
                   onChange={(e) => setFilterKelasBerat(e.target.value)}
                   className="w-full px-3 py-2.5 rounded-xl border shadow-sm focus:ring-2 focus:border-transparent text-sm transition-colors"
-                  style={{
-                    borderColor: '#990D35',
-                    backgroundColor: '#F5FBEF',
-                    color: '#050505'
-                  }}
-                  onFocus={(e) => {
-                    e.target.style.outline = 'none';
-                    e.target.style.boxShadow = '0 0 0 2px rgba(153, 13, 53, 0.2)';
-                  }}
-                  onBlur={(e) => {
-                    e.target.style.boxShadow = '';
-                  }}
+                  style={{ borderColor: '#990D35', backgroundColor: '#F5FBEF', color: '#050505' }}
                 >
                   {kelasBeratOptionsMap[filterKelasUsia || "ALL"].map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
                   ))}
                 </select>
               </div>
             </div>
 
-            {/* Info hasil */}
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 pt-2 border-t" style={{ borderColor: 'rgba(153, 13, 53, 0.2)' }}>
-              <p className="text-sm" style={{ color: '#050505', opacity: 0.6 }}>
-                Menampilkan <span className="font-semibold">{startIndex + 1}-{Math.min(endIndex, displayedPesertas.length)}</span> dari <span className="font-semibold">{displayedPesertas.length}</span> peserta
-              </p>
-              <p className="text-xs sm:text-sm" style={{ color: '#050505', opacity: 0.5 }}>
-                Halaman {currentPage} dari {totalPages}
-              </p>
+            {/* ✅ PERBAIKAN: Info hasil dengan items per page selector */}
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 pt-2 border-t" style={{ borderColor: 'rgba(153, 13, 53, 0.2)' }}>
+              <div className="flex items-center gap-3">
+                <p className="text-sm" style={{ color: '#050505', opacity: 0.6 }}>
+                  Menampilkan <span className="font-semibold">{startIndex + 1}-{Math.min(endIndex, displayedPesertas.length)}</span> dari <span className="font-semibold">{displayedPesertas.length}</span> peserta
+                </p>
+              </div>
+              
+              {/* Items per page selector */}
+              <div className="flex items-center gap-2">
+                <label className="text-xs font-medium" style={{ color: '#050505', opacity: 0.6 }}>Tampilkan:</label>
+                <select
+                  value={itemsPerPage}
+                  onChange={(e) => setItemsPerPage(Number(e.target.value))}
+                  className="px-3 py-1.5 rounded-lg border shadow-sm text-sm transition-colors"
+                  style={{ borderColor: '#990D35', backgroundColor: '#F5FBEF', color: '#050505' }}
+                >
+                  {itemsPerPageOptions.map((opt) => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
         </div>
@@ -697,7 +605,6 @@ const handleExportExcel = () => {
                   className="rounded-xl shadow-sm border overflow-hidden hover:shadow-md transition-shadow"
                   style={{ backgroundColor: '#F5FBEF', borderColor: '#990D35' }}
                 >
-                  {/* Header Card */}
                   <div 
                     className="p-4 cursor-pointer"
                     onClick={() => handleRowClick(peserta)}
@@ -728,7 +635,7 @@ const handleExportExcel = () => {
                     </div>
                   </div>
                   
-                  {/* Action Buttons */}
+                  {/* ✅ PERBAIKAN: Action Buttons dengan Delete */}
                   <div className="flex gap-2 p-4 pt-0">
                     <button
                       onClick={(e) => { e.stopPropagation(); handleApproval(peserta.id_peserta_kompetisi); }}
@@ -743,19 +650,16 @@ const handleExportExcel = () => {
                       disabled={processing === peserta.id_peserta_kompetisi}
                       className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 text-white rounded-lg hover:shadow-md disabled:opacity-50 transition-all text-sm font-medium"
                       style={{ backgroundColor: '#990D35' }}
-                      onMouseEnter={(e) => {
-                        if (!e.currentTarget.disabled) {
-                          e.currentTarget.style.backgroundColor = 'rgba(153, 13, 53, 0.9)';
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (!e.currentTarget.disabled) {
-                          e.currentTarget.style.backgroundColor = '#990D35';
-                        }
-                      }}
                     >
                       {processing === peserta.id_peserta_kompetisi ? <Loader size={16} className="animate-spin" /> : <XCircle size={16} />}
                       <span className="hidden xs:inline">Tolak</span>
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleDeletePeserta(peserta); }}
+                      disabled={deleting === peserta.id_peserta_kompetisi}
+                      className="flex items-center justify-center gap-2 px-3 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition-all text-sm font-medium"
+                    >
+                      {deleting === peserta.id_peserta_kompetisi ? <Loader size={16} className="animate-spin" /> : <Trash2 size={16} />}
                     </button>
                   </div>
                 </div>
@@ -797,19 +701,14 @@ const handleExportExcel = () => {
                   <tbody className="divide-y" style={{ borderColor: '#990D35' }}>
                     {currentPesertas.map((peserta: any) => {
                       const isTeam = peserta.is_team;
-
                       const namaPeserta = isTeam
                         ? peserta.anggota_tim?.map((m: any) => m.atlet.nama_atlet).join(", ")
                         : peserta.atlet?.nama_atlet || "-";
-
                       const cabang = peserta.kelas_kejuaraan?.cabang || "-";
                       const levelEvent = peserta.kelas_kejuaraan?.kategori_event?.nama_kategori || "-";
-
-                      const kelasBerat =
-                        cabang === "KYORUGI"
-                          ? peserta.kelas_kejuaraan?.kelas_berat?.nama_kelas || "-"
-                          : "-";
-                          
+                      const kelasBerat = cabang === "KYORUGI"
+                        ? peserta.kelas_kejuaraan?.kelas_berat?.nama_kelas || "-"
+                        : "-";
                       const kelasUsia = peserta.kelas_kejuaraan?.kelompok?.nama_kelompok || "-";
                       const jenisKelamin = !isTeam ? peserta.atlet?.jenis_kelamin || "-" : "-";
                       const dojang = isTeam && peserta.anggota_tim?.length
@@ -836,7 +735,6 @@ const handleExportExcel = () => {
                           <td className="py-3 px-4 text-sm" style={{ color: '#050505', opacity: 0.7 }}>{cabang}</td>
                           <td className="py-3 px-4 text-sm" style={{ color: '#050505', opacity: 0.7 }}>{levelEvent}</td>
                           <td className="py-3 px-4 text-sm" style={{ color: '#050505', opacity: 0.7 }}>{kelasBerat}</td>
-                          {/* Kelas Poomsae */}
                           <td className="py-3 px-4 text-sm" style={{ color: '#050505', opacity: 0.7 }}>
                             {peserta.kelas_kejuaraan?.cabang === "POOMSAE"
                               ? peserta.kelas_kejuaraan?.poomsae?.nama_kelas || "-"
@@ -867,19 +765,19 @@ const handleExportExcel = () => {
                                 className="inline-flex items-center gap-1 px-3 py-2 text-white rounded-lg hover:shadow-md disabled:opacity-50 transition-all text-sm font-medium"
                                 style={{ backgroundColor: '#990D35' }}
                                 title="Tolak peserta"
-                                onMouseEnter={(e) => {
-                                  if (!e.currentTarget.disabled) {
-                                    e.currentTarget.style.backgroundColor = 'rgba(153, 13, 53, 0.9)';
-                                  }
-                                }}
-                                onMouseLeave={(e) => {
-                                  if (!e.currentTarget.disabled) {
-                                    e.currentTarget.style.backgroundColor = '#990D35';
-                                  }
-                                }}
                               >
                                 {processing === peserta.id_peserta_kompetisi ? <Loader size={16} className="animate-spin" /> : <XCircle size={16} />}
                                 <span className="hidden xl:inline">Tolak</span>
+                              </button>
+                              {/* ✅ PERBAIKAN: Tombol Delete */}
+                              <button
+                                onClick={(e) => { e.stopPropagation(); handleDeletePeserta(peserta); }}
+                                disabled={deleting === peserta.id_peserta_kompetisi}
+                                className="inline-flex items-center gap-1 px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition-all text-sm font-medium"
+                                title="Hapus peserta"
+                              >
+                                {deleting === peserta.id_peserta_kompetisi ? <Loader size={16} className="animate-spin" /> : <Trash2 size={16} />}
+                                <span className="hidden xl:inline">Hapus</span>
                               </button>
                             </div>
                           </td>
@@ -907,39 +805,21 @@ const handleExportExcel = () => {
         {/* Pagination */}
         {totalPages > 1 && (
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 rounded-xl shadow-sm border p-4 sm:p-6 mt-6" style={{ backgroundColor: '#F5FBEF', borderColor: '#990D35' }}>
-            {/* Pagination Info */}
             <div className="text-sm order-2 sm:order-1" style={{ color: '#050505', opacity: 0.6 }}>
               Menampilkan {startIndex + 1} - {Math.min(endIndex, displayedPesertas.length)} dari {displayedPesertas.length} hasil
             </div>
 
-            {/* Pagination Controls */}
             <div className="flex items-center gap-1 sm:gap-2 order-1 sm:order-2">
-              {/* Previous Button */}
               <button
                 onClick={() => handlePageChange(currentPage - 1)}
                 disabled={currentPage === 1}
                 className="flex items-center gap-1 px-2 sm:px-3 py-2 rounded-lg border hover:shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
-                style={{ 
-                  borderColor: '#990D35', 
-                  backgroundColor: '#F5FBEF', 
-                  color: '#050505' 
-                }}
-                onMouseEnter={(e) => {
-                  if (!e.currentTarget.disabled) {
-                    e.currentTarget.style.backgroundColor = 'rgba(153, 13, 53, 0.05)';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!e.currentTarget.disabled) {
-                    e.currentTarget.style.backgroundColor = '#F5FBEF';
-                  }
-                }}
+                style={{ borderColor: '#990D35', backgroundColor: '#F5FBEF', color: '#050505' }}
               >
                 <ChevronLeft size={16} />
                 <span className="hidden sm:inline">Prev</span>
               </button>
 
-              {/* Page Numbers */}
               <div className="flex items-center gap-1">
                 {getPageNumbers().map((pageNum, index) => (
                   pageNum === '...' ? (
@@ -954,16 +834,6 @@ const handleExportExcel = () => {
                         color: currentPage === pageNum ? '#F5FBEF' : '#050505',
                         border: currentPage === pageNum ? 'none' : `1px solid #990D35`
                       }}
-                      onMouseEnter={(e) => {
-                        if (currentPage !== pageNum) {
-                          e.currentTarget.style.backgroundColor = 'rgba(153, 13, 53, 0.05)';
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (currentPage !== pageNum) {
-                          e.currentTarget.style.backgroundColor = '#F5FBEF';
-                        }
-                      }}
                     >
                       {pageNum}
                     </button>
@@ -971,26 +841,11 @@ const handleExportExcel = () => {
                 ))}
               </div>
 
-              {/* Next Button */}
               <button
                 onClick={() => handlePageChange(currentPage + 1)}
                 disabled={currentPage === totalPages}
                 className="flex items-center gap-1 px-2 sm:px-3 py-2 rounded-lg border hover:shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
-                style={{ 
-                  borderColor: '#990D35', 
-                  backgroundColor: '#F5FBEF', 
-                  color: '#050505' 
-                }}
-                onMouseEnter={(e) => {
-                  if (!e.currentTarget.disabled) {
-                    e.currentTarget.style.backgroundColor = 'rgba(153, 13, 53, 0.05)';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!e.currentTarget.disabled) {
-                    e.currentTarget.style.backgroundColor = '#F5FBEF';
-                  }
-                }}
+                style={{ borderColor: '#990D35', backgroundColor: '#F5FBEF', color: '#050505' }}
               >
                 <span className="hidden sm:inline">Next</span>
                 <ChevronRight size={16} />
@@ -999,7 +854,67 @@ const handleExportExcel = () => {
           </div>
         )}
 
-        {/* Team Modal */}
+        {/* ✅ MODAL DELETE CONFIRMATION */}
+        {showDeleteModal && pesertaToDelete && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden">
+              <div className="p-6 flex flex-col items-center" style={{ backgroundColor: 'rgba(220, 38, 38, 0.1)' }}>
+                <div
+                  className="w-20 h-20 rounded-full flex items-center justify-center mb-4"
+                  style={{ backgroundColor: '#DC2626' }}
+                >
+                  <Trash2 size={40} style={{ color: 'white' }} />
+                </div>
+                
+                <h3 className="text-2xl font-bold text-center mb-2" style={{ color: '#050505' }}>
+                  Hapus Peserta?
+                </h3>
+                
+                <p className="text-center text-base leading-relaxed mb-4" style={{ color: '#050505', opacity: 0.7 }}>
+                  Apakah Anda yakin ingin menghapus peserta <strong>{pesertaToDelete.is_team 
+                    ? pesertaToDelete.anggota_tim?.map((m: any) => m.atlet.nama_atlet).join(", ")
+                    : pesertaToDelete.atlet?.nama_atlet}</strong> dari database?
+                </p>
+                
+                <p className="text-center text-sm" style={{ color: '#DC2626' }}>
+                  ⚠️ Aksi ini tidak dapat dibatalkan!
+                </p>
+              </div>
+              
+              <div className="p-6 bg-gray-50 flex gap-3">
+                <button
+                  onClick={() => {
+                    setShowDeleteModal(false);
+                    setPesertaToDelete(null);
+                  }}
+                  className="flex-1 py-3 px-4 rounded-xl font-semibold transition-all hover:bg-white border-2"
+                  style={{ borderColor: '#990D35', color: '#990D35', backgroundColor: 'white' }}
+                >
+                  Batal
+                </button>
+                <button
+                  onClick={confirmDelete}
+                  disabled={deleting !== null}
+                  className="flex-1 py-3 px-4 rounded-xl font-semibold transition-all hover:opacity-90 shadow-lg disabled:opacity-50 flex items-center justify-center gap-2"
+                  style={{ backgroundColor: '#DC2626', color: 'white' }}
+                >
+                  {deleting !== null ? (
+                    <>
+                      <Loader size={18} className="animate-spin" />
+                      <span>Menghapus...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 size={18} />
+                      <span>Ya, Hapus</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         <SelectTeamMemberModal
           isOpen={teamModalOpen}
           anggotaTim={selectedTeam}
