@@ -915,52 +915,63 @@ const exportPesertaToExcel = () => {
     return peserta.atlet?.dojang.nama_dojang || '';
   };
 
-  const getTotalRounds = (): number => {
-    if (matches.length > 0) {
-      return Math.max(...matches.map(m => m.ronde));
-    }
+const getTotalRounds = (): number => {
+  if (matches.length > 0) {
+    return Math.max(...matches.map(m => m.ronde));
+  }
+  
+  // ✅ PERBAIKAN: Handle 2-3 participants
+  if (approvedParticipants.length < 2) return 0;
+  if (approvedParticipants.length === 2) return 1; // Langsung final
+  if (approvedParticipants.length === 3) return 2; // 1 match + final
+  if (approvedParticipants.length === 4) return 2; // Semi + final
+  
+  let rounds = 2;
+  
+  if (approvedParticipants.length >= 8) {
+    rounds++;
     
-    if (approvedParticipants.length < 4) return 0;
-    
-    let rounds = 2;
-    
-    if (approvedParticipants.length >= 8) {
+    if (approvedParticipants.length > 8) {
       rounds++;
-      
-      if (approvedParticipants.length > 8) {
-        rounds++;
-      }
-    } else if (approvedParticipants.length > 4) {
-      rounds++;
     }
-    
-    return rounds;
-  };
+  } else if (approvedParticipants.length > 4) {
+    rounds++;
+  }
+  
+  return rounds;
+};
 
-  const getRoundName = (round: number, totalRounds: number): string => {
-    const fromEnd = totalRounds - round;
-    
-    switch (fromEnd) {
-      case 0: 
-        return 'Final';
-      case 1: 
-        return 'Semi Final';
-      case 2: 
-        if (totalRounds >= 3) {
-          if (approvedParticipants.length >= 8) {
-            return 'Quarter Final';
-          }
-        }
+const getRoundName = (round: number, totalRounds: number): string => {
+  // ✅ PERBAIKAN: Jika total round = 1, langsung final
+  if (totalRounds === 1) return 'Final';
+  
+  const fromEnd = totalRounds - round;
+  
+  switch (fromEnd) {
+    case 0: 
+      return 'Final';
+    case 1: 
+      // ✅ Jika 3 peserta (2 rounds), round 1 bukan "Semi Final"
+      if (totalRounds === 2 && approvedParticipants.length === 3) {
         return 'Round 1';
-      case 3:
-        if (approvedParticipants.length >= 16) {
-          return 'Round of 16';
+      }
+      return 'Semi Final';
+    case 2: 
+      if (totalRounds >= 3) {
+        if (approvedParticipants.length >= 8) {
+          return 'Quarter Final';
         }
-        return 'Round 1';
-      default: 
-        return `Round ${round}`;
-    }
-  };
+      }
+      return 'Round 1';
+    case 3:
+      if (approvedParticipants.length >= 16) {
+        return 'Round of 16';
+      }
+      return 'Round 1';
+    default: 
+      return `Round ${round}`;
+  }
+};
 
   const getMatchesByRound = (round: number) => {
     return matches.filter(match => match.ronde === round);
@@ -1873,9 +1884,25 @@ const splitMatchesBySide = (matches: Match[], totalRounds: number) => {
   for (let round = 1; round <= totalRounds; round++) {
     const roundMatches = getMatchesByRound(round);
     
+    // ✅ PERBAIKAN: Jika total rounds = 1 atau 2 peserta, TIDAK perlu split
+    if (totalRounds === 1) {
+      allRounds.push({ left: [], right: [] });
+      continue;
+    }
+    
     // Final round stays in center (tidak di-split)
     if (round === totalRounds) {
       allRounds.push({ left: [], right: [] });
+      continue;
+    }
+    
+    // ✅ PERBAIKAN: Jika 3 peserta (round 1 hanya 1 match), jangan split
+    if (approvedParticipants.length === 3 && round === 1) {
+      // Taruh di left saja, right kosong
+      allRounds.push({
+        left: roundMatches,
+        right: []
+      });
       continue;
     }
     
@@ -2171,32 +2198,51 @@ const calculateCardPosition = (
 </div>
 
 <div ref={bracketRef} className="overflow-x-auto overflow-y-visible pb-8">
-  <div 
-    className="tournament-layout"
-    style={{
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'flex-start', // ✅ PENTING!
-      gap: `${CENTER_GAP}px`,
-      minWidth: 'fit-content',
-      minHeight: '800px', // ✅ Fixed minimum height
-      padding: '60px 40px 20px 40px',
-      position: 'relative'
-    }}
-  >
-    {/* LEFT BRACKET */}
-    {renderBracketSide(getLeftMatches(), 'left', 1)}
-
-    {/* CENTER FINAL */}
-    {renderCenterFinal()}
-
-    {/* RIGHT BRACKET */}
-    {renderBracketSide(getRightMatches(), 'right', 1)}
-  </div>
-</div>
+        {/* ✅ PERBAIKAN: Jika hanya 2 peserta, render center final saja */}
+        {approvedParticipants.length === 2 ? (
+          <div 
+            className="tournament-layout"
+            style={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'flex-start',
+              minWidth: 'fit-content',
+              minHeight: '400px',
+              padding: '60px 40px 20px 40px',
+              position: 'relative'
+            }}
+          >
+            {/* Hanya render final match */}
+            {renderCenterFinal()}
           </div>
-        </div>
-      ) : (
+        ) : (
+          <div 
+            className="tournament-layout"
+            style={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'flex-start',
+              gap: `${CENTER_GAP}px`,
+              minWidth: 'fit-content',
+              minHeight: '800px',
+              padding: '60px 40px 20px 40px',
+              position: 'relative'
+            }}
+          >
+            {/* LEFT BRACKET */}
+            {renderBracketSide(getLeftMatches(), 'left', 1)}
+
+            {/* CENTER FINAL */}
+            {renderCenterFinal()}
+
+            {/* RIGHT BRACKET */}
+            {renderBracketSide(getRightMatches(), 'right', 1)}
+          </div>
+        )}
+      </div>
+    </div>
+  </div>
+) : (
         <div className="p-6">
           <div className="text-center py-16">
             <Trophy size={64} style={{ color: '#990D35', opacity: 0.4 }} className="mx-auto mb-4" />

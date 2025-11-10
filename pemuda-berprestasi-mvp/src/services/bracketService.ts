@@ -453,11 +453,54 @@ static calculateBracketStructure(
   console.log(`\n📐 === CALCULATING BRACKET STRUCTURE ===`);
   console.log(`   Participant Count: ${participantCount}`);
   
-  // CRITICAL: Minimal 4 peserta untuk proper bracket
-  if (participantCount < 4) {
-    throw new Error('Minimal 4 peserta diperlukan untuk bracket turnamen');
+  // ✅ PERBAIKAN: Support 2-3 participants
+  if (participantCount < 2) {
+    throw new Error('Minimal 2 peserta diperlukan untuk bracket turnamen');
   }
   
+  // ✅ SPECIAL CASE: 2 participants (langsung final)
+  if (participantCount === 2) {
+    console.log(`   ✅ 2 participants → Direct Final`);
+    return {
+      totalRounds: 1,
+      rounds: [
+        {
+          round: 1,
+          name: 'Final',
+          participants: 2,
+          matches: 1
+        }
+      ],
+      round1Target: 2,
+      byesRecommended: 0
+    };
+  }
+  
+  // ✅ SPECIAL CASE: 3 participants (1 match + final)
+  if (participantCount === 3) {
+    console.log(`   ✅ 3 participants → Round 1 + Final`);
+    return {
+      totalRounds: 2,
+      rounds: [
+        {
+          round: 1,
+          name: 'Round 1',
+          participants: 2,
+          matches: 1
+        },
+        {
+          round: 2,
+          name: 'Final',
+          participants: 2,
+          matches: 1
+        }
+      ],
+      round1Target: 2,
+      byesRecommended: 1 // 1 peserta dapat BYE ke final
+    };
+  }
+  
+  // ✅ EXISTING LOGIC for 4+ participants (tetap sama)
   const rounds: {
     round: number;
     name: string;
@@ -583,14 +626,107 @@ static async generatePrestasiBracket(
   const matches: Match[] = [];
 
   const participantCount = participants.length;
-  if (participantCount < 4) {
-    throw new Error("Minimal 4 peserta diperlukan untuk bracket prestasi");
+  
+  // ✅ PERBAIKAN: Support 2-3 participants
+  if (participantCount < 2) {
+    throw new Error("Minimal 2 peserta diperlukan untuk bracket prestasi");
   }
 
-  // 1️⃣ Hitung struktur dasar
+  // ✅ HANDLE 2 PARTICIPANTS (langsung final)
+  if (participantCount === 2) {
+    console.log(`🎯 PRESTASI: 2 participants → Direct Final`);
+    
+    const shuffled = this.shuffleArray([...participants]);
+    
+    const finalMatch = await prisma.tb_match.create({
+      data: {
+        id_bagan: baganId,
+        ronde: 1, // Langsung final (round 1)
+        id_peserta_a: shuffled[0].id,
+        id_peserta_b: shuffled[1].id,
+        skor_a: 0,
+        skor_b: 0,
+      },
+    });
+
+    matches.push({
+      id: finalMatch.id_match,
+      round: 1,
+      position: 0,
+      participant1: shuffled[0],
+      participant2: shuffled[1],
+      status: "pending",
+      scoreA: 0,
+      scoreB: 0,
+    });
+
+    console.log(`   ✅ Final match created: ${shuffled[0].name} vs ${shuffled[1].name}`);
+    return matches;
+  }
+
+  // ✅ HANDLE 3 PARTICIPANTS (1 bye + 1 match → final)
+  if (participantCount === 3) {
+    console.log(`🎯 PRESTASI: 3 participants → 1 BYE + 1 Match → Final`);
+    
+    const shuffled = this.shuffleArray([...participants]);
+    
+    // Round 1: 1 BYE + 1 Match
+    // Match 1: Participant 1 vs Participant 2
+    const round1Match = await prisma.tb_match.create({
+      data: {
+        id_bagan: baganId,
+        ronde: 1,
+        id_peserta_a: shuffled[0].id,
+        id_peserta_b: shuffled[1].id,
+        skor_a: 0,
+        skor_b: 0,
+      },
+    });
+
+    matches.push({
+      id: round1Match.id_match,
+      round: 1,
+      position: 0,
+      participant1: shuffled[0],
+      participant2: shuffled[1],
+      status: "pending",
+      scoreA: 0,
+      scoreB: 0,
+    });
+
+    console.log(`   🥊 R1 Match: ${shuffled[0].name} vs ${shuffled[1].name}`);
+
+    // Round 2: Final (BYE participant vs winner of R1)
+    const finalMatch = await prisma.tb_match.create({
+      data: {
+        id_bagan: baganId,
+        ronde: 2,
+        id_peserta_a: shuffled[2].id, // BYE participant
+        id_peserta_b: null, // TBD - winner of R1
+        skor_a: 0,
+        skor_b: 0,
+      },
+    });
+
+    matches.push({
+      id: finalMatch.id_match,
+      round: 2,
+      position: 0,
+      participant1: shuffled[2],
+      participant2: null,
+      status: "pending",
+      scoreA: 0,
+      scoreB: 0,
+    });
+
+    console.log(`   🏆 Final: ${shuffled[2].name} (BYE) vs Winner of R1`);
+    return matches;
+  }
+
+  // ✅ EXISTING LOGIC for 4+ participants (tetap sama)
   const targetSize = Math.pow(2, Math.ceil(Math.log2(participantCount)));
   const byesNeeded = targetSize - participantCount;
-  const totalMatchesR1 = targetSize / 2; // ✅ TAMBAH INI - PENTING!
+  const totalMatchesR1 = targetSize / 2;
   
   console.log(`📊 PRESTASI: participants=${participantCount}, targetSize=${targetSize}, byesNeeded=${byesNeeded}`);
   console.log(`   Total R1 matches: ${totalMatchesR1}`);
@@ -1580,15 +1716,19 @@ static async shufflePemulaBracket(
    * Calculate total rounds needed
    */
 static calculateTotalRounds(participantCount: number): number {
-  if (participantCount < 4) {
-    throw new Error('Minimal 4 peserta diperlukan untuk bracket turnamen');
+  // ✅ PERBAIKAN: Support 2-3 participants
+  if (participantCount < 2) {
+    throw new Error('Minimal 2 peserta diperlukan untuk bracket turnamen');
   }
+  
+  // ✅ SPECIAL CASES
+  if (participantCount === 2) return 1; // Langsung final
+  if (participantCount === 3) return 2; // 1 match + final
   
   try {
     const structure = this.calculateBracketStructure(participantCount);
     return structure.totalRounds;
   } catch (error) {
-    // Fallback to old logic if structure calculation fails
     console.warn('⚠️ Using fallback calculation for total rounds');
     const nextPowerOf2 = Math.pow(2, Math.ceil(Math.log2(participantCount)));
     return Math.log2(nextPowerOf2);
