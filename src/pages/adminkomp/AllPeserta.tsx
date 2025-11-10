@@ -60,89 +60,51 @@ const AllPeserta: React.FC = () => {
     setShowDeleteModal(true);
   };
 
-  const confirmDelete = async () => {
-    if (!pesertaToDelete || !kompetisiId) return;
+const confirmDelete = async () => {
+  if (!pesertaToDelete || !kompetisiId) return;
 
-    const pesertaId = pesertaToDelete.id_peserta_kompetisi;
-    const pesertaName = pesertaToDelete.is_team
-      ? pesertaToDelete.anggota_tim?.map((m: any) => m.atlet.nama_atlet).join(", ")
-      : pesertaToDelete.atlet?.nama_atlet;
+  const pesertaId = pesertaToDelete.id_peserta_kompetisi;
+  const pesertaName = pesertaToDelete.is_team
+    ? pesertaToDelete.anggota_tim?.map((m: any) => m.atlet.nama_atlet).join(", ")
+    : pesertaToDelete.atlet?.nama_atlet;
 
-    setDeleting(pesertaId);
+  setDeleting(pesertaId);
 
-    try {
-      console.log('🗑️ Deleting peserta:', {
-        kompetisiId,
-        participantId: pesertaId,
-        endpoint: `/kompetisi/${kompetisiId}/peserta/${pesertaId}`
-      });
+  try {
+    console.log('🗑️ Deleting peserta:', {
+      kompetisiId,
+      participantId: pesertaId,
+      endpoint: `/kompetisi/${kompetisiId}/peserta/${pesertaId}`
+    });
 
-      const response = await apiClient.delete(
-        `/kompetisi/${kompetisiId}/peserta/${pesertaId}`
-      );
+    const response = await apiClient.delete(
+      `/kompetisi/${kompetisiId}/peserta/${pesertaId}`
+    );
 
-      console.log('✅ Delete response:', response);
+    console.log('✅ Delete response:', response);
 
-      if (response.status === 200) {
-        // Close modal first
-        setShowDeleteModal(false);
-        setPesertaToDelete(null);
-        
-        // Show success notification
-        const notification = document.createElement('div');
-        notification.className = 'fixed top-4 right-4 z-50 bg-green-500 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 animate-slide-in';
-        notification.style.maxWidth = '400px';
-        notification.innerHTML = `
-          <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-          </svg>
-          <div class="flex-1">
-            <p class="font-semibold">Berhasil Dihapus!</p>
-            <p class="text-sm opacity-90">${pesertaName}</p>
-          </div>
-        `;
-        document.body.appendChild(notification);
-
-        setTimeout(() => {
-          notification.style.opacity = '0';
-          notification.style.transform = 'translateX(100%)';
-          notification.style.transition = 'all 0.3s ease-out';
-          setTimeout(() => notification.remove(), 300);
-        }, 3000);
-
-        // Force refresh data from server
-        console.log('🔄 Force refreshing data from server...');
-        setIsRefreshing(true);
-        
-        try {
-          await fetchAtletByKompetisi(kompetisiId);
-          console.log('✅ Data refreshed successfully after delete');
-        } catch (refreshError) {
-          console.error('❌ Error refreshing data:', refreshError);
-          // Even if refresh fails, try reloading the page as fallback
-          window.location.reload();
-        } finally {
-          setIsRefreshing(false);
-        }
-      }
-    } catch (error: any) {
-      console.error('❌ Error deleting peserta:', error);
-
-      const errorMessage = error.response?.data?.message
-        || error.response?.data?.error
-        || error.message
-        || 'Gagal menghapus peserta';
-
+    if (response.status === 200) {
+      // Close modal dan reset state
+      setShowDeleteModal(false);
+      setPesertaToDelete(null);
+      setDeleting(null);
+      
+      // Immediately refresh data
+      console.log('🔄 Force refreshing data from server...');
+      await fetchAtletByKompetisi(kompetisiId);
+      console.log('✅ Data refreshed successfully after delete');
+      
+      // Show success notification AFTER refresh
       const notification = document.createElement('div');
-      notification.className = 'fixed top-4 right-4 z-50 bg-red-500 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 animate-slide-in';
+      notification.className = 'fixed top-4 right-4 z-50 bg-green-500 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 animate-slide-in';
       notification.style.maxWidth = '400px';
       notification.innerHTML = `
         <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
         </svg>
         <div class="flex-1">
-          <p class="font-semibold">Gagal Menghapus!</p>
-          <p class="text-sm opacity-90">${errorMessage}</p>
+          <p class="font-semibold">Berhasil Dihapus!</p>
+          <p class="text-sm opacity-90">${pesertaName}</p>
         </div>
       `;
       document.body.appendChild(notification);
@@ -152,13 +114,42 @@ const AllPeserta: React.FC = () => {
         notification.style.transform = 'translateX(100%)';
         notification.style.transition = 'all 0.3s ease-out';
         setTimeout(() => notification.remove(), 300);
-      }, 4000);
-    } finally {
-      setDeleting(null);
-      setShowDeleteModal(false);
-      setPesertaToDelete(null);
+      }, 3000);
     }
-  };
+  } catch (error: any) {
+    console.error('❌ Error deleting peserta:', error);
+
+    const errorMessage = error.response?.data?.message
+      || error.response?.data?.error
+      || error.message
+      || 'Gagal menghapus peserta';
+
+    const notification = document.createElement('div');
+    notification.className = 'fixed top-4 right-4 z-50 bg-red-500 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 animate-slide-in';
+    notification.style.maxWidth = '400px';
+    notification.innerHTML = `
+      <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+      </svg>
+      <div class="flex-1">
+        <p class="font-semibold">Gagal Menghapus!</p>
+        <p class="text-sm opacity-90">${errorMessage}</p>
+      </div>
+    `;
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+      notification.style.opacity = '0';
+      notification.style.transform = 'translateX(100%)';
+      notification.style.transition = 'all 0.3s ease-out';
+      setTimeout(() => notification.remove(), 300);
+    }, 4000);
+    
+    setDeleting(null);
+    setShowDeleteModal(false);
+    setPesertaToDelete(null);
+  }
+};
 
   const handleManualRefresh = async () => {
     if (!kompetisiId || isRefreshing) return;
