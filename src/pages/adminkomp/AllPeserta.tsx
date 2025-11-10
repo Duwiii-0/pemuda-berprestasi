@@ -84,17 +84,17 @@ const confirmDelete = async () => {
     console.log('✅ Delete response:', response);
 
     if (response.status === 200) {
-      // Close modal dan reset state
+      // IMPORTANT: Reset semua state dulu sebelum refresh
+      setDeleting(null);
       setShowDeleteModal(false);
       setPesertaToDelete(null);
-      setDeleting(null);
       
-      // Immediately refresh data
+      // Force refresh data
       console.log('🔄 Force refreshing data from server...');
       await fetchAtletByKompetisi(kompetisiId);
       console.log('✅ Data refreshed successfully after delete');
       
-      // Show success notification AFTER refresh
+      // Show success notification
       const notification = document.createElement('div');
       notification.className = 'fixed top-4 right-4 z-50 bg-green-500 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 animate-slide-in';
       notification.style.maxWidth = '400px';
@@ -118,6 +118,11 @@ const confirmDelete = async () => {
     }
   } catch (error: any) {
     console.error('❌ Error deleting peserta:', error);
+    
+    // Reset state di error juga
+    setDeleting(null);
+    setShowDeleteModal(false);
+    setPesertaToDelete(null);
 
     const errorMessage = error.response?.data?.message
       || error.response?.data?.error
@@ -144,10 +149,6 @@ const confirmDelete = async () => {
       notification.style.transition = 'all 0.3s ease-out';
       setTimeout(() => notification.remove(), 300);
     }, 4000);
-    
-    setDeleting(null);
-    setShowDeleteModal(false);
-    setPesertaToDelete(null);
   }
 };
 
