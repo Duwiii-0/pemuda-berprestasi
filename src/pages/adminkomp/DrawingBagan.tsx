@@ -1036,7 +1036,7 @@ if (filterKelasUsia !== "ALL") {
                       </p>
                     </div>
                   </div>
-                  {kelas.peserta_count >= 4 && (
+                  {kelas.peserta_count >= 2 && (
                     <span
                       className="text-xs px-3 py-1.5 rounded-full font-bold shadow-sm"
                       style={{
@@ -1074,7 +1074,7 @@ if (filterKelasUsia !== "ALL") {
                   </div>
                 )}
 
-                {kelas.peserta_count < 4 && (
+                {kelas.peserta_count < 2 && (
                   <div
                     className="p-3 rounded-xl flex items-center gap-2"
                     style={{
@@ -1084,7 +1084,7 @@ if (filterKelasUsia !== "ALL") {
                   >
                     <AlertTriangle size={16} style={{ color: "#F5B700" }} />
                     <span className="text-xs font-medium" style={{ color: "#F5B700" }}>
-                      Minimal 4 peserta untuk tournament
+                      Minimal 2 peserta untuk tournament
                     </span>
                   </div>
                 )}
@@ -1093,33 +1093,33 @@ if (filterKelasUsia !== "ALL") {
               {/* Actions */}
               <div className="p-5 pt-0">
                 <button
-                disabled={kelas.peserta_count < 4}
-                onClick={() => {
-                  setSelectedKelas(kelas);
-                  setShowBracket(true);
-                  navigate(`/admin-kompetisi/drawing-bagan/${kelasId}`);
-                }}
-                className="w-full flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg transform hover:scale-[1.02]"
-                style={{
-                  background:
-                    kelas.bracket_status === "not_created"
-                      ? "linear-gradient(135deg, #F5B700 0%, #D19B00 100%)"
-                      : "linear-gradient(135deg, #990D35 0%, #7A0A2B 100%)",
-                  color: "white",
-                }}
-              >
-                {kelas.bracket_status === "not_created" ? (
-                  <>
-                    <GitBranch size={18} />
-                    <span>Buat Bracket</span>
-                  </>
-                ) : (
-                  <>
-                    <Eye size={18} />
-                    <span>Lihat Bracket</span>
-                  </>
-                )}
-              </button>
+                  disabled={kelas.peserta_count < 2}  // ✅ UBAH JADI 2
+                  onClick={() => {
+                    setSelectedKelas(kelas);
+                    setShowBracket(true);
+                    navigate(`/admin-kompetisi/drawing-bagan/${kelas.id_kelas_kejuaraan}`);
+                  }}
+                  className="w-full flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg transform hover:scale-[1.02]"
+                  style={{
+                    background:
+                      kelas.bracket_status === "not_created"
+                        ? "linear-gradient(135deg, #F5B700 0%, #D19B00 100%)"
+                        : "linear-gradient(135deg, #990D35 0%, #7A0A2B 100%)",
+                    color: "white",
+                  }}
+                >
+                  {kelas.bracket_status === "not_created" ? (
+                    <>
+                      <GitBranch size={18} />
+                      <span>Buat Bracket</span>
+                    </>
+                  ) : (
+                    <>
+                      <Eye size={18} />
+                      <span>Lihat Bracket</span>
+                    </>
+                  )}
+                </button>
               </div>
             </div>
           ))}
