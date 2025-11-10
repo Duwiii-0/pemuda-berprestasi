@@ -238,6 +238,7 @@ model tb_kelas_kejuaraan {
   id_poomsae         Int?
   id_kompetisi       Int
   cabang             Cabang
+  poomsae_type       String?            @db.VarChar(50)
 
   kompetisi          tb_kompetisi           @relation(fields: [id_kompetisi], references: [id_kompetisi])
   kategori_event     tb_kategori_event      @relation(fields: [id_kategori_event], references: [id_kategori_event])

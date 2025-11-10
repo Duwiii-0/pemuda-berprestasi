@@ -67,8 +67,8 @@ const BuktiTf = () => {
         return;
       }
 
-      console.log('🚀 Background fetch - Loading all pending peserta...');
-      const url = `${API_BASE_URL}/api/kompetisi/${kompetisiId}/atlet?limit=1000&status=PENDING`;
+      console.log('🚀 Background fetch - Loading all pending peserta (no limit)...');
+      const url = `${API_BASE_URL}/api/kompetisi/${kompetisiId}/atlet?status=PENDING`;
       console.time('⏱️ Background Fetch Time');
 
       const response = await fetch(url, {
@@ -92,10 +92,10 @@ const BuktiTf = () => {
         
         console.log('🔍 After frontend filter:', pendingOnly.length, 'PENDING peserta');
         
-        if (allPeserta.length !== pendingOnly.length) {
+        if (allPeserta.length > 0 && allPeserta.length !== pendingOnly.length) {
           console.warn('⚠️ Backend does NOT support status=PENDING filter!');
           console.warn(`   Received ${allPeserta.length} peserta, but only ${pendingOnly.length} are PENDING`);
-        } else {
+        } else if (pendingOnly.length > 0) {
           console.log('✅ Backend supports status filter');
         }
         
@@ -103,9 +103,11 @@ const BuktiTf = () => {
         console.log('✅ Cached', pendingOnly.length, 'PENDING peserta');
       } else {
         console.error('❌ Background fetch failed:', response.status);
+        toast.error('Gagal mengambil data. API mungkin memberlakukan limit default.');
       }
     } catch (error) {
       console.error('❌ Background fetch error:', error);
+      toast.error('Terjadi kesalahan saat mengambil data peserta.');
     }
   };
 
