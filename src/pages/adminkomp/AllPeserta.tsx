@@ -68,7 +68,11 @@ const confirmDelete = async () => {
     ? pesertaToDelete.anggota_tim?.map((m: any) => m.atlet.nama_atlet).join(", ")
     : pesertaToDelete.atlet?.nama_atlet;
 
+  // Set loading HANYA untuk peserta ini
   setDeleting(pesertaId);
+  
+  // Tutup modal IMMEDIATELY untuk prevent double click
+  setShowDeleteModal(false);
 
   try {
     console.log('🗑️ Deleting peserta:', {
@@ -84,15 +88,10 @@ const confirmDelete = async () => {
     console.log('✅ Delete response:', response);
 
     if (response.status === 200) {
-      // IMPORTANT: Reset semua state dulu sebelum refresh
-      setDeleting(null);
-      setShowDeleteModal(false);
-      setPesertaToDelete(null);
-      
-      // Force refresh data
-      console.log('🔄 Force refreshing data from server...');
+      // Force refresh data IMMEDIATELY
+      console.log('🔄 Refreshing data...');
       await fetchAtletByKompetisi(kompetisiId);
-      console.log('✅ Data refreshed successfully after delete');
+      console.log('✅ Data refreshed');
       
       // Show success notification
       const notification = document.createElement('div');
@@ -117,12 +116,7 @@ const confirmDelete = async () => {
       }, 3000);
     }
   } catch (error: any) {
-    console.error('❌ Error deleting peserta:', error);
-    
-    // Reset state di error juga
-    setDeleting(null);
-    setShowDeleteModal(false);
-    setPesertaToDelete(null);
+    console.error('❌ Error deleting:', error);
 
     const errorMessage = error.response?.data?.message
       || error.response?.data?.error
@@ -149,6 +143,10 @@ const confirmDelete = async () => {
       notification.style.transition = 'all 0.3s ease-out';
       setTimeout(() => notification.remove(), 300);
     }, 4000);
+  } finally {
+    // ALWAYS reset state di finally
+    setDeleting(null);
+    setPesertaToDelete(null);
   }
 };
 
@@ -1082,6 +1080,7 @@ const confirmDelete = async () => {
                     onClick={() => {
                       setShowDeleteModal(false);
                       setPesertaToDelete(null);
+                      // JANGAN set deleting di sini!
                     }}
                     className="flex-1 py-3 px-4 rounded-xl font-semibold transition-all hover:bg-white border-2"
                     style={{ borderColor: '#990D35', color: '#990D35', backgroundColor: 'white' }}
