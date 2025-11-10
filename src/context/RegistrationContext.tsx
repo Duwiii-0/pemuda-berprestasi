@@ -30,6 +30,7 @@
     selectedGender: OptionType | null;
     selectedAtlit: OptionType | null;
     selectedPoomsae: OptionType | null; 
+    selectedPoomsaeType: OptionType | null;
     selectedAtlit2: OptionType | null; // For team/pair poomsae
     kelasKejuaraanId: number | null; // Store the class ID for registration
   };
@@ -108,6 +109,7 @@
     selectedGender: null,
     selectedAtlit: null,
     selectedPoomsae: null,
+    selectedPoomsaeType: null,
     selectedAtlit2: null,
     kelasKejuaraanId: null,
   };
@@ -269,6 +271,7 @@
       kelasBeratId?: number;
       poomsaeId?: number;
       poomsaeName?: string; // ✅ ADD THIS
+      poomsae_type?: string;
     }
   ) => {
     try {
@@ -295,6 +298,10 @@
       
       if (filter.poomsaeName) { // ✅ ADD THIS
         payload.poomsaeName = filter.poomsaeName;
+      }
+
+      if (filter.poomsae_type) {
+        payload.poomsae_type = filter.poomsae_type;
       }
 
       const res = await apiClient.post(`/kelas/kejuaraan/${kompetisiId}/filter`, payload);

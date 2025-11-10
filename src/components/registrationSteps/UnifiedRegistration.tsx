@@ -193,6 +193,13 @@ const UnifiedRegistration = ({
       (!formData.selectedPoomsae || !formData.selectedGender)
     )
       return;
+    
+    if (
+      formData.styleType === "POOMSAE" &&
+      formData.categoryType === "prestasi" &&
+      !formData.selectedPoomsaeType
+    )
+      return;
 
     const kelasFilter: any = {
       styleType: formData.styleType,
@@ -228,6 +235,10 @@ const UnifiedRegistration = ({
     // ✅ UPDATED: Kirim poomsaeName, bukan poomsaeId
     if (formData.selectedPoomsae)
       kelasFilter.poomsaeName = formData.selectedPoomsae.value;
+    
+    if (formData.selectedPoomsaeType) {
+      kelasFilter.poomsae_type = formData.selectedPoomsaeType.value;
+    }
 
     (async () => {
       try {
@@ -252,6 +263,7 @@ const UnifiedRegistration = ({
     formData.selectedAge,
     formData.selectedWeight,
     formData.selectedPoomsae,
+    formData.selectedPoomsaeType,
     kompetisiId,
     user?.pelatih?.id_dojang,
     fetchKelasKejuaraan,
@@ -367,6 +379,11 @@ const UnifiedRegistration = ({
     { value: "PEREMPUAN", label: "Perempuan" },
   ];
 
+  const poomsaeTypeOptions: OptionType[] = [
+    { value: "recognized", label: "Recognized" },
+    { value: "freestyle", label: "Freestyle" },
+  ];
+
   console.log("Debug availableAtlits:", {
     availableAtlits,
     isArray: Array.isArray(availableAtlits),
@@ -474,6 +491,10 @@ const UnifiedRegistration = ({
       ) {
         if (!formData.selectedPoomsae) {
           toast.error("Anda harus memilih kelas poomsae terlebih dahulu");
+          return;
+        }
+        if (!formData.selectedPoomsaeType) {
+          toast.error("Anda harus memilih tipe poomsae terlebih dahulu");
           return;
         }
         // Jika individu, perlu gender
@@ -609,6 +630,7 @@ const UnifiedRegistration = ({
       formData.categoryType === "prestasi"
     ) {
       if (!formData.selectedPoomsae) return false;
+      if (!formData.selectedPoomsaeType) return false;
 
       // Jika individu, perlu gender juga
       if (!isPoomsaeTeam()) {
@@ -840,6 +862,32 @@ const UnifiedRegistration = ({
                   )}
                 </div>
               )}
+
+              {/* Poomsae Type */}
+              {formData.styleType === "POOMSAE" &&
+                formData.categoryType === "prestasi" && (
+                  <div>
+                    <label className="block text-black mb-3 text-lg font-plex font-semibold pl-2">
+                      Tipe Poomsae <span className="text-red">*</span>
+                    </label>
+                    <LockedSelect
+                      unstyled
+                      options={poomsaeTypeOptions}
+                      value={formData.selectedPoomsaeType}
+                      onChange={(value: OptionType | null) =>
+                        setFormData({
+                          ...formData,
+                          selectedPoomsaeType: value,
+                        })
+                      }
+                      placeholder="Pilih tipe poomsae..."
+                      isSearchable={false}
+                      classNames={selectClassNames}
+                      disabled={!formData.selectedPoomsae}
+                      message="Harap pilih kelas poomsae terlebih dahulu"
+                    />
+                  </div>
+                )}
 
               {/* ✅ UPDATED: Gender - Conditional rendering */}
               {(formData.categoryType === "pemula" ||

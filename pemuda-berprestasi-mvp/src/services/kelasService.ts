@@ -39,6 +39,7 @@ export const kelasService = {
       kelasBeratId?: number;
       poomsaeId?: number;
       poomsaeName?: string; // ✅ ADDED: To filter by name
+      poomsae_type?: string;
     }
   ) => {
     try {
@@ -68,6 +69,9 @@ export const kelasService = {
 
         if (filter.styleType === "POOMSAE" && filter.poomsaeId) {
           whereCondition.id_poomsae = filter.poomsaeId;
+        }
+        if (filter.styleType === "POOMSAE" && filter.poomsae_type) {
+          whereCondition.poomsae_type = filter.poomsae_type;
         }
       } else if (filter.categoryType === "pemula") {
         if (filter.styleType === "POOMSAE") {
