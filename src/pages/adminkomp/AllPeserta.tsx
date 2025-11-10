@@ -11,7 +11,7 @@ import { kelasBeratOptionsMap } from "../../dummy/beratOptions";
 import * as XLSX from 'xlsx';
 
 const AllPeserta: React.FC = () => {
-  const { token, user } = useAuth();
+  const { user } = useAuth(); // ✅ Hapus token yang tidak digunakan
   const { pesertaList, fetchAtletByKompetisi, updatePesertaStatus, loadingAtlet } = useKompetisi();
   const navigate = useNavigate();
   const [teamModalOpen, setTeamModalOpen] = useState(false);
@@ -26,11 +26,11 @@ const AllPeserta: React.FC = () => {
   const [filterKelasUsia, setFilterKelasUsia] = useState<"ALL" | "Super pracadet" | "Pracadet" | "Cadet" | "Junior" | "Senior" >("ALL");
   const [filterLevel, setFilterLevel] = useState<"pemula" | "prestasi" | null>(null);
   const [filterDojang, setFilterDojang] = useState<string>("ALL");
-  const { dojangOptions, refreshDojang, isLoading } = useDojang();
+  const { dojangOptions, refreshDojang } = useDojang(); // ✅ Hapus isLoading
 
   // ✅ PERBAIKAN: Pagination states dengan opsi yang bisa diatur
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(25); // ✅ Default 25
+  const [itemsPerPage, setItemsPerPage] = useState(25);
   const [isExporting, setIsExporting] = useState(false);
 
   // ✅ Modal konfirmasi delete
@@ -62,26 +62,43 @@ const AllPeserta: React.FC = () => {
     setShowDeleteModal(true);
   };
 
+  // ✅ PERBAIKAN: Fix confirmDelete dengan type assertion
   const confirmDelete = async () => {
     if (!pesertaToDelete || !kompetisiId) return;
 
     setDeleting(pesertaToDelete.id_peserta_kompetisi);
     
     try {
+      console.log('🗑️ Deleting peserta:', {
+        kompetisiId,
+        participantId: pesertaToDelete.id_peserta_kompetisi,
+        endpoint: `/kompetisi/${kompetisiId}/peserta/${pesertaToDelete.id_peserta_kompetisi}`
+      });
+
       const response = await apiClient.delete(
         `/kompetisi/${kompetisiId}/peserta/${pesertaToDelete.id_peserta_kompetisi}`
       );
 
-      if (response.status === 200) {
-        // Refresh data setelah delete
+      console.log('✅ Delete response:', response);
+
+      // ✅ Type assertion untuk response
+      if ((response as any).status === 200 || response.status === 200) {
         await fetchAtletByKompetisi(kompetisiId);
-        
-        // Show success notification (you can use your notification system)
-        alert('Peserta berhasil dihapus dari database');
+        alert('✅ Peserta berhasil dihapus dari database');
       }
     } catch (error: any) {
-      console.error('Error deleting peserta:', error);
-      alert(error.response?.data?.message || 'Gagal menghapus peserta');
+      console.error('❌ Error deleting peserta:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
+      
+      const errorMessage = error.response?.data?.message 
+        || error.response?.data?.error 
+        || error.message 
+        || 'Gagal menghapus peserta';
+      
+      alert(`❌ ${errorMessage}`);
     } finally {
       setDeleting(null);
       setShowDeleteModal(false);
@@ -89,12 +106,13 @@ const AllPeserta: React.FC = () => {
     }
   };
 
-  // Export Excel Function
+  // ✅ PERBAIKAN: Fix handleExportExcel
   const handleExportExcel = () => {
     setIsExporting(true);
     
     try {
-      const kompetisiInfo = user?.admin_kompetisi || pesertaList[0]?.kelas_kejuaraan?.kompetisi;
+      // ✅ Fix: Ambil kompetisi info dari user saja
+      const kompetisiInfo = user?.admin_kompetisi;
       
       const currentDate = new Date().toLocaleDateString('id-ID', { 
         day: 'numeric', 
@@ -205,6 +223,7 @@ const AllPeserta: React.FC = () => {
 
     } catch (error) {   
       console.error('Error exporting to Excel:', error);
+      alert('Gagal export data ke Excel');
     } finally {
       setIsExporting(false);
     }

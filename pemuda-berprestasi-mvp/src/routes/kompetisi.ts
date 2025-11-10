@@ -3,13 +3,8 @@ import { KompetisiController } from "../controllers/kompetisiController";
 import { authenticate } from "../middleware/auth";
 import { validateRequest } from "../middleware/validation";
 import { kompetisiValidation } from "../validations/kompetisiValidation";
-import { kelasController } from "../controllers/kelasController";
 
 const router = Router();
-
-// Public routes
-// router.get('/stats', KompetisiController.getStats);
-// router.get('/:id/classes', KompetisiController.getCompetitionClasses);
 
 // Protected routes (require authentication)
 router.use(authenticate);
@@ -29,14 +24,6 @@ router.put(
 );
 router.delete("/:id", KompetisiController.delete);
 
-// Competition management
-// router.post(
-//   '/:id/classes',
-//   validateRequest(kompetisiValidation.createClass),
-//   KompetisiController.addKelasKejuaraan
-// );
-// sementara update & delete class belum ada di controller
-
 // Registration management
 router.get(
   "/:id/atlet",
@@ -44,6 +31,13 @@ router.get(
   KompetisiController.getAtletsByKompetisi
 );
 router.post("/:id/register", authenticate, KompetisiController.registerAtlet);
+
+// ✅ DELETE PESERTA - Harus sebelum route dengan parameter yang lebih spesifik
+router.delete(
+  "/:id/peserta/:participantId",
+  KompetisiController.deleteParticipant
+);
+
 router.get(
   "/:id/participants/:participantId/available-classes",
   KompetisiController.getAvailableClassesForParticipant
@@ -58,10 +52,6 @@ router.put(
   validateRequest(kompetisiValidation.updateStatus),
   KompetisiController.updateRegistrationStatus
 );
-router.delete(
-  "/:id/participants/:participantId",
-  KompetisiController.deleteParticipant
-);
 
 router.put(
   "/:id/participants/:participantId/class",
@@ -69,67 +59,39 @@ router.put(
 );
 
 // ============================================================
-// ⚠️ TOURNAMENT/BRACKET MANAGEMENT ROUTES - ORDER MATTERS! ⚠️
+// TOURNAMENT/BRACKET MANAGEMENT ROUTES
 // ============================================================
-// Specific routes MUST be defined BEFORE parameterized routes
-// Otherwise Express will match /:kelasKejuaraanId first
-
-// 1. Generate bracket (no kelasKejuaraanId in path)
 router.post(
   "/:id/brackets/generate",
   validateRequest(kompetisiValidation.generateBracket),
   KompetisiController.generateBrackets
 );
 
-// 2. Shuffle bracket (no kelasKejuaraanId in path)
 router.post("/:id/brackets/shuffle", KompetisiController.shuffleBrackets);
-
-// 3. Export PDF (no kelasKejuaraanId in path)
 router.get("/:id/brackets/pdf", KompetisiController.exportBracketToPdf);
-
-// 4. Update match result (has /match/ prefix)
 router.put(
   "/:id/brackets/match/:matchId",
   validateRequest(kompetisiValidation.updateMatch),
   KompetisiController.updateMatch
 );
-
-// 5. Legacy draw endpoint
 router.post("/:id/draw", KompetisiController.conductDraw);
 
-// ============================================================
-// ⭐ ROUTES WITH /:kelasKejuaraanId - SPECIFIC ACTIONS FIRST ⭐
-// ============================================================
-
-// 6. Clear results (has /clear-results suffix) - MUST BE BEFORE GET
 router.post(
   "/:id/brackets/:kelasKejuaraanId/clear-results",
   KompetisiController.clearBracketResults
 );
-
-// 7. Regenerate bracket (has /regenerate suffix) - MUST BE BEFORE GET
 router.post(
   "/:id/brackets/:kelasKejuaraanId/regenerate",
   KompetisiController.regenerateBracket
 );
-
-// 8. Delete bracket (DELETE method) - MUST BE BEFORE GET
 router.delete(
   "/:id/brackets/:kelasKejuaraanId",
   KompetisiController.deleteBracket
 );
-
-// 9. Get specific bracket (GET method) - MUST BE LAST
 router.get(
   "/:id/brackets/:kelasKejuaraanId",
   KompetisiController.getBracketByClass
 );
-
-// 10. Get all brackets for competition (no kelasKejuaraanId)
 router.get("/:id/brackets", KompetisiController.getBrackets);
-
-// ============================================================
-// END OF BRACKET ROUTES
-// ============================================================
 
 export default router;
