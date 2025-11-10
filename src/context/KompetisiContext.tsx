@@ -408,56 +408,60 @@ export const KompetisiProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const deleteParticipant = async (
-    kompetisiId: number,
-    participantId: number
-  ) => {
-    const originalPesertaList = [...pesertaList];
+const deleteParticipant = async (
+  kompetisiId: number,
+  participantId: number
+) => {
+  const originalPesertaList = [...pesertaList];
 
-    try {
-      console.log(
-        `🗑️ Deleting participant ${participantId} from kompetisi ${kompetisiId}`
-      );
+  try {
+    console.log(
+      `🗑️ Deleting participant ${participantId} from kompetisi ${kompetisiId}`
+    );
 
-      setPesertaList((prev) =>
-        prev.filter((p) => p.id_peserta_kompetisi !== participantId)
-      );
+    // Optimistic update - hapus dari UI dulu
+    setPesertaList((prev) =>
+      prev.filter((p) => p.id_peserta_kompetisi !== participantId)
+    );
 
-      const response = await apiClient.delete(
-        `/kompetisi/${kompetisiId}/participants/${participantId}`
-      );
+    // API Call dengan endpoint yang BENAR (sesuai dengan yang di component)
+    const response = await apiClient.delete(
+      `/kompetisi/${kompetisiId}/peserta/${participantId}`  // ✅ FIX: Ganti dari /participants/ ke /peserta/
+    );
 
-      console.log("✅ Participant deleted successfully:", response.data);
+    console.log("✅ Participant deleted successfully:", response.data);
 
-      setKompetisiList((prev) =>
-        prev.map((k) =>
-          k.id_kompetisi === kompetisiId
-            ? { ...k, jumlah_peserta: Math.max((k.jumlah_peserta || 1) - 1, 0) }
-            : k
-        )
-      );
+    // Update kompetisi count
+    setKompetisiList((prev) =>
+      prev.map((k) =>
+        k.id_kompetisi === kompetisiId
+          ? { ...k, jumlah_peserta: Math.max((k.jumlah_peserta || 1) - 1, 0) }
+          : k
+      )
+    );
 
-      setAtletPagination((prev) => ({
-        ...prev,
-        total: Math.max(prev.total - 1, 0),
-      }));
+    // Update pagination
+    setAtletPagination((prev) => ({
+      ...prev,
+      total: Math.max(prev.total - 1, 0),
+    }));
 
-      console.log("Peserta berhasil dihapus dari kompetisi");
-      return response.data;
-    } catch (error: any) {
-      console.error("❌ Error deleting participant:", error);
+    console.log("✅ Peserta berhasil dihapus dari kompetisi");
+    return response.data;
+  } catch (error: any) {
+    console.error("❌ Error deleting participant:", error);
 
-      setPesertaList(originalPesertaList);
+    // Rollback jika gagal
+    setPesertaList(originalPesertaList);
 
-      const errorMessage =
-        error.response?.data?.message ||
-        error.message ||
-        "Gagal menghapus peserta";
-      console.error(errorMessage);
-
-      throw new Error(errorMessage);
-    }
-  };
+    const errorMessage =
+      error.response?.data?.message ||
+      error.message ||
+      "Gagal menghapus peserta";
+    
+    throw new Error(errorMessage);
+  }
+};
 
   const updateParticipantClass = async (
     kompetisiId: number,

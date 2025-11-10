@@ -12,7 +12,7 @@ import * as XLSX from 'xlsx';
 
 const AllPeserta: React.FC = () => {
   const { user } = useAuth();
-  const { pesertaList, fetchAtletByKompetisi, updatePesertaStatus, loadingAtlet } = useKompetisi();
+  const { pesertaList, fetchAtletByKompetisi, updatePesertaStatus, deleteParticipant, loadingAtlet } = useKompetisi();
   const navigate = useNavigate();
   const [teamModalOpen, setTeamModalOpen] = useState(false);
   const [selectedTeam, setSelectedTeam] = useState<any[]>([]);
@@ -68,60 +68,39 @@ const confirmDelete = async () => {
     ? pesertaToDelete.anggota_tim?.map((m: any) => m.atlet.nama_atlet).join(", ")
     : pesertaToDelete.atlet?.nama_atlet;
 
-  // Set loading HANYA untuk peserta ini
   setDeleting(pesertaId);
-  
-  // Tutup modal IMMEDIATELY untuk prevent double click
-  setShowDeleteModal(false);
+  setShowDeleteModal(false); // Tutup modal immediately
 
   try {
-    console.log('🗑️ Deleting peserta:', {
-      kompetisiId,
-      participantId: pesertaId,
-      endpoint: `/kompetisi/${kompetisiId}/peserta/${pesertaId}`
-    });
+    // ✅ GUNAKAN fungsi dari context, bukan manual API call
+    await deleteParticipant(kompetisiId, pesertaId);
+    
+    // Show success notification
+    const notification = document.createElement('div');
+    notification.className = 'fixed top-4 right-4 z-50 bg-green-500 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 animate-slide-in';
+    notification.style.maxWidth = '400px';
+    notification.innerHTML = `
+      <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+      </svg>
+      <div class="flex-1">
+        <p class="font-semibold">Berhasil Dihapus!</p>
+        <p class="text-sm opacity-90">${pesertaName}</p>
+      </div>
+    `;
+    document.body.appendChild(notification);
 
-    const response = await apiClient.delete(
-      `/kompetisi/${kompetisiId}/peserta/${pesertaId}`
-    );
+    setTimeout(() => {
+      notification.style.opacity = '0';
+      notification.style.transform = 'translateX(100%)';
+      notification.style.transition = 'all 0.3s ease-out';
+      setTimeout(() => notification.remove(), 300);
+    }, 3000);
 
-    console.log('✅ Delete response:', response);
-
-    if (response.status === 200) {
-      // Force refresh data IMMEDIATELY
-      console.log('🔄 Refreshing data...');
-      await fetchAtletByKompetisi(kompetisiId);
-      console.log('✅ Data refreshed');
-      
-      // Show success notification
-      const notification = document.createElement('div');
-      notification.className = 'fixed top-4 right-4 z-50 bg-green-500 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 animate-slide-in';
-      notification.style.maxWidth = '400px';
-      notification.innerHTML = `
-        <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-        </svg>
-        <div class="flex-1">
-          <p class="font-semibold">Berhasil Dihapus!</p>
-          <p class="text-sm opacity-90">${pesertaName}</p>
-        </div>
-      `;
-      document.body.appendChild(notification);
-
-      setTimeout(() => {
-        notification.style.opacity = '0';
-        notification.style.transform = 'translateX(100%)';
-        notification.style.transition = 'all 0.3s ease-out';
-        setTimeout(() => notification.remove(), 300);
-      }, 3000);
-    }
   } catch (error: any) {
     console.error('❌ Error deleting:', error);
 
-    const errorMessage = error.response?.data?.message
-      || error.response?.data?.error
-      || error.message
-      || 'Gagal menghapus peserta';
+    const errorMessage = error.message || 'Gagal menghapus peserta';
 
     const notification = document.createElement('div');
     notification.className = 'fixed top-4 right-4 z-50 bg-red-500 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 animate-slide-in';
@@ -144,7 +123,6 @@ const confirmDelete = async () => {
       setTimeout(() => notification.remove(), 300);
     }, 4000);
   } finally {
-    // ALWAYS reset state di finally
     setDeleting(null);
     setPesertaToDelete(null);
   }
