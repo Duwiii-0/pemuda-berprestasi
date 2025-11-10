@@ -1333,5 +1333,106 @@ static async getMedalTally(req: Request, res: Response) {
   }
 }
 
+static async getAvailableClassesWithDetails(req: Request, res: Response) {
+  try {
+    const { id, participantId } = req.params;
+    
+    const kompetisiId = parseInt(id);
+    const pesertaId = parseInt(participantId);
+
+    if (isNaN(kompetisiId) || isNaN(pesertaId)) {
+      return sendError(res, 'Parameter tidak valid', 400);
+    }
+
+    // Get current participant
+    const participant = await prisma.tb_peserta_kompetisi.findFirst({
+      where: {
+        id_peserta_kompetisi: pesertaId,
+        kelas_kejuaraan: { id_kompetisi: kompetisiId }
+      },
+      include: {
+        kelas_kejuaraan: {
+          include: {
+            kategori_event: true,
+            kelompok: true,
+            kelas_berat: true,
+            poomsae: true
+          }
+        }
+      }
+    });
+
+    if (!participant) {
+      return sendError(res, 'Peserta tidak ditemukan', 404);
+    }
+
+    // Get all classes in competition
+    const availableClasses = await prisma.tb_kelas_kejuaraan.findMany({
+      where: {
+        id_kompetisi: kompetisiId
+      },
+      include: {
+        kategori_event: true,
+        kelompok: true,
+        kelas_berat: true,
+        poomsae: true
+      },
+      orderBy: [
+        { cabang: 'asc' },
+        { kategori_event: { nama_kategori: 'asc' } },
+        { kelompok: { nama_kelompok: 'asc' } }
+      ]
+    });
+
+    // Format classes untuk display yang lebih baik
+    const formattedClasses = availableClasses.map(kelas => {
+      let displayName = '';
+      
+      // Kategori (KYORUGI/POOMSAE)
+      displayName += kelas.cabang;
+      
+      // Level (Prestasi/Pemula)
+      displayName += ` - ${kelas.kategori_event.nama_kategori}`;
+      
+      // Kelompok Usia
+      if (kelas.kelompok) {
+        displayName += ` - ${kelas.kelompok.nama_kelompok}`;
+      }
+      
+      // Kelas Berat (untuk KYORUGI)
+      if (kelas.kelas_berat) {
+        displayName += ` - ${kelas.kelas_berat.nama_kelas}`;
+      }
+      
+      // Kelas Poomsae (untuk POOMSAE)
+      if (kelas.poomsae) {
+        displayName += ` - ${kelas.poomsae.nama_kelas}`;
+      }
+
+      return {
+        value: kelas.id_kelas_kejuaraan.toString(),
+        label: displayName,
+        isCurrentClass: kelas.id_kelas_kejuaraan === participant.id_kelas_kejuaraan,
+        details: {
+          cabang: kelas.cabang,
+          level: kelas.kategori_event.nama_kategori,
+          kelompokUsia: kelas.kelompok?.nama_kelompok || '-',
+          kelasBerat: kelas.kelas_berat?.nama_kelas || '-',
+          kelasPoomsae: kelas.poomsae?.nama_kelas || '-'
+        }
+      };
+    });
+
+    return sendSuccess(res, {
+      currentClass: formattedClasses.find(c => c.isCurrentClass),
+      availableClasses: formattedClasses
+    }, 'Kelas yang tersedia berhasil diambil');
+
+  } catch (error: any) {
+    console.error('Controller - Error getting classes:', error);
+    return sendError(res, error.message || 'Gagal mendapatkan kelas', 400);
+  }
+}
+
 }
 

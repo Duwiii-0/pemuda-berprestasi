@@ -39,6 +39,21 @@ router.delete(
 );
 
 router.get(
+  "/:id/peserta/:participantId/classes",
+  KompetisiController.getAvailableClassesWithDetails
+);
+
+router.put(
+  "/:id/peserta/:participantId",
+  KompetisiController.updateParticipantClass
+);
+
+router.delete(
+  "/:id/peserta/:participantId",
+  KompetisiController.deleteParticipant
+);
+
+router.get(
   "/:id/participants/:participantId/available-classes",
   KompetisiController.getAvailableClassesForParticipant
 );

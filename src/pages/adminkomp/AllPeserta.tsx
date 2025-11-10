@@ -39,10 +39,13 @@ const AllPeserta: React.FC = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [pesertaToEdit, setPesertaToEdit] = useState<any>(null);
   const [editLoading, setEditLoading] = useState(false);
+  const [availableClasses, setAvailableClasses] = useState<any[]>([]);
+  const [loadingClasses, setLoadingClasses] = useState(false);
 
   const [editFormData, setEditFormData] = useState({
-  kelasKejuaraanId: '',
-  status: ''
+    kelasKejuaraanId: '',
+    currentClassName: '',
+    status: ''
   });
 
 
@@ -138,12 +141,57 @@ const confirmDelete = async () => {
   }
 };
 
+const fetchAvailableClasses = async (kompetisiId: number, pesertaId: number) => {
+  setLoadingClasses(true);
+  try {
+    const response = await apiClient.get(
+      `/kompetisi/${kompetisiId}/peserta/${pesertaId}/classes`
+    );
+    
+    if (response.data.success) {
+      setAvailableClasses(response.data.data.availableClasses);
+      return response.data.data;
+    }
+  } catch (error: any) {
+    console.error('Error fetching classes:', error);
+    alert('Gagal memuat daftar kelas');
+  } finally {
+    setLoadingClasses(false);
+  }
+};
+
 const handleEditPeserta = async (peserta: any) => {
   setPesertaToEdit(peserta);
+  
+  // Format current class name
+  const currentKelas = peserta.kelas_kejuaraan;
+  let currentClassName = '';
+  
+  if (currentKelas) {
+    currentClassName += currentKelas.cabang;
+    currentClassName += ` - ${currentKelas.kategori_event?.nama_kategori}`;
+    if (currentKelas.kelompok) {
+      currentClassName += ` - ${currentKelas.kelompok.nama_kelompok}`;
+    }
+    if (currentKelas.kelas_berat) {
+      currentClassName += ` - ${currentKelas.kelas_berat.nama_kelas}`;
+    }
+    if (currentKelas.poomsae) {
+      currentClassName += ` - ${currentKelas.poomsae.nama_kelas}`;
+    }
+  }
+  
   setEditFormData({
-    kelasKejuaraanId: peserta.kelas_kejuaraan?.id_kelas_kejuaraan || '',
+    kelasKejuaraanId: currentKelas?.id_kelas_kejuaraan?.toString() || '',
+    currentClassName: currentClassName,
     status: peserta.status || 'PENDING'
   });
+  
+  // Fetch available classes
+  if (kompetisiId) {
+    await fetchAvailableClasses(kompetisiId, peserta.id_peserta_kompetisi);
+  }
+  
   setShowEditModal(true);
 };
 
@@ -155,7 +203,7 @@ const handleSubmitEdit = async () => {
     await apiClient.put(
       `/kompetisi/${kompetisiId}/peserta/${pesertaToEdit.id_peserta_kompetisi}`,
       {
-        kelasKejuaraanId: Number(editFormData.kelasKejuaraanId),
+        kelas_kejuaraan_id: Number(editFormData.kelasKejuaraanId),
         status: editFormData.status
       }
     );
@@ -187,7 +235,6 @@ const handleSubmitEdit = async () => {
     setEditLoading(false);
   }
 };
-
 
   const handleManualRefresh = async () => {
     if (!kompetisiId || isRefreshing) return;
@@ -1164,95 +1211,142 @@ const handleSubmitEdit = async () => {
           )}
 
           {showEditModal && pesertaToEdit && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden">
-              <div className="p-6" style={{ backgroundColor: 'rgba(59, 130, 246, 0.1)' }}>
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ backgroundColor: '#3B82F6' }}>
-                    <Edit size={24} style={{ color: 'white' }} />
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full overflow-hidden max-h-[90vh] overflow-y-auto">
+                <div className="p-6" style={{ backgroundColor: 'rgba(59, 130, 246, 0.1)' }}>
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ backgroundColor: '#3B82F6' }}>
+                      <Edit size={24} style={{ color: 'white' }} />
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-bold" style={{ color: '#050505' }}>
+                        Edit Peserta
+                      </h3>
+                      <p className="text-sm" style={{ color: '#050505', opacity: 0.6 }}>
+                        {pesertaToEdit.is_team
+                          ? pesertaToEdit.anggota_tim?.map((m: any) => m.atlet.nama_atlet).join(", ")
+                          : pesertaToEdit.atlet?.nama_atlet}
+                      </p>
+                    </div>
                   </div>
+                </div>
+
+                <div className="p-6 space-y-6">
+                  {/* Current Class Info */}
+                  <div className="p-4 bg-blue-50 rounded-lg border-l-4 border-blue-500">
+                    <p className="text-sm font-semibold text-blue-900 mb-1">Kelas Saat Ini:</p>
+                    <p className="text-sm text-blue-800">{editFormData.currentClassName || 'Tidak ada kelas'}</p>
+                  </div>
+
+                  {/* Kelas Kejuaraan Dropdown */}
                   <div>
-                    <h3 className="text-2xl font-bold" style={{ color: '#050505' }}>
-                      Edit Peserta
-                    </h3>
-                    <p className="text-sm" style={{ color: '#050505', opacity: 0.6 }}>
-                      {pesertaToEdit.is_team
-                        ? pesertaToEdit.anggota_tim?.map((m: any) => m.atlet.nama_atlet).join(", ")
-                        : pesertaToEdit.atlet?.nama_atlet}
+                    <label className="block text-sm font-semibold mb-2" style={{ color: '#050505' }}>
+                      Ubah Kelas Kejuaraan <span className="text-red-500">*</span>
+                    </label>
+                    
+                    {loadingClasses ? (
+                      <div className="flex items-center justify-center py-4">
+                        <Loader className="animate-spin" size={24} style={{ color: '#3B82F6' }} />
+                        <span className="ml-2 text-sm" style={{ color: '#050505', opacity: 0.6 }}>
+                          Memuat kelas...
+                        </span>
+                      </div>
+                    ) : (
+                      <select
+                        value={editFormData.kelasKejuaraanId}
+                        onChange={(e) => setEditFormData({ ...editFormData, kelasKejuaraanId: e.target.value })}
+                        className="w-full px-4 py-3 rounded-xl border-2 focus:outline-none focus:ring-2"
+                        style={{ borderColor: '#990D35', backgroundColor: '#F5FBEF' }}
+                      >
+                        <option value="">-- Pilih Kelas Baru --</option>
+                        {availableClasses.map((kelas) => (
+                          <option 
+                            key={kelas.value} 
+                            value={kelas.value}
+                            disabled={kelas.isCurrentClass}
+                          >
+                            {kelas.label} {kelas.isCurrentClass ? '(Kelas Saat Ini)' : ''}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                    
+                    <p className="text-xs mt-2" style={{ color: '#050505', opacity: 0.5 }}>
+                      Format: Kategori - Level - Kelompok Usia - Kelas Berat/Poomsae
                     </p>
                   </div>
-                </div>
-              </div>
 
-              <div className="p-6 space-y-4">
-                <div>
-                  <label className="block text-sm font-semibold mb-2" style={{ color: '#050505' }}>
-                    ID Kelas Kejuaraan
-                  </label>
-                  <input
-                    type="number"
-                    value={editFormData.kelasKejuaraanId}
-                    onChange={(e) => setEditFormData({ ...editFormData, kelasKejuaraanId: e.target.value })}
-                    className="w-full px-4 py-3 rounded-xl border-2 focus:outline-none focus:ring-2"
-                    style={{ borderColor: '#990D35', backgroundColor: '#F5FBEF' }}
-                    placeholder="Masukkan ID kelas kejuaraan"
-                  />
-                  <p className="text-xs mt-1" style={{ color: '#050505', opacity: 0.5 }}>
-                    ID saat ini: {pesertaToEdit.kelas_kejuaraan?.id_kelas_kejuaraan || '-'}
-                  </p>
-                </div>
+                  {/* Status Peserta */}
+                  <div>
+                    <label className="block text-sm font-semibold mb-2" style={{ color: '#050505' }}>
+                      Status Peserta
+                    </label>
+                    <select
+                      value={editFormData.status}
+                      onChange={(e) => setEditFormData({ ...editFormData, status: e.target.value })}
+                      className="w-full px-4 py-3 rounded-xl border-2 focus:outline-none focus:ring-2"
+                      style={{ borderColor: '#990D35', backgroundColor: '#F5FBEF' }}
+                    >
+                      <option value="PENDING">PENDING</option>
+                      <option value="APPROVED">APPROVED</option>
+                      <option value="REJECTED">REJECTED</option>
+                    </select>
+                  </div>
 
-                <div>
-                  <label className="block text-sm font-semibold mb-2" style={{ color: '#050505' }}>
-                    Status Peserta
-                  </label>
-                  <select
-                    value={editFormData.status}
-                    onChange={(e) => setEditFormData({ ...editFormData, status: e.target.value })}
-                    className="w-full px-4 py-3 rounded-xl border-2 focus:outline-none focus:ring-2"
-                    style={{ borderColor: '#990D35', backgroundColor: '#F5FBEF' }}
-                  >
-                    <option value="PENDING">PENDING</option>
-                    <option value="APPROVED">APPROVED</option>
-                    <option value="REJECTED">REJECTED</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="p-6 bg-gray-50 flex gap-3">
-                <button
-                  onClick={() => {
-                    setShowEditModal(false);
-                    setPesertaToEdit(null);
-                  }}
-                  disabled={editLoading}
-                  className="flex-1 py-3 px-4 rounded-xl font-semibold transition-all hover:bg-white border-2"
-                  style={{ borderColor: '#990D35', color: '#990D35', backgroundColor: 'white' }}
-                >
-                  Batal
-                </button>
-                <button
-                  onClick={handleSubmitEdit}
-                  disabled={editLoading || !editFormData.kelasKejuaraanId}
-                  className="flex-1 py-3 px-4 rounded-xl font-semibold transition-all hover:opacity-90 shadow-lg disabled:opacity-50 flex items-center justify-center gap-2"
-                  style={{ backgroundColor: '#3B82F6', color: 'white' }}
-                >
-                  {editLoading ? (
-                    <>
-                      <Loader size={18} className="animate-spin" />
-                      <span>Menyimpan...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Edit size={18} />
-                      <span>Simpan Perubahan</span>
-                    </>
+                  {/* Preview Selected Class Details */}
+                  {editFormData.kelasKejuaraanId && editFormData.kelasKejuaraanId !== pesertaToEdit.kelas_kejuaraan?.id_kelas_kejuaraan?.toString() && (
+                    <div className="p-4 bg-green-50 rounded-lg border-l-4 border-green-500">
+                      <p className="text-sm font-semibold text-green-900 mb-2">Kelas Baru:</p>
+                      {availableClasses.find(k => k.value === editFormData.kelasKejuaraanId)?.details && (
+                        <div className="grid grid-cols-2 gap-2 text-xs text-green-800">
+                          <div><span className="font-semibold">Kategori:</span> {availableClasses.find(k => k.value === editFormData.kelasKejuaraanId)?.details.cabang}</div>
+                          <div><span className="font-semibold">Level:</span> {availableClasses.find(k => k.value === editFormData.kelasKejuaraanId)?.details.level}</div>
+                          <div><span className="font-semibold">Usia:</span> {availableClasses.find(k => k.value === editFormData.kelasKejuaraanId)?.details.kelompokUsia}</div>
+                          <div><span className="font-semibold">Berat:</span> {availableClasses.find(k => k.value === editFormData.kelasKejuaraanId)?.details.kelasBerat}</div>
+                          {availableClasses.find(k => k.value === editFormData.kelasKejuaraanId)?.details.kelasPoomsae !== '-' && (
+                            <div className="col-span-2"><span className="font-semibold">Poomsae:</span> {availableClasses.find(k => k.value === editFormData.kelasKejuaraanId)?.details.kelasPoomsae}</div>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   )}
-                </button>
+                </div>
+
+                <div className="p-6 bg-gray-50 flex gap-3">
+                  <button
+                    onClick={() => {
+                      setShowEditModal(false);
+                      setPesertaToEdit(null);
+                      setAvailableClasses([]);
+                    }}
+                    disabled={editLoading}
+                    className="flex-1 py-3 px-4 rounded-xl font-semibold transition-all hover:bg-white border-2"
+                    style={{ borderColor: '#990D35', color: '#990D35', backgroundColor: 'white' }}
+                  >
+                    Batal
+                  </button>
+                  <button
+                    onClick={handleSubmitEdit}
+                    disabled={editLoading || !editFormData.kelasKejuaraanId}
+                    className="flex-1 py-3 px-4 rounded-xl font-semibold transition-all hover:opacity-90 shadow-lg disabled:opacity-50 flex items-center justify-center gap-2"
+                    style={{ backgroundColor: '#3B82F6', color: 'white' }}
+                  >
+                    {editLoading ? (
+                      <>
+                        <Loader size={18} className="animate-spin" />
+                        <span>Menyimpan...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Edit size={18} />
+                        <span>Simpan Perubahan</span>
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
           <SelectTeamMemberModal
             isOpen={teamModalOpen}
