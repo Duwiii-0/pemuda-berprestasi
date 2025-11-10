@@ -198,6 +198,17 @@ const handleEditPeserta = async (peserta: any) => {
 const handleSubmitEdit = async () => {
   if (!pesertaToEdit || !kompetisiId) return;
 
+    // ✅ VALIDASI FRONTEND
+  if (!editFormData.kelasKejuaraanId) {
+    alert('Pilih kelas kejuaraan terlebih dahulu!');
+    return;
+  }
+
+  if (editFormData.kelasKejuaraanId === pesertaToEdit.kelas_kejuaraan?.id_kelas_kejuaraan?.toString()) {
+    alert('Pilih kelas yang berbeda dari kelas saat ini!');
+    return;
+  }
+
   setEditLoading(true);
   try {
     await apiClient.put(

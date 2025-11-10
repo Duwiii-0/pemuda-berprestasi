@@ -660,7 +660,8 @@ static async updateParticipantClass(
   kompetisiId: number, 
   participantId: number, 
   newKelasKejuaraanId: number,
-  user: any
+  user: any,
+  status?: string // ✅ TAMBAHKAN parameter status optional
 ) {
   try {
     // Start transaction
@@ -815,16 +816,29 @@ static async updateParticipantClass(
         }
       }
 
-      // 11. Update the participant's class
+      // ✅ 9. Build update data dynamically
+      const updateData: any = {
+        id_kelas_kejuaraan: newKelasKejuaraanId
+      };
+
+      // ✅ Only update status if provided
+      if (status) {
+        // Validate status value
+        if (!['PENDING', 'APPROVED', 'REJECTED'].includes(status)) {
+          throw new Error('Status tidak valid. Harus PENDING, APPROVED, atau REJECTED');
+        }
+        updateData.status = status;
+      } else {
+        // Default: reset to PENDING when changing class
+        updateData.status = 'PENDING';
+      }
+
+      // ✅ 10. Update the participant's class
       const updatedParticipant = await tx.tb_peserta_kompetisi.update({
         where: {
           id_peserta_kompetisi: participantId
         },
-        data: {
-          id_kelas_kejuaraan: newKelasKejuaraanId,
-          // Reset status to PENDING if needed
-          status: 'PENDING'
-        },
+        data: updateData, // ✅ Use dynamic update data
         include: {
           atlet: {
             select: {
@@ -893,7 +907,6 @@ static async updateParticipantClass(
     throw new Error(error.message || 'Gagal mengubah kelas peserta');
   }
 }
-
 // Helper function to validate participant eligibility
 static async validateParticipantEligibility(participant: any, newKelas: any) {
   // If it's a team registration

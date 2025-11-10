@@ -240,16 +240,15 @@ export class KompetisiController {
     }
   }
 
-  static async updateParticipantClass(req: Request, res: Response) {
+static async updateParticipantClass(req: Request, res: Response) {
   try {
     const { id, participantId } = req.params;
-    // ✅ FIXED: Sesuaikan dengan nama field yang dikirim frontend
-    const { kelas_kejuaraan_id } = req.body; // Frontend mengirim field ini
+    const { kelas_kejuaraan_id, status } = req.body; // ✅ Destructure status juga
 
     // Validasi parameter
     const kompetisiId = parseInt(id);
     const pesertaId = parseInt(participantId);
-    const newKelasId = parseInt(kelas_kejuaraan_id); // ✅ FIXED: Gunakan field yang benar
+    const newKelasId = parseInt(kelas_kejuaraan_id);
 
     if (isNaN(kompetisiId)) {
       return sendError(res, 'ID kompetisi tidak valid', 400);
@@ -269,12 +268,13 @@ export class KompetisiController {
       return sendError(res, 'User tidak ditemukan', 401);
     }
 
-    // Call service to handle the update logic
+    // ✅ Call service dengan status parameter
     const result = await KompetisiService.updateParticipantClass(
       kompetisiId, 
       pesertaId, 
       newKelasId, 
-      user
+      user,
+      status // ✅ Pass status ke service
     );
 
     return sendSuccess(res, result.data, result.message);

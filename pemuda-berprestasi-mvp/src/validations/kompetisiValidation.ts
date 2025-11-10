@@ -152,6 +152,26 @@ export const kompetisiValidation = {
     })
   }),
 
+  updateParticipantClass: Joi.object({
+  kelas_kejuaraan_id: Joi.number()
+    .integer()
+    .positive()
+    .required()
+    .messages({
+      'number.base': 'ID kelas kejuaraan harus berupa angka',
+      'number.integer': 'ID kelas kejuaraan harus bilangan bulat',
+      'number.positive': 'ID kelas kejuaraan harus positif',
+      'any.required': 'ID kelas kejuaraan wajib diisi'
+    }),
+  
+  status: Joi.string()
+    .valid('PENDING', 'APPROVED', 'REJECTED')
+    .optional()
+    .messages({
+      'any.only': 'Status harus salah satu dari: PENDING, APPROVED, REJECTED'
+    })
+}),
+
   generateBracket: Joi.object({
     kelasKejuaraanId: Joi.number()
       .integer()
