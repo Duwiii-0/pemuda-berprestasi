@@ -89,6 +89,11 @@ const AllPeserta: React.FC = () => {
       console.log('✅ Delete response:', response);
 
       if (response.status === 200) {
+        // Refresh data immediately
+        setIsRefreshing(true);
+        await fetchAtletByKompetisi(kompetisiId);
+        setIsRefreshing(false);
+        
         setShowDeleteModal(false);
         setPesertaToDelete(null);
 
@@ -113,12 +118,7 @@ const AllPeserta: React.FC = () => {
           setTimeout(() => notification.remove(), 300);
         }, 3000);
 
-        setTimeout(async () => {
-          setIsRefreshing(true);
-          await fetchAtletByKompetisi(kompetisiId);
-          setIsRefreshing(false);
-          console.log('✅ Data refreshed successfully via AJAX');
-        }, 300);
+        console.log('✅ Data refreshed successfully after delete');
       }
     } catch (error: any) {
       console.error('❌ Error deleting peserta:', error);
