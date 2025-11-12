@@ -144,15 +144,18 @@ const confirmDelete = async () => {
 const fetchAvailableClasses = async (kompetisiId: number, pesertaId: number) => {
   setLoadingClasses(true);
   try {
-    // ✅ GANTI endpoint ke yang benar
-    const response = await apiClient.get(
-      `/kompetisi/${kompetisiId}/peserta/${pesertaId}/classes` // Endpoint ini sudah ada di backend
-    );
+    const url = `/kompetisi/${kompetisiId}/peserta/${pesertaId}/classes`;
+    console.log('🔗 Fetching from:', url); // Debug URL
     
-    console.log('📦 Response from API:', response.data); // Debug log
+    const response = await apiClient.get(url);
+    
+    console.log('📦 Raw response:', response); // Debug response
+    console.log('📦 Response data:', response.data); // Debug data
     
     if (response.data.success) {
-      setAvailableClasses(response.data.data.availableClasses);
+      const classes = response.data.data.availableClasses;
+      console.log('✅ Available classes:', classes); // Debug classes
+      setAvailableClasses(classes);
       return response.data.data;
     } else {
       console.error('❌ API returned success: false');
@@ -160,7 +163,9 @@ const fetchAvailableClasses = async (kompetisiId: number, pesertaId: number) => 
     }
   } catch (error: any) {
     console.error('❌ Error fetching classes:', error);
-    console.error('Response:', error.response?.data); // Tambah detail error
+    console.error('❌ Error response:', error.response); // Debug full error
+    console.error('❌ Error data:', error.response?.data); // Debug error data
+    console.error('❌ Error status:', error.response?.status); // Debug status code
     alert(error.response?.data?.message || 'Gagal memuat daftar kelas');
   } finally {
     setLoadingClasses(false);
