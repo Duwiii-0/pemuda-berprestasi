@@ -50,10 +50,10 @@ interface IDCardGeneratorProps {
 // Koordinat dalam MM (akan dikonversi saat digunakan)
 const COORDS_MM = {
   photo: {
-    x: 25.5,
-    y: 95.7,
-    width: 77,
-    height: 108,
+    x: 20,
+    y: 60,
+    width: 45,
+    height: 76,
     borderRadius: 8, // radius dalam mm
   },
   nama: {
@@ -152,17 +152,53 @@ export const IDCardGenerator = ({ atlet, isEditing }: IDCardGeneratorProps) => {
   };
 
   const getKategoriTemplate = (): "pemula" | "prestasi" => {
+    console.log("🔍 === KATEGORI DETECTION DEBUG ===");
+    console.log("peserta_kompetisi array:", atlet.peserta_kompetisi);
+    
     if (!atlet.peserta_kompetisi || atlet.peserta_kompetisi.length === 0) {
+      console.log("❌ No peserta_kompetisi found, defaulting to PEMULA");
       return "pemula";
     }
 
+    console.log(`📊 Found ${atlet.peserta_kompetisi.length} peserta(s)`);
+    
+    // Debug setiap peserta
+    atlet.peserta_kompetisi.forEach((p, idx) => {
+      console.log(`\n--- Peserta ${idx + 1} ---`);
+      console.log("  Status:", p.status);
+      console.log("  kelas_kejuaraan:", p.kelas_kejuaraan);
+      if (p.kelas_kejuaraan) {
+        console.log("    kategori_event:", p.kelas_kejuaraan.kategori_event);
+        if (p.kelas_kejuaraan.kategori_event) {
+          console.log("      nama_kategori:", p.kelas_kejuaraan.kategori_event.nama_kategori);
+        }
+      }
+    });
+
     const approvedPeserta = atlet.peserta_kompetisi.find(p => p.status === 'APPROVED');
     const targetPeserta = approvedPeserta || atlet.peserta_kompetisi[0];
-    const kategori = targetPeserta?.kelas_kejuaraan?.kategori_event?.nama_kategori?.toLowerCase();
     
-    console.log("🏆 Detected kategori:", kategori);
+    console.log("\n🎯 Selected peserta:", targetPeserta);
+    console.log("  Status:", targetPeserta?.status);
+
+    const kategoriObj = targetPeserta?.kelas_kejuaraan?.kategori_event;
+    console.log("kategori_event object:", kategoriObj);
     
-    return kategori?.includes("prestasi") ? "prestasi" : "pemula";
+    const namaKategori = kategoriObj?.nama_kategori;
+    console.log("nama_kategori (raw):", namaKategori);
+    console.log("nama_kategori (type):", typeof namaKategori);
+    
+    const kategoriLower = namaKategori?.toLowerCase();
+    console.log("nama_kategori (lowercase):", kategoriLower);
+    
+    const isPrestasi = kategoriLower?.includes("prestasi");
+    console.log("Contains 'prestasi'?:", isPrestasi);
+    
+    const result = isPrestasi ? "prestasi" : "pemula";
+    console.log(`\n✅ FINAL RESULT: ${result.toUpperCase()}`);
+    console.log("=================================\n");
+    
+    return result;
   };
 
   const generateIDCard = async () => {
