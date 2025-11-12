@@ -62,12 +62,12 @@ const COORDS_MM = {
     fontSize: 7,
   },
   kelas: {
-    x: 23,
+    x: 24.5,
     y: 102,
     fontSize: 7,
   },
   kontingen: {
-    x: 23,
+    x: 24.5,
     y: 107,
     fontSize: 7,
   },
