@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Download, Eye, FileText } from "lucide-react";
 import { PDFDocument, rgb } from "pdf-lib";
 
 interface Atlet {
+  id_atlet?: number;
   nama_atlet: string;
   jenis_kelamin: "LAKI_LAKI" | "PEREMPUAN";
   tanggal_lahir: string;
@@ -78,6 +79,18 @@ export const IDCardGenerator = ({ atlet, isEditing }: IDCardGeneratorProps) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string>("");
+  const [cachedPdfBlob, setCachedPdfBlob] = useState<Blob | null>(null);
+
+  // Check localStorage saat component mount
+  useEffect(() => {
+    const storageKey = `idcard_generated_${atlet.id_atlet || atlet.nama_atlet}`;
+    const hasGeneratedBefore = localStorage.getItem(storageKey);
+    
+    if (hasGeneratedBefore === 'true') {
+      setHasGenerated(true);
+      console.log("✅ ID Card sudah pernah di-generate sebelumnya");
+    }
+  }, [atlet]);
 
   const getPhotoUrl = (filename: string): string => {
     if (!filename) return "";
@@ -322,12 +335,19 @@ export const IDCardGenerator = ({ atlet, isEditing }: IDCardGeneratorProps) => {
       const blob = new Blob([pdfBytes], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
       
+      // Cache blob untuk preview dan download ulang
+      setCachedPdfBlob(blob);
       setPreviewUrl(url);
 
+      // Download otomatis
       const link = document.createElement('a');
       link.href = url;
       link.download = `ID-Card-${atlet.nama_atlet.replace(/\s/g, "-")}.pdf`;
       link.click();
+
+      // Simpan ke localStorage bahwa ID Card sudah pernah di-generate
+      const storageKey = `idcard_generated_${atlet.id_atlet || atlet.nama_atlet}`;
+      localStorage.setItem(storageKey, 'true');
 
       setHasGenerated(true);
     } catch (error) {
@@ -335,6 +355,36 @@ export const IDCardGenerator = ({ atlet, isEditing }: IDCardGeneratorProps) => {
       alert("Gagal generate ID Card: " + (error as Error).message);
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  // Handler untuk preview (re-generate jika belum ada cached blob)
+  const handlePreview = async () => {
+    if (cachedPdfBlob) {
+      // Pakai cached blob
+      const url = URL.createObjectURL(cachedPdfBlob);
+      setPreviewUrl(url);
+      setShowPreview(true);
+    } else {
+      // Re-generate
+      await generateIDCard();
+      setShowPreview(true);
+    }
+  };
+
+  // Handler untuk download ulang
+  const handleDownloadAgain = async () => {
+    if (cachedPdfBlob) {
+      // Download dari cached blob
+      const url = URL.createObjectURL(cachedPdfBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `ID-Card-${atlet.nama_atlet.replace(/\s/g, "-")}.pdf`;
+      link.click();
+      URL.revokeObjectURL(url);
+    } else {
+      // Re-generate dan download
+      await generateIDCard();
     }
   };
 
@@ -359,18 +409,20 @@ export const IDCardGenerator = ({ atlet, isEditing }: IDCardGeneratorProps) => {
             ) : (
               <>
                 <button
-                  onClick={() => setShowPreview(true)}
-                  className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl font-medium text-sm lg:text-base transition-all duration-300 shadow-lg"
+                  onClick={handlePreview}
+                  disabled={isGenerating}
+                  className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl font-medium text-sm lg:text-base transition-all duration-300 shadow-lg disabled:opacity-50"
                 >
                   <Eye size={18} />
-                  Lihat Preview
+                  {isGenerating ? "Generating..." : "Lihat Preview"}
                 </button>
                 <button
-                  onClick={generateIDCard}
-                  className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-xl font-medium text-sm lg:text-base transition-all duration-300 shadow-lg"
+                  onClick={handleDownloadAgain}
+                  disabled={isGenerating}
+                  className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-xl font-medium text-sm lg:text-base transition-all duration-300 shadow-lg disabled:opacity-50"
                 >
                   <Download size={18} />
-                  Download Ulang
+                  {isGenerating ? "Generating..." : "Download Ulang"}
                 </button>
               </>
             )}
@@ -387,12 +439,12 @@ export const IDCardGenerator = ({ atlet, isEditing }: IDCardGeneratorProps) => {
       )}
 
       <div className="mt-4 bg-purple-50 border border-purple-200 rounded-xl p-4">
-        <h4 className="font-semibold text-purple-900 mb-2 text-sm">🏆 Deteksi Kategori:</h4>
-        <p className="text-xs text-purple-800">
+        <h4 className="font-semibold text-purple-900 mb-2 text-lg">Deteksi Kategori:</h4>
+        <p className="text-base text-purple-800">
           Template otomatis: Pemula / Prestasi
         </p>
         {atlet.peserta_kompetisi && atlet.peserta_kompetisi.length > 0 && (
-          <p className="text-xs text-purple-600 mt-1 font-mono">
+          <p className="text-base text-purple-600 mt-1 font-mono">
             Kategori: {atlet.peserta_kompetisi[0]?.kelas_kejuaraan?.kategori_event?.nama_kategori || "N/A"}
           </p>
         )}
