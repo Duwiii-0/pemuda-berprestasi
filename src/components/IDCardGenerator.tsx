@@ -50,25 +50,25 @@ interface IDCardGeneratorProps {
 // Koordinat dalam MM (akan dikonversi saat digunakan)
 const COORDS_MM = {
   photo: {
-    x: 10,
+    x: 11,
     y: 42,
-    width: 35,
-    height: 48,
+    width: 34,
+    height: 47,
     borderRadius: 3, // radius dalam mm
   },
   nama: {
     x: 25,
-    y: 110,
+    y: 90,
     fontSize: 7,
   },
   kelas: {
     x: 25,
-    y: 115,
+    y: 95,
     fontSize: 7,
   },
   kontingen: {
     x: 25,
-    y: 120,
+    y: 100,
     fontSize: 7,
   },
 };
@@ -385,17 +385,6 @@ export const IDCardGenerator = ({ atlet, isEditing }: IDCardGeneratorProps) => {
           </p>
         </div>
       )}
-
-      <div className="mt-4 bg-blue-50 border border-blue-200 rounded-xl p-4">
-        <h4 className="font-semibold text-blue-900 mb-2 text-sm">📐 Koordinat Overlay:</h4>
-        <ul className="text-xs text-blue-800 space-y-1 font-mono">
-          <li>• Foto: x={COORDS_MM.photo.x}mm, y={COORDS_MM.photo.y}mm ({COORDS_MM.photo.width}x{COORDS_MM.photo.height}mm)</li>
-          <li>• Border Radius: {COORDS_MM.photo.borderRadius}mm</li>
-          <li>• Nama: y={COORDS_MM.nama.y}mm</li>
-          <li>• Kelas: y={COORDS_MM.kelas.y}mm</li>
-          <li>• Kontingen: y={COORDS_MM.kontingen.y}mm</li>
-        </ul>
-      </div>
 
       <div className="mt-4 bg-purple-50 border border-purple-200 rounded-xl p-4">
         <h4 className="font-semibold text-purple-900 mb-2 text-sm">🏆 Deteksi Kategori:</h4>
