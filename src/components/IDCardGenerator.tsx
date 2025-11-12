@@ -53,24 +53,27 @@ const mmToPt = (mm: number) => mm * 2.83465;
 const OVERLAY_COORDS = {
   photo: {
     x: mmToPt(25.5),
-    y: mmToPt(297 - 95.7 - 108), // PDF coordinate system: bottom-left origin
+    y: mmToPt(297 - 95.7 - 108),
     width: mmToPt(77),
     height: mmToPt(108),
+    borderRadius: mmToPt(8),
+    borderWidth: 3,
+    borderColor: rgb(0.85, 0.65, 0.13),
   },
   nama: {
     x: mmToPt(55),
     y: mmToPt(297 - 220),
-    fontSize: 14,
+    fontSize: 11,
   },
   kelas: {
     x: mmToPt(55),
     y: mmToPt(297 - 233),
-    fontSize: 14,
+    fontSize: 9.5,
   },
   kontingen: {
     x: mmToPt(55),
     y: mmToPt(297 - 246),
-    fontSize: 14,
+    fontSize: 11,
   },
 };
 
@@ -98,16 +101,13 @@ export const IDCardGenerator = ({ atlet, isEditing }: IDCardGeneratorProps) => {
     return await response.arrayBuffer();
   };
 
-  // Deteksi kategori dari peserta_kompetisi
   const getKategoriTemplate = (): "pemula" | "prestasi" => {
     if (!atlet.peserta_kompetisi || atlet.peserta_kompetisi.length === 0) {
-      return "pemula"; // Default
+      return "pemula";
     }
 
-    // Cari peserta dengan status APPROVED
     const approvedPeserta = atlet.peserta_kompetisi.find(p => p.status === 'APPROVED');
     const targetPeserta = approvedPeserta || atlet.peserta_kompetisi[0];
-
     const kategori = targetPeserta?.kelas_kejuaraan?.kategori_event?.nama_kategori?.toLowerCase();
     
     console.log("🏆 Detected kategori:", kategori);
@@ -121,10 +121,8 @@ export const IDCardGenerator = ({ atlet, isEditing }: IDCardGeneratorProps) => {
     console.log("=== DEBUG ATLET DATA ===");
     console.log("Full atlet object:", atlet);
     
-    // Extract dojang name
     const dojangName = atlet.dojang_name || atlet.dojang?.nama_dojang || "-";
     
-    // Extract kelas info
     let kelasInfo = "";
     
     if (atlet.peserta_kompetisi && atlet.peserta_kompetisi.length > 0) {
@@ -163,22 +161,19 @@ export const IDCardGenerator = ({ atlet, isEditing }: IDCardGeneratorProps) => {
     console.log("Kelas:", kelasInfo);
 
     try {
-      // Deteksi kategori untuk pilih template
       const kategori = getKategoriTemplate();
       const templatePath = `/templates/e-idcard_sriwijaya_${kategori}.pdf`;
       
       console.log("📄 Using template:", templatePath, `(kategori: ${kategori})`);
 
-      // Load PDF template
       const templateBytes = await loadPDFAsArrayBuffer(templatePath);
       const pdfDoc = await PDFDocument.load(templateBytes);
       const pages = pdfDoc.getPages();
       const firstPage = pages[0];
 
-      // Embed font
       const helveticaFont = await pdfDoc.embedFont('Helvetica-Bold');
 
-      // ========== OVERLAY FOTO ATLET ==========
+      // ========== OVERLAY FOTO ATLET DENGAN BORDER ROUNDED ==========
       if (atlet.pas_foto_path) {
         try {
           const photoUrl = getPhotoUrl(atlet.pas_foto_path);
@@ -195,16 +190,53 @@ export const IDCardGenerator = ({ atlet, isEditing }: IDCardGeneratorProps) => {
             throw new Error('Unsupported image format');
           }
 
-          // Draw image dengan ukuran fixed
-          firstPage.drawImage(image, {
-            x: OVERLAY_COORDS.photo.x,
-            y: OVERLAY_COORDS.photo.y,
-            width: OVERLAY_COORDS.photo.width,
-            height: OVERLAY_COORDS.photo.height,
+          const bx = OVERLAY_COORDS.photo.x;
+          const by = OVERLAY_COORDS.photo.y;
+          const bw = OVERLAY_COORDS.photo.width;
+          const bh = OVERLAY_COORDS.photo.height;
+          const br = OVERLAY_COORDS.photo.borderRadius;
+
+          // Draw background border (lebih besar sedikit)
+          firstPage.drawRectangle({
+            x: bx - 2,
+            y: by - 2,
+            width: bw + 4,
+            height: bh + 4,
+            color: OVERLAY_COORDS.photo.borderColor,
+            borderRadius: br,
           });
+
+          // Draw white background untuk image
+          firstPage.drawRectangle({
+            x: bx,
+            y: by,
+            width: bw,
+            height: bh,
+            color: rgb(1, 1, 1),
+            borderRadius: br - 1,
+          });
+
+          // Draw image
+          firstPage.drawImage(image, {
+            x: bx,
+            y: by,
+            width: bw,
+            height: bh,
+          });
+
+          // Draw border foreground (overlay)
+          firstPage.drawRectangle({
+            x: bx,
+            y: by,
+            width: bw,
+            height: bh,
+            borderColor: OVERLAY_COORDS.photo.borderColor,
+            borderWidth: OVERLAY_COORDS.photo.borderWidth,
+            borderRadius: br,
+          });
+
         } catch (error) {
           console.error("Failed to embed photo:", error);
-          // Draw placeholder text
           firstPage.drawText(atlet.nama_atlet.charAt(0).toUpperCase(), {
             x: OVERLAY_COORDS.photo.x + OVERLAY_COORDS.photo.width / 2 - 20,
             y: OVERLAY_COORDS.photo.y + OVERLAY_COORDS.photo.height / 2,
@@ -216,9 +248,8 @@ export const IDCardGenerator = ({ atlet, isEditing }: IDCardGeneratorProps) => {
       }
 
       // ========== OVERLAY TEXT DATA ==========
-      const textColor = rgb(0.04, 0.13, 0.41); // Blue color (10, 34, 104)
+      const textColor = rgb(0.04, 0.13, 0.41);
 
-      // Nama
       firstPage.drawText(atlet.nama_atlet, {
         x: OVERLAY_COORDS.nama.x,
         y: OVERLAY_COORDS.nama.y,
@@ -227,7 +258,6 @@ export const IDCardGenerator = ({ atlet, isEditing }: IDCardGeneratorProps) => {
         color: textColor,
       });
 
-      // Kelas
       firstPage.drawText(kelasInfo, {
         x: OVERLAY_COORDS.kelas.x,
         y: OVERLAY_COORDS.kelas.y,
@@ -236,7 +266,6 @@ export const IDCardGenerator = ({ atlet, isEditing }: IDCardGeneratorProps) => {
         color: textColor,
       });
 
-      // Kontingen
       firstPage.drawText(dojangName, {
         x: OVERLAY_COORDS.kontingen.x,
         y: OVERLAY_COORDS.kontingen.y,
@@ -252,7 +281,6 @@ export const IDCardGenerator = ({ atlet, isEditing }: IDCardGeneratorProps) => {
       
       setPreviewUrl(url);
 
-      // Download
       const link = document.createElement('a');
       link.href = url;
       link.download = `ID-Card-${atlet.nama_atlet.replace(/\s/g, "-")}.pdf`;
@@ -315,7 +343,6 @@ export const IDCardGenerator = ({ atlet, isEditing }: IDCardGeneratorProps) => {
         </div>
       )}
 
-      {/* Info Kategori Detection */}
       <div className="mt-4 bg-purple-50 border border-purple-200 rounded-xl p-4">
         <h4 className="font-semibold text-purple-900 mb-2 text-sm">🏆 Deteksi Kategori:</h4>
         <p className="text-xs text-purple-800">
@@ -328,7 +355,6 @@ export const IDCardGenerator = ({ atlet, isEditing }: IDCardGeneratorProps) => {
         )}
       </div>
 
-      {/* Preview Modal */}
       {showPreview && previewUrl && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl p-6 max-w-4xl w-full max-h-[90vh] overflow-auto">
