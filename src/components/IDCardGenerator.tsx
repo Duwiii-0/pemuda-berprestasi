@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Download, Eye, FileText } from "lucide-react";
-import jsPDF from "jspdf";
+import { PDFDocument, rgb } from "pdf-lib";
 
 interface Atlet {
   nama_atlet: string;
@@ -10,7 +10,6 @@ interface Atlet {
   dojang_name?: string;
   kelas_berat?: string;
   belt?: string;
-  // Tambahan struktur nested dari API
   dojang?: {
     id_dojang?: number;
     nama_dojang?: string;
@@ -48,29 +47,30 @@ interface IDCardGeneratorProps {
   isEditing: boolean;
 }
 
-// Koordinat PRESISI untuk overlay pada template (disesuaikan dengan template asli)
+// Koordinat untuk overlay (dalam points: 1mm = 2.83465 pt)
+const mmToPt = (mm: number) => mm * 2.83465;
+
 const OVERLAY_COORDS = {
-  page: { width: 210, height: 297 },
-  
-  // Photo box (kotak besar kiri) - koordinat FIXED berdasarkan template
   photo: {
-    x: 25.5,           // Posisi X foto
-    y: 95.7,           // Posisi Y foto (dari atas)
-    width: 77,       // Lebar foto FIXED
-    height: 108,      // Tinggi foto FIXED
+    x: mmToPt(25.5),
+    y: mmToPt(297 - 95.7 - 108), // PDF coordinate system: bottom-left origin
+    width: mmToPt(77),
+    height: mmToPt(108),
   },
-  
   nama: {
-    x: 55,           // Setelah "Nama :"
-    y: 220,          // Baris Nama
+    x: mmToPt(55),
+    y: mmToPt(297 - 220),
+    fontSize: 14,
   },
   kelas: {
-    x: 55,           // Setelah "Kelas :"
-    y: 233,          // Baris Kelas
+    x: mmToPt(55),
+    y: mmToPt(297 - 233),
+    fontSize: 14,
   },
   kontingen: {
-    x: 55,           // Setelah "Kontingen :"
-    y: 246,          // Baris Kontingen
+    x: mmToPt(55),
+    y: mmToPt(297 - 246),
+    fontSize: 14,
   },
 };
 
@@ -86,49 +86,33 @@ export const IDCardGenerator = ({ atlet, isEditing }: IDCardGeneratorProps) => {
     return `${baseUrl}/uploads/atlet/pas_foto/${filename}`;
   };
 
-  const loadImageAsBase64 = async (url: string, rounded = false): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.crossOrigin = "anonymous";
-      img.onload = () => {
-        const canvas = document.createElement("canvas");
-        const ctx = canvas.getContext("2d");
+  const loadImageAsArrayBuffer = async (url: string): Promise<ArrayBuffer> => {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`Failed to fetch image: ${url}`);
+    return await response.arrayBuffer();
+  };
 
-        if (!ctx) return reject(new Error("Canvas context not available"));
+  const loadPDFAsArrayBuffer = async (url: string): Promise<ArrayBuffer> => {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`Failed to fetch PDF: ${url}`);
+    return await response.arrayBuffer();
+  };
 
-        const w = img.width;
-        const h = img.height;
-        canvas.width = w;
-        canvas.height = h;
+  // Deteksi kategori dari peserta_kompetisi
+  const getKategoriTemplate = (): "pemula" | "prestasi" => {
+    if (!atlet.peserta_kompetisi || atlet.peserta_kompetisi.length === 0) {
+      return "pemula"; // Default
+    }
 
-        if (rounded) {
-          const radius = Math.min(w, h) * 0.10; // radius 10% dari ukuran gambar
-          ctx.clearRect(0, 0, w, h);
+    // Cari peserta dengan status APPROVED
+    const approvedPeserta = atlet.peserta_kompetisi.find(p => p.status === 'APPROVED');
+    const targetPeserta = approvedPeserta || atlet.peserta_kompetisi[0];
 
-          // Buat path rounded dan clip TANPA background putih
-          ctx.beginPath();
-          ctx.moveTo(radius, 0);
-          ctx.lineTo(w - radius, 0);
-          ctx.quadraticCurveTo(w, 0, w, radius);
-          ctx.lineTo(w, h - radius);
-          ctx.quadraticCurveTo(w, h, w - radius, h);
-          ctx.lineTo(radius, h);
-          ctx.quadraticCurveTo(0, h, 0, h - radius);
-          ctx.lineTo(0, radius);
-          ctx.quadraticCurveTo(0, 0, radius, 0);
-          ctx.closePath();
-          ctx.clip();
-        }
-
-        // Gambar foto di atas canvas transparan
-        ctx.drawImage(img, 0, 0, w, h);
-
-        // Gunakan PNG biar transparansi tidak hilang
-        resolve(canvas.toDataURL("image/png"));
-      };
-      img.onerror = () => reject(new Error(`Failed to load image: ${url}`));
-      img.src = url;
-    });
+    const kategori = targetPeserta?.kelas_kejuaraan?.kategori_event?.nama_kategori?.toLowerCase();
+    
+    console.log("🏆 Detected kategori:", kategori);
+    
+    return kategori?.includes("prestasi") ? "prestasi" : "pemula";
   };
 
   const generateIDCard = async () => {
@@ -136,74 +120,33 @@ export const IDCardGenerator = ({ atlet, isEditing }: IDCardGeneratorProps) => {
 
     console.log("=== DEBUG ATLET DATA ===");
     console.log("Full atlet object:", atlet);
-    console.log("nama_atlet:", atlet.nama_atlet);
-    console.log("dojang object:", atlet.dojang);
-    console.log("peserta_kompetisi:", atlet.peserta_kompetisi);
     
-    // ✅ Ambil dojang_name (sudah ada di nested object)
-    const dojangName = atlet.dojang_name || 
-                       atlet.dojang?.nama_dojang || 
-                       "-";
+    // Extract dojang name
+    const dojangName = atlet.dojang_name || atlet.dojang?.nama_dojang || "-";
     
-    // ✅ Ambil kelas dari peserta_kompetisi yang APPROVED (prioritas tertinggi)
+    // Extract kelas info
     let kelasInfo = "";
     
     if (atlet.peserta_kompetisi && atlet.peserta_kompetisi.length > 0) {
-      console.log("📊 Processing peserta_kompetisi...");
+      const targetPeserta = atlet.peserta_kompetisi.find(p => p.status === 'APPROVED') || 
+                            atlet.peserta_kompetisi[0];
       
-      // Prioritas: APPROVED > PENDING > REJECTED
-      let targetPeserta = atlet.peserta_kompetisi.find(p => p.status === 'APPROVED');
-      
-      if (!targetPeserta) {
-        targetPeserta = atlet.peserta_kompetisi.find(p => p.status === 'PENDING');
-      }
-      
-      if (!targetPeserta) {
-        targetPeserta = atlet.peserta_kompetisi[atlet.peserta_kompetisi.length - 1];
-      }
-      
-      console.log("🎯 Selected peserta:", targetPeserta);
-      
-      if (targetPeserta && targetPeserta.kelas_kejuaraan) {
+      if (targetPeserta?.kelas_kejuaraan) {
         const kj = targetPeserta.kelas_kejuaraan;
-        
-        console.log("📋 Full kelas_kejuaraan:", kj);
-        console.log("  - cabang:", kj.cabang);
-        console.log("  - kelompok:", kj.kelompok);
-        console.log("  - kelas_berat:", kj.kelas_berat);
-        console.log("  - poomsae:", kj.poomsae);
-        console.log("  - kategori_event:", kj.kategori_event);
-        
         const cabang = kj.cabang || "";
-        let kelompokUsia = kj.kelompok?.nama_kelompok || "";
+        const kelompokUsia = kj.kelompok?.nama_kelompok || "";
         const kategoriEvent = kj.kategori_event?.nama_kategori || "";
         let kelasDetail = "";
         
-        // ✅ Langsung ambil dari nested object yang sudah ada
         if (cabang === "KYORUGI" && kj.kelas_berat?.nama_kelas) {
           kelasDetail = kj.kelas_berat.nama_kelas;
         } else if (cabang === "POOMSAE" && kj.poomsae?.nama_kelas) {
           kelasDetail = kj.poomsae.nama_kelas;
         }
         
-        console.log("📊 Direct extraction:");
-        console.log("  - kelompokUsia:", kelompokUsia);
-        console.log("  - kelasDetail:", kelasDetail);
-        
-        // ✅ Format: Kategori - Cabang - (Kelompok Usia ATAU Kelas Detail)
         const parts = [];
-        
-        // 1. Kategori Event (Pemula/Prestasi)
-        if (kategoriEvent) {
-          parts.push(kategoriEvent);
-        }
-        
-        // 2. Cabang (KYORUGI/POOMSAE)
-        if (cabang) {
-          parts.push(cabang);
-        }
-        
-        // 3. Kelompok Usia (jika ada dan bukan "pemula") ATAU Kelas Detail
+        if (kategoriEvent) parts.push(kategoriEvent);
+        if (cabang) parts.push(cabang);
         if (kelompokUsia && kelompokUsia.toLowerCase() !== 'pemula') {
           parts.push(kelompokUsia);
         } else if (kelasDetail) {
@@ -211,148 +154,109 @@ export const IDCardGenerator = ({ atlet, isEditing }: IDCardGeneratorProps) => {
         }
         
         kelasInfo = parts.join(" - ") || "-";
-        
-        console.log("=== EXTRACTED CLASS INFO ===");
-        console.log("Selected Peserta Status:", targetPeserta.status);
-        console.log("Cabang:", cabang);
-        console.log("Kelompok Usia:", kelompokUsia);
-        console.log("Kategori Event:", kategoriEvent);
-        console.log("Kelas Detail:", kelasDetail);
-        console.log("Final kelasInfo:", kelasInfo);
       }
     }
     
-    // Fallback jika tidak ada peserta kompetisi
-    if (!kelasInfo || kelasInfo === "") {
-      kelasInfo = atlet.kelas_berat || "-";
-    }
-    
-    console.log("dojang_name (extracted):", dojangName);
-    console.log("kelas_info (final):", kelasInfo);
-    console.log("========================");
+    if (!kelasInfo) kelasInfo = atlet.kelas_berat || "-";
+
+    console.log("Dojang:", dojangName);
+    console.log("Kelas:", kelasInfo);
 
     try {
-      const pdf = new jsPDF({
-        orientation: "portrait",
-        unit: "mm",
-        format: "a4",
-      });
+      // Deteksi kategori untuk pilih template
+      const kategori = getKategoriTemplate();
+      const templatePath = `/templates/e-idcard_sriwijaya_${kategori}.pdf`;
+      
+      console.log("📄 Using template:", templatePath, `(kategori: ${kategori})`);
 
-      const c = OVERLAY_COORDS;
+      // Load PDF template
+      const templateBytes = await loadPDFAsArrayBuffer(templatePath);
+      const pdfDoc = await PDFDocument.load(templateBytes);
+      const pages = pdfDoc.getPages();
+      const firstPage = pages[0];
 
-      // ========== LOAD TEMPLATE BACKGROUND ==========
-      try {
-        const templateImg = "/templates/e-idcard_sriwijaya.jpg";
-        const templateBase64 = await loadImageAsBase64(templateImg);
-        
-        // Paste template sebagai background (full page A4)
-        pdf.addImage(
-          templateBase64,
-          "JPEG",
-          0,
-          0,
-          c.page.width,
-          c.page.height,
-          undefined,
-          "FAST"
-        );
-      } catch (error) {
-        console.error("Failed to load template:", error);
-        // Fallback: white background jika template gagal load
-        pdf.setFillColor(255, 255, 255);
-        pdf.rect(0, 0, c.page.width, c.page.height, "F");
-        
-        // Tampilkan error message
-        pdf.setFontSize(12);
-        pdf.setTextColor(255, 0, 0);
-        pdf.text("Error: Template tidak dapat dimuat", 105, 20, { align: "center" });
-      }
+      // Embed font
+      const helveticaFont = await pdfDoc.embedFont('Helvetica-Bold');
 
       // ========== OVERLAY FOTO ATLET ==========
       if (atlet.pas_foto_path) {
         try {
           const photoUrl = getPhotoUrl(atlet.pas_foto_path);
-          const base64Photo = await loadImageAsBase64(photoUrl, true); // true => aktifkan rounded
+          const imageBytes = await loadImageAsArrayBuffer(photoUrl);
+          
+          let image;
+          const photoFilename = atlet.pas_foto_path.toLowerCase();
+          
+          if (photoFilename.endsWith('.png')) {
+            image = await pdfDoc.embedPng(imageBytes);
+          } else if (photoFilename.endsWith('.jpg') || photoFilename.endsWith('.jpeg')) {
+            image = await pdfDoc.embedJpg(imageBytes);
+          } else {
+            throw new Error('Unsupported image format');
+          }
 
-          // Paste foto atlet dengan ukuran FIXED di koordinat yang sudah ditentukan
-          // Menggunakan "FAST" compression untuk hasil optimal
-          pdf.addImage(
-            base64Photo,
-            "PNG",
-            c.photo.x,
-            c.photo.y,
-            c.photo.width,    // Fixed width
-            c.photo.height,   // Fixed height
-            undefined,
-            "FAST"
-          );
+          // Draw image dengan ukuran fixed
+          firstPage.drawImage(image, {
+            x: OVERLAY_COORDS.photo.x,
+            y: OVERLAY_COORDS.photo.y,
+            width: OVERLAY_COORDS.photo.width,
+            height: OVERLAY_COORDS.photo.height,
+          });
         } catch (error) {
-          console.error("Failed to load athlete photo:", error);
-          // Fallback: kotak abu-abu dengan initial
-          pdf.setFillColor(220, 220, 220);
-          pdf.rect(c.photo.x, c.photo.y, c.photo.width, c.photo.height, "F");
-          pdf.setFontSize(40);
-          pdf.setTextColor(150, 150, 150);
-          pdf.text(
-            atlet.nama_atlet.charAt(0).toUpperCase(),
-            c.photo.x + c.photo.width / 2,
-            c.photo.y + c.photo.height / 2 + 10,
-            { align: "center" }
-          );
+          console.error("Failed to embed photo:", error);
+          // Draw placeholder text
+          firstPage.drawText(atlet.nama_atlet.charAt(0).toUpperCase(), {
+            x: OVERLAY_COORDS.photo.x + OVERLAY_COORDS.photo.width / 2 - 20,
+            y: OVERLAY_COORDS.photo.y + OVERLAY_COORDS.photo.height / 2,
+            size: 48,
+            font: helveticaFont,
+            color: rgb(0.7, 0.7, 0.7),
+          });
         }
-      } else {
-        // Tidak ada foto - tampilkan placeholder
-        pdf.setFillColor(240, 240, 240);
-        pdf.rect(c.photo.x, c.photo.y, c.photo.width, c.photo.height, "F");
-        pdf.setFontSize(36);
-        pdf.setTextColor(180, 180, 180);
-        pdf.text(
-          atlet.nama_atlet.charAt(0).toUpperCase(),
-          c.photo.x + c.photo.width / 2,
-          c.photo.y + c.photo.height / 2 + 10,
-          { align: "center" }
-        );
       }
 
-      // ========== OVERLAY DATA ATLET ==========
-      pdf.setFont("helvetica", "bold");
-      pdf.setFontSize(14);        // Font size disesuaikan dengan template
-      pdf.setTextColor(10, 34, 104);
+      // ========== OVERLAY TEXT DATA ==========
+      const textColor = rgb(0.04, 0.13, 0.41); // Blue color (10, 34, 104)
 
       // Nama
-      pdf.text(atlet.nama_atlet, c.nama.x, c.nama.y);
-
-      // Kelas - gunakan kelasInfo yang sudah di-extract
-      pdf.text(kelasInfo, c.kelas.x, c.kelas.y);
-
-      // Kontingen - gunakan variable yang sudah di-extract
-      pdf.text(dojangName, c.kontingen.x, c.kontingen.y);
-
-      // ========== METADATA untuk ekstraksi ==========
-      pdf.setProperties({
-        title: `ID-Card-${atlet.nama_atlet}`,
-        subject: "ID Card Atlet Sriwijaya Championship 2025",
-        author: "Sriwijaya International Taekwondo Championship",
-        keywords: JSON.stringify({
-          nama: atlet.nama_atlet,
-          nama_coords: { x: c.nama.x, y: c.nama.y },
-          kelas: kelasInfo,
-          kelas_coords: { x: c.kelas.x, y: c.kelas.y },
-          kontingen: dojangName,
-          kontingen_coords: { x: c.kontingen.x, y: c.kontingen.y },
-          foto_path: atlet.pas_foto_path || "",
-          foto_coords: { x: c.photo.x, y: c.photo.y, w: c.photo.width, h: c.photo.height },
-          template: "e-idcard_sriwijaya.jpg",
-          version: "4.1"
-        }),
-        creator: "ID Card Generator v4.1",
+      firstPage.drawText(atlet.nama_atlet, {
+        x: OVERLAY_COORDS.nama.x,
+        y: OVERLAY_COORDS.nama.y,
+        size: OVERLAY_COORDS.nama.fontSize,
+        font: helveticaFont,
+        color: textColor,
       });
 
-      // Preview & Download
-      const pdfBlob = pdf.output("blob");
-      const url = URL.createObjectURL(pdfBlob);
+      // Kelas
+      firstPage.drawText(kelasInfo, {
+        x: OVERLAY_COORDS.kelas.x,
+        y: OVERLAY_COORDS.kelas.y,
+        size: OVERLAY_COORDS.kelas.fontSize,
+        font: helveticaFont,
+        color: textColor,
+      });
+
+      // Kontingen
+      firstPage.drawText(dojangName, {
+        x: OVERLAY_COORDS.kontingen.x,
+        y: OVERLAY_COORDS.kontingen.y,
+        size: OVERLAY_COORDS.kontingen.fontSize,
+        font: helveticaFont,
+        color: textColor,
+      });
+
+      // ========== SAVE PDF ==========
+      const pdfBytes = await pdfDoc.save();
+      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      
       setPreviewUrl(url);
-      pdf.save(`ID-Card-${atlet.nama_atlet.replace(/\s/g, "-")}.pdf`);
+
+      // Download
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `ID-Card-${atlet.nama_atlet.replace(/\s/g, "-")}.pdf`;
+      link.click();
 
       setHasGenerated(true);
     } catch (error) {
@@ -410,6 +314,19 @@ export const IDCardGenerator = ({ atlet, isEditing }: IDCardGeneratorProps) => {
           </p>
         </div>
       )}
+
+      {/* Info Kategori Detection */}
+      <div className="mt-4 bg-purple-50 border border-purple-200 rounded-xl p-4">
+        <h4 className="font-semibold text-purple-900 mb-2 text-sm">🏆 Deteksi Kategori:</h4>
+        <p className="text-xs text-purple-800">
+          Template akan otomatis dipilih berdasarkan kategori event (Pemula/Prestasi)
+        </p>
+        {atlet.peserta_kompetisi && atlet.peserta_kompetisi.length > 0 && (
+          <p className="text-xs text-purple-600 mt-1 font-mono">
+            Kategori: {atlet.peserta_kompetisi[0]?.kelas_kejuaraan?.kategori_event?.nama_kategori || "N/A"}
+          </p>
+        )}
+      </div>
 
       {/* Preview Modal */}
       {showPreview && previewUrl && (
