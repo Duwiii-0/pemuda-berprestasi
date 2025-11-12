@@ -9,7 +9,9 @@ const router = Router();
 // Protected routes (require authentication)
 router.use(authenticate);
 
-// CRUD operations
+// ============================================================
+// CRUD OPERATIONS
+// ============================================================
 router.post(
   "/",
   validateRequest(kompetisiValidation.create),
@@ -24,44 +26,47 @@ router.put(
 );
 router.delete("/:id", KompetisiController.delete);
 
-// Registration management
+// ============================================================
+// REGISTRATION MANAGEMENT
+// ============================================================
 router.get(
   "/:id/atlet",
-  authenticate,
   KompetisiController.getAtletsByKompetisi
 );
-router.post("/:id/register", authenticate, KompetisiController.registerAtlet);
+router.post(
+  "/:id/register", 
+  KompetisiController.registerAtlet
+);
 
+// ============================================================
+// PESERTA MANAGEMENT (HARUS DI ATAS SEBELUM ROUTES LAIN!)
+// ============================================================
+
+// ✅ GET available classes for participant (PALING ATAS)
 router.get(
   "/:id/peserta/:participantId/classes",
   KompetisiController.getAvailableClassesWithDetails
 );
 
-// ✅ DELETE PESERTA - Harus sebelum route dengan parameter yang lebih spesifik
-router.delete(
-  "/:id/peserta/:participantId",
-  KompetisiController.deleteParticipant
-);
-
+// ✅ UPDATE participant class/status
 router.put(
   "/:id/peserta/:participantId",
-  validateRequest(kompetisiValidation.updateParticipantClass), // ✅ Tambah ini
+  validateRequest(kompetisiValidation.updateParticipantClass),
   KompetisiController.updateParticipantClass
 );
 
+// ✅ DELETE participant
 router.delete(
   "/:id/peserta/:participantId",
   KompetisiController.deleteParticipant
 );
 
+// ============================================================
+// LEGACY ROUTES (for backward compatibility - bisa dihapus kalau tidak dipakai)
+// ============================================================
 router.get(
   "/:id/participants/:participantId/available-classes",
   KompetisiController.getAvailableClassesForParticipant
-);
-router.get(
-  "/:id/participants/:participantId/available-classes",
-  authenticate,
-  KompetisiController.getAvailableClassesSimple
 );
 
 router.put(
@@ -84,31 +89,50 @@ router.post(
   KompetisiController.generateBrackets
 );
 
-router.post("/:id/brackets/shuffle", KompetisiController.shuffleBrackets);
-router.get("/:id/brackets/pdf", KompetisiController.exportBracketToPdf);
+router.post(
+  "/:id/brackets/shuffle", 
+  KompetisiController.shuffleBrackets
+);
+
+router.get(
+  "/:id/brackets/pdf", 
+  KompetisiController.exportBracketToPdf
+);
+
 router.put(
   "/:id/brackets/match/:matchId",
   validateRequest(kompetisiValidation.updateMatch),
   KompetisiController.updateMatch
 );
-router.post("/:id/draw", KompetisiController.conductDraw);
+
+router.post(
+  "/:id/draw", 
+  KompetisiController.conductDraw
+);
 
 router.post(
   "/:id/brackets/:kelasKejuaraanId/clear-results",
   KompetisiController.clearBracketResults
 );
+
 router.post(
   "/:id/brackets/:kelasKejuaraanId/regenerate",
   KompetisiController.regenerateBracket
 );
+
 router.delete(
   "/:id/brackets/:kelasKejuaraanId",
   KompetisiController.deleteBracket
 );
+
 router.get(
   "/:id/brackets/:kelasKejuaraanId",
   KompetisiController.getBracketByClass
 );
-router.get("/:id/brackets", KompetisiController.getBrackets);
+
+router.get(
+  "/:id/brackets", 
+  KompetisiController.getBrackets
+);
 
 export default router;
