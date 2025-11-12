@@ -148,23 +148,49 @@ const fetchAvailableClasses = async (kompetisiId: number, pesertaId: number) => 
       `/kompetisi/${kompetisiId}/peserta/${pesertaId}/classes`
     );
     
+    console.log('📦 Full Response:', response);
+    console.log('📦 Response.data:', response.data);
+    
     if (response.data.success) {
-      // ✅ Akses langsung tanpa nested .data
-      setAvailableClasses(response.data.availableClasses);
+      // ✅ Cek struktur data
+      const classes = response.data.availableClasses;
+      
+      console.log('✅ Classes to set:', classes);
+      console.log('✅ Classes length:', classes?.length);
+      console.log('✅ First class:', classes?.[0]);
+      
+      if (!classes || classes.length === 0) {
+        console.error('❌ No classes found in response');
+        alert('Tidak ada kelas yang tersedia');
+        return null;
+      }
+      
+      // ✅ Set state
+      setAvailableClasses(classes);
+      
+      // ✅ Return untuk digunakan di handleEditPeserta
       return {
         currentClass: response.data.currentClass,
-        availableClasses: response.data.availableClasses
+        availableClasses: classes
       };
+    } else {
+      console.error('❌ Response success = false');
+      alert('Gagal memuat daftar kelas');
+      return null;
     }
   } catch (error: any) {
-    console.error('Error fetching classes:', error);
-    alert('Gagal memuat daftar kelas');
+    console.error('❌ Error fetching classes:', error);
+    console.error('❌ Error response:', error.response);
+    alert(error.response?.data?.message || 'Gagal memuat daftar kelas');
+    return null;
   } finally {
     setLoadingClasses(false);
   }
 };
 
 const handleEditPeserta = async (peserta: any) => {
+  console.log('🎯 Opening edit modal for:', peserta);
+  
   setPesertaToEdit(peserta);
   
   // Format current class name
@@ -185,17 +211,32 @@ const handleEditPeserta = async (peserta: any) => {
     }
   }
   
+  console.log('📝 Current class name:', currentClassName);
+  
   setEditFormData({
     kelasKejuaraanId: currentKelas?.id_kelas_kejuaraan?.toString() || '',
     currentClassName: currentClassName,
     status: peserta.status || 'PENDING'
   });
   
-  // Fetch available classes
+  // ✅ Fetch classes SEBELUM buka modal
   if (kompetisiId) {
-    await fetchAvailableClasses(kompetisiId, peserta.id_peserta_kompetisi);
+    console.log('🔄 Fetching classes...');
+    const result = await fetchAvailableClasses(kompetisiId, peserta.id_peserta_kompetisi);
+    
+    console.log('🔄 Fetch result:', result);
+    
+    if (result && result.availableClasses) {
+      console.log('✅ Classes fetched successfully:', result.availableClasses.length);
+      // ✅ Pastikan state di-set lagi kalau perlu
+      setAvailableClasses(result.availableClasses);
+    } else {
+      console.error('❌ No classes returned from fetch');
+    }
   }
   
+  // ✅ Buka modal SETELAH data siap
+  console.log('🚪 Opening modal...');
   setShowEditModal(true);
 };
 
