@@ -144,17 +144,24 @@ const confirmDelete = async () => {
 const fetchAvailableClasses = async (kompetisiId: number, pesertaId: number) => {
   setLoadingClasses(true);
   try {
+    // ✅ GANTI endpoint ke yang benar
     const response = await apiClient.get(
-      `/kompetisi/${kompetisiId}/peserta/${pesertaId}/classes`
+      `/kompetisi/${kompetisiId}/peserta/${pesertaId}/classes` // Endpoint ini sudah ada di backend
     );
+    
+    console.log('📦 Response from API:', response.data); // Debug log
     
     if (response.data.success) {
       setAvailableClasses(response.data.data.availableClasses);
       return response.data.data;
+    } else {
+      console.error('❌ API returned success: false');
+      alert('Gagal memuat daftar kelas');
     }
   } catch (error: any) {
-    console.error('Error fetching classes:', error);
-    alert('Gagal memuat daftar kelas');
+    console.error('❌ Error fetching classes:', error);
+    console.error('Response:', error.response?.data); // Tambah detail error
+    alert(error.response?.data?.message || 'Gagal memuat daftar kelas');
   } finally {
     setLoadingClasses(false);
   }
@@ -198,25 +205,41 @@ const handleEditPeserta = async (peserta: any) => {
 const handleSubmitEdit = async () => {
   if (!pesertaToEdit || !kompetisiId) return;
 
-    // ✅ VALIDASI FRONTEND
-  if (!editFormData.kelasKejuaraanId) {
-    alert('Pilih kelas kejuaraan terlebih dahulu!');
+  // ✅ PERBAIKAN: Validasi lebih flexible
+  const isChangingClass = editFormData.kelasKejuaraanId && 
+    editFormData.kelasKejuaraanId !== pesertaToEdit.kelas_kejuaraan?.id_kelas_kejuaraan?.toString();
+  
+  const isChangingStatus = editFormData.status !== pesertaToEdit.status;
+
+  // Harus mengubah minimal 1 field
+  if (!isChangingClass && !isChangingStatus) {
+    alert('Tidak ada perubahan yang dilakukan!');
     return;
   }
 
-  if (editFormData.kelasKejuaraanId === pesertaToEdit.kelas_kejuaraan?.id_kelas_kejuaraan?.toString()) {
-    alert('Pilih kelas yang berbeda dari kelas saat ini!');
+  // Jika pilih kelas, validasi kelas tidak boleh sama dengan saat ini
+  if (editFormData.kelasKejuaraanId && !isChangingClass) {
+    alert('Pilih kelas yang berbeda dari kelas saat ini, atau kosongkan untuk hanya mengubah status!');
     return;
   }
 
   setEditLoading(true);
   try {
+    // ✅ Build payload dinamis
+    const payload: any = {
+      status: editFormData.status
+    };
+
+    // ✅ Hanya kirim kelas_kejuaraan_id jika ada perubahan kelas
+    if (isChangingClass) {
+      payload.kelas_kejuaraan_id = Number(editFormData.kelasKejuaraanId);
+    }
+
+    console.log('📤 Sending payload:', payload); // Debug log
+
     await apiClient.put(
       `/kompetisi/${kompetisiId}/peserta/${pesertaToEdit.id_peserta_kompetisi}`,
-      {
-        kelas_kejuaraan_id: Number(editFormData.kelasKejuaraanId),
-        status: editFormData.status
-      }
+      payload
     );
 
     // Refresh data
@@ -231,7 +254,7 @@ const handleSubmitEdit = async () => {
       </svg>
       <div>
         <p class="font-semibold">Berhasil Diupdate!</p>
-        <p class="text-sm opacity-90">Data peserta telah diperbarui</p>
+        <p class="text-sm opacity-90">${isChangingClass ? 'Kelas dan status' : 'Status'} telah diperbarui</p>
       </div>
     `;
     document.body.appendChild(notification);
@@ -241,6 +264,7 @@ const handleSubmitEdit = async () => {
     setPesertaToEdit(null);
   } catch (error: any) {
     console.error('❌ Error updating:', error);
+    console.error('Response:', error.response?.data); // Detail error
     alert(error.response?.data?.message || 'Gagal mengupdate peserta');
   } finally {
     setEditLoading(false);

@@ -659,9 +659,9 @@ static async deleteParticipant(kompetisiId: number, participantId: number) {
 static async updateParticipantClass(
   kompetisiId: number, 
   participantId: number, 
-  newKelasKejuaraanId: number,
+  newKelasKejuaraanId: number | undefined, // ✅ BISA UNDEFINED
   user: any,
-  status?: string // ✅ TAMBAHKAN parameter status optional
+  status?: string // ✅ Optional status parameter
 ) {
   try {
     // Start transaction
@@ -772,68 +772,75 @@ static async updateParticipantClass(
         }
       }
 
-      // 5. Verify new kelas kejuaraan exists and belongs to this competition
-      const newKelasKejuaraan = await tx.tb_kelas_kejuaraan.findUnique({
-        where: { id_kelas_kejuaraan: newKelasKejuaraanId },
-        include: {
-          kategori_event: true,
-          kelompok: true,
-          kelas_berat: true,
-          poomsae: true
-        }
-      });
+      // ✅ 5. BUILD UPDATE DATA OBJECT
+      const updateData: any = {};
+      let newKelasKejuaraan: any = null;
 
-      if (!newKelasKejuaraan) {
-        throw new Error('Kelas kejuaraan baru tidak ditemukan');
-      }
-
-      if (newKelasKejuaraan.id_kompetisi !== kompetisiId) {
-        throw new Error('Kelas kejuaraan tidak terdaftar dalam kompetisi ini');
-      }
-
-      // 6. Check if participant is already in the new class
-      if (existingParticipant.id_kelas_kejuaraan === newKelasKejuaraanId) {
-        throw new Error('Peserta sudah terdaftar di kelas kejuaraan ini');
-      }
-
-      // 7. Validate participant eligibility for new class
-      await KompetisiService.validateParticipantEligibility(existingParticipant, newKelasKejuaraan);
-
-      // 8. Check for duplicate registration in new class
-      if (!existingParticipant.is_team && existingParticipant.atlet) {
-        const duplicateCheck = await tx.tb_peserta_kompetisi.findFirst({
-          where: {
-            id_atlet: existingParticipant.atlet.id_atlet,
-            id_kelas_kejuaraan: newKelasKejuaraanId,
-            NOT: {
-              id_peserta_kompetisi: participantId
-            }
-          }
-        });
-
-        if (duplicateCheck) {
-          throw new Error('Atlet sudah terdaftar di kelas kejuaraan ini');
-        }
-      }
-
-      // ✅ 9. Build update data dynamically
-      const updateData: any = {
-        id_kelas_kejuaraan: newKelasKejuaraanId
-      };
-
-      // ✅ Only update status if provided
+      // ✅ HANDLE STATUS UPDATE
       if (status) {
         // Validate status value
         if (!['PENDING', 'APPROVED', 'REJECTED'].includes(status)) {
           throw new Error('Status tidak valid. Harus PENDING, APPROVED, atau REJECTED');
         }
         updateData.status = status;
-      } else {
-        // Default: reset to PENDING when changing class
-        updateData.status = 'PENDING';
       }
 
-      // ✅ 10. Update the participant's class
+      // ✅ HANDLE CLASS CHANGE (ONLY IF PROVIDED)
+      if (newKelasKejuaraanId) {
+        // 5a. Verify new kelas kejuaraan exists and belongs to this competition
+        newKelasKejuaraan = await tx.tb_kelas_kejuaraan.findUnique({
+          where: { id_kelas_kejuaraan: newKelasKejuaraanId },
+          include: {
+            kategori_event: true,
+            kelompok: true,
+            kelas_berat: true,
+            poomsae: true
+          }
+        });
+
+        if (!newKelasKejuaraan) {
+          throw new Error('Kelas kejuaraan baru tidak ditemukan');
+        }
+
+        if (newKelasKejuaraan.id_kompetisi !== kompetisiId) {
+          throw new Error('Kelas kejuaraan tidak terdaftar dalam kompetisi ini');
+        }
+
+        // 5b. Check if participant is already in the new class
+        if (existingParticipant.id_kelas_kejuaraan === newKelasKejuaraanId) {
+          throw new Error('Peserta sudah terdaftar di kelas kejuaraan ini');
+        }
+
+        // 5c. Validate participant eligibility for new class
+        await KompetisiService.validateParticipantEligibility(existingParticipant, newKelasKejuaraan);
+
+        // 5d. Check for duplicate registration in new class
+        if (!existingParticipant.is_team && existingParticipant.atlet) {
+          const duplicateCheck = await tx.tb_peserta_kompetisi.findFirst({
+            where: {
+              id_atlet: existingParticipant.atlet.id_atlet,
+              id_kelas_kejuaraan: newKelasKejuaraanId,
+              NOT: {
+                id_peserta_kompetisi: participantId
+              }
+            }
+          });
+
+          if (duplicateCheck) {
+            throw new Error('Atlet sudah terdaftar di kelas kejuaraan ini');
+          }
+        }
+
+        // Add class change to update data
+        updateData.id_kelas_kejuaraan = newKelasKejuaraanId;
+      }
+
+      // ✅ 6. VALIDATE: Must have at least one change
+      if (Object.keys(updateData).length === 0) {
+        throw new Error('Tidak ada data yang diubah');
+      }
+
+      // ✅ 7. UPDATE THE PARTICIPANT
       const updatedParticipant = await tx.tb_peserta_kompetisi.update({
         where: {
           id_peserta_kompetisi: participantId
@@ -877,20 +884,35 @@ static async updateParticipantClass(
         }
       });
 
+      // ✅ 8. PREPARE RETURN DATA
+      const participantName = existingParticipant.is_team 
+        ? existingParticipant.anggota_tim.map(m => m.atlet.nama_atlet).join(' & ')
+        : existingParticipant.atlet?.nama_atlet || 'Unknown';
+
       return {
         updatedParticipant,
         oldClass: existingParticipant.kelas_kejuaraan,
         newClass: newKelasKejuaraan,
-        participantName: existingParticipant.is_team 
-          ? existingParticipant.anggota_tim.map(m => m.atlet.nama_atlet).join(' & ')
-          : existingParticipant.atlet?.nama_atlet || 'Unknown'
+        participantName,
+        isClassChanged: !!newKelasKejuaraanId,
+        isStatusChanged: !!status
       };
     });
+
+    // ✅ 9. BUILD SUCCESS MESSAGE
+    let successMessage = '';
+    if (result.isClassChanged && result.isStatusChanged) {
+      successMessage = `Kelas dan status ${result.participantName} berhasil diubah`;
+    } else if (result.isClassChanged) {
+      successMessage = `Kelas ${result.participantName} berhasil diubah dari "${result.oldClass.kategori_event.nama_kategori}" ke "${result.newClass.kategori_event.nama_kategori}"`;
+    } else if (result.isStatusChanged) {
+      successMessage = `Status ${result.participantName} berhasil diubah`;
+    }
 
     return {
       success: true,
       data: result.updatedParticipant,
-      message: `Kelas ${result.participantName} berhasil diubah dari "${result.oldClass.kategori_event.nama_kategori}" ke "${result.newClass.kategori_event.nama_kategori}"`
+      message: successMessage
     };
 
   } catch (error: any) {
@@ -907,7 +929,8 @@ static async updateParticipantClass(
     throw new Error(error.message || 'Gagal mengubah kelas peserta');
   }
 }
-// Helper function to validate participant eligibility
+
+// ✅ Helper function tetap sama (tidak berubah)
 static async validateParticipantEligibility(participant: any, newKelas: any) {
   // If it's a team registration
   if (participant.is_team) {

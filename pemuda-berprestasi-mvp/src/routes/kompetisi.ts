@@ -32,15 +32,15 @@ router.get(
 );
 router.post("/:id/register", authenticate, KompetisiController.registerAtlet);
 
+router.get(
+  "/:id/peserta/:participantId/classes",
+  KompetisiController.getAvailableClassesWithDetails
+);
+
 // ✅ DELETE PESERTA - Harus sebelum route dengan parameter yang lebih spesifik
 router.delete(
   "/:id/peserta/:participantId",
   KompetisiController.deleteParticipant
-);
-
-router.get(
-  "/:id/peserta/:participantId/classes",
-  KompetisiController.getAvailableClassesWithDetails
 );
 
 router.put(

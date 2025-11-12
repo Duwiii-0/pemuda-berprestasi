@@ -243,45 +243,43 @@ export class KompetisiController {
 static async updateParticipantClass(req: Request, res: Response) {
   try {
     const { id, participantId } = req.params;
-    const { kelas_kejuaraan_id, status } = req.body; // ✅ Destructure status juga
+    const { kelas_kejuaraan_id, status } = req.body;
 
-    // Validasi parameter
     const kompetisiId = parseInt(id);
     const pesertaId = parseInt(participantId);
-    const newKelasId = parseInt(kelas_kejuaraan_id);
 
-    if (isNaN(kompetisiId)) {
-      return sendError(res, 'ID kompetisi tidak valid', 400);
+    if (isNaN(kompetisiId) || isNaN(pesertaId)) {
+      return sendError(res, 'Parameter tidak valid', 400);
     }
 
-    if (isNaN(pesertaId)) {
-      return sendError(res, 'ID peserta tidak valid', 400);
+    // ✅ PERBAIKAN: kelas_kejuaraan_id optional
+    let newKelasId: number | undefined = undefined;
+    if (kelas_kejuaraan_id) {
+      newKelasId = parseInt(kelas_kejuaraan_id);
+      if (isNaN(newKelasId)) {
+        return sendError(res, 'ID kelas kejuaraan tidak valid', 400);
+      }
     }
 
-    if (isNaN(newKelasId)) {
-      return sendError(res, 'ID kelas kejuaraan tidak valid', 400);
-    }
-
-    // Check authorization
     const user = req.user;
     if (!user) {
       return sendError(res, 'User tidak ditemukan', 401);
     }
 
-    // ✅ Call service dengan status parameter
+    // ✅ Call service dengan parameter optional
     const result = await KompetisiService.updateParticipantClass(
       kompetisiId, 
       pesertaId, 
-      newKelasId, 
+      newKelasId,
       user,
-      status // ✅ Pass status ke service
+      status
     );
 
     return sendSuccess(res, result.data, result.message);
 
   } catch (error: any) {
-    console.error('Controller - Error updating participant class:', error);
-    return sendError(res, error.message || 'Gagal mengubah kelas peserta', 400);
+    console.error('Controller - Error updating participant:', error);
+    return sendError(res, error.message || 'Gagal mengubah data peserta', 400);
   }
 }
 
@@ -1423,9 +1421,9 @@ static async getAvailableClassesWithDetails(req: Request, res: Response) {
       };
     });
 
-    return sendSuccess(res, {
+     return sendSuccess(res, {
       currentClass: formattedClasses.find(c => c.isCurrentClass),
-      availableClasses: formattedClasses
+      availableClasses: formattedClasses // ✅ Ini yang dibutuhkan frontend
     }, 'Kelas yang tersedia berhasil diambil');
 
   } catch (error: any) {
