@@ -51,24 +51,24 @@ interface IDCardGeneratorProps {
 const COORDS_MM = {
   photo: {
     x: 11,
-    y: 42,
-    width: 34,
+    y: 42.4,
+    width: 35,
     height: 47,
     borderRadius: 3, // radius dalam mm
   },
   nama: {
     x: 25,
-    y: 90,
+    y: 98,
     fontSize: 7,
   },
   kelas: {
     x: 25,
-    y: 95,
+    y: 103,
     fontSize: 7,
   },
   kontingen: {
     x: 25,
-    y: 100,
+    y: 108,
     fontSize: 7,
   },
 };
