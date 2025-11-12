@@ -47,32 +47,28 @@ interface IDCardGeneratorProps {
   isEditing: boolean;
 }
 
-// Koordinat untuk overlay (dalam points: 1mm = 2.83465 pt)
-const mmToPt = (mm: number) => mm * 2.83465;
-
-const OVERLAY_COORDS = {
+// Koordinat dalam MM (akan dikonversi saat digunakan)
+const COORDS_MM = {
   photo: {
-    x: mmToPt(25.5),
-    y: mmToPt(297 - 95.7 - 108),
-    width: mmToPt(77),
-    height: mmToPt(108),
-    borderRadius: mmToPt(8),
-    borderWidth: 3,
-    borderColor: rgb(0.85, 0.65, 0.13),
+    x: 25.5,
+    y: 95.7,
+    width: 77,
+    height: 108,
+    borderRadius: 8, // radius dalam mm
   },
   nama: {
-    x: mmToPt(55),
-    y: mmToPt(297 - 220),
+    x: 55,
+    y: 220,
     fontSize: 11,
   },
   kelas: {
-    x: mmToPt(55),
-    y: mmToPt(297 - 233),
+    x: 55,
+    y: 233,
     fontSize: 9.5,
   },
   kontingen: {
-    x: mmToPt(55),
-    y: mmToPt(297 - 246),
+    x: 55,
+    y: 246,
     fontSize: 11,
   },
 };
@@ -89,16 +85,70 @@ export const IDCardGenerator = ({ atlet, isEditing }: IDCardGeneratorProps) => {
     return `${baseUrl}/uploads/atlet/pas_foto/${filename}`;
   };
 
-  const loadImageAsArrayBuffer = async (url: string): Promise<ArrayBuffer> => {
-    const response = await fetch(url);
-    if (!response.ok) throw new Error(`Failed to fetch image: ${url}`);
-    return await response.arrayBuffer();
+  // Convert image ke rounded corners pakai canvas
+  const createRoundedImage = async (url: string, radiusMM: number): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          reject(new Error("Canvas context not available"));
+          return;
+        }
+
+        // Set canvas size sesuai target size dalam pixels (untuk high quality)
+        const targetWidth = COORDS_MM.photo.width * 11.811; // mm to px at 300 DPI
+        const targetHeight = COORDS_MM.photo.height * 11.811;
+        const radius = radiusMM * 11.811;
+
+        canvas.width = targetWidth;
+        canvas.height = targetHeight;
+
+        // Clear canvas
+        ctx.clearRect(0, 0, targetWidth, targetHeight);
+
+        // Create rounded rectangle path
+        ctx.beginPath();
+        ctx.moveTo(radius, 0);
+        ctx.lineTo(targetWidth - radius, 0);
+        ctx.quadraticCurveTo(targetWidth, 0, targetWidth, radius);
+        ctx.lineTo(targetWidth, targetHeight - radius);
+        ctx.quadraticCurveTo(targetWidth, targetHeight, targetWidth - radius, targetHeight);
+        ctx.lineTo(radius, targetHeight);
+        ctx.quadraticCurveTo(0, targetHeight, 0, targetHeight - radius);
+        ctx.lineTo(0, radius);
+        ctx.quadraticCurveTo(0, 0, radius, 0);
+        ctx.closePath();
+        ctx.clip();
+
+        // Draw image
+        ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
+
+        // Convert to PNG (preserve transparency)
+        resolve(canvas.toDataURL("image/png"));
+      };
+
+      img.onerror = () => reject(new Error(`Failed to load image: ${url}`));
+      img.src = url;
+    });
   };
 
   const loadPDFAsArrayBuffer = async (url: string): Promise<ArrayBuffer> => {
     const response = await fetch(url);
     if (!response.ok) throw new Error(`Failed to fetch PDF: ${url}`);
     return await response.arrayBuffer();
+  };
+
+  const base64ToArrayBuffer = (base64: string): ArrayBuffer => {
+    const binaryString = atob(base64.split(',')[1]);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    return bytes.buffer;
   };
 
   const getKategoriTemplate = (): "pemula" | "prestasi" => {
@@ -119,7 +169,6 @@ export const IDCardGenerator = ({ atlet, isEditing }: IDCardGeneratorProps) => {
     setIsGenerating(true);
 
     console.log("=== DEBUG ATLET DATA ===");
-    console.log("Full atlet object:", atlet);
     
     const dojangName = atlet.dojang_name || atlet.dojang?.nama_dojang || "-";
     
@@ -164,112 +213,70 @@ export const IDCardGenerator = ({ atlet, isEditing }: IDCardGeneratorProps) => {
       const kategori = getKategoriTemplate();
       const templatePath = `/templates/e-idcard_sriwijaya_${kategori}.pdf`;
       
-      console.log("📄 Using template:", templatePath, `(kategori: ${kategori})`);
+      console.log("📄 Using template:", templatePath);
 
       const templateBytes = await loadPDFAsArrayBuffer(templatePath);
       const pdfDoc = await PDFDocument.load(templateBytes);
       const pages = pdfDoc.getPages();
       const firstPage = pages[0];
+      const { height: pageHeight } = firstPage.getSize();
 
       const helveticaFont = await pdfDoc.embedFont('Helvetica-Bold');
 
-      // ========== OVERLAY FOTO ATLET DENGAN BORDER ROUNDED ==========
+      // Convert mm to points (1mm = 2.83465 pt)
+      const mmToPt = (mm: number) => mm * 2.83465;
+
+      // ========== OVERLAY FOTO ROUNDED ==========
       if (atlet.pas_foto_path) {
         try {
           const photoUrl = getPhotoUrl(atlet.pas_foto_path);
-          const imageBytes = await loadImageAsArrayBuffer(photoUrl);
           
-          let image;
-          const photoFilename = atlet.pas_foto_path.toLowerCase();
-          
-          if (photoFilename.endsWith('.png')) {
-            image = await pdfDoc.embedPng(imageBytes);
-          } else if (photoFilename.endsWith('.jpg') || photoFilename.endsWith('.jpeg')) {
-            image = await pdfDoc.embedJpg(imageBytes);
-          } else {
-            throw new Error('Unsupported image format');
-          }
+          // Create rounded image
+          const roundedImageBase64 = await createRoundedImage(photoUrl, COORDS_MM.photo.borderRadius);
+          const imageBytes = base64ToArrayBuffer(roundedImageBase64);
+          const image = await pdfDoc.embedPng(imageBytes);
 
-          const bx = OVERLAY_COORDS.photo.x;
-          const by = OVERLAY_COORDS.photo.y;
-          const bw = OVERLAY_COORDS.photo.width;
-          const bh = OVERLAY_COORDS.photo.height;
-          const br = OVERLAY_COORDS.photo.borderRadius;
+          // Calculate position (PDF origin = bottom-left)
+          const x = mmToPt(COORDS_MM.photo.x);
+          const y = pageHeight - mmToPt(COORDS_MM.photo.y) - mmToPt(COORDS_MM.photo.height);
+          const width = mmToPt(COORDS_MM.photo.width);
+          const height = mmToPt(COORDS_MM.photo.height);
 
-          // Draw background border (lebih besar sedikit)
-          firstPage.drawRectangle({
-            x: bx - 2,
-            y: by - 2,
-            width: bw + 4,
-            height: bh + 4,
-            color: OVERLAY_COORDS.photo.borderColor,
-            borderRadius: br,
-          });
+          console.log("📍 Photo position:", { x, y, width, height, pageHeight });
 
-          // Draw white background untuk image
-          firstPage.drawRectangle({
-            x: bx,
-            y: by,
-            width: bw,
-            height: bh,
-            color: rgb(1, 1, 1),
-            borderRadius: br - 1,
-          });
-
-          // Draw image
-          firstPage.drawImage(image, {
-            x: bx,
-            y: by,
-            width: bw,
-            height: bh,
-          });
-
-          // Draw border foreground (overlay)
-          firstPage.drawRectangle({
-            x: bx,
-            y: by,
-            width: bw,
-            height: bh,
-            borderColor: OVERLAY_COORDS.photo.borderColor,
-            borderWidth: OVERLAY_COORDS.photo.borderWidth,
-            borderRadius: br,
-          });
+          firstPage.drawImage(image, { x, y, width, height });
 
         } catch (error) {
           console.error("Failed to embed photo:", error);
-          firstPage.drawText(atlet.nama_atlet.charAt(0).toUpperCase(), {
-            x: OVERLAY_COORDS.photo.x + OVERLAY_COORDS.photo.width / 2 - 20,
-            y: OVERLAY_COORDS.photo.y + OVERLAY_COORDS.photo.height / 2,
-            size: 48,
-            font: helveticaFont,
-            color: rgb(0.7, 0.7, 0.7),
-          });
         }
       }
 
       // ========== OVERLAY TEXT DATA ==========
       const textColor = rgb(0.04, 0.13, 0.41);
 
+      // Nama
       firstPage.drawText(atlet.nama_atlet, {
-        x: OVERLAY_COORDS.nama.x,
-        y: OVERLAY_COORDS.nama.y,
-        size: OVERLAY_COORDS.nama.fontSize,
+        x: mmToPt(COORDS_MM.nama.x),
+        y: pageHeight - mmToPt(COORDS_MM.nama.y),
+        size: COORDS_MM.nama.fontSize,
         font: helveticaFont,
         color: textColor,
       });
 
+      // Kelas
       firstPage.drawText(kelasInfo, {
-        x: OVERLAY_COORDS.kelas.x,
-        y: OVERLAY_COORDS.kelas.y,
-        size: OVERLAY_COORDS.kelas.fontSize,
+        x: mmToPt(COORDS_MM.kelas.x),
+        y: pageHeight - mmToPt(COORDS_MM.kelas.y),
+        size: COORDS_MM.kelas.fontSize,
         font: helveticaFont,
         color: textColor,
       });
 
+      // Kontingen
       firstPage.drawText(dojangName, {
-        x: OVERLAY_COORDS.kontingen.x,
-        y: OVERLAY_COORDS.kontingen.y,
-        size: OVERLAY_COORDS.kontingen.fontSize,
+        x: mmToPt(COORDS_MM.kontingen.x),
+        y: pageHeight - mmToPt(COORDS_MM.kontingen.y),
+        size: COORDS_MM.kontingen.fontSize,
         font: helveticaFont,
         color: textColor,
       });
@@ -343,10 +350,21 @@ export const IDCardGenerator = ({ atlet, isEditing }: IDCardGeneratorProps) => {
         </div>
       )}
 
+      <div className="mt-4 bg-blue-50 border border-blue-200 rounded-xl p-4">
+        <h4 className="font-semibold text-blue-900 mb-2 text-sm">📐 Koordinat Overlay:</h4>
+        <ul className="text-xs text-blue-800 space-y-1 font-mono">
+          <li>• Foto: x={COORDS_MM.photo.x}mm, y={COORDS_MM.photo.y}mm ({COORDS_MM.photo.width}x{COORDS_MM.photo.height}mm)</li>
+          <li>• Border Radius: {COORDS_MM.photo.borderRadius}mm</li>
+          <li>• Nama: y={COORDS_MM.nama.y}mm</li>
+          <li>• Kelas: y={COORDS_MM.kelas.y}mm</li>
+          <li>• Kontingen: y={COORDS_MM.kontingen.y}mm</li>
+        </ul>
+      </div>
+
       <div className="mt-4 bg-purple-50 border border-purple-200 rounded-xl p-4">
         <h4 className="font-semibold text-purple-900 mb-2 text-sm">🏆 Deteksi Kategori:</h4>
         <p className="text-xs text-purple-800">
-          Template akan otomatis dipilih berdasarkan kategori event (Pemula/Prestasi)
+          Template otomatis: Pemula / Prestasi
         </p>
         {atlet.peserta_kompetisi && atlet.peserta_kompetisi.length > 0 && (
           <p className="text-xs text-purple-600 mt-1 font-mono">
