@@ -243,7 +243,6 @@ const handleEditPeserta = async (peserta: any) => {
 const handleSubmitEdit = async () => {
   if (!pesertaToEdit || !kompetisiId) return;
 
-  // ✅ PERBAIKAN: Validasi lebih flexible
   const isChangingClass = editFormData.kelasKejuaraanId && 
     editFormData.kelasKejuaraanId !== pesertaToEdit.kelas_kejuaraan?.id_kelas_kejuaraan?.toString();
   
@@ -258,7 +257,6 @@ const handleSubmitEdit = async () => {
     currentStatus: pesertaToEdit.status
   });
 
-  // Harus mengubah minimal 1 field
   if (!isChangingClass && !isChangingStatus) {
     alert('Tidak ada perubahan yang dilakukan!');
     return;
@@ -266,15 +264,12 @@ const handleSubmitEdit = async () => {
 
   setEditLoading(true);
   try {
-    // ✅ Build payload dinamis
     const payload: any = {};
 
-    // ✅ Hanya kirim kelas_kejuaraan_id jika ada perubahan kelas
     if (isChangingClass && editFormData.kelasKejuaraanId) {
       payload.kelas_kejuaraan_id = Number(editFormData.kelasKejuaraanId);
     }
 
-    // ✅ Selalu kirim status (atau hanya jika berubah)
     if (isChangingStatus) {
       payload.status = editFormData.status;
     }
@@ -289,8 +284,86 @@ const handleSubmitEdit = async () => {
 
     console.log('✅ Response:', response);
 
-    // Refresh data
-    await fetchAtletByKompetisi(kompetisiId);
+    // ✅ UPDATE DOM LANGSUNG tanpa full refresh
+    const updatedPeserta = response.data.data;
+    
+    // Update di state pesertaList
+    const updatedList = pesertaList.map(p => 
+      p.id_peserta_kompetisi === pesertaToEdit.id_peserta_kompetisi 
+        ? { ...p, ...updatedPeserta }
+        : p
+    );
+    
+    // Trigger manual update ke context (jika ada setter)
+    // Atau bisa langsung update UI dengan re-render
+
+    // ✅ UPDATE DOM ELEMENT
+    const rowElement = document.querySelector(`[data-peserta-id="${pesertaToEdit.id_peserta_kompetisi}"]`);
+    if (rowElement) {
+      // Add success animation
+      rowElement.classList.add('animate-pulse-success');
+      
+      setTimeout(() => {
+        rowElement.classList.remove('animate-pulse-success');
+      }, 1000);
+
+      // Update status badge jika ada perubahan status
+      if (isChangingStatus) {
+        const statusBadge = rowElement.querySelector('.status-badge');
+        if (statusBadge) {
+          statusBadge.className = 'status-badge px-2 py-1 rounded-full text-xs font-medium';
+          
+          const statusMap = {
+            PENDING: { bg: 'rgba(245, 183, 0, 0.2)', text: '#050505' },
+            APPROVED: { bg: 'rgba(34, 197, 94, 0.2)', text: '#059669' },
+            REJECTED: { bg: 'rgba(153, 13, 53, 0.1)', text: '#990D35' },
+          };
+          
+          const colors = statusMap[editFormData.status as keyof typeof statusMap];
+          if (colors) {
+            (statusBadge as HTMLElement).style.backgroundColor = colors.bg;
+            (statusBadge as HTMLElement).style.color = colors.text;
+            statusBadge.textContent = editFormData.status;
+          }
+        }
+      }
+
+      // Update kelas info jika ada perubahan kelas
+      if (isChangingClass) {
+        const selectedClass = availableClasses.find(k => k.value === editFormData.kelasKejuaraanId);
+        if (selectedClass) {
+          // Update kategori cell
+          const kategoriCell = rowElement.querySelector('.kategori-cell');
+          if (kategoriCell) {
+            kategoriCell.textContent = selectedClass.details.cabang;
+          }
+
+          // Update level cell
+          const levelCell = rowElement.querySelector('.level-cell');
+          if (levelCell) {
+            levelCell.textContent = selectedClass.details.level;
+          }
+
+          // Update kelas berat cell
+          const kelasBeratCell = rowElement.querySelector('.kelas-berat-cell');
+          if (kelasBeratCell) {
+            kelasBeratCell.textContent = selectedClass.details.kelasBerat;
+          }
+
+          // Update kelas poomsae cell
+          const kelasPoomsaeCell = rowElement.querySelector('.kelas-poomsae-cell');
+          if (kelasPoomsaeCell) {
+            kelasPoomsaeCell.textContent = selectedClass.details.kelasPoomsae;
+          }
+
+          // Update kelompok usia cell
+          const kelasUsiaCell = rowElement.querySelector('.kelas-usia-cell');
+          if (kelasUsiaCell) {
+            kelasUsiaCell.textContent = selectedClass.details.kelompokUsia;
+          }
+        }
+      }
+    }
 
     // Success notification
     const notification = document.createElement('div');
@@ -305,10 +378,21 @@ const handleSubmitEdit = async () => {
       </div>
     `;
     document.body.appendChild(notification);
-    setTimeout(() => notification.remove(), 3000);
+    
+    setTimeout(() => {
+      notification.style.opacity = '0';
+      notification.style.transform = 'translateX(100%)';
+      notification.style.transition = 'all 0.3s ease-out';
+      setTimeout(() => notification.remove(), 300);
+    }, 3000);
+
+    // ✅ Refresh data dari server (background update)
+    fetchAtletByKompetisi(kompetisiId);
 
     setShowEditModal(false);
     setPesertaToEdit(null);
+    setAvailableClasses([]);
+    
   } catch (error: any) {
     console.error('❌ Error updating:', error);
     console.error('❌ Error response:', error.response);
@@ -316,7 +400,28 @@ const handleSubmitEdit = async () => {
     console.error('❌ Error status:', error.response?.status);
     
     const errorMsg = error.response?.data?.message || 'Gagal mengupdate peserta';
-    alert(errorMsg);
+    
+    // Error notification
+    const notification = document.createElement('div');
+    notification.className = 'fixed top-4 right-4 z-50 bg-red-500 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 animate-slide-in';
+    notification.innerHTML = `
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+      </svg>
+      <div>
+        <p class="font-semibold">Gagal Update!</p>
+        <p class="text-sm opacity-90">${errorMsg}</p>
+      </div>
+    `;
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+      notification.style.opacity = '0';
+      notification.style.transform = 'translateX(100%)';
+      notification.style.transition = 'all 0.3s ease-out';
+      setTimeout(() => notification.remove(), 300);
+    }, 4000);
+    
   } finally {
     setEditLoading(false);
   }
@@ -636,23 +741,23 @@ const handleSubmitEdit = async () => {
     { value: 100, label: "100 per halaman" },
   ];
 
-  const getStatusBadge = (status: string) => {
-    const statusMap = {
-      PENDING: { bg: 'rgba(245, 183, 0, 0.2)', text: '#050505' },
-      APPROVED: { bg: 'rgba(34, 197, 94, 0.2)', text: '#059669' },
-      REJECTED: { bg: 'rgba(153, 13, 53, 0.1)', text: '#990D35' },
-    };
-    const colors = statusMap[status as keyof typeof statusMap] || statusMap.PENDING;
+    const getStatusBadge = (status: string) => {
+      const statusMap = {
+        PENDING: { bg: 'rgba(245, 183, 0, 0.2)', text: '#050505' },
+        APPROVED: { bg: 'rgba(34, 197, 94, 0.2)', text: '#059669' },
+        REJECTED: { bg: 'rgba(153, 13, 53, 0.1)', text: '#990D35' },
+      };
+      const colors = statusMap[status as keyof typeof statusMap] || statusMap.PENDING;
 
-    return (
-      <span
-        className="px-2 py-1 rounded-full text-xs font-medium"
-        style={{ backgroundColor: colors.bg, color: colors.text }}
-      >
-        {status}
-      </span>
-    );
-  };
+      return (
+        <span
+          className="status-badge px-2 py-1 rounded-full text-xs font-medium"
+          style={{ backgroundColor: colors.bg, color: colors.text }}
+        >
+          {status}
+        </span>
+      );
+    };
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -707,36 +812,50 @@ const handleSubmitEdit = async () => {
   return (
     <>
       <style>{`
-        @keyframes slide-in {
-          from {
-            transform: translateX(100%);
-            opacity: 0;
-          }
-          to {
-            transform: translateX(0);
-            opacity: 1;
-          }
-        }
-        
-        .animate-slide-in {
-          animation: slide-in 0.3s ease-out forwards;
-        }
+  @keyframes slide-in {
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+  
+  .animate-slide-in {
+    animation: slide-in 0.3s ease-out forwards;
+  }
 
-        .row-removing {
-          animation: fadeOut 0.3s ease-out forwards;
-        }
+  .row-removing {
+    animation: fadeOut 0.3s ease-out forwards;
+  }
 
-        @keyframes fadeOut {
-          from {
-            opacity: 1;
-            transform: scale(1);
-          }
-          to {
-            opacity: 0;
-            transform: scale(0.95);
-          }
-        }
-      `}</style>
+  @keyframes fadeOut {
+    from {
+      opacity: 1;
+      transform: scale(1);
+    }
+    to {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+  }
+
+  /* ✅ Tambahkan animation untuk success update */
+  @keyframes pulse-success {
+    0%, 100% {
+      background-color: transparent;
+    }
+    50% {
+      background-color: rgba(34, 197, 94, 0.1);
+    }
+  }
+
+  .animate-pulse-success {
+    animation: pulse-success 1s ease-in-out;
+  }
+`}</style>
 
       <div className="min-h-screen" style={{ backgroundColor: '#F5FBEF' }}>
         <div className="p-4 sm:p-6 lg:p-8 max-w-full">
@@ -1043,135 +1162,138 @@ const handleSubmitEdit = async () => {
               })}
             </div>
 
-            {/* Desktop Table View */}
-            <div className="hidden lg:block">
-              <div className="rounded-xl shadow-sm border overflow-hidden" style={{ backgroundColor: '#F5FBEF', borderColor: '#990D35' }}>
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead style={{ backgroundColor: '#F5B700' }}>
-                      <tr>
-                        {[
-                          "Nama Peserta",
-                          "Kategori",
-                          "Level",
-                          "Kelas Berat",
-                          "Kelas Poomsae",
-                          "Kelompok Usia",
-                          "Jenis Kelamin",
-                          "Dojang",
-                          "Status",
-                          "Aksi",
-                        ].map((header) => (
-                          <th
-                            key={header}
-                            className={`py-3 px-4 font-semibold text-sm ${["Dojang", "Usia/Kelompok", "Jenis Kelamin", "Status", "Aksi"].includes(header) ? "text-center" : "text-left"
-                              }`}
-                            style={{ color: '#050505' }}
-                          >
-                            {header}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y" style={{ borderColor: '#990D35' }}>
-                      {currentPesertas.map((peserta: any) => {
-                        const isTeam = peserta.is_team;
-                        const namaPeserta = isTeam
-                          ? peserta.anggota_tim?.map((m: any) => m.atlet.nama_atlet).join(", ")
-                          : peserta.atlet?.nama_atlet || "-";
-                        const cabang = peserta.kelas_kejuaraan?.cabang || "-";
-                        const levelEvent = peserta.kelas_kejuaraan?.kategori_event?.nama_kategori || "-";
-                        const kelasBerat = cabang === "KYORUGI"
-                          ? peserta.kelas_kejuaraan?.kelas_berat?.nama_kelas || "-"
-                          : "-";
-                        const kelasUsia = peserta.kelas_kejuaraan?.kelompok?.nama_kelompok || "-";
-                        const jenisKelamin = !isTeam ? peserta.atlet?.jenis_kelamin || "-" : "-";
-                        const dojang = isTeam && peserta.anggota_tim?.length
-                          ? peserta.anggota_tim[0]?.atlet?.dojang?.nama_dojang || "-"
-                          : peserta.atlet?.dojang?.nama_dojang || "-";
+{/* Desktop Table View - UPDATE dengan class names */}
+<div className="hidden lg:block">
+  <div className="rounded-xl shadow-sm border overflow-hidden" style={{ backgroundColor: '#F5FBEF', borderColor: '#990D35' }}>
+    <div className="overflow-x-auto">
+      <table className="w-full">
+        <thead style={{ backgroundColor: '#F5B700' }}>
+          <tr>
+            {[
+              "Nama Peserta",
+              "Kategori",
+              "Level",
+              "Kelas Berat",
+              "Kelas Poomsae",
+              "Kelompok Usia",
+              "Jenis Kelamin",
+              "Dojang",
+              "Status",
+              "Aksi",
+            ].map((header) => (
+              <th
+                key={header}
+                className={`py-3 px-4 font-semibold text-sm ${["Dojang", "Usia/Kelompok", "Jenis Kelamin", "Status", "Aksi"].includes(header) ? "text-center" : "text-left"}`}
+                style={{ color: '#050505' }}
+              >
+                {header}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody className="divide-y" style={{ borderColor: '#990D35' }}>
+          {currentPesertas.map((peserta: any) => {
+            const isTeam = peserta.is_team;
+            const namaPeserta = isTeam
+              ? peserta.anggota_tim?.map((m: any) => m.atlet.nama_atlet).join(", ")
+              : peserta.atlet?.nama_atlet || "-";
+            const cabang = peserta.kelas_kejuaraan?.cabang || "-";
+            const levelEvent = peserta.kelas_kejuaraan?.kategori_event?.nama_kategori || "-";
+            const kelasBerat = cabang === "KYORUGI"
+              ? peserta.kelas_kejuaraan?.kelas_berat?.nama_kelas || "-"
+              : "-";
+            const kelasUsia = peserta.kelas_kejuaraan?.kelompok?.nama_kelompok || "-";
+            const jenisKelamin = !isTeam ? peserta.atlet?.jenis_kelamin || "-" : "-";
+            const dojang = isTeam && peserta.anggota_tim?.length
+              ? peserta.anggota_tim[0]?.atlet?.dojang?.nama_dojang || "-"
+              : peserta.atlet?.dojang?.nama_dojang || "-";
 
-                        return (
-                          <tr
-                            key={peserta.id_peserta_kompetisi}
-                            data-peserta-id={peserta.id_peserta_kompetisi}
-                            className="transition-colors cursor-pointer"
-                            onClick={() => handleRowClick(peserta)}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.backgroundColor = 'rgba(245, 183, 0, 0.1)';
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.backgroundColor = 'transparent';
-                            }}
-                          >
-                            <td className="py-3 px-4 font-medium text-sm" style={{ color: '#050505' }}>
-                              <div className="max-w-[200px] truncate" title={namaPeserta}>
-                                {namaPeserta}
-                              </div>
-                            </td>
-                            <td className="py-3 px-4 text-sm" style={{ color: '#050505', opacity: 0.7 }}>{cabang}</td>
-                            <td className="py-3 px-4 text-sm" style={{ color: '#050505', opacity: 0.7 }}>{levelEvent}</td>
-                            <td className="py-3 px-4 text-sm" style={{ color: '#050505', opacity: 0.7 }}>{kelasBerat}</td>
-                            <td className="py-3 px-4 text-sm" style={{ color: '#050505', opacity: 0.7 }}>
-                              {peserta.kelas_kejuaraan?.cabang === "POOMSAE"
-                                ? peserta.kelas_kejuaraan?.poomsae?.nama_kelas || "-"
-                                : "-"}
-                            </td>
-                            <td className="py-3 px-4 text-center text-sm" style={{ color: '#050505', opacity: 0.7 }}>{kelasUsia}</td>
-                            <td className="py-3 px-4 text-center text-sm" style={{ color: '#050505', opacity: 0.7 }}>{jenisKelamin === "LAKI_LAKI" ? "Laki-Laki" : jenisKelamin === "PEREMPUAN" ? "Perempuan" : "-"}</td>
-                            <td className="py-3 px-4 text-sm text-center" style={{ color: '#050505', opacity: 0.7 }}>
-                              <div className="max-w-[150px] truncate" title={dojang}>
-                                {dojang}
-                              </div>
-                            </td>
-                            <td className="py-3 px-4 text-center">{getStatusBadge(peserta.status)}</td>
-                            <td className="py-3 px-4 text-center">
-                              <div className="flex gap-2 justify-center">
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); handleApproval(peserta.id_peserta_kompetisi); }}
-                                  disabled={processing === peserta.id_peserta_kompetisi}
-                                  className="inline-flex items-center gap-1 px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50 transition-all text-sm font-medium"
-                                  title="Setujui peserta"
-                                >
-                                  {processing === peserta.id_peserta_kompetisi ? <Loader size={16} className="animate-spin" /> : <CheckCircle size={16} />}
-                                  <span className="hidden xl:inline">Setujui</span>
-                                </button>
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); handleRejection(peserta.id_peserta_kompetisi); }}
-                                  disabled={processing === peserta.id_peserta_kompetisi}
-                                  className="inline-flex items-center gap-1 px-3 py-2 text-white rounded-lg hover:shadow-md disabled:opacity-50 transition-all text-sm font-medium"
-                                  style={{ backgroundColor: '#990D35' }}
-                                  title="Tolak peserta"
-                                >
-                                  {processing === peserta.id_peserta_kompetisi ? <Loader size={16} className="animate-spin" /> : <XCircle size={16} />}
-                                  <span className="hidden xl:inline">Tolak</span>
-                                </button>
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); handleDeletePeserta(peserta); }}
-                                  disabled={deleting === peserta.id_peserta_kompetisi}
-                                  className="inline-flex items-center gap-1 px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition-all text-sm font-medium"
-                                  title="Hapus peserta"
-                                >
-                                  {deleting === peserta.id_peserta_kompetisi ? <Loader size={16} className="animate-spin" /> : <Trash2 size={16} />}
-                                  <span className="hidden xl:inline">Hapus</span>
-                                </button>
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); handleEditPeserta(peserta); }}
-                                  className="inline-flex items-center gap-1 px-3 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all text-sm font-medium"
-                                  title="Edit peserta"
-                                >
-                                  <Edit size={16} />
-                                  <span className="hidden xl:inline">Edit</span>
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
+            return (
+              <tr
+                key={peserta.id_peserta_kompetisi}
+                data-peserta-id={peserta.id_peserta_kompetisi}
+                className="transition-colors cursor-pointer"
+                onClick={() => handleRowClick(peserta)}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'rgba(245, 183, 0, 0.1)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                }}
+              >
+                <td className="py-3 px-4 font-medium text-sm" style={{ color: '#050505' }}>
+                  <div className="max-w-[200px] truncate" title={namaPeserta}>
+                    {namaPeserta}
+                  </div>
+                </td>
+                {/* ✅ Tambahkan class names */}
+                <td className="kategori-cell py-3 px-4 text-sm" style={{ color: '#050505', opacity: 0.7 }}>{cabang}</td>
+                <td className="level-cell py-3 px-4 text-sm" style={{ color: '#050505', opacity: 0.7 }}>{levelEvent}</td>
+                <td className="kelas-berat-cell py-3 px-4 text-sm" style={{ color: '#050505', opacity: 0.7 }}>{kelasBerat}</td>
+                <td className="kelas-poomsae-cell py-3 px-4 text-sm" style={{ color: '#050505', opacity: 0.7 }}>
+                  {peserta.kelas_kejuaraan?.cabang === "POOMSAE"
+                    ? peserta.kelas_kejuaraan?.poomsae?.nama_kelas || "-"
+                    : "-"}
+                </td>
+                <td className="kelas-usia-cell py-3 px-4 text-center text-sm" style={{ color: '#050505', opacity: 0.7 }}>{kelasUsia}</td>
+                <td className="py-3 px-4 text-center text-sm" style={{ color: '#050505', opacity: 0.7 }}>{jenisKelamin === "LAKI_LAKI" ? "Laki-Laki" : jenisKelamin === "PEREMPUAN" ? "Perempuan" : "-"}</td>
+                <td className="py-3 px-4 text-sm text-center" style={{ color: '#050505', opacity: 0.7 }}>
+                  <div className="max-w-[150px] truncate" title={dojang}>
+                    {dojang}
+                  </div>
+                </td>
+                {/* ✅ Tambahkan class status-badge */}
+                <td className="py-3 px-4 text-center">
+                  {getStatusBadge(peserta.status)}
+                </td>
+                <td className="py-3 px-4 text-center">
+                  <div className="flex gap-2 justify-center">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleApproval(peserta.id_peserta_kompetisi); }}
+                      disabled={processing === peserta.id_peserta_kompetisi}
+                      className="inline-flex items-center gap-1 px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50 transition-all text-sm font-medium"
+                      title="Setujui peserta"
+                    >
+                      {processing === peserta.id_peserta_kompetisi ? <Loader size={16} className="animate-spin" /> : <CheckCircle size={16} />}
+                      <span className="hidden xl:inline">Setujui</span>
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleRejection(peserta.id_peserta_kompetisi); }}
+                      disabled={processing === peserta.id_peserta_kompetisi}
+                      className="inline-flex items-center gap-1 px-3 py-2 text-white rounded-lg hover:shadow-md disabled:opacity-50 transition-all text-sm font-medium"
+                      style={{ backgroundColor: '#990D35' }}
+                      title="Tolak peserta"
+                    >
+                      {processing === peserta.id_peserta_kompetisi ? <Loader size={16} className="animate-spin" /> : <XCircle size={16} />}
+                      <span className="hidden xl:inline">Tolak</span>
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleDeletePeserta(peserta); }}
+                      disabled={deleting === peserta.id_peserta_kompetisi}
+                      className="inline-flex items-center gap-1 px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition-all text-sm font-medium"
+                      title="Hapus peserta"
+                    >
+                      {deleting === peserta.id_peserta_kompetisi ? <Loader size={16} className="animate-spin" /> : <Trash2 size={16} />}
+                      <span className="hidden xl:inline">Hapus</span>
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleEditPeserta(peserta); }}
+                      className="inline-flex items-center gap-1 px-3 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all text-sm font-medium"
+                      title="Edit peserta"
+                    >
+                      <Edit size={16} />
+                      <span className="hidden xl:inline">Edit</span>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
 
             {displayedPesertas.length === 0 && (
               <div className="py-16 text-center" style={{ color: '#050505', opacity: 0.4 }}>
