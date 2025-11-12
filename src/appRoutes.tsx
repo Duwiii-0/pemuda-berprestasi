@@ -39,7 +39,7 @@ const MedalTallyWrapper = () => {
 // Dashboard
 import DataAtlit from "./pages/dashboard/dataAtlit";
 import Dojang from "./pages/dashboard/dataDojang";
-import TambahAtlit from "./pages/dashboard/TambahAtlit";
+import TambahAtlit from "./pages/atlit/TambahAtlit";
 import DataKompetisi from "./pages/dashboard/dataKompetisi";
 
 // Admin - Fixed import paths
