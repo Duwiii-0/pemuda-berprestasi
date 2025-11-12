@@ -1177,7 +1177,7 @@ return (
 {/* PEMULA Layout */}
 {bracketGenerated && matches.length > 0 ? (
   <div className="p-6">
-    <div className="flex flex-col items-center gap-8 mx-auto" style={{ maxWidth: '1400px' }}>
+    <div className="flex flex-col items-center gap-8 mx-auto" style={{ maxWidth: '1600px' }}>
       {/* CENTER: Bracket Container */}
       <div className="w-full">    
         {/* Header Sederhana - Tanpa Border */}
@@ -1238,11 +1238,11 @@ return (
           </div>
         </div>
 
-        {/* ROUND 1 MATCHES - SPLIT INTO COLUMNS */}
+        {/* ROUND 1 MATCHES - SPLIT INTO COLUMNS (5 MATCHES PER COLUMN = 10 PESERTA) */}
         <div ref={bracketRef} className="tournament-layout bg-white p-6 rounded-lg">
           {(() => {
             const round1Matches = matches.filter(m => m.ronde === 1);
-            const matchesPerColumn = 4; // 4 matches per column (8 peserta)
+            const matchesPerColumn = 5; // ✅ 5 matches per column (10 peserta)
             
             // Split matches into columns
             const columns: Match[][] = [];
