@@ -659,12 +659,11 @@ static async deleteParticipant(kompetisiId: number, participantId: number) {
 static async updateParticipantClass(
   kompetisiId: number, 
   participantId: number, 
-  newKelasKejuaraanId: number | undefined, // ✅ BISA UNDEFINED
+  newKelasKejuaraanId: number | undefined,
   user: any,
-  status?: string // ✅ Optional status parameter
+  status?: string
 ) {
   try {
-    // Start transaction
     const result = await prisma.$transaction(async (tx) => {
       
       // 1. Verify competition exists
@@ -744,24 +743,29 @@ static async updateParticipantClass(
         throw new Error('Peserta tidak ditemukan dalam kompetisi ini');
       }
 
-      // 4. Additional authorization checks
+      // 4. Authorization checks and determine if validation should be skipped
+      let skipValidation = false;
+
       if (user.role === 'ADMIN_KOMPETISI') {
-        // Admin kompetisi can only edit participants in their assigned competition
         const isAdminOfThisKompetisi = kompetisi.admin.some(
           admin => admin.id_akun === user.id_akun
         );
         if (!isAdminOfThisKompetisi) {
           throw new Error('Anda tidak memiliki akses untuk mengubah peserta di kompetisi ini');
         }
+        skipValidation = true;
+        console.log('✅ ADMIN_KOMPETISI - Validation will be skipped');
+        
+      } else if (user.role === 'ADMIN') {
+        skipValidation = true;
+        console.log('✅ ADMIN - Validation will be skipped');
+        
       } else if (user.role === 'PELATIH') {
-        // Pelatih can only edit participants from their dojang
         let canEdit = false;
         
         if (!existingParticipant.is_team && existingParticipant.atlet) {
-          // Individual participant
           canEdit = existingParticipant.atlet.id_dojang === user.pelatih?.id_dojang;
         } else if (existingParticipant.is_team && existingParticipant.anggota_tim.length > 0) {
-          // Team participant - all members must be from pelatih's dojang
           canEdit = existingParticipant.anggota_tim.every(
             member => member.atlet.id_dojang === user.pelatih?.id_dojang
           );
@@ -770,24 +774,24 @@ static async updateParticipantClass(
         if (!canEdit) {
           throw new Error('Anda hanya dapat mengubah kelas peserta dari dojang Anda sendiri');
         }
+        
+        skipValidation = false;
+        console.log('⚠️ PELATIH - Validation will be enforced');
       }
 
-      // ✅ 5. BUILD UPDATE DATA OBJECT
+      // 5. Build update data object
       const updateData: any = {};
       let newKelasKejuaraan: any = null;
 
-      // ✅ HANDLE STATUS UPDATE
       if (status) {
-        // Validate status value
         if (!['PENDING', 'APPROVED', 'REJECTED'].includes(status)) {
           throw new Error('Status tidak valid. Harus PENDING, APPROVED, atau REJECTED');
         }
         updateData.status = status;
       }
 
-      // ✅ HANDLE CLASS CHANGE (ONLY IF PROVIDED)
+      // 6. Handle class change (ONLY IF PROVIDED)
       if (newKelasKejuaraanId) {
-        // 5a. Verify new kelas kejuaraan exists and belongs to this competition
         newKelasKejuaraan = await tx.tb_kelas_kejuaraan.findUnique({
           where: { id_kelas_kejuaraan: newKelasKejuaraanId },
           include: {
@@ -806,15 +810,19 @@ static async updateParticipantClass(
           throw new Error('Kelas kejuaraan tidak terdaftar dalam kompetisi ini');
         }
 
-        // 5b. Check if participant is already in the new class
         if (existingParticipant.id_kelas_kejuaraan === newKelasKejuaraanId) {
           throw new Error('Peserta sudah terdaftar di kelas kejuaraan ini');
         }
 
-        // 5c. Validate participant eligibility for new class
-        await KompetisiService.validateParticipantEligibility(existingParticipant, newKelasKejuaraan);
+        // CONDITIONAL VALIDATION - Skip if Admin or Admin Kompetisi
+        if (!skipValidation) {
+          console.log('🔍 Validating participant eligibility...');
+          await KompetisiService.validateParticipantEligibility(existingParticipant, newKelasKejuaraan);
+        } else {
+          console.log('⏭️ Skipping eligibility validation (Admin override)');
+        }
 
-        // 5d. Check for duplicate registration in new class
+        // Check for duplicate registration (always check, even for admin)
         if (!existingParticipant.is_team && existingParticipant.atlet) {
           const duplicateCheck = await tx.tb_peserta_kompetisi.findFirst({
             where: {
@@ -831,21 +839,20 @@ static async updateParticipantClass(
           }
         }
 
-        // Add class change to update data
         updateData.id_kelas_kejuaraan = newKelasKejuaraanId;
       }
 
-      // ✅ 6. VALIDATE: Must have at least one change
+      // 7. Validate: Must have at least one change
       if (Object.keys(updateData).length === 0) {
         throw new Error('Tidak ada data yang diubah');
       }
 
-      // ✅ 7. UPDATE THE PARTICIPANT
+      // 8. Update the participant
       const updatedParticipant = await tx.tb_peserta_kompetisi.update({
         where: {
           id_peserta_kompetisi: participantId
         },
-        data: updateData, // ✅ Use dynamic update data
+        data: updateData,
         include: {
           atlet: {
             select: {
@@ -884,7 +891,7 @@ static async updateParticipantClass(
         }
       });
 
-      // ✅ 8. PREPARE RETURN DATA
+      // 9. Prepare return data
       const participantName = existingParticipant.is_team 
         ? existingParticipant.anggota_tim.map(m => m.atlet.nama_atlet).join(' & ')
         : existingParticipant.atlet?.nama_atlet || 'Unknown';
@@ -895,16 +902,20 @@ static async updateParticipantClass(
         newClass: newKelasKejuaraan,
         participantName,
         isClassChanged: !!newKelasKejuaraanId,
-        isStatusChanged: !!status
+        isStatusChanged: !!status,
+        wasValidationSkipped: skipValidation
       };
     });
 
-    // ✅ 9. BUILD SUCCESS MESSAGE
+    // 10. Build success message
     let successMessage = '';
     if (result.isClassChanged && result.isStatusChanged) {
       successMessage = `Kelas dan status ${result.participantName} berhasil diubah`;
     } else if (result.isClassChanged) {
       successMessage = `Kelas ${result.participantName} berhasil diubah dari "${result.oldClass.kategori_event.nama_kategori}" ke "${result.newClass.kategori_event.nama_kategori}"`;
+      if (result.wasValidationSkipped) {
+        successMessage += ' (Admin Override)';
+      }
     } else if (result.isStatusChanged) {
       successMessage = `Status ${result.participantName} berhasil diubah`;
     }

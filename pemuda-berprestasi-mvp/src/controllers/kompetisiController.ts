@@ -1354,45 +1354,55 @@ static async getAvailableClassesWithDetails(req: Request, res: Response) {
       return sendError(res, 'Peserta tidak ditemukan', 404);
     }
 
-    // Get all classes in competition
-    const availableClasses = await prisma.tb_kelas_kejuaraan.findMany({
-      where: {
-        id_kompetisi: kompetisiId
-      },
-      include: {
-        kategori_event: true,
-        kelompok: true,
-        kelas_berat: true,
-        poomsae: true
-      },
-      orderBy: [
-        { cabang: 'asc' },
-        { kategori_event: { nama_kategori: 'asc' } },
-        { kelompok: { nama_kelompok: 'asc' } }
-      ]
-    });
+    // Check user role from request
+    const user = req.user;
+    const isAdmin = user?.role === 'ADMIN' || user?.role === 'ADMIN_KOMPETISI';
 
-    // Format classes untuk display yang lebih baik
+    let availableClasses;
+
+    if (isAdmin) {
+      // ADMIN: Get ALL classes without filtering
+      console.log('✅ Admin detected - returning ALL classes');
+      availableClasses = await prisma.tb_kelas_kejuaraan.findMany({
+        where: {
+          id_kompetisi: kompetisiId
+        },
+        include: {
+          kategori_event: true,
+          kelompok: true,
+          kelas_berat: true,
+          poomsae: true
+        },
+        orderBy: [
+          { cabang: 'asc' },
+          { kategori_event: { nama_kategori: 'asc' } },
+          { kelompok: { nama_kelompok: 'asc' } }
+        ]
+      });
+    } else {
+      // PELATIH: Get only eligible classes
+      console.log('⚠️ Pelatih detected - returning only eligible classes');
+      availableClasses = await KompetisiService.getAvailableClassesForParticipant(
+        kompetisiId,
+        pesertaId
+      );
+    }
+
+    // Format classes for display
     const formattedClasses = availableClasses.map(kelas => {
       let displayName = '';
       
-      // Kategori (KYORUGI/POOMSAE)
       displayName += kelas.cabang;
-      
-      // Level (Prestasi/Pemula)
       displayName += ` - ${kelas.kategori_event.nama_kategori}`;
       
-      // Kelompok Usia
       if (kelas.kelompok) {
         displayName += ` - ${kelas.kelompok.nama_kelompok}`;
       }
       
-      // Kelas Berat (untuk KYORUGI)
       if (kelas.kelas_berat) {
         displayName += ` - ${kelas.kelas_berat.nama_kelas}`;
       }
       
-      // Kelas Poomsae (untuk POOMSAE)
       if (kelas.poomsae) {
         displayName += ` - ${kelas.poomsae.nama_kelas}`;
       }
@@ -1411,9 +1421,10 @@ static async getAvailableClassesWithDetails(req: Request, res: Response) {
       };
     });
 
-     return sendSuccess(res, {
+    return sendSuccess(res, {
       currentClass: formattedClasses.find(c => c.isCurrentClass),
-      availableClasses: formattedClasses // ✅ Ini yang dibutuhkan frontend
+      availableClasses: formattedClasses,
+      isAdminMode: isAdmin
     }, 'Kelas yang tersedia berhasil diambil');
 
   } catch (error: any) {

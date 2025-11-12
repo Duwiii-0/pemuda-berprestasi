@@ -151,16 +151,14 @@ const fetchAvailableClasses = async (kompetisiId: number, pesertaId: number) => 
     console.log('📦 Full Response:', response);
     console.log('📦 Response.data:', response.data);
     
-    // ✅ PERBAIKAN: Cek success dari response langsung, bukan response.data
-    // Karena apiClient (axios) sudah wrap data
-    
-    // Cek apakah data ada
     if (response.data && response.data.availableClasses) {
       const classes = response.data.availableClasses;
+      const isAdminMode = response.data.isAdminMode || false;
       
       console.log('✅ Classes to set:', classes);
       console.log('✅ Classes length:', classes?.length);
       console.log('✅ First class:', classes?.[0]);
+      console.log('✅ Admin mode:', isAdminMode);
       
       if (!classes || classes.length === 0) {
         console.error('❌ No classes found in response');
@@ -168,13 +166,12 @@ const fetchAvailableClasses = async (kompetisiId: number, pesertaId: number) => 
         return null;
       }
       
-      // ✅ Set state
       setAvailableClasses(classes);
       
-      // ✅ Return untuk digunakan di handleEditPeserta
       return {
         currentClass: response.data.currentClass,
-        availableClasses: classes
+        availableClasses: classes,
+        isAdminMode: isAdminMode
       };
     } else {
       console.error('❌ Invalid response structure:', response.data);
