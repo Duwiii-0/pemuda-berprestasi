@@ -109,20 +109,20 @@ export class DojangService {
 
   // ===== DELETE DOJANG =====
   static async deleteDojang(id: number) {
-    const existing = await prisma.tb_dojang.findUnique({
+    const dojang = await prisma.tb_dojang.findUnique({
       where: { id_dojang: id },
-      include: {
-        atlet: true,
-        pelatih: true,
-        buktiTransfer: true,
-      },
     });
 
-    if (!existing) throw new Error("Dojang tidak ditemukan");
-    if (existing.buktiTransfer.length > 0)
+    if (!dojang) throw new Error("Dojang tidak ditemukan");
+
+    const buktiTransferCount = await prisma.tb_buktiTransfer.count({
+      where: { id_dojang: id },
+    });
+    if (buktiTransferCount > 0) {
       throw new Error(
         "Tidak bisa menghapus dojang yang memiliki riwayat bukti transfer"
       );
+    }
 
     await prisma.tb_dojang.delete({ where: { id_dojang: id } });
     return { message: "Dojang berhasil dihapus" };
