@@ -19,6 +19,7 @@ import { useKompetisi } from "../../context/KompetisiContext";
 import { apiClient } from "../../config/api";
 import { useNavigate } from "react-router-dom";
 import SelectTeamMemberModal from "../../components/selectTeamModal";
+import Select from "react-select";
 import { useDojang } from "../../context/dojangContext";
 import { kelasBeratOptionsMap } from "../../dummy/beratOptions";
 import * as XLSX from "xlsx";
@@ -1291,29 +1292,46 @@ const AllPeserta: React.FC = () => {
                 </div>
 
                 <div className="col-span-4 sm:col-span-3 lg:col-span-1">
-                  <label
-                    className="block text-xs mb-2 font-medium"
-                    style={{ color: "#050505", opacity: 0.6 }}
-                  >
-                    Dojang
-                  </label>
-                  <select
-                    value={filterDojang}
-                    onChange={(e) => setFilterDojang(e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-xl border shadow-sm focus:ring-2 focus:border-transparent text-sm transition-colors"
-                    style={{
-                      borderColor: "#990D35",
-                      backgroundColor: "#F5FBEF",
-                      color: "#050505",
+                  <label className="block text-xs mb-2 font-medium" style={{ color: '#050505', opacity: 0.6 }}>Dojang</label>
+                  <Select
+                    options={[{ value: "ALL", label: "Semua Dojang" }, ...dojangOptions]}
+                    value={[{ value: "ALL", label: "Semua Dojang" }, ...dojangOptions].find(opt => opt.value === filterDojang)}
+                    onChange={(option) => setFilterDojang(option ? option.value : "ALL")}
+                    isSearchable
+                    placeholder="Cari dojang..."
+                    styles={{
+                      control: (base) => ({
+                        ...base,
+                        backgroundColor: '#F5FBEF',
+                        borderColor: '#990D35',
+                        borderRadius: '0.75rem',
+                        padding: '0.3rem',
+                        boxShadow: 'none',
+                        '&:hover': {
+                          borderColor: '#990D35',
+                        },
+                      }),
+                      singleValue: (base) => ({
+                        ...base,
+                        color: '#050505',
+                      }),
+                      menu: (base) => ({
+                        ...base,
+                        backgroundColor: '#F5FBEF',
+                        borderRadius: '0.75rem',
+                        borderColor: '#990D35',
+                        borderWidth: '1px',
+                      }),
+                      option: (base, { isFocused, isSelected }) => ({
+                        ...base,
+                        backgroundColor: isSelected ? '#990D35' : isFocused ? 'rgba(245, 183, 0, 0.1)' : '#F5FBEF',
+                        color: isSelected ? '#F5FBEF' : '#050505',
+                        '&:active': {
+                          backgroundColor: '#990D35',
+                        },
+                      }),
                     }}
-                  >
-                    <option value="ALL">Semua Dojang</option>
-                    {dojangOptions.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </select>
+                  />
                 </div>
 
                 <div className="col-span-2 sm:col-span-1">
