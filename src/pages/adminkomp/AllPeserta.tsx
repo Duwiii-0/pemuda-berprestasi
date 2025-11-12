@@ -144,29 +144,21 @@ const confirmDelete = async () => {
 const fetchAvailableClasses = async (kompetisiId: number, pesertaId: number) => {
   setLoadingClasses(true);
   try {
-    const url = `/kompetisi/${kompetisiId}/peserta/${pesertaId}/classes`;
-    console.log('🔗 Fetching from:', url); // Debug URL
-    
-    const response = await apiClient.get(url);
-    
-    console.log('📦 Raw response:', response); // Debug response
-    console.log('📦 Response data:', response.data); // Debug data
+    const response = await apiClient.get(
+      `/kompetisi/${kompetisiId}/peserta/${pesertaId}/classes`
+    );
     
     if (response.data.success) {
-      const classes = response.data.data.availableClasses;
-      console.log('✅ Available classes:', classes); // Debug classes
-      setAvailableClasses(classes);
-      return response.data.data;
-    } else {
-      console.error('❌ API returned success: false');
-      alert('Gagal memuat daftar kelas');
+      // ✅ Akses langsung tanpa nested .data
+      setAvailableClasses(response.data.availableClasses);
+      return {
+        currentClass: response.data.currentClass,
+        availableClasses: response.data.availableClasses
+      };
     }
   } catch (error: any) {
-    console.error('❌ Error fetching classes:', error);
-    console.error('❌ Error response:', error.response); // Debug full error
-    console.error('❌ Error data:', error.response?.data); // Debug error data
-    console.error('❌ Error status:', error.response?.status); // Debug status code
-    alert(error.response?.data?.message || 'Gagal memuat daftar kelas');
+    console.error('Error fetching classes:', error);
+    alert('Gagal memuat daftar kelas');
   } finally {
     setLoadingClasses(false);
   }
