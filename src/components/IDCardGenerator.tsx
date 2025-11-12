@@ -57,13 +57,13 @@ const COORDS_MM = {
     borderRadius: 3, // radius dalam mm
   },
   nama: {
-    x: 23,
-    y: 98,
+    x: 24.5,
+    y: 96,
     fontSize: 7,
   },
   kelas: {
     x: 23,
-    y: 101,
+    y: 102,
     fontSize: 7,
   },
   kontingen: {
