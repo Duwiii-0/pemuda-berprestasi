@@ -50,25 +50,25 @@ interface IDCardGeneratorProps {
 // Koordinat dalam MM (akan dikonversi saat digunakan)
 const COORDS_MM = {
   photo: {
-    x: 12,
-    y: 40,
+    x: 10,
+    y: 42,
     width: 35,
     height: 48,
-    borderRadius: 5, // radius dalam mm
+    borderRadius: 3, // radius dalam mm
   },
   nama: {
     x: 25,
-    y: 60,
+    y: 110,
     fontSize: 7,
   },
   kelas: {
     x: 25,
-    y: 65,
+    y: 115,
     fontSize: 7,
   },
   kontingen: {
     x: 25,
-    y: 70,
+    y: 120,
     fontSize: 7,
   },
 };
