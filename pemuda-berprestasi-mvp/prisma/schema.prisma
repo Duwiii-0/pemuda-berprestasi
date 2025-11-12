@@ -46,7 +46,7 @@ model tb_pelatih {
   atlet_pembuat tb_atlet[] @relation("AtletPembuat")
 
   id_dojang Int
-  dojang    tb_dojang @relation(fields: [id_dojang], references: [id_dojang])
+  dojang    tb_dojang @relation(fields: [id_dojang], references: [id_dojang], onDelete: Cascade)
 }
 
 model tb_admin {
@@ -124,7 +124,7 @@ pas_foto        String?                @db.VarChar(255)
 sertifikat_belt String?                @db.VarChar(255)
 ktp             String?                @db.VarChar(255)
 
-dojang          tb_dojang              @relation(fields: [id_dojang], references: [id_dojang])
+dojang          tb_dojang              @relation(fields: [id_dojang], references: [id_dojang], onDelete: Cascade)
 pelatih_pembuat tb_pelatih             @relation("AtletPembuat", fields: [id_pelatih_pembuat], references: [id_pelatih])
 peserta_kompetisi  tb_peserta_kompetisi[]  // untuk individu
 peserta_tim      tb_peserta_tim[]     
