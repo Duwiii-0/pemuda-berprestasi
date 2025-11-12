@@ -151,8 +151,11 @@ const fetchAvailableClasses = async (kompetisiId: number, pesertaId: number) => 
     console.log('📦 Full Response:', response);
     console.log('📦 Response.data:', response.data);
     
-    if (response.data.success) {
-      // ✅ Cek struktur data
+    // ✅ PERBAIKAN: Cek success dari response langsung, bukan response.data
+    // Karena apiClient (axios) sudah wrap data
+    
+    // Cek apakah data ada
+    if (response.data && response.data.availableClasses) {
       const classes = response.data.availableClasses;
       
       console.log('✅ Classes to set:', classes);
@@ -174,8 +177,8 @@ const fetchAvailableClasses = async (kompetisiId: number, pesertaId: number) => 
         availableClasses: classes
       };
     } else {
-      console.error('❌ Response success = false');
-      alert('Gagal memuat daftar kelas');
+      console.error('❌ Invalid response structure:', response.data);
+      alert('Format response tidak valid');
       return null;
     }
   } catch (error: any) {
