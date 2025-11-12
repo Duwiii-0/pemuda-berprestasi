@@ -245,6 +245,8 @@ static async updateParticipantClass(req: Request, res: Response) {
     const { id, participantId } = req.params;
     const { kelas_kejuaraan_id, status } = req.body;
 
+    console.log('📥 Received payload:', { kelas_kejuaraan_id, status });
+
     const kompetisiId = parseInt(id);
     const pesertaId = parseInt(participantId);
 
@@ -252,7 +254,12 @@ static async updateParticipantClass(req: Request, res: Response) {
       return sendError(res, 'Parameter tidak valid', 400);
     }
 
-    // ✅ PERBAIKAN: kelas_kejuaraan_id optional
+    // ✅ Validate minimal 1 field provided
+    if (!kelas_kejuaraan_id && !status) {
+      return sendError(res, 'Harus mengubah minimal kelas atau status', 400);
+    }
+
+    // ✅ kelas_kejuaraan_id optional
     let newKelasId: number | undefined = undefined;
     if (kelas_kejuaraan_id) {
       newKelasId = parseInt(kelas_kejuaraan_id);
@@ -266,7 +273,14 @@ static async updateParticipantClass(req: Request, res: Response) {
       return sendError(res, 'User tidak ditemukan', 401);
     }
 
-    // ✅ Call service dengan parameter optional
+    console.log('✅ Calling service with:', {
+      kompetisiId,
+      pesertaId,
+      newKelasId,
+      status
+    });
+
+    // ✅ Call service
     const result = await KompetisiService.updateParticipantClass(
       kompetisiId, 
       pesertaId, 
@@ -278,7 +292,7 @@ static async updateParticipantClass(req: Request, res: Response) {
     return sendSuccess(res, result.data, result.message);
 
   } catch (error: any) {
-    console.error('Controller - Error updating participant:', error);
+    console.error('❌ Controller error:', error);
     return sendError(res, error.message || 'Gagal mengubah data peserta', 400);
   }
 }

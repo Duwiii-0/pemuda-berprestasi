@@ -252,36 +252,45 @@ const handleSubmitEdit = async () => {
   
   const isChangingStatus = editFormData.status !== pesertaToEdit.status;
 
+  console.log('🔍 Validation:', {
+    isChangingClass,
+    isChangingStatus,
+    kelasKejuaraanId: editFormData.kelasKejuaraanId,
+    currentKelasId: pesertaToEdit.kelas_kejuaraan?.id_kelas_kejuaraan,
+    status: editFormData.status,
+    currentStatus: pesertaToEdit.status
+  });
+
   // Harus mengubah minimal 1 field
   if (!isChangingClass && !isChangingStatus) {
     alert('Tidak ada perubahan yang dilakukan!');
     return;
   }
 
-  // Jika pilih kelas, validasi kelas tidak boleh sama dengan saat ini
-  if (editFormData.kelasKejuaraanId && !isChangingClass) {
-    alert('Pilih kelas yang berbeda dari kelas saat ini, atau kosongkan untuk hanya mengubah status!');
-    return;
-  }
-
   setEditLoading(true);
   try {
     // ✅ Build payload dinamis
-    const payload: any = {
-      status: editFormData.status
-    };
+    const payload: any = {};
 
     // ✅ Hanya kirim kelas_kejuaraan_id jika ada perubahan kelas
-    if (isChangingClass) {
+    if (isChangingClass && editFormData.kelasKejuaraanId) {
       payload.kelas_kejuaraan_id = Number(editFormData.kelasKejuaraanId);
     }
 
-    console.log('📤 Sending payload:', payload); // Debug log
+    // ✅ Selalu kirim status (atau hanya jika berubah)
+    if (isChangingStatus) {
+      payload.status = editFormData.status;
+    }
 
-    await apiClient.put(
+    console.log('📤 Sending payload:', payload);
+    console.log('📍 Endpoint:', `/kompetisi/${kompetisiId}/peserta/${pesertaToEdit.id_peserta_kompetisi}`);
+
+    const response = await apiClient.put(
       `/kompetisi/${kompetisiId}/peserta/${pesertaToEdit.id_peserta_kompetisi}`,
       payload
     );
+
+    console.log('✅ Response:', response);
 
     // Refresh data
     await fetchAtletByKompetisi(kompetisiId);
@@ -305,8 +314,12 @@ const handleSubmitEdit = async () => {
     setPesertaToEdit(null);
   } catch (error: any) {
     console.error('❌ Error updating:', error);
-    console.error('Response:', error.response?.data); // Detail error
-    alert(error.response?.data?.message || 'Gagal mengupdate peserta');
+    console.error('❌ Error response:', error.response);
+    console.error('❌ Error data:', error.response?.data);
+    console.error('❌ Error status:', error.response?.status);
+    
+    const errorMsg = error.response?.data?.message || 'Gagal mengupdate peserta';
+    alert(errorMsg);
   } finally {
     setEditLoading(false);
   }

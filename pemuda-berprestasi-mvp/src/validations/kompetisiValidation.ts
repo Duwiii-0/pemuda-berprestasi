@@ -152,24 +152,27 @@ export const kompetisiValidation = {
     })
   }),
 
-  updateParticipantClass: Joi.object({
+updateParticipantClass: Joi.object({
   kelas_kejuaraan_id: Joi.number()
     .integer()
     .positive()
-    .required()
+    .optional() // ✅ OPTIONAL
     .messages({
       'number.base': 'ID kelas kejuaraan harus berupa angka',
       'number.integer': 'ID kelas kejuaraan harus bilangan bulat',
-      'number.positive': 'ID kelas kejuaraan harus positif',
-      'any.required': 'ID kelas kejuaraan wajib diisi'
+      'number.positive': 'ID kelas kejuaraan harus positif'
     }),
   
   status: Joi.string()
     .valid('PENDING', 'APPROVED', 'REJECTED')
-    .optional()
+    .optional() // ✅ OPTIONAL
     .messages({
       'any.only': 'Status harus salah satu dari: PENDING, APPROVED, REJECTED'
     })
+})
+.or('kelas_kejuaraan_id', 'status') // ✅ Minimal 1 harus ada
+.messages({
+  'object.missing': 'Harus mengubah minimal kelas atau status'
 }),
 
   generateBracket: Joi.object({
