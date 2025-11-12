@@ -1,20 +1,7 @@
-// src/components/EditRegistrationModal.tsx - Improved Responsive Design
-import { useState, useEffect } from "react";
-import { X, AlertCircle, User, Users, Info, Clock } from 'lucide-react';
-import Modal from "./modal";
-import { LockedSelect } from "./lockSelect";
-import GeneralButton from "./generalButton";
-import toast from "react-hot-toast";
-import { apiClient } from "../config/api";
-import { useAuth } from "../context/authContext";
-
-interface ApiResponse<T> {
-  data: T;
-  message?: string;
-  status?: number;
-}
-
-type OptionType = { value: string; label: string };
+import React, { useState, useEffect } from 'react';
+import { X, Loader, Edit, AlertTriangle } from 'lucide-react';
+import { apiClient } from '../config/api';
+import toast from 'react-hot-toast';
 
 interface EditRegistrationModalProps {
   isOpen: boolean;
@@ -24,457 +11,308 @@ interface EditRegistrationModalProps {
   onSuccess: () => void;
 }
 
-interface KelasKejuaraan {
-  id_kelas_kejuaraan: number;
-  cabang: "KYORUGI" | "POOMSAE";
-  kategori_event: {
-    nama_kategori: string;
-  };
-  kelompok: {
-    nama_kelompok: string;
-  };
-  kelas_berat?: {
-    nama_kelas: string;
-  };
-  poomsae?: {
-    nama_kelas: string;
-  };
-}
-
-const EditRegistrationModal = ({
+const EditRegistrationModal: React.FC<EditRegistrationModalProps> = ({
   isOpen,
   onClose,
   participant,
   kompetisiId,
   onSuccess
-}: EditRegistrationModalProps) => {
-  const { user } = useAuth();
+}) => {
   const [loading, setLoading] = useState(false);
-  const [availableClasses, setAvailableClasses] = useState<KelasKejuaraan[]>([]);
-  const [selectedClass, setSelectedClass] = useState<OptionType | null>(null);
-  const [originalClass, setOriginalClass] = useState<OptionType | null>(null);
+  const [loadingClasses, setLoadingClasses] = useState(false);
+  const [availableClasses, setAvailableClasses] = useState<any[]>([]);
+  const [formData, setFormData] = useState({
+    kelasKejuaraanId: '',
+    currentClassName: '',
+    status: ''
+  });
 
-  // Extract participant info
-  const isTeam = participant?.is_team;
-  const participantName = isTeam
-    ? participant?.anggota_tim?.map((m: any) => m.atlet.nama_atlet).join(" & ") || "Tim"
-    : participant?.atlet?.nama_atlet || "Atlet";
-  
-  const currentClass = participant?.kelas_kejuaraan;
-  const participantGender = isTeam ? "CAMPURAN" : participant?.atlet?.jenis_kelamin;
-  const dojang = isTeam && participant?.anggota_tim?.length
-    ? participant.anggota_tim[0]?.atlet?.dojang?.nama_dojang
-    : participant?.atlet?.dojang?.nama_dojang;
-
-  // Helper functions
-  const getParticipantAge = (): number => {
-    if (isTeam) {
-      // For team, use youngest member's age
-      const ages = participant?.anggota_tim?.map((member: any) => {
-        const birthYear = new Date(member.atlet.tanggal_lahir).getFullYear();
-        return new Date().getFullYear() - birthYear;
-      }) || [];
-      return Math.min(...ages) || 0;
-    } else {
-      const birthYear = new Date(participant?.atlet?.tanggal_lahir || '').getFullYear();
-      return new Date().getFullYear() - birthYear;
-    }
-  };
-
-  const getParticipantWeight = (): number => {
-    if (isTeam) return 0;
-    return participant?.atlet?.berat_badan || 0;
-  };
-
-  const buildClassLabel = (kelas: KelasKejuaraan) => {
-    const parts = [
-      kelas.cabang,
-      kelas.kategori_event?.nama_kategori || "",
-      kelas.kelompok?.nama_kelompok || "",
-    ];
-
-    if (kelas.cabang === "KYORUGI" && kelas.kelas_berat?.nama_kelas) {
-      parts.push(kelas.kelas_berat.nama_kelas);
-    } else if (kelas.cabang === "POOMSAE" && kelas.poomsae?.nama_kelas) {
-      parts.push(kelas.poomsae.nama_kelas);
-    }
-
-    return parts.filter(Boolean).join(" - ");
-  };
-
-  // ✅ TEMPORARY: Use simple endpoint while backend is being implemented
-  const fetchAvailableClasses = async () => {
-    try {
-      setLoading(true);
-      
-      // Try the new endpoint first, fallback to kompetisi endpoint
-      try {
-        const response = await apiClient.get<ApiResponse<KelasKejuaraan[]>>(
-          `/kompetisi/${kompetisiId}/participants/${participant.id_peserta_kompetisi}/available-classes`
-        );
-        const classes = response.data.data || [];
-        setAvailableClasses(classes);
-        return;
-      } catch (error: any) {
-        console.log('New endpoint not available, falling back to kompetisi endpoint');
-      }
-
-      // Fallback: Use kompetisi endpoint
-      const response = await apiClient.get<ApiResponse<any>>(
-        `/kompetisi/${kompetisiId}`
-      );
-
-      if (response.data.data?.kelas_kejuaraan) {
-        const allClasses = response.data.data.kelas_kejuaraan;
-        
-        // Basic client-side filtering
-        const eligibleClasses = allClasses.filter((kelas: KelasKejuaraan) => {
-          // Don't show current class
-          if (kelas.id_kelas_kejuaraan === currentClass?.id_kelas_kejuaraan) {
-            return false;
-          }
-          
-          // Only show classes with same sport
-          if (kelas.cabang !== participant?.kelas_kejuaraan?.cabang) {
-            return false;
-          }
-          
-          return true;
-        });
-        
-        setAvailableClasses(eligibleClasses);
-      } else {
-        setAvailableClasses([]);
-      }
-
-    } catch (error: any) {
-      console.error('Error fetching available classes:', error);
-      toast.error('Gagal memuat kelas yang tersedia');
-      setAvailableClasses([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Fetch available classes when modal opens
+  // Fetch available classes saat modal dibuka
   useEffect(() => {
     if (isOpen && participant) {
-      fetchAvailableClasses();
-      
-      // Set current selection
-      if (currentClass) {
-        const currentClassLabel = buildClassLabel(currentClass);
-        const currentOption = {
-          value: currentClass.id_kelas_kejuaraan.toString(),
-          label: currentClassLabel
-        };
-        setSelectedClass(currentOption);
-        setOriginalClass(currentOption);
-      }
+      initializeModal();
     }
   }, [isOpen, participant]);
 
-  const handleSave = async () => {
-    if (!selectedClass || !participant) {
-      toast.error("Silakan pilih kelas kejuaraan");
-      return;
-    }
+  const initializeModal = async () => {
+    if (!participant) return;
 
-    if (selectedClass.value === originalClass?.value) {
-      toast.error("Tidak ada perubahan yang dilakukan");
-      return;
+    // Format current class name
+    const currentKelas = participant.kelas_kejuaraan;
+    let currentClassName = '';
+    
+    if (currentKelas) {
+      currentClassName += currentKelas.cabang;
+      currentClassName += ` - ${currentKelas.kategori_event?.nama_kategori}`;
+      if (currentKelas.kelompok) {
+        currentClassName += ` - ${currentKelas.kelompok.nama_kelompok}`;
+      }
+      if (currentKelas.kelas_berat) {
+        currentClassName += ` - ${currentKelas.kelas_berat.nama_kelas}`;
+      }
+      if (currentKelas.poomsae) {
+        currentClassName += ` - ${currentKelas.poomsae.nama_kelas}`;
+      }
     }
+    
+    setFormData({
+      kelasKejuaraanId: currentKelas?.id_kelas_kejuaraan?.toString() || '',
+      currentClassName: currentClassName,
+      status: participant.status || 'PENDING'
+    });
+    
+    // Fetch available classes
+    await fetchAvailableClasses();
+  };
 
+  const fetchAvailableClasses = async () => {
+    setLoadingClasses(true);
     try {
-      setLoading(true);
+      const response = await apiClient.get(
+        `/kompetisi/${kompetisiId}/peserta/${participant.id_peserta_kompetisi}/classes`
+      );
+      
+      if (response.data && response.data.availableClasses) {
+        setAvailableClasses(response.data.availableClasses);
+      }
+    } catch (error: any) {
+      console.error('Error fetching classes:', error);
+      toast.error('Gagal memuat daftar kelas');
+    } finally {
+      setLoadingClasses(false);
+    }
+  };
 
-      await apiClient.put<ApiResponse<any>>(
-        `/kompetisi/${kompetisiId}/participants/${participant.id_peserta_kompetisi}/class`, 
-        {
-          kelas_kejuaraan_id: parseInt(selectedClass.value)
-        }
+  const handleSubmit = async () => {
+    if (!participant) return;
+
+    const isChangingClass = formData.kelasKejuaraanId && 
+      formData.kelasKejuaraanId !== participant.kelas_kejuaraan?.id_kelas_kejuaraan?.toString();
+    
+    const isChangingStatus = formData.status !== participant.status;
+
+    if (!isChangingClass && !isChangingStatus) {
+      toast.error('Tidak ada perubahan yang dilakukan!');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const payload: any = {};
+
+      if (isChangingClass && formData.kelasKejuaraanId) {
+        payload.kelas_kejuaraan_id = Number(formData.kelasKejuaraanId);
+      }
+
+      if (isChangingStatus) {
+        payload.status = formData.status;
+      }
+
+      await apiClient.put(
+        `/kompetisi/${kompetisiId}/peserta/${participant.id_peserta_kompetisi}`,
+        payload
       );
 
-      toast.success("Kelas peserta berhasil diubah");
+      toast.success('Data peserta berhasil diupdate!');
       onSuccess();
       onClose();
-
+      
     } catch (error: any) {
-      console.error('Error updating participant class:', error);
-      const message = error.response?.data?.message || error.message || "Gagal mengubah kelas peserta";
-      toast.error(message);
+      console.error('Error updating:', error);
+      const errorMsg = error.response?.data?.message || 'Gagal mengupdate peserta';
+      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleClose = () => {
-    setSelectedClass(originalClass);
-    onClose();
-  };
+  if (!isOpen || !participant) return null;
 
-  const classOptions: OptionType[] = availableClasses.map(kelas => ({
-    value: kelas.id_kelas_kejuaraan.toString(),
-    label: buildClassLabel(kelas)
-  }));
-
-  const selectClassNames = {
-    control: () => "border-2 border-red/30 rounded-xl h-12 px-3 text-inter bg-white hover:border-red/50 transition-colors",
-    valueContainer: () => "px-2",
-    placeholder: () => "text-red/50 text-inter",
-    menu: () => "border-2 border-red/20 bg-white rounded-xl shadow-lg mt-1 z-50",
-    menuList: () => "max-h-60 overflow-y-scroll py-2",
-    option: ({ isFocused, isSelected }: any) =>
-      [
-        "px-4 py-3 cursor-pointer text-sm transition-colors",
-        isFocused ? "bg-red/5 text-black" : "text-black/80",
-        isSelected ? "bg-red text-white font-medium" : "",
-      ].join(" "),
-  };
-
-  const ValidationMessage = () => {
-    if (availableClasses.length === 0 && !loading) {
-      return (
-        <div className="bg-amber-50 rounded-xl p-4 border-l-4 border-amber-400">
-          <div className="flex items-start gap-3">
-            <AlertCircle size={20} className="text-amber-600 mt-0.5 flex-shrink-0" />
-            <div className="min-w-0">
-              <h4 className="font-plex font-semibold text-amber-800 mb-2">
-                Tidak Ada Kelas Tersedia
-              </h4>
-              <p className="font-plex text-amber-700 text-sm mb-3">
-                Tidak ada kelas lain yang sesuai dengan kriteria peserta ini.
-              </p>
-              
-              <div className="space-y-2">
-                <p className="font-plex text-amber-700 text-sm font-medium">
-                  Kemungkinan penyebab:
-                </p>
-                <ul className="font-plex text-amber-700 text-xs space-y-1 ml-4 list-disc">
-                  <li>Umur tidak sesuai dengan kelompok usia yang tersedia</li>
-                  <li>Berat badan tidak sesuai (untuk Kyorugi)</li>
-                  <li>Tidak dapat berpindah level (pemula ↔ prestasi)</li>
-                  <li>Peserta sudah di kelas yang paling sesuai</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </div>
-      );
-    }
-
-    if (availableClasses.length > 0) {
-      return (
-        <div className="bg-blue-50 rounded-xl p-3 border-l-4 border-blue-400">
-          <div className="flex items-center gap-2">
-            <Info size={16} className="text-blue-600 flex-shrink-0" />
-            <p className="font-plex text-blue-700 text-sm">
-              {availableClasses.length} kelas tersedia untuk peserta ini
-            </p>
-          </div>
-        </div>
-      );
-    }
-
-    return null;
-  };
-
-  if (!participant) return null;
+  const participantName = participant.is_team
+    ? participant.anggota_tim?.map((m: any) => m.atlet.nama_atlet).join(", ")
+    : participant.atlet?.nama_atlet;
 
   return (
-    <Modal isOpen={isOpen}>
-      <div className="bg-white w-full max-w-4xl mx-4 rounded-2xl shadow-2xl border border-gray-100 max-h-[95vh] overflow-hidden flex flex-col">
-        {/* Header - Fixed */}
-        <div className="flex items-center justify-between p-4 lg:p-6 border-b border-gray-200 bg-gradient-to-r from-red/5 to-yellow/5">
-          <div className="flex items-center gap-3">
-            {isTeam ? (
-              <Users className="text-red flex-shrink-0" size={24} />
-            ) : (
-              <User className="text-red flex-shrink-0" size={24} />
-            )}
-            <div className="min-w-0">
-              <h2 className="font-bebas text-xl lg:text-2xl text-red tracking-wider">
-                EDIT KELAS PESERTA
-              </h2>
-              <p className="font-plex text-black/60 text-sm">
-                Ubah kelas kejuaraan untuk peserta
-              </p>
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full overflow-hidden max-h-[90vh] overflow-y-auto">
+        {/* Header */}
+        <div className="p-6" style={{ backgroundColor: 'rgba(59, 130, 246, 0.1)' }}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ backgroundColor: '#3B82F6' }}>
+                <Edit size={24} style={{ color: 'white' }} />
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold" style={{ color: '#050505' }}>
+                  Edit Peserta
+                </h3>
+                <p className="text-sm" style={{ color: '#050505', opacity: 0.6 }}>
+                  {participantName}
+                </p>
+              </div>
             </div>
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-black/5 rounded-full transition-colors"
+              disabled={loading}
+            >
+              <X size={24} />
+            </button>
           </div>
-          <button
-            onClick={handleClose}
-            className="p-2 hover:bg-red/5 rounded-full transition-colors duration-200 flex-shrink-0"
-          >
-            <X size={20} className="text-black/40 hover:text-red" />
-          </button>
         </div>
 
-        {/* Content - Scrollable */}
-        <div className="flex-1 overflow-y-auto p-4 lg:p-6">
-          <div className="space-y-6">
-            {/* Participant Info - Improved Layout */}
-            <div className="bg-gradient-to-r from-gray-50 to-gray-50/50 rounded-xl p-4 border border-gray-200">
-              <h3 className="font-bebas text-lg text-black/80 mb-3">
-                INFORMASI PESERTA
-              </h3>
-              
-              {/* Mobile-first grid */}
-              <div className="space-y-3 sm:space-y-0 sm:grid sm:grid-cols-2 lg:grid-cols-3 sm:gap-4 text-sm font-plex">
-                <div className="space-y-1">
-                  <span className="text-black/50 text-xs uppercase tracking-wide">Nama</span>
-                  <p className="font-medium text-black/80 break-words">{participantName}</p>
-                </div>
-                
-                <div className="space-y-1">
-                  <span className="text-black/50 text-xs uppercase tracking-wide">Dojang</span>
-                  <p className="font-medium text-black/80 break-words">{dojang || "-"}</p>
-                </div>
-                
-                <div className="space-y-1">
-                  <span className="text-black/50 text-xs uppercase tracking-wide">Jenis</span>
-                  <p className="font-medium text-black/80">{isTeam ? "Tim" : "Individu"}</p>
-                </div>
-                
-                <div className="space-y-1">
-                  <span className="text-black/50 text-xs uppercase tracking-wide">Status</span>
-                  <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
-                    participant.status === 'PENDING' ? 'bg-yellow-100 text-yellow-700' :
-                    participant.status === 'APPROVED' ? 'bg-green-100 text-green-700' :
-                    'bg-red-100 text-red-700'
-                  }`}>
-                    {participant.status}
-                  </span>
-                </div>
+        {/* Body */}
+        <div className="p-6 space-y-6">
+          {/* Current Class Info */}
+          <div className="p-4 bg-blue-50 rounded-lg border-l-4 border-blue-500">
+            <p className="text-sm font-semibold text-blue-900 mb-1">Kelas Saat Ini:</p>
+            <p className="text-sm text-blue-800">{formData.currentClassName || 'Tidak ada kelas'}</p>
+          </div>
 
-                {!isTeam && (
-                  <>
-                    <div className="space-y-1">
-                      <span className="text-black/50 text-xs uppercase tracking-wide">Umur</span>
-                      <p className="font-medium text-black/80">{getParticipantAge()} tahun</p>
-                    </div>
-                    {getParticipantWeight() > 0 && (
-                      <div className="space-y-1">
-                        <span className="text-black/50 text-xs uppercase tracking-wide">Berat Badan</span>
-                        <p className="font-medium text-black/80">{getParticipantWeight()} kg</p>
-                      </div>
-                    )}
-                  </>
-                )}
+          {/* Warning if APPROVED */}
+          {participant.status === 'APPROVED' && (
+            <div className="p-4 bg-yellow-50 rounded-lg border-l-4 border-yellow-500 flex items-start gap-3">
+              <AlertTriangle size={20} className="text-yellow-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-semibold text-yellow-900">Perhatian!</p>
+                <p className="text-sm text-yellow-800">
+                  Peserta ini sudah disetujui. Perubahan hanya bisa dilakukan oleh Admin.
+                </p>
               </div>
             </div>
+          )}
 
-            {/* Current Class - More Compact */}
-            <div className="bg-blue-50 rounded-xl p-4 border-l-4 border-blue-400">
-              <div className="flex items-start gap-3">
-                <Clock size={18} className="text-blue-600 mt-0.5 flex-shrink-0" />
-                <div className="min-w-0">
-                  <h4 className="font-plex font-semibold text-blue-800 mb-1">Kelas Saat Ini</h4>
-                  <p className="font-plex text-blue-700 text-sm break-words">
-                    {originalClass?.label || "Tidak tersedia"}
+          {/* Kelas Kejuaraan Dropdown */}
+          <div>
+            <label className="block text-sm font-semibold mb-2" style={{ color: '#050505' }}>
+              Ubah Kelas Kejuaraan <span className="text-red-500">*</span>
+            </label>
+            
+            {loadingClasses ? (
+              <div className="flex items-center justify-center py-4">
+                <Loader className="animate-spin" size={24} style={{ color: '#3B82F6' }} />
+                <span className="ml-2 text-sm" style={{ color: '#050505', opacity: 0.6 }}>
+                  Memuat kelas...
+                </span>
+              </div>
+            ) : (
+              <>
+                <select
+                  value={formData.kelasKejuaraanId}
+                  onChange={(e) => setFormData({ ...formData, kelasKejuaraanId: e.target.value })}
+                  className="w-full px-4 py-3 rounded-xl border-2 focus:outline-none focus:ring-2"
+                  style={{ borderColor: '#990D35', backgroundColor: '#F5FBEF' }}
+                  disabled={loading}
+                >
+                  <option value="">-- Pilih Kelas Baru --</option>
+                  {availableClasses.map((kelas) => (
+                    <option 
+                      key={kelas.value} 
+                      value={kelas.value}
+                      disabled={kelas.isCurrentClass}
+                    >
+                      {kelas.label} {kelas.isCurrentClass ? '(Kelas Saat Ini)' : ''}
+                    </option>
+                  ))}
+                </select>
+                
+                <p className="text-xs mt-2" style={{ color: '#050505', opacity: 0.5 }}>
+                  Format: Kategori - Level - Kelompok Usia - Kelas Berat/Poomsae
+                </p>
+
+                {availableClasses.length === 0 && (
+                  <p className="text-sm text-red-600 mt-2">
+                    Tidak ada kelas lain yang tersedia untuk peserta ini
                   </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Status Warnings - Conditional */}
-            {participant?.status === 'APPROVED' && (
-              <div className="bg-red-50 rounded-xl p-4 border-l-4 border-red-400">
-                <div className="flex items-start gap-3">
-                  <AlertCircle size={18} className="text-red-600 mt-0.5 flex-shrink-0" />
-                  <div className="min-w-0">
-                    <h4 className="font-plex font-semibold text-red-800 mb-1">
-                      Peserta Sudah Disetujui
-                    </h4>
-                    <p className="font-plex text-red-700 text-sm">
-                      Peserta ini sudah disetujui dan tidak dapat diubah kelasnya. 
-                      Hubungi administrator jika diperlukan perubahan.
-                    </p>
-                  </div>
-                </div>
-              </div>
+                )}
+              </>
             )}
+          </div>
 
-            {user?.role === 'PELATIH' && (
-              <div className="bg-amber-50 rounded-xl p-4 border-l-4 border-amber-400">
-                <div className="flex items-start gap-3">
-                  <Info size={18} className="text-amber-600 mt-0.5 flex-shrink-0" />
-                  <div className="min-w-0">
-                    <h4 className="font-plex font-semibold text-amber-800 mb-1">
-                      Catatan Penting
-                    </h4>
-                    <p className="font-plex text-amber-700 text-sm">
-                      Sebagai pelatih, Anda hanya dapat mengubah kelas peserta dari dojang sendiri 
-                      selama masa pendaftaran.
-                    </p>
+          {/* Status Peserta */}
+          <div>
+            <label className="block text-sm font-semibold mb-2" style={{ color: '#050505' }}>
+              Status Peserta
+            </label>
+            <select
+              value={formData.status}
+              onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+              className="w-full px-4 py-3 rounded-xl border-2 focus:outline-none focus:ring-2"
+              style={{ borderColor: '#990D35', backgroundColor: '#F5FBEF' }}
+              disabled={loading}
+            >
+              <option value="PENDING">PENDING</option>
+              <option value="APPROVED">APPROVED</option>
+              <option value="REJECTED">REJECTED</option>
+            </select>
+          </div>
+
+          {/* Preview Selected Class */}
+          {formData.kelasKejuaraanId && 
+           formData.kelasKejuaraanId !== participant.kelas_kejuaraan?.id_kelas_kejuaraan?.toString() && (
+            <div className="p-4 bg-green-50 rounded-lg border-l-4 border-green-500">
+              <p className="text-sm font-semibold text-green-900 mb-2">Kelas Baru:</p>
+              {availableClasses.find(k => k.value === formData.kelasKejuaraanId)?.details && (
+                <div className="grid grid-cols-2 gap-2 text-xs text-green-800">
+                  <div>
+                    <span className="font-semibold">Kategori:</span>{' '}
+                    {availableClasses.find(k => k.value === formData.kelasKejuaraanId)?.details.cabang}
                   </div>
+                  <div>
+                    <span className="font-semibold">Level:</span>{' '}
+                    {availableClasses.find(k => k.value === formData.kelasKejuaraanId)?.details.level}
+                  </div>
+                  <div>
+                    <span className="font-semibold">Usia:</span>{' '}
+                    {availableClasses.find(k => k.value === formData.kelasKejuaraanId)?.details.kelompokUsia}
+                  </div>
+                  <div>
+                    <span className="font-semibold">Berat:</span>{' '}
+                    {availableClasses.find(k => k.value === formData.kelasKejuaraanId)?.details.kelasBerat}
+                  </div>
+                  {availableClasses.find(k => k.value === formData.kelasKejuaraanId)?.details.kelasPoomsae !== '-' && (
+                    <div className="col-span-2">
+                      <span className="font-semibold">Poomsae:</span>{' '}
+                      {availableClasses.find(k => k.value === formData.kelasKejuaraanId)?.details.kelasPoomsae}
+                    </div>
+                  )}
                 </div>
-              </div>
-            )}
-
-            {/* Validation Message */}
-            <ValidationMessage />
-
-            {/* Class Selection */}
-            <div className="space-y-3">
-              <label className="block text-black/80 font-plex font-semibold">
-                Pilih Kelas Baru <span className="text-red">*</span>
-              </label>
-              
-              {loading ? (
-                <div className="flex items-center justify-center h-12 bg-gray-50 rounded-xl">
-                  <div className="animate-spin rounded-full h-5 w-5 border-2 border-red border-t-transparent"></div>
-                  <span className="ml-2 font-plex text-sm text-black/60">Memuat kelas...</span>
-                </div>
-              ) : (
-                <LockedSelect
-                  unstyled
-                  options={classOptions}
-                  value={selectedClass}
-                  onChange={(value: OptionType | null) => setSelectedClass(value)}
-                  placeholder="Pilih kelas kejuaraan baru..."
-                  isSearchable
-                  classNames={selectClassNames}
-                  disabled={loading || classOptions.length === 0 || participant?.status === 'APPROVED'}
-                  message={classOptions.length === 0 ? "Tidak ada kelas yang tersedia" : ""}
-                />
               )}
             </div>
-
-            {/* Change Preview */}
-            {selectedClass && selectedClass.value !== originalClass?.value && (
-              <div className="bg-green-50 rounded-xl p-4 border-l-4 border-green-400">
-                <h4 className="font-plex font-semibold text-green-800 mb-2">Perubahan:</h4>
-                <div className="font-plex text-sm text-green-700 space-y-1">
-                  <p className="opacity-60 line-through break-words">{originalClass?.label}</p>
-                  <p className="font-medium break-words">→ {selectedClass.label}</p>
-                </div>
-              </div>
-            )}
-          </div>
+          )}
         </div>
 
-        {/* Footer - Fixed */}
-        <div className="flex flex-col sm:flex-row items-center justify-end gap-3 p-4 lg:p-6 border-t border-gray-200 bg-gray-50/30">
+        {/* Footer */}
+        <div className="p-6 bg-gray-50 flex gap-3">
           <button
-            onClick={handleClose}
+            onClick={onClose}
             disabled={loading}
-            className="w-full sm:w-auto px-6 py-2.5 border-2 border-gray-300 text-gray-700 font-plex font-medium rounded-xl hover:bg-gray-50 transition-colors duration-200 disabled:opacity-50"
+            className="flex-1 py-3 px-4 rounded-xl font-semibold transition-all hover:bg-white border-2"
+            style={{ borderColor: '#990D35', color: '#990D35', backgroundColor: 'white' }}
           >
             Batal
           </button>
-          <GeneralButton
-            label={loading ? "Menyimpan..." : "Simpan Perubahan"}
-            onClick={handleSave}
-            className={`w-full sm:w-auto px-6 py-2.5 font-plex font-medium rounded-xl transition-all duration-200 ${
-              loading || !selectedClass || selectedClass.value === originalClass?.value || participant?.status === 'APPROVED'
-                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                : 'bg-gradient-to-r from-red to-red/90 text-white hover:shadow-lg hover:scale-105'
-            }`}
-            disabled={loading || !selectedClass || selectedClass.value === originalClass?.value || participant?.status === 'APPROVED'}
-          />
+          <button
+            onClick={handleSubmit}
+            disabled={loading || !formData.kelasKejuaraanId || loadingClasses}
+            className="flex-1 py-3 px-4 rounded-xl font-semibold transition-all hover:opacity-90 shadow-lg disabled:opacity-50 flex items-center justify-center gap-2"
+            style={{ backgroundColor: '#3B82F6', color: 'white' }}
+          >
+            {loading ? (
+              <>
+                <Loader size={18} className="animate-spin" />
+                <span>Menyimpan...</span>
+              </>
+            ) : (
+              <>
+                <Edit size={18} />
+                <span>Simpan Perubahan</span>
+              </>
+            )}
+          </button>
         </div>
       </div>
-    </Modal>
+    </div>
   );
 };
 
