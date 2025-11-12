@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Download, Eye, FileText } from "lucide-react";
+import { Download, Eye, FileText, AlertCircle } from "lucide-react";
 import { PDFDocument, rgb } from "pdf-lib";
 
 interface Atlet {
@@ -55,7 +55,7 @@ const COORDS_MM = {
     y: 42.4,
     width: 35,
     height: 47,
-    borderRadius: 3, // radius dalam mm
+    borderRadius: 3,
   },
   nama: {
     x: 24.5,
@@ -92,13 +92,44 @@ export const IDCardGenerator = ({ atlet, isEditing }: IDCardGeneratorProps) => {
     }
   }, [atlet]);
 
+  // Validasi apakah bisa generate ID Card
+  const canGenerateIDCard = (): { canGenerate: boolean; reason: string } => {
+    // 1. Cek pas foto
+    if (!atlet.pas_foto_path) {
+      return { 
+        canGenerate: false, 
+        reason: "Pas foto belum tersedia" 
+      };
+    }
+
+    // 2. Cek peserta kompetisi
+    if (!atlet.peserta_kompetisi || atlet.peserta_kompetisi.length === 0) {
+      return { 
+        canGenerate: false, 
+        reason: "Belum terdaftar dalam kompetisi" 
+      };
+    }
+
+    // 3. Cek apakah ada yang APPROVED
+    const hasApproved = atlet.peserta_kompetisi.some(p => p.status === 'APPROVED');
+    if (!hasApproved) {
+      return { 
+        canGenerate: false, 
+        reason: "Belum ada peserta dengan status APPROVED" 
+      };
+    }
+
+    return { canGenerate: true, reason: "" };
+  };
+
+  const validation = canGenerateIDCard();
+
   const getPhotoUrl = (filename: string): string => {
     if (!filename) return "";
     const baseUrl = process.env.REACT_APP_API_BASE_URL || 'https://cjvmanagementevent.com';
     return `${baseUrl}/uploads/atlet/pas_foto/${filename}`;
   };
 
-  // Convert image ke rounded corners pakai canvas
   const createRoundedImage = async (url: string, radiusMM: number): Promise<string> => {
     return new Promise((resolve, reject) => {
       const img = new Image();
@@ -112,18 +143,15 @@ export const IDCardGenerator = ({ atlet, isEditing }: IDCardGeneratorProps) => {
           return;
         }
 
-        // Set canvas size sesuai target size dalam pixels (untuk high quality)
-        const targetWidth = COORDS_MM.photo.width * 11.811; // mm to px at 300 DPI
+        const targetWidth = COORDS_MM.photo.width * 11.811;
         const targetHeight = COORDS_MM.photo.height * 11.811;
         const radius = radiusMM * 11.811;
 
         canvas.width = targetWidth;
         canvas.height = targetHeight;
 
-        // Clear canvas
         ctx.clearRect(0, 0, targetWidth, targetHeight);
 
-        // Create rounded rectangle path
         ctx.beginPath();
         ctx.moveTo(radius, 0);
         ctx.lineTo(targetWidth - radius, 0);
@@ -137,10 +165,8 @@ export const IDCardGenerator = ({ atlet, isEditing }: IDCardGeneratorProps) => {
         ctx.closePath();
         ctx.clip();
 
-        // Draw image
         ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
 
-        // Convert to PNG (preserve transparency)
         resolve(canvas.toDataURL("image/png"));
       };
 
@@ -175,7 +201,6 @@ export const IDCardGenerator = ({ atlet, isEditing }: IDCardGeneratorProps) => {
 
     console.log(`📊 Found ${atlet.peserta_kompetisi.length} peserta(s)`);
     
-    // Debug setiap peserta
     atlet.peserta_kompetisi.forEach((p, idx) => {
       console.log(`\n--- Peserta ${idx + 1} ---`);
       console.log("  Status:", p.status);
@@ -215,6 +240,12 @@ export const IDCardGenerator = ({ atlet, isEditing }: IDCardGeneratorProps) => {
   };
 
   const generateIDCard = async () => {
+    // Validasi sebelum generate
+    if (!validation.canGenerate) {
+      alert(`Tidak dapat generate ID Card: ${validation.reason}`);
+      return;
+    }
+
     setIsGenerating(true);
 
     console.log("=== DEBUG ATLET DATA ===");
@@ -272,20 +303,16 @@ export const IDCardGenerator = ({ atlet, isEditing }: IDCardGeneratorProps) => {
 
       const helveticaFont = await pdfDoc.embedFont('Helvetica-Bold');
 
-      // Convert mm to points (1mm = 2.83465 pt)
       const mmToPt = (mm: number) => mm * 2.83465;
 
-      // ========== OVERLAY FOTO ROUNDED ==========
       if (atlet.pas_foto_path) {
         try {
           const photoUrl = getPhotoUrl(atlet.pas_foto_path);
           
-          // Create rounded image
           const roundedImageBase64 = await createRoundedImage(photoUrl, COORDS_MM.photo.borderRadius);
           const imageBytes = base64ToArrayBuffer(roundedImageBase64);
           const image = await pdfDoc.embedPng(imageBytes);
 
-          // Calculate position (PDF origin = bottom-left)
           const x = mmToPt(COORDS_MM.photo.x);
           const y = pageHeight - mmToPt(COORDS_MM.photo.y) - mmToPt(COORDS_MM.photo.height);
           const width = mmToPt(COORDS_MM.photo.width);
@@ -300,10 +327,8 @@ export const IDCardGenerator = ({ atlet, isEditing }: IDCardGeneratorProps) => {
         }
       }
 
-      // ========== OVERLAY TEXT DATA ==========
       const textColor = rgb(0.04, 0.13, 0.41);
 
-      // Nama
       firstPage.drawText(atlet.nama_atlet, {
         x: mmToPt(COORDS_MM.nama.x),
         y: pageHeight - mmToPt(COORDS_MM.nama.y),
@@ -312,7 +337,6 @@ export const IDCardGenerator = ({ atlet, isEditing }: IDCardGeneratorProps) => {
         color: textColor,
       });
 
-      // Kelas
       firstPage.drawText(kelasInfo, {
         x: mmToPt(COORDS_MM.kelas.x),
         y: pageHeight - mmToPt(COORDS_MM.kelas.y),
@@ -321,7 +345,6 @@ export const IDCardGenerator = ({ atlet, isEditing }: IDCardGeneratorProps) => {
         color: textColor,
       });
 
-      // Kontingen
       firstPage.drawText(dojangName, {
         x: mmToPt(COORDS_MM.kontingen.x),
         y: pageHeight - mmToPt(COORDS_MM.kontingen.y),
@@ -330,22 +353,18 @@ export const IDCardGenerator = ({ atlet, isEditing }: IDCardGeneratorProps) => {
         color: textColor,
       });
 
-      // ========== SAVE PDF ==========
       const pdfBytes = await pdfDoc.save();
       const blob = new Blob([pdfBytes], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
       
-      // Cache blob untuk preview dan download ulang
       setCachedPdfBlob(blob);
       setPreviewUrl(url);
 
-      // Download otomatis
       const link = document.createElement('a');
       link.href = url;
       link.download = `ID-Card-${atlet.nama_atlet.replace(/\s/g, "-")}.pdf`;
       link.click();
 
-      // Simpan ke localStorage bahwa ID Card sudah pernah di-generate
       const storageKey = `idcard_generated_${atlet.id_atlet || atlet.nama_atlet}`;
       localStorage.setItem(storageKey, 'true');
 
@@ -358,24 +377,29 @@ export const IDCardGenerator = ({ atlet, isEditing }: IDCardGeneratorProps) => {
     }
   };
 
-  // Handler untuk preview (re-generate jika belum ada cached blob)
   const handlePreview = async () => {
+    if (!validation.canGenerate) {
+      alert(`Tidak dapat melihat preview: ${validation.reason}`);
+      return;
+    }
+
     if (cachedPdfBlob) {
-      // Pakai cached blob
       const url = URL.createObjectURL(cachedPdfBlob);
       setPreviewUrl(url);
       setShowPreview(true);
     } else {
-      // Re-generate
       await generateIDCard();
       setShowPreview(true);
     }
   };
 
-  // Handler untuk download ulang
   const handleDownloadAgain = async () => {
+    if (!validation.canGenerate) {
+      alert(`Tidak dapat download: ${validation.reason}`);
+      return;
+    }
+
     if (cachedPdfBlob) {
-      // Download dari cached blob
       const url = URL.createObjectURL(cachedPdfBlob);
       const link = document.createElement('a');
       link.href = url;
@@ -383,7 +407,6 @@ export const IDCardGenerator = ({ atlet, isEditing }: IDCardGeneratorProps) => {
       link.click();
       URL.revokeObjectURL(url);
     } else {
-      // Re-generate dan download
       await generateIDCard();
     }
   };
@@ -400,8 +423,9 @@ export const IDCardGenerator = ({ atlet, isEditing }: IDCardGeneratorProps) => {
             {!hasGenerated ? (
               <button
                 onClick={generateIDCard}
-                disabled={isGenerating || !atlet.pas_foto_path}
+                disabled={isGenerating || !validation.canGenerate}
                 className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white rounded-xl font-medium text-sm lg:text-base transition-all duration-300 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                title={!validation.canGenerate ? validation.reason : "Generate ID Card"}
               >
                 <FileText size={18} />
                 {isGenerating ? "Generating..." : "Generate ID Card"}
@@ -410,16 +434,18 @@ export const IDCardGenerator = ({ atlet, isEditing }: IDCardGeneratorProps) => {
               <>
                 <button
                   onClick={handlePreview}
-                  disabled={isGenerating}
-                  className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl font-medium text-sm lg:text-base transition-all duration-300 shadow-lg disabled:opacity-50"
+                  disabled={isGenerating || !validation.canGenerate}
+                  className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl font-medium text-sm lg:text-base transition-all duration-300 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                  title={!validation.canGenerate ? validation.reason : "Lihat Preview"}
                 >
                   <Eye size={18} />
                   {isGenerating ? "Generating..." : "Lihat Preview"}
                 </button>
                 <button
                   onClick={handleDownloadAgain}
-                  disabled={isGenerating}
-                  className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-xl font-medium text-sm lg:text-base transition-all duration-300 shadow-lg disabled:opacity-50"
+                  disabled={isGenerating || !validation.canGenerate}
+                  className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-xl font-medium text-sm lg:text-base transition-all duration-300 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                  title={!validation.canGenerate ? validation.reason : "Download Ulang"}
                 >
                   <Download size={18} />
                   {isGenerating ? "Generating..." : "Download Ulang"}
@@ -430,22 +456,37 @@ export const IDCardGenerator = ({ atlet, isEditing }: IDCardGeneratorProps) => {
         )}
       </div>
 
-      {!atlet.pas_foto_path && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
-          <p className="text-yellow-800 font-medium text-sm">
-            ⚠️ Foto atlet belum tersedia. Upload foto terlebih dahulu untuk generate ID Card.
-          </p>
+      {/* Warning Messages */}
+      {!validation.canGenerate && (
+        <div className="bg-red-50 border-2 border-red-200 rounded-xl p-4 mb-4">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="text-red-600 flex-shrink-0 mt-0.5" size={20} />
+            <div>
+              <p className="text-red-800 font-semibold text-sm mb-1">
+                Tidak Dapat Generate ID Card
+              </p>
+              <p className="text-red-700 text-sm">
+                {validation.reason}
+              </p>
+              <ul className="mt-2 text-xs text-red-600 space-y-1 list-disc list-inside">
+                <li>Pas foto: {atlet.pas_foto_path ? "✅ Tersedia" : "❌ Belum ada"}</li>
+                <li>Peserta kompetisi: {atlet.peserta_kompetisi?.length ? `✅ ${atlet.peserta_kompetisi.length} peserta` : "❌ Belum terdaftar"}</li>
+                <li>Status APPROVED: {atlet.peserta_kompetisi?.some(p => p.status === 'APPROVED') ? "✅ Ada" : "❌ Belum ada"}</li>
+              </ul>
+            </div>
+          </div>
         </div>
       )}
 
       <div className="mt-4 bg-purple-50 border border-purple-200 rounded-xl p-4">
-        <h4 className="font-semibold text-purple-900 mb-2 text-lg">Deteksi Kategori:</h4>
-        <p className="text-base text-purple-800">
+        <h4 className="font-semibold text-purple-900 mb-2 text-sm">🏆 Deteksi Kategori:</h4>
+        <p className="text-xs text-purple-800">
           Template otomatis: Pemula / Prestasi
         </p>
         {atlet.peserta_kompetisi && atlet.peserta_kompetisi.length > 0 && (
-          <p className="text-base text-purple-600 mt-1 font-mono">
-            Kategori: {atlet.peserta_kompetisi[0]?.kelas_kejuaraan?.kategori_event?.nama_kategori || "N/A"}
+          <p className="text-xs text-purple-600 mt-1 font-mono">
+            Kategori: {atlet.peserta_kompetisi.find(p => p.status === 'APPROVED')?.kelas_kejuaraan?.kategori_event?.nama_kategori || 
+                       atlet.peserta_kompetisi[0]?.kelas_kejuaraan?.kategori_event?.nama_kategori || "N/A"}
           </p>
         )}
       </div>
