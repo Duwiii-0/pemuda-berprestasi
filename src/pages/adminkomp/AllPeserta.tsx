@@ -105,23 +105,78 @@ const AllPeserta: React.FC = () => {
   const handleBulkAction = async (status: "APPROVED" | "REJECTED") => {
     if (!kompetisiId || selectedPesertas.size === 0) return;
 
-    // Using a simple alert for now, can be replaced with a toast notification library
-    alert(`Processing ${selectedPesertas.size} peserta...`);
+    const actionText = status === "APPROVED" ? "menyetujui" : "menolak";
+    const totalSelected = selectedPesertas.size;
+
+    // Show loading/processing notification
+    const loadingNotification = document.createElement('div');
+    loadingNotification.className = 'fixed top-4 right-4 z-50 bg-blue-500 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 animate-slide-in';
+    loadingNotification.style.maxWidth = '400px';
+    loadingNotification.innerHTML = `
+      <svg class="w-6 h-6 flex-shrink-0 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+      </svg>
+      <div class="flex-1">
+        <p class="font-semibold">Memproses...</p>
+        <p class="text-sm opacity-90">Sedang ${actionText} ${totalSelected} peserta.</p>
+      </div>
+    `;
+    document.body.appendChild(loadingNotification);
+
+    const closeNotification = (element: HTMLElement) => {
+      element.style.opacity = '0';
+      element.style.transform = 'translateX(100%)';
+      element.style.transition = 'all 0.3s ease-out';
+      setTimeout(() => element.remove(), 300);
+    };
+    
     const promises = Array.from(selectedPesertas).map((id) =>
       updatePesertaStatus(kompetisiId, id, status)
     );
 
     try {
       await Promise.all(promises);
-      alert(
-        `${selectedPesertas.size} peserta telah di-${
-          status === "APPROVED" ? "setujui" : "tolak"
-        }.`
-      );
+      
+      // Close loading notification
+      closeNotification(loadingNotification);
+
+      // Show success notification
+      const successNotification = document.createElement('div');
+      successNotification.className = 'fixed top-4 right-4 z-50 bg-green-500 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 animate-slide-in';
+      successNotification.style.maxWidth = '400px';
+      successNotification.innerHTML = `
+        <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+        </svg>
+        <div class="flex-1">
+          <p class="font-semibold">Berhasil!</p>
+          <p class="text-sm opacity-90">${totalSelected} peserta telah di-${status === "APPROVED" ? "setujui" : "tolak"}.</p>
+        </div>
+      `;
+      document.body.appendChild(successNotification);
+      setTimeout(() => closeNotification(successNotification), 3000);
+
       setSelectedPesertas(new Set());
-      // The context should handle refreshing the list
     } catch (error) {
-      alert(`Gagal memproses beberapa peserta.`);
+      // Close loading notification
+      closeNotification(loadingNotification);
+      
+      // Show error notification
+      const errorNotification = document.createElement('div');
+      errorNotification.className = 'fixed top-4 right-4 z-50 bg-red-500 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 animate-slide-in';
+      errorNotification.style.maxWidth = '400px';
+      errorNotification.innerHTML = `
+        <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+        <div class="flex-1">
+          <p class="font-semibold">Gagal!</p>
+          <p class="text-sm opacity-90">Gagal memproses beberapa peserta.</p>
+        </div>
+      `;
+      document.body.appendChild(errorNotification);
+      setTimeout(() => closeNotification(errorNotification), 4000);
+
       console.error("Error during bulk action:", error);
     }
   };
