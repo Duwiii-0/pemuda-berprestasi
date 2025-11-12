@@ -2,12 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { Eye, Loader, Building2, Search, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
 import { useDojang } from '../../context/dojangContext';
 import toast from 'react-hot-toast';
+import AlertModal from '../../components/alertModal';
+import { apiClient as api } from '../../config/api'; // Use apiClient as api
 
 const ValidasiDojang: React.FC = () => {
   const { dojangs, refreshDojang, isLoading } = useDojang(); 
   const [selectedDojang, setSelectedDojang] = useState<number | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isAlertOpen, setIsAlertOpen] = useState(false);
+  const [dojangToDelete, setDojangToDelete] = useState<any | null>(null);
   
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -20,6 +24,29 @@ const ValidasiDojang: React.FC = () => {
   const handleViewDetail = (id: number) => {
     setSelectedDojang(id);
     setShowDetailModal(true);
+  };
+
+  const handleDeleteClick = (dojang: any) => {
+    setDojangToDelete(dojang);
+    setIsAlertOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!dojangToDelete) return;
+
+    const toastId = toast.loading('Menghapus dojang...');
+    try {
+      await api.delete(`/dojang/${dojangToDelete.id_dojang}`);
+      toast.success(`Dojang ${dojangToDelete.nama_dojang} berhasil dihapus.`, { id: toastId });
+      await refreshDojang();
+    } catch (error: any) {
+      console.error('Error deleting dojang:', error);
+      const errorMessage = error?.data?.message || error?.message || 'Gagal menghapus dojang.';
+      toast.error(errorMessage, { id: toastId });
+    } finally {
+      setIsAlertOpen(false);
+      setDojangToDelete(null);
+    }
   };
 
   const formatDate = (dateStr: string) => {
@@ -235,7 +262,7 @@ const ValidasiDojang: React.FC = () => {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        toast.success(`Hapus dojang ${d.nama_dojang}`);
+                        handleDeleteClick(d);
                       }}
                       className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg hover:shadow-md transition-all text-sm font-medium"
                       style={{ backgroundColor: '#990D35', color: '#F5B700' }}
@@ -323,7 +350,7 @@ const ValidasiDojang: React.FC = () => {
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  toast.success(`Hapus dojang ${d.nama_dojang}`);
+                                  handleDeleteClick(d);
                                 }}
                                 className="flex items-center gap-1 px-3 py-2 rounded-lg hover:shadow-md transition-all text-xs font-medium"
                                 style={{ backgroundColor: '#990D35', color: '#F5B700' }}
@@ -494,6 +521,18 @@ const ValidasiDojang: React.FC = () => {
             </div>
           </div>
         )}
+
+        {/* Alert Modal for Delete Confirmation */}
+        <AlertModal
+          isOpen={isAlertOpen}
+          onClose={() => setIsAlertOpen(false)}
+          onConfirm={handleConfirmDelete}
+          message={
+            dojangToDelete
+              ? `Anda yakin ingin menghapus dojang "${dojangToDelete.nama_dojang}"? Dojang ini memiliki ${dojangToDelete.jumlah_atlet || 0} atlet.`
+              : 'Apakah Anda yakin?'
+          }
+        />
       </div>
     </div>
   );
