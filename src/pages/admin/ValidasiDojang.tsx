@@ -39,9 +39,10 @@ const ValidasiDojang: React.FC = () => {
       await api.delete(`/dojang/${dojangToDelete.id_dojang}`);
       toast.success(`Dojang ${dojangToDelete.nama_dojang} berhasil dihapus.`, { id: toastId });
       await refreshDojang();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting dojang:', error);
-      toast.error('Gagal menghapus dojang.', { id: toastId });
+      const errorMessage = error?.data?.message || error?.message || 'Gagal menghapus dojang.';
+      toast.error(errorMessage, { id: toastId });
     } finally {
       setIsAlertOpen(false);
       setDojangToDelete(null);

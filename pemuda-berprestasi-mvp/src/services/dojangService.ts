@@ -108,12 +108,18 @@ static async createDojang(data: CreateDojangData) {
 // ===== DELETE DOJANG =====
 static async deleteDojang(id: number) {
   const existing = await prisma.tb_dojang.findUnique({
-    where: { id_dojang: id }, // gunakan parameter id, bukan hardcode 1
-    include: { atlet: true }  // hanya where dan include
+    where: { id_dojang: id },
+    include: { 
+      atlet: true,
+      pelatih: true,
+      buktiTransfer: true,
+    }
   });
   
   if (!existing) throw new Error('Dojang tidak ditemukan');
   if (existing.atlet.length > 0) throw new Error('Tidak bisa menghapus dojang yang masih memiliki atlet');
+  if (existing.pelatih.length > 0) throw new Error('Tidak bisa menghapus dojang yang masih memiliki pelatih terdaftar');
+  if (existing.buktiTransfer.length > 0) throw new Error('Tidak bisa menghapus dojang yang memiliki riwayat bukti transfer');
 
   await prisma.tb_dojang.delete({ where: { id_dojang: id } });
   return { message: 'Dojang berhasil dihapus' };
