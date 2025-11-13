@@ -1342,7 +1342,6 @@ if (hasAdditionalMatch && byeMatchIndex > 0) {
 }
 
 const OFFSET_CONNECTOR = 180;
-const OFFSET_CARD = 70;
 
 // Hitung posisi konektor (buat line)
 const lastFightY = lastNormalFightIndex >= 0 
@@ -1353,7 +1352,7 @@ const byeMatchY = byeMatchIndex >= 0
   ? (byeMatchIndex % matchesPerColumn) * CARD_HEIGHT + OFFSET_CONNECTOR
   : OFFSET_CONNECTOR + 50;
 
-const ADDITIONAL_CARD_OFFSET = -40
+const ADDITIONAL_CARD_OFFSET = -100
 
 // Hitung posisi tambahan match — tetap pakai base offset kecil
 const additionalMatchY = (lastFightY + byeMatchY) / 2;
@@ -1384,8 +1383,8 @@ const additionalMatchY = (lastFightY + byeMatchY) / 2;
                     <div
                       className="bg-white rounded-lg shadow-md border overflow-hidden"
                       style={{ 
-                        borderColor: shouldShowConnector ? '#F5B700' : '#DC143C',
-                        borderWidth: shouldShowConnector ? '3px' : '1px',
+                        borderColor: '#DC143C',  // ⬅️ UBAH: selalu merah
+                        borderWidth: '1px',      // ⬅️ UBAH: selalu 1px
                         position: 'relative',
                         zIndex: 10,
                         background: 'white'
@@ -1394,7 +1393,7 @@ const additionalMatchY = (lastFightY + byeMatchY) / 2;
                       <div 
                         className="px-3 py-2 border-b flex items-center justify-between"
                         style={{ 
-                          backgroundColor: shouldShowConnector ? '#FFFBEA' : '#FFF5F5',
+                          backgroundColor: '#FFF5F5',  // ⬅️ UBAH: selalu merah muda
                           borderColor: '#DC143C'
                         }}
                       >
@@ -1597,7 +1596,7 @@ const additionalMatchY = (lastFightY + byeMatchY) / 2;
                   position: 'relative',
                   zIndex: 10,
                   width: `${CARD_WIDTH}px`,
-                  top: `${additionalMatchY + ADDITIONAL_CARD_OFFSET}px` // ⬅️ pakai offset di sini
+                  top: `${additionalMatchY + ADDITIONAL_CARD_OFFSET}px`
                 }}
               >
               <div 
@@ -1719,7 +1718,6 @@ const additionalMatchY = (lastFightY + byeMatchY) / 2;
               GOLD MEDALS ({leaderboard.gold.length})
             </h4>
           </div>
-          {/* Grid 3 kolom untuk Gold */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
             {leaderboard.gold.map((participant, idx) => (
               <div key={participant.id} className="p-2 rounded border" style={{ 
@@ -1753,7 +1751,6 @@ const additionalMatchY = (lastFightY + byeMatchY) / 2;
               SILVER MEDALS ({leaderboard.silver.length})
             </h4>
           </div>
-          {/* Grid 3 kolom untuk Silver */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
             {leaderboard.silver.map((participant, idx) => (
               <div key={participant.id} className="p-2 rounded border" style={{ 
@@ -1787,7 +1784,6 @@ const additionalMatchY = (lastFightY + byeMatchY) / 2;
               BRONZE MEDALS ({leaderboard.bronze.length})
             </h4>
           </div>
-          {/* Grid 3 kolom untuk Bronze */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
             {leaderboard.bronze.map((participant, idx) => (
               <div key={participant.id} className="p-2 rounded border" style={{ 
