@@ -1478,8 +1478,9 @@ if (isPemula && currentRound === 1) {
     // ⭐ Find BYE match
     const byeMatch = round1Matches.find(m => m.id_peserta_a && !m.id_peserta_b);
     
-    // ⭐ Find LAST NORMAL FIGHT match (match sebelum BYE)
-    let lastNormalFightMatch = null;
+    // ⭐ FIX: Declare dengan type yang benar (bukan null)
+    let lastNormalFightMatch: typeof round1Matches[0] | undefined = undefined;
+    
     if (byeMatch) {
       const byeIndex = round1Matches.findIndex(m => m.id_match === byeMatch.id_match);
       if (byeIndex > 0) {
