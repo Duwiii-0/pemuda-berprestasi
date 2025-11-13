@@ -1269,28 +1269,26 @@ return (
   const byeMatch = round1Matches.find(m => m.peserta_a && !m.peserta_b);
   const byeMatchIndex = byeMatch ? round1Matches.findIndex(m => m.id_match === byeMatch.id_match) : -1;
   
-  // ⭐ CRITICAL FIX: Find LAST normal fight match (sebelum BYE match)
-  // BUKAN yang pertama, tapi yang TERAKHIR sebelum BYE!
-  let lastNormalFightMatch = null;
-  let lastNormalFightIndex = -1;
-  
-  if (hasAdditionalMatch && byeMatchIndex > 0) {
-    // Match sebelum BYE adalah last normal fight
-    lastNormalFightMatch = round1Matches[byeMatchIndex - 1];
-    lastNormalFightIndex = byeMatchIndex - 1;
-  }
-  
-  // Calculate Y positions
-  const lastFightY = lastNormalFightIndex >= 0 
-    ? (lastNormalFightIndex % matchesPerColumn) * CARD_HEIGHT + 70 
-    : 70;
-  
-  const byeMatchY = byeMatchIndex >= 0 
-    ? (byeMatchIndex % matchesPerColumn) * CARD_HEIGHT + 70 
-    : 230;
-  
-  // Additional match di tengah-tengah kedua match
-  const additionalMatchY = (lastFightY + byeMatchY) / 2;
+  // ⭐ Find LAST normal fight match (sebelum BYE match)
+let lastNormalFightMatch = null;
+let lastNormalFightIndex = -1;
+
+if (hasAdditionalMatch && byeMatchIndex > 0) {
+  lastNormalFightMatch = round1Matches[byeMatchIndex - 1];
+  lastNormalFightIndex = byeMatchIndex - 1;
+}
+
+// Calculate Y positions
+const lastFightY = lastNormalFightIndex >= 0 
+  ? (lastNormalFightIndex % matchesPerColumn) * CARD_HEIGHT + 70 
+  : 70;
+
+const byeMatchY = byeMatchIndex >= 0 
+  ? (byeMatchIndex % matchesPerColumn) * CARD_HEIGHT + 70 
+  : 230;
+
+// ⭐ Additional match DI TENGAH-TENGAH kedua match
+const additionalMatchY = (lastFightY + byeMatchY) / 2;
   
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>

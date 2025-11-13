@@ -1457,6 +1457,7 @@ static async advanceWinnerToNextRound(match: any, winnerId: number): Promise<voi
   
   const isPemula = bagan?.kelas_kejuaraan?.kategori_event?.nama_kategori?.toLowerCase().includes('pemula') || false;
   
+// ⭐ PEMULA LOGIC: Check if this is the LAST match in Round 1
 if (isPemula && currentRound === 1) {
   const round1Matches = await prisma.tb_match.findMany({
     where: {
@@ -1474,25 +1475,34 @@ if (isPemula && currentRound === 1) {
   });
   
   if (round2Match) {
-    // ⭐ Cari match dengan BYE
+    // ⭐ Find BYE match
     const byeMatch = round1Matches.find(m => m.id_peserta_a && !m.id_peserta_b);
     
-    // ⭐ Jika ini BUKAN BYE match, maka ini normal fight match
-    // Winner-nya harus masuk ke Additional Match Slot A
-    if (match.id_match !== byeMatch?.id_match) {
-      console.log(`   ⭐ PEMULA: Normal fight winner → Advance to Additional Match (Slot A)`);
+    // ⭐ Find LAST NORMAL FIGHT match (match sebelum BYE)
+    let lastNormalFightMatch = null;
+    if (byeMatch) {
+      const byeIndex = round1Matches.findIndex(m => m.id_match === byeMatch.id_match);
+      if (byeIndex > 0) {
+        lastNormalFightMatch = round1Matches[byeIndex - 1];
+      }
+    }
+    
+    // ⭐ ONLY advance winner dari LAST NORMAL FIGHT match
+    if (lastNormalFightMatch && match.id_match === lastNormalFightMatch.id_match) {
+      console.log(`   ⭐ PEMULA: Last normal fight winner → Advance to Additional Match (Slot A)`);
       
       await prisma.tb_match.update({
         where: { id_match: round2Match.id_match },
         data: { id_peserta_a: winnerId }
       });
       
-      console.log(`   ✅ Winner ${winnerId} placed in Additional Match (Slot A)`);
+      console.log(`   ✅ Winner ${winnerId} placed in Additional Match (Slot A vs BYE)`);
       return;
     }
-    // ⭐ Jika ini BYE match, winner sudah otomatis di Slot B (tidak perlu advance)
-    else {
-      console.log(`   ℹ️ BYE match winner already in Additional Match (Slot B)`);
+    
+    // ⭐ BYE match winner TIDAK perlu advance (sudah auto di slot B)
+    if (byeMatch && match.id_match === byeMatch.id_match) {
+      console.log(`   ℹ️ BYE match - participant already in Additional Match (Slot B)`);
       return;
     }
   }
