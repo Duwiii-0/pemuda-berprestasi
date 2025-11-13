@@ -1929,7 +1929,8 @@ static async clearMatchResults(kompetisiId: number, kelasKejuaraanId: number): P
   clearedMatches: number;
 }> {
   try {
-    console.log(`🧹 Clearing match results for kompetisi ${kompetisiId}, kelas ${kelasKejuaraanId}`);
+    console.log(`🧹 === CLEARING MATCH RESULTS ===`);
+    console.log(`   Kompetisi: ${kompetisiId}, Kelas: ${kelasKejuaraanId}`);
 
     const bagan = await prisma.tb_bagan.findFirst({
       where: {
@@ -1937,7 +1938,17 @@ static async clearMatchResults(kompetisiId: number, kelasKejuaraanId: number): P
         id_kelas_kejuaraan: kelasKejuaraanId
       },
       include: {
-        match: true
+        match: {
+          include: {
+            peserta_a: true,
+            peserta_b: true
+          }
+        },
+        kelas_kejuaraan: {
+          include: {
+            kategori_event: true
+          }
+        }
       }
     });
 
@@ -1945,10 +1956,19 @@ static async clearMatchResults(kompetisiId: number, kelasKejuaraanId: number): P
       throw new Error('Bagan tidak ditemukan');
     }
 
-    // ⭐ PERBAIKAN 3: Jangan hapus participant di Round 2!
+    // ⭐ Detect if PEMULA
+    const isPemula = bagan.kelas_kejuaraan?.kategori_event?.nama_kategori?.toLowerCase().includes('pemula') || false;
+
+    console.log(`   Category: ${isPemula ? 'PEMULA' : 'PRESTASI'}`);
+    console.log(`   Total matches: ${bagan.match.length}`);
+
     const updatePromises = bagan.match.map((match) => {
+      console.log(`\n   Processing Match ${match.id_match} (Round ${match.ronde}):`);
+      console.log(`      Before: peserta_a=${match.id_peserta_a}, peserta_b=${match.id_peserta_b}`);
+      
       if (match.ronde === 1) {
-        // Round 1: Reset scores only, keep participants
+        // ⭐ Round 1: KEEP ALL participants, reset scores only
+        console.log(`      Action: Keep participants, reset scores`);
         return prisma.tb_match.update({
           where: { id_match: match.id_match },
           data: {
@@ -1956,16 +1976,30 @@ static async clearMatchResults(kompetisiId: number, kelasKejuaraanId: number): P
             skor_b: 0
           }
         });
-      } else {
-        // ⭐ Round 2+: Reset scores + clear ONLY peserta_a (TBD winner)
-        // KEEP peserta_b (BYE participant yang auto-advanced)
+      } else if (isPemula && match.ronde === 2) {
+        // ⭐ PEMULA Round 2 (Additional Match):
+        // - KEEP peserta_b (BYE participant - auto advanced)
+        // - CLEAR peserta_a (TBD - winner from fight match)
+        console.log(`      Action: PEMULA R2 - Keep peserta_b (BYE), clear peserta_a (TBD)`);
         return prisma.tb_match.update({
           where: { id_match: match.id_match },
           data: {
             skor_a: 0,
             skor_b: 0,
-            id_peserta_a: null  // ⭐ Clear TBD slot only
-            // ⭐ id_peserta_b TIDAK dihapus (keep BYE participant)
+            id_peserta_a: null  // Clear TBD slot
+            // id_peserta_b is KEPT (BYE participant)
+          }
+        });
+      } else {
+        // ⭐ PRESTASI Round 2+: Clear both participants (will be filled by winners)
+        console.log(`      Action: PRESTASI R${match.ronde} - Clear both participants`);
+        return prisma.tb_match.update({
+          where: { id_match: match.id_match },
+          data: {
+            skor_a: 0,
+            skor_b: 0,
+            id_peserta_a: null,
+            id_peserta_b: null
           }
         });
       }
@@ -1973,7 +2007,7 @@ static async clearMatchResults(kompetisiId: number, kelasKejuaraanId: number): P
 
     await Promise.all(updatePromises);
 
-    console.log(`✅ Cleared ${bagan.match.length} matches`);
+    console.log(`\n✅ Successfully cleared ${bagan.match.length} matches\n`);
 
     return {
       success: true,

@@ -1260,24 +1260,37 @@ return (
   const CARD_WIDTH = 320;
   const COLUMN_GAP = 120;
   
-  // Split matches into columns
   const columns: Match[][] = [];
   for (let i = 0; i < round1Matches.length; i += matchesPerColumn) {
     columns.push(round1Matches.slice(i, i + matchesPerColumn));
   }
   
-  // ⭐ PERBAIKAN 1: Find SPECIFIC matches (bukan semua yang punya connector)
+  // ⭐ CRITICAL FIX: Find BYE match
   const byeMatch = round1Matches.find(m => m.peserta_a && !m.peserta_b);
   const byeMatchIndex = byeMatch ? round1Matches.findIndex(m => m.id_match === byeMatch.id_match) : -1;
   
-  // ⭐ Find the FIRST normal fight match (bukan semua fight matches)
-  const normalFightMatch = round1Matches.find(m => m.peserta_a && m.peserta_b);
-  const normalFightIndex = normalFightMatch ? round1Matches.findIndex(m => m.id_match === normalFightMatch.id_match) : -1;
+  // ⭐ CRITICAL FIX: Find LAST normal fight match (sebelum BYE match)
+  // BUKAN yang pertama, tapi yang TERAKHIR sebelum BYE!
+  let lastNormalFightMatch = null;
+  let lastNormalFightIndex = -1;
   
-  // ⭐ PERBAIKAN 2: Calculate exact Y positions
-  const normalFightY = normalFightIndex >= 0 ? (normalFightIndex % matchesPerColumn) * CARD_HEIGHT + 70 : 70;
-  const byeMatchY = byeMatchIndex >= 0 ? (byeMatchIndex % matchesPerColumn) * CARD_HEIGHT + 70 : 230;
-  const additionalMatchY = (normalFightY + byeMatchY) / 2;
+  if (hasAdditionalMatch && byeMatchIndex > 0) {
+    // Match sebelum BYE adalah last normal fight
+    lastNormalFightMatch = round1Matches[byeMatchIndex - 1];
+    lastNormalFightIndex = byeMatchIndex - 1;
+  }
+  
+  // Calculate Y positions
+  const lastFightY = lastNormalFightIndex >= 0 
+    ? (lastNormalFightIndex % matchesPerColumn) * CARD_HEIGHT + 70 
+    : 70;
+  
+  const byeMatchY = byeMatchIndex >= 0 
+    ? (byeMatchIndex % matchesPerColumn) * CARD_HEIGHT + 70 
+    : 230;
+  
+  // Additional match di tengah-tengah kedua match
+  const additionalMatchY = (lastFightY + byeMatchY) / 2;
   
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>
@@ -1289,10 +1302,12 @@ return (
           {columns.map((columnMatches, colIndex) => (
             <div key={colIndex} className="space-y-4">
               {columnMatches.map((match) => {
-                const isByeMatch = match.id_match === byeMatch?.id_match;
-                const isNormalFight = match.id_match === normalFightMatch?.id_match;
-                // ⭐ PERBAIKAN 1: HANYA 2 match ini yang punya connector!
-                const shouldShowConnector = hasAdditionalMatch && (isByeMatch || isNormalFight);
+                // ⭐ CEK: Apakah match ini BYE atau LAST normal fight?
+                const isByeMatch = byeMatch && match.id_match === byeMatch.id_match;
+                const isLastFightMatch = lastNormalFightMatch && match.id_match === lastNormalFightMatch.id_match;
+                
+                // HANYA 2 match ini yang connect ke Additional
+                const shouldShowConnector = hasAdditionalMatch && (isByeMatch || isLastFightMatch);
                 
                 return (
                   <div 
@@ -1425,8 +1440,10 @@ return (
           ))}
         </div>
 
+        {/* ADDITIONAL MATCH */}
         {hasAdditionalMatch && additionalMatch && (
           <div style={{ position: 'relative' }}>
+            {/* CONNECTORS */}
             <svg
               style={{
                 position: 'absolute',
@@ -1439,24 +1456,28 @@ return (
                 overflow: 'visible'
               }}
             >
-              {normalFightMatch && (
+              {/* Line dari Last Fight Match */}
+              {lastNormalFightMatch && (
                 <g>
+                  {/* Horizontal dari last fight */}
                   <line 
                     x1="0" 
-                    y1={normalFightY} 
+                    y1={lastFightY} 
                     x2={COLUMN_GAP / 2} 
-                    y2={normalFightY} 
+                    y2={lastFightY} 
                     stroke="#F5B700" 
                     strokeWidth="3" 
                   />
+                  {/* Vertical ke tengah */}
                   <line 
                     x1={COLUMN_GAP / 2} 
-                    y1={normalFightY} 
+                    y1={lastFightY} 
                     x2={COLUMN_GAP / 2} 
                     y2={additionalMatchY} 
                     stroke="#F5B700" 
                     strokeWidth="3" 
                   />
+                  {/* Horizontal ke additional */}
                   <line 
                     x1={COLUMN_GAP / 2} 
                     y1={additionalMatchY} 
@@ -1468,8 +1489,10 @@ return (
                 </g>
               )}
               
+              {/* Line dari BYE Match */}
               {byeMatch && (
                 <g>
+                  {/* Horizontal dari bye */}
                   <line 
                     x1="0" 
                     y1={byeMatchY} 
@@ -1478,6 +1501,7 @@ return (
                     stroke="#F5B700" 
                     strokeWidth="3" 
                   />
+                  {/* Vertical ke tengah (reuse yang sama) */}
                   <line 
                     x1={COLUMN_GAP / 2} 
                     y1={byeMatchY} 
@@ -1490,6 +1514,7 @@ return (
               )}
             </svg>
 
+            {/* Header Label */}
             <div 
               className="rounded-lg p-2 shadow-sm mb-3"
               style={{ 
@@ -1505,6 +1530,7 @@ return (
               </h3>
             </div>
 
+            {/* Additional Match Card */}
             <div
               className="bg-white rounded-lg shadow-md border overflow-hidden"
               style={{ 
@@ -1572,7 +1598,7 @@ return (
                         className="text-xs font-bold px-3 py-1 rounded"
                         style={{ backgroundColor: '#F5B700', color: 'white' }}
                       >
-                        ⏳ Waiting for Match {normalFightMatch?.nomor_partai || 'TBD'}
+                        ⏳ Waiting for Match {lastNormalFightMatch?.nomor_partai || 'TBD'}
                       </span>
                     </div>
                   )}
