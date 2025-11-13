@@ -832,7 +832,14 @@ const generateLeaderboard = () => {
     const hasAdditionalMatch = round2Matches.length > 0;
 
     if (!hasAdditionalMatch) {
-      // SCENARIO GENAP: Winner → GOLD, Loser → SILVER
+      // ═══════════════════════════════════════════════════════════════
+      // 📊 SCENARIO GENAP (EVEN) - Semua match di Round 1
+      // ═══════════════════════════════════════════════════════════════
+      // Logika:
+      // - Winner → GOLD 🥇
+      // - Loser → SILVER 🥈
+      // ═══════════════════════════════════════════════════════════════
+      
       round1Matches.forEach((match) => {
         const hasScore = match.skor_a > 0 || match.skor_b > 0;
         
@@ -843,6 +850,7 @@ const generateLeaderboard = () => {
           const winnerId = winner.id_peserta_kompetisi;
           const loserId = loser.id_peserta_kompetisi;
           
+          // Winner → GOLD
           if (!processedGold.has(winnerId)) {
             leaderboard.gold.push({
               name: getParticipantName(winner),
@@ -852,6 +860,7 @@ const generateLeaderboard = () => {
             processedGold.add(winnerId);
           }
           
+          // Loser → SILVER
           if (!processedSilver.has(loserId)) {
             leaderboard.silver.push({
               name: getParticipantName(loser),
@@ -862,13 +871,33 @@ const generateLeaderboard = () => {
           }
         }
       });
+      
     } else {
-      // SCENARIO GANJIL: Ada Additional Match
+      // ═══════════════════════════════════════════════════════════════
+      // 📊 SCENARIO GANJIL (ODD) - Ada Additional Match
+      // ═══════════════════════════════════════════════════════════════
+      // Structure:
+      // Round 1:
+      //   - Normal Matches (n-2 pertandingan) → Winner: GOLD, Loser: SILVER
+      //   - Last Normal Match (1 pertandingan) → Winner: ke Additional, Loser: BRONZE
+      //   - BYE Match (1 pertandingan) → Auto-advance ke Additional
+      // 
+      // Round 2:
+      //   - Additional Match → Winner: GOLD, Loser: SILVER
+      // ═══════════════════════════════════════════════════════════════
+      
       const additionalMatch = round2Matches[0];
       const lastRound1Match = round1Matches[round1Matches.length - 1];
       const byeMatch = round1Matches.find(m => m.peserta_a && !m.peserta_b);
       
-      // ⭐ STEP 1: Process Additional Match (Round 2)
+      // ═══════════════════════════════════════════════════════════════
+      // 🏆 STEP 1: Process Additional Match (Round 2) TERLEBIH DAHULU
+      // ═══════════════════════════════════════════════════════════════
+      // Ini penting dilakukan pertama agar ID peserta yang menang/kalah
+      // di Additional Match sudah ter-track, sehingga tidak akan
+      // di-assign lagi saat processing Round 1
+      // ═══════════════════════════════════════════════════════════════
+      
       if (additionalMatch && (additionalMatch.skor_a > 0 || additionalMatch.skor_b > 0)) {
         const winner = additionalMatch.skor_a > additionalMatch.skor_b 
           ? additionalMatch.peserta_a 
@@ -877,6 +906,7 @@ const generateLeaderboard = () => {
           ? additionalMatch.peserta_b 
           : additionalMatch.peserta_a;
         
+        // Winner Additional Match → GOLD 🥇
         if (winner) {
           leaderboard.gold.push({
             name: getParticipantName(winner),
@@ -886,6 +916,7 @@ const generateLeaderboard = () => {
           processedGold.add(winner.id_peserta_kompetisi);
         }
         
+        // Loser Additional Match → SILVER 🥈
         if (loser) {
           leaderboard.silver.push({
             name: getParticipantName(loser),
@@ -896,13 +927,17 @@ const generateLeaderboard = () => {
         }
       }
       
-      // ⭐ STEP 2: Process Round 1 Matches
+      // ═══════════════════════════════════════════════════════════════
+      // 🥋 STEP 2: Process Round 1 Matches
+      // ═══════════════════════════════════════════════════════════════
+      
       round1Matches.forEach((match) => {
         const hasScore = match.skor_a > 0 || match.skor_b > 0;
         const isLastMatch = match.id_match === lastRound1Match?.id_match;
         const isByeMatch = match.id_match === byeMatch?.id_match;
         
-        if (isByeMatch) return; // Skip BYE match
+        // Skip BYE match (peserta auto-advance, tidak ada medal di sini)
+        if (isByeMatch) return;
         
         if (hasScore && match.peserta_a && match.peserta_b) {
           const winner = match.skor_a > match.skor_b ? match.peserta_a : match.peserta_b;
@@ -912,11 +947,14 @@ const generateLeaderboard = () => {
           const loserId = loser.id_peserta_kompetisi;
           
           if (isLastMatch) {
-            // ═══════════════════════════════════════════════════════
-            // ⭐ LAST NORMAL FIGHT MATCH
-            // Winner → Goes to Additional Match
-            // Loser → BRONZE ✅ (HANYA LAST MATCH!)
-            // ═══════════════════════════════════════════════════════
+            // ═════════════════════════════════════════════════════════
+            // 🟡 LAST NORMAL FIGHT MATCH (yang connect ke Additional)
+            // ═════════════════════════════════════════════════════════
+            // Winner → Lanjut ke Additional Match (belum dapat medal)
+            //          Medal-nya ditentukan di Additional Match result
+            // Loser  → BRONZE 🥉 (LANGSUNG!)
+            // ═════════════════════════════════════════════════════════
+            
             if (!processedBronze.has(loserId)) {
               leaderboard.bronze.push({
                 name: getParticipantName(loser),
@@ -925,12 +963,20 @@ const generateLeaderboard = () => {
               });
               processedBronze.add(loserId);
             }
+            
+            // ⚠️ CRITICAL: Winner TIDAK di-assign medal di sini!
+            // Winner akan dapat GOLD atau SILVER tergantung hasil Additional Match
+            // Yang sudah di-handle di STEP 1 di atas
+            
           } else {
-            // ═══════════════════════════════════════════════════════
-            // ⭐ OTHER NORMAL MATCHES (bukan last match)
+            // ═════════════════════════════════════════════════════════
+            // 🔵 NORMAL MATCHES (semua match SELAIN last match & BYE)
+            // ═════════════════════════════════════════════════════════
+            // Winner → GOLD 🥇 (langsung selesai, tidak lanjut ke mana-mana)
+            // Loser  → SILVER 🥈 (langsung selesai)
+            // ═════════════════════════════════════════════════════════
+            
             // Winner → GOLD
-            // Loser → SILVER ✅
-            // ═══════════════════════════════════════════════════════
             if (!processedGold.has(winnerId)) {
               leaderboard.gold.push({
                 name: getParticipantName(winner),
@@ -940,7 +986,7 @@ const generateLeaderboard = () => {
               processedGold.add(winnerId);
             }
             
-            // ⭐ PERBAIKAN: Loser normal match → SILVER
+            // Loser → SILVER
             if (!processedSilver.has(loserId)) {
               leaderboard.silver.push({
                 name: getParticipantName(loser),
@@ -956,7 +1002,7 @@ const generateLeaderboard = () => {
     
     return leaderboard;
   };
-
+  
 const handleExportPDF = async () => {
   if (!kelasData || matches.length === 0) {
     showNotification(
@@ -1280,11 +1326,11 @@ if (hasAdditionalMatch && byeMatchIndex > 0) {
 
 // Calculate Y positions
 const lastFightY = lastNormalFightIndex >= 0 
-  ? (lastNormalFightIndex % matchesPerColumn) * CARD_HEIGHT + 150
+  ? (lastNormalFightIndex % matchesPerColumn) * CARD_HEIGHT + 180
   : 70;
 
 const byeMatchY = byeMatchIndex >= 0 
-  ? (byeMatchIndex % matchesPerColumn) * CARD_HEIGHT + 150
+  ? (byeMatchIndex % matchesPerColumn) * CARD_HEIGHT + 180
   : 230;
 
 // ⭐ Additional match DI TENGAH-TENGAH kedua match
