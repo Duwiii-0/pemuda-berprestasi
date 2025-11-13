@@ -1522,7 +1522,7 @@ const additionalMatchY = (lastFightY + byeMatchY) / 2;
                     y1={lastFightY} 
                     x2={COLUMN_GAP / 2} 
                     y2={lastFightY} 
-                    stroke="#F5B700" 
+                    stroke="#DC143C" 
                     strokeWidth="3" 
                   />
                   {/* Vertical ke tengah */}
@@ -1531,7 +1531,7 @@ const additionalMatchY = (lastFightY + byeMatchY) / 2;
                     y1={lastFightY} 
                     x2={COLUMN_GAP / 2} 
                     y2={additionalMatchY} 
-                    stroke="#F5B700" 
+                    stroke="#DC143C" 
                     strokeWidth="3" 
                   />
                   {/* Horizontal ke additional */}
@@ -1540,7 +1540,7 @@ const additionalMatchY = (lastFightY + byeMatchY) / 2;
                     y1={additionalMatchY} 
                     x2={COLUMN_GAP} 
                     y2={additionalMatchY} 
-                    stroke="#F5B700" 
+                    stroke="#DC143C" 
                     strokeWidth="3" 
                   />
                 </g>
@@ -1555,7 +1555,7 @@ const additionalMatchY = (lastFightY + byeMatchY) / 2;
                     y1={byeMatchY} 
                     x2={COLUMN_GAP / 2} 
                     y2={byeMatchY} 
-                    stroke="#F5B700" 
+                    stroke="#DC143C" 
                     strokeWidth="3" 
                   />
                   {/* Vertical ke tengah (reuse yang sama) */}
@@ -1564,7 +1564,7 @@ const additionalMatchY = (lastFightY + byeMatchY) / 2;
                     y1={byeMatchY} 
                     x2={COLUMN_GAP / 2} 
                     y2={additionalMatchY} 
-                    stroke="#F5B700" 
+                    stroke="#DC143C" 
                     strokeWidth="3" 
                   />
                 </g>
@@ -1607,7 +1607,7 @@ const additionalMatchY = (lastFightY + byeMatchY) / 2;
                   {additionalMatch.nomor_partai && (
                     <span 
                       className="text-xs px-2 py-1 rounded-full font-bold"
-                      style={{ backgroundColor: '#F5B700', color: 'white' }}
+                      style={{ backgroundColor: '#DC143C', color: 'white' }}
                     >
                       No.Partai: {additionalMatch.nomor_partai}
                     </span>
@@ -1618,7 +1618,7 @@ const additionalMatchY = (lastFightY + byeMatchY) / 2;
                   onClick={() => setEditingMatch(additionalMatch)}
                   className="p-1 rounded hover:bg-black/5 transition-all"
                 >
-                  <Edit3 size={14} style={{ color: '#F5B700' }} />
+                  <Edit3 size={14} style={{ color: '#DC143C' }} />
                 </button>
               </div>
 
@@ -1653,7 +1653,7 @@ const additionalMatchY = (lastFightY + byeMatchY) / 2;
                     <div className="w-full text-center">
                       <span 
                         className="text-xs font-bold px-3 py-1 rounded"
-                        style={{ backgroundColor: '#F5B700', color: 'white' }}
+                        style={{ backgroundColor: '#DC143C', color: 'white' }}
                       >
                         ⏳ Waiting for Match {lastNormalFightMatch?.nomor_partai || 'TBD'}
                       </span>
