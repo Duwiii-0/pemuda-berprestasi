@@ -827,7 +827,6 @@ const generateLeaderboard = () => {
     const processedSilver = new Set<number>();
     const processedBronze = new Set<number>();
 
-    // ⭐ DETECT: Ada Round 2 (Additional Match)?
     const round1Matches = matches.filter(m => m.ronde === 1);
     const round2Matches = matches.filter(m => m.ronde === 2);
     const hasAdditionalMatch = round2Matches.length > 0;
@@ -844,7 +843,6 @@ const generateLeaderboard = () => {
           const winnerId = winner.id_peserta_kompetisi;
           const loserId = loser.id_peserta_kompetisi;
           
-          // Winner → GOLD
           if (!processedGold.has(winnerId)) {
             leaderboard.gold.push({
               name: getParticipantName(winner),
@@ -854,7 +852,6 @@ const generateLeaderboard = () => {
             processedGold.add(winnerId);
           }
           
-          // Loser → SILVER
           if (!processedSilver.has(loserId)) {
             leaderboard.silver.push({
               name: getParticipantName(loser),
@@ -869,8 +866,9 @@ const generateLeaderboard = () => {
       // SCENARIO GANJIL: Ada Additional Match
       const additionalMatch = round2Matches[0];
       const lastRound1Match = round1Matches[round1Matches.length - 1];
+      const byeMatch = round1Matches.find(m => m.peserta_a && !m.peserta_b);
       
-      // ⭐ STEP 1: Process Additional Match (Round 2) FIRST
+      // ⭐ STEP 1: Process Additional Match (Round 2)
       if (additionalMatch && (additionalMatch.skor_a > 0 || additionalMatch.skor_b > 0)) {
         const winner = additionalMatch.skor_a > additionalMatch.skor_b 
           ? additionalMatch.peserta_a 
@@ -879,7 +877,6 @@ const generateLeaderboard = () => {
           ? additionalMatch.peserta_b 
           : additionalMatch.peserta_a;
         
-        // Additional Match Winner → GOLD
         if (winner) {
           leaderboard.gold.push({
             name: getParticipantName(winner),
@@ -889,7 +886,6 @@ const generateLeaderboard = () => {
           processedGold.add(winner.id_peserta_kompetisi);
         }
         
-        // Additional Match Loser → SILVER
         if (loser) {
           leaderboard.silver.push({
             name: getParticipantName(loser),
@@ -904,7 +900,9 @@ const generateLeaderboard = () => {
       round1Matches.forEach((match) => {
         const hasScore = match.skor_a > 0 || match.skor_b > 0;
         const isLastMatch = match.id_match === lastRound1Match?.id_match;
-        const isByeMatch = match.peserta_a && !match.peserta_b;
+        const isByeMatch = match.id_match === byeMatch?.id_match;
+        
+        if (isByeMatch) return; // Skip BYE match
         
         if (hasScore && match.peserta_a && match.peserta_b) {
           const winner = match.skor_a > match.skor_b ? match.peserta_a : match.peserta_b;
@@ -914,9 +912,11 @@ const generateLeaderboard = () => {
           const loserId = loser.id_peserta_kompetisi;
           
           if (isLastMatch) {
+            // ═══════════════════════════════════════════════════════
             // ⭐ LAST NORMAL FIGHT MATCH
-            // Winner → Goes to Additional Match (sudah diproses di Step 1)
-            // Loser → BRONZE ✅ INI PERBAIKAN UTAMA
+            // Winner → Goes to Additional Match
+            // Loser → BRONZE ✅ (HANYA LAST MATCH!)
+            // ═══════════════════════════════════════════════════════
             if (!processedBronze.has(loserId)) {
               leaderboard.bronze.push({
                 name: getParticipantName(loser),
@@ -925,9 +925,12 @@ const generateLeaderboard = () => {
               });
               processedBronze.add(loserId);
             }
-          } else if (!isByeMatch) {
-            // ⭐ OTHER NORMAL MATCHES (bukan BYE, bukan last match)
+          } else {
+            // ═══════════════════════════════════════════════════════
+            // ⭐ OTHER NORMAL MATCHES (bukan last match)
             // Winner → GOLD
+            // Loser → SILVER ✅
+            // ═══════════════════════════════════════════════════════
             if (!processedGold.has(winnerId)) {
               leaderboard.gold.push({
                 name: getParticipantName(winner),
@@ -937,7 +940,7 @@ const generateLeaderboard = () => {
               processedGold.add(winnerId);
             }
             
-            // Loser → SILVER
+            // ⭐ PERBAIKAN: Loser normal match → SILVER
             if (!processedSilver.has(loserId)) {
               leaderboard.silver.push({
                 name: getParticipantName(loser),
@@ -1277,11 +1280,11 @@ if (hasAdditionalMatch && byeMatchIndex > 0) {
 
 // Calculate Y positions
 const lastFightY = lastNormalFightIndex >= 0 
-  ? (lastNormalFightIndex % matchesPerColumn) * CARD_HEIGHT + 135 
+  ? (lastNormalFightIndex % matchesPerColumn) * CARD_HEIGHT + 150
   : 70;
 
 const byeMatchY = byeMatchIndex >= 0 
-  ? (byeMatchIndex % matchesPerColumn) * CARD_HEIGHT + 135
+  ? (byeMatchIndex % matchesPerColumn) * CARD_HEIGHT + 150
   : 230;
 
 // ⭐ Additional match DI TENGAH-TENGAH kedua match
@@ -1644,7 +1647,6 @@ const additionalMatchY = (lastFightY + byeMatchY) / 2;
       {leaderboard && leaderboard.gold.length > 0 && (
         <div className="mb-6">
           <div className="flex items-center gap-2 mb-3 px-2">
-            <span className="text-lg">🥇</span>
             <h4 className="font-bold text-base" style={{ color: '#000' }}>
               GOLD MEDALS ({leaderboard.gold.length})
             </h4>
@@ -1679,7 +1681,6 @@ const additionalMatchY = (lastFightY + byeMatchY) / 2;
       {leaderboard && leaderboard.silver.length > 0 && (
         <div className="mb-6">
           <div className="flex items-center gap-2 mb-3 px-2">
-            <span className="text-lg">🥈</span>
             <h4 className="font-bold text-base" style={{ color: '#000' }}>
               SILVER MEDALS ({leaderboard.silver.length})
             </h4>
@@ -1714,7 +1715,6 @@ const additionalMatchY = (lastFightY + byeMatchY) / 2;
       {leaderboard && leaderboard.bronze && leaderboard.bronze.length > 0 && (
         <div>
           <div className="flex items-center gap-2 mb-3 px-2">
-            <span className="text-lg">🥉</span>
             <h4 className="font-bold text-base" style={{ color: '#000' }}>
               BRONZE MEDALS ({leaderboard.bronze.length})
             </h4>
