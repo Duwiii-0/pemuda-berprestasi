@@ -1248,7 +1248,7 @@ return (
         {/* ============================================
             🆕 RENDER BRACKET dengan ADDITIONAL MATCH
             ============================================ */}
-        <div ref={bracketRef} className="tournament-layout bg-white p-6 rounded-lg">
+<div ref={bracketRef} className="tournament-layout bg-white p-6 rounded-lg">
   {(() => {
     const round1Matches = matches.filter(m => m.ronde === 1);
     const round2Matches = matches.filter(m => m.ronde === 2);
@@ -1256,9 +1256,9 @@ return (
     const additionalMatch = hasAdditionalMatch ? round2Matches[0] : null;
     
     const matchesPerColumn = 5;
-    const CARD_HEIGHT = 160;
+    const CARD_HEIGHT = 180;
     const CARD_WIDTH = 320;
-    const COLUMN_GAP = 80;
+    const COLUMN_GAP = 120;
     
     // Split matches into columns
     const columns: Match[][] = [];
@@ -1266,458 +1266,488 @@ return (
       columns.push(round1Matches.slice(i, i + matchesPerColumn));
     }
     
-    // ⭐ Find special matches
+    // Find special matches
     const byeMatch = round1Matches.find(m => m.peserta_a && !m.peserta_b);
+    const byeMatchIndex = byeMatch ? round1Matches.findIndex(m => m.id_match === byeMatch.id_match) : -1;
+    
     const normalFightMatch = round1Matches.find(m => m.peserta_a && m.peserta_b);
+    const normalFightIndex = normalFightMatch ? round1Matches.findIndex(m => m.id_match === normalFightMatch.id_match) : -1;
+    
+    // Calculate Y positions
+    const normalFightY = normalFightIndex >= 0 ? (normalFightIndex % matchesPerColumn) * CARD_HEIGHT + 70 : 70;
+    const byeMatchY = byeMatchIndex >= 0 ? (byeMatchIndex % matchesPerColumn) * CARD_HEIGHT + 70 : 230;
+    const additionalMatchY = (normalFightY + byeMatchY) / 2;
     
     return (
-      <div style={{ position: 'relative', display: 'flex', gap: `${COLUMN_GAP}px`, alignItems: 'flex-start' }}>
-        {/* ========================================
-            PART 1: ROUND 1 MATCHES - COLUMN LAYOUT
-            ======================================== */}
-        <div className="grid gap-6" style={{ 
-          gridTemplateColumns: `repeat(${columns.length}, ${CARD_WIDTH}px)`,
-          columnGap: '24px'
-        }}>
-          {columns.map((columnMatches, colIndex) => (
-            <div key={colIndex} className="space-y-4">
-              {columnMatches.map((match) => {
-                const isByeMatch = match.peserta_a && !match.peserta_b;
-                const isNormalFight = match.peserta_a && match.peserta_b;
-                const shouldShowConnector = hasAdditionalMatch && (isByeMatch || isNormalFight);
-                
-                return (
-                  <div 
-                    key={match.id_match}
-                    style={{ position: 'relative' }}
-                    id={`match-${match.id_match}`}
-                  >
-                    {/* Match Card */}
-                    <div
-                      className="bg-white rounded-lg shadow-md border overflow-hidden"
-                      style={{ 
-                        borderColor: shouldShowConnector ? '#F5B700' : '#DC143C',
-                        borderWidth: shouldShowConnector ? '3px' : '1px',
-                        position: 'relative',
-                        zIndex: 10,
-                        background: 'white'
-                      }}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>
+        {/* BRACKET AREA */}
+        <div style={{ position: 'relative', display: 'flex', gap: `${COLUMN_GAP}px`, alignItems: 'flex-start' }}>
+          {/* ROUND 1 MATCHES */}
+          <div className="grid gap-6" style={{ 
+            gridTemplateColumns: `repeat(${columns.length}, ${CARD_WIDTH}px)`,
+            columnGap: '24px'
+          }}>
+            {columns.map((columnMatches, colIndex) => (
+              <div key={colIndex} className="space-y-4">
+                {columnMatches.map((match) => {
+                  const isByeMatch = match.peserta_a && !match.peserta_b;
+                  const isNormalFight = match.peserta_a && match.peserta_b;
+                  const shouldShowConnector = hasAdditionalMatch && (isByeMatch || isNormalFight);
+                  
+                  return (
+                    <div 
+                      key={match.id_match}
+                      style={{ position: 'relative' }}
+                      id={`match-${match.id_match}`}
                     >
-                      {/* Header Card */}
-                      <div 
-                        className="px-3 py-2 border-b flex items-center justify-between"
+                      <div
+                        className="bg-white rounded-lg shadow-md border overflow-hidden"
                         style={{ 
-                          backgroundColor: shouldShowConnector ? '#FFFBEA' : '#FFF5F5',
-                          borderColor: '#DC143C'
+                          borderColor: shouldShowConnector ? '#F5B700' : '#DC143C',
+                          borderWidth: shouldShowConnector ? '3px' : '1px',
+                          position: 'relative',
+                          zIndex: 10,
+                          background: 'white'
                         }}
                       >
-                        <div className="flex items-center gap-2 flex-1">
-                          {match.nomor_partai && (
-                            <span 
-                              className="text-xs px-2 py-1 rounded-full font-bold"
-                              style={{ backgroundColor: '#990D35', color: 'white' }}
-                            >
-                              No.Partai: {match.nomor_partai}
-                            </span>
-                          )}
-                          {shouldShowConnector && (
-                            <span 
-                              className="text-xs px-2 py-1 rounded-full font-bold"
-                              style={{ backgroundColor: '#F5B700', color: 'white' }}
-                            >
-                              → To Additional
-                            </span>
-                          )}
-                        </div>
-                        
-                        <button
-                          onClick={() => setEditingMatch(match)}
-                          className="p-1 rounded hover:bg-black/5 transition-all"
-                        >
-                          <Edit3 size={14} style={{ color: '#DC143C' }} />
-                        </button>
-                      </div>
-
-                      {/* Participants Container */}
-                      <div className="flex flex-col">
-                        {/* Participant A */}
                         <div 
-                          className="px-3 py-3 border-b flex items-start justify-between gap-2"
+                          className="px-3 py-2 border-b flex items-center justify-between"
                           style={{ 
-                            borderColor: '#F0F0F0',
-                            minHeight: '70px'
+                            backgroundColor: shouldShowConnector ? '#FFFBEA' : '#FFF5F5',
+                            borderColor: '#DC143C'
                           }}
                         >
-                          {match.peserta_a ? (
-                            <>
-                              <div className="flex-1 min-w-0">
-                                <p className="font-bold text-lg leading-tight mb-1" style={{ color: '#000', wordBreak: 'break-word' }}>
-                                  {getParticipantName(match.peserta_a)}
-                                </p>
-                                <p className="text-base leading-tight" style={{ color: '#DC143C', opacity: 0.7 }}>
-                                  {getDojoName(match.peserta_a)}
-                                </p>
-                              </div>
-                              {(match.skor_a > 0 || match.skor_b > 0) && (
-                                <div 
-                                  className="w-8 h-8 rounded flex items-center justify-center font-bold text-sm flex-shrink-0"
-                                  style={{ 
-                                    backgroundColor: match.skor_a > match.skor_b ? '#22c55e' : '#F0F0F0',
-                                    color: match.skor_a > match.skor_b ? 'white' : '#6b7280'
-                                  }}
-                                >
-                                  {match.skor_a}
-                                </div>
-                              )}
-                            </>
-                          ) : (
-                            <div className="w-full text-center">
-                              <span className="text-sm text-gray-400">TBD</span>
-                            </div>
-                          )}
+                          <div className="flex items-center gap-2 flex-1">
+                            {match.nomor_partai && (
+                              <span 
+                                className="text-xs px-2 py-1 rounded-full font-bold"
+                                style={{ backgroundColor: '#990D35', color: 'white' }}
+                              >
+                                No.Partai: {match.nomor_partai}
+                              </span>
+                            )}
+                            {shouldShowConnector && (
+                              <span 
+                                className="text-xs px-2 py-1 rounded-full font-bold"
+                                style={{ backgroundColor: '#F5B700', color: 'white' }}
+                              >
+                                → To Additional
+                              </span>
+                            )}
+                          </div>
+                          
+                          <button
+                            onClick={() => setEditingMatch(match)}
+                            className="p-1 rounded hover:bg-black/5 transition-all"
+                          >
+                            <Edit3 size={14} style={{ color: '#DC143C' }} />
+                          </button>
                         </div>
 
-                        {/* Participant B atau BYE */}
-                        <div 
-                          className="px-3 py-3 flex items-center justify-center"
-                          style={{ 
-                            minHeight: '70px',
-                            backgroundColor: match.peserta_b ? 'transparent' : '#FFFBEA'
-                          }}
-                        >
-                          {match.peserta_b ? (
-                            <div className="w-full flex items-start justify-between gap-2">
-                              <div className="flex-1 min-w-0">
-                                <p className="font-bold text-lg leading-tight mb-1" style={{ color: '#000', wordBreak: 'break-word' }}>
-                                  {getParticipantName(match.peserta_b)}
-                                </p>
-                                <p className="text-base leading-tight" style={{ color: '#EF4444', opacity: 0.7 }}>
-                                  {getDojoName(match.peserta_b)}
-                                </p>
-                              </div>
-                              {(match.skor_a > 0 || match.skor_b > 0) && (
-                                <div 
-                                  className="w-8 h-8 rounded flex items-center justify-center font-bold text-sm flex-shrink-0"
-                                  style={{ 
-                                    backgroundColor: match.skor_b > match.skor_a ? '#22c55e' : '#F0F0F0',
-                                    color: match.skor_b > match.skor_a ? 'white' : '#6b7280'
-                                  }}
-                                >
-                                  {match.skor_b}
+                        <div className="flex flex-col">
+                          <div 
+                            className="px-3 py-3 border-b flex items-start justify-between gap-2"
+                            style={{ borderColor: '#F0F0F0', minHeight: '70px' }}
+                          >
+                            {match.peserta_a ? (
+                              <>
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-bold text-lg leading-tight mb-1" style={{ color: '#000', wordBreak: 'break-word' }}>
+                                    {getParticipantName(match.peserta_a)}
+                                  </p>
+                                  <p className="text-base leading-tight" style={{ color: '#DC143C', opacity: 0.7 }}>
+                                    {getDojoName(match.peserta_a)}
+                                  </p>
                                 </div>
-                              )}
-                            </div>
-                          ) : (
-                            <span 
-                              className="text-xs font-bold px-3 py-1 rounded"
-                              style={{ backgroundColor: '#F5B700', color: 'white' }}
-                            >
-                              BYE
-                            </span>
-                          )}
+                                {(match.skor_a > 0 || match.skor_b > 0) && (
+                                  <div 
+                                    className="w-8 h-8 rounded flex items-center justify-center font-bold text-sm flex-shrink-0"
+                                    style={{ 
+                                      backgroundColor: match.skor_a > match.skor_b ? '#22c55e' : '#F0F0F0',
+                                      color: match.skor_a > match.skor_b ? 'white' : '#6b7280'
+                                    }}
+                                  >
+                                    {match.skor_a}
+                                  </div>
+                                )}
+                              </>
+                            ) : (
+                              <div className="w-full text-center">
+                                <span className="text-sm text-gray-400">TBD</span>
+                              </div>
+                            )}
+                          </div>
+
+                          <div 
+                            className="px-3 py-3 flex items-center justify-center"
+                            style={{ 
+                              minHeight: '70px',
+                              backgroundColor: match.peserta_b ? 'transparent' : '#FFFBEA'
+                            }}
+                          >
+                            {match.peserta_b ? (
+                              <div className="w-full flex items-start justify-between gap-2">
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-bold text-lg leading-tight mb-1" style={{ color: '#000', wordBreak: 'break-word' }}>
+                                    {getParticipantName(match.peserta_b)}
+                                  </p>
+                                  <p className="text-base leading-tight" style={{ color: '#EF4444', opacity: 0.7 }}>
+                                    {getDojoName(match.peserta_b)}
+                                  </p>
+                                </div>
+                                {(match.skor_a > 0 || match.skor_b > 0) && (
+                                  <div 
+                                    className="w-8 h-8 rounded flex items-center justify-center font-bold text-sm flex-shrink-0"
+                                    style={{ 
+                                      backgroundColor: match.skor_b > match.skor_a ? '#22c55e' : '#F0F0F0',
+                                      color: match.skor_b > match.skor_a ? 'white' : '#6b7280'
+                                    }}
+                                  >
+                                    {match.skor_b}
+                                  </div>
+                                )}
+                              </div>
+                            ) : (
+                              <span 
+                                className="text-xs font-bold px-3 py-1 rounded"
+                                style={{ backgroundColor: '#F5B700', color: 'white' }}
+                              >
+                                BYE
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          ))}
-        </div>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
 
-        {/* ========================================
-            PART 2: ADDITIONAL MATCH (Round 2)
-            ======================================== */}
-        {hasAdditionalMatch && additionalMatch && (
-          <div style={{ position: 'relative', marginLeft: `${COLUMN_GAP}px` }}>
-            {/* ⭐ CONNECTORS - Render BEFORE card for proper z-index */}
-            <svg
-              style={{
-                position: 'absolute',
-                left: `-${COLUMN_GAP}px`,
-                top: 0,
-                width: `${COLUMN_GAP + CARD_WIDTH}px`,
-                height: '400px',
-                pointerEvents: 'none',
-                zIndex: 1
-              }}
-            >
-              {/* Connector dari Normal Fight Match (atas) */}
-              {normalFightMatch && (
-                <>
-                  <line x1="0" y1="70" x2={COLUMN_GAP / 2} y2="70" stroke="#F5B700" strokeWidth="2.5" />
-                  <line x1={COLUMN_GAP / 2} y1="70" x2={COLUMN_GAP / 2} y2="140" stroke="#F5B700" strokeWidth="2.5" />
-                  <line x1={COLUMN_GAP / 2} y1="140" x2={COLUMN_GAP} y2="140" stroke="#F5B700" strokeWidth="2.5" />
-                </>
-              )}
-              
-              {/* Connector dari BYE Match (bawah) */}
-              {byeMatch && (
-                <>
-                  <line x1="0" y1="230" x2={COLUMN_GAP / 2} y2="230" stroke="#F5B700" strokeWidth="2.5" />
-                  <line x1={COLUMN_GAP / 2} y1="140" x2={COLUMN_GAP / 2} y2="230" stroke="#F5B700" strokeWidth="2.5" />
-                </>
-              )}
-            </svg>
-
-            {/* Header Label */}
-            <div 
-              className="rounded-lg p-2 shadow-sm mb-3"
-              style={{ 
-                backgroundColor: '#FFFBEA', 
-                border: '2px solid #F5B700',
-                width: `${CARD_WIDTH}px`
-              }}
-            >
-              <h3 className="text-center font-bold text-sm" style={{ color: '#000' }}>
-                ADDITIONAL MATCH
-              </h3>
-            </div>
-
-            {/* Additional Match Card */}
-            <div
-              className="bg-white rounded-lg shadow-md border overflow-hidden"
-              style={{ 
-                borderColor: '#F5B700',
-                borderWidth: '3px',
-                position: 'relative',
-                zIndex: 10,
-                width: `${CARD_WIDTH}px`
-              }}
-            >
-              {/* Header */}
-              <div 
-                className="px-3 py-2 border-b flex items-center justify-between"
-                style={{ backgroundColor: '#FFFBEA', borderColor: '#F5B700' }}
+          {/* ADDITIONAL MATCH */}
+          {hasAdditionalMatch && additionalMatch && (
+            <div style={{ position: 'relative' }}>
+              <svg
+                style={{
+                  position: 'absolute',
+                  left: `-${COLUMN_GAP}px`,
+                  top: 0,
+                  width: `${COLUMN_GAP}px`,
+                  height: '600px',
+                  pointerEvents: 'none',
+                  zIndex: 5,
+                  overflow: 'visible'
+                }}
               >
-                <div className="flex items-center gap-2 flex-1">
-                  {additionalMatch.nomor_partai && (
-                    <span 
-                      className="text-xs px-2 py-1 rounded-full font-bold"
-                      style={{ backgroundColor: '#F5B700', color: 'white' }}
-                    >
-                      No.Partai: {additionalMatch.nomor_partai}
-                    </span>
-                  )}
-                </div>
+                {normalFightMatch && (
+                  <g>
+                    <line 
+                      x1="0" 
+                      y1={normalFightY} 
+                      x2={COLUMN_GAP / 2} 
+                      y2={normalFightY} 
+                      stroke="#F5B700" 
+                      strokeWidth="3" 
+                    />
+                    <line 
+                      x1={COLUMN_GAP / 2} 
+                      y1={normalFightY} 
+                      x2={COLUMN_GAP / 2} 
+                      y2={additionalMatchY} 
+                      stroke="#F5B700" 
+                      strokeWidth="3" 
+                    />
+                    <line 
+                      x1={COLUMN_GAP / 2} 
+                      y1={additionalMatchY} 
+                      x2={COLUMN_GAP} 
+                      y2={additionalMatchY} 
+                      stroke="#F5B700" 
+                      strokeWidth="3" 
+                    />
+                  </g>
+                )}
                 
-                <button
-                  onClick={() => setEditingMatch(additionalMatch)}
-                  className="p-1 rounded hover:bg-black/5 transition-all"
-                >
-                  <Edit3 size={14} style={{ color: '#F5B700' }} />
-                </button>
+                {byeMatch && (
+                  <g>
+                    <line 
+                      x1="0" 
+                      y1={byeMatchY} 
+                      x2={COLUMN_GAP / 2} 
+                      y2={byeMatchY} 
+                      stroke="#F5B700" 
+                      strokeWidth="3" 
+                    />
+                    <line 
+                      x1={COLUMN_GAP / 2} 
+                      y1={byeMatchY} 
+                      x2={COLUMN_GAP / 2} 
+                      y2={additionalMatchY} 
+                      stroke="#F5B700" 
+                      strokeWidth="3" 
+                    />
+                  </g>
+                )}
+              </svg>
+
+              <div 
+                className="rounded-lg p-2 shadow-sm mb-3"
+                style={{ 
+                  backgroundColor: '#FFFBEA', 
+                  border: '2px solid #F5B700',
+                  width: `${CARD_WIDTH}px`,
+                  position: 'relative',
+                  top: `${additionalMatchY - 40}px`
+                }}
+              >
+                <h3 className="text-center font-bold text-sm" style={{ color: '#000' }}>
+                  ADDITIONAL MATCH
+                </h3>
               </div>
 
-              {/* Participants */}
-              <div className="flex flex-col">
-                {/* Participant A (Winner dari normal fight) */}
+              <div
+                className="bg-white rounded-lg shadow-md border overflow-hidden"
+                style={{ 
+                  borderColor: '#F5B700',
+                  borderWidth: '3px',
+                  position: 'relative',
+                  zIndex: 10,
+                  width: `${CARD_WIDTH}px`,
+                  top: `${additionalMatchY - 40}px`
+                }}
+              >
                 <div 
-                  className="px-3 py-3 border-b flex items-start justify-between gap-2"
-                  style={{ borderColor: '#F0F0F0', minHeight: '70px' }}
+                  className="px-3 py-2 border-b flex items-center justify-between"
+                  style={{ backgroundColor: '#FFFBEA', borderColor: '#F5B700' }}
                 >
-                  {additionalMatch.peserta_a ? (
-                    <>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-bold text-lg leading-tight mb-1" style={{ color: '#000', wordBreak: 'break-word' }}>
-                          {getParticipantName(additionalMatch.peserta_a)}
-                        </p>
-                        <p className="text-base leading-tight" style={{ color: '#DC143C', opacity: 0.7 }}>
-                          {getDojoName(additionalMatch.peserta_a)}
-                        </p>
-                      </div>
-                      {(additionalMatch.skor_a > 0 || additionalMatch.skor_b > 0) && (
-                        <div 
-                          className="w-8 h-8 rounded flex items-center justify-center font-bold text-sm flex-shrink-0"
-                          style={{ 
-                            backgroundColor: additionalMatch.skor_a > additionalMatch.skor_b ? '#22c55e' : '#F0F0F0',
-                            color: additionalMatch.skor_a > additionalMatch.skor_b ? 'white' : '#6b7280'
-                          }}
-                        >
-                          {additionalMatch.skor_a}
-                        </div>
-                      )}
-                    </>
-                  ) : (
-                    <div className="w-full text-center">
+                  <div className="flex items-center gap-2 flex-1">
+                    {additionalMatch.nomor_partai && (
                       <span 
-                        className="text-xs font-bold px-3 py-1 rounded"
+                        className="text-xs px-2 py-1 rounded-full font-bold"
                         style={{ backgroundColor: '#F5B700', color: 'white' }}
                       >
-                        ⏳ Waiting for Match {normalFightMatch?.nomor_partai || 'TBD'}
+                        No.Partai: {additionalMatch.nomor_partai}
                       </span>
-                    </div>
-                  )}
+                    )}
+                  </div>
+                  
+                  <button
+                    onClick={() => setEditingMatch(additionalMatch)}
+                    className="p-1 rounded hover:bg-black/5 transition-all"
+                  >
+                    <Edit3 size={14} style={{ color: '#F5B700' }} />
+                  </button>
                 </div>
 
-                {/* Participant B (BYE winner - auto advanced) */}
-                <div 
-                  className="px-3 py-3 flex items-center justify-center"
-                  style={{ minHeight: '70px', backgroundColor: '#FFFBEA' }}
-                >
-                  {additionalMatch.peserta_b ? (
-                    <div className="w-full flex items-start justify-between gap-2">
-                      <div className="flex-1 min-w-0">
-                        <p className="font-bold text-lg leading-tight mb-1" style={{ color: '#000', wordBreak: 'break-word' }}>
-                          {getParticipantName(additionalMatch.peserta_b)}
-                        </p>
-                        <p className="text-base leading-tight" style={{ color: '#EF4444', opacity: 0.7 }}>
-                          {getDojoName(additionalMatch.peserta_b)}
-                        </p>
-                      </div>
-                      <span 
-                        className="text-xs px-2 py-1 rounded-full font-bold flex-shrink-0"
-                        style={{ backgroundColor: '#22c55e', color: 'white' }}
-                      >
-                        ✓ AUTO
-                      </span>
-                      {(additionalMatch.skor_a > 0 || additionalMatch.skor_b > 0) && (
-                        <div 
-                          className="w-8 h-8 rounded flex items-center justify-center font-bold text-sm flex-shrink-0"
-                          style={{ 
-                            backgroundColor: additionalMatch.skor_b > additionalMatch.skor_a ? '#22c55e' : '#F0F0F0',
-                            color: additionalMatch.skor_b > additionalMatch.skor_a ? 'white' : '#6b7280'
-                          }}
-                        >
-                          {additionalMatch.skor_b}
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <span className="text-sm text-gray-400">TBD</span>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-                {/* LEADERBOARD */}
-                <div className="w-full mt-10">
-                  <div className="bg-white rounded-lg shadow-md border overflow-hidden" style={{ borderColor: '#DC143C', maxWidth: '500px', margin: '0 auto' }}>
-                    <div className="px-4 py-3 border-b" style={{ backgroundColor: '#FFF5F5', borderColor: '#DC143C' }}>
-                      <div className="flex items-center gap-2 justify-center">
-                        <Trophy size={24} style={{ color: '#DC143C' }} />
-                        <h3 className="text-xl font-bold" style={{ color: '#DC143C' }}>
-                          LEADERBOARD
-                        </h3>
-                      </div>
-                    </div>
-
-                    <div className="p-4 space-y-4">
-                      {leaderboard && leaderboard.gold.length > 0 && (
-                        <div>
-                          <div className="flex items-center gap-2 mb-2 px-2">
-                            <span className="text-lg">🥇</span>
-                            <h4 className="font-bold text-base" style={{ color: '#000' }}>
-                              GOLD MEDALS
-                            </h4>
-                          </div>
-                          <div className="space-y-2">
-                            {leaderboard.gold.map((participant, idx) => (
-                              <div key={participant.id} className="p-3 rounded border" style={{ 
-                                backgroundColor: '#FFFBEA', 
-                                borderColor: '#F5B700' 
-                              }}>
-                                <div className="flex items-center gap-2">
-                                  <span className="text-base font-bold" style={{ color: '#F5B700' }}>
-                                    {idx + 1}.
-                                  </span>
-                                  <div className="flex-1 min-w-0">
-                                    <p className="font-bold text-sm leading-tight" style={{ color: '#000' }}>
-                                      {participant.name}
-                                    </p>
-                                    <p className="text-xs leading-tight" style={{ color: '#DC143C', opacity: 0.7 }}>
-                                      {participant.dojo}
-                                    </p>
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {leaderboard && leaderboard.silver.length > 0 && (
-                        <div>
-                          <div className="flex items-center gap-2 mb-2 px-2">
-                            <span className="text-lg">🥈</span>
-                            <h4 className="font-bold text-base" style={{ color: '#000' }}>
-                              SILVER MEDALS
-                            </h4>
-                          </div>
-                          <div className="space-y-2">
-                            {leaderboard.silver.map((participant, idx) => (
-                              <div key={participant.id} className="p-3 rounded border" style={{ 
-                                backgroundColor: '#F5F5F5', 
-                                borderColor: '#C0C0C0' 
-                              }}>
-                                <div className="flex items-center gap-2">
-                                  <span className="text-base font-bold" style={{ color: '#9CA3AF' }}>
-                                    {idx + 1}.
-                                  </span>
-                                  <div className="flex-1 min-w-0">
-                                    <p className="font-bold text-sm leading-tight" style={{ color: '#000' }}>
-                                      {participant.name}
-                                    </p>
-                                    <p className="text-xs leading-tight" style={{ color: '#DC143C', opacity: 0.7 }}>
-                                      {participant.dojo}
-                                    </p>
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {leaderboard && leaderboard.bronze && leaderboard.bronze.length > 0 && (
-                        <div>
-                          <div className="flex items-center gap-2 mb-2 px-2">
-                            <span className="text-lg">🥉</span>
-                            <h4 className="font-bold text-base" style={{ color: '#000' }}>
-                              BRONZE MEDALS
-                            </h4>
-                          </div>
-                          <div className="space-y-2">
-                            {leaderboard.bronze.map((participant, idx) => (
-                              <div key={participant.id} className="p-3 rounded border" style={{ 
-                                backgroundColor: '#FFF8F0', 
-                                borderColor: '#CD7F32' 
-                              }}>
-                                <div className="flex items-center gap-2">
-                                  <span className="text-base font-bold" style={{ color: '#CD7F32' }}>
-                                    {idx + 1}.
-                                  </span>
-                                  <div className="flex-1 min-w-0">
-                                    <p className="font-bold text-sm leading-tight" style={{ color: '#000' }}>
-                                      {participant.name}
-                                    </p>
-                                    <p className="text-xs leading-tight" style={{ color: '#DC143C', opacity: 0.7 }}>
-                                      {participant.dojo}
-                                    </p>
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {leaderboard && leaderboard.gold.length === 0 && (
-                        <div className="text-center py-6">
-                          <Trophy size={40} style={{ color: '#DC143C', opacity: 0.3 }} className="mx-auto mb-2" />
-                          <p className="text-sm" style={{ color: '#050505', opacity: 0.5 }}>
-                            Belum ada hasil pertandingan
+                <div className="flex flex-col">
+                  <div 
+                    className="px-3 py-3 border-b flex items-start justify-between gap-2"
+                    style={{ borderColor: '#F0F0F0', minHeight: '70px' }}
+                  >
+                    {additionalMatch.peserta_a ? (
+                      <>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-bold text-lg leading-tight mb-1" style={{ color: '#000', wordBreak: 'break-word' }}>
+                            {getParticipantName(additionalMatch.peserta_a)}
+                          </p>
+                          <p className="text-base leading-tight" style={{ color: '#DC143C', opacity: 0.7 }}>
+                            {getDojoName(additionalMatch.peserta_a)}
                           </p>
                         </div>
-                      )}
-                    </div>
+                        {(additionalMatch.skor_a > 0 || additionalMatch.skor_b > 0) && (
+                          <div 
+                            className="w-8 h-8 rounded flex items-center justify-center font-bold text-sm flex-shrink-0"
+                            style={{ 
+                              backgroundColor: additionalMatch.skor_a > additionalMatch.skor_b ? '#22c55e' : '#F0F0F0',
+                              color: additionalMatch.skor_a > additionalMatch.skor_b ? 'white' : '#6b7280'
+                            }}
+                          >
+                            {additionalMatch.skor_a}
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <div className="w-full text-center">
+                        <span 
+                          className="text-xs font-bold px-3 py-1 rounded"
+                          style={{ backgroundColor: '#F5B700', color: 'white' }}
+                        >
+                          ⏳ Waiting for Match {normalFightMatch?.nomor_partai || 'TBD'}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div 
+                    className="px-3 py-3 flex items-center justify-center"
+                    style={{ minHeight: '70px', backgroundColor: '#FFFBEA' }}
+                  >
+                    {additionalMatch.peserta_b ? (
+                      <div className="w-full flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-bold text-lg leading-tight mb-1" style={{ color: '#000', wordBreak: 'break-word' }}>
+                            {getParticipantName(additionalMatch.peserta_b)}
+                          </p>
+                          <p className="text-base leading-tight" style={{ color: '#EF4444', opacity: 0.7 }}>
+                            {getDojoName(additionalMatch.peserta_b)}
+                          </p>
+                        </div>
+                        <span 
+                          className="text-xs px-2 py-1 rounded-full font-bold flex-shrink-0"
+                          style={{ backgroundColor: '#22c55e', color: 'white' }}
+                        >
+                          ✓ AUTO
+                        </span>
+                        {(additionalMatch.skor_a > 0 || additionalMatch.skor_b > 0) && (
+                          <div 
+                            className="w-8 h-8 rounded flex items-center justify-center font-bold text-sm flex-shrink-0"
+                            style={{ 
+                              backgroundColor: additionalMatch.skor_b > additionalMatch.skor_a ? '#22c55e' : '#F0F0F0',
+                              color: additionalMatch.skor_b > additionalMatch.skor_a ? 'white' : '#6b7280'
+                            }}
+                          >
+                            {additionalMatch.skor_b}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-sm text-gray-400">TBD</span>
+                    )}
                   </div>
                 </div>
               </div>
-            );
-          })()}
+            </div>
+          )}
         </div>
+
+        {/* LEADERBOARD */}
+        <div className="w-full">
+          <div className="bg-white rounded-lg shadow-md border overflow-hidden" style={{ borderColor: '#DC143C', maxWidth: '500px', margin: '0 auto' }}>
+            <div className="px-4 py-3 border-b" style={{ backgroundColor: '#FFF5F5', borderColor: '#DC143C' }}>
+              <div className="flex items-center gap-2 justify-center">
+                <Trophy size={24} style={{ color: '#DC143C' }} />
+                <h3 className="text-xl font-bold" style={{ color: '#DC143C' }}>
+                  LEADERBOARD
+                </h3>
+              </div>
+            </div>
+
+            <div className="p-4 space-y-4">
+              {leaderboard && leaderboard.gold.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-2 px-2">
+                    <span className="text-lg">🥇</span>
+                    <h4 className="font-bold text-base" style={{ color: '#000' }}>
+                      GOLD MEDALS
+                    </h4>
+                  </div>
+                  <div className="space-y-2">
+                    {leaderboard.gold.map((participant, idx) => (
+                      <div key={participant.id} className="p-3 rounded border" style={{ 
+                        backgroundColor: '#FFFBEA', 
+                        borderColor: '#F5B700' 
+                      }}>
+                        <div className="flex items-center gap-2">
+                          <span className="text-base font-bold" style={{ color: '#F5B700' }}>
+                            {idx + 1}.
+                          </span>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-bold text-sm leading-tight" style={{ color: '#000' }}>
+                              {participant.name}
+                            </p>
+                            <p className="text-xs leading-tight" style={{ color: '#DC143C', opacity: 0.7 }}>
+                              {participant.dojo}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {leaderboard && leaderboard.silver.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-2 px-2">
+                    <span className="text-lg">🥈</span>
+                    <h4 className="font-bold text-base" style={{ color: '#000' }}>
+                      SILVER MEDALS
+                    </h4>
+                  </div>
+                  <div className="space-y-2">
+                    {leaderboard.silver.map((participant, idx) => (
+                      <div key={participant.id} className="p-3 rounded border" style={{ 
+                        backgroundColor: '#F5F5F5', 
+                        borderColor: '#C0C0C0' 
+                      }}>
+                        <div className="flex items-center gap-2">
+                          <span className="text-base font-bold" style={{ color: '#9CA3AF' }}>
+                            {idx + 1}.
+                          </span>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-bold text-sm leading-tight" style={{ color: '#000' }}>
+                              {participant.name}
+                            </p>
+                            <p className="text-xs leading-tight" style={{ color: '#DC143C', opacity: 0.7 }}>
+                              {participant.dojo}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {leaderboard && leaderboard.bronze && leaderboard.bronze.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-2 px-2">
+                    <span className="text-lg">🥉</span>
+                    <h4 className="font-bold text-base" style={{ color: '#000' }}>
+                      BRONZE MEDALS
+                    </h4>
+                  </div>
+                  <div className="space-y-2">
+                    {leaderboard.bronze.map((participant, idx) => (
+                      <div key={participant.id} className="p-3 rounded border" style={{ 
+                        backgroundColor: '#FFF8F0', 
+                        borderColor: '#CD7F32' 
+                      }}>
+                        <div className="flex items-center gap-2">
+                          <span className="text-base font-bold" style={{ color: '#CD7F32' }}>
+                            {idx + 1}.
+                          </span>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-bold text-sm leading-tight" style={{ color: '#000' }}>
+                              {participant.name}
+                            </p>
+                            <p className="text-xs leading-tight" style={{ color: '#DC143C', opacity: 0.7 }}>
+                              {participant.dojo}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {leaderboard && leaderboard.gold.length === 0 && (
+                <div className="text-center py-6">
+                  <Trophy size={40} style={{ color: '#DC143C', opacity: 0.3 }} className="mx-auto mb-2" />
+                  <p className="text-sm" style={{ color: '#050505', opacity: 0.5 }}>
+                    Belum ada hasil pertandingan
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  })()}
+</div>
       </div>
     </div>
   </div>
