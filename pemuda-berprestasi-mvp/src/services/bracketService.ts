@@ -1731,58 +1731,74 @@ static async shufflePemulaBracket(
       const normalPairs = Math.floor((totalParticipants - 1) / 2);
       
       // Update normal fight matches
-      for (let i = 0; i < normalPairs; i++) {
-        const match = round1Matches[i];
-        const participant1 = shuffled[i * 2];
-        const participant2 = shuffled[i * 2 + 1];
+      // Update Round 1 matches
+for (let i = 0; i < normalPairs; i++) {
+  const match = round1Matches[i];
+  const participant1 = shuffled[i * 2];
+  const participant2 = shuffled[i * 2 + 1];
 
-        await prisma.tb_match.update({
-          where: { id_match: match.id_match },
-          data: {
-            id_peserta_a: participant1.id,
-            id_peserta_b: participant2.id,
-            skor_a: 0,
-            skor_b: 0
-          }
-        });
+  await prisma.tb_match.update({
+    where: { id_match: match.id_match },
+    data: {
+      id_peserta_a: participant1.id,
+      id_peserta_b: participant2.id,
+      skor_a: 0,
+      skor_b: 0,
+      // ⭐ PERBAIKAN 4: Clear metadata
+      tanggal_pertandingan: null,
+      nomor_partai: null,
+      nomor_antrian: null,
+      nomor_lapangan: null
+    }
+  });
 
-        console.log(`      Match ${match.id_match}: ${participant1.name} vs ${participant2.name}`);
-      }
-      
-      // ⭐ Update BYE match (last match in Round 1)
-      const byeParticipant = shuffled[totalParticipants - 1];
-      const byeMatch = round1Matches[normalPairs]; // Next match after normal pairs
-      
-      if (byeMatch) {
-        await prisma.tb_match.update({
-          where: { id_match: byeMatch.id_match },
-          data: {
-            id_peserta_a: byeParticipant.id,
-            id_peserta_b: null, // BYE
-            skor_a: 0,
-            skor_b: 0
-          }
-        });
-        
-        console.log(`      BYE Match ${byeMatch.id_match}: ${byeParticipant.name} vs BYE`);
-      }
-      
-      // ⭐ Update Additional Match (Round 2)
-      if (round2Matches.length > 0) {
-        const additionalMatch = round2Matches[0];
-        
-        await prisma.tb_match.update({
-          where: { id_match: additionalMatch.id_match },
-          data: {
-            id_peserta_a: null, // TBD - winner dari normal fight
-            id_peserta_b: byeParticipant.id, // BYE winner (auto-advanced)
-            skor_a: 0,
-            skor_b: 0
-          }
-        });
-        
-        console.log(`      Additional Match ${additionalMatch.id_match}: TBD vs ${byeParticipant.name} (BYE)`);
-      }
+  console.log(`      Match ${match.id_match}: ${participant1.name} vs ${participant2.name}`);
+}
+
+// ⭐ Update BYE match (last match in Round 1)
+const byeParticipant = shuffled[totalParticipants - 1];
+const byeMatch = round1Matches[normalPairs];
+
+if (byeMatch) {
+  await prisma.tb_match.update({
+    where: { id_match: byeMatch.id_match },
+    data: {
+      id_peserta_a: byeParticipant.id,
+      id_peserta_b: null,
+      skor_a: 0,
+      skor_b: 0,
+      // ⭐ Clear metadata
+      tanggal_pertandingan: null,
+      nomor_partai: null,
+      nomor_antrian: null,
+      nomor_lapangan: null
+    }
+  });
+  
+  console.log(`      BYE Match ${byeMatch.id_match}: ${byeParticipant.name} vs BYE`);
+}
+
+// ⭐ Update Additional Match (Round 2)
+if (round2Matches.length > 0) {
+  const additionalMatch = round2Matches[0];
+  
+  await prisma.tb_match.update({
+    where: { id_match: additionalMatch.id_match },
+    data: {
+      id_peserta_a: null,
+      id_peserta_b: byeParticipant.id,
+      skor_a: 0,
+      skor_b: 0,
+      // ⭐ Clear metadata
+      tanggal_pertandingan: null,
+      nomor_partai: null,
+      nomor_antrian: null,
+      nomor_lapangan: null
+    }
+  });
+  
+  console.log(`      Additional Match ${additionalMatch.id_match}: TBD vs ${byeParticipant.name} (BYE)`);
+}
       
     } else {
       // ⭐ EVEN: Only normal fights, no BYE, no additional match
@@ -1907,65 +1923,68 @@ static calculateTotalRounds(participantCount: number): number {
   /**
    * Clear all match results (scores) but keep bracket structure
    */
-  static async clearMatchResults(kompetisiId: number, kelasKejuaraanId: number): Promise<{
-    success: boolean;
-    message: string;
-    clearedMatches: number;
-  }> {
-    try {
-      console.log(`🧹 Clearing match results for kompetisi ${kompetisiId}, kelas ${kelasKejuaraanId}`);
+static async clearMatchResults(kompetisiId: number, kelasKejuaraanId: number): Promise<{
+  success: boolean;
+  message: string;
+  clearedMatches: number;
+}> {
+  try {
+    console.log(`🧹 Clearing match results for kompetisi ${kompetisiId}, kelas ${kelasKejuaraanId}`);
 
-      const bagan = await prisma.tb_bagan.findFirst({
-        where: {
-          id_kompetisi: kompetisiId,
-          id_kelas_kejuaraan: kelasKejuaraanId
-        },
-        include: {
-          match: true
-        }
-      });
-
-      if (!bagan) {
-        throw new Error('Bagan tidak ditemukan');
+    const bagan = await prisma.tb_bagan.findFirst({
+      where: {
+        id_kompetisi: kompetisiId,
+        id_kelas_kejuaraan: kelasKejuaraanId
+      },
+      include: {
+        match: true
       }
+    });
 
-      // Reset all match scores to 0
-      const updatePromises = bagan.match.map((match) => {
-        if (match.ronde === 1) {
-          return prisma.tb_match.update({
-            where: { id_match: match.id_match },
-            data: {
-              skor_a: 0,
-              skor_b: 0
-            }
-          });
-        } else {
-          return prisma.tb_match.update({
-            where: { id_match: match.id_match },
-            data: {
-              skor_a: 0,
-              skor_b: 0,
-              id_peserta_a: null,
-              id_peserta_b: null
-            }
-          });
-        }
-      });
-
-      await Promise.all(updatePromises);
-
-      console.log(`✅ Cleared ${bagan.match.length} matches`);
-
-      return {
-        success: true,
-        message: `Berhasil mereset ${bagan.match.length} pertandingan`,
-        clearedMatches: bagan.match.length
-      };
-    } catch (error: any) {
-      console.error('❌ Error clearing match results:', error);
-      throw new Error(error.message || 'Gagal mereset hasil pertandingan');
+    if (!bagan) {
+      throw new Error('Bagan tidak ditemukan');
     }
+
+    // ⭐ PERBAIKAN 3: Jangan hapus participant di Round 2!
+    const updatePromises = bagan.match.map((match) => {
+      if (match.ronde === 1) {
+        // Round 1: Reset scores only, keep participants
+        return prisma.tb_match.update({
+          where: { id_match: match.id_match },
+          data: {
+            skor_a: 0,
+            skor_b: 0
+          }
+        });
+      } else {
+        // ⭐ Round 2+: Reset scores + clear ONLY peserta_a (TBD winner)
+        // KEEP peserta_b (BYE participant yang auto-advanced)
+        return prisma.tb_match.update({
+          where: { id_match: match.id_match },
+          data: {
+            skor_a: 0,
+            skor_b: 0,
+            id_peserta_a: null  // ⭐ Clear TBD slot only
+            // ⭐ id_peserta_b TIDAK dihapus (keep BYE participant)
+          }
+        });
+      }
+    });
+
+    await Promise.all(updatePromises);
+
+    console.log(`✅ Cleared ${bagan.match.length} matches`);
+
+    return {
+      success: true,
+      message: `Berhasil mereset ${bagan.match.length} pertandingan`,
+      clearedMatches: bagan.match.length
+    };
+  } catch (error: any) {
+    console.error('❌ Error clearing match results:', error);
+    throw new Error(error.message || 'Gagal mereset hasil pertandingan');
   }
+}
 
   /**
    * Delete entire bracket (bagan + matches + seeds)
