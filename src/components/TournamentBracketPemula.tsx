@@ -833,8 +833,8 @@ const generateLeaderboard = () => {
     const hasAdditionalMatch = round2Matches.length > 0;
 
     if (!hasAdditionalMatch) {
-      
-      round1Matches.forEach((match, index) => {
+      // SCENARIO GENAP: Winner → GOLD, Loser → SILVER
+      round1Matches.forEach((match) => {
         const hasScore = match.skor_a > 0 || match.skor_b > 0;
         
         if (hasScore && match.peserta_a && match.peserta_b) {
@@ -865,94 +865,91 @@ const generateLeaderboard = () => {
           }
         }
       });
-    }
-    // ========================================
-    // SCENARIO 2: GANJIL (Ada Additional Match)
-    // ========================================
-else {
-  
-  const additionalMatch = round2Matches[0];
-  const lastRound1Match = round1Matches[round1Matches.length - 1];
-  
-  // ⭐ STEP 1: Process Additional Match (Round 2) FIRST
-  if (additionalMatch && (additionalMatch.skor_a > 0 || additionalMatch.skor_b > 0)) {
-    const winner = additionalMatch.skor_a > additionalMatch.skor_b 
-      ? additionalMatch.peserta_a 
-      : additionalMatch.peserta_b;
-    const loser = additionalMatch.skor_a > additionalMatch.skor_b 
-      ? additionalMatch.peserta_b 
-      : additionalMatch.peserta_a;
-    
-    // Additional Match Winner → GOLD
-    if (winner) {
-      leaderboard.gold.push({
-        name: getParticipantName(winner),
-        dojo: getDojoName(winner),
-        id: winner.id_peserta_kompetisi
-      });
-      processedGold.add(winner.id_peserta_kompetisi);
-    }
-    
-    // Additional Match Loser → SILVER
-    if (loser) {
-      leaderboard.silver.push({
-        name: getParticipantName(loser),
-        dojo: getDojoName(loser),
-        id: loser.id_peserta_kompetisi
-      });
-      processedSilver.add(loser.id_peserta_kompetisi);
-    }
-  }
-  
-  // ⭐ STEP 2: Process Round 1 Matches
-  round1Matches.forEach((match, index) => {
-    const hasScore = match.skor_a > 0 || match.skor_b > 0;
-    const isLastMatch = match.id_match === lastRound1Match?.id_match;
-    
-    if (hasScore && match.peserta_a && match.peserta_b) {
-      const winner = match.skor_a > match.skor_b ? match.peserta_a : match.peserta_b;
-      const loser = match.skor_a > match.skor_b ? match.peserta_b : match.peserta_a;
+    } else {
+      // SCENARIO GANJIL: Ada Additional Match
+      const additionalMatch = round2Matches[0];
+      const lastRound1Match = round1Matches[round1Matches.length - 1];
       
-      const winnerId = winner.id_peserta_kompetisi;
-      const loserId = loser.id_peserta_kompetisi;
-      
-      if (isLastMatch) {
-        // ⭐ LAST MATCH SPECIAL HANDLING
-        // Winner goes to Additional Match (already processed above or pending)
-        // Loser → BRONZE
-        if (!processedBronze.has(loserId)) {
-          leaderboard.bronze.push({
-            name: getParticipantName(loser),
-            dojo: getDojoName(loser),
-            id: loserId
-          });
-          processedBronze.add(loserId);
-        }
-      } else {
-        // ⭐ OTHER MATCHES (Match A, etc.)
-        // Winner → GOLD (if not already processed)
-        if (!processedGold.has(winnerId)) {
+      // ⭐ STEP 1: Process Additional Match (Round 2) FIRST
+      if (additionalMatch && (additionalMatch.skor_a > 0 || additionalMatch.skor_b > 0)) {
+        const winner = additionalMatch.skor_a > additionalMatch.skor_b 
+          ? additionalMatch.peserta_a 
+          : additionalMatch.peserta_b;
+        const loser = additionalMatch.skor_a > additionalMatch.skor_b 
+          ? additionalMatch.peserta_b 
+          : additionalMatch.peserta_a;
+        
+        // Additional Match Winner → GOLD
+        if (winner) {
           leaderboard.gold.push({
             name: getParticipantName(winner),
             dojo: getDojoName(winner),
-            id: winnerId
+            id: winner.id_peserta_kompetisi
           });
-          processedGold.add(winnerId);
+          processedGold.add(winner.id_peserta_kompetisi);
         }
         
-        // Loser → SILVER (if not already processed)
-        if (!processedSilver.has(loserId)) {
+        // Additional Match Loser → SILVER
+        if (loser) {
           leaderboard.silver.push({
             name: getParticipantName(loser),
             dojo: getDojoName(loser),
-            id: loserId
+            id: loser.id_peserta_kompetisi
           });
-          processedSilver.add(loserId);
+          processedSilver.add(loser.id_peserta_kompetisi);
         }
       }
+      
+      // ⭐ STEP 2: Process Round 1 Matches
+      round1Matches.forEach((match) => {
+        const hasScore = match.skor_a > 0 || match.skor_b > 0;
+        const isLastMatch = match.id_match === lastRound1Match?.id_match;
+        const isByeMatch = match.peserta_a && !match.peserta_b;
+        
+        if (hasScore && match.peserta_a && match.peserta_b) {
+          const winner = match.skor_a > match.skor_b ? match.peserta_a : match.peserta_b;
+          const loser = match.skor_a > match.skor_b ? match.peserta_b : match.peserta_a;
+          
+          const winnerId = winner.id_peserta_kompetisi;
+          const loserId = loser.id_peserta_kompetisi;
+          
+          if (isLastMatch) {
+            // ⭐ LAST NORMAL FIGHT MATCH
+            // Winner → Goes to Additional Match (sudah diproses di Step 1)
+            // Loser → BRONZE ✅ INI PERBAIKAN UTAMA
+            if (!processedBronze.has(loserId)) {
+              leaderboard.bronze.push({
+                name: getParticipantName(loser),
+                dojo: getDojoName(loser),
+                id: loserId
+              });
+              processedBronze.add(loserId);
+            }
+          } else if (!isByeMatch) {
+            // ⭐ OTHER NORMAL MATCHES (bukan BYE, bukan last match)
+            // Winner → GOLD
+            if (!processedGold.has(winnerId)) {
+              leaderboard.gold.push({
+                name: getParticipantName(winner),
+                dojo: getDojoName(winner),
+                id: winnerId
+              });
+              processedGold.add(winnerId);
+            }
+            
+            // Loser → SILVER
+            if (!processedSilver.has(loserId)) {
+              leaderboard.silver.push({
+                name: getParticipantName(loser),
+                dojo: getDojoName(loser),
+                id: loserId
+              });
+              processedSilver.add(loserId);
+            }
+          }
+        }
+      });
     }
-  });
-}
     
     return leaderboard;
   };
@@ -1280,11 +1277,11 @@ if (hasAdditionalMatch && byeMatchIndex > 0) {
 
 // Calculate Y positions
 const lastFightY = lastNormalFightIndex >= 0 
-  ? (lastNormalFightIndex % matchesPerColumn) * CARD_HEIGHT + 100 
+  ? (lastNormalFightIndex % matchesPerColumn) * CARD_HEIGHT + 135 
   : 70;
 
 const byeMatchY = byeMatchIndex >= 0 
-  ? (byeMatchIndex % matchesPerColumn) * CARD_HEIGHT + 100
+  ? (byeMatchIndex % matchesPerColumn) * CARD_HEIGHT + 135
   : 230;
 
 // ⭐ Additional match DI TENGAH-TENGAH kedua match
@@ -1337,14 +1334,6 @@ const additionalMatchY = (lastFightY + byeMatchY) / 2;
                               style={{ backgroundColor: '#990D35', color: 'white' }}
                             >
                               No.Partai: {match.nomor_partai}
-                            </span>
-                          )}
-                          {shouldShowConnector && (
-                            <span 
-                              className="text-xs px-2 py-1 rounded-full font-bold"
-                              style={{ backgroundColor: '#F5B700', color: 'white' }}
-                            >
-                              → To Additional
                             </span>
                           )}
                         </div>
@@ -1616,12 +1605,6 @@ const additionalMatchY = (lastFightY + byeMatchY) / 2;
                           {getDojoName(additionalMatch.peserta_b)}
                         </p>
                       </div>
-                      <span 
-                        className="text-xs px-2 py-1 rounded-full font-bold flex-shrink-0"
-                        style={{ backgroundColor: '#22c55e', color: 'white' }}
-                      >
-                        ✓ AUTO
-                      </span>
                       {(additionalMatch.skor_a > 0 || additionalMatch.skor_b > 0) && (
                         <div 
                           className="w-8 h-8 rounded flex items-center justify-center font-bold text-sm flex-shrink-0"
@@ -1644,129 +1627,136 @@ const additionalMatchY = (lastFightY + byeMatchY) / 2;
         )}
       </div>
 
-      {/* LEADERBOARD - sama seperti sebelumnya */}
-      <div className="w-full">
-        <div className="bg-white rounded-lg shadow-md border overflow-hidden" style={{ borderColor: '#DC143C', maxWidth: '500px', margin: '0 auto' }}>
-          <div className="px-4 py-3 border-b" style={{ backgroundColor: '#FFF5F5', borderColor: '#DC143C' }}>
-            <div className="flex items-center gap-2 justify-center">
-              <Trophy size={24} style={{ color: '#DC143C' }} />
-              <h3 className="text-xl font-bold" style={{ color: '#DC143C' }}>
-                LEADERBOARD
-              </h3>
-            </div>
+{/* LEADERBOARD - Grid Layout */}
+<div className="w-full">
+  <div className="bg-white rounded-lg shadow-md border overflow-hidden" style={{ borderColor: '#DC143C' }}>
+    <div className="px-4 py-3 border-b" style={{ backgroundColor: '#FFF5F5', borderColor: '#DC143C' }}>
+      <div className="flex items-center gap-2 justify-center">
+        <Trophy size={24} style={{ color: '#DC143C' }} />
+        <h3 className="text-xl font-bold" style={{ color: '#DC143C' }}>
+          LEADERBOARD
+        </h3>
+      </div>
+    </div>
+
+    <div className="p-4">
+      {/* GOLD MEDALS */}
+      {leaderboard && leaderboard.gold.length > 0 && (
+        <div className="mb-6">
+          <div className="flex items-center gap-2 mb-3 px-2">
+            <span className="text-lg">🥇</span>
+            <h4 className="font-bold text-base" style={{ color: '#000' }}>
+              GOLD MEDALS ({leaderboard.gold.length})
+            </h4>
           </div>
-
-          <div className="p-4 space-y-4">
-            {leaderboard && leaderboard.gold.length > 0 && (
-              <div>
-                <div className="flex items-center gap-2 mb-2 px-2">
-                  <span className="text-lg">🥇</span>
-                  <h4 className="font-bold text-base" style={{ color: '#000' }}>
-                    GOLD MEDALS
-                  </h4>
-                </div>
-                <div className="space-y-2">
-                  {leaderboard.gold.map((participant, idx) => (
-                    <div key={participant.id} className="p-3 rounded border" style={{ 
-                      backgroundColor: '#FFFBEA', 
-                      borderColor: '#F5B700' 
-                    }}>
-                      <div className="flex items-center gap-2">
-                        <span className="text-base font-bold" style={{ color: '#F5B700' }}>
-                          {idx + 1}.
-                        </span>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-bold text-sm leading-tight" style={{ color: '#000' }}>
-                            {participant.name}
-                          </p>
-                          <p className="text-xs leading-tight" style={{ color: '#DC143C', opacity: 0.7 }}>
-                            {participant.dojo}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+          {/* Grid 3 kolom untuk Gold */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+            {leaderboard.gold.map((participant, idx) => (
+              <div key={participant.id} className="p-2 rounded border" style={{ 
+                backgroundColor: '#FFFBEA', 
+                borderColor: '#F5B700' 
+              }}>
+                <div className="flex items-start gap-2">
+                  <span className="text-xs font-bold flex-shrink-0" style={{ color: '#F5B700' }}>
+                    {idx + 1}.
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-xs leading-tight truncate" style={{ color: '#000' }} title={participant.name}>
+                      {participant.name}
+                    </p>
+                    <p className="text-xs leading-tight truncate" style={{ color: '#DC143C', opacity: 0.7 }} title={participant.dojo}>
+                      {participant.dojo}
+                    </p>
+                  </div>
                 </div>
               </div>
-            )}
-
-            {leaderboard && leaderboard.silver.length > 0 && (
-              <div>
-                <div className="flex items-center gap-2 mb-2 px-2">
-                  <span className="text-lg">🥈</span>
-                  <h4 className="font-bold text-base" style={{ color: '#000' }}>
-                    SILVER MEDALS
-                  </h4>
-                </div>
-                <div className="space-y-2">
-                  {leaderboard.silver.map((participant, idx) => (
-                    <div key={participant.id} className="p-3 rounded border" style={{ 
-                      backgroundColor: '#F5F5F5', 
-                      borderColor: '#C0C0C0' 
-                    }}>
-                      <div className="flex items-center gap-2">
-                        <span className="text-base font-bold" style={{ color: '#9CA3AF' }}>
-                          {idx + 1}.
-                        </span>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-bold text-sm leading-tight" style={{ color: '#000' }}>
-                            {participant.name}
-                          </p>
-                          <p className="text-xs leading-tight" style={{ color: '#DC143C', opacity: 0.7 }}>
-                            {participant.dojo}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {leaderboard && leaderboard.bronze && leaderboard.bronze.length > 0 && (
-              <div>
-                <div className="flex items-center gap-2 mb-2 px-2">
-                  <span className="text-lg">🥉</span>
-                  <h4 className="font-bold text-base" style={{ color: '#000' }}>
-                    BRONZE MEDALS
-                  </h4>
-                </div>
-                <div className="space-y-2">
-                  {leaderboard.bronze.map((participant, idx) => (
-                    <div key={participant.id} className="p-3 rounded border" style={{ 
-                      backgroundColor: '#FFF8F0', 
-                      borderColor: '#CD7F32' 
-                    }}>
-                      <div className="flex items-center gap-2">
-                        <span className="text-base font-bold" style={{ color: '#CD7F32' }}>
-                          {idx + 1}.
-                        </span>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-bold text-sm leading-tight" style={{ color: '#000' }}>
-                            {participant.name}
-                          </p>
-                          <p className="text-xs leading-tight" style={{ color: '#DC143C', opacity: 0.7 }}>
-                            {participant.dojo}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {leaderboard && leaderboard.gold.length === 0 && (
-              <div className="text-center py-6">
-                <Trophy size={40} style={{ color: '#DC143C', opacity: 0.3 }} className="mx-auto mb-2" />
-                <p className="text-sm" style={{ color: '#050505', opacity: 0.5 }}>
-                  Belum ada hasil pertandingan
-                </p>
-              </div>
-            )}
+            ))}
           </div>
         </div>
-      </div>
+      )}
+
+      {/* SILVER MEDALS */}
+      {leaderboard && leaderboard.silver.length > 0 && (
+        <div className="mb-6">
+          <div className="flex items-center gap-2 mb-3 px-2">
+            <span className="text-lg">🥈</span>
+            <h4 className="font-bold text-base" style={{ color: '#000' }}>
+              SILVER MEDALS ({leaderboard.silver.length})
+            </h4>
+          </div>
+          {/* Grid 3 kolom untuk Silver */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+            {leaderboard.silver.map((participant, idx) => (
+              <div key={participant.id} className="p-2 rounded border" style={{ 
+                backgroundColor: '#F5F5F5', 
+                borderColor: '#C0C0C0' 
+              }}>
+                <div className="flex items-start gap-2">
+                  <span className="text-xs font-bold flex-shrink-0" style={{ color: '#9CA3AF' }}>
+                    {idx + 1}.
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-xs leading-tight truncate" style={{ color: '#000' }} title={participant.name}>
+                      {participant.name}
+                    </p>
+                    <p className="text-xs leading-tight truncate" style={{ color: '#DC143C', opacity: 0.7 }} title={participant.dojo}>
+                      {participant.dojo}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* BRONZE MEDALS */}
+      {leaderboard && leaderboard.bronze && leaderboard.bronze.length > 0 && (
+        <div>
+          <div className="flex items-center gap-2 mb-3 px-2">
+            <span className="text-lg">🥉</span>
+            <h4 className="font-bold text-base" style={{ color: '#000' }}>
+              BRONZE MEDALS ({leaderboard.bronze.length})
+            </h4>
+          </div>
+          {/* Grid 3 kolom untuk Bronze */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+            {leaderboard.bronze.map((participant, idx) => (
+              <div key={participant.id} className="p-2 rounded border" style={{ 
+                backgroundColor: '#FFF8F0', 
+                borderColor: '#CD7F32' 
+              }}>
+                <div className="flex items-start gap-2">
+                  <span className="text-xs font-bold flex-shrink-0" style={{ color: '#CD7F32' }}>
+                    {idx + 1}.
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-xs leading-tight truncate" style={{ color: '#000' }} title={participant.name}>
+                      {participant.name}
+                    </p>
+                    <p className="text-xs leading-tight truncate" style={{ color: '#DC143C', opacity: 0.7 }} title={participant.dojo}>
+                      {participant.dojo}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Empty State */}
+      {leaderboard && leaderboard.gold.length === 0 && (
+        <div className="text-center py-6">
+          <Trophy size={40} style={{ color: '#DC143C', opacity: 0.3 }} className="mx-auto mb-2" />
+          <p className="text-sm" style={{ color: '#050505', opacity: 0.5 }}>
+            Belum ada hasil pertandingan
+          </p>
+        </div>
+      )}
+    </div>
+  </div>
+</div>
     </div>
   );
 })()}
