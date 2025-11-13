@@ -1353,8 +1353,10 @@ const byeMatchY = byeMatchIndex >= 0
   ? (byeMatchIndex % matchesPerColumn) * CARD_HEIGHT + OFFSET_CONNECTOR
   : OFFSET_CONNECTOR + 50;
 
+const ADDITIONAL_CARD_OFFSET = -40
+
 // Hitung posisi tambahan match — tetap pakai base offset kecil
-const additionalMatchY = ((lastFightY + byeMatchY) / 2) - (OFFSET_CONNECTOR - OFFSET_CARD);
+const additionalMatchY = (lastFightY + byeMatchY) / 2;
   
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>
@@ -1481,7 +1483,7 @@ const additionalMatchY = ((lastFightY + byeMatchY) / 2) - (OFFSET_CONNECTOR - OF
                           ) : (
                             <span 
                               className="text-xs font-bold px-3 py-1 rounded"
-                              style={{ backgroundColor: '#F5B700', color: 'white' }}
+                              style={{ backgroundColor: '#DC143C', color: 'white' }}
                             >
                               BYE
                             </span>
@@ -1575,7 +1577,7 @@ const additionalMatchY = ((lastFightY + byeMatchY) / 2) - (OFFSET_CONNECTOR - OF
               className="rounded-lg p-2 shadow-sm mb-3"
               style={{ 
                 backgroundColor: '#FFFBEA', 
-                border: '2px solid #F5B700',
+                border: '2px solid #DC143C',
                 width: `${CARD_WIDTH}px`,
                 position: 'relative',
                 top: `${additionalMatchY - 40}px`
@@ -1587,20 +1589,20 @@ const additionalMatchY = ((lastFightY + byeMatchY) / 2) - (OFFSET_CONNECTOR - OF
             </div>
 
             {/* Additional Match Card */}
-            <div
-              className="bg-white rounded-lg shadow-md border overflow-hidden"
-              style={{ 
-                borderColor: '#F5B700',
-                borderWidth: '3px',
-                position: 'relative',
-                zIndex: 10,
-                width: `${CARD_WIDTH}px`,
-                top: `${additionalMatchY - 40}px`
-              }}
-            >
+              <div
+                className="bg-white rounded-lg shadow-md border overflow-hidden"
+                style={{ 
+                  borderColor: '#FFFBEA',
+                  borderWidth: '3px',
+                  position: 'relative',
+                  zIndex: 10,
+                  width: `${CARD_WIDTH}px`,
+                  top: `${additionalMatchY + ADDITIONAL_CARD_OFFSET}px` // ⬅️ pakai offset di sini
+                }}
+              >
               <div 
                 className="px-3 py-2 border-b flex items-center justify-between"
-                style={{ backgroundColor: '#FFFBEA', borderColor: '#F5B700' }}
+                style={{ backgroundColor: '#FFFBEA', borderColor: '#DC143C' }}
               >
                 <div className="flex items-center gap-2 flex-1">
                   {additionalMatch.nomor_partai && (
