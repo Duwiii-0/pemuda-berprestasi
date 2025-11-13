@@ -1280,11 +1280,11 @@ if (hasAdditionalMatch && byeMatchIndex > 0) {
 
 // Calculate Y positions
 const lastFightY = lastNormalFightIndex >= 0 
-  ? (lastNormalFightIndex % matchesPerColumn) * CARD_HEIGHT + 70 
+  ? (lastNormalFightIndex % matchesPerColumn) * CARD_HEIGHT + 100 
   : 70;
 
 const byeMatchY = byeMatchIndex >= 0 
-  ? (byeMatchIndex % matchesPerColumn) * CARD_HEIGHT + 70 
+  ? (byeMatchIndex % matchesPerColumn) * CARD_HEIGHT + 100
   : 230;
 
 // ⭐ Additional match DI TENGAH-TENGAH kedua match

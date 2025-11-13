@@ -1457,62 +1457,74 @@ static async advanceWinnerToNextRound(match: any, winnerId: number): Promise<voi
   
   const isPemula = bagan?.kelas_kejuaraan?.kategori_event?.nama_kategori?.toLowerCase().includes('pemula') || false;
   
-  // ⭐ PEMULA LOGIC: ONLY advance LAST MATCH winner
-  if (isPemula && currentRound === 1) {
-    const round1Matches = await prisma.tb_match.findMany({
-      where: {
-        id_bagan: match.id_bagan,
-        ronde: 1
-      },
-      orderBy: { id_match: 'asc' }
-    });
+if (isPemula && currentRound === 1) {
+  console.log(`\n🥋 === PEMULA ADVANCE LOGIC ===`);
+  console.log(`   Current match ID: ${match.id_match}`);
+  
+  const round1Matches = await prisma.tb_match.findMany({
+    where: {
+      id_bagan: match.id_bagan,
+      ronde: 1
+    },
+    orderBy: { id_match: 'asc' }
+  });
+  
+  console.log(`   Total Round 1 matches: ${round1Matches.length}`);
+  console.log(`   Match IDs:`, round1Matches.map(m => m.id_match));
+  
+  const round2Match = await prisma.tb_match.findFirst({
+    where: {
+      id_bagan: match.id_bagan,
+      ronde: 2
+    }
+  });
+  
+  if (round2Match && round1Matches.length > 0) {
+    // ⭐ Find BYE match
+    const byeMatch = round1Matches.find(m => m.id_peserta_a && !m.id_peserta_b);
     
-    const round2Match = await prisma.tb_match.findFirst({
-      where: {
-        id_bagan: match.id_bagan,
-        ronde: 2
-      }
-    });
+    if (!byeMatch) {
+      console.log(`   ℹ️ No BYE match found - no additional match needed`);
+      return;
+    }
     
-    if (round2Match && round1Matches.length > 0) {
-      // ⭐ Find BYE match
-      const byeMatch = round1Matches.find(m => m.id_peserta_a && !m.id_peserta_b);
+    console.log(`   BYE match ID: ${byeMatch.id_match}`);
+    
+    // ⭐ Find LAST NORMAL FIGHT match (sebelum BYE)
+    const byeIndex = round1Matches.findIndex(m => m.id_match === byeMatch.id_match);
+    console.log(`   BYE match index: ${byeIndex}`);
+    
+    if (byeIndex <= 0) {
+      console.log(`   ⚠️ BYE match is first (index ${byeIndex}) - no last normal fight match`);
+      return;
+    }
+    
+    const lastNormalFightMatch = round1Matches[byeIndex - 1];
+    console.log(`   Last normal fight match ID: ${lastNormalFightMatch.id_match}`);
+    console.log(`   Checking: ${match.id_match} === ${lastNormalFightMatch.id_match}?`);
+    
+    // ⭐ CRITICAL CHECK: Is this match the LAST NORMAL FIGHT?
+    if (match.id_match === lastNormalFightMatch.id_match) {
+      console.log(`   ✅ YES! This is the LAST normal fight → Advance to Additional Match`);
       
-      if (!byeMatch) {
-        // ⭐ Kalau TIDAK ada BYE match (jumlah genap), TIDAK ada additional match
-        console.log(`   ℹ️ No BYE match found - no additional match needed`);
-        return;
-      }
+      await prisma.tb_match.update({
+        where: { id_match: round2Match.id_match },
+        data: { id_peserta_a: winnerId }
+      });
       
-      // ⭐ Find LAST NORMAL FIGHT match (sebelum BYE)
-      const byeIndex = round1Matches.findIndex(m => m.id_match === byeMatch.id_match);
-      
-      if (byeIndex <= 0) {
-        console.log(`   ⚠️ BYE match is first - no last normal fight match`);
-        return;
-      }
-      
-      const lastNormalFightMatch = round1Matches[byeIndex - 1];
-      
-      // ⭐ CRITICAL CHECK: Is this match the LAST NORMAL FIGHT?
-      if (match.id_match === lastNormalFightMatch.id_match) {
-        console.log(`   ⭐ PEMULA: This is LAST normal fight → Advance to Additional Match (Slot A)`);
-        
-        await prisma.tb_match.update({
-          where: { id_match: round2Match.id_match },
-          data: { id_peserta_a: winnerId }
-        });
-        
-        console.log(`   ✅ Winner ${winnerId} placed in Additional Match (Slot A)`);
-        return;
-      } else {
-        // ⭐ CRITICAL: This is NOT the last match → DO NOT ADVANCE!
-        console.log(`   ℹ️ This is NOT the last normal fight (match ${match.id_match}) → Winner stays in Round 1`);
-        console.log(`      Last normal fight is match ${lastNormalFightMatch.id_match}`);
-        return;
-      }
+      console.log(`   ✅ Winner ${winnerId} placed in Additional Match (Slot A)`);
+      console.log(`═══════════════════════════════════════\n`);
+      return;
+    } else {
+      console.log(`   ❌ NO! This is NOT the last normal fight`);
+      console.log(`      Current match: ${match.id_match}`);
+      console.log(`      Last match should be: ${lastNormalFightMatch.id_match}`);
+      console.log(`   → Winner stays in Round 1 (DO NOT ADVANCE)`);
+      console.log(`═══════════════════════════════════════\n`);
+      return;
     }
   }
+}
   
   // ⭐ EXISTING LOGIC FOR PRESTASI (continue as normal)
   const currentRoundMatches = await prisma.tb_match.findMany({
