@@ -2026,29 +2026,37 @@ const handleExportLapangan = async () => {
 
             <div className="border-2 rounded-lg p-4 space-y-4" style={{ borderColor: '#990D35', backgroundColor: 'rgba(153,13,53,0.02)' }}>
 
-              {/* Summary Cards */}
-              <div className="grid grid-cols-3 gap-3">
-                <div className="p-4 rounded-lg shadow-sm" style={{ backgroundColor: 'white', borderLeft: '4px solid #990D35' }}>
-                  <p className="text-xs mb-1" style={{ color: '#050505', opacity: 0.6 }}>Total Matches</p>
-                  <p className="text-3xl font-bold" style={{ color: '#990D35' }}>
-                    {previewData.total_matches}
-                  </p>
-                </div>
+{/* Summary Cards */}
+<div className="grid grid-cols-4 gap-3">
+  <div className="p-4 rounded-lg shadow-sm" style={{ backgroundColor: 'white', borderLeft: '4px solid #990D35' }}>
+    <p className="text-xs mb-1" style={{ color: '#050505', opacity: 0.6 }}>Total Matches</p>
+    <p className="text-3xl font-bold" style={{ color: '#990D35' }}>
+      {previewData.total_matches}
+    </p>
+  </div>
 
-                <div className="p-4 rounded-lg shadow-sm" style={{ backgroundColor: 'white', borderLeft: '4px solid #6366F1' }}>
-                  <p className="text-xs mb-1" style={{ color: '#050505', opacity: 0.6 }}>Range Nomor</p>
-                  <p className="text-xl font-bold" style={{ color: '#6366F1' }}>
-                    {previewData.range}
-                  </p>
-                </div>
+  {/* ⭐ NEW CARD: BYE Skipped */}
+  <div className="p-4 rounded-lg shadow-sm" style={{ backgroundColor: 'white', borderLeft: '4px solid #F5B700' }}>
+    <p className="text-xs mb-1" style={{ color: '#050505', opacity: 0.6 }}>BYE Skipped</p>
+    <p className="text-3xl font-bold" style={{ color: '#F5B700' }}>
+      {previewData.total_bye_skipped || 0}
+    </p>
+  </div>
 
-                <div className="p-4 rounded-lg shadow-sm" style={{ backgroundColor: 'white', borderLeft: '4px solid #16a34a' }}>
-                  <p className="text-xs mb-1" style={{ color: '#050505', opacity: 0.6 }}>Total Kelas</p>
-                  <p className="text-3xl font-bold" style={{ color: '#16a34a' }}>
-                    {(previewData.summary.pemula?.length || 0) + (previewData.summary.prestasi?.length || 0)}
-                  </p>
-                </div>
-              </div>
+  <div className="p-4 rounded-lg shadow-sm" style={{ backgroundColor: 'white', borderLeft: '4px solid #6366F1' }}>
+    <p className="text-xs mb-1" style={{ color: '#050505', opacity: 0.6 }}>Range Nomor</p>
+    <p className="text-xl font-bold" style={{ color: '#6366F1' }}>
+      {previewData.range}
+    </p>
+  </div>
+
+  <div className="p-4 rounded-lg shadow-sm" style={{ backgroundColor: 'white', borderLeft: '4px solid #16a34a' }}>
+    <p className="text-xs mb-1" style={{ color: '#050505', opacity: 0.6 }}>Total Kelas</p>
+    <p className="text-3xl font-bold" style={{ color: '#16a34a' }}>
+      {(previewData.summary.pemula?.length || 0) + (previewData.summary.prestasi?.length || 0)}
+    </p>
+  </div>
+</div>
 
               {/* PEMULA */}
               {previewData.summary.pemula?.length > 0 && (
