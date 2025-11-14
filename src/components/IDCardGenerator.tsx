@@ -179,6 +179,24 @@ export const IDCardGenerator = ({ atlet, isEditing }: IDCardGeneratorProps) => {
     });
   };
 
+  const fetchKelasDetail = async (idKelasKejuaraan: number) => {
+  try {
+    const baseUrl = process.env.REACT_APP_API_BASE_URL || 'https://cjvmanagementevent.com';
+    const response = await fetch(`${baseUrl}/api/kelas-kejuaraan/${idKelasKejuaraan}`);
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch kelas detail');
+    }
+    
+    const data = await response.json();
+    console.log("📦 Fetched kelas detail:", data);
+    return data;
+  } catch (error) {
+    console.error("❌ Error fetching kelas detail:", error);
+    return null;
+  }
+};
+
   const loadPDFAsArrayBuffer = async (url: string): Promise<ArrayBuffer> => {
     const response = await fetch(url);
     if (!response.ok) throw new Error(`Failed to fetch PDF: ${url}`);
@@ -257,11 +275,9 @@ const generateIDCard = async () => {
   
   const dojangName = atlet.dojang_name || atlet.dojang?.nama_dojang || "-";
   
-  // ✅ AMBIL KELAS INFO - SAMA PERSIS DENGAN ALLPESERTA
   let kelasInfo = "";
   
   if (atlet.peserta_kompetisi && atlet.peserta_kompetisi.length > 0) {
-    // Pilih peserta APPROVED atau yang pertama
     const targetPeserta = atlet.peserta_kompetisi.find(p => p.status === 'APPROVED') || 
                           atlet.peserta_kompetisi[0];
     
@@ -269,59 +285,63 @@ const generateIDCard = async () => {
     
     if (targetPeserta?.kelas_kejuaraan) {
       const kj = targetPeserta.kelas_kejuaraan;
+      console.log("📚 Original kelas_kejuaraan:", kj);
       
-      console.log("📚 Full kelas_kejuaraan object:", kj);
+      // ✅ JIKA DATA RELASI KOSONG, FETCH DARI API
+      let kelasData = kj;
       
-      // Ambil semua komponen
-      const cabang = kj.cabang || "";
-      const kelompokUsia = kj.kelompok?.nama_kelompok || "";
-      const kategoriEvent = kj.kategori_event?.nama_kategori || "";
+      if (kj.id_kelas_kejuaraan && (!kj.kelompok || !kj.kelas_berat)) {
+        console.log("⚠️ Missing relations, fetching complete data...");
+        const completeData = await fetchKelasDetail(kj.id_kelas_kejuaraan);
+        
+        if (completeData?.data) {
+          kelasData = completeData.data;
+          console.log("✅ Complete kelas data:", kelasData);
+        }
+      }
       
-      // Tentukan kelas detail berdasarkan cabang
+      // Ambil semua komponen dari data lengkap
+      const cabang = kelasData.cabang || "";
+      const kelompokUsia = kelasData.kelompok?.nama_kelompok || "";
+      const kategoriEvent = kelasData.kategori_event?.nama_kategori || "";
+      
+      // Tentukan kelas detail
       let kelasDetail = "";
       
-      if (cabang === "KYORUGI" && kj.kelas_berat?.nama_kelas) {
-        kelasDetail = kj.kelas_berat.nama_kelas;
+      if (cabang === "KYORUGI" && kelasData.kelas_berat?.nama_kelas) {
+        kelasDetail = kelasData.kelas_berat.nama_kelas;
         console.log("✅ KYORUGI - Kelas Berat:", kelasDetail);
-      } else if (cabang === "POOMSAE" && kj.poomsae?.nama_kelas) {
-        kelasDetail = kj.poomsae.nama_kelas;
+      } else if (cabang === "POOMSAE" && kelasData.poomsae?.nama_kelas) {
+        kelasDetail = kelasData.poomsae.nama_kelas;
         console.log("✅ POOMSAE - Kelas Poomsae:", kelasDetail);
       }
       
-      // ✅ BUILD FORMAT: Kategori - Level - Kelompok Usia - Kelas Detail
+      // Build format
       const parts = [];
       if (kategoriEvent) parts.push(kategoriEvent);
       if (cabang) parts.push(cabang);
       
-      // Logika khusus untuk kelompok usia
       if (kelompokUsia && kelompokUsia.toLowerCase() !== 'pemula') {
         parts.push(kelompokUsia);
       } else if (kelasDetail) {
-        // Jika kelompok usia = pemula atau kosong, tampilkan kelas detail
         parts.push(kelasDetail);
       }
       
       kelasInfo = parts.join(" - ") || "-";
       
-      console.log("📋 Breakdown Components:", {
+      console.log("📋 Final Breakdown:", {
         cabang,
         kategoriEvent,
         kelompokUsia,
         kelasDetail,
-        finalParts: parts,
-        finalString: kelasInfo
+        parts,
+        result: kelasInfo
       });
-    } else {
-      console.warn("⚠️ kelas_kejuaraan is null/undefined");
     }
-  } else {
-    console.warn("⚠️ No peserta_kompetisi found");
   }
   
-  // Fallback
   if (!kelasInfo) {
     kelasInfo = atlet.kelas_berat || "-";
-    console.log("⚠️ Using fallback:", kelasInfo);
   }
 
   console.log("✅ FINAL Kelas Info:", kelasInfo);
@@ -342,7 +362,6 @@ const generateIDCard = async () => {
     const helveticaFont = await pdfDoc.embedFont('Helvetica-Bold');
     const mmToPt = (mm: number) => mm * 2.83465;
 
-    // Embed Photo
     if (atlet.pas_foto_path) {
       try {
         const photoUrl = getPhotoUrl(atlet.pas_foto_path);
@@ -363,7 +382,6 @@ const generateIDCard = async () => {
 
     const textColor = rgb(0.04, 0.13, 0.41);
 
-    // Draw Nama
     firstPage.drawText(atlet.nama_atlet, {
       x: mmToPt(COORDS_MM.nama.x),
       y: pageHeight - mmToPt(COORDS_MM.nama.y),
@@ -372,7 +390,6 @@ const generateIDCard = async () => {
       color: textColor,
     });
 
-    // Draw Kelas
     console.log("✍️ Writing to PDF - Kelas:", kelasInfo);
     firstPage.drawText(kelasInfo, {
       x: mmToPt(COORDS_MM.kelas.x),
@@ -382,7 +399,6 @@ const generateIDCard = async () => {
       color: textColor,
     });
 
-    // Draw Kontingen
     firstPage.drawText(dojangName, {
       x: mmToPt(COORDS_MM.kontingen.x),
       y: pageHeight - mmToPt(COORDS_MM.kontingen.y),
