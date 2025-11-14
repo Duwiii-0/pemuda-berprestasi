@@ -101,12 +101,14 @@ interface TournamentBracketPrestasiProps {
   kelasData: KelasKejuaraan;
   onBack?: () => void;
   apiBaseUrl?: string;
+  viewOnly?: boolean; // ⭐ TAMBAHKAN
 }
 
 const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({ 
   kelasData, 
   onBack,
   apiBaseUrl = '/api',
+  viewOnly = false, // ⭐ TAMBAHKAN
 }) => {
   const { token } = useAuth();
   const [matches, setMatches] = useState<Match[]>([]);
@@ -1103,12 +1105,14 @@ return (
               })}
             </span>
           )}
-          <button
-            onClick={() => setEditingMatch(match)}
-            className="p-1 rounded hover:bg-black/5"
-          >
-            <Edit3 size={12} style={{ color: '#050505', opacity: 0.6 }} />
-          </button>
+<button
+  onClick={() => setEditingMatch(match)}
+  className="p-1 rounded hover:bg-black/5 transition-all"
+  disabled={viewOnly} // ⭐ TAMBAHKAN
+  style={{ opacity: viewOnly ? 0.3 : 1, cursor: viewOnly ? 'not-allowed' : 'pointer' }} // ⭐ TAMBAHKAN
+>
+  <Edit3 size={14} style={{ color: '#DC143C' }} />
+</button>
         </div>
       </div>
 
@@ -2051,6 +2055,7 @@ const calculateCardPosition = (
               </div>
             </div>
 
+            {!viewOnly && (
             <div className="flex gap-3">
               <button
                 onClick={exportPesertaToExcel}
@@ -2136,6 +2141,7 @@ const calculateCardPosition = (
                 )}
               </button>
             </div>
+            )}
           </div>
 
           {/* Competition details */}

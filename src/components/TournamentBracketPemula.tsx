@@ -98,12 +98,14 @@ interface TournamentBracketPemulaProps {
   kelasData: KelasKejuaraan;
   onBack?: () => void;
   apiBaseUrl?: string;
+  viewOnly?: boolean; // ⭐ TAMBAHKAN
 }
 
 const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({ 
   kelasData, 
   onBack,
   apiBaseUrl = '/api',
+  viewOnly = false,
 }) => {
   const { token } = useAuth();
   const [matches, setMatches] = useState<Match[]>([]);
@@ -1147,6 +1149,7 @@ return (
           </div>
 
           {/* Action Buttons */}
+          {!viewOnly && (
           <div className="flex gap-3">
             <button
                 onClick={exportPesertaToExcel}
@@ -1231,6 +1234,7 @@ return (
               )}
             </button>
           </div>
+          )}
         </div>
 
         {/* Competition details */}
@@ -1408,12 +1412,14 @@ const additionalMatchY = (lastFightY + byeMatchY) / 2;
                           )}
                         </div>
                         
-                        <button
-                          onClick={() => setEditingMatch(match)}
-                          className="p-1 rounded hover:bg-black/5 transition-all"
-                        >
-                          <Edit3 size={14} style={{ color: '#DC143C' }} />
-                        </button>
+                      <button
+                        onClick={() => setEditingMatch(match)}
+                        className="p-1 rounded hover:bg-black/5 transition-all"
+                        disabled={viewOnly} // ⭐ TAMBAHKAN
+                        style={{ opacity: viewOnly ? 0.3 : 1, cursor: viewOnly ? 'not-allowed' : 'pointer' }} // ⭐ TAMBAHKAN
+                      >
+                        <Edit3 size={14} style={{ color: '#DC143C' }} />
+                      </button>
                       </div>
 
                       <div className="flex flex-col">

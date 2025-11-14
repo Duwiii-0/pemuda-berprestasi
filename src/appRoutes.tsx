@@ -41,6 +41,8 @@ import DataAtlit from "./pages/dashboard/dataAtlit";
 import Dojang from "./pages/dashboard/dataDojang";
 import TambahAtlit from "./pages/atlit/TambahAtlit";
 import DataKompetisi from "./pages/dashboard/dataKompetisi";
+import BracketViewer from "./pages/dashboard/BracketViewer";
+import BracketList from "./pages/dashboard/BracketList";
 
 // Admin - Fixed import paths
 import AdminLayout from "./layouts/adminlayout";
@@ -314,17 +316,34 @@ export default function AppRoutes() {
             }
           />
 
-          {/* Competition data */}
-          <Route
-            path="dataKompetisi"
-            element={
-              <ProtectedRoute requiredRole="PELATIH">
-                <DataKompetisi />
-              </ProtectedRoute>
-            }
-          />
-        </Route>
+{/* Competition data */}
+  <Route
+    path="dataKompetisi"
+    element={
+      <ProtectedRoute requiredRole="PELATIH">
+        <DataKompetisi />
+      </ProtectedRoute>
+    }
+  />
 
+  {/* ⭐ TAMBAHKAN INI - Bracket Viewer Routes */}
+  <Route
+    path="bracket-viewer"
+    element={
+      <ProtectedRoute requiredRole="PELATIH">
+        <BracketList />
+      </ProtectedRoute>
+    }
+  />
+  <Route
+    path="bracket-viewer/:kelasId"
+    element={
+      <ProtectedRoute requiredRole="PELATIH">
+        <BracketViewer />
+      </ProtectedRoute>
+    }
+  />
+</Route>
         {/* ✅ Lomba pages - PUBLIC ACCESS */}
         <Route path="/event" element={<LombaLayout />}>
           <Route index element={<Navigate to="/event/home" replace />} />

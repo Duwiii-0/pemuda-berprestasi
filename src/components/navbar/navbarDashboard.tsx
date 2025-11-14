@@ -22,32 +22,33 @@ const NavbarDashboard: React.FC<NavbarProps> = ({ mobile = false, onClose }) => 
     navigate("/");
   };
 
-  const navItems = [
-//    { 
-//      path: '/dashboard', 
-//      label: 'Dashboard', 
-//      icon: Home,
-//      exact: true // Only match exact path for dashboard home
-//    },
-    { 
-      path: '/dashboard/dojang', 
-      label: 'Data Dojang', 
-      icon: Home,
-      exact: false
-    },
-    { 
-      path: '/dashboard/atlit', 
-      label: 'Data Atlit', 
-      icon: Users,
-      exact: false
-    },
-    { 
-      path: '/dashboard/dataKompetisi', 
-      label: 'Data Kompetisi', 
-      icon: Trophy,
-      exact: false
-    }
-  ];
+const navItems = [
+  { 
+    path: '/dashboard/dojang', 
+    label: 'Data Dojang', 
+    icon: Home,
+    exact: false
+  },
+  { 
+    path: '/dashboard/atlit', 
+    label: 'Data Atlit', 
+    icon: Users,
+    exact: false
+  },
+  { 
+    path: '/dashboard/dataKompetisi', 
+    label: 'Data Kompetisi', 
+    icon: Trophy,
+    exact: false
+  },
+  // ⭐ TAMBAHKAN INI
+  { 
+    path: '/dashboard/bracket-viewer', 
+    label: 'Lihat Bracket', 
+    icon: Trophy, // atau import { GitBranch } from 'lucide-react'
+    exact: false
+  }
+];
 
   const checkIsActive = (path: string, exact: boolean = false) => {
     if (exact) {
