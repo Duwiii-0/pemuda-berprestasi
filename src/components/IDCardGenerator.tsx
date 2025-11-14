@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { Download, Eye, FileText, AlertCircle } from "lucide-react";
+import { useKompetisi } from "../context/KompetisiContext";
+import { useAuth } from "../context/authContext"; // ✅ TAMBAHKAN INI
 import { PDFDocument, rgb } from "pdf-lib";
 
 interface Atlet {
@@ -79,11 +81,25 @@ const COORDS_MM = {
 };
 
 export const IDCardGenerator = ({ atlet, isEditing }: IDCardGeneratorProps) => {
+  // ✅ Destructure dari context
+  const { pesertaList, fetchAtletByKompetisi } = useKompetisi();
+  const { user } = useAuth();
+  
   const [hasGenerated, setHasGenerated] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string>("");
   const [cachedPdfBlob, setCachedPdfBlob] = useState<Blob | null>(null);
+
+  // ✅ Auto-fetch pesertaList jika belum ada
+  useEffect(() => {
+    const kompetisiId = user?.admin_kompetisi?.id_kompetisi;
+    
+    if (kompetisiId && (!pesertaList || pesertaList.length === 0)) {
+      console.log("🔄 Auto-fetching pesertaList for ID Card...");
+      fetchAtletByKompetisi(kompetisiId);
+    }
+  }, [user, pesertaList]);
 
   // Check localStorage saat component mount
   useEffect(() => {
@@ -96,31 +112,20 @@ export const IDCardGenerator = ({ atlet, isEditing }: IDCardGeneratorProps) => {
     }
   }, [atlet]);
 
-  // Validasi apakah bisa generate ID Card
+
+// Validasi apakah bisa generate ID Card
   const canGenerateIDCard = (): { canGenerate: boolean; reason: string } => {
-    // 1. Cek pas foto
     if (!atlet.pas_foto_path) {
-      return { 
-        canGenerate: false, 
-        reason: "Pas foto belum tersedia" 
-      };
+      return { canGenerate: false, reason: "Pas foto belum tersedia" };
     }
 
-    // 2. Cek peserta kompetisi
     if (!atlet.peserta_kompetisi || atlet.peserta_kompetisi.length === 0) {
-      return { 
-        canGenerate: false, 
-        reason: "Belum terdaftar dalam kompetisi" 
-      };
+      return { canGenerate: false, reason: "Belum terdaftar dalam kompetisi" };
     }
 
-    // 3. Cek apakah ada yang APPROVED
     const hasApproved = atlet.peserta_kompetisi.some(p => p.status === 'APPROVED');
     if (!hasApproved) {
-      return { 
-        canGenerate: false, 
-        reason: "Belum ada peserta dengan status APPROVED" 
-      };
+      return { canGenerate: false, reason: "Belum ada peserta dengan status APPROVED" };
     }
 
     return { canGenerate: true, reason: "" };
@@ -178,24 +183,6 @@ export const IDCardGenerator = ({ atlet, isEditing }: IDCardGeneratorProps) => {
       img.src = url;
     });
   };
-
-  const fetchKelasDetail = async (idKelasKejuaraan: number) => {
-  try {
-    const baseUrl = process.env.REACT_APP_API_BASE_URL || 'https://cjvmanagementevent.com';
-    const response = await fetch(`${baseUrl}/api/kelas-kejuaraan/${idKelasKejuaraan}`);
-    
-    if (!response.ok) {
-      throw new Error('Failed to fetch kelas detail');
-    }
-    
-    const data = await response.json();
-    console.log("📦 Fetched kelas detail:", data);
-    return data;
-  } catch (error) {
-    console.error("❌ Error fetching kelas detail:", error);
-    return null;
-  }
-};
 
   const loadPDFAsArrayBuffer = async (url: string): Promise<ArrayBuffer> => {
     const response = await fetch(url);
@@ -261,175 +248,224 @@ export const IDCardGenerator = ({ atlet, isEditing }: IDCardGeneratorProps) => {
     return result;
   };
 
-const generateIDCard = async () => {
-  if (!validation.canGenerate) {
-    alert(`Tidak dapat generate ID Card: ${validation.reason}`);
-    return;
-  }
+  const generateIDCard = async () => {
+    if (!validation.canGenerate) {
+      alert(`Tidak dapat generate ID Card: ${validation.reason}`);
+      return;
+    }
 
-  setIsGenerating(true);
+    setIsGenerating(true);
 
-  console.log("=== DEBUG ATLET DATA (FULL) ===");
-  console.log("Full atlet object:", atlet);
-  console.log("peserta_kompetisi:", atlet.peserta_kompetisi);
-  
-  const dojangName = atlet.dojang_name || atlet.dojang?.nama_dojang || "-";
-  
-  let kelasInfo = "";
-  
-  if (atlet.peserta_kompetisi && atlet.peserta_kompetisi.length > 0) {
-    const targetPeserta = atlet.peserta_kompetisi.find(p => p.status === 'APPROVED') || 
-                          atlet.peserta_kompetisi[0];
+    console.log("=== 🎯 DEBUG ATLET DATA (FULL) ===");
+    console.log("1️⃣ Full atlet object:", atlet);
+    console.log("2️⃣ peserta_kompetisi from atlet:", atlet.peserta_kompetisi);
+    console.log("3️⃣ pesertaList from context:", pesertaList);
+    console.log("4️⃣ pesertaList length:", pesertaList?.length || 0);
     
-    console.log("🎯 Target Peserta:", targetPeserta);
+    const dojangName = atlet.dojang_name || atlet.dojang?.nama_dojang || "-";
     
-    if (targetPeserta?.kelas_kejuaraan) {
-      const kj = targetPeserta.kelas_kejuaraan;
-      console.log("📚 Original kelas_kejuaraan:", kj);
+    let kelasInfo = "";
+    
+    if (atlet.peserta_kompetisi && atlet.peserta_kompetisi.length > 0) {
+      // Pilih peserta APPROVED
+      const targetPeserta = atlet.peserta_kompetisi.find(p => p.status === 'APPROVED') || 
+                            atlet.peserta_kompetisi[0];
       
-      // ✅ JIKA DATA RELASI KOSONG, FETCH DARI API
-      let kelasData = kj;
+      console.log("🎯 Target Peserta (from atlet):", targetPeserta);
+      console.log("   - id_peserta_kompetisi:", targetPeserta?.id_peserta_kompetisi);
+      console.log("   - kelas_kejuaraan:", targetPeserta?.kelas_kejuaraan);
       
-      if (kj.id_kelas_kejuaraan && (!kj.kelompok || !kj.kelas_berat)) {
-        console.log("⚠️ Missing relations, fetching complete data...");
-        const completeData = await fetchKelasDetail(kj.id_kelas_kejuaraan);
+      // ✅ CARI DATA LENGKAP DARI CONTEXT pesertaList
+      let fullPesertaData = null;
+      
+      if (pesertaList && pesertaList.length > 0) {
+        fullPesertaData = pesertaList.find((p: any) => {
+          // Match by id_peserta_kompetisi
+          const match1 = p.id_peserta_kompetisi === targetPeserta?.id_peserta_kompetisi;
+          // Or match by id_atlet and status
+          const match2 = p.id_atlet === atlet.id_atlet && p.status === 'APPROVED';
+          return match1 || match2;
+        });
         
-        if (completeData?.data) {
-          kelasData = completeData.data;
-          console.log("✅ Complete kelas data:", kelasData);
+        console.log("🔍 Search result from pesertaList:", fullPesertaData);
+      } else {
+        console.warn("⚠️ pesertaList is empty or undefined");
+      }
+      
+      // ✅ Gunakan data dari context jika ada dan lengkap
+      let kelasData = targetPeserta?.kelas_kejuaraan;
+      
+      if (fullPesertaData?.kelas_kejuaraan) {
+        const hasCompleteRelations = 
+          fullPesertaData.kelas_kejuaraan.kelompok || 
+          fullPesertaData.kelas_kejuaraan.kelas_berat ||
+          fullPesertaData.kelas_kejuaraan.poomsae;
+        
+        if (hasCompleteRelations) {
+          console.log("✅ Using COMPLETE data from pesertaList context");
+          kelasData = fullPesertaData.kelas_kejuaraan;
+        } else {
+          console.log("⚠️ Context data incomplete, using atlet data");
+        }
+      } else {
+        console.log("⚠️ No matching data in pesertaList, using atlet data");
+      }
+      
+      console.log("📚 Final kelas data to use:", kelasData);
+      
+      if (kelasData) {
+        const cabang = kelasData.cabang || "";
+        const kelompokUsia = kelasData.kelompok?.nama_kelompok || "";
+        const kategoriEvent = kelasData.kategori_event?.nama_kategori || "";
+        
+        console.log("📋 Extracted data:", {
+          cabang,
+          kelompokUsia,
+          kategoriEvent,
+          hasKelompok: !!kelasData.kelompok,
+          hasKelasBerat: !!kelasData.kelas_berat,
+          hasPoomsae: !!kelasData.poomsae
+        });
+        
+        let kelasDetail = "";
+        
+        if (cabang === "KYORUGI" && kelasData.kelas_berat?.nama_kelas) {
+          kelasDetail = kelasData.kelas_berat.nama_kelas;
+          console.log("✅ KYORUGI - Kelas Berat:", kelasDetail);
+        } else if (cabang === "POOMSAE" && kelasData.poomsae?.nama_kelas) {
+          kelasDetail = kelasData.poomsae.nama_kelas;
+          console.log("✅ POOMSAE - Kelas Poomsae:", kelasDetail);
+        } else {
+          console.log("⚠️ No detail class found");
+        }
+        
+        // ✅ BUILD FORMAT: Kategori - Cabang - Kelompok Usia/Kelas Detail
+        const parts = [];
+        if (kategoriEvent) parts.push(kategoriEvent);
+        if (cabang) parts.push(cabang);
+        
+        if (kelompokUsia && kelompokUsia.toLowerCase() !== 'pemula') {
+          parts.push(kelompokUsia);
+        } else if (kelasDetail) {
+          parts.push(kelasDetail);
+        }
+        
+        kelasInfo = parts.join(" - ") || "-";
+        
+        console.log("📋 Final Breakdown:", {
+          cabang,
+          kategoriEvent,
+          kelompokUsia,
+          kelasDetail,
+          parts,
+          result: kelasInfo
+        });
+      } else {
+        console.error("❌ No kelas data available at all!");
+      }
+    } else {
+      console.error("❌ No peserta_kompetisi found in atlet data!");
+    }
+    
+    // Fallback
+    if (!kelasInfo || kelasInfo === "-") {
+      kelasInfo = atlet.kelas_berat || "Kategori Tidak Tersedia";
+      console.log("⚠️ Using fallback:", kelasInfo);
+    }
+
+    console.log("✅ FINAL Kelas Info:", kelasInfo);
+    console.log("✅ FINAL Dojang:", dojangName);
+    console.log("=================================\n");
+
+    try {
+      const kategori = getKategoriTemplate();
+      const templatePath = `/templates/e-idcard_sriwijaya_${kategori}.pdf`;
+      
+      console.log("📄 Using template:", templatePath);
+
+      const templateBytes = await loadPDFAsArrayBuffer(templatePath);
+      const pdfDoc = await PDFDocument.load(templateBytes);
+      const pages = pdfDoc.getPages();
+      const firstPage = pages[0];
+      const { height: pageHeight } = firstPage.getSize();
+
+      const helveticaFont = await pdfDoc.embedFont('Helvetica-Bold');
+      const mmToPt = (mm: number) => mm * 2.83465;
+
+      // Embed Photo
+      if (atlet.pas_foto_path) {
+        try {
+          const photoUrl = getPhotoUrl(atlet.pas_foto_path);
+          const roundedImageBase64 = await createRoundedImage(photoUrl, COORDS_MM.photo.borderRadius);
+          const imageBytes = base64ToArrayBuffer(roundedImageBase64);
+          const image = await pdfDoc.embedPng(imageBytes);
+
+          const x = mmToPt(COORDS_MM.photo.x);
+          const y = pageHeight - mmToPt(COORDS_MM.photo.y) - mmToPt(COORDS_MM.photo.height);
+          const width = mmToPt(COORDS_MM.photo.width);
+          const height = mmToPt(COORDS_MM.photo.height);
+
+          firstPage.drawImage(image, { x, y, width, height });
+        } catch (error) {
+          console.error("Failed to embed photo:", error);
         }
       }
-      
-      // Ambil semua komponen dari data lengkap
-      const cabang = kelasData.cabang || "";
-      const kelompokUsia = kelasData.kelompok?.nama_kelompok || "";
-      const kategoriEvent = kelasData.kategori_event?.nama_kategori || "";
-      
-      // Tentukan kelas detail
-      let kelasDetail = "";
-      
-      if (cabang === "KYORUGI" && kelasData.kelas_berat?.nama_kelas) {
-        kelasDetail = kelasData.kelas_berat.nama_kelas;
-        console.log("✅ KYORUGI - Kelas Berat:", kelasDetail);
-      } else if (cabang === "POOMSAE" && kelasData.poomsae?.nama_kelas) {
-        kelasDetail = kelasData.poomsae.nama_kelas;
-        console.log("✅ POOMSAE - Kelas Poomsae:", kelasDetail);
-      }
-      
-      // Build format
-      const parts = [];
-      if (kategoriEvent) parts.push(kategoriEvent);
-      if (cabang) parts.push(cabang);
-      
-      if (kelompokUsia && kelompokUsia.toLowerCase() !== 'pemula') {
-        parts.push(kelompokUsia);
-      } else if (kelasDetail) {
-        parts.push(kelasDetail);
-      }
-      
-      kelasInfo = parts.join(" - ") || "-";
-      
-      console.log("📋 Final Breakdown:", {
-        cabang,
-        kategoriEvent,
-        kelompokUsia,
-        kelasDetail,
-        parts,
-        result: kelasInfo
+
+      const textColor = rgb(0.04, 0.13, 0.41);
+
+      // Draw Nama
+      firstPage.drawText(atlet.nama_atlet, {
+        x: mmToPt(COORDS_MM.nama.x),
+        y: pageHeight - mmToPt(COORDS_MM.nama.y),
+        size: COORDS_MM.nama.fontSize,
+        font: helveticaFont,
+        color: textColor,
       });
+
+      // Draw Kelas
+      console.log("✍️ Writing to PDF - Kelas:", kelasInfo);
+      firstPage.drawText(kelasInfo, {
+        x: mmToPt(COORDS_MM.kelas.x),
+        y: pageHeight - mmToPt(COORDS_MM.kelas.y),
+        size: COORDS_MM.kelas.fontSize,
+        font: helveticaFont,
+        color: textColor,
+      });
+
+      // Draw Kontingen
+      firstPage.drawText(dojangName, {
+        x: mmToPt(COORDS_MM.kontingen.x),
+        y: pageHeight - mmToPt(COORDS_MM.kontingen.y),
+        size: COORDS_MM.kontingen.fontSize,
+        font: helveticaFont,
+        color: textColor,
+      });
+
+      const pdfBytes = await pdfDoc.save();
+      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      
+      setCachedPdfBlob(blob);
+      setPreviewUrl(url);
+
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `ID-Card-${atlet.nama_atlet.replace(/\s/g, "-")}.pdf`;
+      link.click();
+
+      const storageKey = `idcard_generated_${atlet.id_atlet || atlet.nama_atlet}`;
+      localStorage.setItem(storageKey, 'true');
+
+      setHasGenerated(true);
+      
+      console.log("✅ PDF Generated successfully!");
+    } catch (error) {
+      console.error("❌ Error generating ID card:", error);
+      alert("Gagal generate ID Card: " + (error as Error).message);
+    } finally {
+      setIsGenerating(false);
     }
-  }
-  
-  if (!kelasInfo) {
-    kelasInfo = atlet.kelas_berat || "-";
-  }
-
-  console.log("✅ FINAL Kelas Info:", kelasInfo);
-  console.log("✅ FINAL Dojang:", dojangName);
-
-  try {
-    const kategori = getKategoriTemplate();
-    const templatePath = `/templates/e-idcard_sriwijaya_${kategori}.pdf`;
-    
-    console.log("📄 Using template:", templatePath);
-
-    const templateBytes = await loadPDFAsArrayBuffer(templatePath);
-    const pdfDoc = await PDFDocument.load(templateBytes);
-    const pages = pdfDoc.getPages();
-    const firstPage = pages[0];
-    const { height: pageHeight } = firstPage.getSize();
-
-    const helveticaFont = await pdfDoc.embedFont('Helvetica-Bold');
-    const mmToPt = (mm: number) => mm * 2.83465;
-
-    if (atlet.pas_foto_path) {
-      try {
-        const photoUrl = getPhotoUrl(atlet.pas_foto_path);
-        const roundedImageBase64 = await createRoundedImage(photoUrl, COORDS_MM.photo.borderRadius);
-        const imageBytes = base64ToArrayBuffer(roundedImageBase64);
-        const image = await pdfDoc.embedPng(imageBytes);
-
-        const x = mmToPt(COORDS_MM.photo.x);
-        const y = pageHeight - mmToPt(COORDS_MM.photo.y) - mmToPt(COORDS_MM.photo.height);
-        const width = mmToPt(COORDS_MM.photo.width);
-        const height = mmToPt(COORDS_MM.photo.height);
-
-        firstPage.drawImage(image, { x, y, width, height });
-      } catch (error) {
-        console.error("Failed to embed photo:", error);
-      }
-    }
-
-    const textColor = rgb(0.04, 0.13, 0.41);
-
-    firstPage.drawText(atlet.nama_atlet, {
-      x: mmToPt(COORDS_MM.nama.x),
-      y: pageHeight - mmToPt(COORDS_MM.nama.y),
-      size: COORDS_MM.nama.fontSize,
-      font: helveticaFont,
-      color: textColor,
-    });
-
-    console.log("✍️ Writing to PDF - Kelas:", kelasInfo);
-    firstPage.drawText(kelasInfo, {
-      x: mmToPt(COORDS_MM.kelas.x),
-      y: pageHeight - mmToPt(COORDS_MM.kelas.y),
-      size: COORDS_MM.kelas.fontSize,
-      font: helveticaFont,
-      color: textColor,
-    });
-
-    firstPage.drawText(dojangName, {
-      x: mmToPt(COORDS_MM.kontingen.x),
-      y: pageHeight - mmToPt(COORDS_MM.kontingen.y),
-      size: COORDS_MM.kontingen.fontSize,
-      font: helveticaFont,
-      color: textColor,
-    });
-
-    const pdfBytes = await pdfDoc.save();
-    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-    const url = URL.createObjectURL(blob);
-    
-    setCachedPdfBlob(blob);
-    setPreviewUrl(url);
-
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `ID-Card-${atlet.nama_atlet.replace(/\s/g, "-")}.pdf`;
-    link.click();
-
-    const storageKey = `idcard_generated_${atlet.id_atlet || atlet.nama_atlet}`;
-    localStorage.setItem(storageKey, 'true');
-
-    setHasGenerated(true);
-  } catch (error) {
-    console.error("Error generating ID card:", error);
-    alert("Gagal generate ID Card: " + (error as Error).message);
-  } finally {
-    setIsGenerating(false);
-  }
-};
+  };
 
   const handlePreview = async () => {
     if (!validation.canGenerate) {
