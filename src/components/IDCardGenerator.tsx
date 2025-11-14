@@ -23,6 +23,7 @@ interface Atlet {
     kelas_kejuaraan?: {
       id_kelas_kejuaraan?: number;
       cabang?: string;
+      jenis_kelamin?: string;
       kelompok?: {
         id_kelompok?: number;
         nama_kelompok?: string;
@@ -30,18 +31,21 @@ interface Atlet {
         usia_max?: number;
       };
       kelas_berat?: {
+        id_kelas_berat?: number;
         nama_kelas?: string;
       };
       poomsae?: {
+        id_poomsae?: number;
         nama_kelas?: string;
       };
       kategori_event?: {
+        id_kategori_event?: number;
         nama_kategori?: string;
       };
-      jenis_kelamin?: string;
     };
   }>;
 }
+
 
 interface IDCardGeneratorProps {
   atlet: Atlet;
@@ -240,7 +244,6 @@ export const IDCardGenerator = ({ atlet, isEditing }: IDCardGeneratorProps) => {
   };
 
 const generateIDCard = async () => {
-  // Validasi sebelum generate
   if (!validation.canGenerate) {
     alert(`Tidak dapat generate ID Card: ${validation.reason}`);
     return;
@@ -248,58 +251,81 @@ const generateIDCard = async () => {
 
   setIsGenerating(true);
 
-  console.log("=== DEBUG ATLET DATA ===");
+  console.log("=== DEBUG ATLET DATA (FULL) ===");
+  console.log("Full atlet object:", atlet);
+  console.log("peserta_kompetisi:", atlet.peserta_kompetisi);
   
   const dojangName = atlet.dojang_name || atlet.dojang?.nama_dojang || "-";
   
-  // ✅ PERBAIKAN: Ambil kelasInfo dengan lengkap seperti di AllPeserta
+  // ✅ AMBIL KELAS INFO - SAMA PERSIS DENGAN ALLPESERTA
   let kelasInfo = "";
   
   if (atlet.peserta_kompetisi && atlet.peserta_kompetisi.length > 0) {
+    // Pilih peserta APPROVED atau yang pertama
     const targetPeserta = atlet.peserta_kompetisi.find(p => p.status === 'APPROVED') || 
                           atlet.peserta_kompetisi[0];
+    
+    console.log("🎯 Target Peserta:", targetPeserta);
     
     if (targetPeserta?.kelas_kejuaraan) {
       const kj = targetPeserta.kelas_kejuaraan;
       
+      console.log("📚 Full kelas_kejuaraan object:", kj);
+      
       // Ambil semua komponen
       const cabang = kj.cabang || "";
-      const kategoriEvent = kj.kategori_event?.nama_kategori || "";
       const kelompokUsia = kj.kelompok?.nama_kelompok || "";
+      const kategoriEvent = kj.kategori_event?.nama_kategori || "";
       
       // Tentukan kelas detail berdasarkan cabang
       let kelasDetail = "";
+      
       if (cabang === "KYORUGI" && kj.kelas_berat?.nama_kelas) {
         kelasDetail = kj.kelas_berat.nama_kelas;
+        console.log("✅ KYORUGI - Kelas Berat:", kelasDetail);
       } else if (cabang === "POOMSAE" && kj.poomsae?.nama_kelas) {
         kelasDetail = kj.poomsae.nama_kelas;
+        console.log("✅ POOMSAE - Kelas Poomsae:", kelasDetail);
       }
       
-      // ✅ Format lengkap: Kategori - Level - Kelompok Usia - Kelas Berat/Poomsae
+      // ✅ BUILD FORMAT: Kategori - Level - Kelompok Usia - Kelas Detail
       const parts = [];
-      
-      if (cabang) parts.push(cabang);
       if (kategoriEvent) parts.push(kategoriEvent);
-      if (kelompokUsia) parts.push(kelompokUsia);
-      if (kelasDetail) parts.push(kelasDetail);
+      if (cabang) parts.push(cabang);
+      
+      // Logika khusus untuk kelompok usia
+      if (kelompokUsia && kelompokUsia.toLowerCase() !== 'pemula') {
+        parts.push(kelompokUsia);
+      } else if (kelasDetail) {
+        // Jika kelompok usia = pemula atau kosong, tampilkan kelas detail
+        parts.push(kelasDetail);
+      }
       
       kelasInfo = parts.join(" - ") || "-";
       
-      console.log("📋 Kelas Info Components:", {
+      console.log("📋 Breakdown Components:", {
         cabang,
         kategoriEvent,
         kelompokUsia,
         kelasDetail,
-        final: kelasInfo
+        finalParts: parts,
+        finalString: kelasInfo
       });
+    } else {
+      console.warn("⚠️ kelas_kejuaraan is null/undefined");
     }
+  } else {
+    console.warn("⚠️ No peserta_kompetisi found");
   }
   
-  // Fallback jika masih kosong
-  if (!kelasInfo) kelasInfo = atlet.kelas_berat || "-";
+  // Fallback
+  if (!kelasInfo) {
+    kelasInfo = atlet.kelas_berat || "-";
+    console.log("⚠️ Using fallback:", kelasInfo);
+  }
 
-  console.log("Dojang:", dojangName);
-  console.log("Kelas (Final):", kelasInfo);
+  console.log("✅ FINAL Kelas Info:", kelasInfo);
+  console.log("✅ FINAL Dojang:", dojangName);
 
   try {
     const kategori = getKategoriTemplate();
@@ -314,14 +340,12 @@ const generateIDCard = async () => {
     const { height: pageHeight } = firstPage.getSize();
 
     const helveticaFont = await pdfDoc.embedFont('Helvetica-Bold');
-
     const mmToPt = (mm: number) => mm * 2.83465;
 
     // Embed Photo
     if (atlet.pas_foto_path) {
       try {
         const photoUrl = getPhotoUrl(atlet.pas_foto_path);
-        
         const roundedImageBase64 = await createRoundedImage(photoUrl, COORDS_MM.photo.borderRadius);
         const imageBytes = base64ToArrayBuffer(roundedImageBase64);
         const image = await pdfDoc.embedPng(imageBytes);
@@ -331,10 +355,7 @@ const generateIDCard = async () => {
         const width = mmToPt(COORDS_MM.photo.width);
         const height = mmToPt(COORDS_MM.photo.height);
 
-        console.log("📍 Photo position:", { x, y, width, height, pageHeight });
-
         firstPage.drawImage(image, { x, y, width, height });
-
       } catch (error) {
         console.error("Failed to embed photo:", error);
       }
@@ -342,7 +363,7 @@ const generateIDCard = async () => {
 
     const textColor = rgb(0.04, 0.13, 0.41);
 
-    // Draw Text - Nama
+    // Draw Nama
     firstPage.drawText(atlet.nama_atlet, {
       x: mmToPt(COORDS_MM.nama.x),
       y: pageHeight - mmToPt(COORDS_MM.nama.y),
@@ -351,8 +372,8 @@ const generateIDCard = async () => {
       color: textColor,
     });
 
-    // Draw Text - Kelas (FULL INFO)
-    console.log("✍️ Drawing kelas text:", kelasInfo);
+    // Draw Kelas
+    console.log("✍️ Writing to PDF - Kelas:", kelasInfo);
     firstPage.drawText(kelasInfo, {
       x: mmToPt(COORDS_MM.kelas.x),
       y: pageHeight - mmToPt(COORDS_MM.kelas.y),
@@ -361,7 +382,7 @@ const generateIDCard = async () => {
       color: textColor,
     });
 
-    // Draw Text - Kontingen
+    // Draw Kontingen
     firstPage.drawText(dojangName, {
       x: mmToPt(COORDS_MM.kontingen.x),
       y: pageHeight - mmToPt(COORDS_MM.kontingen.y),
