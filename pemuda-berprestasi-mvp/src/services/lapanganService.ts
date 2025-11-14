@@ -358,13 +358,15 @@ export class LapanganService {
         jumlah_peserta: kelas.peserta_kompetisi.length,
         bagan: kelas.bagan.length > 0 ? {
           id_bagan: kelas.bagan[0].id_bagan,
-          matches: kelas.bagan[0].match.map(m => ({
-            id_match: m.id_match,
-            ronde: m.ronde,
-            nomor_antrian: m.nomor_antrian,
-            nomor_lapangan: m.nomor_lapangan,
-            nomor_partai: m.nomor_partai
-          }))
+        matches: kelas.bagan[0].match.map(m => ({
+          id_match: m.id_match,
+          ronde: m.ronde,
+          id_peserta_a: m.id_peserta_a,        // ⭐ TAMBAH INI
+          id_peserta_b: m.id_peserta_b,        // ⭐ TAMBAH INI
+          nomor_antrian: m.nomor_antrian,
+          nomor_lapangan: m.nomor_lapangan,
+          nomor_partai: m.nomor_partai
+        }))
         } : null
       };
     });
@@ -612,14 +614,11 @@ private generateMatchAssignments(
         console.log(`         Peserta A: ${match.id_peserta_a}`);
         console.log(`         Peserta B: ${match.id_peserta_b}`);
 
-        // ⭐ CRITICAL: Check BYE
-        const matchData = {
+        const isBye = isByeMatch({
           ronde: match.ronde,
           id_peserta_a: match.id_peserta_a,
           id_peserta_b: match.id_peserta_b
-        };
-
-        const isBye = isByeMatch(matchData);
+        });
         console.log(`         → Is BYE? ${isBye ? '✅ YES' : '❌ NO'}`);
 
         if (isBye) {
@@ -720,14 +719,11 @@ private generateMatchAssignments(
         console.log(`         Peserta A: ${match.id_peserta_a}`);
         console.log(`         Peserta B: ${match.id_peserta_b}`);
 
-        // ⭐ CRITICAL: Check BYE
-        const matchData = {
+        const isBye = isByeMatch({
           ronde: match.ronde,
           id_peserta_a: match.id_peserta_a,
           id_peserta_b: match.id_peserta_b
-        };
-
-        const isBye = isByeMatch(matchData);
+        });
         console.log(`         → Is BYE? ${isBye ? '✅ YES' : '❌ NO'}`);
 
         if (isBye) {
