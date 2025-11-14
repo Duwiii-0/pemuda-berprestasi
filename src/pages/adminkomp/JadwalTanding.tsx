@@ -808,15 +808,63 @@ const handleExportLapangan = async () => {
       const lapangan = selectedHari.lapangan.find(l => l.id_lapangan === lapanganId);
       if (!lapangan) continue;
 
-      console.log(`📍 Processing Lapangan ${lapangan.nama_lapangan}...`);
+      console.log(`\n📍 ========================================`);
+      console.log(`   Processing Lapangan ${lapangan.nama_lapangan}`);
+      console.log(`   Total kelas assigned: ${lapangan.kelasDipilih.length}`);
+      console.log(`========================================`);
 
-      // Loop setiap kelas di lapangan ini
-      for (const kelasId of lapangan.kelasDipilih) {
-        const kelasData = kelasKejuaraanList.find(k => k.id_kelas_kejuaraan === kelasId);
-        if (!kelasData) continue;
+// ⭐ STEP 1: MAP kelas dengan data lengkap (kategori + jumlah peserta)
+const kelasList = lapangan.kelasDipilih
+  .map(kelasId => {
+    const kelas = kelasKejuaraanList.find(k => k.id_kelas_kejuaraan === kelasId);
+    if (!kelas) {
+      console.warn(`   ⚠️ Kelas ${kelasId} tidak ditemukan di kelasKejuaraanList`);
+      return null;
+    }
+    
+    const isPemula = kelas.kategori_event.nama_kategori.toLowerCase().includes('pemula');
+    const jumlahPeserta = pesertaList.filter(
+      p => p.status === 'APPROVED' && p.kelas_kejuaraan?.id_kelas_kejuaraan === kelasId
+    ).length;
+    
+    return {
+      kelasId,
+      kelasData: kelas,
+      isPemula,
+      jumlahPeserta,
+      namaKelas: generateNamaKelas(kelas)
+    };
+  })
+  .filter((item): item is NonNullable<typeof item> => item !== null); // ✅ Type guard
+
+// ⭐ STEP 2: SORT sesuai logic auto-generate
+// Priority: PEMULA first, then by jumlah peserta (DESC)
+const sortedKelas = kelasList.sort((a, b) => {
+  // PEMULA always comes first
+  if (a.isPemula && !b.isPemula) return -1;
+  if (!a.isPemula && b.isPemula) return 1;
+  
+  // Within same category, sort by jumlah peserta (DESC - terbanyak dulu)
+  return b.jumlahPeserta - a.jumlahPeserta;
+});
+
+      // ⭐ STEP 3: LOG urutan export (untuk debugging)
+      console.log(`\n   📋 URUTAN EXPORT (sesuai auto-generate):`);
+      sortedKelas.forEach((kelas, idx) => {
+        const category = kelas.isPemula ? '🥋 PEMULA' : '🏆 PRESTASI';
+        console.log(`      ${idx + 1}. ${category} - ${kelas.namaKelas} (${kelas.jumlahPeserta} peserta)`);
+      });
+      console.log(''); // Empty line for readability
+
+      // ⭐ STEP 4: LOOP dengan urutan yang sudah di-sort
+      for (const kelas of sortedKelas) {
+        const kelasId = kelas.kelasId;
+        const kelasData = kelas.kelasData;
 
         try {
-          // ✅ Fetch bracket data (yang sudah ada nomor_antrian & nomor_partai dari input manual)
+          console.log(`   🔄 Fetching bracket for: ${kelas.namaKelas}...`);
+          
+          // ✅ Fetch bracket data
           const response = await fetch(
             `${import.meta.env.VITE_API_URL}/kompetisi/${idKompetisi}/brackets/${kelasId}`,
             {
@@ -826,10 +874,10 @@ const handleExportLapangan = async () => {
             }
           );
 
+          // ❌ Handle 404 (bracket belum dibuat)
           if (response.status === 404) {
-            const namaKelas = generateNamaKelas(kelasData);
-            failedKelas.push(`${namaKelas} (Lapangan ${lapangan.nama_lapangan})`);
-            console.warn(`⚠️ Bracket belum dibuat untuk kelas ${kelasId}`);
+            failedKelas.push(`${kelas.namaKelas} (Lapangan ${lapangan.nama_lapangan})`);
+            console.warn(`      ⚠️ Bracket belum dibuat`);
             continue;
           }
 
@@ -839,14 +887,14 @@ const handleExportLapangan = async () => {
 
           const result = await response.json();
           
+          // ❌ Validate bracket data
           if (!result.data || !result.data.matches || result.data.matches.length === 0) {
-            const namaKelas = generateNamaKelas(kelasData);
-            failedKelas.push(`${namaKelas} (Lapangan ${lapangan.nama_lapangan})`);
-            console.warn(`⚠️ Bracket kosong untuk kelas ${kelasId}`);
+            failedKelas.push(`${kelas.namaKelas} (Lapangan ${lapangan.nama_lapangan})`);
+            console.warn(`      ⚠️ Bracket kosong`);
             continue;
           }
 
-          console.log(`✅ Bracket kelas ${kelasId} berhasil di-fetch (${result.data.matches.length} matches)`);
+          console.log(`      ✅ Bracket loaded: ${result.data.matches.length} matches`);
 
           // ✅ Transform peserta data
           const pesertaKelas = pesertaList.filter(
@@ -895,22 +943,29 @@ const handleExportLapangan = async () => {
                 drawing_seed: result.data.drawing_seed || []
               }],
             },
-            bracketData: result.data, // ✅ Data asli dari API (sudah ada nomor_antrian & nomor_partai)
+            bracketData: result.data,
             lapanganNama: lapangan.nama_lapangan,
             tanggal: selectedExportHari,
-            isPemula: kelasData.kategori_event.nama_kategori.toLowerCase().includes('pemula'),
-            namaKelas: generateNamaKelas(kelasData)
+            isPemula: kelas.isPemula,
+            namaKelas: kelas.namaKelas
           });
 
+          console.log(`      ✅ Added to export queue`);
+
         } catch (kelasError: any) {
-          console.error(`❌ Error fetching bracket kelas ${kelasId}:`, kelasError);
-          const namaKelas = generateNamaKelas(kelasData);
-          failedKelas.push(`${namaKelas} (Lapangan ${lapangan.nama_lapangan})`);
+          console.error(`      ❌ Error fetching bracket:`, kelasError);
+          failedKelas.push(`${kelas.namaKelas} (Lapangan ${lapangan.nama_lapangan})`);
         }
       }
     }
 
-    // ✅ Validasi
+    console.log(`\n📦 ========================================`);
+    console.log(`   EXPORT SUMMARY`);
+    console.log(`   Total brackets to export: ${bracketsToExport.length}`);
+    console.log(`   Failed/skipped: ${failedKelas.length}`);
+    console.log(`========================================\n`);
+
+    // ✅ Validasi final
     if (bracketsToExport.length === 0) {
       if (failedKelas.length > 0) {
         throw new Error(
@@ -923,12 +978,8 @@ const handleExportLapangan = async () => {
       }
     }
 
-    console.log(`📦 Total brackets to export: ${bracketsToExport.length}`);
-    if (failedKelas.length > 0) {
-      console.warn(`⚠️ ${failedKelas.length} kelas di-skip`);
-    }
-
-    // ✅ Export PDF
+    // ✅ Export PDF dengan urutan yang sudah sorted
+    console.log(`📄 Generating PDF...`);
     await exportMultipleBracketsByLapangan(bracketsToExport, {
       namaKejuaraan: 'Sriwijaya International Taekwondo Championship 2025',
       logoPBTI: taekwondo,
@@ -938,7 +989,10 @@ const handleExportLapangan = async () => {
     // ✅ Success message
     let message = `✅ Berhasil export ${bracketsToExport.length} bracket!`;
     if (failedKelas.length > 0) {
-      message += `\n\n⚠️ ${failedKelas.length} kelas di-skip karena bracket belum dibuat`;
+      message += `\n\n⚠️ ${failedKelas.length} kelas di-skip karena bracket belum dibuat:\n${failedKelas.slice(0, 3).join('\n')}`;
+      if (failedKelas.length > 3) {
+        message += `\n... dan ${failedKelas.length - 3} lainnya`;
+      }
     }
 
     setSuccessMessage(message);
@@ -946,6 +1000,7 @@ const handleExportLapangan = async () => {
     setSelectedExportHari('');
     setSelectedExportLapangan([]);
     
+    console.log(`✅ Export complete!`);
     setTimeout(() => setSuccessMessage(''), 5000);
 
   } catch (err: any) {
