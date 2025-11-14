@@ -1068,31 +1068,31 @@ return (
     }}
   >
     {/* Header */}
-    <div 
-      className="px-3 py-2 border-b flex items-center justify-between"
-      style={{ 
-        backgroundColor: 'rgba(153, 13, 53, 0.05)',
-        borderColor: '#990D35'
-      }}
-    >
-      <div className="flex items-center gap-2">
-        {/* ⭐ UPDATED: Show BYE label if no nomor_partai */}
-        {match.nomor_partai ? (
-          <span 
-            className="text-xs px-2 py-1 rounded-full font-bold"
-            style={{ backgroundColor: '#990D35', color: 'white' }}
-          >
-            No. Partai: {match.nomor_partai}
-          </span>
-        ) : (match.peserta_a && !match.peserta_b) || (!match.peserta_a && match.peserta_b) ? (
-          <span 
-            className="text-xs px-2 py-1 rounded-full font-medium"
-            style={{ backgroundColor: 'rgba(245, 183, 0, 0.15)', color: '#F5B700' }}
-          >
-            BYE - No Number
-          </span>
-        ) : null}
-      </div>
+<div 
+  className="px-3 py-2 border-b flex items-center justify-between"
+  style={{ 
+    backgroundColor: 'rgba(153, 13, 53, 0.05)',
+    borderColor: '#990D35'
+  }}
+>
+  <div className="flex items-center gap-2">
+    {/* ⭐ UPDATED: Show BYE label ONLY for Round 1 with one participant */}
+    {match.nomor_partai ? (
+      <span 
+        className="text-xs px-2 py-1 rounded-full font-bold"
+        style={{ backgroundColor: '#990D35', color: 'white' }}
+      >
+        No. Partai: {match.nomor_partai}
+      </span>
+    ) : match.ronde === 1 && ((match.peserta_a && !match.peserta_b) || (!match.peserta_a && match.peserta_b)) ? (
+      <span 
+        className="text-xs px-2 py-1 rounded-full font-medium"
+        style={{ backgroundColor: 'rgba(245, 183, 0, 0.15)', color: '#F5B700' }}
+      >
+        BYE - No Number
+      </span>
+    ) : null}
+  </div>
         
         <div className="flex items-center gap-2">
           {match.tanggal_pertandingan && (

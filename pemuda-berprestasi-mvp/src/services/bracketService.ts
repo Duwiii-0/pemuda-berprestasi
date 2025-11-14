@@ -40,23 +40,20 @@ export interface Bracket {
 }
 
 /**
- * ⭐ NEW: Check if match is BYE (only for Round 1)
- * BYE match = exactly one participant, other is NULL
+ * ⭐ CRITICAL FIX: Export as standalone function (NOT class method)
+ * Check if match is BYE (only for Round 1)
  */
 export function isByeMatch(match: {
   ronde: number;
   id_peserta_a: number | null;
   id_peserta_b: number | null;
 }): boolean {
-  // Only check BYE in Round 1
-  // Round 2+ TBD matches are NOT bye (they will be filled by winners)
   if (match.ronde !== 1) {
     return false;
   }
   
-  // BYE = exactly one participant
-  const hasOnlyA = !!match.id_peserta_a && !match.id_peserta_b;
-  const hasOnlyB = !match.id_peserta_a && !!match.id_peserta_b;
+  const hasOnlyA = match.id_peserta_a !== null && match.id_peserta_b === null;
+  const hasOnlyB = match.id_peserta_a === null && match.id_peserta_b !== null;
   
   return hasOnlyA || hasOnlyB;
 }

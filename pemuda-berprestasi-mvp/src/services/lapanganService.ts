@@ -537,13 +537,35 @@ export class LapanganService {
  /**
  * Core logic: Generate match assignments (WITH BYE FILTERING)
  */
+/**
+ * Core logic: Generate match assignments (WITH BYE FILTERING + DEBUG)
+ */
 private generateMatchAssignments(
   kelasList: any[],
   lapanganLetter: string,
   startingNumber: number,
   saveToDb: boolean
 ): any {
-  console.log(`\n📊 Generating assignments for ${kelasList.length} kelas...`);
+
+    // ⭐ TEST: Verify isByeMatch is imported correctly
+  console.log(`\n🧪 === TESTING isByeMatch FUNCTION ===`);
+  const testCases = [
+    { ronde: 1, id_peserta_a: 123, id_peserta_b: null, expected: true },
+    { ronde: 1, id_peserta_a: null, id_peserta_b: 456, expected: true },
+    { ronde: 1, id_peserta_a: 123, id_peserta_b: 456, expected: false },
+    { ronde: 2, id_peserta_a: 123, id_peserta_b: null, expected: false },
+  ];
+  
+  testCases.forEach((tc, idx) => {
+    const result = isByeMatch(tc);
+    const status = result === tc.expected ? '✅ PASS' : '❌ FAIL';
+    console.log(`   Test ${idx + 1}: ${status} - ronde=${tc.ronde}, A=${tc.id_peserta_a}, B=${tc.id_peserta_b} → ${result} (expected: ${tc.expected})`);
+  });
+  console.log(`══════════════════════════════════════════\n`);
+  console.log(`\n📊 === GENERATING ASSIGNMENTS (WITH BYE FILTER) ===`);
+  console.log(`   Lapangan: ${lapanganLetter}`);
+  console.log(`   Starting Number: ${startingNumber}`);
+  console.log(`   Total Kelas: ${kelasList.length}`);
 
   // Separate PEMULA & PRESTASI
   const pemulaClasses = kelasList.filter(k => k.kategori === 'PEMULA');
@@ -560,72 +582,101 @@ private generateMatchAssignments(
   const assignments: any[] = [];
 
   // ═══════════════════════════════════════════════════════════════
-  // 🥋 PROCESS PEMULA FIRST (Habis per Kelas)
+  // 🥋 PROCESS PEMULA FIRST
   // ═══════════════════════════════════════════════════════════════
-  console.log(`\n🥋 Processing PEMULA classes...`);
-  
-  sortedPemula.forEach(kelas => {
-    if (!kelas.bagan || !kelas.bagan.matches) return;
-
-    const startRange = currentNumber;
-    const allMatches = [...kelas.bagan.matches].sort((a, b) => {
-      if (a.ronde !== b.ronde) return a.ronde - b.ronde;
-      return a.id_match - b.id_match;
-    });
-
-    let numberedCount = 0;
-    let byeCount = 0;
-
-    allMatches.forEach(match => {
-      // ⭐ CHECK: Is this a BYE match?
-      if (isByeMatch(match)) {
-        // ❌ BYE match - NO NUMBER
-        assignments.push({
-          id_match: match.id_match,
-          nomor_antrian: null,
-          nomor_lapangan: null,
-          nomor_partai: null,
-          kelas_id: kelas.id_kelas_kejuaraan,
-          kelas_nama: kelas.nama_kelas,
-          round: match.ronde,
-          note: 'BYE - Skipped'
-        });
-        
-        byeCount++;
-        console.log(`      ⏭️  Match ${match.id_match} (R${match.ronde}): BYE - Skipped`);
-      } else {
-        // ✅ FIGHT/TBD match - ASSIGN NUMBER
-        assignments.push({
-          id_match: match.id_match,
-          nomor_antrian: currentNumber,
-          nomor_lapangan: lapanganLetter,
-          nomor_partai: `${currentNumber}${lapanganLetter}`,
-          kelas_id: kelas.id_kelas_kejuaraan,
-          kelas_nama: kelas.nama_kelas,
-          round: match.ronde
-        });
-        
-        console.log(`      ✅ Match ${match.id_match} (R${match.ronde}): ${currentNumber}${lapanganLetter}`);
-        currentNumber++;
-        numberedCount++;
+  if (sortedPemula.length > 0) {
+    console.log(`\n🥋 === PROCESSING PEMULA CLASSES ===`);
+    
+    sortedPemula.forEach(kelas => {
+      if (!kelas.bagan || !kelas.bagan.matches) {
+        console.log(`   ⚠️ Kelas ${kelas.id_kelas_kejuaraan}: No bagan/matches`);
+        return;
       }
-    });
 
-    const endRange = currentNumber - 1;
-    console.log(`   📦 ${kelas.nama_kelas}: ${startRange}${lapanganLetter}-${endRange}${lapanganLetter} (${numberedCount} matches, ${byeCount} BYE skipped)`);
-  });
+      console.log(`\n   📦 Kelas: ${kelas.nama_kelas}`);
+      console.log(`      Peserta: ${kelas.jumlah_peserta}`);
+      console.log(`      Total Matches: ${kelas.bagan.matches.length}`);
+
+      const startRange = currentNumber;
+      const allMatches = [...kelas.bagan.matches].sort((a, b) => {
+        if (a.ronde !== b.ronde) return a.ronde - b.ronde;
+        return a.id_match - b.id_match;
+      });
+
+      let numberedCount = 0;
+      let byeCount = 0;
+
+      allMatches.forEach((match, idx) => {
+        console.log(`\n      🔍 Match ${idx + 1}/${allMatches.length} (ID: ${match.id_match})`);
+        console.log(`         Round: ${match.ronde}`);
+        console.log(`         Peserta A: ${match.id_peserta_a}`);
+        console.log(`         Peserta B: ${match.id_peserta_b}`);
+
+        // ⭐ CRITICAL: Check BYE
+        const matchData = {
+          ronde: match.ronde,
+          id_peserta_a: match.id_peserta_a,
+          id_peserta_b: match.id_peserta_b
+        };
+
+        const isBye = isByeMatch(matchData);
+        console.log(`         → Is BYE? ${isBye ? '✅ YES' : '❌ NO'}`);
+
+        if (isBye) {
+          // ❌ BYE match - NO NUMBER
+          assignments.push({
+            id_match: match.id_match,
+            nomor_antrian: null,
+            nomor_lapangan: null,
+            nomor_partai: null,
+            kelas_id: kelas.id_kelas_kejuaraan,
+            kelas_nama: kelas.nama_kelas,
+            round: match.ronde,
+            note: 'BYE - Skipped'
+          });
+          
+          byeCount++;
+          console.log(`         ⏭️  SKIPPED (BYE) - No number assigned`);
+        } else {
+          // ✅ FIGHT/TBD match - ASSIGN NUMBER
+          assignments.push({
+            id_match: match.id_match,
+            nomor_antrian: currentNumber,
+            nomor_lapangan: lapanganLetter,
+            nomor_partai: `${currentNumber}${lapanganLetter}`,
+            kelas_id: kelas.id_kelas_kejuaraan,
+            kelas_nama: kelas.nama_kelas,
+            round: match.ronde
+          });
+          
+          console.log(`         ✅ NUMBERED: ${currentNumber}${lapanganLetter}`);
+          currentNumber++;
+          numberedCount++;
+        }
+      });
+
+      const endRange = numberedCount > 0 ? currentNumber - 1 : startRange;
+      console.log(`\n      📊 Summary for ${kelas.nama_kelas}:`);
+      console.log(`         Numbered: ${numberedCount} matches (${startRange}${lapanganLetter}-${endRange}${lapanganLetter})`);
+      console.log(`         BYE Skipped: ${byeCount} matches`);
+    });
+  }
 
   // ═══════════════════════════════════════════════════════════════
   // 🏆 PROCESS PRESTASI (Habis per Round)
   // ═══════════════════════════════════════════════════════════════
   if (sortedPrestasi.length > 0) {
-    console.log(`\n🏆 Processing PRESTASI classes...`);
+    console.log(`\n🏆 === PROCESSING PRESTASI CLASSES ===`);
 
     // Group by round
     const matchesByRound = new Map<number, any[]>();
 
     sortedPrestasi.forEach(kelas => {
       if (!kelas.bagan || !kelas.bagan.matches) return;
+
+      console.log(`\n   📦 Kelas: ${kelas.nama_kelas}`);
+      console.log(`      Peserta: ${kelas.jumlah_peserta}`);
+      console.log(`      Total Matches: ${kelas.bagan.matches.length}`);
 
       kelas.bagan.matches.forEach((match: any) => {
         if (!matchesByRound.has(match.ronde)) {
@@ -643,12 +694,13 @@ private generateMatchAssignments(
 
     // Sort rounds
     const sortedRounds = Array.from(matchesByRound.keys()).sort((a, b) => a - b);
+    console.log(`\n   🔄 Processing ${sortedRounds.length} rounds: ${sortedRounds.join(', ')}`);
 
     sortedRounds.forEach(round => {
       const roundMatches = matchesByRound.get(round)!;
       const startRange = currentNumber;
 
-      console.log(`\n   🏆 Round ${round}`);
+      console.log(`\n   🏆 ROUND ${round} - ${roundMatches.length} matches`);
 
       // Sort: jumlah peserta DESC, then id_match ASC
       const sortedRoundMatches = roundMatches.sort((a, b) => {
@@ -661,9 +713,24 @@ private generateMatchAssignments(
       let numberedCount = 0;
       let byeCount = 0;
 
-      sortedRoundMatches.forEach(match => {
-        // ⭐ CHECK: Is this a BYE match?
-        if (isByeMatch(match)) {
+      sortedRoundMatches.forEach((match, idx) => {
+        console.log(`\n      🔍 Match ${idx + 1}/${sortedRoundMatches.length} (ID: ${match.id_match})`);
+        console.log(`         Kelas: ${match.kelas_nama}`);
+        console.log(`         Round: ${match.ronde}`);
+        console.log(`         Peserta A: ${match.id_peserta_a}`);
+        console.log(`         Peserta B: ${match.id_peserta_b}`);
+
+        // ⭐ CRITICAL: Check BYE
+        const matchData = {
+          ronde: match.ronde,
+          id_peserta_a: match.id_peserta_a,
+          id_peserta_b: match.id_peserta_b
+        };
+
+        const isBye = isByeMatch(matchData);
+        console.log(`         → Is BYE? ${isBye ? '✅ YES' : '❌ NO'}`);
+
+        if (isBye) {
           // ❌ BYE match - NO NUMBER
           assignments.push({
             id_match: match.id_match,
@@ -677,7 +744,7 @@ private generateMatchAssignments(
           });
           
           byeCount++;
-          console.log(`      ⏭️  Match ${match.id_match} (${match.kelas_nama}): BYE - Skipped`);
+          console.log(`         ⏭️  SKIPPED (BYE) - No number assigned`);
         } else {
           // ✅ FIGHT/TBD match - ASSIGN NUMBER
           assignments.push({
@@ -690,19 +757,21 @@ private generateMatchAssignments(
             round: match.ronde
           });
           
-          console.log(`      ✅ Match ${match.id_match} (${match.kelas_nama}): ${currentNumber}${lapanganLetter}`);
+          console.log(`         ✅ NUMBERED: ${currentNumber}${lapanganLetter}`);
           currentNumber++;
           numberedCount++;
         }
       });
 
-      const endRange = currentNumber - 1;
-      console.log(`   📦 Round ${round}: ${startRange}${lapanganLetter}-${endRange}${lapanganLetter} (${numberedCount} matches, ${byeCount} BYE skipped)`);
+      const endRange = numberedCount > 0 ? currentNumber - 1 : startRange;
+      console.log(`\n      📊 Summary for Round ${round}:`);
+      console.log(`         Numbered: ${numberedCount} matches (${startRange}${lapanganLetter}-${endRange}${lapanganLetter})`);
+      console.log(`         BYE Skipped: ${byeCount} matches`);
     });
   }
 
   // ═══════════════════════════════════════════════════════════════
-  // 📊 GENERATE SUMMARY
+  // 📊 FINAL SUMMARY
   // ═══════════════════════════════════════════════════════════════
   const totalNumbered = assignments.filter(a => a.nomor_antrian !== null).length;
   const totalBye = assignments.filter(a => a.note === 'BYE - Skipped').length;
@@ -711,10 +780,12 @@ private generateMatchAssignments(
     ? `${startingNumber}${lapanganLetter}-${currentNumber - 1}${lapanganLetter}`
     : '-';
 
-  console.log(`\n✅ Assignment Summary:`);
-  console.log(`   - Fight/TBD matches: ${totalNumbered}`);
-  console.log(`   - BYE matches (skipped): ${totalBye}`);
-  console.log(`   - Range: ${finalRange}\n`);
+  console.log(`\n═══════════════════════════════════════════════════════`);
+  console.log(`✅ FINAL ASSIGNMENT SUMMARY:`);
+  console.log(`   Fight/TBD matches: ${totalNumbered}`);
+  console.log(`   BYE matches (skipped): ${totalBye}`);
+  console.log(`   Range: ${finalRange}`);
+  console.log(`═══════════════════════════════════════════════════════\n`);
 
   return {
     success: true,
