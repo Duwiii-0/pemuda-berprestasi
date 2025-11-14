@@ -248,6 +248,7 @@ export const IDCardGenerator = ({ atlet, isEditing }: IDCardGeneratorProps) => {
     return result;
   };
 
+  // ✅ ✅ ✅ FUNGSI UTAMA GENERATE ID CARD - FULLY FIXED ✅ ✅ ✅
   const generateIDCard = async () => {
     if (!validation.canGenerate) {
       alert(`Tidak dapat generate ID Card: ${validation.reason}`);
@@ -339,14 +340,20 @@ export const IDCardGenerator = ({ atlet, isEditing }: IDCardGeneratorProps) => {
           console.log("⚠️ No detail class found");
         }
         
-        // ✅ BUILD FORMAT: Kategori - Cabang - Kelompok Usia/Kelas Detail
+        // ✅ BUILD FORMAT: Kategori - Cabang - Kelompok Usia - Kelas Detail
         const parts = [];
         if (kategoriEvent) parts.push(kategoriEvent);
         if (cabang) parts.push(cabang);
         
+        // ✅ TAMPILKAN KEDUANYA jika ada
         if (kelompokUsia && kelompokUsia.toLowerCase() !== 'pemula') {
           parts.push(kelompokUsia);
+          // Tambahkan kelas detail juga jika ada
+          if (kelasDetail) {
+            parts.push(kelasDetail);
+          }
         } else if (kelasDetail) {
+          // Jika kelompok = pemula atau kosong, pakai kelas detail saja
           parts.push(kelasDetail);
         }
         
