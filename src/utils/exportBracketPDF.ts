@@ -472,7 +472,7 @@ if (isPrestasi) {
 }
 
 // Margin bawah header
-const HEADER_MARGIN_BOTTOM = 10;
+const HEADER_MARGIN_BOTTOM = 5;
 
 // --- Hitung ulang ukuran gambar ---
 displayWidth *= zoom;

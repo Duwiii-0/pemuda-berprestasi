@@ -9,7 +9,9 @@ import {
   GitBranch,
   Save,
   Download,
-  Check
+  Check,
+  Zap,
+  X
 } from "lucide-react";
 import { useKompetisi } from "../../context/KompetisiContext";
 import { useAuth } from "../../context/authContext";
@@ -83,6 +85,12 @@ const JadwalPertandingan: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [isAdding, setIsAdding] = useState(false);
+  const [showAutoNumberModal, setShowAutoNumberModal] = useState(false);
+  const [selectedAutoGenHari, setSelectedAutoGenHari] = useState<string>('');
+  const [selectedAutoGenLapangan, setSelectedAutoGenLapangan] = useState<number | null>(null);
+  const [previewData, setPreviewData] = useState<any | null>(null);
+  const [generatingNumbers, setGeneratingNumbers] = useState(false);
+  const [loadingPreview, setLoadingPreview] = useState(false);
   const [addingLapanganTo, setAddingLapanganTo] = useState<string | null>(null);
   const [savingKelas, setSavingKelas] = useState<Record<number, boolean>>({});
   const [isSavingAntrian, setIsSavingAntrian] = useState(false);
@@ -233,6 +241,16 @@ const JadwalPertandingan: React.FC = () => {
 
     fetchBaganInfo();
   }, [hariList, idKompetisi, token, kelasKejuaraanList]);
+
+  // 🆕 Auto-load preview saat lapangan dipilih
+useEffect(() => {
+  if (selectedAutoGenLapangan) {
+    console.log(`📊 Lapangan selected: ${selectedAutoGenLapangan}, fetching preview...`);
+    fetchPreviewNumbers(selectedAutoGenLapangan);
+  } else {
+    setPreviewData(null);
+  }
+}, [selectedAutoGenLapangan]);
 
   // Pisahkan peserta approved
   useEffect(() => {
@@ -618,6 +636,129 @@ const JadwalPertandingan: React.FC = () => {
       setIsSavingAntrian(false);
     }
   };
+
+  // 🆕 ============================================================================
+// AUTO-GENERATE NOMOR PARTAI FUNCTIONS
+// 🆕 ============================================================================
+
+/**
+ * Fetch preview nomor partai tanpa save
+ */
+const fetchPreviewNumbers = async (id_lapangan: number) => {
+  setLoadingPreview(true);
+  setErrorMessage('');
+  
+  try {
+    console.log(`🔮 Fetching preview for lapangan ${id_lapangan}...`);
+    
+    const res = await fetch(
+      `${import.meta.env.VITE_API_URL}/lapangan/${id_lapangan}/preview-numbers?starting_number=1`
+    );
+    
+    const data = await res.json();
+    
+    if (data.success) {
+      setPreviewData(data);
+      console.log('✅ Preview loaded:', data);
+    } else {
+      throw new Error(data.message || 'Gagal memuat preview');
+    }
+  } catch (err: any) {
+    console.error('❌ Error fetching preview:', err);
+    setErrorMessage(err.message || 'Gagal memuat preview nomor partai');
+    setTimeout(() => setErrorMessage(''), 5000);
+  } finally {
+    setLoadingPreview(false);
+  }
+};
+
+/**
+ * Auto-generate dan save nomor partai
+ */
+const handleAutoGenerateNumbers = async () => {
+  if (!selectedAutoGenLapangan) return;
+  
+  setGeneratingNumbers(true);
+  setErrorMessage('');
+  setSuccessMessage('');
+  
+  try {
+    console.log(`🎯 Generating numbers for lapangan ${selectedAutoGenLapangan}...`);
+    
+    const res = await fetch(
+      `${import.meta.env.VITE_API_URL}/lapangan/${selectedAutoGenLapangan}/auto-generate-numbers`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ starting_number: 1 })
+      }
+    );
+    
+    const data = await res.json();
+    
+    if (data.success) {
+      setSuccessMessage(`✅ ${data.message} - Range: ${data.range}`);
+      
+      // Close modal
+      setShowAutoNumberModal(false);
+      setSelectedAutoGenHari('');
+      setSelectedAutoGenLapangan(null);
+      setPreviewData(null);
+      
+      // Refresh data
+      await fetchHariLapangan();
+      
+      console.log('✅ Numbers generated successfully');
+      
+      // Clear success message after 5 seconds
+      setTimeout(() => setSuccessMessage(''), 5000);
+    } else {
+      throw new Error(data.message || 'Gagal generate nomor partai');
+    }
+  } catch (err: any) {
+    console.error('❌ Error auto-generate:', err);
+    setErrorMessage(err.message || 'Gagal generate nomor partai');
+    setTimeout(() => setErrorMessage(''), 5000);
+  } finally {
+    setGeneratingNumbers(false);
+  }
+};
+
+/**
+ * Reset nomor partai di lapangan
+ */
+const handleResetNumbers = async (id_lapangan: number, namaLapangan: string) => {
+  if (!confirm(`Yakin ingin reset semua nomor partai di Lapangan ${namaLapangan}?\n\nNomor partai akan dihapus dan harus di-generate ulang.`)) {
+    return;
+  }
+  
+  setErrorMessage('');
+  setSuccessMessage('');
+  
+  try {
+    console.log(`🗑️ Resetting numbers for lapangan ${id_lapangan}...`);
+    
+    const res = await fetch(
+      `${import.meta.env.VITE_API_URL}/lapangan/${id_lapangan}/reset-numbers`,
+      { method: 'DELETE' }
+    );
+    
+    const data = await res.json();
+    
+    if (data.success) {
+      setSuccessMessage(data.message);
+      await fetchHariLapangan();
+      setTimeout(() => setSuccessMessage(''), 3000);
+      console.log('✅ Numbers reset successfully');
+    } else {
+      throw new Error(data.message || 'Gagal reset nomor partai');
+    }
+  } catch (err: any) {
+    console.error('❌ Error reset:', err);
+    setErrorMessage(err.message || 'Gagal reset nomor partai');
+    setTimeout(() => setErrorMessage(''), 3000);
+  }
+};
 
   const generateNamaKelas = (kelas: any) => {
     const parts = [];
@@ -1266,6 +1407,18 @@ const handleExportLapangan = async () => {
                   Export Bracket per Lapangan
                 </button>
               </div>
+                    {/* 🆕 BUTTON AUTO-GENERATE */}
+      <div className="mb-6 flex gap-3">
+        <button
+          onClick={() => setShowAutoNumberModal(true)}
+          disabled={hariList.length === 0}
+          className="flex items-center gap-2 px-4 py-3 rounded-xl font-medium transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+          style={{ backgroundColor: '#6366F1', color: '#F5FBEF' }}
+        >
+          <Zap size={16} />
+          Auto-Generate Nomor Partai
+        </button>
+      </div>
               {hariAntrianList.length === 0 ? (
                 <div className="text-center py-12">
                   <ClipboardList
@@ -1724,6 +1877,303 @@ const handleExportLapangan = async () => {
     </div>
   </div>
 )}
+{/* ============================================================================ */}
+{/* MODAL AUTO-GENERATE NOMOR PARTAI */}
+{/* ============================================================================ */}
+{showAutoNumberModal && (
+  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+
+      {/* Header */}
+      <div className="p-6 border-b sticky top-0 bg-white z-10" style={{ borderColor: '#990D35' }}>
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-xl font-bold" style={{ color: '#050505' }}>
+              🎯 Auto-Generate Nomor Partai
+            </h3>
+            <p className="text-sm mt-1" style={{ color: '#050505', opacity: 0.6 }}>
+              Sistem akan generate nomor partai otomatis berdasarkan jumlah peserta
+            </p>
+          </div>
+          <button
+            onClick={() => {
+              setShowAutoNumberModal(false);
+              setSelectedAutoGenHari('');
+              setSelectedAutoGenLapangan(null);
+              setPreviewData(null);
+            }}
+            className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+          >
+            <X size={20} style={{ color: '#990D35' }} />
+          </button>
+        </div>
+      </div>
+
+      <div className="p-6 space-y-4">
+
+        {/* STEP 1: PILIH HARI */}
+        <div>
+          <label className="block text-sm font-bold mb-2 flex items-center gap-2" style={{ color: '#050505' }}>
+            <span className="bg-gradient-to-r from-purple-500 to-pink-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">1</span>
+            Pilih Hari Pertandingan
+          </label>
+
+          <select
+            value={selectedAutoGenHari}
+            onChange={(e) => {
+              setSelectedAutoGenHari(e.target.value);
+              setSelectedAutoGenLapangan(null);
+              setPreviewData(null);
+            }}
+            className="w-full px-4 py-3 rounded-lg border-2 focus:outline-none focus:ring-2 transition-all"
+            style={{ borderColor: '#990D35' }}
+          >
+            <option value="">-- Pilih Hari --</option>
+            {hariList.map((hari, idx) => (
+              <option key={hari.tanggal} value={hari.tanggal}>
+                Hari ke-{idx + 1} - {new Date(hari.tanggal).toLocaleDateString('id-ID', {
+                  weekday: 'long',
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric'
+                })}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* STEP 2: PILIH LAPANGAN */}
+        {selectedAutoGenHari && (
+          <div>
+            <label className="block text-sm font-bold mb-2 flex items-center gap-2" style={{ color: '#050505' }}>
+              <span className="bg-gradient-to-r from-purple-500 to-pink-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">2</span>
+              Pilih Lapangan
+            </label>
+
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+              {hariList
+                .find(h => h.tanggal === selectedAutoGenHari)
+                ?.lapangan.filter(lap => lap.kelasDipilih.length > 0)
+                .map((lap) => {
+                  const isSelected = selectedAutoGenLapangan === lap.id_lapangan;
+                  const kelasCount = lap.kelasDipilih.length;
+                  const pesertaCount = lap.kelasDipilih.reduce(
+                    (total, kelasId) => total + (approvedPesertaByKelas[kelasId]?.length || 0),
+                    0
+                  );
+
+                  return (
+                    <button
+                      key={lap.id_lapangan}
+                      onClick={() => setSelectedAutoGenLapangan(lap.id_lapangan)}
+                      className={`p-4 rounded-lg border-2 text-left transition-all ${
+                        isSelected ? 'shadow-lg scale-105' : 'hover:border-opacity-60 hover:scale-102'
+                      }`}
+                      style={{
+                        borderColor: isSelected ? '#990D35' : 'rgba(153,13,53,0.3)',
+                        backgroundColor: isSelected ? 'rgba(153,13,53,0.05)' : 'white'
+                      }}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-bold text-lg" style={{ color: '#990D35' }}>
+                          Lapangan {lap.nama_lapangan}
+                        </span>
+                        {isSelected && <Check size={20} style={{ color: '#990D35' }} />}
+                      </div>
+
+                      <div className="space-y-1">
+                        <p className="text-xs" style={{ color: '#050505', opacity: 0.7 }}>
+                          📚 {kelasCount} Kelas
+                        </p>
+                        <p className="text-xs" style={{ color: '#050505', opacity: 0.7 }}>
+                          👥 {pesertaCount} Peserta
+                        </p>
+                      </div>
+                    </button>
+                  );
+                })}
+            </div>
+
+            {hariList.find(h => h.tanggal === selectedAutoGenHari)?.lapangan.filter(lap => lap.kelasDipilih.length > 0).length === 0 && (
+              <div className="mt-3 p-4 rounded-lg border-2" style={{ borderColor: '#F5B700', backgroundColor: 'rgba(245, 183, 0, 0.1)' }}>
+                <p className="text-sm font-medium" style={{ color: '#F5B700' }}>
+                  ⚠️ Tidak ada lapangan dengan kelas yang sudah di-assign
+                </p>
+                <p className="text-xs mt-1" style={{ color: '#050505', opacity: 0.7 }}>
+                  Silakan assign kelas ke lapangan terlebih dahulu di tab "Setup Jadwal"
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* STEP 3: PREVIEW */}
+        {loadingPreview && (
+          <div className="flex flex-col items-center justify-center py-12">
+            <Loader className="animate-spin mb-3" size={48} style={{ color: '#990D35' }} />
+            <span className="text-sm font-medium" style={{ color: '#990D35' }}>
+              Memuat preview nomor partai...
+            </span>
+          </div>
+        )}
+
+        {previewData && !loadingPreview && (
+          <div>
+            <label className="block text-sm font-bold mb-2 flex items-center gap-2" style={{ color: '#050505' }}>
+              <span className="bg-gradient-to-r from-purple-500 to-pink-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">3</span>
+              Preview Penomoran
+            </label>
+
+            <div className="border-2 rounded-lg p-4 space-y-4" style={{ borderColor: '#990D35', backgroundColor: 'rgba(153,13,53,0.02)' }}>
+
+              {/* Summary Cards */}
+              <div className="grid grid-cols-3 gap-3">
+                <div className="p-4 rounded-lg shadow-sm" style={{ backgroundColor: 'white', borderLeft: '4px solid #990D35' }}>
+                  <p className="text-xs mb-1" style={{ color: '#050505', opacity: 0.6 }}>Total Matches</p>
+                  <p className="text-3xl font-bold" style={{ color: '#990D35' }}>
+                    {previewData.total_matches}
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-lg shadow-sm" style={{ backgroundColor: 'white', borderLeft: '4px solid #6366F1' }}>
+                  <p className="text-xs mb-1" style={{ color: '#050505', opacity: 0.6 }}>Range Nomor</p>
+                  <p className="text-xl font-bold" style={{ color: '#6366F1' }}>
+                    {previewData.range}
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-lg shadow-sm" style={{ backgroundColor: 'white', borderLeft: '4px solid #16a34a' }}>
+                  <p className="text-xs mb-1" style={{ color: '#050505', opacity: 0.6 }}>Total Kelas</p>
+                  <p className="text-3xl font-bold" style={{ color: '#16a34a' }}>
+                    {(previewData.summary.pemula?.length || 0) + (previewData.summary.prestasi?.length || 0)}
+                  </p>
+                </div>
+              </div>
+
+              {/* PEMULA */}
+              {previewData.summary.pemula?.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="px-3 py-1 rounded-full text-xs font-bold" style={{ backgroundColor: 'rgba(22,163,74,0.2)', color: '#16a34a' }}>
+                      🥋 PEMULA
+                    </div>
+                    <span className="text-xs" style={{ color: '#050505', opacity: 0.6 }}>
+                      {previewData.summary.pemula.length} kelas (habis per kelas)
+                    </span>
+                  </div>
+
+                  <div className="space-y-2 max-h-48 overflow-y-auto">
+                    {previewData.summary.pemula.map((kelas: any, idx: number) => (
+                      <div key={idx} className="p-3 rounded-lg bg-white shadow-sm border flex justify-between items-center" style={{ borderColor: 'rgba(22,163,74,0.2)' }}>
+                        <div className="flex-1">
+                          <p className="text-sm font-semibold" style={{ color: '#050505' }}>{kelas.kelas}</p>
+                          <p className="text-xs mt-0.5" style={{ color: '#050505', opacity: 0.6 }}>
+                            👥 {kelas.peserta} peserta • 🥊 {kelas.matches} matches
+                          </p>
+                        </div>
+
+                        <div className="text-right">
+                          <span className="text-sm font-bold px-3 py-1 rounded-full" style={{ backgroundColor: 'rgba(22,163,74,0.1)', color: '#16a34a' }}>
+                            {kelas.range}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* PRESTASI */}
+              {previewData.summary.prestasi?.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="px-3 py-1 rounded-full text-xs font-bold" style={{ backgroundColor: 'rgba(153,13,53,0.2)', color: '#990D35' }}>
+                      🏆 PRESTASI
+                    </div>
+                    <span className="text-xs" style={{ color: '#050505', opacity: 0.6 }}>
+                      {previewData.summary.prestasi.length} kelas (habis per round)
+                    </span>
+                  </div>
+
+                  <div className="space-y-2 max-h-48 overflow-y-auto">
+                    {previewData.summary.prestasi.map((kelas: any, idx: number) => (
+                      <div key={idx} className="p-3 rounded-lg bg-white shadow-sm border flex justify-between items-center" style={{ borderColor: 'rgba(153,13,53,0.2)' }}>
+                        <div className="flex-1">
+                          <p className="text-sm font-semibold" style={{ color: '#050505' }}>{kelas.kelas}</p>
+                          <p className="text-xs mt-0.5" style={{ color: '#050505', opacity: 0.6 }}>
+                            👥 {kelas.peserta} peserta • 🥊 {kelas.matches} matches
+                          </p>
+                        </div>
+
+                        <div className="text-right">
+                          <span className="text-sm font-bold px-3 py-1 rounded-full" style={{ backgroundColor: 'rgba(153,13,53,0.1)', color: '#990D35' }}>
+                            {kelas.range}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* INFO */}
+              <div className="p-3 rounded-lg" style={{ backgroundColor: 'rgba(99,102,241,0.1)' }}>
+                <p className="text-xs font-medium" style={{ color: '#6366F1' }}>
+                  ℹ️ <strong>Catatan:</strong> Nomor akan di-generate otomatis berdasarkan urutan:
+                </p>
+                <ul className="text-xs mt-2 space-y-1 ml-4" style={{ color: '#050505', opacity: 0.7 }}>
+                  <li>• PEMULA: Dihabiskan per kelas (jumlah peserta terbanyak dulu)</li>
+                  <li>• PRESTASI: Dihabiskan per round (R1 → Quarter → Semi → Final)</li>
+                </ul>
+              </div>
+
+            </div>
+          </div>
+        )}
+
+      </div>
+
+      {/* FOOTER */}
+      <div className="p-6 border-t flex gap-3 sticky bottom-0 bg-white z-10">
+
+        <button
+          onClick={() => {
+            setShowAutoNumberModal(false);
+            setSelectedAutoGenHari('');
+            setSelectedAutoGenLapangan(null);
+            setPreviewData(null);
+          }}
+          className="flex-1 py-3 px-4 rounded-lg border-2 font-medium transition-all hover:bg-gray-50"
+          style={{ borderColor: '#990D35', color: '#990D35' }}
+        >
+          Batal
+        </button>
+
+        <button
+          onClick={handleAutoGenerateNumbers}
+          disabled={!previewData || generatingNumbers}
+          className="flex-1 py-3 px-4 rounded-lg font-medium transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+          style={{ backgroundColor: '#990D35', color: '#F5FBEF' }}
+        >
+          {generatingNumbers ? (
+            <span className="flex items-center justify-center gap-2">
+              <Loader size={16} className="animate-spin" />
+              Generating...
+            </span>
+          ) : (
+            <span className="flex items-center justify-center gap-2">
+              <Zap size={16} />
+              Generate Nomor Partai
+            </span>
+          )}
+        </button>
+
+      </div>
+
+    </div>
+  </div>
+)}
+
     </div>
   );
 };

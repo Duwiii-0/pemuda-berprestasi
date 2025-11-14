@@ -3,39 +3,46 @@ import lapanganController from "../controllers/lapanganController";
 
 const router = Router();
 
-// Rute ini memerlukan autentikasi dan role ADMIN
-
-// POST /api/lapangan/tambah-hari
+// ============= EXISTING ROUTES (sudah ada) =============
 router.post("/tambah-hari", lapanganController.tambahHariLapangan);
-
-// POST /api/lapangan/tambah-lapangan-ke-hari
-router.post(
-  "/tambah-lapangan-ke-hari",
-  lapanganController.tambahLapanganKeHari
-);
-
-// POST /api/lapangan/simpan-kelas
+router.post("/tambah-lapangan-ke-hari", lapanganController.tambahLapanganKeHari);
 router.post("/simpan-kelas", lapanganController.simpanKelasLapangan);
-
-// DELETE /api/lapangan/hapus-lapangan
 router.delete("/hapus-lapangan", lapanganController.hapusLapangan);
-
-// GET /api/lapangan/kompetisi/:id_kompetisi
-router.get(
-  "/kompetisi/:id_kompetisi",
-  lapanganController.getHariLapanganByKompetisi
-);
-
-// DELETE /api/lapangan/hapus-hari
 router.delete("/hapus-hari", lapanganController.hapusHariLapangan);
+router.get("/kompetisi/:id_kompetisi", lapanganController.getHariLapanganByKompetisi);
+router.get("/:id_lapangan/kelas", lapanganController.getKelasKejuaraanByLapangan);
+router.post("/antrian", lapanganController.simpanAntrian);
 
-// GET /api/lapangan/:id_lapangan/kelas
+// ============= 🆕 NEW ROUTES UNTUK AUTO-GENERATE =============
+
+// 🆕 1. GET full data (lapangan + kelas + bracket + matches)
 router.get(
-  "/:id_lapangan/kelas",
-  lapanganController.getKelasKejuaraanByLapangan
+  "/:id_lapangan/full-data",
+  lapanganController.getLapanganFullData
 );
 
-// POST /api/lapangan/antrian
-router.post("/antrian", lapanganController.simpanAntrian);
+// 🆕 2. GET preview nomor partai (tanpa save)
+router.get(
+  "/:id_lapangan/preview-numbers",
+  lapanganController.previewMatchNumbers
+);
+
+// 🆕 3. POST auto-generate nomor partai (dengan save)
+router.post(
+  "/:id_lapangan/auto-generate-numbers",
+  lapanganController.autoGenerateMatchNumbers
+);
+
+// 🆕 4. DELETE reset nomor partai
+router.delete(
+  "/:id_lapangan/reset-numbers",
+  lapanganController.resetMatchNumbers
+);
+
+// 🆕 5. GET status penomoran (sudah ada nomor atau belum)
+router.get(
+  "/:id_lapangan/numbering-status",
+  lapanganController.getNumberingStatus
+);
 
 export default router;
