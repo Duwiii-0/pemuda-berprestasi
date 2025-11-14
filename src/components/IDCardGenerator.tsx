@@ -588,25 +588,6 @@ export const IDCardGenerator = ({ atlet, isEditing }: IDCardGeneratorProps) => {
         )}
       </div>
 
-      <div className="mt-4 bg-blue-50 border border-blue-200 rounded-xl p-4">
-        <h4 className="font-semibold text-blue-900 mb-2 text-sm">📋 Info Kelas Lengkap:</h4>
-        {atlet.peserta_kompetisi && atlet.peserta_kompetisi.length > 0 && (() => {
-          const targetPeserta = atlet.peserta_kompetisi.find(p => p.status === 'APPROVED') || 
-                                atlet.peserta_kompetisi[0];
-          const kj = targetPeserta?.kelas_kejuaraan;
-          
-          return (
-            <div className="text-xs text-blue-800 space-y-1">
-              <p><span className="font-semibold">Cabang:</span> {kj?.cabang || "-"}</p>
-              <p><span className="font-semibold">Kategori Event:</span> {kj?.kategori_event?.nama_kategori || "-"}</p>
-              <p><span className="font-semibold">Kelompok Usia:</span> {kj?.kelompok?.nama_kelompok || "-"}</p>
-              <p><span className="font-semibold">Kelas Berat:</span> {kj?.kelas_berat?.nama_kelas || "-"}</p>
-              <p><span className="font-semibold">Kelas Poomsae:</span> {kj?.poomsae?.nama_kelas || "-"}</p>
-            </div>
-          );
-        })()}
-      </div>
-
       {showPreview && previewUrl && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl p-6 max-w-4xl w-full max-h-[90vh] overflow-auto">
