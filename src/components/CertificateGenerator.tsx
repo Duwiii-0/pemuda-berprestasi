@@ -50,21 +50,15 @@ interface CertificateGeneratorProps {
 }
 
 // Koordinat dalam MM untuk penempatan teks pada sertifikat
+// Sesuaikan dengan posisi pada template E-Certificate.jpg
 const COORDS_MM = {
   nama: {
-    x: 148.5, // center horizontal (A4 = 297mm / 2)
-    y: 120,
-    fontSize: 24,
+    y: 158, // Posisi untuk nama (dari atas dalam mm)
+    fontSize: 28,
   },
   kelas: {
-    x: 148.5,
-    y: 145,
-    fontSize: 14,
-  },
-  tanggal: {
-    x: 148.5,
-    y: 220,
-    fontSize: 12,
+    y: 175, // Posisi untuk kelas kejuaraan (dari atas dalam mm)
+    fontSize: 16,
   },
 };
 
@@ -86,7 +80,7 @@ export const CertificateGenerator = ({ atlet, isEditing }: CertificateGeneratorP
     }
   }, [atlet]);
 
-  // Validasi apakah bisa generate Certificate
+  // Validasi apakah bisa generate Certificate (Certificate of Participation - tidak perlu juara)
   const canGenerateCertificate = (): { canGenerate: boolean; reason: string } => {
     // 1. Cek peserta kompetisi
     if (!atlet.peserta_kompetisi || atlet.peserta_kompetisi.length === 0) {
@@ -96,15 +90,15 @@ export const CertificateGenerator = ({ atlet, isEditing }: CertificateGeneratorP
       };
     }
 
-    // 2. Cek apakah ada yang APPROVED dan punya ranking (juara)
-    const hasWinner = atlet.peserta_kompetisi.some(
-      p => p.status === 'APPROVED' && p.ranking && p.ranking <= 3
+    // 2. Cek apakah ada yang APPROVED (tidak perlu ranking untuk certificate of participation)
+    const hasApproved = atlet.peserta_kompetisi.some(
+      p => p.status === 'APPROVED'
     );
     
-    if (!hasWinner) {
+    if (!hasApproved) {
       return { 
         canGenerate: false, 
-        reason: "Atlet belum menjadi juara (ranking 1-3)" 
+        reason: "Belum ada peserta kompetisi yang disetujui (APPROVED)" 
       };
     }
 
@@ -113,26 +107,21 @@ export const CertificateGenerator = ({ atlet, isEditing }: CertificateGeneratorP
 
   const validation = canGenerateCertificate();
 
-  const loadPDFAsArrayBuffer = async (url: string): Promise<ArrayBuffer> => {
-    const response = await fetch(url);
-    if (!response.ok) throw new Error(`Failed to fetch PDF: ${url}`);
-    return await response.arrayBuffer();
-  };
-
   const getKelasKejuaraan = (): string => {
     if (!atlet.peserta_kompetisi || atlet.peserta_kompetisi.length === 0) {
       return "-";
     }
 
-    const winnerPeserta = atlet.peserta_kompetisi.find(
-      p => p.status === 'APPROVED' && p.ranking && p.ranking <= 3
+    // Ambil peserta yang APPROVED (bisa lebih dari 1)
+    const approvedPeserta = atlet.peserta_kompetisi.find(
+      p => p.status === 'APPROVED'
     );
 
-    if (!winnerPeserta?.kelas_kejuaraan) {
+    if (!approvedPeserta?.kelas_kejuaraan) {
       return atlet.kelas_berat || "-";
     }
 
-    const kj = winnerPeserta.kelas_kejuaraan;
+    const kj = approvedPeserta.kelas_kejuaraan;
     const cabang = kj.cabang || "";
     const kelompokUsia = kj.kelompok?.nama_kelompok || "";
     const kategoriEvent = kj.kategori_event?.nama_kategori || "";
@@ -147,38 +136,13 @@ export const CertificateGenerator = ({ atlet, isEditing }: CertificateGeneratorP
     }
     
     const parts = [];
-    if (kategoriEvent) parts.push(kategoriEvent);
     if (cabang) parts.push(cabang);
     if (jenisKelamin) parts.push(jenisKelamin === "LAKI_LAKI" ? "Putra" : "Putri");
     if (kelompokUsia) parts.push(kelompokUsia);
     if (kelasDetail) parts.push(kelasDetail);
+    if (kategoriEvent) parts.push(kategoriEvent);
     
     return parts.join(" - ") || "-";
-  };
-
-  const getRanking = (): number => {
-    const winnerPeserta = atlet.peserta_kompetisi?.find(
-      p => p.status === 'APPROVED' && p.ranking && p.ranking <= 3
-    );
-    return winnerPeserta?.ranking || 0;
-  };
-
-  const getRankingText = (ranking: number): string => {
-    switch(ranking) {
-      case 1: return "Juara 1";
-      case 2: return "Juara 2";
-      case 3: return "Juara 3";
-      default: return "-";
-    }
-  };
-
-  const getCurrentDate = (): string => {
-    const months = [
-      "Januari", "Februari", "Maret", "April", "Mei", "Juni",
-      "Juli", "Agustus", "September", "Oktober", "November", "Desember"
-    ];
-    const date = new Date();
-    return `Palembang, ${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
   };
 
   const generateCertificate = async () => {
@@ -193,24 +157,32 @@ export const CertificateGenerator = ({ atlet, isEditing }: CertificateGeneratorP
     console.log("=== DEBUG CERTIFICATE GENERATION ===");
     
     const kelasKejuaraan = getKelasKejuaraan();
-    const ranking = getRanking();
-    const rankingText = getRankingText(ranking);
     
     console.log("Nama Atlet:", atlet.nama_atlet);
     console.log("Kelas Kejuaraan:", kelasKejuaraan);
-    console.log("Ranking:", ranking, "-", rankingText);
 
     try {
-      // Template path - sesuaikan dengan lokasi template Anda
-      const templatePath = `/templates/certificate_sriwijaya.pdf`;
+      // Load template JPG
+      const templatePath = `/templates/E-Certificate.jpg`;
       
       console.log("📄 Using template:", templatePath);
 
-      const templateBytes = await loadPDFAsArrayBuffer(templatePath);
-      const pdfDoc = await PDFDocument.load(templateBytes);
-      const pages = pdfDoc.getPages();
-      const firstPage = pages[0];
-      const { width: pageWidth, height: pageHeight } = firstPage.getSize();
+      // Buat PDF baru dengan ukuran A4 landscape
+      const pdfDoc = await PDFDocument.create();
+      const page = pdfDoc.addPage([841.89, 595.28]); // A4 landscape dalam points
+      const { width: pageWidth, height: pageHeight } = page.getSize();
+
+      // Load dan embed gambar template
+      const imageBytes = await fetch(templatePath).then(res => res.arrayBuffer());
+      const image = await pdfDoc.embedJpg(imageBytes);
+      
+      // Draw template sebagai background (full page)
+      page.drawImage(image, {
+        x: 0,
+        y: 0,
+        width: pageWidth,
+        height: pageHeight,
+      });
 
       // Load fonts
       const helveticaBold = await pdfDoc.embedFont('Helvetica-Bold');
@@ -220,11 +192,10 @@ export const CertificateGenerator = ({ atlet, isEditing }: CertificateGeneratorP
 
       // Warna teks (dark blue/black)
       const textColor = rgb(0.04, 0.13, 0.41);
-      const goldColor = rgb(0.85, 0.65, 0.13);
 
       // Draw Nama Atlet (centered, bold, large)
       const namaWidth = helveticaBold.widthOfTextAtSize(atlet.nama_atlet, COORDS_MM.nama.fontSize);
-      firstPage.drawText(atlet.nama_atlet, {
+      page.drawText(atlet.nama_atlet, {
         x: (pageWidth - namaWidth) / 2,
         y: pageHeight - mmToPt(COORDS_MM.nama.y),
         size: COORDS_MM.nama.fontSize,
@@ -232,24 +203,12 @@ export const CertificateGenerator = ({ atlet, isEditing }: CertificateGeneratorP
         color: textColor,
       });
 
-      // Draw Ranking Text
-      const rankingFullText = `${rankingText} - ${kelasKejuaraan}`;
-      const kelasWidth = helvetica.widthOfTextAtSize(rankingFullText, COORDS_MM.kelas.fontSize);
-      firstPage.drawText(rankingFullText, {
+      // Draw Kelas Kejuaraan (centered)
+      const kelasWidth = helvetica.widthOfTextAtSize(kelasKejuaraan, COORDS_MM.kelas.fontSize);
+      page.drawText(kelasKejuaraan, {
         x: (pageWidth - kelasWidth) / 2,
         y: pageHeight - mmToPt(COORDS_MM.kelas.y),
         size: COORDS_MM.kelas.fontSize,
-        font: helvetica,
-        color: textColor,
-      });
-
-      // Draw Date
-      const dateText = getCurrentDate();
-      const dateWidth = helvetica.widthOfTextAtSize(dateText, COORDS_MM.tanggal.fontSize);
-      firstPage.drawText(dateText, {
-        x: (pageWidth - dateWidth) / 2,
-        y: pageHeight - mmToPt(COORDS_MM.tanggal.y),
-        size: COORDS_MM.tanggal.fontSize,
         font: helvetica,
         color: textColor,
       });
@@ -263,7 +222,7 @@ export const CertificateGenerator = ({ atlet, isEditing }: CertificateGeneratorP
 
       const link = document.createElement('a');
       link.href = url;
-      link.download = `Certificate-${atlet.nama_atlet.replace(/\s/g, "-")}-${rankingText.replace(/\s/g, "-")}.pdf`;
+      link.download = `Certificate-Participation-${atlet.nama_atlet.replace(/\s/g, "-")}.pdf`;
       link.click();
 
       const storageKey = `certificate_generated_${atlet.id_atlet || atlet.nama_atlet}`;
@@ -304,9 +263,7 @@ export const CertificateGenerator = ({ atlet, isEditing }: CertificateGeneratorP
       const url = URL.createObjectURL(cachedPdfBlob);
       const link = document.createElement('a');
       link.href = url;
-      const ranking = getRanking();
-      const rankingText = getRankingText(ranking);
-      link.download = `Certificate-${atlet.nama_atlet.replace(/\s/g, "-")}-${rankingText.replace(/\s/g, "-")}.pdf`;
+      link.download = `Certificate-Participation-${atlet.nama_atlet.replace(/\s/g, "-")}.pdf`;
       link.click();
       URL.revokeObjectURL(url);
     } else {
@@ -318,7 +275,7 @@ export const CertificateGenerator = ({ atlet, isEditing }: CertificateGeneratorP
     <div className="bg-white/60 backdrop-blur-sm rounded-2xl lg:rounded-3xl p-4 sm:p-6 lg:p-8 shadow-xl border-2 border-gray-200">
       <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
         <h3 className="font-bebas text-2xl lg:text-3xl text-black/80 tracking-wide">
-          SERTIFIKAT KEJUARAAN
+          SERTIFIKAT PARTISIPASI
         </h3>
 
         {!isEditing && (
@@ -374,7 +331,6 @@ export const CertificateGenerator = ({ atlet, isEditing }: CertificateGeneratorP
               <ul className="mt-2 text-xs text-yellow-600 space-y-1 list-disc list-inside">
                 <li>Peserta kompetisi: {atlet.peserta_kompetisi?.length ? `✅ ${atlet.peserta_kompetisi.length} peserta` : "❌ Belum terdaftar"}</li>
                 <li>Status APPROVED: {atlet.peserta_kompetisi?.some(p => p.status === 'APPROVED') ? "✅ Ada" : "❌ Belum ada"}</li>
-                <li>Ranking Juara (1-3): {atlet.peserta_kompetisi?.some(p => p.ranking && p.ranking <= 3) ? `✅ Ranking ${getRanking()}` : "❌ Belum juara"}</li>
               </ul>
             </div>
           </div>
@@ -383,17 +339,12 @@ export const CertificateGenerator = ({ atlet, isEditing }: CertificateGeneratorP
 
       {/* Info Section */}
       <div className="mt-4 bg-amber-50 border border-amber-200 rounded-xl p-4">
-        <h4 className="font-semibold text-amber-900 mb-2 text-sm">🏆 Info Kejuaraan:</h4>
+        <h4 className="font-semibold text-amber-900 mb-2 text-sm">📋 Info Partisipasi:</h4>
         {atlet.peserta_kompetisi && atlet.peserta_kompetisi.length > 0 && (
           <>
             <p className="text-xs text-amber-800">
               <strong>Kelas:</strong> {getKelasKejuaraan()}
             </p>
-            {getRanking() > 0 && (
-              <p className="text-xs text-amber-800 mt-1">
-                <strong>Peringkat:</strong> {getRankingText(getRanking())}
-              </p>
-            )}
           </>
         )}
         {(!atlet.peserta_kompetisi || atlet.peserta_kompetisi.length === 0) && (
