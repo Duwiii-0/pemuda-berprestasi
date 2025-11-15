@@ -1,24 +1,25 @@
+// src/routes/certificate.ts
 import { Router } from 'express';
 import { CertificateController } from '../controllers/certificateController';
-import { authMiddleware } from '../middleware/authMiddleware';
+import { authenticate } from '../middleware/auth'; // ✅ Sesuaikan dengan file yang ada
 
 const router = Router();
 
 // Generate certificate number (authenticated)
 router.post('/generate-number', 
-  authMiddleware, 
+  authenticate, 
   CertificateController.generateCertificateNumber
 );
 
 // Get athlete certificates
 router.get('/athlete/:id_atlet', 
-  authMiddleware, 
+  authenticate, 
   CertificateController.getAthleteCertificates
 );
 
 // Check if certificate exists
 router.get('/check/:id_atlet/:id_peserta_kompetisi',
-  authMiddleware,
+  authenticate,
   CertificateController.checkCertificateExists
 );
 
