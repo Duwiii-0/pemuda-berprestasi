@@ -423,9 +423,23 @@ model tb_antrian {
   lapangan     tb_lapangan @relation(fields: [id_lapangan], references: [id_lapangan], onDelete: Cascade)
 }
 
-
-
-
+model tb_certificate {
+  id_certificate         Int      @id @default(autoincrement())
+  certificate_number     String   @unique @db.VarChar(10)  // "00001"
+  id_atlet              Int
+  id_peserta_kompetisi  Int
+  id_kompetisi          Int
+  medal_status          String   @db.VarChar(20)  // "GOLD", "SILVER", "BRONZE", "PARTICIPANT"
+  generated_at          DateTime @default(now())
+  
+  atlet                 tb_atlet              @relation(fields: [id_atlet], references: [id_atlet])
+  peserta_kompetisi     tb_peserta_kompetisi  @relation(fields: [id_peserta_kompetisi], references: [id_peserta_kompetisi])
+  kompetisi             tb_kompetisi          @relation(fields: [id_kompetisi], references: [id_kompetisi])
+  
+  @@index([id_atlet])
+  @@index([id_kompetisi])
+  @@index([certificate_number])
+}
 
 enum JenisKelamin {
 LAKI_LAKI
