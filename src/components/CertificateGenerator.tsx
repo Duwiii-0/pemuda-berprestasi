@@ -49,16 +49,16 @@ interface CertificateGeneratorProps {
   isEditing: boolean;
 }
 
-// Koordinat dalam MM untuk penempatan teks pada sertifikat
-// Sesuaikan dengan posisi pada template E-Certificate.jpg
+// Koordinat dalam MM untuk penempatan teks pada sertifikat A4 Portrait
+// Template size: 210mm x 297mm
 const COORDS_MM = {
   nama: {
-    y: 158, // Posisi untuk nama (dari atas dalam mm)
-    fontSize: 28,
+    y: 157, // Posisi nama dari atas (sekitar 53% dari tinggi)
+    fontSize: 20, // Ukuran font nama
   },
   kelas: {
-    y: 175, // Posisi untuk kelas kejuaraan (dari atas dalam mm)
-    fontSize: 16,
+    y: 170, // Posisi kelas dari atas (sekitar 57% dari tinggi)
+    fontSize: 12, // Ukuran font kelas
   },
 };
 
@@ -167,13 +167,19 @@ export const CertificateGenerator = ({ atlet, isEditing }: CertificateGeneratorP
       
       console.log("📄 Using template:", templatePath);
 
-      // Buat PDF baru dengan ukuran A4 landscape
+      // Buat PDF baru dengan ukuran A4 PORTRAIT
       const pdfDoc = await PDFDocument.create();
-      const page = pdfDoc.addPage([841.89, 595.28]); // A4 landscape dalam points
+      const page = pdfDoc.addPage([595.28, 841.89]); // A4 portrait dalam points (210mm x 297mm)
       const { width: pageWidth, height: pageHeight } = page.getSize();
 
+      console.log("📐 PDF Size - Width:", pageWidth, "Height:", pageHeight);
+
       // Load dan embed gambar template
-      const imageBytes = await fetch(templatePath).then(res => res.arrayBuffer());
+      const imageBytes = await fetch(templatePath).then(res => {
+        if (!res.ok) throw new Error(`Failed to load template: ${res.status}`);
+        return res.arrayBuffer();
+      });
+      
       const image = await pdfDoc.embedJpg(imageBytes);
       
       // Draw template sebagai background (full page)
@@ -188,26 +194,39 @@ export const CertificateGenerator = ({ atlet, isEditing }: CertificateGeneratorP
       const helveticaBold = await pdfDoc.embedFont('Helvetica-Bold');
       const helvetica = await pdfDoc.embedFont('Helvetica');
 
+      // Convert MM to Points (1mm = 2.83465 points)
       const mmToPt = (mm: number) => mm * 2.83465;
 
-      // Warna teks (dark blue/black)
-      const textColor = rgb(0.04, 0.13, 0.41);
+      // Warna teks (dark blue/navy sesuai template)
+      const textColor = rgb(0.04, 0.13, 0.41); // #0a2169 (navy blue dari template)
 
-      // Draw Nama Atlet (centered, bold, large)
-      const namaWidth = helveticaBold.widthOfTextAtSize(atlet.nama_atlet, COORDS_MM.nama.fontSize);
-      page.drawText(atlet.nama_atlet, {
-        x: (pageWidth - namaWidth) / 2,
-        y: pageHeight - mmToPt(COORDS_MM.nama.y),
+      // Draw Nama Atlet (centered, bold)
+      const namaText = atlet.nama_atlet.toUpperCase(); // Uppercase untuk konsistensi
+      const namaWidth = helveticaBold.widthOfTextAtSize(namaText, COORDS_MM.nama.fontSize);
+      const namaX = (pageWidth - namaWidth) / 2;
+      const namaY = pageHeight - mmToPt(COORDS_MM.nama.y);
+      
+      console.log("📝 Nama Position - X:", namaX, "Y:", namaY);
+      
+      page.drawText(namaText, {
+        x: namaX,
+        y: namaY,
         size: COORDS_MM.nama.fontSize,
         font: helveticaBold,
         color: textColor,
       });
 
       // Draw Kelas Kejuaraan (centered)
-      const kelasWidth = helvetica.widthOfTextAtSize(kelasKejuaraan, COORDS_MM.kelas.fontSize);
-      page.drawText(kelasKejuaraan, {
-        x: (pageWidth - kelasWidth) / 2,
-        y: pageHeight - mmToPt(COORDS_MM.kelas.y),
+      const kelasText = kelasKejuaraan;
+      const kelasWidth = helvetica.widthOfTextAtSize(kelasText, COORDS_MM.kelas.fontSize);
+      const kelasX = (pageWidth - kelasWidth) / 2;
+      const kelasY = pageHeight - mmToPt(COORDS_MM.kelas.y);
+      
+      console.log("📝 Kelas Position - X:", kelasX, "Y:", kelasY);
+      
+      page.drawText(kelasText, {
+        x: kelasX,
+        y: kelasY,
         size: COORDS_MM.kelas.fontSize,
         font: helvetica,
         color: textColor,
@@ -229,8 +248,10 @@ export const CertificateGenerator = ({ atlet, isEditing }: CertificateGeneratorP
       localStorage.setItem(storageKey, 'true');
 
       setHasGenerated(true);
+      
+      console.log("✅ Certificate generated successfully!");
     } catch (error) {
-      console.error("Error generating certificate:", error);
+      console.error("❌ Error generating certificate:", error);
       alert("Gagal generate Certificate: " + (error as Error).message);
     } finally {
       setIsGenerating(false);
