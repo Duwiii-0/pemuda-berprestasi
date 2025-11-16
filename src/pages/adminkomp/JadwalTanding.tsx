@@ -782,7 +782,7 @@ const handleResetNumbers = async (id_lapangan: number, namaLapangan: string) => 
 
     if (kelas.kelas_berat?.nama_kelas) parts.push(kelas.kelas_berat.nama_kelas);
     if (kelas.poomsae?.nama_kelas) parts.push(kelas.poomsae.nama_kelas);
-    if (kelas.poomsae?.poomsaeType) parts.push(kelas.poomsae.poomsaeType);
+    if (kelas.poomsae_type) parts.push(kelas.poomsae_type);
 
     return parts.length > 0 ? parts.join(" - ") : "Kelas Tidak Lengkap";
   };

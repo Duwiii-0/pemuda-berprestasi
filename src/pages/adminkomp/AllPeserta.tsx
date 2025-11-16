@@ -878,7 +878,7 @@ const AllPeserta: React.FC = () => {
       peserta.kelas_kejuaraan?.kategori_event?.nama_kategori?.toUpperCase() ||
       "";
     const matchesLevel = !filterLevel || level === filterLevel.toUpperCase();
-    const poomsaeType = peserta.kelas_kejuaraan?.poomsae?.poomsaeType?.toUpperCase() || "";
+    const poomsaeType = peserta.kelas_kejuaraan?.poomsae_type?.toUpperCase() || "";
     const matchesPoomsaeType =
       filterPoomsaeType === "ALL" || poomsaeType === filterPoomsaeType.toUpperCase();
     const pesertaDojang = peserta.is_team
