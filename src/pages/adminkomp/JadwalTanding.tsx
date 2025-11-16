@@ -90,6 +90,7 @@ const JadwalPertandingan: React.FC = () => {
   const [selectedExportHari, setSelectedExportHari] = useState<string>("");
   const [selectedExportLapangan, setSelectedExportLapangan] = useState<number[]>([]);
   const [exportingPDF, setExportingPDF] = useState(false);
+  const [lapanganSearchTerms, setLapanganSearchTerms] = useState<Record<number, string>>({});
 
   useEffect(() => {
     if (!idKompetisi) return;
@@ -1087,106 +1088,129 @@ const handleExportLapangan = async () => {
                             >
                               Pilih Kelas Kejuaraan:
                             </p>
+                            <input
+                              type="text"
+                              placeholder="Cari kelas kejuaraan..."
+                              className="w-full px-3 py-2 text-sm rounded-lg border focus:outline-none focus:ring-2 focus:ring-[#990D35] mb-2"
+                              style={{ borderColor: "#990D35", backgroundColor: "#F5FBEF" }}
+                              value={lapanganSearchTerms[lap.id_lapangan] || ''}
+                              onChange={(e) => setLapanganSearchTerms(prev => ({
+                                ...prev,
+                                [lap.id_lapangan]: e.target.value
+                              }))}
+                            />
 
                             <div
                               className="max-h-64 overflow-y-auto space-y-2 border p-3 rounded-lg"
                               style={{ backgroundColor: "#F5FBEF" }}
                             >
-                              {sortedKelasKejuaraanList &&
-                              sortedKelasKejuaraanList.length > 0 ? (
-                                sortedKelasKejuaraanList.map((kelas) => {
-                                  const approvedPeserta =
-                                    approvedPesertaByKelas[
-                                      kelas.id_kelas_kejuaraan
-                                    ] || [];
-                                  const namaKelasDisplay =
-                                    generateNamaKelas(kelas);
+                              {(() => {
+                                const currentSearchTerm = lapanganSearchTerms[lap.id_lapangan]?.toLowerCase() || '';
+                                const filteredKelasKejuaraan = sortedKelasKejuaraanList.filter(kelas => {
+                                  const namaKelasDisplay = generateNamaKelas(kelas);
+                                  return namaKelasDisplay.toLowerCase().includes(currentSearchTerm);
+                                });
 
-                                  return (
-                                    <label
-                                      key={kelas.id_kelas_kejuaraan}
-                                      className="flex flex-col border rounded-md p-2 hover:bg-white cursor-pointer transition-colors"
-                                      style={{
-                                        borderColor: "rgba(153,13,53,0.3)",
-                                      }}
-                                    >
-                                      <div className="flex justify-between items-center">
-                                        <div className="flex items-center gap-2">
-                                          <input
-                                            type="checkbox"
-                                            name={`kelas-lapangan-${lap.id_lapangan}-${kelas.id_kelas_kejuaraan}`}
-                                            checked={lap.kelasDipilih.includes(
-                                              kelas.id_kelas_kejuaraan
-                                            )}
-                                            onChange={() =>
-                                              toggleKelasAndSave(
-                                                hari.tanggal,
-                                                lap.id_lapangan,
-                                                kelas.id_kelas_kejuaraan
-                                              )
-                                            }
-                                            disabled={
-                                              savingKelas[lap.id_lapangan]
-                                            }
-                                            className="accent-[#990D35] cursor-pointer disabled:opacity-50"
-                                          />
-                                          <span className="text-xs font-medium text-[#050505]">
-                                            {namaKelasDisplay}
-                                          </span>
-                                        </div>
-                                        <span
-                                          className="text-xs px-2 py-1 rounded-md font-medium whitespace-nowrap"
-                                          style={{
-                                            backgroundColor:
-                                              "rgba(153,13,53,0.1)",
-                                            color: "#990D35",
-                                          }}
-                                        >
-                                          {approvedPeserta.length}
-                                        </span>
-                                      </div>
+                                return (
+                                  <>
+                                    {filteredKelasKejuaraan &&
+                                    filteredKelasKejuaraan.length > 0 ? (
+                                      filteredKelasKejuaraan.map((kelas) => {
+                                        const approvedPeserta =
+                                          approvedPesertaByKelas[
+                                            kelas.id_kelas_kejuaraan
+                                          ] || [];
+                                        const namaKelasDisplay =
+                                          generateNamaKelas(kelas);
 
-                                      {/* DAFTAR PESERTA */}
-                                      {approvedPeserta.length > 0 &&
-                                        lap.kelasDipilih.includes(
-                                          kelas.id_kelas_kejuaraan
-                                        ) && (
-                                          <ul className="mt-2 ml-6 list-disc text-xs text-[#050505] space-y-1">
-                                            {approvedPeserta
-                                              .slice(0, 3)
-                                              .map((p) => (
-                                                <li key={p.id_peserta}>
-                                                  <span className="font-medium">
-                                                    {p.nama_peserta}
-                                                  </span>
-                                                  {p.dojang && (
-                                                    <span className="text-[#990D35] ml-1">
-                                                      ({p.dojang})
-                                                    </span>
+                                        return (
+                                          <label
+                                            key={kelas.id_kelas_kejuaraan}
+                                            className="flex flex-col border rounded-md p-2 hover:bg-white cursor-pointer transition-colors"
+                                            style={{
+                                              borderColor: "rgba(153,13,53,0.3)",
+                                            }}
+                                          >
+                                            <div className="flex justify-between items-center">
+                                              <div className="flex items-center gap-2">
+                                                <input
+                                                  type="checkbox"
+                                                  name={`kelas-lapangan-${lap.id_lapangan}-${kelas.id_kelas_kejuaraan}`}
+                                                  checked={lap.kelasDipilih.includes(
+                                                    kelas.id_kelas_kejuaraan
                                                   )}
-                                                </li>
-                                              ))}
-                                            {approvedPeserta.length > 3 && (
-                                              <li className="text-[#990D35] font-medium">
-                                                +{approvedPeserta.length - 3}{" "}
-                                                lainnya
-                                              </li>
-                                            )}
-                                          </ul>
-                                        )}
-                                    </label>
-                                  );
-                                })
-                              ) : (
-                                <div className="text-center py-8">
-                                  <p
-                                    className="text-xs font-medium mb-1"
-                                    style={{ color: "#050505", opacity: 0.6 }}
-                                  >
-                                    Tidak ada kelas kejuaraan tersedia
-                                  </p>
-                                </div>
-                              )}
+                                                  onChange={() =>
+                                                    toggleKelasAndSave(
+                                                      hari.tanggal,
+                                                      lap.id_lapangan,
+                                                      kelas.id_kelas_kejuaraan
+                                                    )
+                                                  }
+                                                  disabled={
+                                                    savingKelas[lap.id_lapangan]
+                                                  }
+                                                  className="accent-[#990D35] cursor-pointer disabled:opacity-50"
+                                                />
+                                                <span className="text-xs font-medium text-[#050505]">
+                                                  {namaKelasDisplay}
+                                                </span>
+                                              </div>
+                                              <span
+                                                className="text-xs px-2 py-1 rounded-md font-medium whitespace-nowrap"
+                                                style={{
+                                                  backgroundColor:
+                                                    "rgba(153,13,53,0.1)",
+                                                  color: "#990D35",
+                                                }}
+                                              >
+                                                {approvedPeserta.length}
+                                              </span>
+                                            </div>
+
+                                            {/* DAFTAR PESERTA */}
+                                            {approvedPeserta.length > 0 &&
+                                              lap.kelasDipilih.includes(
+                                                kelas.id_kelas_kejuaraan
+                                              ) && (
+                                                <ul className="mt-2 ml-6 list-disc text-xs text-[#050505] space-y-1">
+                                                  {approvedPeserta
+                                                    .slice(0, 3)
+                                                    .map((p) => (
+                                                      <li key={p.id_peserta}>
+                                                        <span className="font-medium">
+                                                          {p.nama_peserta}
+                                                        </span>
+                                                        {p.dojang && (
+                                                          <span className="text-[#990D35] ml-1">
+                                                            ({p.dojang})
+                                                          </span>
+                                                        )}
+                                                      </li>
+                                                    ))}
+                                                  {approvedPeserta.length > 3 && (
+                                                    <li className="text-[#990D35] font-medium">
+                                                      +{approvedPeserta.length - 3}{" "}
+                                                      lainnya
+                                                    </li>
+                                                  )}
+                                                </ul>
+                                              )}
+                                          </label>
+                                        );
+                                      })
+                                    ) : (
+                                      <div className="text-center py-8">
+                                        <p
+                                          className="text-xs font-medium mb-1"
+                                          style={{ color: "#050505", opacity: 0.6 }}
+                                        >
+                                          Tidak ada kelas kejuaraan tersedia
+                                        </p>
+                                      </div>
+                                    )}
+                                  </>
+                                );
+                              })()}
                             </div>
                           </div>
 
