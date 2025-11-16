@@ -277,6 +277,7 @@ model tb_peserta_kompetisi {
   @@index([status])
   @@index([id_kelas_kejuaraan, status])
   @@index([is_team])
+  @@index([id_kelas_kejuaraan, status, is_team])
 }
 
 model tb_venue {
