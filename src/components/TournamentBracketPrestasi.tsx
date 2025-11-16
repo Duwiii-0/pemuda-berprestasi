@@ -101,12 +101,14 @@ interface TournamentBracketPrestasiProps {
   kelasData: KelasKejuaraan;
   onBack?: () => void;
   apiBaseUrl?: string;
+  viewOnly?: boolean; // ⭐ TAMBAHKAN
 }
 
 const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({ 
   kelasData, 
   onBack,
   apiBaseUrl = '/api',
+  viewOnly = false, // ⭐ TAMBAHKAN
 }) => {
   const { token } = useAuth();
   const [matches, setMatches] = useState<Match[]>([]);
@@ -1067,24 +1069,32 @@ return (
       background: 'white'      // ✅ TAMBAH - Solid background
     }}
   >
-      {/* Header */}
-      <div 
-        className="px-3 py-2 border-b flex items-center justify-between"
-        style={{ 
-          backgroundColor: 'rgba(153, 13, 53, 0.05)',
-          borderColor: '#990D35'
-        }}
+    {/* Header */}
+<div 
+  className="px-3 py-2 border-b flex items-center justify-between"
+  style={{ 
+    backgroundColor: 'rgba(153, 13, 53, 0.05)',
+    borderColor: '#990D35'
+  }}
+>
+  <div className="flex items-center gap-2">
+    {/* ⭐ UPDATED: Show BYE label ONLY for Round 1 with one participant */}
+    {match.nomor_partai ? (
+      <span 
+        className="text-xs px-2 py-1 rounded-full font-bold"
+        style={{ backgroundColor: '#990D35', color: 'white' }}
       >
-        <div className="flex items-center gap-2">
-          {match.nomor_partai && (
-            <span 
-              className="text-xs px-2 py-1 rounded-full font-bold"
-              style={{ backgroundColor: '#990D35', color: 'white' }}
-            >
-              No. Partai: {match.nomor_partai}
-            </span>
-          )}
-        </div>
+        No. Partai: {match.nomor_partai}
+      </span>
+    ) : match.ronde === 1 && ((match.peserta_a && !match.peserta_b) || (!match.peserta_a && match.peserta_b)) ? (
+      <span 
+        className="text-xs px-2 py-1 rounded-full font-medium"
+        style={{ backgroundColor: 'rgba(245, 183, 0, 0.15)', color: '#F5B700' }}
+      >
+        BYE - No Number
+      </span>
+    ) : null}
+  </div>
         
         <div className="flex items-center gap-2">
           {match.tanggal_pertandingan && (
@@ -1095,12 +1105,14 @@ return (
               })}
             </span>
           )}
-          <button
-            onClick={() => setEditingMatch(match)}
-            className="p-1 rounded hover:bg-black/5"
-          >
-            <Edit3 size={12} style={{ color: '#050505', opacity: 0.6 }} />
-          </button>
+<button
+  onClick={() => setEditingMatch(match)}
+  className="p-1 rounded hover:bg-black/5 transition-all"
+  disabled={viewOnly} // ⭐ TAMBAHKAN
+  style={{ opacity: viewOnly ? 0.3 : 1, cursor: viewOnly ? 'not-allowed' : 'pointer' }} // ⭐ TAMBAHKAN
+>
+  <Edit3 size={14} style={{ color: '#DC143C' }} />
+</button>
         </div>
       </div>
 
@@ -2043,6 +2055,7 @@ const calculateCardPosition = (
               </div>
             </div>
 
+            {!viewOnly && (
             <div className="flex gap-3">
               <button
                 onClick={exportPesertaToExcel}
@@ -2128,6 +2141,7 @@ const calculateCardPosition = (
                 )}
               </button>
             </div>
+            )}
           </div>
 
           {/* Competition details */}

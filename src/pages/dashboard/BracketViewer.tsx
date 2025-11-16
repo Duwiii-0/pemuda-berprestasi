@@ -1,0 +1,234 @@
+import React, { useEffect, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/authContext';
+import { Loader, AlertTriangle, ArrowLeft, Menu } from 'lucide-react';
+import TournamentBracketPemula from '../../components/TournamentBracketPemula';
+import TournamentBracketPrestasi from '../../components/TournamentBracketPrestasi';
+import NavbarDashboard from '../../components/navbar/navbarDashboard';
+
+const BracketViewer: React.FC = () => {
+  const { kelasId } = useParams<{ kelasId: string }>();
+  const { token, user } = useAuth();
+  const navigate = useNavigate();
+  const [kelasData, setKelasData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    if (!kelasId || !token) return;
+
+    const fetchKelasData = async () => {
+      try {
+        setLoading(true);
+        
+        // ✅ PERBAIKAN: Ambil ID kompetisi dari struktur user yang benar
+        let kompetisiId;
+        
+        if (user?.pelatih?.dojang?.id_kompetisi) {
+          kompetisiId = user.pelatih.dojang.id_kompetisi;
+          console.log('✅ Found kompetisi from pelatih.dojang:', kompetisiId);
+        } else if (user?.pelatih?.id_dojang) {
+          // Fallback: fetch dojang data untuk dapat kompetisi ID
+          console.log('⚠️ Fetching dojang data for kompetisi ID...');
+          const dojangResponse = await fetch(
+            `${import.meta.env.VITE_API_URL}/dojang/${user.pelatih.id_dojang}`,
+            {
+              headers: { 'Authorization': `Bearer ${token}` }
+            }
+          );
+          
+          if (dojangResponse.ok) {
+            const dojangData = await dojangResponse.json();
+            kompetisiId = dojangData.data?.id_kompetisi;
+            console.log('✅ Found kompetisi from dojang API:', kompetisiId);
+          }
+        }
+        
+        if (!kompetisiId) {
+          throw new Error('Kompetisi tidak ditemukan untuk dojang Anda. Pastikan dojang sudah terdaftar dalam kompetisi.');
+        }
+
+        console.log('🔍 Fetching bracket for kompetisi:', kompetisiId, 'kelas:', kelasId);
+
+        // Fetch data bracket
+        const response = await fetch(
+          `${import.meta.env.VITE_API_URL}/kompetisi/${kompetisiId}/brackets/${kelasId}`,
+          {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          }
+        );
+
+        if (!response.ok) {
+          if (response.status === 404) {
+            throw new Error('Bracket belum dibuat untuk kelas ini');
+          }
+          throw new Error('Gagal memuat data bracket');
+        }
+
+        const result = await response.json();
+        console.log('📊 Bracket data received:', result);
+        
+        // Transform data sesuai format yang dibutuhkan
+        if (result.data) {
+          const transformedData = {
+            id_kelas_kejuaraan: parseInt(kelasId),
+            cabang: result.data.cabang || 'KYORUGI',
+            kategori_event: result.data.kategori_event || { nama_kategori: 'PEMULA' },
+            kelompok: result.data.kelompok || { nama_kelompok: '', usia_min: 0, usia_max: 0 },
+            kelas_berat: result.data.kelas_berat,
+            poomsae: result.data.poomsae,
+            jenis_kelamin: result.data.jenis_kelamin || 'LAKI_LAKI',
+            kompetisi: result.data.kompetisi || {
+              id_kompetisi: kompetisiId,
+              nama_event: "Tournament",
+              tanggal_mulai: new Date().toISOString(),
+              tanggal_selesai: new Date().toISOString(),
+              lokasi: "",
+              status: "SEDANG_DIMULAI"
+            },
+            peserta_kompetisi: result.data.participants || [],
+            bagan: []
+          };
+          
+          setKelasData(transformedData);
+        }
+      } catch (err: any) {
+        console.error('❌ Error fetching bracket:', err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchKelasData();
+  }, [kelasId, token, user]);
+
+  useEffect(() => {
+    const onResize = () => {
+      if (window.innerWidth >= 1024) setSidebarOpen(false);
+    };
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
+  const handleBack = () => {
+    navigate('/dashboard/bracket-viewer');
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen max-w-screen bg-gradient-to-br from-white via-red/5 to-yellow/10">
+        <NavbarDashboard />
+        <div className="lg:ml-72 min-h-screen flex items-center justify-center">
+          <div className="flex flex-col items-center gap-3">
+            <Loader className="animate-spin" style={{ color: '#990D35' }} size={32} />
+            <p className="font-plex text-black/60">Memuat bracket...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !kelasData) {
+    return (
+      <div className="min-h-screen max-w-screen bg-gradient-to-br from-white via-red/5 to-yellow/10">
+        <NavbarDashboard />
+        
+        <div className="lg:ml-72 min-h-screen">
+          <div className="bg-white/40 backdrop-blur-md border-white/30 w-full min-h-screen flex flex-col gap-6 lg:gap-8 pt-6 lg:pt-8 pb-12 px-4 lg:px-8">
+            
+            {/* Mobile Menu Button */}
+            <div className="lg:hidden">
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="p-3 rounded-xl hover:bg-white/50 transition-all duration-300 border border-red/20"
+                aria-label="Open menu"
+              >
+                <Menu size={24} className="text-red" />
+              </button>
+            </div>
+
+            {/* Error Content */}
+            <div className="flex-1 flex items-center justify-center px-4">
+              <div className="bg-white/60 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 p-6 lg:p-8 max-w-md w-full text-center">
+                <AlertTriangle size={48} className="text-red mx-auto mb-4 opacity-50" />
+                <h3 className="font-bebas text-2xl lg:text-3xl text-black/80 mb-2">
+                  GAGAL MEMUAT BRACKET
+                </h3>
+                <p className="font-plex text-sm lg:text-base text-black/60 mb-6">
+                  {error || 'Bracket tidak ditemukan'}
+                </p>
+                <button
+                  onClick={handleBack}
+                  className="font-plex font-medium px-6 py-3 rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-lg active:scale-95 flex justify-center items-center cursor-pointer text-white bg-gradient-to-r from-red to-red/80 hover:from-red/90 hover:to-red/70 border-0 shadow-lg gap-2 mx-auto"
+                >
+                  <ArrowLeft size={18} />
+                  <span>Kembali</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile Sidebar */}
+        {sidebarOpen && (
+          <>
+            <div
+              className="fixed inset-0 bg-black/60 z-40 lg:hidden"
+              onClick={() => setSidebarOpen(false)}
+            />
+            <div className="lg:hidden z-50">
+              <NavbarDashboard mobile onClose={() => setSidebarOpen(false)} />
+            </div>
+          </>
+        )}
+      </div>
+    );
+  }
+
+  const isPemula = kelasData.kategori_event?.nama_kategori?.toLowerCase().includes('pemula');
+
+  return (
+    <div className="min-h-screen max-w-screen bg-gradient-to-br from-white via-red/5 to-yellow/10">
+      {/* Desktop Navbar */}
+      <NavbarDashboard />
+
+      {/* Main Content - No padding/margin, let bracket component handle it */}
+      <div className="lg:ml-72 min-h-screen">
+        {isPemula ? (
+          <TournamentBracketPemula
+            kelasData={kelasData}
+            onBack={handleBack}
+            viewOnly={true}
+            apiBaseUrl={import.meta.env.VITE_API_URL || '/api'}
+          />
+        ) : (
+          <TournamentBracketPrestasi
+            kelasData={kelasData}
+            onBack={handleBack}
+            viewOnly={true}
+            apiBaseUrl={import.meta.env.VITE_API_URL || '/api'}
+          />
+        )}
+      </div>
+
+      {/* Mobile Sidebar */}
+      {sidebarOpen && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/60 z-40 lg:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
+          <div className="lg:hidden z-50">
+            <NavbarDashboard mobile onClose={() => setSidebarOpen(false)} />
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
+
+export default BracketViewer;

@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import { isByeMatch } from "./bracketService"; // ⭐ TAMBAH INI
 
 const prisma = new PrismaClient();
 
@@ -298,6 +299,587 @@ export class LapanganService {
       },
     };
   }
+
+  // ============================================================================
+  // 🆕 AUTO-GENERATE NOMOR PARTAI FUNCTIONS
+  // ============================================================================
+
+  /**
+   * 1️⃣ Get Lapangan Full Data (dengan kelas, bracket, matches)
+   */
+  async getLapanganFullData(id_lapangan: number) {
+    console.log(`\n🔍 Fetching full data for lapangan ${id_lapangan}...`);
+
+    const lapangan = await prisma.tb_lapangan.findUnique({
+      where: { id_lapangan },
+      include: {
+        kelas_list: {
+          include: {
+            kelas_kejuaraan: {
+              include: {
+                kategori_event: true,
+                kelompok: true,
+                kelas_berat: true,
+                poomsae: true,
+                peserta_kompetisi: {
+                  where: { status: 'APPROVED' }
+                },
+                bagan: {
+                  include: {
+                    match: {
+                      orderBy: [
+                        { ronde: 'asc' },
+                        { id_match: 'asc' }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          orderBy: { urutan: 'asc' }
+        }
+      }
+    });
+
+    if (!lapangan) {
+      throw new Error('Lapangan tidak ditemukan');
+    }
+
+    // Transform data
+    const kelasListTransformed = lapangan.kelas_list.map(kl => {
+      const kelas = kl.kelas_kejuaraan;
+      const isPemula = kelas.kategori_event.nama_kategori.toLowerCase().includes('pemula');
+      
+      return {
+        id_kelas_kejuaraan: kelas.id_kelas_kejuaraan,
+        nama_kelas: this.generateNamaKelas(kelas),
+        kategori: isPemula ? 'PEMULA' : 'PRESTASI',
+        jumlah_peserta: kelas.peserta_kompetisi.length,
+        bagan: kelas.bagan.length > 0 ? {
+          id_bagan: kelas.bagan[0].id_bagan,
+        matches: kelas.bagan[0].match.map(m => ({
+          id_match: m.id_match,
+          ronde: m.ronde,
+          id_peserta_a: m.id_peserta_a,        // ⭐ TAMBAH INI
+          id_peserta_b: m.id_peserta_b,        // ⭐ TAMBAH INI
+          nomor_antrian: m.nomor_antrian,
+          nomor_lapangan: m.nomor_lapangan,
+          nomor_partai: m.nomor_partai
+        }))
+        } : null
+      };
+    });
+
+    console.log(`✅ Found ${kelasListTransformed.length} kelas in lapangan ${lapangan.nama_lapangan}`);
+
+    return {
+      success: true,
+      data: {
+        id_lapangan: lapangan.id_lapangan,
+        nama_lapangan: lapangan.nama_lapangan,
+        tanggal: lapangan.tanggal,
+        kelas_list: kelasListTransformed
+      }
+    };
+  }
+
+  /**
+   * 2️⃣ Preview Match Numbers (tanpa save)
+   */
+  async previewMatchNumbers(id_lapangan: number, starting_number: number = 1) {
+    console.log(`\n🔮 Preview match numbers for lapangan ${id_lapangan}`);
+    console.log(`   Starting number: ${starting_number}`);
+
+    const fullData = await this.getLapanganFullData(id_lapangan);
+    const lapanganData = fullData.data;
+
+    // Generate assignments (tanpa save)
+    const result = this.generateMatchAssignments(
+      lapanganData.kelas_list,
+      lapanganData.nama_lapangan,
+      starting_number,
+      false // preview only
+    );
+
+    return result;
+  }
+
+  /**
+   * 3️⃣ Auto-Generate Match Numbers (dengan save)
+   */
+  async autoGenerateMatchNumbers(id_lapangan: number, starting_number: number = 1) {
+    console.log(`\n🎯 Auto-generating match numbers for lapangan ${id_lapangan}`);
+    console.log(`   Starting number: ${starting_number}`);
+
+    const fullData = await this.getLapanganFullData(id_lapangan);
+    const lapanganData = fullData.data;
+
+    // Generate assignments
+    const result = this.generateMatchAssignments(
+      lapanganData.kelas_list,
+      lapanganData.nama_lapangan,
+      starting_number,
+      true // save to database
+    );
+
+    // Bulk update database
+    if (result.assignments.length > 0) {
+      await prisma.$transaction(
+        result.assignments.map(assignment =>
+          prisma.tb_match.update({
+            where: { id_match: assignment.id_match },
+            data: {
+              nomor_antrian: assignment.nomor_antrian,
+              nomor_lapangan: assignment.nomor_lapangan,
+              nomor_partai: assignment.nomor_partai
+            }
+          })
+        )
+      );
+
+      console.log(`✅ Successfully updated ${result.assignments.length} matches`);
+    }
+
+    return result;
+  }
+
+  /**
+   * 4️⃣ Reset Match Numbers
+   */
+  async resetMatchNumbers(id_lapangan: number) {
+    console.log(`\n🗑️ Resetting match numbers for lapangan ${id_lapangan}`);
+
+    const fullData = await this.getLapanganFullData(id_lapangan);
+    const lapanganData = fullData.data;
+
+    const allMatchIds: number[] = [];
+    
+    lapanganData.kelas_list.forEach(kelas => {
+      if (kelas.bagan && kelas.bagan.matches) {
+        kelas.bagan.matches.forEach(match => {
+          allMatchIds.push(match.id_match);
+        });
+      }
+    });
+
+    if (allMatchIds.length === 0) {
+      return {
+        success: true,
+        message: 'Tidak ada match untuk direset',
+        data: { total_reset: 0 }
+      };
+    }
+
+    await prisma.$transaction(
+      allMatchIds.map(id =>
+        prisma.tb_match.update({
+          where: { id_match: id },
+          data: {
+            nomor_antrian: null,
+            nomor_lapangan: null,
+            nomor_partai: null
+          }
+        })
+      )
+    );
+
+    console.log(`✅ Reset ${allMatchIds.length} matches`);
+
+    return {
+      success: true,
+      message: `Berhasil reset ${allMatchIds.length} nomor partai`,
+      data: { total_reset: allMatchIds.length }
+    };
+  }
+
+  /**
+   * 5️⃣ Get Numbering Status
+   */
+  async getNumberingStatus(id_lapangan: number) {
+    const fullData = await this.getLapanganFullData(id_lapangan);
+    const lapanganData = fullData.data;
+
+    let totalMatches = 0;
+    let matchesWithNumbers = 0;
+
+    lapanganData.kelas_list.forEach(kelas => {
+      if (kelas.bagan && kelas.bagan.matches) {
+        totalMatches += kelas.bagan.matches.length;
+        matchesWithNumbers += kelas.bagan.matches.filter(
+          m => m.nomor_antrian !== null
+        ).length;
+      }
+    });
+
+    const hasNumbers = matchesWithNumbers > 0;
+    const isComplete = totalMatches > 0 && matchesWithNumbers === totalMatches;
+
+    return {
+      success: true,
+      data: {
+        id_lapangan,
+        nama_lapangan: lapanganData.nama_lapangan,
+        total_matches: totalMatches,
+        matches_with_numbers: matchesWithNumbers,
+        has_numbers: hasNumbers,
+        is_complete: isComplete,
+        percentage: totalMatches > 0 ? (matchesWithNumbers / totalMatches) * 100 : 0
+      }
+    };
+  }
+
+  // ============================================================================
+  // 🔧 HELPER FUNCTIONS
+  // ============================================================================
+
+  /**
+   * Core logic: Generate match assignments
+   */
+ /**
+ * Core logic: Generate match assignments (WITH BYE FILTERING)
+ */
+/**
+ * Core logic: Generate match assignments (WITH BYE FILTERING + DEBUG)
+ */
+private generateMatchAssignments(
+  kelasList: any[],
+  lapanganLetter: string,
+  startingNumber: number,
+  saveToDb: boolean
+): any {
+
+    // ⭐ TEST: Verify isByeMatch is imported correctly
+  console.log(`\n🧪 === TESTING isByeMatch FUNCTION ===`);
+  const testCases = [
+    { ronde: 1, id_peserta_a: 123, id_peserta_b: null, expected: true },
+    { ronde: 1, id_peserta_a: null, id_peserta_b: 456, expected: true },
+    { ronde: 1, id_peserta_a: 123, id_peserta_b: 456, expected: false },
+    { ronde: 2, id_peserta_a: 123, id_peserta_b: null, expected: false },
+  ];
+  
+  testCases.forEach((tc, idx) => {
+    const result = isByeMatch(tc);
+    const status = result === tc.expected ? '✅ PASS' : '❌ FAIL';
+    console.log(`   Test ${idx + 1}: ${status} - ronde=${tc.ronde}, A=${tc.id_peserta_a}, B=${tc.id_peserta_b} → ${result} (expected: ${tc.expected})`);
+  });
+  console.log(`══════════════════════════════════════════\n`);
+  console.log(`\n📊 === GENERATING ASSIGNMENTS (WITH BYE FILTER) ===`);
+  console.log(`   Lapangan: ${lapanganLetter}`);
+  console.log(`   Starting Number: ${startingNumber}`);
+  console.log(`   Total Kelas: ${kelasList.length}`);
+
+  // Separate PEMULA & PRESTASI
+  const pemulaClasses = kelasList.filter(k => k.kategori === 'PEMULA');
+  const prestasiClasses = kelasList.filter(k => k.kategori === 'PRESTASI');
+
+  console.log(`   - PEMULA: ${pemulaClasses.length} kelas`);
+  console.log(`   - PRESTASI: ${prestasiClasses.length} kelas`);
+
+  // Sort by jumlah peserta (DESC)
+  const sortedPemula = [...pemulaClasses].sort((a, b) => b.jumlah_peserta - a.jumlah_peserta);
+  const sortedPrestasi = [...prestasiClasses].sort((a, b) => b.jumlah_peserta - a.jumlah_peserta);
+
+  let currentNumber = startingNumber;
+  const assignments: any[] = [];
+
+  // ═══════════════════════════════════════════════════════════════
+  // 🥋 PROCESS PEMULA FIRST
+  // ═══════════════════════════════════════════════════════════════
+  if (sortedPemula.length > 0) {
+    console.log(`\n🥋 === PROCESSING PEMULA CLASSES ===`);
+    
+    sortedPemula.forEach(kelas => {
+      if (!kelas.bagan || !kelas.bagan.matches) {
+        console.log(`   ⚠️ Kelas ${kelas.id_kelas_kejuaraan}: No bagan/matches`);
+        return;
+      }
+
+      console.log(`\n   📦 Kelas: ${kelas.nama_kelas}`);
+      console.log(`      Peserta: ${kelas.jumlah_peserta}`);
+      console.log(`      Total Matches: ${kelas.bagan.matches.length}`);
+
+      const startRange = currentNumber;
+      const allMatches = [...kelas.bagan.matches].sort((a, b) => {
+        if (a.ronde !== b.ronde) return a.ronde - b.ronde;
+        return a.id_match - b.id_match;
+      });
+
+      let numberedCount = 0;
+      let byeCount = 0;
+
+      allMatches.forEach((match, idx) => {
+        console.log(`\n      🔍 Match ${idx + 1}/${allMatches.length} (ID: ${match.id_match})`);
+        console.log(`         Round: ${match.ronde}`);
+        console.log(`         Peserta A: ${match.id_peserta_a}`);
+        console.log(`         Peserta B: ${match.id_peserta_b}`);
+
+        const isBye = isByeMatch({
+          ronde: match.ronde,
+          id_peserta_a: match.id_peserta_a,
+          id_peserta_b: match.id_peserta_b
+        });
+        console.log(`         → Is BYE? ${isBye ? '✅ YES' : '❌ NO'}`);
+
+        if (isBye) {
+          // ❌ BYE match - NO NUMBER
+          assignments.push({
+            id_match: match.id_match,
+            nomor_antrian: null,
+            nomor_lapangan: null,
+            nomor_partai: null,
+            kelas_id: kelas.id_kelas_kejuaraan,
+            kelas_nama: kelas.nama_kelas,
+            round: match.ronde,
+            note: 'BYE - Skipped'
+          });
+          
+          byeCount++;
+          console.log(`         ⏭️  SKIPPED (BYE) - No number assigned`);
+        } else {
+          // ✅ FIGHT/TBD match - ASSIGN NUMBER
+          assignments.push({
+            id_match: match.id_match,
+            nomor_antrian: currentNumber,
+            nomor_lapangan: lapanganLetter,
+            nomor_partai: `${currentNumber}${lapanganLetter}`,
+            kelas_id: kelas.id_kelas_kejuaraan,
+            kelas_nama: kelas.nama_kelas,
+            round: match.ronde
+          });
+          
+          console.log(`         ✅ NUMBERED: ${currentNumber}${lapanganLetter}`);
+          currentNumber++;
+          numberedCount++;
+        }
+      });
+
+      const endRange = numberedCount > 0 ? currentNumber - 1 : startRange;
+      console.log(`\n      📊 Summary for ${kelas.nama_kelas}:`);
+      console.log(`         Numbered: ${numberedCount} matches (${startRange}${lapanganLetter}-${endRange}${lapanganLetter})`);
+      console.log(`         BYE Skipped: ${byeCount} matches`);
+    });
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // 🏆 PROCESS PRESTASI (Habis per Round)
+  // ═══════════════════════════════════════════════════════════════
+  if (sortedPrestasi.length > 0) {
+    console.log(`\n🏆 === PROCESSING PRESTASI CLASSES ===`);
+
+    // Group by round
+    const matchesByRound = new Map<number, any[]>();
+
+    sortedPrestasi.forEach(kelas => {
+      if (!kelas.bagan || !kelas.bagan.matches) return;
+
+      console.log(`\n   📦 Kelas: ${kelas.nama_kelas}`);
+      console.log(`      Peserta: ${kelas.jumlah_peserta}`);
+      console.log(`      Total Matches: ${kelas.bagan.matches.length}`);
+
+      kelas.bagan.matches.forEach((match: any) => {
+        if (!matchesByRound.has(match.ronde)) {
+          matchesByRound.set(match.ronde, []);
+        }
+
+        matchesByRound.get(match.ronde)!.push({
+          ...match,
+          kelas_id: kelas.id_kelas_kejuaraan,
+          kelas_nama: kelas.nama_kelas,
+          jumlah_peserta: kelas.jumlah_peserta
+        });
+      });
+    });
+
+    // Sort rounds
+    const sortedRounds = Array.from(matchesByRound.keys()).sort((a, b) => a - b);
+    console.log(`\n   🔄 Processing ${sortedRounds.length} rounds: ${sortedRounds.join(', ')}`);
+
+    sortedRounds.forEach(round => {
+      const roundMatches = matchesByRound.get(round)!;
+      const startRange = currentNumber;
+
+      console.log(`\n   🏆 ROUND ${round} - ${roundMatches.length} matches`);
+
+      // Sort: jumlah peserta DESC, then id_match ASC
+      const sortedRoundMatches = roundMatches.sort((a, b) => {
+        if (a.jumlah_peserta !== b.jumlah_peserta) {
+          return b.jumlah_peserta - a.jumlah_peserta;
+        }
+        return a.id_match - b.id_match;
+      });
+
+      let numberedCount = 0;
+      let byeCount = 0;
+
+      sortedRoundMatches.forEach((match, idx) => {
+        console.log(`\n      🔍 Match ${idx + 1}/${sortedRoundMatches.length} (ID: ${match.id_match})`);
+        console.log(`         Kelas: ${match.kelas_nama}`);
+        console.log(`         Round: ${match.ronde}`);
+        console.log(`         Peserta A: ${match.id_peserta_a}`);
+        console.log(`         Peserta B: ${match.id_peserta_b}`);
+
+        const isBye = isByeMatch({
+          ronde: match.ronde,
+          id_peserta_a: match.id_peserta_a,
+          id_peserta_b: match.id_peserta_b
+        });
+        console.log(`         → Is BYE? ${isBye ? '✅ YES' : '❌ NO'}`);
+
+        if (isBye) {
+          // ❌ BYE match - NO NUMBER
+          assignments.push({
+            id_match: match.id_match,
+            nomor_antrian: null,
+            nomor_lapangan: null,
+            nomor_partai: null,
+            kelas_id: match.kelas_id,
+            kelas_nama: match.kelas_nama,
+            round: match.ronde,
+            note: 'BYE - Skipped'
+          });
+          
+          byeCount++;
+          console.log(`         ⏭️  SKIPPED (BYE) - No number assigned`);
+        } else {
+          // ✅ FIGHT/TBD match - ASSIGN NUMBER
+          assignments.push({
+            id_match: match.id_match,
+            nomor_antrian: currentNumber,
+            nomor_lapangan: lapanganLetter,
+            nomor_partai: `${currentNumber}${lapanganLetter}`,
+            kelas_id: match.kelas_id,
+            kelas_nama: match.kelas_nama,
+            round: match.ronde
+          });
+          
+          console.log(`         ✅ NUMBERED: ${currentNumber}${lapanganLetter}`);
+          currentNumber++;
+          numberedCount++;
+        }
+      });
+
+      const endRange = numberedCount > 0 ? currentNumber - 1 : startRange;
+      console.log(`\n      📊 Summary for Round ${round}:`);
+      console.log(`         Numbered: ${numberedCount} matches (${startRange}${lapanganLetter}-${endRange}${lapanganLetter})`);
+      console.log(`         BYE Skipped: ${byeCount} matches`);
+    });
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // 📊 FINAL SUMMARY
+  // ═══════════════════════════════════════════════════════════════
+  const totalNumbered = assignments.filter(a => a.nomor_antrian !== null).length;
+  const totalBye = assignments.filter(a => a.note === 'BYE - Skipped').length;
+
+  const finalRange = totalNumbered > 0 
+    ? `${startingNumber}${lapanganLetter}-${currentNumber - 1}${lapanganLetter}`
+    : '-';
+
+  console.log(`\n═══════════════════════════════════════════════════════`);
+  console.log(`✅ FINAL ASSIGNMENT SUMMARY:`);
+  console.log(`   Fight/TBD matches: ${totalNumbered}`);
+  console.log(`   BYE matches (skipped): ${totalBye}`);
+  console.log(`   Range: ${finalRange}`);
+  console.log(`═══════════════════════════════════════════════════════\n`);
+
+  return {
+    success: true,
+    message: saveToDb 
+      ? `Berhasil generate ${totalNumbered} nomor partai (${totalBye} BYE skipped)` 
+      : `Preview ${totalNumbered} nomor partai (${totalBye} BYE skipped)`,
+    total_matches: totalNumbered,
+    total_bye_skipped: totalBye,
+    range: finalRange,
+    assignments,
+    summary: this.generateSummary(assignments, sortedPemula, sortedPrestasi, lapanganLetter)
+  };
 }
+
+  /**
+   * Generate summary per kelas
+   */
+/**
+ * Generate summary per kelas (ONLY COUNT NUMBERED MATCHES)
+ */
+private generateSummary(assignments: any[], pemulaClasses: any[], prestasiClasses: any[], lapanganLetter: string) {
+  const summary = {
+    pemula: [] as any[],
+    prestasi: [] as any[]
+  };
+
+  // Summary PEMULA
+  pemulaClasses.forEach(kelas => {
+    // ⭐ ONLY count assignments with numbers (exclude BYE)
+    const kelasAssignments = assignments.filter(
+      a => a.kelas_id === kelas.id_kelas_kejuaraan && a.nomor_antrian !== null
+    );
+    
+    if (kelasAssignments.length > 0) {
+      const minNum = Math.min(...kelasAssignments.map(a => a.nomor_antrian));
+      const maxNum = Math.max(...kelasAssignments.map(a => a.nomor_antrian));
+      
+      summary.pemula.push({
+        kelas: kelas.nama_kelas,
+        peserta: kelas.jumlah_peserta,
+        matches: kelasAssignments.length, // ⭐ Only numbered matches
+        range: `${minNum}${lapanganLetter}-${maxNum}${lapanganLetter}`
+      });
+    }
+  });
+
+  // Summary PRESTASI
+  prestasiClasses.forEach(kelas => {
+    // ⭐ ONLY count assignments with numbers (exclude BYE)
+    const kelasAssignments = assignments.filter(
+      a => a.kelas_id === kelas.id_kelas_kejuaraan && a.nomor_antrian !== null
+    );
+    
+    if (kelasAssignments.length > 0) {
+      const minNum = Math.min(...kelasAssignments.map(a => a.nomor_antrian));
+      const maxNum = Math.max(...kelasAssignments.map(a => a.nomor_antrian));
+      
+      summary.prestasi.push({
+        kelas: kelas.nama_kelas,
+        peserta: kelas.jumlah_peserta,
+        matches: kelasAssignments.length, // ⭐ Only numbered matches
+        range: `${minNum}${lapanganLetter}-${maxNum}${lapanganLetter}`
+      });
+    }
+  });
+
+  return summary;
+}
+
+/**
+ * Generate nama kelas (helper)
+ */
+private generateNamaKelas(kelas: any): string {
+  const parts: string[] = []; // ✅ Explicitly type as string[]
+  
+  if (kelas.cabang) parts.push(String(kelas.cabang));
+  if (kelas.kategori_event?.nama_kategori) parts.push(String(kelas.kategori_event.nama_kategori));
+
+  const isPoomsaePemula =
+    kelas.cabang === 'POOMSAE' &&
+    kelas.kategori_event?.nama_kategori === 'Pemula';
+  
+  if (kelas.kelompok?.nama_kelompok && !isPoomsaePemula) {
+    parts.push(String(kelas.kelompok.nama_kelompok));
+  }
+
+  if (kelas.kelas_berat) {
+    const gender = kelas.kelas_berat.jenis_kelamin === 'LAKI_LAKI' ? 'Putra' : 'Putri';
+    parts.push(gender);
+  }
+
+  if (kelas.kelas_berat?.nama_kelas) parts.push(String(kelas.kelas_berat.nama_kelas));
+  if (kelas.poomsae?.nama_kelas) parts.push(String(kelas.poomsae.nama_kelas));
+
+  return parts.length > 0 ? parts.join(' - ') : 'Kelas Tidak Lengkap';
+}
+}
+
+
 
 export default new LapanganService();

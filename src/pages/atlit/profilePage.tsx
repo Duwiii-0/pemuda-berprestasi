@@ -23,6 +23,7 @@ import toast from "react-hot-toast";
 import { useAuth } from "../../context/authContext";
 import { AtletDocumentUploader } from "../../components/atletUploads";
 import { IDCardGenerator } from "../../components/IDCardGenerator";
+import { CertificateGenerator } from "../../components/CertificateGenerator";
 
 // Extend Atlet type untuk include file fields
 interface AtletWithFiles
@@ -1314,6 +1315,9 @@ const Profile = () => {
 
         {/* ID Card Generator */}
         <IDCardGenerator atlet={formData} isEditing={isEditing} />
+
+        {/* Certificate Generator */}
+        {/* <CertificateGenerator atlet={formData} isEditing={isEditing} /> */}
 
         {/* Document Uploader */}
         <AtletDocumentUploader

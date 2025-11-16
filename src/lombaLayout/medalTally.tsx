@@ -42,6 +42,16 @@ interface AggregatedLeaderboard {
   bronze: Array<{ id: number; name: string; dojo: string; kelasName: string }>;
 }
 
+type LevelFilter = 'ALL' | 'PRA_CADET' | 'CADET' | 'JUNIOR' | 'SENIOR' | 'PEMULA';
+
+interface DojoMedalCount {
+  dojo: string;
+  gold: number;
+  silver: number;
+  bronze: number;
+  total: number;
+}
+
 const MedalTallyPage: React.FC<{ idKompetisi?: number }> = ({ idKompetisi }) => {
   const { token } = useAuth();
   const [kompetisi, setKompetisi] = useState<Kompetisi | null>(null);
@@ -50,202 +60,119 @@ const MedalTallyPage: React.FC<{ idKompetisi?: number }> = ({ idKompetisi }) => 
   const [error, setError] = useState('');
   const [selectedView, setSelectedView] = useState<'overall' | number>('overall');
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [levelFilter, setLevelFilter] = useState<LevelFilter>('ALL');
+  const [showJuaraUmum, setShowJuaraUmum] = useState(false);
 
   useEffect(() => {
     if (!idKompetisi) return;
     fetchMedalData();
   }, [idKompetisi]);
 
-const fetchMedalData = async () => {
-  if (!idKompetisi) return;
+  const fetchMedalData = async () => {
+    if (!idKompetisi) return;
 
-  try {
-    setLoading(true);
-    
-    console.log('Fetching medal data for kompetisi:', idKompetisi);
-    
-    // Fetch dari PUBLIC endpoint (NO AUTH!)
-    const response = await fetch(`/api/public/kompetisi/${idKompetisi}/medal-tally`);
-    
-    console.log('Response status:', response.status);
-    
-    if (!response.ok) {
-      throw new Error(`Failed to fetch medal data: ${response.status} ${response.statusText}`);
+    try {
+      setLoading(true);
+      
+      console.log('Fetching medal data for kompetisi:', idKompetisi);
+      
+      const response = await fetch(`/api/public/kompetisi/${idKompetisi}/medal-tally`);
+      
+      console.log('Response status:', response.status);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch medal data: ${response.status} ${response.statusText}`);
+      }
+      
+      const result = await response.json();
+      console.log('Medal data response:', result);
+      
+      if (!result.success) {
+        throw new Error('Failed to fetch medal data');
+      }
+
+      if (result.data.kompetisi) {
+        setKompetisi(result.data.kompetisi);
+      }
+
+      const kelasWithLeaderboard = result.data.kelas
+        .filter((kelas: any) => kelas.bracket && kelas.bracket.matches.length > 0)
+        .map((kelas: any) => {
+          console.log(`Processing kelas: ${kelas.id_kelas_kejuaraan}`);
+          
+          const isPemula = kelas.kategori_event?.nama_kategori?.toLowerCase().includes('pemula') || false;
+          
+          console.log(`Type: ${isPemula ? 'PEMULA' : 'PRESTASI'}`);
+          console.log(`Total matches: ${kelas.bracket.matches.length}`);
+          
+          const leaderboard = transformLeaderboard(kelas.bracket.matches, isPemula);
+          
+          console.log(`Leaderboard:`, leaderboard);
+          
+          return {
+            id_kelas_kejuaraan: kelas.id_kelas_kejuaraan,
+            nama_kelas: kelas.nama_kelas,
+            cabang: kelas.cabang,
+            kategori_event: kelas.kategori_event,
+            kelompok: kelas.kelompok,
+            kelas_berat: kelas.kelas_berat,
+            poomsae: kelas.poomsae,
+            leaderboard
+          };
+        });
+
+      console.log(`Total kelas dengan medali: ${kelasWithLeaderboard.length}`);
+      setKelasList(kelasWithLeaderboard);
+
+    } catch (err: any) {
+      console.error('Error fetching medal data:', err);
+      setError(err.message || 'Gagal memuat data perolehan medali');
+    } finally {
+      setLoading(false);
     }
-    
-    const result = await response.json();
-    console.log('Medal data response:', result);
-    
-    if (!result.success) {
-      throw new Error('Failed to fetch medal data');
-    }
-
-    // Set kompetisi info
-    if (result.data.kompetisi) {
-      setKompetisi(result.data.kompetisi);
-    }
-
-    // Process kelas data dengan bracket
-    const kelasWithLeaderboard = result.data.kelas
-      .filter((kelas: any) => kelas.bracket && kelas.bracket.matches.length > 0)
-      .map((kelas: any) => {
-        console.log(`Processing kelas: ${kelas.id_kelas_kejuaraan}`);
-        
-        // Detect kategori (PEMULA atau PRESTASI)
-        const isPemula = kelas.kategori_event?.nama_kategori?.toLowerCase().includes('pemula') || false;
-        
-        console.log(`Type: ${isPemula ? 'PEMULA' : 'PRESTASI'}`);
-        console.log(`Total matches: ${kelas.bracket.matches.length}`);
-        
-        // Transform leaderboard
-        const leaderboard = transformLeaderboard(kelas.bracket.matches, isPemula);
-        
-        console.log(`Leaderboard:`, leaderboard);
-        
-        return {
-          id_kelas_kejuaraan: kelas.id_kelas_kejuaraan,
-          nama_kelas: kelas.nama_kelas,
-          cabang: kelas.cabang,
-          kategori_event: kelas.kategori_event,
-          kelompok: kelas.kelompok,
-          kelas_berat: kelas.kelas_berat,
-          poomsae: kelas.poomsae,
-          leaderboard
-        };
-      });
-
-    console.log(`Total kelas dengan medali: ${kelasWithLeaderboard.length}`);
-    setKelasList(kelasWithLeaderboard);
-
-  } catch (err: any) {
-    console.error('Error fetching medal data:', err);
-    setError(err.message || 'Gagal memuat data perolehan medali');
-  } finally {
-    setLoading(false);
-  }
-};
-
-  /**
-   * Transform bracket data menjadi leaderboard
-   */
-const transformLeaderboard = (matches: any[], isPemula: boolean) => {
-  const leaderboard = {
-    gold: [] as Array<{ id: number; name: string; dojo: string }>,
-    silver: [] as Array<{ id: number; name: string; dojo: string }>,
-    bronze: [] as Array<{ id: number; name: string; dojo: string }>
   };
 
-  if (!matches || matches.length === 0) {
-    return leaderboard;
-  }
+  const transformLeaderboard = (matches: any[], isPemula: boolean) => {
+    const leaderboard = {
+      gold: [] as Array<{ id: number; name: string; dojo: string }>,
+      silver: [] as Array<{ id: number; name: string; dojo: string }>,
+      bronze: [] as Array<{ id: number; name: string; dojo: string }>
+    };
 
-  if (isPemula) {
-    return transformPemulaLeaderboard(matches);
-  } else {
-    return transformPrestasiLeaderboard(matches);
-  }
-};
-
-  /**
-   * Transform PEMULA leaderboard
-   */
-const transformPemulaLeaderboard = (matches: any[]) => {
-  const leaderboard = {
-    gold: [] as Array<{ id: number; name: string; dojo: string }>,
-    silver: [] as Array<{ id: number; name: string; dojo: string }>,
-    bronze: [] as Array<{ id: number; name: string; dojo: string }>
-  };
-
-  const processedGold = new Set<number>();
-  const processedSilver = new Set<number>();
-  const processedBronze = new Set<number>();
-
-  const round1Matches = matches.filter(m => m.round === 1);
-  const round2Matches = matches.filter(m => m.round === 2);
-  const hasAdditionalMatch = round2Matches.length > 0;
-
-  console.log(`Round 1: ${round1Matches.length}, Round 2: ${round2Matches.length}`);
-
-  if (!hasAdditionalMatch) {
-    // GENAP SCENARIO
-    round1Matches.forEach(match => {
-      if ((match.scoreA > 0 || match.scoreB > 0) && match.participant1 && match.participant2) {
-        const winner = match.scoreA > match.scoreB ? match.participant1 : match.participant2;
-        const loser = match.scoreA > match.scoreB ? match.participant2 : match.participant1;
-
-        if (!processedGold.has(winner.id)) {
-          leaderboard.gold.push({
-            id: winner.id,
-            name: winner.name,
-            dojo: winner.dojo || ''
-          });
-          processedGold.add(winner.id);
-        }
-
-        if (!processedSilver.has(loser.id)) {
-          leaderboard.silver.push({
-            id: loser.id,
-            name: loser.name,
-            dojo: loser.dojo || ''
-          });
-          processedSilver.add(loser.id);
-        }
-      }
-    });
-  } else {
-    // GANJIL SCENARIO
-    const additionalMatch = round2Matches[0];
-    const lastRound1Match = round1Matches[round1Matches.length - 1];
-
-    // Additional match
-    if (additionalMatch && (additionalMatch.scoreA > 0 || additionalMatch.scoreB > 0)) {
-      const winner = additionalMatch.scoreA > additionalMatch.scoreB 
-        ? additionalMatch.participant1 
-        : additionalMatch.participant2;
-      const loser = additionalMatch.scoreA > additionalMatch.scoreB 
-        ? additionalMatch.participant2 
-        : additionalMatch.participant1;
-
-      if (winner) {
-        leaderboard.gold.push({
-          id: winner.id,
-          name: winner.name,
-          dojo: winner.dojo || ''
-        });
-        processedGold.add(winner.id);
-      }
-
-      if (loser) {
-        leaderboard.silver.push({
-          id: loser.id,
-          name: loser.name,
-          dojo: loser.dojo || ''
-        });
-        processedSilver.add(loser.id);
-      }
+    if (!matches || matches.length === 0) {
+      return leaderboard;
     }
 
-    // Round 1 matches
-    round1Matches.forEach(match => {
-      const isLastMatch = match.id === lastRound1Match?.id;
-      const hasScore = match.scoreA > 0 || match.scoreB > 0;
+    if (isPemula) {
+      return transformPemulaLeaderboard(matches);
+    } else {
+      return transformPrestasiLeaderboard(matches);
+    }
+  };
 
-      if (hasScore && match.participant1 && match.participant2) {
-        const winner = match.scoreA > match.scoreB ? match.participant1 : match.participant2;
-        const loser = match.scoreA > match.scoreB ? match.participant2 : match.participant1;
+  const transformPemulaLeaderboard = (matches: any[]) => {
+    const leaderboard = {
+      gold: [] as Array<{ id: number; name: string; dojo: string }>,
+      silver: [] as Array<{ id: number; name: string; dojo: string }>,
+      bronze: [] as Array<{ id: number; name: string; dojo: string }>
+    };
 
-        if (isLastMatch) {
-          // Last match loser = BRONZE
-          if (!processedBronze.has(loser.id)) {
-            leaderboard.bronze.push({
-              id: loser.id,
-              name: loser.name,
-              dojo: loser.dojo || ''
-            });
-            processedBronze.add(loser.id);
-          }
-        } else {
-          // Other matches
+    const processedGold = new Set<number>();
+    const processedSilver = new Set<number>();
+    const processedBronze = new Set<number>();
+
+    const round1Matches = matches.filter(m => m.round === 1);
+    const round2Matches = matches.filter(m => m.round === 2);
+    const hasAdditionalMatch = round2Matches.length > 0;
+
+    console.log(`Round 1: ${round1Matches.length}, Round 2: ${round2Matches.length}`);
+
+    if (!hasAdditionalMatch) {
+      round1Matches.forEach(match => {
+        if ((match.scoreA > 0 || match.scoreB > 0) && match.participant1 && match.participant2) {
+          const winner = match.scoreA > match.scoreB ? match.participant1 : match.participant2;
+          const loser = match.scoreA > match.scoreB ? match.participant2 : match.participant1;
+
           if (!processedGold.has(winner.id)) {
             leaderboard.gold.push({
               id: winner.id,
@@ -264,76 +191,210 @@ const transformPemulaLeaderboard = (matches: any[]) => {
             processedSilver.add(loser.id);
           }
         }
+      });
+    } else {
+      const additionalMatch = round2Matches[0];
+      const lastRound1Match = round1Matches[round1Matches.length - 1];
+
+      if (additionalMatch && (additionalMatch.scoreA > 0 || additionalMatch.scoreB > 0)) {
+        const winner = additionalMatch.scoreA > additionalMatch.scoreB 
+          ? additionalMatch.participant1 
+          : additionalMatch.participant2;
+        const loser = additionalMatch.scoreA > additionalMatch.scoreB 
+          ? additionalMatch.participant2 
+          : additionalMatch.participant1;
+
+        if (winner) {
+          leaderboard.gold.push({
+            id: winner.id,
+            name: winner.name,
+            dojo: winner.dojo || ''
+          });
+          processedGold.add(winner.id);
+        }
+
+        if (loser) {
+          leaderboard.silver.push({
+            id: loser.id,
+            name: loser.name,
+            dojo: loser.dojo || ''
+          });
+          processedSilver.add(loser.id);
+        }
       }
-    });
-  }
 
-  return leaderboard;
-};
+      round1Matches.forEach(match => {
+        const isLastMatch = match.id === lastRound1Match?.id;
+        const hasScore = match.scoreA > 0 || match.scoreB > 0;
 
-  /**
-   * Transform PRESTASI leaderboard
-   */
-const transformPrestasiLeaderboard = (matches: any[]) => {
-  const leaderboard = {
-    gold: [] as Array<{ id: number; name: string; dojo: string }>,
-    silver: [] as Array<{ id: number; name: string; dojo: string }>,
-    bronze: [] as Array<{ id: number; name: string; dojo: string }>
+        if (hasScore && match.participant1 && match.participant2) {
+          const winner = match.scoreA > match.scoreB ? match.participant1 : match.participant2;
+          const loser = match.scoreA > match.scoreB ? match.participant2 : match.participant1;
+
+          if (isLastMatch) {
+            if (!processedBronze.has(loser.id)) {
+              leaderboard.bronze.push({
+                id: loser.id,
+                name: loser.name,
+                dojo: loser.dojo || ''
+              });
+              processedBronze.add(loser.id);
+            }
+          } else {
+            if (!processedGold.has(winner.id)) {
+              leaderboard.gold.push({
+                id: winner.id,
+                name: winner.name,
+                dojo: winner.dojo || ''
+              });
+              processedGold.add(winner.id);
+            }
+
+            if (!processedSilver.has(loser.id)) {
+              leaderboard.silver.push({
+                id: loser.id,
+                name: loser.name,
+                dojo: loser.dojo || ''
+              });
+              processedSilver.add(loser.id);
+            }
+          }
+        }
+      });
+    }
+
+    return leaderboard;
   };
 
-  const totalRounds = Math.max(...matches.map(m => m.round));
-  const finalMatch = matches.find(m => m.round === totalRounds);
+  const transformPrestasiLeaderboard = (matches: any[]) => {
+    const leaderboard = {
+      gold: [] as Array<{ id: number; name: string; dojo: string }>,
+      silver: [] as Array<{ id: number; name: string; dojo: string }>,
+      bronze: [] as Array<{ id: number; name: string; dojo: string }>
+    };
 
-  // Final match winner = GOLD, loser = SILVER
-  if (finalMatch && (finalMatch.scoreA > 0 || finalMatch.scoreB > 0)) {
-    const winner = finalMatch.scoreA > finalMatch.scoreB 
-      ? finalMatch.participant1 
-      : finalMatch.participant2;
-    const loser = finalMatch.scoreA > finalMatch.scoreB 
-      ? finalMatch.participant2 
-      : finalMatch.participant1;
+    const totalRounds = Math.max(...matches.map(m => m.round));
+    const finalMatch = matches.find(m => m.round === totalRounds);
 
-    if (winner) {
-      leaderboard.gold.push({
-        id: winner.id,
-        name: winner.name,
-        dojo: winner.dojo || ''
-      });
-    }
+    if (finalMatch && (finalMatch.scoreA > 0 || finalMatch.scoreB > 0)) {
+      const winner = finalMatch.scoreA > finalMatch.scoreB 
+        ? finalMatch.participant1 
+        : finalMatch.participant2;
+      const loser = finalMatch.scoreA > finalMatch.scoreB 
+        ? finalMatch.participant2 
+        : finalMatch.participant1;
 
-    if (loser) {
-      leaderboard.silver.push({
-        id: loser.id,
-        name: loser.name,
-        dojo: loser.dojo || ''
-      });
-    }
-  }
+      if (winner) {
+        leaderboard.gold.push({
+          id: winner.id,
+          name: winner.name,
+          dojo: winner.dojo || ''
+        });
+      }
 
-  // Semi-final losers = BRONZE
-  const semiRound = totalRounds - 1;
-  const semiMatches = matches.filter(m => m.round === semiRound);
-
-  semiMatches.forEach(match => {
-    if ((match.scoreA > 0 || match.scoreB > 0) && match.participant1 && match.participant2) {
-      const loser = match.scoreA > match.scoreB ? match.participant2 : match.participant1;
-
-      if (loser && !leaderboard.bronze.find(p => p.id === loser.id)) {
-        leaderboard.bronze.push({
+      if (loser) {
+        leaderboard.silver.push({
           id: loser.id,
           name: loser.name,
           dojo: loser.dojo || ''
         });
       }
     }
-  });
 
-  return leaderboard;
-};
+    const semiRound = totalRounds - 1;
+    const semiMatches = matches.filter(m => m.round === semiRound);
 
-  /**
-   * Aggregate semua leaderboard jadi satu
-   */
+    semiMatches.forEach(match => {
+      if ((match.scoreA > 0 || match.scoreB > 0) && match.participant1 && match.participant2) {
+        const loser = match.scoreA > match.scoreB ? match.participant2 : match.participant1;
+
+        if (loser && !leaderboard.bronze.find(p => p.id === loser.id)) {
+          leaderboard.bronze.push({
+            id: loser.id,
+            name: loser.name,
+            dojo: loser.dojo || ''
+          });
+        }
+      }
+    });
+
+    return leaderboard;
+  };
+
+  const extractLevel = (kelas: KelasKejuaraan): string => {
+    const kelompokName = kelas.kelompok?.nama_kelompok?.toUpperCase() || '';
+    
+    if (kelompokName.includes('PRA CADET') || kelompokName.includes('PRACADET')) return 'PRA_CADET';
+    if (kelompokName.includes('CADET')) return 'CADET';
+    if (kelompokName.includes('JUNIOR')) return 'JUNIOR';
+    if (kelompokName.includes('SENIOR')) return 'SENIOR';
+    
+    return 'UNKNOWN';
+  };
+
+  const isPemulaKelas = (kelas: KelasKejuaraan): boolean => {
+    return kelas.kategori_event?.nama_kategori?.toLowerCase().includes('pemula') || false;
+  };
+
+  const getFilteredKelasList = (): KelasKejuaraan[] => {
+    if (levelFilter === 'ALL') {
+      return kelasList.filter(kelas => !isPemulaKelas(kelas));
+    }
+    
+    if (levelFilter === 'PEMULA') {
+      return kelasList.filter(kelas => isPemulaKelas(kelas));
+    }
+    
+    return kelasList.filter(kelas => {
+      if (isPemulaKelas(kelas)) return false;
+      return extractLevel(kelas) === levelFilter;
+    });
+  };
+
+  const calculateJuaraUmum = (): DojoMedalCount[] => {
+    const filteredKelas = getFilteredKelasList();
+    const dojoMap = new Map<string, DojoMedalCount>();
+
+    filteredKelas.forEach(kelas => {
+      kelas.leaderboard.gold.forEach(participant => {
+        const dojo = participant.dojo || 'Tidak Diketahui';
+        if (!dojoMap.has(dojo)) {
+          dojoMap.set(dojo, { dojo, gold: 0, silver: 0, bronze: 0, total: 0 });
+        }
+        const current = dojoMap.get(dojo)!;
+        current.gold += 1;
+        current.total += 1;
+      });
+
+      kelas.leaderboard.silver.forEach(participant => {
+        const dojo = participant.dojo || 'Tidak Diketahui';
+        if (!dojoMap.has(dojo)) {
+          dojoMap.set(dojo, { dojo, gold: 0, silver: 0, bronze: 0, total: 0 });
+        }
+        const current = dojoMap.get(dojo)!;
+        current.silver += 1;
+        current.total += 1;
+      });
+
+      kelas.leaderboard.bronze.forEach(participant => {
+        const dojo = participant.dojo || 'Tidak Diketahui';
+        if (!dojoMap.has(dojo)) {
+          dojoMap.set(dojo, { dojo, gold: 0, silver: 0, bronze: 0, total: 0 });
+        }
+        const current = dojoMap.get(dojo)!;
+        current.bronze += 1;
+        current.total += 1;
+      });
+    });
+
+    return Array.from(dojoMap.values()).sort((a, b) => {
+      if (b.gold !== a.gold) return b.gold - a.gold;
+      if (b.silver !== a.silver) return b.silver - a.silver;
+      if (b.bronze !== a.bronze) return b.bronze - a.bronze;
+      return b.total - a.total;
+    });
+  };
+
   const getAggregatedLeaderboard = (): AggregatedLeaderboard => {
     const aggregated: AggregatedLeaderboard = {
       gold: [],
@@ -341,20 +402,19 @@ const transformPrestasiLeaderboard = (matches: any[]) => {
       bronze: []
     };
 
-    kelasList.forEach(kelas => {
+    const filteredKelas = getFilteredKelasList();
+
+    filteredKelas.forEach(kelas => {
       const kelasName = generateNamaKelas(kelas);
 
-      // Add gold medals
       kelas.leaderboard.gold.forEach(participant => {
         aggregated.gold.push({ ...participant, kelasName });
       });
 
-      // Add silver medals
       kelas.leaderboard.silver.forEach(participant => {
         aggregated.silver.push({ ...participant, kelasName });
       });
 
-      // Add bronze medals
       kelas.leaderboard.bronze.forEach(participant => {
         aggregated.bronze.push({ ...participant, kelasName });
       });
@@ -386,6 +446,18 @@ const transformPrestasiLeaderboard = (matches: any[]) => {
     if (kelas.poomsae?.nama_kelas) parts.push(kelas.poomsae.nama_kelas);
     
     return parts.length > 0 ? parts.join(' - ') : 'Kelas Tidak Lengkap';
+  };
+
+  const getLevelFilterLabel = () => {
+    switch (levelFilter) {
+      case 'ALL': return 'Semua Prestasi';
+      case 'PRA_CADET': return 'Pra Cadet';
+      case 'CADET': return 'Cadet';
+      case 'JUNIOR': return 'Junior';
+      case 'SENIOR': return 'Senior';
+      case 'PEMULA': return 'Pemula';
+      default: return 'All';
+    }
   };
 
   if (loading) {
@@ -434,7 +506,7 @@ const transformPrestasiLeaderboard = (matches: any[]) => {
     : kelasList.find(k => k.id_kelas_kejuaraan === selectedView)?.leaderboard;
 
   const currentEventName = selectedView === 'overall'
-    ? `${kompetisi.nama_event} - Overall`
+    ? `${kompetisi.nama_event} - Overall (${getLevelFilterLabel()})`
     : `${kompetisi.nama_event} - ${generateNamaKelas(kelasList.find(k => k.id_kelas_kejuaraan === selectedView)!)}`;
 
   const handleViewChange = (newView: 'overall' | number) => {
@@ -444,6 +516,17 @@ const transformPrestasiLeaderboard = (matches: any[]) => {
       setIsTransitioning(false);
     }, 150);
   };
+
+  const handleLevelChange = (newLevel: LevelFilter) => {
+    setIsTransitioning(true);
+    setTimeout(() => {
+      setLevelFilter(newLevel);
+      setSelectedView('overall');
+      setIsTransitioning(false);
+    }, 150);
+  };
+
+  const juaraUmumData = calculateJuaraUmum();
 
   return (
     <section className="relative w-full min-h-screen overflow-hidden py-8 md:py-12 pt-32 sm:pt-36 md:pt-40" style={{ backgroundColor: '#F5FBEF' }}>
@@ -502,39 +585,58 @@ const transformPrestasiLeaderboard = (matches: any[]) => {
           </div>
         </div>
 
-        {/* View Selector - Dropdown Style */}
+        {/* Level Filter */}
         <div className="mb-6 sm:mb-8 max-w-4xl mx-auto">
           <label className="block text-sm font-semibold mb-3" style={{ color: '#990D35' }}>
-            Pilih Kategori Lomba:
+            Filter Level:
           </label>
-          <div className="relative">
-            <select
-              value={selectedView}
-              onChange={(e) => handleViewChange(e.target.value === 'overall' ? 'overall' : Number(e.target.value))}
-              className="w-full px-4 sm:px-6 py-3 sm:py-4 rounded-xl font-medium text-sm sm:text-base appearance-none cursor-pointer shadow-lg focus:outline-none focus:ring-2 transition-all"
-              style={{
-                backgroundColor: '#990D35',
-                color: '#F5FBEF',
-                border: '2px solid #990D35',
-              }}
-            >
-              <option value="overall">Overall - Semua Kelas (Total Medali Keseluruhan)</option>
-              {kelasList.map((kelas) => (
-                <option key={kelas.id_kelas_kejuaraan} value={kelas.id_kelas_kejuaraan}>
-                  {generateNamaKelas(kelas)} - Emas: {kelas.leaderboard.gold.length}, Perak: {kelas.leaderboard.silver.length}, Perunggu: {kelas.leaderboard.bronze.length}
-                </option>
-              ))}
-            </select>
-            <div className="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M5 7.5L10 12.5L15 7.5" stroke="#F5FBEF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3">
+            {[
+              { value: 'ALL' as LevelFilter, label: 'Semua Prestasi' },
+              { value: 'PRA_CADET' as LevelFilter, label: 'Pra Cadet' },
+              { value: 'CADET' as LevelFilter, label: 'Cadet' },
+              { value: 'JUNIOR' as LevelFilter, label: 'Junior' },
+              { value: 'SENIOR' as LevelFilter, label: 'Senior' },
+              { value: 'PEMULA' as LevelFilter, label: 'Pemula' }
+            ].map((level) => (
+              <button
+                key={level.value}
+                onClick={() => handleLevelChange(level.value)}
+                className={`px-4 py-2.5 rounded-lg font-medium text-sm transition-all ${
+                  levelFilter === level.value
+                    ? 'shadow-lg'
+                    : 'opacity-60 hover:opacity-100'
+                }`}
+                style={{
+                  backgroundColor: levelFilter === level.value ? '#990D35' : 'white',
+                  color: levelFilter === level.value ? '#F5FBEF' : '#990D35',
+                  border: `2px solid ${levelFilter === level.value ? '#990D35' : '#990D35'}`,
+                }}
+              >
+                {level.label}
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* Medal Table with Animation */}
-        {currentLeaderboard && (
+        {/* Juara Umum Toggle */}
+        <div className="mb-6 sm:mb-8 max-w-4xl mx-auto">
+          <button
+            onClick={() => setShowJuaraUmum(!showJuaraUmum)}
+            className="w-full px-6 py-4 rounded-xl font-bold text-base sm:text-lg transition-all shadow-lg flex items-center justify-center gap-3"
+            style={{
+              backgroundColor: showJuaraUmum ? '#990D35' : 'white',
+              color: showJuaraUmum ? '#F5FBEF' : '#990D35',
+              border: '3px solid #990D35',
+            }}
+          >
+            <Trophy size={24} />
+            {showJuaraUmum ? 'Lihat Perolehan Medali Individual' : `Lihat Juara Umum (${getLevelFilterLabel()})`}
+          </button>
+        </div>
+
+        {/* Juara Umum Table */}
+        {showJuaraUmum && (
           <div 
             className={`max-w-5xl mx-auto mb-12 transition-all duration-300 ${
               isTransitioning 
@@ -542,11 +644,130 @@ const transformPrestasiLeaderboard = (matches: any[]) => {
                 : 'opacity-100 transform scale-100'
             }`}
           >
-            <DojangMedalTable
-              leaderboard={currentLeaderboard}
-              eventName={currentEventName}
-            />
+            <div className="bg-white rounded-2xl shadow-2xl border-2 p-6 sm:p-8" style={{ borderColor: '#990D35' }}>
+              <div className="text-center mb-6">
+                <h3 className="text-2xl sm:text-3xl font-bebas mb-2" style={{ color: '#990D35' }}>
+                  🏆 JUARA UMUM 🏆
+                </h3>
+                <p className="text-sm sm:text-base" style={{ color: '#050505', opacity: 0.7 }}>
+                  {getLevelFilterLabel()} - Total Medali per Dojang
+                </p>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b-2" style={{ borderColor: '#990D35' }}>
+                      <th className="px-4 py-3 text-left text-sm font-bold" style={{ color: '#990D35' }}>Peringkat</th>
+                      <th className="px-4 py-3 text-left text-sm font-bold" style={{ color: '#990D35' }}>Dojang</th>
+                      <th className="px-4 py-3 text-center text-sm font-bold" style={{ color: '#990D35' }}>🥇</th>
+                      <th className="px-4 py-3 text-center text-sm font-bold" style={{ color: '#990D35' }}>🥈</th>
+                      <th className="px-4 py-3 text-center text-sm font-bold" style={{ color: '#990D35' }}>🥉</th>
+                      <th className="px-4 py-3 text-center text-sm font-bold" style={{ color: '#990D35' }}>Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {juaraUmumData.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="px-4 py-8 text-center text-sm" style={{ color: '#050505', opacity: 0.6 }}>
+                          Belum ada data perolehan medali untuk level ini
+                        </td>
+                      </tr>
+                    ) : (
+                      juaraUmumData.map((dojo, index) => (
+                        <tr 
+                          key={dojo.dojo}
+                          className="border-b transition-colors hover:bg-gray-50"
+                          style={{ 
+                            backgroundColor: index === 0 ? 'rgba(255, 215, 0, 0.1)' : 
+                                           index === 1 ? 'rgba(192, 192, 192, 0.1)' : 
+                                           index === 2 ? 'rgba(205, 127, 50, 0.1)' : 'white'
+                          }}
+                        >
+                          <td className="px-4 py-4 font-bold text-lg">
+                            {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}`}
+                          </td>
+                          <td className="px-4 py-4 font-semibold" style={{ color: '#050505' }}>
+                            {dojo.dojo}
+                          </td>
+                          <td className="px-4 py-4 text-center font-bold text-yellow-600">
+                            {dojo.gold}
+                          </td>
+                          <td className="px-4 py-4 text-center font-bold text-gray-500">
+                            {dojo.silver}
+                          </td>
+                          <td className="px-4 py-4 text-center font-bold" style={{ color: '#CD7F32' }}>
+                            {dojo.bronze}
+                          </td>
+                          <td className="px-4 py-4 text-center font-bold text-lg" style={{ color: '#990D35' }}>
+                            {dojo.total}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {juaraUmumData.length > 0 && (
+                <div className="mt-6 text-center text-xs sm:text-sm" style={{ color: '#050505', opacity: 0.6 }}>
+                  * Peringkat berdasarkan: Emas tertinggi → Perak → Perunggu → Total
+                </div>
+              )}
+            </div>
           </div>
+        )}
+
+        {/* Individual Medal View */}
+        {!showJuaraUmum && (
+          <>
+            {/* View Selector - Dropdown Style */}
+            <div className="mb-6 sm:mb-8 max-w-4xl mx-auto">
+              <label className="block text-sm font-semibold mb-3" style={{ color: '#990D35' }}>
+                Pilih Kategori Lomba:
+              </label>
+              <div className="relative">
+                <select
+                  value={selectedView}
+                  onChange={(e) => handleViewChange(e.target.value === 'overall' ? 'overall' : Number(e.target.value))}
+                  className="w-full px-4 sm:px-6 py-3 sm:py-4 rounded-xl font-medium text-sm sm:text-base appearance-none cursor-pointer shadow-lg focus:outline-none focus:ring-2 transition-all"
+                  style={{
+                    backgroundColor: '#990D35',
+                    color: '#F5FBEF',
+                    border: '2px solid #990D35',
+                  }}
+                >
+                  <option value="overall">Overall - {getLevelFilterLabel()} (Total Medali Individual)</option>
+                  {getFilteredKelasList().map((kelas) => (
+                    <option key={kelas.id_kelas_kejuaraan} value={kelas.id_kelas_kejuaraan}>
+                      {generateNamaKelas(kelas)} - Emas: {kelas.leaderboard.gold.length}, Perak: {kelas.leaderboard.silver.length}, Perunggu: {kelas.leaderboard.bronze.length}
+                    </option>
+                  ))}
+                </select>
+                <div className="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M5 7.5L10 12.5L15 7.5" stroke="#F5FBEF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            {/* Medal Table with Animation */}
+            {currentLeaderboard && (
+              <div 
+                className={`max-w-5xl mx-auto mb-12 transition-all duration-300 ${
+                  isTransitioning 
+                    ? 'opacity-0 transform scale-95' 
+                    : 'opacity-100 transform scale-100'
+                }`}
+              >
+                <DojangMedalTable
+                  leaderboard={currentLeaderboard}
+                  eventName={currentEventName}
+                />
+              </div>
+            )}
+          </>
         )}
       </div>
     </section>

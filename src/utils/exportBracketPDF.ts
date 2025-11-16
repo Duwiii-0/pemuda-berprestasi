@@ -456,23 +456,23 @@ console.log('✅ isPrestasi:', isPrestasi);
 let zoom = 1.0;
 
 if (isPrestasi) {
-  // Zoom dinamis untuk PRESTASI (zoom in)
+  // Zoom dinamis untuk Pemula (zoom in)
   if (totalPeserta <= 8) zoom = 0.35;
   else if (totalPeserta <= 16) zoom = 0.25;
   else if (totalPeserta <= 32) zoom = 0.15;
   else zoom = 0.10;
   console.log('📏 PRESTASI zoom:', zoom);
 } else {
-  // ✅ Zoom diperkecil untuk PEMULA (zoom out)
+  // ✅ Zoom diperkecil untuk Prestasi (zoom out)
   if (totalPeserta <= 8) zoom = 1.1;
   else if (totalPeserta <= 16) zoom = 1.05;
   else if (totalPeserta <= 32) zoom = 1;
-  else zoom = 0.9;
+  else zoom = 0.75;
   console.log('📏 PEMULA zoom:', zoom);
 }
 
 // Margin bawah header
-const HEADER_MARGIN_BOTTOM = 15;
+const HEADER_MARGIN_BOTTOM = 5;
 
 // --- Hitung ulang ukuran gambar ---
 displayWidth *= zoom;
