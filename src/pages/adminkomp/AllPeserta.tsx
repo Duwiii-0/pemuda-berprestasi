@@ -53,6 +53,9 @@ const AllPeserta: React.FC = () => {
   const [filterLevel, setFilterLevel] = useState<"pemula" | "prestasi" | null>(
     null
   );
+  const [filterPoomsaeType, setFilterPoomsaeType] = useState<"ALL" | "FREESTYLE" | "RECOGNIZED">(
+    "ALL"
+  );
   const [filterDojang, setFilterDojang] = useState<string>("ALL");
   const { dojangOptions, refreshDojang } = useDojang();
 
@@ -875,6 +878,9 @@ const AllPeserta: React.FC = () => {
       peserta.kelas_kejuaraan?.kategori_event?.nama_kategori?.toUpperCase() ||
       "";
     const matchesLevel = !filterLevel || level === filterLevel.toUpperCase();
+    const poomsaeType = peserta.kelas_kejuaraan?.poomsae?.poomsaeType?.toUpperCase() || "";
+    const matchesPoomsaeType =
+      filterPoomsaeType === "ALL" || poomsaeType === filterPoomsaeType.toUpperCase();
     const pesertaDojang = peserta.is_team
       ? peserta.anggota_tim?.[0]?.atlet?.dojang?.id_dojang?.toString() || ""
       : peserta.atlet?.dojang?.id_dojang?.toString() || "";
@@ -888,6 +894,7 @@ const AllPeserta: React.FC = () => {
       matchesKelasBerat &&
       matchesKelasUsia &&
       matchesLevel &&
+      matchesPoomsaeType &&
       matchesDojang
     );
   });
@@ -906,6 +913,7 @@ const AllPeserta: React.FC = () => {
     filterKelasBerat,
     filterKelasUsia,
     filterLevel,
+    filterPoomsaeType,
     filterDojang,
     itemsPerPage,
   ]);
@@ -1234,6 +1242,29 @@ const AllPeserta: React.FC = () => {
                         {opt.label}
                       </option>
                     ))}
+                  </select>
+                </div>
+
+                <div className="col-span-2 sm:col-span-1">
+                  <label
+                    className="block text-xs mb-2 font-medium"
+                    style={{ color: "#050505", opacity: 0.6 }}
+                  >
+                    Tipe Poomsae
+                  </label>
+                  <select
+                    value={filterPoomsaeType}
+                    onChange={(e) => setFilterPoomsaeType(e.target.value as any)}
+                    className="w-full px-3 py-2.5 rounded-xl border shadow-sm focus:ring-2 focus:border-transparent text-sm transition-colors"
+                    style={{
+                      borderColor: "#990D35",
+                      backgroundColor: "#F5FBEF",
+                      color: "#050505",
+                    }}
+                  >
+                    <option value="ALL">Semua Tipe Poomsae</option>
+                    <option value="FREESTYLE">Freestyle</option>
+                    <option value="RECOGNIZED">Recognized</option>
                   </select>
                 </div>
 
