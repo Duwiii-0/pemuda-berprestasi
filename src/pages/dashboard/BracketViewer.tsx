@@ -48,113 +48,117 @@ useEffect(() => {
   if (!kelasId || !token) return;
 
   const fetchKelasData = async () => {
-    try {
-      setLoading(true);
-      setError(null);
+  try {
+    setLoading(true);
+    setError(null);
+    
+    // ✅ HELPER FUNCTION dengan proper typing
+    const getKompetisiId = async (): Promise<number | null> => {
+      const currentUser = user as User | null;
       
-      // ✅ HELPER FUNCTION dengan proper typing
-      const getKompetisiId = async (): Promise<number | null> => {
-        const currentUser = user as User | null;
-        
-        if (!currentUser?.pelatih) {
-          console.warn('⚠️ No pelatih data in user');
-          return null;
-        }
+      if (!currentUser?.pelatih) {
+        console.warn('⚠️ No pelatih data in user');
+        return null;
+      }
 
-        if (currentUser.pelatih.dojang?.id_kompetisi) {
-          console.log('✅ Found from user.pelatih.dojang:', currentUser.pelatih.dojang.id_kompetisi);
-          return currentUser.pelatih.dojang.id_kompetisi;
-        }
-        
-        if (currentUser.pelatih.id_kompetisi) {
-          console.log('✅ Found from user.pelatih:', currentUser.pelatih.id_kompetisi);
-          return currentUser.pelatih.id_kompetisi;
-        }
-        
-        if (currentUser.pelatih.id_dojang) {
-          console.log('⚠️ Fetching dojang data for kompetisi ID...');
-          try {
-            const dojangResponse = await fetch(
-              `${import.meta.env.VITE_API_URL}/dojang/${currentUser.pelatih.id_dojang}`,
-              { headers: { 'Authorization': `Bearer ${token}` } }
-            );
-            
-            if (dojangResponse.ok) {
-              const dojangData = await dojangResponse.json();
-              const kompetisiId = dojangData.data?.id_kompetisi || dojangData.id_kompetisi;
-              if (kompetisiId) {
-                console.log('✅ Found from dojang API:', kompetisiId);
-                return kompetisiId;
-              }
-            }
-          } catch (err) {
-            console.error('❌ Error fetching dojang:', err);
-          }
-        }
-        
-        console.warn('⚠️ No kompetisi in user data, fetching active competition...');
+      if (currentUser.pelatih.dojang?.id_kompetisi) {
+        console.log('✅ Found from user.pelatih.dojang:', currentUser.pelatih.dojang.id_kompetisi);
+        return currentUser.pelatih.dojang.id_kompetisi;
+      }
+      
+      if (currentUser.pelatih.id_kompetisi) {
+        console.log('✅ Found from user.pelatih:', currentUser.pelatih.id_kompetisi);
+        return currentUser.pelatih.id_kompetisi;
+      }
+      
+      if (currentUser.pelatih.id_dojang) {
+        console.log('⚠️ Fetching dojang data for kompetisi ID...');
         try {
-          const kompetisiResponse = await fetch(
-            `${import.meta.env.VITE_API_URL}/kompetisi`,
+          const dojangResponse = await fetch(
+            `${import.meta.env.VITE_API_URL}/dojang/${currentUser.pelatih.id_dojang}`,
             { headers: { 'Authorization': `Bearer ${token}` } }
           );
           
-          if (kompetisiResponse.ok) {
-            const kompetisiList = await kompetisiResponse.json();
-            const activeKompetisi = kompetisiList.data?.find(
-              (k: any) => k.status === 'SEDANG_DIMULAI' || k.status === 'AKAN_DIMULAI'
-            );
-            
-            if (activeKompetisi) {
-              console.log('✅ Using active kompetisi:', activeKompetisi.id_kompetisi);
-              return activeKompetisi.id_kompetisi;
+          if (dojangResponse.ok) {
+            const dojangData = await dojangResponse.json();
+            const kompetisiId = dojangData.data?.id_kompetisi || dojangData.id_kompetisi;
+            if (kompetisiId) {
+              console.log('✅ Found from dojang API:', kompetisiId);
+              return kompetisiId;
             }
           }
         } catch (err) {
-          console.error('❌ Error fetching kompetisi list:', err);
+          console.error('❌ Error fetching dojang:', err);
         }
-        
-        return null;
-      };
-
-      const kompetisiId = await getKompetisiId();
-      
-      if (!kompetisiId) {
-        throw new Error('Kompetisi tidak ditemukan. Pastikan dojang sudah terdaftar dalam kompetisi aktif.');
       }
-
-      console.log('🔍 Fetching bracket for kompetisi:', kompetisiId, 'kelas:', kelasId);
-
-      // Fetch data bracket
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/kompetisi/${kompetisiId}/brackets/${kelasId}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`
+      
+      console.warn('⚠️ No kompetisi in user data, fetching active competition...');
+      try {
+        const kompetisiResponse = await fetch(
+          `${import.meta.env.VITE_API_URL}/kompetisi`,
+          { headers: { 'Authorization': `Bearer ${token}` } }
+        );
+        
+        if (kompetisiResponse.ok) {
+          const kompetisiList = await kompetisiResponse.json();
+          const activeKompetisi = kompetisiList.data?.find(
+            (k: any) => k.status === 'SEDANG_DIMULAI' || k.status === 'AKAN_DIMULAI'
+          );
+          
+          if (activeKompetisi) {
+            console.log('✅ Using active kompetisi:', activeKompetisi.id_kompetisi);
+            return activeKompetisi.id_kompetisi;
           }
         }
-      );
-
-      if (!response.ok) {
-        if (response.status === 404) {
-          throw new Error('Bracket belum dibuat untuk kelas ini');
-        }
-        throw new Error('Gagal memuat data bracket');
+      } catch (err) {
+        console.error('❌ Error fetching kompetisi list:', err);
       }
-
-      const result = await response.json();
-      console.log('📊 Bracket data received:', result);
-      console.log('📊 Raw participants from API:', result.data?.participants); // ⭐ LOG
-      console.log('📊 Participants count:', result.data?.participants?.length || 0); // ⭐ LOG
       
-      // ✅ Transform data dengan PROPER PARTICIPANT MAPPING
-      if (result.data) {
-        // ⭐ MAP participants ke format peserta_kompetisi yang expected
-        const pesertaKompetisi = (result.data.participants || []).map((p: any) => ({
+      return null;
+    };
+
+    const kompetisiId = await getKompetisiId();
+    
+    if (!kompetisiId) {
+      throw new Error('Kompetisi tidak ditemukan. Pastikan dojang sudah terdaftar dalam kompetisi aktif.');
+    }
+
+    console.log('🔍 Fetching bracket for kompetisi:', kompetisiId, 'kelas:', kelasId);
+
+    // Fetch data bracket
+    const response = await fetch(
+      `${import.meta.env.VITE_API_URL}/kompetisi/${kompetisiId}/brackets/${kelasId}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      }
+    );
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        throw new Error('Bracket belum dibuat untuk kelas ini');
+      }
+      throw new Error('Gagal memuat data bracket');
+    }
+
+    const result = await response.json();
+    console.log('📊 Bracket data received:', result);
+    console.log('📊 Raw participants from API:', result.data?.participants);
+    console.log('📊 Participants count:', result.data?.participants?.length || 0);
+    
+    // ✅ Transform data dengan PROPER PARTICIPANT MAPPING
+    if (result.data) {
+      // ⭐ FALLBACK: Jika participants kosong, fetch dari endpoint lain
+      let pesertaKompetisi = [];
+      
+      if (result.data.participants && result.data.participants.length > 0) {
+        // ✅ CASE 1: Backend mengirim participants
+        pesertaKompetisi = result.data.participants.map((p: any) => ({
           id_peserta_kompetisi: p.id,
           id_atlet: p.atletId,
           is_team: p.isTeam || false,
-          status: 'APPROVED', // Peserta di bracket pasti approved
+          status: 'APPROVED',
           atlet: p.isTeam ? undefined : {
             id_atlet: p.atletId || 0,
             nama_atlet: p.name || '',
@@ -169,41 +173,100 @@ useEffect(() => {
             }
           })) : undefined
         }));
-
-        console.log(`✅ Transformed ${pesertaKompetisi.length} participants`); // ⭐ LOG
-
-        const transformedData = {
-          id_kelas_kejuaraan: parseInt(kelasId),
-          cabang: result.data.cabang || 'KYORUGI',
-          kategori_event: result.data.kategori_event || { nama_kategori: 'PEMULA' },
-          kelompok: result.data.kelompok || { nama_kelompok: '', usia_min: 0, usia_max: 0 },
-          kelas_berat: result.data.kelas_berat,
-          poomsae: result.data.poomsae,
-          jenis_kelamin: result.data.jenis_kelamin || 'LAKI_LAKI',
-          kompetisi: result.data.kompetisi || {
-            id_kompetisi: kompetisiId,
-            nama_event: "Tournament",
-            tanggal_mulai: new Date().toISOString(),
-            tanggal_selesai: new Date().toISOString(),
-            lokasi: "",
-            status: "SEDANG_DIMULAI"
-          },
-          peserta_kompetisi: pesertaKompetisi, // ⭐ GUNAKAN ARRAY YANG SUDAH DI-MAP
-          bagan: []
-        };
         
-        console.log('✅ Final kelasData:', transformedData); // ⭐ LOG
-        console.log('✅ peserta_kompetisi count:', transformedData.peserta_kompetisi.length); // ⭐ LOG
+        console.log(`✅ Got ${pesertaKompetisi.length} participants from bracket API`);
         
-        setKelasData(transformedData);
+      } else {
+        // ⚠️ CASE 2: Backend tidak kirim participants - FETCH MANUAL
+        console.warn('⚠️ No participants in bracket response, fetching manually...');
+        
+        try {
+          const participantsResponse = await fetch(
+            `${import.meta.env.VITE_API_URL}/kompetisi/${kompetisiId}/atlet`,
+            {
+              headers: {
+                'Authorization': `Bearer ${token}`
+              }
+            }
+          );
+          
+          if (participantsResponse.ok) {
+            const participantsData = await participantsResponse.json();
+            console.log('📥 Manual participants fetch:', participantsData);
+            
+            // Filter by kelas and APPROVED status
+            const allParticipants = participantsData.data || [];
+            const kelasParticipants = allParticipants.filter((p: any) => 
+              p.id_kelas_kejuaraan === parseInt(kelasId) && 
+              p.status === 'APPROVED'
+            );
+            
+            console.log(`✅ Found ${kelasParticipants.length} approved participants for kelas ${kelasId}`);
+            
+            // Transform ke format yang dibutuhkan
+            pesertaKompetisi = kelasParticipants.map((p: any) => ({
+              id_peserta_kompetisi: p.id_peserta_kompetisi,
+              id_atlet: p.id_atlet,
+              is_team: p.is_team || false,
+              status: p.status,
+              atlet: p.is_team ? undefined : {
+                id_atlet: p.atlet?.id_atlet || 0,
+                nama_atlet: p.atlet?.nama_atlet || '',
+                dojang: {
+                  nama_dojang: p.atlet?.dojang?.nama_dojang || ''
+                }
+              },
+              anggota_tim: p.is_team && p.anggota_tim ? p.anggota_tim.map((member: any) => ({
+                atlet: {
+                  nama_atlet: member.atlet?.nama_atlet || '',
+                  dojang: { 
+                    nama_dojang: member.atlet?.dojang?.nama_dojang || '' 
+                  }
+                }
+              })) : undefined
+            }));
+            
+            console.log(`✅ Transformed ${pesertaKompetisi.length} participants from manual fetch`);
+          } else {
+            console.error('❌ Failed to fetch participants manually');
+          }
+        } catch (err) {
+          console.error('❌ Error fetching participants manually:', err);
+        }
       }
-    } catch (err: any) {
-      console.error('❌ Error fetching bracket:', err);
-      setError(err.message);
-    } finally {
-      setLoading(false);
+
+      const transformedData = {
+        id_kelas_kejuaraan: parseInt(kelasId),
+        cabang: result.data.cabang || 'KYORUGI',
+        kategori_event: result.data.kategori_event || { nama_kategori: 'PEMULA' },
+        kelompok: result.data.kelompok || { nama_kelompok: '', usia_min: 0, usia_max: 0 },
+        kelas_berat: result.data.kelas_berat,
+        poomsae: result.data.poomsae,
+        jenis_kelamin: result.data.jenis_kelamin || 'LAKI_LAKI',
+        kompetisi: result.data.kompetisi || {
+          id_kompetisi: kompetisiId,
+          nama_event: "Tournament",
+          tanggal_mulai: new Date().toISOString(),
+          tanggal_selesai: new Date().toISOString(),
+          lokasi: "",
+          status: "SEDANG_DIMULAI"
+        },
+        peserta_kompetisi: pesertaKompetisi, // ⭐ GUNAKAN HASIL MAPPING (fallback jika perlu)
+        bagan: []
+      };
+      
+      console.log('✅ Final kelasData:', transformedData);
+      console.log('✅ peserta_kompetisi count:', transformedData.peserta_kompetisi.length);
+      
+      setKelasData(transformedData);
     }
-  };
+  } catch (err: any) {
+    console.error('❌ Error fetching bracket:', err);
+    setError(err.message);
+  } finally {
+    setLoading(false);
+  }
+};
 
   fetchKelasData();
 }, [kelasId, token, user]);
