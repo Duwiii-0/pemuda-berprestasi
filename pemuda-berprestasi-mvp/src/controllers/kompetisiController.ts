@@ -572,9 +572,6 @@ static async getBracketsListPublic(req: Request, res: Response) {
 /**
  * Get bracket by specific class
  */
-/**
- * Get bracket by specific class
- */
 static async getBracketByClass(req: Request, res: Response) {
   try {
     const { id, kelasKejuaraanId } = req.params;
@@ -652,8 +649,7 @@ static async getBracketByClass(req: Request, res: Response) {
                     anggota_tim: {
                       include: {
                         atlet: {
-                          select: {
-                            nama_atlet: true,
+                          include: {
                             dojang: {
                               select: {
                                 nama_dojang: true
@@ -679,8 +675,7 @@ static async getBracketByClass(req: Request, res: Response) {
                     anggota_tim: {
                       include: {
                         atlet: {
-                          select: {
-                            nama_atlet: true,
+                          include: {
                             dojang: {
                               select: {
                                 nama_dojang: true
@@ -713,8 +708,12 @@ static async getBracketByClass(req: Request, res: Response) {
             anggota_tim: {
               include: {
                 atlet: {
-                  select: {
-                    nama_atlet: true
+                  include: {
+                    dojang: {
+                      select: {
+                        nama_dojang: true
+                      }
+                    }
                   }
                 }
               }
@@ -779,21 +778,29 @@ static async getBracketByClass(req: Request, res: Response) {
       };
     });
 
-    // ✅ Transform participants
-    const participants = kelas.peserta_kompetisi.map(p => ({
-      id: p.id_peserta_kompetisi,
-      atletId: p.id_atlet,
-      name: p.is_team 
-        ? p.anggota_tim?.map(t => t.atlet.nama_atlet).join(', ') || 'Team'
-        : p.atlet?.nama_atlet || '',
-      dojang: p.is_team
-        ? p.anggota_tim?.[0]?.atlet?.dojang?.nama_dojang || ''
-        : p.atlet?.dojang?.nama_dojang || '',
-      isTeam: p.is_team,
-      teamMembers: p.is_team 
-        ? p.anggota_tim?.map(t => t.atlet.nama_atlet) || []
-        : undefined
-    }));
+    // ✅ Transform participants - PERBAIKAN TYPE SAFETY
+    const participants = kelas.peserta_kompetisi.map(p => {
+      // Safely access nested properties
+      const teamDojangName = p.anggota_tim && p.anggota_tim.length > 0 
+        ? (p.anggota_tim[0].atlet as any)?.dojang?.nama_dojang || ''
+        : '';
+      
+      const soloAtletName = p.atlet?.nama_atlet || '';
+      const soloDojoName = (p.atlet as any)?.dojang?.nama_dojang || '';
+      
+      return {
+        id: p.id_peserta_kompetisi,
+        atletId: p.id_atlet,
+        name: p.is_team 
+          ? p.anggota_tim?.map(t => t.atlet.nama_atlet).join(', ') || 'Team'
+          : soloAtletName,
+        dojang: p.is_team ? teamDojangName : soloDojoName,
+        isTeam: p.is_team,
+        teamMembers: p.is_team 
+          ? p.anggota_tim?.map(t => t.atlet.nama_atlet) || []
+          : undefined
+      };
+    });
 
     // ✅ Build response dengan semua data yang dibutuhkan
     const response = {
