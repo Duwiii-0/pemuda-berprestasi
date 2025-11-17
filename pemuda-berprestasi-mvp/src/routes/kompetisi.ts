@@ -83,6 +83,13 @@ router.put(
 // ============================================================
 // TOURNAMENT/BRACKET MANAGEMENT ROUTES
 // ============================================================
+
+// ✅ NEW: Get list of all brackets (HARUS SEBELUM /:id/brackets/:kelasKejuaraanId)
+router.get(
+  "/:id/brackets/list",
+  KompetisiController.getBracketsListPublic
+);
+
 router.post(
   "/:id/brackets/generate",
   validateRequest(kompetisiValidation.generateBracket),
@@ -125,11 +132,13 @@ router.delete(
   KompetisiController.deleteBracket
 );
 
+// ✅ Get specific bracket by class (HARUS SETELAH /list)
 router.get(
   "/:id/brackets/:kelasKejuaraanId",
   KompetisiController.getBracketByClass
 );
 
+// ✅ Get all brackets (general)
 router.get(
   "/:id/brackets", 
   KompetisiController.getBrackets

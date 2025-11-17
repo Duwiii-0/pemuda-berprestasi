@@ -480,6 +480,75 @@ static async getBrackets(req: Request, res: Response) {
   }
 }
 
+static async getBracketsListPublic(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    
+    const kompetisiId = parseInt(id);
+    
+    if (isNaN(kompetisiId)) {
+      return sendError(res, 'ID kompetisi tidak valid', 400);
+    }
+
+    console.log(`📋 Fetching brackets list for kompetisi: ${kompetisiId}`);
+
+    // Fetch kelas yang sudah punya bracket
+    const kelasKejuaraan = await prisma.tb_kelas_kejuaraan.findMany({
+      where: {
+        id_kompetisi: kompetisiId,
+        bracket_status: {
+          not: 'not_created' // Hanya tampilkan yang sudah ada bracket
+        }
+      },
+      include: {
+        kategori_event: true,
+        kelompok: true,
+        kelas_berat: true,
+        poomsae: true,
+        _count: {
+          select: { peserta_kompetisi: true }
+        }
+      },
+      orderBy: [
+        { cabang: 'asc' },
+        { kategori_event: { nama_kategori: 'asc' } },
+        { kelompok: { nama_kelompok: 'asc' } }
+      ]
+    });
+
+    console.log(`✅ Found ${kelasKejuaraan.length} brackets`);
+
+    // Format data
+    const formattedData = kelasKejuaraan.map(kelas => ({
+      id_kelas_kejuaraan: kelas.id_kelas_kejuaraan,
+      cabang: kelas.cabang,
+      kategori_event: {
+        nama_kategori: kelas.kategori_event.nama_kategori
+      },
+      kelompok: {
+        nama_kelompok: kelas.kelompok.nama_kelompok,
+        usia_min: kelas.kelompok.usia_min,
+        usia_max: kelas.kelompok.usia_max
+      },
+      kelas_berat: kelas.kelas_berat ? {
+        nama_kelas: kelas.kelas_berat.nama_kelas
+      } : null,
+      poomsae: kelas.poomsae ? {
+        nama_kelas: kelas.poomsae.nama_kelas
+      } : null,
+      jenis_kelamin: kelas.jenis_kelamin,
+      peserta_count: kelas._count.peserta_kompetisi,
+      bracket_status: kelas.bracket_status
+    }));
+
+    return sendSuccess(res, formattedData, 'Daftar bracket berhasil diambil');
+
+  } catch (error: any) {
+    console.error('❌ Error fetching brackets list:', error);
+    return sendError(res, error.message || 'Gagal memuat daftar bracket', 500);
+  }
+}
+
 /**
  * Get bracket by specific class
  */

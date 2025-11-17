@@ -1,8 +1,37 @@
 import React, { useEffect, useState } from "react";
-import { GitBranch, Trophy, Eye, Loader, Menu, Users, Award } from "lucide-react";
+import { GitBranch, Trophy, Eye, Loader, Menu, Award } from "lucide-react"; // ✅ Hapus Users dari import
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/authContext";
 import NavbarDashboard from "../../components/navbar/navbarDashboard";
+
+// ✅ TAMBAHKAN TYPE DEFINITIONS
+interface Dojang {
+  id_dojang: number;
+  nama_dojang: string;
+  id_kompetisi?: number;
+}
+
+interface Pelatih {
+  id_pelatih: number;
+  nama_pelatih: string;
+  id_dojang: number;
+  no_telp: string;
+  kota: string;
+  provinsi: string;
+  alamat: string;
+  tanggal_lahir: string;
+  nik: string;
+  jenis_kelamin: "LAKI_LAKI" | "PEREMPUAN" | null;
+  dojang?: Dojang; // ✅ Optional dojang relation
+  id_kompetisi?: number; // ✅ Optional direct kompetisi ID
+}
+
+interface User {
+  id_akun: number;
+  username: string;
+  role: string;
+  pelatih?: Pelatih;
+}
 
 interface StatsCardProps {
   icon: React.ComponentType<{ size?: number; className?: string }>;
@@ -51,30 +80,81 @@ const BracketList: React.FC = () => {
       try {
         setLoading(true);
         
-        // ✅ PERBAIKAN: Ambil kompetisi ID dengan benar
-        let kompetisiId;
-        
-        if (user?.pelatih?.dojang?.id_kompetisi) {
-          kompetisiId = user.pelatih.dojang.id_kompetisi;
-          console.log('✅ Found kompetisi from pelatih.dojang:', kompetisiId);
-        } else if (user?.pelatih?.id_dojang) {
-          console.log('⚠️ Fetching dojang data for kompetisi ID...');
-          const dojangResponse = await fetch(
-            `${import.meta.env.VITE_API_URL}/dojang/${user.pelatih.id_dojang}`,
-            {
-              headers: { 'Authorization': `Bearer ${token}` }
-            }
-          );
+        // ✅ HELPER FUNCTION dengan proper typing
+        const getKompetisiId = async (): Promise<number | null> => {
+          // Cast user untuk TypeScript
+          const currentUser = user as User | null;
           
-          if (dojangResponse.ok) {
-            const dojangData = await dojangResponse.json();
-            kompetisiId = dojangData.data?.id_kompetisi;
-            console.log('✅ Found kompetisi from dojang API:', kompetisiId);
+          if (!currentUser?.pelatih) {
+            console.warn('⚠️ No pelatih data in user');
+            return null;
           }
-        }
+
+          // Try 1: From user.pelatih.dojang
+          if (currentUser.pelatih.dojang?.id_kompetisi) {
+            console.log('✅ Found from user.pelatih.dojang:', currentUser.pelatih.dojang.id_kompetisi);
+            return currentUser.pelatih.dojang.id_kompetisi;
+          }
+          
+          // Try 2: From user.pelatih directly
+          if (currentUser.pelatih.id_kompetisi) {
+            console.log('✅ Found from user.pelatih:', currentUser.pelatih.id_kompetisi);
+            return currentUser.pelatih.id_kompetisi;
+          }
+          
+          // Try 3: Fetch from dojang endpoint
+          if (currentUser.pelatih.id_dojang) {
+            console.log('⚠️ Fetching dojang data for kompetisi ID...');
+            try {
+              const dojangResponse = await fetch(
+                `${import.meta.env.VITE_API_URL}/dojang/${currentUser.pelatih.id_dojang}`,
+                { headers: { 'Authorization': `Bearer ${token}` } }
+              );
+              
+              if (dojangResponse.ok) {
+                const dojangData = await dojangResponse.json();
+                const kompetisiId = dojangData.data?.id_kompetisi || dojangData.id_kompetisi;
+                if (kompetisiId) {
+                  console.log('✅ Found from dojang API:', kompetisiId);
+                  return kompetisiId;
+                }
+              }
+            } catch (err) {
+              console.error('❌ Error fetching dojang:', err);
+            }
+          }
+          
+          // Try 4: Get active kompetisi from list
+          console.warn('⚠️ No kompetisi in user data, fetching active competition...');
+          try {
+            const kompetisiResponse = await fetch(
+              `${import.meta.env.VITE_API_URL}/kompetisi`,
+              { headers: { 'Authorization': `Bearer ${token}` } }
+            );
+            
+            if (kompetisiResponse.ok) {
+              const kompetisiList = await kompetisiResponse.json();
+              const activeKompetisi = kompetisiList.data?.find(
+                (k: any) => k.status === 'SEDANG_DIMULAI' || k.status === 'AKAN_DIMULAI'
+              );
+              
+              if (activeKompetisi) {
+                console.log('✅ Using active kompetisi:', activeKompetisi.id_kompetisi);
+                return activeKompetisi.id_kompetisi;
+              }
+            }
+          } catch (err) {
+            console.error('❌ Error fetching kompetisi list:', err);
+          }
+          
+          return null;
+        };
+
+        const kompetisiId = await getKompetisiId();
         
         if (!kompetisiId) {
           console.error('❌ No kompetisi found for user');
+          setKelasKejuaraan([]);
           return;
         }
 
@@ -90,19 +170,25 @@ const BracketList: React.FC = () => {
           }
         );
 
-        if (!response.ok) throw new Error('Failed to fetch brackets');
+        if (!response.ok) {
+          throw new Error('Failed to fetch brackets');
+        }
 
         const result = await response.json();
         console.log('📊 Brackets list received:', result);
         setKelasKejuaraan(result.data || []);
+        
       } catch (error) {
         console.error('❌ Error fetching brackets:', error);
+        setKelasKejuaraan([]);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchBrackets();
+    if (token && user) {
+      fetchBrackets();
+    }
   }, [token, user]);
 
   useEffect(() => {
