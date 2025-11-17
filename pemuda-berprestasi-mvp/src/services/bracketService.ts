@@ -915,18 +915,16 @@ static async generatePrestasiBracket(
   baganId: number,
   participants: Participant[],
   byeParticipantIds?: number[],
-  dojangSeparation?: { enabled: boolean; mode?: 'STRICT' | 'BALANCED' } // mode deprecated, always STRICT
+  dojangSeparation?: { enabled: boolean; mode?: 'STRICT' | 'BALANCED' }
 ): Promise<Match[]> {
   const matches: Match[] = [];
-
   const participantCount = participants.length;
   
-  // ✅ Support 2-3 participants
   if (participantCount < 2) {
     throw new Error("Minimal 2 peserta diperlukan untuk bracket prestasi");
   }
 
-  // ✅ HANDLE 2 PARTICIPANTS (langsung final)
+  // ✅ HANDLE 2 PARTICIPANTS
   if (participantCount === 2) {
     console.log(`🎯 PRESTASI: 2 participants → Direct Final`);
     
@@ -954,7 +952,7 @@ static async generatePrestasiBracket(
       scoreB: 0,
     });
 
-    console.log(`   ✅ Final match created: ${shuffled[0].name} vs ${shuffled[1].name}`);
+    console.log(`   ✅ Final match created`);
     return matches;
   }
 
@@ -1008,12 +1006,11 @@ static async generatePrestasiBracket(
       scoreB: 0,
     });
 
-    console.log(`   🥊 R1 Match: ${shuffled[0].name} vs ${shuffled[1].name}`);
-    console.log(`   🏆 Final: ${shuffled[2].name} (BYE) vs Winner of R1`);
+    console.log(`   ✅ Round 1 + Final created`);
     return matches;
   }
 
-  // ✅ EXISTING LOGIC for 4+ participants
+  // ✅ EXISTING LOGIC 4+ participants
   const targetSize = Math.pow(2, Math.ceil(Math.log2(participantCount)));
   const byesNeeded = targetSize - participantCount;
   const totalMatchesR1 = targetSize / 2;
@@ -1024,88 +1021,72 @@ static async generatePrestasiBracket(
   console.log(`   Target size: ${targetSize}`);
   console.log(`   BYEs needed: ${byesNeeded}`);
   console.log(`   Total R1 matches: ${totalMatchesR1}`);
-  console.log(`   Half size (split point): ${halfSize}`);
 
-  // ⭐⭐⭐ VALIDATION PRESTASI R1 SEPARATION ⭐⭐⭐
+  // ⭐ VALIDATION
   let isUnavoidable = false;
   
   if (dojangSeparation?.enabled) {
     console.log(`\n🔒 STRICT MODE ENABLED`);
-    
     const validation = this.validatePrestasiR1Separation(participants, targetSize);
     isUnavoidable = validation.isUnavoidable;
     
-    // Show warnings if unavoidable
     if (validation.warnings.length > 0) {
       validation.warnings.forEach(w => console.log(w));
     }
   }
 
-  // 2️⃣ Tentukan peserta BYE
+  // ✅ TENTUKAN BYE & ACTIVE PARTICIPANTS
   let byeParticipants: Participant[] = [];
   let activeParticipants: Participant[] = [...participants];
 
   if (byeParticipantIds && byeParticipantIds.length > 0) {
     byeParticipants = participants.filter(p => byeParticipantIds.includes(p.id));
     activeParticipants = participants.filter(p => !byeParticipantIds.includes(p.id));
-    console.log("   Using provided BYE IDs:", byeParticipantIds);
   } else if (byesNeeded > 0) {
     const shuffled = this.shuffleArray([...participants]);
     byeParticipants = shuffled.slice(0, byesNeeded);
     activeParticipants = shuffled.slice(byesNeeded);
-    console.log("   Auto-selected BYE participants:", byeParticipants.map(p => p.name));
   }
 
-  // 3️⃣ Tentukan posisi BYE dengan distribusi kiri-kanan
-  const byePositions = this.distributeBYEForMirroredBracket(
-    participantCount,
-    targetSize
-  );
+  console.log(`   🎁 BYE participants (${byeParticipants.length}):`, byeParticipants.map(p => p.name));
+  console.log(`   ⚔️ Active participants (${activeParticipants.length}):`, activeParticipants.map(p => p.name));
 
-  console.log(`   🧩 BYE positions:`, byePositions);
-
-  // 4️⃣ Tentukan posisi FIGHT
+  // ✅ DISTRIBUSI BYE POSITIONS
+  const byePositions = this.distributeBYEForMirroredBracket(participantCount, targetSize);
+  
+  // ✅ DISTRIBUSI FIGHT POSITIONS
   const allPositions = Array.from({ length: totalMatchesR1 }, (_, i) => i);
   const fightPositions = allPositions.filter(pos => !byePositions.includes(pos));
+  const distributedFightPositions = this.distributeFightPositions(fightPositions, totalMatchesR1);
 
-  console.log(`   ⚔️ FIGHT positions (before distribution):`, fightPositions);
+  console.log(`   📊 BYE positions:`, byePositions);
+  console.log(`   📊 FIGHT positions:`, distributedFightPositions);
 
-  // 5️⃣ DISTRIBUTE fight positions untuk merata kiri-kanan
-  const distributedFightPositions = this.distributeFightPositions(
-    fightPositions,
-    totalMatchesR1
-  );
-
-  console.log(`   ✅ FIGHT positions (after distribution):`, distributedFightPositions);
-
-  // ⭐⭐⭐ 6️⃣ SPLIT PARTICIPANTS WITH STRICT DOJANG SEPARATION ⭐⭐⭐
+  // ✅ FIX: SPLIT PARTICIPANTS CORRECTLY
   let leftPool: Participant[] = [];
   let rightPool: Participant[] = [];
 
   if (dojangSeparation?.enabled) {
-    // ⭐ USE STRICT SEPARATION
+    // STRICT SEPARATION
     [leftPool, rightPool] = this.distributeDojangSeparatedStrict(activeParticipants);
-    
-    // Shuffle within each pool
     leftPool = this.shuffleArray(leftPool);
     rightPool = this.shuffleArray(rightPool);
     
-    console.log(`   📦 LEFT pool (${leftPool.length}):`, leftPool.map(p => `${p.name} (${p.dojang})`));
-    console.log(`   📦 RIGHT pool (${rightPool.length}):`, rightPool.map(p => `${p.name} (${p.dojang})`));
-    
   } else {
-    // ⭐ RANDOM DISTRIBUTION (No dojang separation)
-    console.log(`\n🎲 === RANDOM DISTRIBUTION (No Dojang Separation) ===`);
+    // RANDOM SPLIT
+    console.log(`\n🎲 Random distribution (no dojang separation)`);
+    
     const shuffledActive = this.shuffleArray([...activeParticipants]);
     
+    // ✅ FIX: Calculate needed per side correctly
     const leftFights = distributedFightPositions.filter(pos => pos < halfSize);
     const rightFights = distributedFightPositions.filter(pos => pos >= halfSize);
     
     const leftNeeded = leftFights.length * 2;
     const rightNeeded = rightFights.length * 2;
     
-    console.log(`   LEFT fights: ${leftFights.length} matches (need ${leftNeeded} participants)`);
-    console.log(`   RIGHT fights: ${rightFights.length} matches (need ${rightNeeded} participants)`);
+    console.log(`   LEFT side: ${leftFights.length} fights = ${leftNeeded} participants needed`);
+    console.log(`   RIGHT side: ${rightFights.length} fights = ${rightNeeded} participants needed`);
     
     leftPool = shuffledActive.slice(0, leftNeeded);
     rightPool = shuffledActive.slice(leftNeeded);
@@ -1114,12 +1095,14 @@ static async generatePrestasiBracket(
     console.log(`   RIGHT pool: ${rightPool.length} participants`);
   }
 
+  // ✅ CREATE R1 MATCHES
   let leftIndex = 0;
   let rightIndex = 0;
   let byeIndex = 0;
 
-  // 7️⃣ CREATE MATCHES
   const allSortedPositions = [...byePositions, ...distributedFightPositions].sort((a, b) => a - b);
+
+  console.log(`\n   🎮 Creating Round 1 matches...`);
 
   for (const pos of allSortedPositions) {
     let p1: Participant | null = null;
@@ -1132,9 +1115,10 @@ static async generatePrestasiBracket(
         p1 = byeParticipants[byeIndex++];
         p2 = null;
         status = "bye";
+        console.log(`      Match ${pos + 1}: ${p1.name} (BYE)`);
       }
     } else {
-      // FIGHT match - ambil dari LEFT atau RIGHT pool
+      // FIGHT match
       const isLeftSide = pos < halfSize;
       
       if (isLeftSide) {
@@ -1147,6 +1131,13 @@ static async generatePrestasiBracket(
       
       if (p1 && !p2) {
         status = "bye";
+        console.log(`      Match ${pos + 1}: ${p1.name} (BYE - odd fighter)`);
+      } else if (p1 && p2) {
+        const isSameDojang = p1.dojang === p2.dojang;
+        console.log(
+          `      Match ${pos + 1}: ${p1.name} vs ${p2.name} ` +
+          `${isSameDojang ? '⚠️ SAME DOJANG' : '✅'}`
+        );
       }
     }
 
@@ -1173,65 +1164,27 @@ static async generatePrestasiBracket(
     });
   }
 
-  // 8️⃣ Safety check - Handle leftover participants
-  while (leftIndex < leftPool.length) {
-    const leftover = leftPool[leftIndex++];
-    console.warn(`   ⚠️ LEFTOVER PARTICIPANT (LEFT): ${leftover.name}`);
+  // ✅ CHECK FOR LEFTOVERS
+  if (leftIndex < leftPool.length || rightIndex < rightPool.length) {
+    console.warn(`\n   ⚠️⚠️⚠️ CRITICAL WARNING ⚠️⚠️⚠️`);
+    console.warn(`   LEFT index: ${leftIndex}/${leftPool.length}`);
+    console.warn(`   RIGHT index: ${rightIndex}/${rightPool.length}`);
+    console.warn(`   Leftover participants detected! This should NOT happen!`);
     
-    const created = await prisma.tb_match.create({
-      data: {
-        id_bagan: baganId,
-        ronde: 1,
-        id_peserta_a: leftover.id,
-        id_peserta_b: null,
-        skor_a: 0,
-        skor_b: 0,
-      },
-    });
-
-    matches.push({
-      id: created.id_match,
-      round: 1,
-      position: matches.length,
-      participant1: leftover,
-      participant2: null,
-      status: "bye",
-      scoreA: 0,
-      scoreB: 0,
-    });
+    throw new Error(
+      `Bracket generation error: ${leftPool.length - leftIndex + rightPool.length - rightIndex} participants not placed. ` +
+      `This indicates a logic error in distribution.`
+    );
   }
 
-  while (rightIndex < rightPool.length) {
-    const leftover = rightPool[rightIndex++];
-    console.warn(`   ⚠️ LEFTOVER PARTICIPANT (RIGHT): ${leftover.name}`);
-    
-    const created = await prisma.tb_match.create({
-      data: {
-        id_bagan: baganId,
-        ronde: 1,
-        id_peserta_a: leftover.id,
-        id_peserta_b: null,
-        skor_a: 0,
-        skor_b: 0,
-      },
-    });
-
-    matches.push({
-      id: created.id_match,
-      round: 1,
-      position: matches.length,
-      participant1: leftover,
-      participant2: null,
-      status: "bye",
-      scoreA: 0,
-      scoreB: 0,
-    });
-  }
-
-  // 9️⃣ Buat placeholder ronde berikutnya
+  // ✅ CREATE PLACEHOLDER ROUNDS
   const totalRounds = Math.log2(targetSize);
+  console.log(`\n   🏗️ Creating ${totalRounds - 1} placeholder rounds...`);
+  
   for (let round = 2; round <= totalRounds; round++) {
     const matchesInRound = Math.pow(2, totalRounds - round);
+    console.log(`      Round ${round}: ${matchesInRound} matches`);
+    
     for (let i = 0; i < matchesInRound; i++) {
       const created = await prisma.tb_match.create({
         data: {
@@ -1257,7 +1210,8 @@ static async generatePrestasiBracket(
     }
   }
 
-  // 🔟 Auto-advance peserta BYE
+  // ✅ AUTO-ADVANCE BYE WINNERS
+  console.log(`\n   ⚡ Auto-advancing BYE winners...`);
   const createdR1Matches = matches.filter(m => m.round === 1);
   for (const m of createdR1Matches) {
     if (m.participant1 && !m.participant2 && m.id) {
@@ -1265,39 +1219,28 @@ static async generatePrestasiBracket(
         { id_bagan: baganId, ronde: 1, id_match: m.id },
         m.participant1.id
       );
-      console.log(`   ⚡ Auto-advanced BYE winner ${m.participant1.name}`);
+      console.log(`      ✅ ${m.participant1.name} advanced`);
     }
   }
 
-  // ⭐⭐⭐ 1️⃣1️⃣ FINAL VALIDATION R1 MATCHES ⭐⭐⭐
+  // ✅ FINAL VALIDATION
   if (dojangSeparation?.enabled) {
     const r1Validation = this.validateR1MatchesStrict(matches, isUnavoidable);
     
-    // ⭐ CRITICAL: If has violation AND NOT unavoidable → ERROR
     if (r1Validation.hasViolation && !isUnavoidable) {
       throw new Error(
-        `❌ STRICT MODE ERROR: Round 1 mengandung same-dojang match(es)!\n\n` +
+        `❌ STRICT MODE ERROR: Round 1 has same-dojang match(es)!\n\n` +
         `Violations:\n${r1Validation.violations.map(v => 
           `  • Match ${v.position + 1}: ${v.p1} vs ${v.p2} (both from "${v.dojang}")`
-        ).join('\n')}\n\n` +
-        `Ini tidak seharusnya terjadi (seharusnya bisa dihindari dengan STRICT mode).\n\n` +
-        `Saran:\n` +
-        `  • Coba shuffle ulang bracket\n` +
-        `  • Atau disable dojang separation jika memang tidak memungkinkan\n` +
-        `  • Atau hubungi developer jika masalah terus terjadi`
+        ).join('\n')}`
       );
     }
   }
 
-  console.log("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-  console.log("✅ PRESTASI BRACKET GENERATED SUCCESSFULLY");
-  console.log(`   Total participants: ${participantCount}`);
-  console.log(`   Target size: ${targetSize}`);
-  console.log(`   BYEs: ${byesNeeded}`);
+  console.log(`\n✅ PRESTASI BRACKET GENERATED SUCCESSFULLY`);
   console.log(`   Total matches: ${matches.length}`);
   console.log(`   Dojang separation: ${dojangSeparation?.enabled ? 'STRICT ✅' : 'DISABLED'}`);
-  console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
-
+  
   return matches;
 }
 
@@ -2214,17 +2157,16 @@ static async shufflePemulaBracket(
   try {
     console.log(`\n🔀 === SHUFFLING PEMULA BRACKET ===`);
     console.log(`   Kompetisi: ${kompetisiId}, Kelas: ${kelasKejuaraanId}`);
-    console.log(`   Dojang Separation Input:`, dojangSeparation);
+    console.log(`   ⭐ Dojang Separation Input:`, dojangSeparation);
 
-    // ⭐ FIX: Normalize dojangSeparation parameter
-    // PEMULA always uses STRICT mode, so enforce it
+    // ✅ FIX: Normalize dengan explicit check
     const normalizedSeparation = dojangSeparation?.enabled
       ? { enabled: true, mode: 'STRICT' as const }
       : undefined;
 
-    console.log(`   Normalized Separation:`, normalizedSeparation);
+    console.log(`   ⭐ Normalized Separation:`, normalizedSeparation);
 
-    // ⭐ STEP 1: DELETE EXISTING BRACKET
+    // Check for existing bracket with scores
     const existingBagan = await prisma.tb_bagan.findFirst({
       where: {
         id_kompetisi: kompetisiId,
@@ -2267,13 +2209,13 @@ static async shufflePemulaBracket(
       console.log(`   ✅ Bracket deleted`);
     }
 
-    // ✅ FIX: Pass normalized separation (with required mode)
-    console.log(`   🎲 Generating new bracket...`);
+    console.log(`   🎲 Generating new bracket with separation:`, normalizedSeparation);
+    
     const newBracket = await this.generateBracket(
       kompetisiId,
       kelasKejuaraanId,
-      undefined, // byeParticipantIds
-      normalizedSeparation // ✅ Now has mode: 'STRICT' if enabled
+      undefined,
+      normalizedSeparation // ✅ Now properly passed
     );
     
     console.log(`   ✅ New bracket generated with ${newBracket.matches.length} matches`);
