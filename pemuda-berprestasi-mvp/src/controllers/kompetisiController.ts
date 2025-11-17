@@ -907,18 +907,12 @@ static async shuffleBrackets(req: Request, res: Response) {
 
     let bracket;
 
-    if (isPemulaCategory) {
-      // PEMULA: Use special shuffle (re-assign only)
-      bracket = await BracketService.shufflePemulaBracket(kompetisiId, kelasId, dojangSeparation);
-    } else {
-      // PRESTASI: Delete + regenerate with new BYE and dojang separation
-      bracket = await BracketService.shuffleBracket(
-        kompetisiId, 
-        kelasId,
-        undefined, // participantIds
-        dojangSeparation
-      );
-    }
+    bracket = await BracketService.shuffleBracket(
+      kompetisiId, 
+      kelasId,
+      isPemulaCategory, // Pass isPemulaCategory to the unified shuffle method
+      dojangSeparation
+    );
 
     return sendSuccess(res, bracket, 'Bagan turnamen berhasil diacak ulang');
   } catch (error: any) {
