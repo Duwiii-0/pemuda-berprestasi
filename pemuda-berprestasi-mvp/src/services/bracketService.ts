@@ -61,284 +61,137 @@ export function isByeMatch(match: {
 export class BracketService {
   
 static async generateBracket(
-  kompetisiId: number,
+  kompetisiId: number, 
   kelasKejuaraanId: number,
   byeParticipantIds?: number[]
-): Promise<any> {
-  console.log(`🎯 generateBracket called:`);
-  console.log(`   Kompetisi: ${kompetisiId}`);
-  console.log(`   Kelas: ${kelasKejuaraanId}`);
-  console.log(`   BYE IDs:`, byeParticipantIds);
+): Promise<Bracket> {
+  try {
+    console.log(`\n🎯 generateBracket called:`);
+    console.log(`   Kompetisi: ${kompetisiId}`);
+    console.log(`   Kelas: ${kelasKejuaraanId}`);
+    console.log(`   BYE IDs:`, byeParticipantIds);
 
-  // Check if bracket already exists
-  const existingBagan = await prisma.tb_bagan.findFirst({
-    where: {
-      id_kompetisi: kompetisiId,
-      id_kelas_kejuaraan: kelasKejuaraanId
+    const existingBagan = await prisma.tb_bagan.findFirst({
+      where: {
+        id_kompetisi: kompetisiId,
+        id_kelas_kejuaraan: kelasKejuaraanId
+      }
+    });
+
+    if (existingBagan) {
+      throw new Error('Bagan sudah dibuat untuk kelas kejuaraan ini');
     }
-  });
 
-  if (existingBagan) {
-    throw new Error('Bagan sudah ada untuk kelas kejuaraan ini');
-  }
-
-  // Get approved participants
-  const registrations = await prisma.tb_peserta_kompetisi.findMany({
-    where: {
-      id_kelas_kejuaraan: kelasKejuaraanId,
-      status: 'APPROVED'
-    },
-    include: {
-      atlet: true,
-      anggota_tim: {
-        include: {
-          atlet: true
-        }
+    const registrations = await prisma.tb_peserta_kompetisi.findMany({
+      where: {
+        id_kelas_kejuaraan: kelasKejuaraanId,
+        status: 'APPROVED'
       },
-      kelas_kejuaraan: {
-        include: {
-          kategori_event: true
+      include: {
+        atlet: {
+          include: {
+            dojang: true
+          }
+        },
+        anggota_tim: {
+          include: {
+            atlet: {
+              include: {
+                dojang: true
+              }
+            }
+          }
+        },
+        kelas_kejuaraan: {
+          include: {
+            kompetisi: true,
+            kategori_event: true
+          }
         }
       }
+    });
+
+    if (registrations.length < 2) {
+      throw new Error('Minimal 2 peserta diperlukan untuk membuat bagan');
     }
-  });
 
-  if (registrations.length === 0) {
-    throw new Error('Tidak ada peserta yang disetujui untuk kelas ini');
-  }
+    const kategori = registrations[0]?.kelas_kejuaraan?.kategori_event?.nama_kategori?.toLowerCase() || '';
+    const isPemula = kategori.includes('pemula');
 
-  const participantCount = registrations.length;
-  console.log(`📊 Total participants: ${participantCount}`);
+    console.log(`📊 Category detected: ${isPemula ? 'PEMULA' : 'PRESTASI'}`);
 
-  // Detect category
-  const kategori = registrations[0]?.kelas_kejuaraan?.kategori_event?.nama_kategori?.toLowerCase() || '';
-  const isPemula = kategori.includes('pemula');
-  console.log(`📊 Category detected: ${isPemula ? 'PEMULA' : 'PRESTASI'}`);
+    const participants: Participant[] = registrations.map(reg => {
+      if (reg.is_team && reg.anggota_tim.length > 0) {
+        return {
+          id: reg.id_peserta_kompetisi,
+          name: `Tim ${reg.anggota_tim.map(m => m.atlet.nama_atlet).join(' & ')}`,
+          dojang: reg.anggota_tim[0]?.atlet?.dojang?.nama_dojang,
+          isTeam: true,
+          teamMembers: reg.anggota_tim.map(m => m.atlet.nama_atlet)
+        };
+      } else if (reg.atlet) {
+        return {
+          id: reg.id_peserta_kompetisi,
+          name: reg.atlet.nama_atlet,
+          dojang: reg.atlet.dojang?.nama_dojang,
+          atletId: reg.atlet.id_atlet,
+          isTeam: false
+        };
+      }
+      return null;
+    }).filter(Boolean) as Participant[];
 
-  // Calculate bracket structure
-  const bracketStructure = BracketService.calculateBracketStructure(participantCount);
+    const bagan = await prisma.tb_bagan.create({
+      data: {
+        id_kompetisi: kompetisiId,
+        id_kelas_kejuaraan: kelasKejuaraanId
+      }
+    });
 
-  // Create bagan
-  const bagan = await prisma.tb_bagan.create({
-    data: {
-      id_kompetisi: kompetisiId,
-      id_kelas_kejuaraan: kelasKejuaraanId
-    }
-  });
+    await Promise.all(
+      participants.map((participant, index) =>
+        prisma.tb_drawing_seed.create({
+          data: {
+            id_bagan: bagan.id_bagan,
+            id_peserta_kompetisi: participant.id,
+            seed_num: index + 1
+          }
+        })
+      )
+    );
 
-  // ⭐ CREATE ALL MATCHES WITH POSITION
-  const allMatches: any[] = [];
-  
-  for (let round of bracketStructure) {
-    console.log(`\n   📍 Creating ${round.matchCount} matches for ${round.name}...`);
+    // ⭐ AUTO-GENERATE BYE for Prestasi
+    let finalByeIds = byeParticipantIds;
     
-    for (let i = 0; i < round.matchCount; i++) {
-      const matchData = {
-        id_bagan: bagan.id_bagan,
-        ronde: round.round,
-        position: i,  // ⭐ SET POSITION = INDEX
-        id_peserta_a: null,
-        id_peserta_b: null,
-        skor_a: 0,
-        skor_b: 0
-      };
+    if (!isPemula && !byeParticipantIds) {
+      const structure = this.calculateBracketStructure(participants.length);
+      const byesNeeded = structure.byesRecommended;
       
-      const match = await prisma.tb_match.create({
-        data: matchData
-      });
-      
-      allMatches.push(match);
-      console.log(`      ✅ Match created - Round ${round.round} Position ${i} (ID: ${match.id_match})`);
-    }
-  }
-
-  console.log(`\n   ✅ Total ${allMatches.length} matches created`);
-
-  // Update bracket status
-  await prisma.tb_kelas_kejuaraan.update({
-    where: { id_kelas_kejuaraan: kelasKejuaraanId },
-    data: { bracket_status: 'created' }
-  });
-
-  // ⭐ POPULATE MATCHES BASED ON CATEGORY
-  if (isPemula) {
-    await BracketService.populatePemulaBracket(
-      bagan.id_bagan,
-      registrations,
-      allMatches,
-      bracketStructure
-    );
-  } else {
-    await BracketService.populatePrestasiMatches(
-      bagan.id_bagan,
-      registrations,
-      allMatches,
-      bracketStructure,
-      byeParticipantIds
-    );
-  }
-
-  // Return bracket data
-  const bracket = await BracketService.getBracket(kompetisiId, kelasKejuaraanId);
-
-  console.log(`✅ Bracket generated with ${allMatches.length} matches`);
-
-  return bracket;
-}
-
-static async populatePrestasiMatches(
-  baganId: number,
-  registrations: any[],
-  allMatches: any[],
-  bracketStructure: any[],
-  byeParticipantIds?: number[]
-): Promise<void> {
-  const participantCount = registrations.length;
-  
-  // ✅ FIX: Get LAST round (actual Round 1)
-  const firstRound = bracketStructure[bracketStructure.length - 1];
-  const targetSize = firstRound.participants;
-  const byesNeeded = targetSize - participantCount;
-
-  console.log(`📊 PRESTASI: participants=${participantCount}, targetSize=${targetSize}, byesNeeded=${byesNeeded}`);
-
-  // Get Round 1 matches (using firstRound.round number)
-  const r1Matches = allMatches
-    .filter(m => m.ronde === firstRound.round)
-    .sort((a, b) => a.position - b.position);
-  
-  console.log(`   Total R1 matches: ${r1Matches.length}`);
-
-  // Auto-select BYE if not provided
-  let byeIds = byeParticipantIds;
-  if (!byeIds || byeIds.length === 0) {
-    const shuffled = [...registrations].sort(() => Math.random() - 0.5);
-    byeIds = shuffled.slice(0, byesNeeded).map(r => r.id_peserta_kompetisi);
-    console.log(`🎁 Auto-selected ${byesNeeded} BYE participants:`, byeIds);
-  }
-
-  console.log(`   Using provided BYE IDs:`, byeIds);
-
-  // Distribute BYEs
-  const byePositions = BracketService.distributeBYEs(r1Matches.length, byesNeeded);
-  console.log(`   📊 Final BYE Positions:`, byePositions);
-
-  // Get non-BYE participants
-  const activeParticipants = registrations.filter(r => !byeIds.includes(r.id_peserta_kompetisi));
-  const byeParticipants = registrations.filter(r => byeIds.includes(r.id_peserta_kompetisi));
-
-  // Shuffle active participants
-  const shuffledActive = [...activeParticipants].sort(() => Math.random() - 0.5);
-
-  console.log(`\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
-  console.log(`   🧩 BYE positions:`, byePositions);
-  
-  // Determine fight positions
-  const fightPositions = Array.from({ length: r1Matches.length }, (_, i) => i)
-    .filter(pos => !byePositions.includes(pos));
-  
-  console.log(`   ⚔️ FIGHT positions (before distribution):`, fightPositions);
-
-  // Balance fights between left and right
-  const halfSize = r1Matches.length / 2;
-  const leftFights = fightPositions.filter(p => p < halfSize);
-  const rightFights = fightPositions.filter(p => p >= halfSize);
-
-  console.log(`   📐 Original fight distribution:`);
-  console.log(`      LEFT fights (${leftFights.length}):`, leftFights);
-  console.log(`      RIGHT fights (${rightFights.length}):`, rightFights);
-
-  let balancedFightPositions = fightPositions;
-  
-  if (Math.abs(leftFights.length - rightFights.length) > 1) {
-    console.log(`   ⚠️ Fights unbalanced - rebalancing...`);
-    balancedFightPositions = BracketService.balanceFights(fightPositions, halfSize);
-  } else {
-    console.log(`   ✅ Fight distribution already balanced!`);
-  }
-
-  console.log(`   ✅ FIGHT positions (after distribution):`, balancedFightPositions);
-
-  // Populate matches
-  let activeIndex = 0;
-  let byeIndex = 0;
-
-  for (let i = 0; i < r1Matches.length; i++) {
-    const match = r1Matches[i];
-    const isByePosition = byePositions.includes(i);
-
-    if (isByePosition) {
-      // BYE match
-      const byeParticipant = byeParticipants[byeIndex++];
-      
-      await prisma.tb_match.update({
-        where: { id_match: match.id_match },
-        data: {
-          id_peserta_a: byeParticipant.id_peserta_kompetisi,
-          id_peserta_b: null
-        }
-      });
-
-      const name = byeParticipant.is_team
-        ? byeParticipant.anggota_tim?.map((t: any) => t.atlet.nama_atlet).join(', ')
-        : byeParticipant.atlet?.nama_atlet;
-
-      console.log(`   🎮 R1 match position ${i}: ${name} vs BYE (bye)`);
-
-      // ⭐ AUTO-ADVANCE BYE WINNER
-      await BracketService.advanceWinnerToNextRound(match, byeParticipant.id_peserta_kompetisi);
-      console.log(`   ⚡ Auto-advanced BYE winner ${name}`);
-
-    } else {
-      // Normal fight
-      const p1 = shuffledActive[activeIndex++];
-      const p2 = shuffledActive[activeIndex++];
-
-      if (!p1 || !p2) {
-        console.error(`   ❌ Not enough active participants for position ${i}`);
-        continue;
+      if (byesNeeded > 0) {
+        // Randomly select BYE participants
+        const shuffled = this.shuffleArray([...participants]);
+        finalByeIds = shuffled.slice(0, byesNeeded).map(p => p.id);
+        console.log(`🎁 Auto-selected ${byesNeeded} BYE participants:`, finalByeIds);
       }
-
-      await prisma.tb_match.update({
-        where: { id_match: match.id_match },
-        data: {
-          id_peserta_a: p1.id_peserta_kompetisi,
-          id_peserta_b: p2.id_peserta_kompetisi
-        }
-      });
-
-      const name1 = p1.is_team ? p1.anggota_tim?.map((t: any) => t.atlet.nama_atlet).join(', ') : p1.atlet?.nama_atlet;
-      const name2 = p2.is_team ? p2.anggota_tim?.map((t: any) => t.atlet.nama_atlet).join(', ') : p2.atlet?.nama_atlet;
-
-      console.log(`   🎮 R1 match position ${i}: ${name1} vs ${name2} (pending)`);
     }
+
+    const matches = isPemula
+      ? await this.generatePemulaBracket(bagan.id_bagan, participants, finalByeIds)
+      : await this.generatePrestasiBracket(bagan.id_bagan, participants, finalByeIds);
+    
+    return {
+      id: bagan.id_bagan,
+      kompetisiId,
+      kelasKejuaraanId,
+      totalRounds: isPemula ? 1 : this.calculateTotalRounds(participants.length),
+      isGenerated: true,
+      participants: participants,
+      matches
+    };
+  } catch (error: any) {
+    console.error('Error generating bracket:', error);
+    throw new Error(error.message || 'Failed to generate bracket');
   }
-
-  // Debug summary
-  console.log(`\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
-  console.log(`🔍 FINAL DEBUG SUMMARY FOR BRACKET`);
-  console.log(`🎯 Total peserta: ${participantCount}`);
-  console.log(`📦 Total targetSize: ${targetSize}`);
-  console.log(`💤 Total BYE needed: ${byesNeeded}`);
-  console.log(`🙋‍♂️ Active participants count: ${shuffledActive.length}`);
-  console.log(`😴 Bye participants count: ${byeParticipants.length}`);
-  console.log(`👥 Semua peserta:`, registrations.map(r => r.is_team ? r.anggota_tim?.map((t: any) => t.atlet.nama_atlet).join(', ') : r.atlet?.nama_atlet));
-  console.log(`✅ Yang masuk ke R1:`, [...shuffledActive, ...byeParticipants].map(r => r.is_team ? r.anggota_tim?.map((t: any) => t.atlet.nama_atlet).join(', ') : r.atlet?.nama_atlet));
-  
-  if (shuffledActive.length + byeParticipants.length === participantCount) {
-    console.log(`🎉 Semua peserta terpakai di R1`);
-  } else {
-    console.log(`⚠️ WARNING: Participant count mismatch!`);
-  }
-
-  const byeMatchCount = byePositions.length;
-  const fightMatchCount = balancedFightPositions.length;
-  console.log(`🟡 Total BYE matches di R1: ${byeMatchCount}`);
-  console.log(`⚔️ Total FIGHT matches di R1: ${fightMatchCount}`);
-  console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
-
-  // Recalculate structure for display
-  BracketService.calculateBracketStructure(participantCount);
 }
 
   /**
@@ -599,6 +452,187 @@ static validateAndAdjustBye(
     adjustedByeCount: null,
     message: `BYE count invalid! Harus ${recommended} (±1 tolerance: ${minBye}-${maxBye}). Anda memilih ${userSelectedByeCount}`,
     recommendedBye: recommended
+  };
+}
+
+static calculateBracketStructure(
+  participantCount: number
+): {
+  totalRounds: number;
+  rounds: {
+    round: number;
+    name: string;
+    participants: number;
+    matches: number;
+  }[];
+  round1Target: number;
+  byesRecommended: number;
+} {
+  console.log(`\n📐 === CALCULATING BRACKET STRUCTURE ===`);
+  console.log(`   Participant Count: ${participantCount}`);
+  
+  // ✅ PERBAIKAN: Support 2-3 participants
+  if (participantCount < 2) {
+    throw new Error('Minimal 2 peserta diperlukan untuk bracket turnamen');
+  }
+  
+  // ✅ SPECIAL CASE: 2 participants (langsung final)
+  if (participantCount === 2) {
+    console.log(`   ✅ 2 participants → Direct Final`);
+    return {
+      totalRounds: 1,
+      rounds: [
+        {
+          round: 1,
+          name: 'Final',
+          participants: 2,
+          matches: 1
+        }
+      ],
+      round1Target: 2,
+      byesRecommended: 0
+    };
+  }
+  
+  // ✅ SPECIAL CASE: 3 participants (1 match + final)
+  if (participantCount === 3) {
+    console.log(`   ✅ 3 participants → Round 1 + Final`);
+    return {
+      totalRounds: 2,
+      rounds: [
+        {
+          round: 1,
+          name: 'Round 1',
+          participants: 2,
+          matches: 1
+        },
+        {
+          round: 2,
+          name: 'Final',
+          participants: 2,
+          matches: 1
+        }
+      ],
+      round1Target: 2,
+      byesRecommended: 1 // 1 peserta dapat BYE ke final
+    };
+  }
+  
+  // ✅ EXISTING LOGIC for 4+ participants (tetap sama)
+  const rounds: {
+    round: number;
+    name: string;
+    participants: number;
+    matches: number;
+  }[] = [];
+  
+  let currentRound = 1;
+  
+  // ========================================
+  // STEP 1: WAJIB - FINAL (2→1)
+  // ========================================
+  rounds.push({
+    round: currentRound++,
+    name: 'Final',
+    participants: 2,
+    matches: 1
+  });
+  
+  console.log(`   ✅ Round ${rounds.length}: Final (2 → 1)`);
+  
+  // ========================================
+  // STEP 2: WAJIB - SEMI FINAL (4→2)
+  // ========================================
+  rounds.push({
+    round: currentRound++,
+    name: 'Semi Final',
+    participants: 4,
+    matches: 2
+  });
+  
+  console.log(`   ✅ Round ${rounds.length}: Semi Final (4 → 2)`);
+  
+  let round1Target = 4; // Default: Round 1 feeds Semi
+  
+  // ========================================
+  // STEP 3: OPTIONAL - QUARTER FINAL (8→4)
+  // ========================================
+  if (participantCount >= 8) {
+    rounds.push({
+      round: currentRound++,
+      name: 'Quarter Final',
+      participants: 8,
+      matches: 4
+    });
+    round1Target = 8; // Round 1 feeds Quarter
+    
+    console.log(`   ✅ Round ${rounds.length}: Quarter Final (8 → 4)`);
+    console.log(`      → Round 1 target changed to: ${round1Target}`);
+  } else {
+    console.log(`   ℹ️ No Quarter Final (participants < 8)`);
+  }
+  
+  // ========================================
+  // STEP 4: OPTIONAL - ROUND 1
+  // ========================================
+  let firstRoundParticipants = round1Target;
+  
+  if (participantCount === round1Target) {
+    // Perfect fit! No Round 1 needed
+    // Quarter/Semi becomes the first round
+    console.log(`   ✅ Perfect fit! No Round 1 needed (${participantCount} = ${round1Target})`);
+    
+  } else if (participantCount > round1Target) {
+    // Need Round 1 to reduce participants to target
+    const nextPowerOf2 = Math.pow(2, Math.ceil(Math.log2(participantCount)));
+    firstRoundParticipants = nextPowerOf2;
+    
+    rounds.push({
+      round: currentRound++,
+      name: 'Round 1',
+      participants: nextPowerOf2,
+      matches: nextPowerOf2 / 2
+    });
+    
+    console.log(`   ✅ Round ${rounds.length}: Round 1 (${nextPowerOf2} → ${round1Target})`);
+    console.log(`      Next Power of 2: ${nextPowerOf2}`);
+    
+  } else {
+    // participantCount < round1Target
+    // Need Round 1 with BYE to reach target
+    rounds.push({
+      round: currentRound++,
+      name: 'Round 1',
+      participants: round1Target,
+      matches: round1Target / 2
+    });
+    
+    console.log(`   ✅ Round ${rounds.length}: Round 1 (${round1Target} with BYE → ${round1Target})`);
+  }
+  
+  // ========================================
+  // STEP 5: REVERSE & RENUMBER
+  // ========================================
+  // Reverse rounds (Final first → Round 1 last dalam array)
+  // But renumber dari Round 1 = 1, Round 2, ..., Final
+  rounds.reverse();
+  rounds.forEach((r, idx) => r.round = idx + 1);
+  
+  // Calculate BYE recommendation
+  const byesRecommended = firstRoundParticipants - participantCount;
+  
+  console.log(`\n   📊 FINAL STRUCTURE:`);
+  rounds.forEach(r => {
+    console.log(`      Round ${r.round}: ${r.name} - ${r.participants} participants, ${r.matches} matches`);
+  });
+  console.log(`   💡 Recommended BYE: ${byesRecommended}`);
+  console.log(`   🎯 Total Rounds: ${rounds.length}\n`);
+  
+  return {
+    totalRounds: rounds.length,
+    rounds,
+    round1Target,
+    byesRecommended
   };
 }
 
@@ -1418,287 +1452,16 @@ static async updateMatch(
   }
 }
 
-/**
- * Calculate bracket structure based on participant count
- * Returns array of rounds with match counts
- */
-static calculateBracketStructure(participantCount: number): any[] {
-  console.log(`📐 === CALCULATING BRACKET STRUCTURE ===`);
-  console.log(`   Participant Count: ${participantCount}`);
-
-  const rounds: any[] = [];
-  let currentParticipants = 2;
-  let roundNumber = 1;
-
-  // Build rounds from Final up to required size
-  const roundNames = ['Final', 'Semi Final', 'Quarter Final', 'Round 1', 'Round 2', 'Round 3'];
-  let nameIndex = 0;
-
-  while (currentParticipants < participantCount) {
-    const matchCount = currentParticipants / 2;
-    rounds.unshift({
-      round: roundNumber,
-      name: roundNames[nameIndex] || `Round ${roundNumber}`,
-      participants: currentParticipants,
-      matchCount: matchCount
-    });
-
-    console.log(`   ✅ Round ${roundNumber}: ${roundNames[nameIndex]} (${currentParticipants} → ${matchCount})`);
-
-    currentParticipants *= 2;
-    roundNumber++;
-    nameIndex++;
-  }
-
-  // Add first round to reach next power of 2
-  const nextPowerOf2 = Math.pow(2, Math.ceil(Math.log2(participantCount)));
-  const firstRoundMatches = nextPowerOf2 / 2;
-
-  rounds.unshift({
-    round: roundNumber,
-    name: roundNames[nameIndex] || 'Round 1',
-    participants: nextPowerOf2,
-    matchCount: firstRoundMatches
-  });
-
-  console.log(`   ✅ Round ${roundNumber}: ${roundNames[nameIndex] || 'Round 1'} (${nextPowerOf2} → ${firstRoundMatches})`);
-  console.log(`      Next Power of 2: ${nextPowerOf2}`);
-
-  // Update round 1 target
-  if (rounds.length > 1) {
-    rounds[1].participants = firstRoundMatches * 2;
-    console.log(`      → Round 1 target changed to: ${firstRoundMatches * 2}`);
-  }
-
-  // Reverse to get correct order (R1, R2, R3, Final)
-  const orderedRounds = rounds.reverse().map((r, idx) => ({
-    ...r,
-    round: idx + 1
-  }));
-
-  console.log(`   📊 FINAL STRUCTURE:`);
-  orderedRounds.forEach(r => {
-    console.log(`      Round ${r.round}: ${r.name} - ${r.participants} participants, ${r.matchCount} matches`);
-  });
-
-  const byesNeeded = nextPowerOf2 - participantCount;
-  console.log(`   💡 Recommended BYE: ${byesNeeded}`);
-  console.log(`   🎯 Total Rounds: ${orderedRounds.length}`);
-
-  return orderedRounds;
-}
-
-/**
- * Distribute BYEs across bracket positions
- * Returns array of positions that should be BYE matches
- */
-static distributeBYEs(totalMatches: number, byesNeeded: number): number[] {
-  console.log(`🎯 === BYE DISTRIBUTION (MIRRORED BRACKET) ===`);
-  console.log(`   Total R1 Matches: ${totalMatches}`);
-  console.log(`   BYEs Needed: ${byesNeeded}`);
-
-  const byePositions: number[] = [];
-  const halfSize = totalMatches / 2;
-
-  console.log(`   Half Size (split point): ${halfSize}`);
-
-  // Distribute BYEs alternating between top and bottom of each half
-  for (let i = 0; i < byesNeeded; i++) {
-    let position: number;
-
-    if (i % 4 === 0) {
-      // BYE 1, 5, 9... → LEFT top
-      position = Math.floor(i / 4);
-      console.log(`   BYE ${i + 1}: LEFT-top position ${position}`);
-    } else if (i % 4 === 1) {
-      // BYE 2, 6, 10... → RIGHT top
-      position = halfSize + Math.floor(i / 4);
-      console.log(`   BYE ${i + 1}: RIGHT-top position ${position}`);
-    } else if (i % 4 === 2) {
-      // BYE 3, 7, 11... → LEFT bottom
-      position = (halfSize - 1) - Math.floor(i / 4);
-      console.log(`   BYE ${i + 1}: LEFT-bottom position ${position}`);
-    } else {
-      // BYE 4, 8, 12... → RIGHT bottom
-      position = (totalMatches - 1) - Math.floor(i / 4);
-      console.log(`   BYE ${i + 1}: RIGHT-bottom position ${position}`);
-    }
-
-    byePositions.push(position);
-  }
-
-  byePositions.sort((a, b) => a - b);
-  console.log(`   📊 Final BYE Positions:`, byePositions);
-
-  // Debug: show distribution
-  const leftByes = byePositions.filter(p => p < halfSize);
-  const rightByes = byePositions.filter(p => p >= halfSize);
-  console.log(`   LEFT side (0-${halfSize - 1}):`, leftByes);
-  console.log(`   RIGHT side (${halfSize}-${totalMatches - 1}):`, rightByes);
-
-  return byePositions;
-}
-
-/**
- * Balance fight matches between left and right bracket
- */
-static balanceFights(fightPositions: number[], halfSize: number): number[] {
-  console.log(`   🔄 Balancing fights...`);
-
-  const leftFights = fightPositions.filter(p => p < halfSize);
-  const rightFights = fightPositions.filter(p => p >= halfSize);
-
-  const diff = Math.abs(leftFights.length - rightFights.length);
-
-  if (diff <= 1) {
-    console.log(`   ✅ Already balanced (diff: ${diff})`);
-    return fightPositions;
-  }
-
-  // If left has more, move some to right
-  if (leftFights.length > rightFights.length) {
-    const toMove = Math.floor(diff / 2);
-    console.log(`   → Moving ${toMove} fights from LEFT to RIGHT`);
-
-    const movedFights = leftFights.splice(-toMove, toMove);
-    const newRightPositions = movedFights.map(p => p + halfSize);
-
-    return [...leftFights, ...rightFights, ...newRightPositions].sort((a, b) => a - b);
-  }
-
-  // If right has more, move some to left
-  if (rightFights.length > leftFights.length) {
-    const toMove = Math.floor(diff / 2);
-    console.log(`   → Moving ${toMove} fights from RIGHT to LEFT`);
-
-    const movedFights = rightFights.splice(0, toMove);
-    const newLeftPositions = movedFights.map(p => p - halfSize);
-
-    return [...leftFights, ...newLeftPositions, ...rightFights].sort((a, b) => a - b);
-  }
-
-  return fightPositions;
-}
-
-/**
- * Populate PEMULA bracket (supports any ODD number of participants)
- * Structure: Normal fights + 1 BYE → Additional Match
- */
-static async populatePemulaBracket(
-  baganId: number,
-  registrations: any[],
-  allMatches: any[],
-  bracketStructure: any[]
-): Promise<void> {
-  console.log(`\n🥋 === POPULATING PEMULA BRACKET ===`);
-  console.log(`   Total participants: ${registrations.length}`);
-
-  const participantCount = registrations.length;
-
-  // ⭐ VALIDATE: Must be ODD number
-  if (participantCount % 2 === 0) {
-    throw new Error('PEMULA bracket requires ODD number of participants');
-  }
-
-  // ⭐ VALIDATE: Minimum 3 participants
-  if (participantCount < 3) {
-    throw new Error('PEMULA bracket requires at least 3 participants');
-  }
-
-  // Shuffle participants
-  const shuffled = [...registrations].sort(() => Math.random() - 0.5);
-
-  // ⭐ GET LAST ROUND (actual Round 1)
-  const firstRound = bracketStructure[bracketStructure.length - 1];
-  
-  // Round 1 matches
-  const r1Matches = allMatches
-    .filter(m => m.ronde === firstRound.round)
-    .sort((a, b) => a.position - b.position);
-
-  console.log(`   📊 Round 1 has ${r1Matches.length} matches`);
-
-  // ⭐ CALCULATE: How many normal fights + 1 BYE
-  const normalFights = Math.floor(participantCount / 2);  // e.g., 29 → 14 fights
-  const byeParticipantIndex = participantCount - 1;       // Last participant gets BYE
-
-  console.log(`   🥊 Normal fights: ${normalFights}`);
-  console.log(`   🎁 BYE participant: ${shuffled[byeParticipantIndex].atlet?.nama_atlet || 'Team'}`);
-
-  // ⭐ POPULATE NORMAL FIGHTS (positions 0 to normalFights-1)
-  for (let i = 0; i < normalFights; i++) {
-    const match = r1Matches[i];
-    const p1 = shuffled[i * 2];
-    const p2 = shuffled[i * 2 + 1];
-
-    await prisma.tb_match.update({
-      where: { id_match: match.id_match },
-      data: {
-        id_peserta_a: p1.id_peserta_kompetisi,
-        id_peserta_b: p2.id_peserta_kompetisi
-      }
-    });
-
-    const name1 = p1.is_team 
-      ? p1.anggota_tim?.map((t: any) => t.atlet.nama_atlet).join(', ')
-      : p1.atlet?.nama_atlet;
-    const name2 = p2.is_team
-      ? p2.anggota_tim?.map((t: any) => t.atlet.nama_atlet).join(', ')
-      : p2.atlet?.nama_atlet;
-
-    console.log(`   🥊 R1 Match ${i}: ${name1} vs ${name2}`);
-  }
-
-  // ⭐ POPULATE BYE MATCH (last position in Round 1)
-  const byeMatch = r1Matches[normalFights];
-  const byeParticipant = shuffled[byeParticipantIndex];
-
-  await prisma.tb_match.update({
-    where: { id_match: byeMatch.id_match },
-    data: {
-      id_peserta_a: byeParticipant.id_peserta_kompetisi,
-      id_peserta_b: null
-    }
-  });
-
-  const byeName = byeParticipant.is_team
-    ? byeParticipant.anggota_tim?.map((t: any) => t.atlet.nama_atlet).join(', ')
-    : byeParticipant.atlet?.nama_atlet;
-
-  console.log(`   🎁 R1 Match ${normalFights}: ${byeName} vs BYE (auto-advance)`);
-
-  // ⭐ POPULATE ADDITIONAL MATCH (Round 2)
-  const r2Matches = allMatches.filter(m => m.ronde === firstRound.round - 1);  // Round sebelum Round 1
-  
-  if (r2Matches.length > 0) {
-    const additionalMatch = r2Matches[0];  // Should only be 1 match in Round 2
-    
-    await prisma.tb_match.update({
-      where: { id_match: additionalMatch.id_match },
-      data: {
-        id_peserta_b: byeParticipant.id_peserta_kompetisi  // BYE winner in Slot B
-      }
-    });
-
-    console.log(`   ✅ ${byeName} auto-advanced to Additional Match (Slot B)`);
-  }
-
-  console.log(`   🎉 PEMULA bracket populated successfully`);
-}
-
-/**
- * Advance winner to next round
- */
+  /**
+   * Advance winner to next round
+   */
 static async advanceWinnerToNextRound(match: any, winnerId: number): Promise<void> {
   const currentRound = match.ronde;
   const nextRound = currentRound + 1;
   
-  console.log(`\n🎯 === ADVANCE WINNER TO NEXT ROUND ===`);
-  console.log(`   Winner ID: ${winnerId}`);
-  console.log(`   From: Round ${currentRound} Match ${match.id_match} Position ${match.position}`);
-  console.log(`   To: Round ${nextRound}`);
+  console.log(`🎯 Advancing winner ${winnerId} from Round ${currentRound} to Round ${nextRound}`);
   
-  // Determine if PEMULA or PRESTASI
+  // ⭐ CHECK: Is this PEMULA category?
   const bagan = await prisma.tb_bagan.findUnique({
     where: { id_bagan: match.id_bagan },
     include: {
@@ -1710,68 +1473,57 @@ static async advanceWinnerToNextRound(match: any, winnerId: number): Promise<voi
     }
   });
   
-  if (!bagan) {
-    console.error(`   ❌ Bagan not found`);
-    return;
-  }
+  const isPemula = bagan?.kelas_kejuaraan?.kategori_event?.nama_kategori?.toLowerCase().includes('pemula') || false;
   
-  const kategoriName = bagan.kelas_kejuaraan?.kategori_event?.nama_kategori?.toLowerCase() || '';
-  const isPemula = kategoriName.includes('pemula');
+if (isPemula && currentRound === 1) {
+  console.log(`\n🥋 === PEMULA ADVANCE LOGIC ===`);
+  console.log(`   Current match ID: ${match.id_match}`);
   
-  console.log(`   📊 Category: ${isPemula ? 'PEMULA' : 'PRESTASI'}`);
+  const round1Matches = await prisma.tb_match.findMany({
+    where: {
+      id_bagan: match.id_bagan,
+      ronde: 1
+    },
+    orderBy: { id_match: 'asc' }
+  });
   
-  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  // ⭐ PEMULA LOGIC
-  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  if (isPemula && currentRound === 1) {
-    console.log(`\n🥋 === PEMULA ADVANCE LOGIC (R1 → Additional Match) ===`);
-    
-    const round1Matches = await prisma.tb_match.findMany({
-      where: {
-        id_bagan: match.id_bagan,
-        ronde: 1
-      },
-      orderBy: { position: 'asc' }  // ⭐ SORT BY POSITION
-    });
-    
-    console.log(`   Total Round 1 matches: ${round1Matches.length}`);
-    
+  console.log(`   Total Round 1 matches: ${round1Matches.length}`);
+  console.log(`   Match IDs:`, round1Matches.map(m => m.id_match));
+  
+  const round2Match = await prisma.tb_match.findFirst({
+    where: {
+      id_bagan: match.id_bagan,
+      ronde: 2
+    }
+  });
+  
+  if (round2Match && round1Matches.length > 0) {
+    // ⭐ Find BYE match
     const byeMatch = round1Matches.find(m => m.id_peserta_a && !m.id_peserta_b);
     
     if (!byeMatch) {
-      console.log(`   ℹ️ No BYE match found`);
-      console.log(`═══════════════════════════════════════\n`);
+      console.log(`   ℹ️ No BYE match found - no additional match needed`);
       return;
     }
     
+    console.log(`   BYE match ID: ${byeMatch.id_match}`);
+    
+    // ⭐ Find LAST NORMAL FIGHT match (sebelum BYE)
     const byeIndex = round1Matches.findIndex(m => m.id_match === byeMatch.id_match);
-    console.log(`   📍 BYE match at index: ${byeIndex} (ID: ${byeMatch.id_match})`);
+    console.log(`   BYE match index: ${byeIndex}`);
     
     if (byeIndex <= 0) {
-      console.log(`   ⚠️ BYE is first match - invalid structure`);
-      console.log(`═══════════════════════════════════════\n`);
+      console.log(`   ⚠️ BYE match is first (index ${byeIndex}) - no last normal fight match`);
       return;
     }
     
     const lastNormalFightMatch = round1Matches[byeIndex - 1];
-    console.log(`   🥊 Last normal fight match ID: ${lastNormalFightMatch.id_match}`);
-    console.log(`   🔍 Current match ID: ${match.id_match}`);
+    console.log(`   Last normal fight match ID: ${lastNormalFightMatch.id_match}`);
+    console.log(`   Checking: ${match.id_match} === ${lastNormalFightMatch.id_match}?`);
     
+    // ⭐ CRITICAL CHECK: Is this match the LAST NORMAL FIGHT?
     if (match.id_match === lastNormalFightMatch.id_match) {
-      console.log(`   ✅ YES! This is the LAST normal fight`);
-      
-      const round2Match = await prisma.tb_match.findFirst({
-        where: {
-          id_bagan: match.id_bagan,
-          ronde: 2
-        }
-      });
-      
-      if (!round2Match) {
-        console.error(`   ❌ Round 2 not found!`);
-        console.log(`═══════════════════════════════════════\n`);
-        return;
-      }
+      console.log(`   ✅ YES! This is the LAST normal fight → Advance to Additional Match`);
       
       await prisma.tb_match.update({
         where: { id_match: round2Match.id_match },
@@ -1781,27 +1533,24 @@ static async advanceWinnerToNextRound(match: any, winnerId: number): Promise<voi
       console.log(`   ✅ Winner ${winnerId} placed in Additional Match (Slot A)`);
       console.log(`═══════════════════════════════════════\n`);
       return;
-      
     } else {
-      console.log(`   ❌ NO - This is NOT the last normal fight`);
-      console.log(`   → Winner ${winnerId} does NOT advance`);
+      console.log(`   ❌ NO! This is NOT the last normal fight`);
+      console.log(`      Current match: ${match.id_match}`);
+      console.log(`      Last match should be: ${lastNormalFightMatch.id_match}`);
+      console.log(`   → Winner stays in Round 1 (DO NOT ADVANCE)`);
       console.log(`═══════════════════════════════════════\n`);
       return;
     }
   }
+}
   
-  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  // ⭐ PRESTASI LOGIC
-  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  console.log(`\n🏆 === PRESTASI ADVANCE LOGIC (Standard Bracket) ===`);
-  
-  // ⭐ GET MATCHES SORTED BY POSITION
+  // ⭐ EXISTING LOGIC FOR PRESTASI (continue as normal)
   const currentRoundMatches = await prisma.tb_match.findMany({
     where: {
       id_bagan: match.id_bagan,
       ronde: currentRound
     },
-    orderBy: { position: 'asc' }  // ⭐ CRITICAL: Sort by position
+    orderBy: { id_match: 'asc' }
   });
 
   const nextRoundMatches = await prisma.tb_match.findMany({
@@ -1809,55 +1558,34 @@ static async advanceWinnerToNextRound(match: any, winnerId: number): Promise<voi
       id_bagan: match.id_bagan,
       ronde: nextRound
     },
-    orderBy: { position: 'asc' }  // ⭐ CRITICAL: Sort by position
+    orderBy: { id_match: 'asc' }
   });
 
-  console.log(`   Current Round ${currentRound}: ${currentRoundMatches.length} matches`);
-  console.log(`   Next Round ${nextRound}: ${nextRoundMatches.length} matches`);
-
   if (nextRoundMatches.length === 0) {
-    console.log(`   🏁 No next round - this was the FINAL`);
-    console.log(`   🎊 Winner ${winnerId} is the CHAMPION!`);
-    console.log(`═══════════════════════════════════════\n`);
+    console.log(`   ℹ️ No next round (this was the final)`);
     return;
   }
 
-  // ⭐ USE POSITION FIELD DIRECTLY (not findIndex)
-  const currentMatchPosition = match.position;
+  const currentMatchIndex = currentRoundMatches.findIndex(m => m.id_match === match.id_match);
   
-  if (currentMatchPosition === null || currentMatchPosition === undefined) {
-    console.error(`   ❌ ERROR: Match has no position set`);
-    console.log(`═══════════════════════════════════════\n`);
+  if (currentMatchIndex === -1) {
+    console.error(`   ❌ Could not find current match in round matches`);
     return;
   }
 
-  console.log(`   📍 Current match position: ${currentMatchPosition}`);
-
-  // ⭐ Calculate next match using bracket tree logic
-  const nextMatchPosition = Math.floor(currentMatchPosition / 2);
-  const nextMatch = nextRoundMatches[nextMatchPosition];
+  const nextMatchIndex = Math.floor(currentMatchIndex / 2);
+  const nextMatch = nextRoundMatches[nextMatchIndex];
 
   if (!nextMatch) {
-    console.error(`   ❌ ERROR: Could not find next match at position ${nextMatchPosition}`);
-    console.log(`   Available positions:`, nextRoundMatches.map(m => m.position));
-    console.log(`═══════════════════════════════════════\n`);
+    console.error(`   ❌ Could not find next match at index ${nextMatchIndex}`);
     return;
   }
 
-  console.log(`   🎯 Target: Round ${nextRound} Match ${nextMatch.id_match} Position ${nextMatchPosition}`);
-
-  // ⭐ Determine slot: EVEN = Slot A, ODD = Slot B
-  const isSlotA = currentMatchPosition % 2 === 0;
-  const targetSlot = isSlotA ? 'A' : 'B';
+  const isFirstSlot = currentMatchIndex % 2 === 0;
   
-  console.log(`   📍 Placement: Slot ${targetSlot} (position ${currentMatchPosition} is ${isSlotA ? 'EVEN' : 'ODD'})`);
-
-  // Update next match with winner
-  if (isSlotA) {
+  if (isFirstSlot) {
     if (nextMatch.id_peserta_a) {
-      console.log(`   ⚠️ WARNING: Slot A already occupied by ${nextMatch.id_peserta_a}`);
-      console.log(`   → SKIPPING to avoid overwrite`);
-      console.log(`═══════════════════════════════════════\n`);
+      console.log(`   ⚠️ Slot A already occupied - SKIPPING`);
       return;
     }
     
@@ -1866,13 +1594,10 @@ static async advanceWinnerToNextRound(match: any, winnerId: number): Promise<voi
       data: { id_peserta_a: winnerId }
     });
     
-    console.log(`   ✅ SUCCESS: Winner ${winnerId} → Match ${nextMatch.id_match} Slot A`);
-    
+    console.log(`   ✅ Winner ${winnerId} placed in Round ${nextRound} Match ${nextMatch.id_match} (Slot A)`);
   } else {
     if (nextMatch.id_peserta_b) {
-      console.log(`   ⚠️ WARNING: Slot B already occupied by ${nextMatch.id_peserta_b}`);
-      console.log(`   → SKIPPING to avoid overwrite`);
-      console.log(`═══════════════════════════════════════\n`);
+      console.log(`   ⚠️ Slot B already occupied - SKIPPING`);
       return;
     }
     
@@ -1881,10 +1606,8 @@ static async advanceWinnerToNextRound(match: any, winnerId: number): Promise<voi
       data: { id_peserta_b: winnerId }
     });
     
-    console.log(`   ✅ SUCCESS: Winner ${winnerId} → Match ${nextMatch.id_match} Slot B`);
+    console.log(`   ✅ Winner ${winnerId} placed in Round ${nextRound} Match ${nextMatch.id_match} (Slot B)`);
   }
-  
-  console.log(`═══════════════════════════════════════\n`);
 }
 
   /**
@@ -2171,6 +1894,9 @@ if (round2Matches.length > 0) {
     }
   }
 
+  /**
+   * Calculate total rounds needed
+   */
 static calculateTotalRounds(participantCount: number): number {
   // ✅ PERBAIKAN: Support 2-3 participants
   if (participantCount < 2) {
@@ -2182,8 +1908,8 @@ static calculateTotalRounds(participantCount: number): number {
   if (participantCount === 3) return 2; // 1 match + final
   
   try {
-    const rounds = BracketService.calculateBracketStructure(participantCount);
-    return rounds.length;  // ✅ FIX: Add return statement
+    const structure = this.calculateBracketStructure(participantCount);
+    return structure.totalRounds;
   } catch (error) {
     console.warn('⚠️ Using fallback calculation for total rounds');
     const nextPowerOf2 = Math.pow(2, Math.ceil(Math.log2(participantCount)));
