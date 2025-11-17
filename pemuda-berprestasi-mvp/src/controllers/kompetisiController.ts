@@ -569,12 +569,6 @@ static async getBracketsListPublic(req: Request, res: Response) {
   }
 }
 
-/**
- * Get bracket by specific class
- */
-/**
- * Get bracket by specific class
- */
 static async getBracketByClass(req: Request, res: Response) {
   try {
     const { id, kelasKejuaraanId } = req.params;
@@ -588,7 +582,7 @@ static async getBracketByClass(req: Request, res: Response) {
 
     console.log(`🔍 Fetching bracket for kompetisi: ${kompetisiId}, kelas: ${kelasId}`);
 
-    // ✅ QUERY LENGKAP dengan ALL INCLUDES
+    // ✅ STEP 1: Query kelas dengan bracket dan matches
     const kelas = await prisma.tb_kelas_kejuaraan.findUnique({
       where: { id_kelas_kejuaraan: kelasId },
       include: {
@@ -693,36 +687,6 @@ static async getBracketByClass(req: Request, res: Response) {
               }
             }
           }
-        },
-        // ✅ KRUSIAL: INCLUDE PESERTA KOMPETISI
-        peserta_kompetisi: {
-          where: {
-            status: 'APPROVED'
-          },
-          include: {
-            atlet: {
-              include: {
-                dojang: {
-                  select: {
-                    nama_dojang: true
-                  }
-                }
-              }
-            },
-            anggota_tim: {
-              include: {
-                atlet: {
-                  include: {
-                    dojang: {
-                      select: {
-                        nama_dojang: true
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
         }
       }
     });
@@ -741,7 +705,51 @@ static async getBracketByClass(req: Request, res: Response) {
     const bagan = kelas.bagan[0];
     
     console.log(`✅ Bracket found with ${bagan.match.length} matches`);
-    console.log(`✅ Found ${kelas.peserta_kompetisi.length} APPROVED participants`); // ⭐ LOG PENTING
+
+    // ⭐ STEP 2: EXTRACT UNIQUE PARTICIPANT IDs dari MATCHES (BUKAN dari peserta_kompetisi table!)
+    const participantIds = new Set<number>();
+    
+    bagan.match.forEach(match => {
+      if (match.id_peserta_a) participantIds.add(match.id_peserta_a);
+      if (match.id_peserta_b) participantIds.add(match.id_peserta_b);
+    });
+
+    console.log(`🔍 Found ${participantIds.size} unique participant IDs in matches`);
+
+    // ⭐ STEP 3: FETCH PARTICIPANTS yang ADA DI MATCHES (ignore status filter!)
+    const pesertaList = await prisma.tb_peserta_kompetisi.findMany({
+      where: {
+        id_peserta_kompetisi: {
+          in: Array.from(participantIds)
+        }
+      },
+      include: {
+        atlet: {
+          include: {
+            dojang: {
+              select: {
+                nama_dojang: true
+              }
+            }
+          }
+        },
+        anggota_tim: {
+          include: {
+            atlet: {
+              include: {
+                dojang: {
+                  select: {
+                    nama_dojang: true
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    });
+
+    console.log(`✅ Found ${pesertaList.length} participants from match references`);
 
     // ✅ Transform matches ke format yang expected frontend
     const matches = bagan.match.map(match => {
@@ -783,13 +791,11 @@ static async getBracketByClass(req: Request, res: Response) {
     });
 
     // ✅ Transform participants dengan PROPER NULL HANDLING
-    const participants = kelas.peserta_kompetisi.map(p => {
-      // Handle team dojang
+    const participants = pesertaList.map(p => {
       const teamDojangName = p.anggota_tim && p.anggota_tim.length > 0 
         ? (p.anggota_tim[0].atlet as any)?.dojang?.nama_dojang || ''
         : '';
       
-      // Handle solo athlete
       const soloAtletName = p.atlet?.nama_atlet || '';
       const soloDojoName = (p.atlet as any)?.dojang?.nama_dojang || '';
       
@@ -807,7 +813,7 @@ static async getBracketByClass(req: Request, res: Response) {
       };
     });
 
-    console.log(`📤 Sending ${participants.length} participants to frontend`); // ⭐ LOG PENTING
+    console.log(`📤 Sending ${participants.length} participants to frontend`);
 
     // ✅ Build response dengan SEMUA DATA
     const response = {
@@ -820,7 +826,7 @@ static async getBracketByClass(req: Request, res: Response) {
         poomsae: kelas.poomsae,
         jenis_kelamin: kelas.kelas_berat?.jenis_kelamin || kelas.poomsae?.jenis_kelamin || null,
         kompetisi: kelas.kompetisi,
-        participants: participants, // ⭐ INI YANG DIKIRIM KE FRONTEND
+        participants: participants, // ⭐ DARI MATCH REFERENCES, BUKAN TABLE FILTER
         matches: matches,
         totalRounds: Math.max(...matches.map(m => m.round), 0)
       }
