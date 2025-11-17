@@ -2078,108 +2078,138 @@ const calculateCardPosition = (
               </div>
             </div>
 
-            {!viewOnly && (
-            <div className="flex gap-3">
-              <button
-                onClick={exportPesertaToExcel}
-                className="py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-all"
-                style={{ backgroundColor: '#16a34a', color: '#F5FBEF' }}
-              >
-                Export Peserta
-              </button>
+{!viewOnly && (
+  <div className="flex flex-wrap gap-2">
+    {/* ROW 1: Primary Actions */}
+    <div className="flex gap-2">
+      {/* Export Peserta Button */}
+      <button
+        onClick={exportPesertaToExcel}
+        className="flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all hover:opacity-90 shadow-md"
+        style={{ backgroundColor: '#16a34a', color: '#F5FBEF' }}
+        title="Export daftar peserta ke Excel"
+      >
+        <Download size={16} />
+        <span className="hidden sm:inline">Export Peserta</span>
+        <span className="sm:hidden">Excel</span>
+      </button>
 
-              <button
-                onClick={() => setShowDojangModal(true)}
-                disabled={loading || approvedParticipants.length < 2 || !bracketGenerated}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50 ${
-                  dojangSeparation.enabled ? 'ring-2 ring-green-500' : ''
-                }`}
-                style={{ 
-                  backgroundColor: dojangSeparation.enabled ? '#10B981' : '#6366F1', 
-                  color: '#F5FBEF' 
-                }}
-              >
-                <Users size={16} />
-                <span>{dojangSeparation.enabled ? '✓ Dojang Separated' : 'Dojang Separation'}</span>
-              </button>
+      {/* Dojang Separation Button */}
+      <button
+        onClick={() => setShowDojangModal(true)}
+        disabled={loading || approvedParticipants.length < 2}
+        className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
+          dojangSeparation.enabled ? 'ring-2 ring-offset-1' : ''
+        }`}
+        style={{ 
+          backgroundColor: dojangSeparation.enabled ? '#10B981' : '#6366F1', 
+          color: '#F5FBEF',
+        }}
+        title={dojangSeparation.enabled ? 'Dojang separation aktif (STRICT mode)' : 'Aktifkan dojang separation'}
+      >
+        <Users size={16} />
+        <span className="hidden md:inline">
+          {dojangSeparation.enabled ? '✓ Dojang Separated' : 'Dojang Separation'}
+        </span>
+        <span className="md:hidden">
+          {dojangSeparation.enabled ? '✓ Dojang' : 'Dojang'}
+        </span>
+      </button>
+    </div>
 
-              <button
-                onClick={shuffleBracket}
-                disabled={loading || approvedParticipants.length < 2 || !bracketGenerated}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50"
-                style={{ backgroundColor: '#6366F1', color: '#F5FBEF' }}
-              >
-                {loading ? (
-                  <>
-                    <RefreshCw size={16} className="animate-spin" />
-                    <span>Processing...</span>
-                  </>
-                ) : (
-                  <>
-                    <Shuffle size={16} />
-                    <span>Shuffle</span>
-                  </>
-                )}
-              </button>
-              
-              <button
-                onClick={clearBracketResults}
-                disabled={!bracketGenerated || clearing}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50"
-                style={{ backgroundColor: '#F97316', color: '#F5FBEF' }}
-              >
-                {clearing ? (
-                  <>
-                    <RefreshCw size={16} className="animate-spin" />
-                    <span>Clearing...</span>
-                  </>
-                ) : (
-                  <>
-                    <AlertTriangle size={16} />
-                    <span>Clear Results</span>
-                  </>
-                )}
-              </button>
+    {/* ROW 2: Bracket Actions */}
+    <div className="flex gap-2">
+      {/* Shuffle Button */}
+      <button
+        onClick={shuffleBracket}
+        disabled={loading || approvedParticipants.length < 2 || !bracketGenerated}
+        className="flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 shadow-md"
+        style={{ backgroundColor: '#6366F1', color: '#F5FBEF' }}
+        title="Acak ulang susunan bracket"
+      >
+        {loading ? (
+          <>
+            <RefreshCw size={16} className="animate-spin" />
+            <span className="hidden sm:inline">Processing...</span>
+          </>
+        ) : (
+          <>
+            <Shuffle size={16} />
+            <span className="hidden sm:inline">Shuffle</span>
+            <span className="sm:hidden">🔀</span>
+          </>
+        )}
+      </button>
+      
+      {/* Clear Results Button */}
+      <button
+        onClick={clearBracketResults}
+        disabled={!bracketGenerated || clearing}
+        className="flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 shadow-md"
+        style={{ backgroundColor: '#F97316', color: '#F5FBEF' }}
+        title="Reset semua skor ke 0 (struktur bracket tetap)"
+      >
+        {clearing ? (
+          <>
+            <RefreshCw size={16} className="animate-spin" />
+            <span className="hidden sm:inline">Clearing...</span>
+          </>
+        ) : (
+          <>
+            <AlertTriangle size={16} />
+            <span className="hidden sm:inline">Clear Results</span>
+            <span className="sm:hidden">🗑️</span>
+          </>
+        )}
+      </button>
 
-              <button
-                onClick={deleteBracketPermanent}
-                disabled={!bracketGenerated || deleting}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50"
-                style={{ backgroundColor: '#DC2626', color: '#F5FBEF' }}
-              >
-                {deleting ? (
-                  <>
-                    <RefreshCw size={16} className="animate-spin" />
-                    <span>Deleting...</span>
-                  </>
-                ) : (
-                  <>
-                    <AlertTriangle size={16} />
-                    <span>Delete Bracket</span>
-                  </>
-                )}
-              </button>
+      {/* Delete Bracket Button */}
+      <button
+        onClick={deleteBracketPermanent}
+        disabled={!bracketGenerated || deleting}
+        className="flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 shadow-md"
+        style={{ backgroundColor: '#DC2626', color: '#F5FBEF' }}
+        title="Hapus bracket secara permanen (TIDAK BISA dibatalkan!)"
+      >
+        {deleting ? (
+          <>
+            <RefreshCw size={16} className="animate-spin" />
+            <span className="hidden sm:inline">Deleting...</span>
+          </>
+        ) : (
+          <>
+            <AlertTriangle size={16} />
+            <span className="hidden sm:inline">Delete Bracket</span>
+            <span className="sm:hidden">❌</span>
+          </>
+        )}
+      </button>
 
-              <button
-                onClick={handleExportPDF}
-                disabled={!bracketGenerated || exportingPDF || matches.length === 0}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50"
-                style={{ backgroundColor: '#10B981', color: '#F5FBEF' }}
-              >
-                {exportingPDF ? (
-                  <>
-                    <RefreshCw size={16} className="animate-spin" />
-                    <span>Generating PDF...</span>
-                  </>
-                ) : (
-                  <>
-                    <Download size={16} />
-                    <span>Download PDF</span>
-                  </>
-                )}
-              </button>
-            </div>
-            )}
+      {/* Download PDF Button */}
+      <button
+        onClick={handleExportPDF}
+        disabled={!bracketGenerated || exportingPDF || matches.length === 0}
+        className="flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 shadow-md"
+        style={{ backgroundColor: '#10B981', color: '#F5FBEF' }}
+        title="Download bracket sebagai PDF"
+      >
+        {exportingPDF ? (
+          <>
+            <RefreshCw size={16} className="animate-spin" />
+            <span className="hidden sm:inline">Generating PDF...</span>
+            <span className="sm:hidden">⏳</span>
+          </>
+        ) : (
+          <>
+            <Download size={16} />
+            <span className="hidden sm:inline">Download PDF</span>
+            <span className="sm:hidden">PDF</span>
+          </>
+        )}
+      </button>
+    </div>
+  </div>
+)}
           </div>
 
           {/* Competition details */}
@@ -2667,101 +2697,113 @@ const calculateCardPosition = (
 {showDojangModal && (
   <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
     <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
+      {/* Header */}
       <div className="p-6 border-b" style={{ borderColor: '#990D35' }}>
-        <h3 className="text-xl font-bold" style={{ color: '#050505' }}>
-          Dojang Separation Settings
-        </h3>
-        <p className="text-sm mt-1" style={{ color: '#050505', opacity: 0.6 }}>
-          Pisahkan atlet dari dojang yang sama
-        </p>
+        <div className="flex items-start gap-3">
+          <div 
+            className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+            style={{ backgroundColor: '#990D35' }}
+          >
+            <Users size={20} style={{ color: 'white' }} />
+          </div>
+          <div className="flex-1">
+            <h3 className="text-xl font-bold" style={{ color: '#050505' }}>
+              Dojang Separation
+            </h3>
+            <p className="text-sm mt-1" style={{ color: '#050505', opacity: 0.6 }}>
+              {/* ⭐ CONDITIONAL TEXT */}
+              {window.location.pathname.includes('pemula') 
+                ? 'Pisahkan atlet se-dojang agar tidak bertemu (STRICT mode)'
+                : 'Pisahkan atlet se-dojang di pool kiri-kanan (STRICT mode)'
+              }
+            </p>
+          </div>
+        </div>
       </div>
       
       <div className="p-6 space-y-4">
         {/* Toggle Enable/Disable */}
-        <div className="flex items-center justify-between p-4 rounded-lg border-2" 
-          style={{ borderColor: dojangSeparation.enabled ? '#10B981' : '#990D35' }}>
-          <div>
-            <p className="font-bold" style={{ color: '#050505' }}>Aktifkan Pemisahan</p>
-            <p className="text-xs" style={{ color: '#050505', opacity: 0.6 }}>
-              Atlet se-dojang tidak bertemu di awal
+        <div 
+          className="flex items-center justify-between p-4 rounded-lg border-2 transition-all" 
+          style={{ borderColor: dojangSeparation.enabled ? '#10B981' : 'rgba(153, 13, 53, 0.2)' }}
+        >
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-1">
+              <p className="font-bold text-base" style={{ color: '#050505' }}>
+                Aktifkan Pemisahan
+              </p>
+              {dojangSeparation.enabled && (
+                <span 
+                  className="text-xs px-2 py-0.5 rounded-full font-bold"
+                  style={{ backgroundColor: '#10B981', color: 'white' }}
+                >
+                  ACTIVE
+                </span>
+              )}
+            </div>
+            <p className="text-xs leading-relaxed" style={{ color: '#050505', opacity: 0.6 }}>
+              {window.location.pathname.includes('pemula')
+                ? 'Atlet se-dojang tidak akan bertemu di semua match'
+                : 'Atlet se-dojang tidak akan bertemu sampai Semi-Final'
+              }
             </p>
           </div>
+          
+          {/* Toggle Switch */}
           <button
             onClick={() => setDojangSeparation(prev => ({ ...prev, enabled: !prev.enabled }))}
-            className={`w-14 h-8 rounded-full transition-all ${
+            className={`relative w-14 h-8 rounded-full transition-all ${
               dojangSeparation.enabled ? 'bg-green-500' : 'bg-gray-300'
             }`}
+            aria-label="Toggle dojang separation"
           >
-            <div className={`w-6 h-6 bg-white rounded-full shadow-md transform transition-transform ${
-              dojangSeparation.enabled ? 'translate-x-7' : 'translate-x-1'
-            }`} />
+            <div 
+              className={`absolute w-6 h-6 bg-white rounded-full shadow-md transform transition-transform top-1 ${
+                dojangSeparation.enabled ? 'translate-x-7' : 'translate-x-1'
+              }`} 
+            />
           </button>
         </div>
 
-        {/* Mode Selection */}
+        {/* Info Box - STRICT Mode Explanation */}
         {dojangSeparation.enabled && (
-          <div className="space-y-3">
-            <label className="block text-sm font-bold" style={{ color: '#050505' }}>
-              Mode Pemisahan:
-            </label>
-            
-            <div 
-              onClick={() => setDojangSeparation(prev => ({ ...prev, mode: 'BALANCED' }))}
-              className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                dojangSeparation.mode === 'BALANCED' ? 'border-green-500 bg-green-50' : 'border-gray-300'
-              }`}
-            >
-              <div className="flex items-start gap-3">
-                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                  dojangSeparation.mode === 'BALANCED' ? 'border-green-500' : 'border-gray-300'
-                }`}>
-                  {dojangSeparation.mode === 'BALANCED' && (
-                    <div className="w-3 h-3 rounded-full bg-green-500" />
-                  )}
-                </div>
-                <div>
-                  <p className="font-bold text-sm" style={{ color: '#050505' }}>
-                    Balanced (Recommended)
-                  </p>
-                  <p className="text-xs mt-1" style={{ color: '#050505', opacity: 0.6 }}>
-                    Bertemu setelat mungkin (Semi/Final)
-                  </p>
+          <div 
+            className="p-4 rounded-lg border-2"
+            style={{ 
+              backgroundColor: 'rgba(59, 130, 246, 0.05)', 
+              borderColor: 'rgba(59, 130, 246, 0.2)' 
+            }}
+          >
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0 mt-0.5">
+                <div 
+                  className="w-6 h-6 rounded-full flex items-center justify-center"
+                  style={{ backgroundColor: '#3B82F6' }}
+                >
+                  <span className="text-white text-xs font-bold">ℹ️</span>
                 </div>
               </div>
-            </div>
-
-            <div 
-              onClick={() => setDojangSeparation(prev => ({ ...prev, mode: 'STRICT' }))}
-              className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                dojangSeparation.mode === 'STRICT' ? 'border-green-500 bg-green-50' : 'border-gray-300'
-              }`}
-            >
-              <div className="flex items-start gap-3">
-                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                  dojangSeparation.mode === 'STRICT' ? 'border-green-500' : 'border-gray-300'
-                }`}>
-                  {dojangSeparation.mode === 'STRICT' && (
-                    <div className="w-3 h-3 rounded-full bg-green-500" />
-                  )}
-                </div>
-                <div>
-                  <p className="font-bold text-sm" style={{ color: '#050505' }}>
-                    Strict
-                  </p>
-                  <p className="text-xs mt-1" style={{ color: '#050505', opacity: 0.6 }}>
-                    Hanya bertemu di Final (jika memungkinkan)
-                  </p>
-                </div>
+              <div className="flex-1">
+                <p className="text-sm font-bold mb-1" style={{ color: '#3B82F6' }}>
+                  Mode: STRICT
+                </p>
+                <p className="text-xs leading-relaxed" style={{ color: '#050505', opacity: 0.7 }}>
+                  {window.location.pathname.includes('pemula')
+                    ? 'Algoritma akan memastikan atlet dari dojang yang sama TIDAK bertemu di Round 1 (kecuali mathematically impossible).'
+                    : 'Atlet dari dojang yang sama akan dipisah ke pool KIRI dan KANAN. Mereka hanya bisa bertemu di Semi-Final atau Final.'
+                  }
+                </p>
               </div>
             </div>
           </div>
         )}
       </div>
       
-      <div className="p-6 border-t flex gap-3">
+      {/* Footer Actions */}
+      <div className="p-6 border-t flex gap-3 bg-gray-50">
         <button
           onClick={() => setShowDojangModal(false)}
-          className="flex-1 py-2 px-4 rounded-lg border"
+          className="flex-1 py-2.5 px-4 rounded-lg border-2 font-medium transition-all hover:bg-white"
           style={{ borderColor: '#990D35', color: '#990D35' }}
         >
           Close
@@ -2773,20 +2815,78 @@ const calculateCardPosition = (
               showNotification(
                 'success',
                 'Dojang Separation Enabled',
-                `Mode: ${dojangSeparation.mode}. Generate/Shuffle bracket untuk apply.`,
+                'Mode STRICT aktif. Generate atau Shuffle bracket untuk menerapkan.',
                 () => setShowModal(false)
               );
             }
           }}
-          className="flex-1 py-2 px-4 rounded-lg"
+          className="flex-1 py-2.5 px-4 rounded-lg font-medium transition-all hover:opacity-90 shadow-md"
           style={{ backgroundColor: '#990D35', color: '#F5FBEF' }}
         >
-          Apply
+          {dojangSeparation.enabled ? '✓ Apply' : 'OK'}
         </button>
       </div>
     </div>
   </div>
 )}
+
+{/* ============================================
+    📱 RESPONSIVE CSS (Add to style tag)
+    ============================================ */}
+<style>{`
+  /* Responsive button text visibility */
+  @media (max-width: 640px) {
+    .hidden.sm\\:inline {
+      display: none !important;
+    }
+    .sm\\:hidden {
+      display: inline !important;
+    }
+  }
+
+  @media (min-width: 641px) {
+    .hidden.sm\\:inline {
+      display: inline !important;
+    }
+    .sm\\:hidden {
+      display: none !important;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .hidden.md\\:inline {
+      display: none !important;
+    }
+    .md\\:hidden {
+      display: inline !important;
+    }
+  }
+
+  @media (min-width: 769px) {
+    .hidden.md\\:inline {
+      display: inline !important;
+    }
+    .md\\:hidden {
+      display: none !important;
+    }
+  }
+
+  /* Button hover effects */
+  button:not(:disabled):hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  /* Smooth transitions */
+  button {
+    transition: all 0.2s ease;
+  }
+`}</style>
     </div>
   );
 };

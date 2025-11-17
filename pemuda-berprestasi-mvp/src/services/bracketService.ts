@@ -245,49 +245,151 @@ static groupByDojang(participants: Participant[]): Map<string, Participant[]> {
 }
 
 /**
+ * Validate PRESTASI dojang separation for Round 1
+ * Formula: If maxDojangSize > halfSize (pool capacity), same-dojang R1 match is UNAVOIDABLE
+ */
+static validatePrestasiR1Separation(
+  participants: Participant[],
+  targetSize: number
+): {
+  canSeparateR1: boolean;
+  largestDojang: { name: string; size: number };
+  poolCapacity: number;
+  totalR1Matches: number;
+  warnings: string[];
+  isUnavoidable: boolean;
+} {
+  const dojangGroups = this.groupByDojang(participants);
+  const totalR1Matches = targetSize / 2;
+  const poolCapacity = totalR1Matches / 2; // LEFT and RIGHT pool capacity (in matches)
+  const maxParticipantsPerPool = poolCapacity * 2; // Each match has 2 participants
+  
+  let largestDojang = { name: '', size: 0 };
+  
+  for (const [dojangName, members] of dojangGroups) {
+    if (members.length > largestDojang.size) {
+      largestDojang = { name: dojangName || 'UNKNOWN', size: members.length };
+    }
+  }
+  
+  const warnings: string[] = [];
+  
+  // ⭐ CRITICAL CHECK: If any dojang has MORE than pool capacity
+  // → Impossible to fit all in one pool → Must spread to both pools → R1 same-dojang unavoidable
+  const isUnavoidable = largestDojang.size > maxParticipantsPerPool;
+  
+  console.log(`\n📊 === PRESTASI R1 STRICT VALIDATION ===`);
+  console.log(`   Total participants: ${participants.length}`);
+  console.log(`   Target bracket size: ${targetSize}`);
+  console.log(`   Total R1 matches: ${totalR1Matches}`);
+  console.log(`   Pool capacity: ${poolCapacity} matches per side`);
+  console.log(`   Max participants per pool: ${maxParticipantsPerPool}`);
+  console.log(`   Largest dojang: "${largestDojang.name}" (${largestDojang.size} members)`);
+  console.log(`   Unavoidable same-dojang R1? ${isUnavoidable ? 'YES ⚠️' : 'NO ✅'}`);
+  
+  if (isUnavoidable) {
+    const overflow = largestDojang.size - maxParticipantsPerPool;
+    warnings.push(
+      `⚠️ PRESTASI STRICT MODE - Round 1 Same-Dojang Match Unavoidable:`,
+      ``,
+      `   📊 Breakdown:`,
+      `      • Dojang "${largestDojang.name}": ${largestDojang.size} members`,
+      `      • Pool capacity: ${maxParticipantsPerPool} participants per side`,
+      `      • Overflow: ${overflow} member(s) must go to opposite pool`,
+      ``,
+      `   💡 Explanation:`,
+      `      Dengan ${largestDojang.size} members dan pool capacity ${maxParticipantsPerPool},`,
+      `      ${overflow} member(s) HARUS masuk ke pool lawan (LEFT/RIGHT),`,
+      `      sehingga minimal ada ${Math.ceil(overflow / 2)} same-dojang match(es) di R1.`,
+      ``,
+      `   ✅ Status: DIPERBOLEHKAN (mathematically impossible to avoid)`,
+      ``
+    );
+  }
+  
+  // ⭐ Special case: All from same dojang
+  if (dojangGroups.size === 1) {
+    warnings.push(
+      `ℹ️ Semua peserta berasal dari dojang yang sama ("${largestDojang.name}")`,
+      `   → Round 1 akan penuh dengan same-dojang matches`,
+      `   → STRICT mode tidak dapat menghindari ini`,
+      `   → Shuffle tidak akan mengubah hasil`,
+      ``
+    );
+  }
+  
+  return {
+    canSeparateR1: !isUnavoidable,
+    largestDojang,
+    poolCapacity,
+    totalR1Matches,
+    warnings,
+    isUnavoidable
+  };
+}
+
+/**
  * Distribute participants with dojang separation
  * STRICT mode: Split same-dojang members between left/right
  * BALANCED mode: Keep same-dojang together, distribute groups evenly
  */
-static distributeDojangSeparated(
-  participants: Participant[], 
-  mode: 'STRICT' | 'BALANCED'
+/**
+ * Distribute participants with STRICT dojang separation
+ * Goal: Split same-dojang members between LEFT and RIGHT pools
+ * Result: They cannot meet until Semi-Final (when pools merge)
+ */
+static distributeDojangSeparatedStrict(
+  participants: Participant[]
 ): [Participant[], Participant[]] {
   const dojangGroups = this.groupByDojang(participants);
   const left: Participant[] = [];
   const right: Participant[] = [];
   
-  // Sort dojangs by member count (largest first)
+  console.log(`\n🏛️ === STRICT DOJANG SEPARATION ===`);
+  console.log(`   Splitting same-dojang members between LEFT and RIGHT pools...`);
+  
+  // Sort dojangs by member count (largest first) for better distribution
   const sortedDojangs = Array.from(dojangGroups.entries())
     .sort((a, b) => b[1].length - a[1].length);
   
+  console.log(`\n   📊 Dojang distribution:`);
+  sortedDojangs.forEach(([dojang, members]) => {
+    console.log(`      ${dojang}: ${members.length} member(s)`);
+  });
+  
+  console.log(`\n   🔀 Distribution process:`);
+  
   sortedDojangs.forEach(([dojang, members]) => {
     if (members.length === 1) {
-      // Single member: distribute to smaller side
+      // ⭐ Single member: Put in smaller pool for balance
       if (left.length <= right.length) {
         left.push(members[0]);
+        console.log(`      • ${members[0].name} (${dojang}) → LEFT (single member)`);
       } else {
         right.push(members[0]);
+        console.log(`      • ${members[0].name} (${dojang}) → RIGHT (single member)`);
       }
+      
     } else {
-      // Multiple members from same dojang
-      if (mode === 'STRICT') {
-        // Split members between left and right
-        const mid = Math.ceil(members.length / 2);
-        left.push(...members.slice(0, mid));
-        right.push(...members.slice(mid));
-      } else {
-        // BALANCED: Keep group together, put in smaller side
-        if (left.length <= right.length) {
-          left.push(...members);
-        } else {
-          right.push(...members);
-        }
-      }
+      // ⭐ Multiple members: SPLIT between pools (STRICT behavior)
+      const mid = Math.ceil(members.length / 2);
+      const leftMembers = members.slice(0, mid);
+      const rightMembers = members.slice(mid);
+      
+      left.push(...leftMembers);
+      right.push(...rightMembers);
+      
+      console.log(`      • ${dojang} SPLIT (${members.length} members):`);
+      console.log(`         LEFT  (${leftMembers.length}): ${leftMembers.map(m => m.name).join(', ')}`);
+      console.log(`         RIGHT (${rightMembers.length}): ${rightMembers.map(m => m.name).join(', ')}`);
     }
   });
   
-  // ⭐ TAMBAHKAN RETURN STATEMENT INI
+  console.log(`\n   ✅ Final distribution:`);
+  console.log(`      LEFT pool:  ${left.length} participants`);
+  console.log(`      RIGHT pool: ${right.length} participants`);
+  console.log(``);
+  
   return [left, right];
 }
 
@@ -721,17 +823,105 @@ static calculateBracketStructure(
   };
 }
 
+/**
+ * Validate Round 1 matches for same-dojang violations
+ * Called AFTER matches are created
+ */
+static validateR1MatchesStrict(
+  matches: Match[],
+  isUnavoidable: boolean
+): {
+  hasViolation: boolean;
+  violations: { position: number; p1: string; p2: string; dojang: string }[];
+  totalR1Matches: number;
+  sameDojangCount: number;
+  differentDojangCount: number;
+  byeCount: number;
+  summary: string;
+} {
+  const r1Matches = matches.filter(m => m.round === 1);
+  const violations: { position: number; p1: string; p2: string; dojang: string }[] = [];
+  let sameDojangCount = 0;
+  let differentDojangCount = 0;
+  let byeCount = 0;
+  
+  console.log(`\n🔍 === VALIDATING ROUND 1 MATCHES ===`);
+  console.log(`   Total R1 matches: ${r1Matches.length}\n`);
+  
+  for (const match of r1Matches) {
+    // ⭐ Skip BYE matches
+    if (!match.participant1 || !match.participant2) {
+      byeCount++;
+      console.log(`   Match ${match.position + 1}: BYE (skipped)`);
+      continue;
+    }
+    
+    const isSameDojang = match.participant1.dojang === match.participant2.dojang;
+    
+    if (isSameDojang) {
+      sameDojangCount++;
+      violations.push({
+        position: match.position,
+        p1: match.participant1.name,
+        p2: match.participant2.name,
+        dojang: match.participant1.dojang || 'UNKNOWN'
+      });
+      console.log(
+        `   ❌ Match ${match.position + 1}: ${match.participant1.name} vs ${match.participant2.name} ` +
+        `(both from "${match.participant1.dojang}")`
+      );
+    } else {
+      differentDojangCount++;
+      console.log(
+        `   ✅ Match ${match.position + 1}: ${match.participant1.name} (${match.participant1.dojang}) vs ` +
+        `${match.participant2.name} (${match.participant2.dojang})`
+      );
+    }
+  }
+  
+  const hasViolation = violations.length > 0;
+  
+  // ⭐ Generate summary
+  let summary = '';
+  if (hasViolation) {
+    if (isUnavoidable) {
+      summary = `⚠️ ${sameDojangCount} same-dojang match(es) in R1 (UNAVOIDABLE - diperbolehkan)`;
+    } else {
+      summary = `❌ ${sameDojangCount} same-dojang match(es) in R1 (SHOULD BE AVOIDABLE!)`;
+    }
+  } else {
+    summary = `✅ All Round 1 matches have different dojangs`;
+  }
+  
+  console.log(`\n   📊 Summary:`);
+  console.log(`      • Different dojang: ${differentDojangCount} match(es) ✅`);
+  console.log(`      • Same dojang: ${sameDojangCount} match(es) ${hasViolation ? '⚠️' : ''}`);
+  console.log(`      • BYE: ${byeCount} match(es)`);
+  console.log(`      • ${summary}`);
+  console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`);
+  
+  return {
+    hasViolation,
+    violations,
+    totalR1Matches: r1Matches.length,
+    sameDojangCount,
+    differentDojangCount,
+    byeCount,
+    summary
+  };
+}
+
 static async generatePrestasiBracket(
   baganId: number,
   participants: Participant[],
   byeParticipantIds?: number[],
-  dojangSeparation?: { enabled: boolean; mode: 'STRICT' | 'BALANCED' } // ⭐ TAMBAHKAN INI
+  dojangSeparation?: { enabled: boolean; mode?: 'STRICT' | 'BALANCED' } // mode deprecated, always STRICT
 ): Promise<Match[]> {
   const matches: Match[] = [];
 
   const participantCount = participants.length;
   
-  // ✅ PERBAIKAN: Support 2-3 participants
+  // ✅ Support 2-3 participants
   if (participantCount < 2) {
     throw new Error("Minimal 2 peserta diperlukan untuk bracket prestasi");
   }
@@ -745,7 +935,7 @@ static async generatePrestasiBracket(
     const finalMatch = await prisma.tb_match.create({
       data: {
         id_bagan: baganId,
-        ronde: 1, // Langsung final (round 1)
+        ronde: 1,
         id_peserta_a: shuffled[0].id,
         id_peserta_b: shuffled[1].id,
         skor_a: 0,
@@ -768,13 +958,12 @@ static async generatePrestasiBracket(
     return matches;
   }
 
-  // ✅ HANDLE 3 PARTICIPANTS (1 bye + 1 match → final)
+  // ✅ HANDLE 3 PARTICIPANTS
   if (participantCount === 3) {
     console.log(`🎯 PRESTASI: 3 participants → 1 BYE + 1 Match → Final`);
     
     const shuffled = this.shuffleArray([...participants]);
     
-    // Round 1: 1 match
     const round1Match = await prisma.tb_match.create({
       data: {
         id_bagan: baganId,
@@ -797,15 +986,12 @@ static async generatePrestasiBracket(
       scoreB: 0,
     });
 
-    console.log(`   🥊 R1 Match: ${shuffled[0].name} vs ${shuffled[1].name}`);
-
-    // Round 2: Final (BYE participant vs winner of R1)
     const finalMatch = await prisma.tb_match.create({
       data: {
         id_bagan: baganId,
         ronde: 2,
-        id_peserta_a: shuffled[2].id, // BYE participant
-        id_peserta_b: null, // TBD - winner of R1
+        id_peserta_a: shuffled[2].id,
+        id_peserta_b: null,
         skor_a: 0,
         skor_b: 0,
       },
@@ -822,6 +1008,7 @@ static async generatePrestasiBracket(
       scoreB: 0,
     });
 
+    console.log(`   🥊 R1 Match: ${shuffled[0].name} vs ${shuffled[1].name}`);
     console.log(`   🏆 Final: ${shuffled[2].name} (BYE) vs Winner of R1`);
     return matches;
   }
@@ -830,13 +1017,30 @@ static async generatePrestasiBracket(
   const targetSize = Math.pow(2, Math.ceil(Math.log2(participantCount)));
   const byesNeeded = targetSize - participantCount;
   const totalMatchesR1 = targetSize / 2;
-  const halfSize = totalMatchesR1 / 2; // ⭐ SPLIT POINT kiri-kanan
+  const halfSize = totalMatchesR1 / 2;
   
-  console.log(`📊 PRESTASI: participants=${participantCount}, targetSize=${targetSize}, byesNeeded=${byesNeeded}`);
+  console.log(`\n🏆 === GENERATING PRESTASI BRACKET ===`);
+  console.log(`   Participants: ${participantCount}`);
+  console.log(`   Target size: ${targetSize}`);
+  console.log(`   BYEs needed: ${byesNeeded}`);
   console.log(`   Total R1 matches: ${totalMatchesR1}`);
+  console.log(`   Half size (split point): ${halfSize}`);
 
-  // ⭐⭐⭐ TAMBAHKAN BAGIAN INI ⭐⭐⭐
+  // ⭐⭐⭐ VALIDATION PRESTASI R1 SEPARATION ⭐⭐⭐
+  let isUnavoidable = false;
   
+  if (dojangSeparation?.enabled) {
+    console.log(`\n🔒 STRICT MODE ENABLED`);
+    
+    const validation = this.validatePrestasiR1Separation(participants, targetSize);
+    isUnavoidable = validation.isUnavoidable;
+    
+    // Show warnings if unavoidable
+    if (validation.warnings.length > 0) {
+      validation.warnings.forEach(w => console.log(w));
+    }
+  }
+
   // 2️⃣ Tentukan peserta BYE
   let byeParticipants: Participant[] = [];
   let activeParticipants: Participant[] = [...participants];
@@ -860,7 +1064,7 @@ static async generatePrestasiBracket(
 
   console.log(`   🧩 BYE positions:`, byePositions);
 
-  // 4️⃣ Tentukan posisi FIGHT (yang BUKAN BYE)
+  // 4️⃣ Tentukan posisi FIGHT
   const allPositions = Array.from({ length: totalMatchesR1 }, (_, i) => i);
   const fightPositions = allPositions.filter(pos => !byePositions.includes(pos));
 
@@ -874,110 +1078,105 @@ static async generatePrestasiBracket(
 
   console.log(`   ✅ FIGHT positions (after distribution):`, distributedFightPositions);
 
-  // 6️⃣ ⭐ PERBAIKAN: Split participants dengan LEFT-RIGHT logic
-let leftPool: Participant[] = [];
-let rightPool: Participant[] = [];
+  // ⭐⭐⭐ 6️⃣ SPLIT PARTICIPANTS WITH STRICT DOJANG SEPARATION ⭐⭐⭐
+  let leftPool: Participant[] = [];
+  let rightPool: Participant[] = [];
 
-if (dojangSeparation?.enabled) {
-  console.log(`\n🏛️ === DOJANG SEPARATION ENABLED (${dojangSeparation.mode}) ===`);
-  [leftPool, rightPool] = this.distributeDojangSeparated(activeParticipants, dojangSeparation.mode);
-  
-  // Shuffle within each pool
-  leftPool = this.shuffleArray(leftPool);
-  rightPool = this.shuffleArray(rightPool);
-  
-  console.log(`   LEFT pool (${leftPool.length}):`, leftPool.map(p => `${p.name} (${p.dojang})`));
-  console.log(`   RIGHT pool (${rightPool.length}):`, rightPool.map(p => `${p.name} (${p.dojang})`));
-} else {
-  console.log(`\n🎲 === RANDOM DISTRIBUTION (No Dojang Separation) ===`);
-  const shuffledActive = this.shuffleArray([...activeParticipants]);
-  
-  // ⭐ SPLIT BERDASARKAN FIGHT POSITIONS
-  const leftFights = distributedFightPositions.filter(pos => pos < halfSize);
-  const rightFights = distributedFightPositions.filter(pos => pos >= halfSize);
-  
-  // Hitung berapa peserta yang dibutuhkan untuk LEFT dan RIGHT
-  const leftNeeded = leftFights.length * 2; // Setiap fight match butuh 2 peserta
-  const rightNeeded = rightFights.length * 2;
-  
-  console.log(`   LEFT fights: ${leftFights.length} matches (need ${leftNeeded} participants)`);
-  console.log(`   RIGHT fights: ${rightFights.length} matches (need ${rightNeeded} participants)`);
-  
-  leftPool = shuffledActive.slice(0, leftNeeded);
-  rightPool = shuffledActive.slice(leftNeeded);
-  
-  console.log(`   LEFT pool: ${leftPool.length} participants`);
-  console.log(`   RIGHT pool: ${rightPool.length} participants`);
-}
-
-let leftIndex = 0;
-let rightIndex = 0;
-let byeIndex = 0;
-
-// 7️⃣ CREATE MATCHES dengan posisi yang sudah didistribusi
-const allSortedPositions = [...byePositions, ...distributedFightPositions].sort((a, b) => a - b);
-
-for (const pos of allSortedPositions) {
-  let p1: Participant | null = null;
-  let p2: Participant | null = null;
-  let status: Match["status"] = "pending";
-
-  if (byePositions.includes(pos)) {
-    // BYE match
-    if (byeIndex < byeParticipants.length) {
-      p1 = byeParticipants[byeIndex++];
-      p2 = null;
-      status = "bye";
-    }
+  if (dojangSeparation?.enabled) {
+    // ⭐ USE STRICT SEPARATION
+    [leftPool, rightPool] = this.distributeDojangSeparatedStrict(activeParticipants);
+    
+    // Shuffle within each pool
+    leftPool = this.shuffleArray(leftPool);
+    rightPool = this.shuffleArray(rightPool);
+    
+    console.log(`   📦 LEFT pool (${leftPool.length}):`, leftPool.map(p => `${p.name} (${p.dojang})`));
+    console.log(`   📦 RIGHT pool (${rightPool.length}):`, rightPool.map(p => `${p.name} (${p.dojang})`));
+    
   } else {
-    // ⭐ FIGHT match - ambil dari LEFT atau RIGHT pool berdasarkan posisi
-    const isLeftSide = pos < halfSize;
+    // ⭐ RANDOM DISTRIBUTION (No dojang separation)
+    console.log(`\n🎲 === RANDOM DISTRIBUTION (No Dojang Separation) ===`);
+    const shuffledActive = this.shuffleArray([...activeParticipants]);
     
-    if (isLeftSide) {
-      // Take from LEFT pool
-      p1 = leftPool[leftIndex++] || null;
-      p2 = leftPool[leftIndex++] || null;
-    } else {
-      // Take from RIGHT pool
-      p1 = rightPool[rightIndex++] || null;
-      p2 = rightPool[rightIndex++] || null;
-    }
+    const leftFights = distributedFightPositions.filter(pos => pos < halfSize);
+    const rightFights = distributedFightPositions.filter(pos => pos >= halfSize);
     
-    if (p1 && !p2) {
-      status = "bye";
-    }
+    const leftNeeded = leftFights.length * 2;
+    const rightNeeded = rightFights.length * 2;
+    
+    console.log(`   LEFT fights: ${leftFights.length} matches (need ${leftNeeded} participants)`);
+    console.log(`   RIGHT fights: ${rightFights.length} matches (need ${rightNeeded} participants)`);
+    
+    leftPool = shuffledActive.slice(0, leftNeeded);
+    rightPool = shuffledActive.slice(leftNeeded);
+    
+    console.log(`   LEFT pool: ${leftPool.length} participants`);
+    console.log(`   RIGHT pool: ${rightPool.length} participants`);
   }
 
-  const created = await prisma.tb_match.create({
-    data: {
-      id_bagan: baganId,
-      ronde: 1,
-      id_peserta_a: p1 ? p1.id : null,
-      id_peserta_b: p2 ? p2.id : null,
-      skor_a: 0,
-      skor_b: 0,
-    },
-  });
+  let leftIndex = 0;
+  let rightIndex = 0;
+  let byeIndex = 0;
 
-  matches.push({
-    id: created.id_match,
-    round: 1,
-    position: pos,
-    participant1: p1,
-    participant2: p2,
-    status,
-    scoreA: 0,
-    scoreB: 0,
-  });
+  // 7️⃣ CREATE MATCHES
+  const allSortedPositions = [...byePositions, ...distributedFightPositions].sort((a, b) => a - b);
 
-  console.log(`   🎮 R1 match position ${pos}: ${p1 ? p1.name : "BYE"} vs ${p2 ? p2.name : "BYE"} (${status})`);
-}
+  for (const pos of allSortedPositions) {
+    let p1: Participant | null = null;
+    let p2: Participant | null = null;
+    let status: Match["status"] = "pending";
 
-  // 8️⃣ Pastikan tidak ada peserta tersisa (Safety check)
+    if (byePositions.includes(pos)) {
+      // BYE match
+      if (byeIndex < byeParticipants.length) {
+        p1 = byeParticipants[byeIndex++];
+        p2 = null;
+        status = "bye";
+      }
+    } else {
+      // FIGHT match - ambil dari LEFT atau RIGHT pool
+      const isLeftSide = pos < halfSize;
+      
+      if (isLeftSide) {
+        p1 = leftPool[leftIndex++] || null;
+        p2 = leftPool[leftIndex++] || null;
+      } else {
+        p1 = rightPool[rightIndex++] || null;
+        p2 = rightPool[rightIndex++] || null;
+      }
+      
+      if (p1 && !p2) {
+        status = "bye";
+      }
+    }
+
+    const created = await prisma.tb_match.create({
+      data: {
+        id_bagan: baganId,
+        ronde: 1,
+        id_peserta_a: p1 ? p1.id : null,
+        id_peserta_b: p2 ? p2.id : null,
+        skor_a: 0,
+        skor_b: 0,
+      },
+    });
+
+    matches.push({
+      id: created.id_match,
+      round: 1,
+      position: pos,
+      participant1: p1,
+      participant2: p2,
+      status,
+      scoreA: 0,
+      scoreB: 0,
+    });
+  }
+
+  // 8️⃣ Safety check - Handle leftover participants
   while (leftIndex < leftPool.length) {
     const leftover = leftPool[leftIndex++];
-    
-    console.warn(`   ⚠️ LEFTOVER PARTICIPANT DETECTED (LEFT): ${leftover.name}`);
+    console.warn(`   ⚠️ LEFTOVER PARTICIPANT (LEFT): ${leftover.name}`);
     
     const created = await prisma.tb_match.create({
       data: {
@@ -1000,15 +1199,11 @@ for (const pos of allSortedPositions) {
       scoreA: 0,
       scoreB: 0,
     });
-
-    console.log(`   🩹 Added leftover participant as BYE: ${leftover.name}`);
   }
 
-  // Check RIGHT pool leftovers
   while (rightIndex < rightPool.length) {
     const leftover = rightPool[rightIndex++];
-    
-    console.warn(`   ⚠️ LEFTOVER PARTICIPANT DETECTED (RIGHT): ${leftover.name}`);
+    console.warn(`   ⚠️ LEFTOVER PARTICIPANT (RIGHT): ${leftover.name}`);
     
     const created = await prisma.tb_match.create({
       data: {
@@ -1031,8 +1226,6 @@ for (const pos of allSortedPositions) {
       scoreA: 0,
       scoreB: 0,
     });
-
-    console.log(`   🩹 Added leftover participant as BYE: ${leftover.name}`);
   }
 
   // 9️⃣ Buat placeholder ronde berikutnya
@@ -1064,7 +1257,7 @@ for (const pos of allSortedPositions) {
     }
   }
 
-  // 🔟 Auto-advance peserta yang BYE
+  // 🔟 Auto-advance peserta BYE
   const createdR1Matches = matches.filter(m => m.round === 1);
   for (const m of createdR1Matches) {
     if (m.participant1 && !m.participant2 && m.id) {
@@ -1076,15 +1269,37 @@ for (const pos of allSortedPositions) {
     }
   }
 
-  // 1️⃣1️⃣ Debug summary
-  console.log("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-  console.log("🔍 FINAL DEBUG SUMMARY FOR BRACKET");
-  console.log(`🎯 Total peserta: ${participantCount}`);
-  console.log(`📦 Total targetSize: ${targetSize}`);
-  console.log(`💤 Total BYE needed: ${byesNeeded}`);
+  // ⭐⭐⭐ 1️⃣1️⃣ FINAL VALIDATION R1 MATCHES ⭐⭐⭐
+  if (dojangSeparation?.enabled) {
+    const r1Validation = this.validateR1MatchesStrict(matches, isUnavoidable);
+    
+    // ⭐ CRITICAL: If has violation AND NOT unavoidable → ERROR
+    if (r1Validation.hasViolation && !isUnavoidable) {
+      throw new Error(
+        `❌ STRICT MODE ERROR: Round 1 mengandung same-dojang match(es)!\n\n` +
+        `Violations:\n${r1Validation.violations.map(v => 
+          `  • Match ${v.position + 1}: ${v.p1} vs ${v.p2} (both from "${v.dojang}")`
+        ).join('\n')}\n\n` +
+        `Ini tidak seharusnya terjadi (seharusnya bisa dihindari dengan STRICT mode).\n\n` +
+        `Saran:\n` +
+        `  • Coba shuffle ulang bracket\n` +
+        `  • Atau disable dojang separation jika memang tidak memungkinkan\n` +
+        `  • Atau hubungi developer jika masalah terus terjadi`
+      );
+    }
+  }
 
-  return matches; // ⭐⭐⭐ INI ADALAH RETURN STATEMENT YANG WAJIB ⭐⭐⭐
-} // ⭐⭐⭐ INI ADALAH CLOSING BRACE FUNGSI ⭐⭐⭐
+  console.log("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+  console.log("✅ PRESTASI BRACKET GENERATED SUCCESSFULLY");
+  console.log(`   Total participants: ${participantCount}`);
+  console.log(`   Target size: ${targetSize}`);
+  console.log(`   BYEs: ${byesNeeded}`);
+  console.log(`   Total matches: ${matches.length}`);
+  console.log(`   Dojang separation: ${dojangSeparation?.enabled ? 'STRICT ✅' : 'DISABLED'}`);
+  console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
+
+  return matches;
+}
 
 static getMatchesByRound(matches: Match[], round: number): Match[] {
   return matches.filter(m => m.round === round);
@@ -1139,90 +1354,356 @@ static calculateByePositionsZigzag(participantCount: number, targetSize: number)
   return [...new Set(positions)].sort((a, b) => a - b);
 }
 
-static async generatePemulaBracket(
-    baganId: number, 
-    participants: Participant[],
-    dojangSeparation?: { enabled: boolean; mode: 'STRICT' | 'BALANCED' }
-  ): Promise<Match[]> {
-    const matches: Match[] = [];
-    console.log(`\n🥋 === GENERATING PEMULA BRACKET (v2) ===`);
-
-    let workingList: Participant[] = [];
-    let byeParticipant: Participant | null = null;
-
-    let allParticipants = this.shuffleArray([...participants]);
-    
-    if (dojangSeparation?.enabled) {
-        console.log('🏠 Applying Dojang Separation for PEMULA');
-        let dojangAwareList: Participant[] = [];
-        let pairedIds = new Set<number>();
-        
-        // Create a copy to safely mutate
-        let availableParticipants = [...allParticipants];
-
-        while(availableParticipants.length > 1) {
-            const p1 = availableParticipants.shift()!;
-            if (pairedIds.has(p1.id)) continue;
-
-            let partner: Participant | undefined;
-            let partnerIndex = -1;
-
-            // Find a suitable partner (different dojang) from the remaining list
-            partnerIndex = availableParticipants.findIndex(p2 => !pairedIds.has(p2.id) && p2.dojang !== p1.dojang);
-            
-            // If no different dojang partner found, find any available partner
-            if (partnerIndex === -1) {
-                partnerIndex = availableParticipants.findIndex(p2 => !pairedIds.has(p2.id));
-            }
-
-            if (partnerIndex !== -1) {
-                partner = availableParticipants.splice(partnerIndex, 1)[0];
-                workingList.push(p1, partner);
-                pairedIds.add(p1.id).add(partner.id);
-            } else {
-                // Should only happen if p1 is the last one
-                workingList.push(p1);
-                pairedIds.add(p1.id);
-            }
-        }
-        // Add the very last participant if any remains
-        if (availableParticipants.length > 0) {
-            workingList.push(availableParticipants[0]);
-        }
-
-    } else {
-        workingList = allParticipants;
+/**
+ * Validate PEMULA dojang separation
+ * Formula: If maxDojangSize >= ceil(n/2) + 1, same-dojang match is UNAVOIDABLE
+ */
+static validatePemulaSeparation(participants: Participant[]): {
+  isUnavoidable: boolean;
+  maxDojangName: string;
+  maxDojangSize: number;
+  threshold: number;
+  minSameDojangMatches: number;
+  warnings: string[];
+} {
+  const dojangGroups = this.groupByDojang(participants);
+  const totalParticipants = participants.length;
+  
+  // ⭐ THRESHOLD: ceil(n/2) + 1
+  const threshold = Math.ceil(totalParticipants / 2) + 1;
+  
+  let maxDojangSize = 0;
+  let maxDojangName = '';
+  
+  for (const [dojangName, members] of dojangGroups) {
+    if (members.length > maxDojangSize) {
+      maxDojangSize = members.length;
+      maxDojangName = dojangName || 'UNKNOWN';
     }
-    
-    const totalParticipants = workingList.length;
-    const isOdd = totalParticipants % 2 === 1;
-
-    const normalPairsCount = Math.floor(totalParticipants / 2);
-    for (let i = 0; i < normalPairsCount; i++) {
-        const p1 = workingList[i * 2];
-        const p2 = workingList[i * 2 + 1];
-        const match = await prisma.tb_match.create({
-            data: { id_bagan: baganId, ronde: 1, id_peserta_a: p1.id, id_peserta_b: p2.id, skor_a: 0, skor_b: 0 }
-        });
-        matches.push({ id: match.id_match, round: 1, position: i, participant1: p1, participant2: p2, status: 'pending', scoreA: 0, scoreB: 0 });
-    }
-
-    if (isOdd) {
-        byeParticipant = workingList[totalParticipants - 1];
-        const byeMatch = await prisma.tb_match.create({
-            data: { id_bagan: baganId, ronde: 1, id_peserta_a: byeParticipant.id, id_peserta_b: null, skor_a: 0, skor_b: 0 }
-        });
-        matches.push({ id: byeMatch.id_match, round: 1, position: normalPairsCount, participant1: byeParticipant, participant2: null, status: 'bye', scoreA: 0, scoreB: 0 });
-        
-        if (matches.length > 1) { 
-            const additionalMatch = await prisma.tb_match.create({
-                data: { id_bagan: baganId, ronde: 2, id_peserta_a: null, id_peserta_b: byeParticipant.id, skor_a: 0, skor_b: 0 }
-            });
-            matches.push({ id: additionalMatch.id_match, round: 2, position: 0, participant1: null, participant2: byeParticipant, status: 'pending', scoreA: 0, scoreB: 0 });
-        }
-    }
-    return matches;
   }
+  
+  const isUnavoidable = maxDojangSize >= threshold;
+  const minSameDojangMatches = isUnavoidable 
+    ? maxDojangSize - (totalParticipants - maxDojangSize)
+    : 0;
+  
+  const warnings: string[] = [];
+  
+  if (isUnavoidable) {
+    warnings.push(
+      `⚠️ PEMULA STRICT MODE - Same-Dojang Match Unavoidable:`,
+      ``,
+      `   📊 Breakdown:`,
+      `      • Total participants: ${totalParticipants}`,
+      `      • Threshold: ceil(${totalParticipants}/2) + 1 = ${threshold}`,
+      `      • Dojang "${maxDojangName}": ${maxDojangSize} members (≥ ${threshold})`,
+      `      • Minimal ${minSameDojangMatches} same-dojang match(es) TIDAK DAPAT DIHINDARI`,
+      ``,
+      `   ✅ Status: DIPERBOLEHKAN (mathematically impossible)`,
+      ``
+    );
+  }
+  
+  // ⭐ Special case: All from same dojang
+  if (dojangGroups.size === 1) {
+    warnings.push(
+      `ℹ️ Semua peserta berasal dari dojang yang sama ("${maxDojangName}")`,
+      `   → Shuffle tidak akan mengubah hasil (semua match pasti same-dojang)`,
+      ``
+    );
+  }
+  
+  return {
+    isUnavoidable,
+    maxDojangName,
+    maxDojangSize,
+    threshold,
+    minSameDojangMatches,
+    warnings
+  };
+}
+
+// ==========================================
+// 2️⃣ OPTIMAL PAIRING ALGORITHM
+// ==========================================
+
+/**
+ * Find optimal pairing for PEMULA
+ * Uses maximum matching approach to minimize same-dojang matches
+ */
+static findOptimalPemulaPairing(
+  participants: Participant[]
+): {
+  pairs: [Participant, Participant][]; // Matched pairs
+  byeParticipant: Participant | null;  // Odd one out
+  hasSameDojangMatch: boolean;         // Any same-dojang pairs?
+  sameDojangCount: number;             // How many same-dojang pairs
+  summary: string;
+} {
+  const totalParticipants = participants.length;
+  const isOdd = totalParticipants % 2 === 1;
+  
+  console.log(`\n🎯 === PEMULA OPTIMAL PAIRING (STRICT) ===`);
+  console.log(`   Total participants: ${totalParticipants}`);
+  
+  // ⭐ STEP 1: Separate BYE participant (if odd)
+  let workingList = [...participants];
+  let byeParticipant: Participant | null = null;
+  
+  if (isOdd) {
+    // Random selection for BYE
+    const byeIndex = Math.floor(Math.random() * workingList.length);
+    byeParticipant = workingList.splice(byeIndex, 1)[0];
+    console.log(`   🎲 BYE participant: ${byeParticipant.name} (${byeParticipant.dojang})`);
+  }
+  
+  // ⭐ STEP 2: Group by dojang
+  const dojangGroups = this.groupByDojang(workingList);
+  
+  console.log(`\n   📊 Dojang distribution:`);
+  for (const [dojang, members] of dojangGroups) {
+    console.log(`      ${dojang}: ${members.length} members`);
+  }
+  
+  // ⭐ STEP 3: Build pairing with priority (different dojangs first)
+  const pairs: [Participant, Participant][] = [];
+  const used = new Set<number>();
+  
+  console.log(`\n   🔄 Phase 1: Pairing DIFFERENT dojangs...`);
+  
+  // Phase 1: Pair DIFFERENT dojangs
+  for (const [dojang1, members1] of dojangGroups) {
+    for (const p1 of members1) {
+      if (used.has(p1.id)) continue;
+      
+      // Find best partner from DIFFERENT dojang
+      let bestPartner: Participant | null = null;
+      
+      for (const [dojang2, members2] of dojangGroups) {
+        if (dojang1 === dojang2) continue; // Skip same dojang
+        
+        const availablePartner = members2.find(p2 => !used.has(p2.id));
+        if (availablePartner) {
+          bestPartner = availablePartner;
+          break;
+        }
+      }
+      
+      if (bestPartner) {
+        pairs.push([p1, bestPartner]);
+        used.add(p1.id);
+        used.add(bestPartner.id);
+        console.log(`      ✅ ${p1.name} (${p1.dojang}) vs ${bestPartner.name} (${bestPartner.dojang})`);
+      }
+    }
+  }
+  
+  // Phase 2: Handle remaining (same-dojang if necessary)
+  const remaining = workingList.filter(p => !used.has(p.id));
+  
+  if (remaining.length > 0) {
+    console.log(`\n   ⚠️ Phase 2: Pairing remaining ${remaining.length} participants...`);
+    
+    for (let i = 0; i < remaining.length - 1; i += 2) {
+      const p1 = remaining[i];
+      const p2 = remaining[i + 1];
+      pairs.push([p1, p2]);
+      
+      const isSameDojang = p1.dojang === p2.dojang;
+      console.log(
+        `      ${isSameDojang ? '⚠️' : '✅'} ${p1.name} (${p1.dojang}) vs ${p2.name} (${p2.dojang})`
+      );
+    }
+  }
+  
+  // ⭐ STEP 4: Calculate results
+  const sameDojangPairs = pairs.filter(([p1, p2]) => p1.dojang === p2.dojang);
+  const hasSameDojangMatch = sameDojangPairs.length > 0;
+  
+  const summary = [
+    `Total pairs: ${pairs.length}`,
+    `Same-dojang: ${sameDojangPairs.length}`,
+    `Different-dojang: ${pairs.length - sameDojangPairs.length}`,
+    byeParticipant ? `BYE: ${byeParticipant.name}` : ''
+  ].filter(Boolean).join(' | ');
+  
+  console.log(`\n   📊 Summary: ${summary}`);
+  console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`);
+  
+  return {
+    pairs,
+    byeParticipant,
+    hasSameDojangMatch,
+    sameDojangCount: sameDojangPairs.length,
+    summary
+  };
+}
+
+
+static async generatePemulaBracket(
+  baganId: number, 
+  participants: Participant[],
+  dojangSeparation?: { enabled: boolean; mode?: 'STRICT' | 'BALANCED' }
+): Promise<Match[]> {
+  const matches: Match[] = [];
+  console.log(`\n🥋 === GENERATING PEMULA BRACKET (STRICT) ===`);
+
+  // ⭐ FORCE STRICT mode for Pemula (ignore mode parameter)
+  const separationEnabled = dojangSeparation?.enabled || false;
+  
+  console.log(`   Dojang Separation: ${separationEnabled ? 'ENABLED (STRICT)' : 'DISABLED'}`);
+  console.log(`   Total participants: ${participants.length}\n`);
+
+  // ⭐ STEP 1: VALIDATE separation possibility
+  let isUnavoidable = false;
+  
+  if (separationEnabled) {
+    const validation = this.validatePemulaSeparation(participants);
+    isUnavoidable = validation.isUnavoidable;
+    
+    // Show warnings (if unavoidable or all same dojang)
+    if (validation.warnings.length > 0) {
+      validation.warnings.forEach(w => console.log(w));
+    }
+  }
+
+  // ⭐ STEP 2: PAIRING
+  let workingList: Participant[] = [];
+  let byeParticipant: Participant | null = null;
+  
+  if (separationEnabled) {
+    // ⭐ Use optimal pairing algorithm
+    const pairingResult = this.findOptimalPemulaPairing(participants);
+    
+    // Convert pairs to flat list for match creation
+    for (const [p1, p2] of pairingResult.pairs) {
+      workingList.push(p1, p2);
+    }
+    
+    byeParticipant = pairingResult.byeParticipant;
+    
+    // ⭐ CRITICAL CHECK: If STRICT mode + has same-dojang + NOT unavoidable → ERROR
+    if (pairingResult.hasSameDojangMatch && !isUnavoidable) {
+      throw new Error(
+        `❌ STRICT MODE ERROR: Terdeteksi ${pairingResult.sameDojangCount} same-dojang match(es)!\n\n` +
+        `Pairing algorithm gagal menghindari same-dojang match.\n` +
+        `Ini tidak seharusnya terjadi (seharusnya bisa dihindari).\n\n` +
+        `Saran:\n` +
+        `  • Coba shuffle ulang bracket\n` +
+        `  • Atau disable dojang separation\n` +
+        `  • Atau hubungi developer jika masalah terus terjadi`
+      );
+    }
+    
+  } else {
+    // ⭐ No dojang separation - random shuffle
+    console.log(`   🎲 Random shuffle (no dojang separation)...`);
+    workingList = this.shuffleArray([...participants]);
+    
+    if (participants.length % 2 === 1) {
+      byeParticipant = workingList.pop() || null;
+    }
+  }
+
+  // ⭐ STEP 3: CREATE MATCHES (existing logic)
+  const totalParticipants = workingList.length;
+  const normalPairsCount = Math.floor(totalParticipants / 2);
+  
+  console.log(`\n   🎮 Creating matches...`);
+  
+  for (let i = 0; i < normalPairsCount; i++) {
+    const p1 = workingList[i * 2];
+    const p2 = workingList[i * 2 + 1];
+    
+    const match = await prisma.tb_match.create({
+      data: { 
+        id_bagan: baganId, 
+        ronde: 1, 
+        id_peserta_a: p1.id, 
+        id_peserta_b: p2.id, 
+        skor_a: 0, 
+        skor_b: 0 
+      }
+    });
+    
+    matches.push({ 
+      id: match.id_match, 
+      round: 1, 
+      position: i, 
+      participant1: p1, 
+      participant2: p2, 
+      status: 'pending', 
+      scoreA: 0, 
+      scoreB: 0 
+    });
+    
+    const isSameDojang = p1.dojang === p2.dojang;
+    console.log(
+      `   Match ${i + 1}: ${p1.name} (${p1.dojang}) vs ${p2.name} (${p2.dojang}) ` +
+      `${isSameDojang ? '⚠️ SAME DOJANG' : '✅'}`
+    );
+  }
+
+  // Handle BYE participant (if exists)
+  if (byeParticipant) {
+    const byeMatch = await prisma.tb_match.create({
+      data: { 
+        id_bagan: baganId, 
+        ronde: 1, 
+        id_peserta_a: byeParticipant.id, 
+        id_peserta_b: null, 
+        skor_a: 0, 
+        skor_b: 0 
+      }
+    });
+    
+    matches.push({ 
+      id: byeMatch.id_match, 
+      round: 1, 
+      position: normalPairsCount, 
+      participant1: byeParticipant, 
+      participant2: null, 
+      status: 'bye', 
+      scoreA: 0, 
+      scoreB: 0 
+    });
+    
+    console.log(`   Match ${normalPairsCount + 1}: ${byeParticipant.name} (BYE)`);
+    
+    // Create additional match for BYE winner (if more than 1 match exists)
+    if (matches.length > 1) { 
+      const additionalMatch = await prisma.tb_match.create({
+        data: { 
+          id_bagan: baganId, 
+          ronde: 2, 
+          id_peserta_a: null, 
+          id_peserta_b: byeParticipant.id, 
+          skor_a: 0, 
+          skor_b: 0 
+        }
+      });
+      
+      matches.push({ 
+        id: additionalMatch.id_match, 
+        round: 2, 
+        position: 0, 
+        participant1: null, 
+        participant2: byeParticipant, 
+        status: 'pending', 
+        scoreA: 0, 
+        scoreB: 0 
+      });
+      
+      console.log(`   Round 2: TBD vs ${byeParticipant.name} (BYE advanced)`);
+    }
+  }
+  
+  console.log(`\n✅ PEMULA bracket generated: ${matches.length} total matches`);
+  console.log(`   Dojang separation: ${separationEnabled ? 'STRICT ✅' : 'DISABLED'}`);
+  console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`);
+  
+  return matches;
+}
 
   /**
    * Get bracket by competition and class
@@ -1725,29 +2206,73 @@ static async shuffleBracket(
   }
 }
 
-/**
- * ⭐ NEW: Shuffle PEMULA bracket (re-arrange participants only)
- * Does NOT delete bracket - just re-assigns participants to matches
- */
 static async shufflePemulaBracket(
   kompetisiId: number,
   kelasKejuaraanId: number,
-  dojangSeparation?: { enabled: boolean; mode: 'STRICT' | 'BALANCED' }
+  dojangSeparation?: { enabled: boolean; mode?: 'STRICT' | 'BALANCED' } // ⭐ mode is optional
 ): Promise<Bracket> {
   try {
-    console.log(`\n🔀 Deleting and Regenerating PEMULA BRACKET...`);
-    const existingBagan = await prisma.tb_bagan.findFirst({ where: { id_kompetisi: kompetisiId, id_kelas_kejuaraan: kelasKejuaraanId }});
+    console.log(`\n🔀 === SHUFFLING PEMULA BRACKET ===`);
+    console.log(`   Kompetisi: ${kompetisiId}, Kelas: ${kelasKejuaraanId}`);
+    console.log(`   Dojang Separation:`, dojangSeparation?.enabled ? 'ENABLED (STRICT)' : 'DISABLED');
+
+    // ⭐ STEP 1: DELETE EXISTING BRACKET
+    const existingBagan = await prisma.tb_bagan.findFirst({
+      where: {
+        id_kompetisi: kompetisiId,
+        id_kelas_kejuaraan: kelasKejuaraanId
+      },
+      include: {
+        match: true
+      }
+    });
 
     if (existingBagan) {
-      const hasScores = await prisma.tb_match.findFirst({ where: { id_bagan: existingBagan.id_bagan, OR: [{skor_a: {gt: 0}}, {skor_b: {gt: 0}}] }});
-      if (hasScores) throw new Error('Tidak dapat shuffle! Ada pertandingan yang sudah memiliki skor.');
+      const hasScores = await prisma.tb_match.findFirst({
+        where: {
+          id_bagan: existingBagan.id_bagan,
+          OR: [
+            { skor_a: { gt: 0 } },
+            { skor_b: { gt: 0 } }
+          ]
+        }
+      });
+
+      if (hasScores) {
+        throw new Error('Tidak dapat shuffle! Ada pertandingan yang sudah memiliki skor.');
+      }
       
-      await prisma.tb_match.deleteMany({ where: { id_bagan: existingBagan.id_bagan } });
-      await prisma.tb_drawing_seed.deleteMany({ where: { id_bagan: existingBagan.id_bagan } });
-      await prisma.tb_bagan.delete({ where: { id_bagan: existingBagan.id_bagan } });
+      console.log(`   🗑️ Deleting existing bracket...`);
+      
+      await prisma.tb_match.deleteMany({
+        where: { id_bagan: existingBagan.id_bagan }
+      });
+
+      await prisma.tb_drawing_seed.deleteMany({
+        where: { id_bagan: existingBagan.id_bagan }
+      });
+
+      await prisma.tb_bagan.delete({
+        where: { id_bagan: existingBagan.id_bagan }
+      });
+
+      console.log(`   ✅ Bracket deleted`);
     }
 
-    return this.generateBracket(kompetisiId, kelasKejuaraanId, undefined, dojangSeparation);
+    // ✅ FIX: Pass dojangSeparation as-is (mode is optional in generateBracket)
+    console.log(`   🎲 Generating new bracket...`);
+    const newBracket = await this.generateBracket(
+      kompetisiId,
+      kelasKejuaraanId,
+      undefined, // byeParticipantIds
+      dojangSeparation // ✅ This is fine - mode is optional
+    );
+    
+    console.log(`   ✅ New bracket generated with ${newBracket.matches.length} matches`);
+    console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`);
+    
+    return newBracket;
+
   } catch (error: any) {
     console.error('❌ Error shuffling PEMULA bracket:', error);
     throw new Error(error.message || 'Gagal shuffle bracket');
