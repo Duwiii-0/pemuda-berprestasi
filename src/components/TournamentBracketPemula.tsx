@@ -1354,49 +1354,54 @@ return (
   const CARD_WIDTH = 320;
   const COLUMN_GAP = 120;
   
-// 🔥 SMART COLUMN SPLIT
   let columns: Match[][] = [];
+  let byeMatch: Match | null = null;
+  let lastNormalFightMatch: Match | null = null;
+  let lastNormalFightIndex = -1;
+  let byeMatchIndex = -1;
   
   if (hasAdditionalMatch) {
-    // Find BYE and Last Fight
-    const byeMatch = round1Matches.find(m => m.peserta_a && !m.peserta_b);
-    const byeIndex = byeMatch ? round1Matches.findIndex(m => m.id_match === byeMatch.id_match) : -1;
-    const lastFightIndex = byeIndex > 0 ? byeIndex - 1 : -1;
+    // Find BYE match (yang punya peserta_a tapi TIDAK punya peserta_b)
+    byeMatch = round1Matches.find(m => m.peserta_a && !m.peserta_b) || null;
+    byeMatchIndex = byeMatch ? round1Matches.findIndex(m => m.id_match === byeMatch!.id_match) : -1;
+    
+    // Last normal fight = match TEPAT SEBELUM BYE
+    if (byeMatchIndex > 0) {
+      lastNormalFightIndex = byeMatchIndex - 1;
+      lastNormalFightMatch = round1Matches[lastNormalFightIndex];
+    }
+    
+    console.log('🔍 BYE Match Index:', byeMatchIndex);
+    console.log('🔍 Last Fight Index:', lastNormalFightIndex);
+    console.log('🔍 Last Fight Nomor Partai:', lastNormalFightMatch?.nomor_partai);
     
     // 🚨 CHECK: Apakah Last Fight di akhir kolom?
-    const isLastFightAtColumnEnd = lastFightIndex >= 0 && (lastFightIndex + 1) % matchesPerColumn === 0;
+    const isLastFightAtColumnEnd = lastNormalFightIndex >= 0 && 
+                                    (lastNormalFightIndex + 1) % matchesPerColumn === 0;
     
     if (isLastFightAtColumnEnd) {
-      console.log('⚠️ Last Fight di posisi', lastFightIndex + 1, '(akhir kolom) - Splitting smartly...');
+      console.log('⚠️ DETECTED: Last Fight at column end (position', lastNormalFightIndex + 1, ') - Splitting smartly!');
       
-      // Split SEBELUM Last Fight
-      columns.push(round1Matches.slice(0, lastFightIndex)); // Kolom 1: sebelum Last Fight
-      columns.push(round1Matches.slice(lastFightIndex));     // Kolom 2: Last Fight + BYE + sisanya
+      // Split SEBELUM Last Fight agar dia dan BYE jadi 1 kolom
+      columns.push(round1Matches.slice(0, lastNormalFightIndex));  // Kolom 1
+      columns.push(round1Matches.slice(lastNormalFightIndex));      // Kolom 2: Last Fight + BYE + rest
+      
+      console.log('📦 Column 1:', columns[0].length, 'matches');
+      console.log('📦 Column 2:', columns[1].length, 'matches');
     } else {
+      console.log('✅ Normal split - Last Fight NOT at column end');
       // Normal split
       for (let i = 0; i < round1Matches.length; i += matchesPerColumn) {
         columns.push(round1Matches.slice(i, i + matchesPerColumn));
       }
     }
   } else {
+    console.log('ℹ️ No Additional Match - Using normal split');
     // Scenario GENAP: Normal split
     for (let i = 0; i < round1Matches.length; i += matchesPerColumn) {
       columns.push(round1Matches.slice(i, i + matchesPerColumn));
     }
   }
-  
-  // ⭐ CRITICAL FIX: Find BYE match
-  const byeMatch = round1Matches.find(m => m.peserta_a && !m.peserta_b);
-  const byeMatchIndex = byeMatch ? round1Matches.findIndex(m => m.id_match === byeMatch.id_match) : -1;
-  
-  // ⭐ Find LAST normal fight match (sebelum BYE match)
-let lastNormalFightMatch = null;
-let lastNormalFightIndex = -1;
-
-if (hasAdditionalMatch && byeMatchIndex > 0) {
-  lastNormalFightMatch = round1Matches[byeMatchIndex - 1];
-  lastNormalFightIndex = byeMatchIndex - 1;
-}
 
 const OFFSET_CONNECTOR = 180;
 
