@@ -1452,16 +1452,20 @@ static async updateMatch(
   }
 }
 
-  /**
-   * Advance winner to next round
-   */
+/**
+ * Advance winner to next round
+ * CRITICAL: Handles both PEMULA and PRESTASI logic separately
+ */
 static async advanceWinnerToNextRound(match: any, winnerId: number): Promise<void> {
   const currentRound = match.ronde;
   const nextRound = currentRound + 1;
   
-  console.log(`🎯 Advancing winner ${winnerId} from Round ${currentRound} to Round ${nextRound}`);
+  console.log(`\n🎯 === ADVANCE WINNER TO NEXT ROUND ===`);
+  console.log(`   Winner ID: ${winnerId}`);
+  console.log(`   From: Round ${currentRound} Match ${match.id_match}`);
+  console.log(`   To: Round ${nextRound}`);
   
-  // ⭐ CHECK: Is this PEMULA category?
+  // ⭐ STEP 1: Determine if PEMULA or PRESTASI
   const bagan = await prisma.tb_bagan.findUnique({
     where: { id_bagan: match.id_bagan },
     include: {
@@ -1473,78 +1477,101 @@ static async advanceWinnerToNextRound(match: any, winnerId: number): Promise<voi
     }
   });
   
-  const isPemula = bagan?.kelas_kejuaraan?.kategori_event?.nama_kategori?.toLowerCase().includes('pemula') || false;
+  if (!bagan) {
+    console.error(`   ❌ Bagan not found`);
+    return;
+  }
   
-if (isPemula && currentRound === 1) {
-  console.log(`\n🥋 === PEMULA ADVANCE LOGIC ===`);
-  console.log(`   Current match ID: ${match.id_match}`);
+  const kategoriName = bagan.kelas_kejuaraan?.kategori_event?.nama_kategori?.toLowerCase() || '';
+  const isPemula = kategoriName.includes('pemula');
   
-  const round1Matches = await prisma.tb_match.findMany({
-    where: {
-      id_bagan: match.id_bagan,
-      ronde: 1
-    },
-    orderBy: { id_match: 'asc' }
-  });
+  console.log(`   📊 Category: ${isPemula ? 'PEMULA' : 'PRESTASI'}`);
   
-  console.log(`   Total Round 1 matches: ${round1Matches.length}`);
-  console.log(`   Match IDs:`, round1Matches.map(m => m.id_match));
-  
-  const round2Match = await prisma.tb_match.findFirst({
-    where: {
-      id_bagan: match.id_bagan,
-      ronde: 2
-    }
-  });
-  
-  if (round2Match && round1Matches.length > 0) {
-    // ⭐ Find BYE match
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // ⭐ PEMULA LOGIC: Only R1 winner from LAST NORMAL FIGHT advances
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  if (isPemula && currentRound === 1) {
+    console.log(`\n🥋 === PEMULA ADVANCE LOGIC (R1 → Additional Match) ===`);
+    
+    const round1Matches = await prisma.tb_match.findMany({
+      where: {
+        id_bagan: match.id_bagan,
+        ronde: 1
+      },
+      orderBy: { id_match: 'asc' }
+    });
+    
+    console.log(`   Total Round 1 matches: ${round1Matches.length}`);
+    
+    // Find BYE match (only peserta_a, no peserta_b)
     const byeMatch = round1Matches.find(m => m.id_peserta_a && !m.id_peserta_b);
     
     if (!byeMatch) {
-      console.log(`   ℹ️ No BYE match found - no additional match needed`);
+      console.log(`   ℹ️ No BYE match found in Round 1`);
+      console.log(`   → No additional match needed (normal tournament)`);
+      console.log(`═══════════════════════════════════════\n`);
       return;
     }
     
-    console.log(`   BYE match ID: ${byeMatch.id_match}`);
-    
-    // ⭐ Find LAST NORMAL FIGHT match (sebelum BYE)
     const byeIndex = round1Matches.findIndex(m => m.id_match === byeMatch.id_match);
-    console.log(`   BYE match index: ${byeIndex}`);
+    console.log(`   📍 BYE match at index: ${byeIndex} (ID: ${byeMatch.id_match})`);
     
+    // Find LAST NORMAL FIGHT (match right before BYE)
     if (byeIndex <= 0) {
-      console.log(`   ⚠️ BYE match is first (index ${byeIndex}) - no last normal fight match`);
+      console.log(`   ⚠️ BYE is first match - invalid bracket structure`);
+      console.log(`═══════════════════════════════════════\n`);
       return;
     }
     
     const lastNormalFightMatch = round1Matches[byeIndex - 1];
-    console.log(`   Last normal fight match ID: ${lastNormalFightMatch.id_match}`);
-    console.log(`   Checking: ${match.id_match} === ${lastNormalFightMatch.id_match}?`);
+    console.log(`   🥊 Last normal fight match ID: ${lastNormalFightMatch.id_match}`);
+    console.log(`   🔍 Current match ID: ${match.id_match}`);
     
-    // ⭐ CRITICAL CHECK: Is this match the LAST NORMAL FIGHT?
+    // ⭐ CRITICAL: Only advance if THIS match is the LAST NORMAL FIGHT
     if (match.id_match === lastNormalFightMatch.id_match) {
-      console.log(`   ✅ YES! This is the LAST normal fight → Advance to Additional Match`);
+      console.log(`   ✅ YES! This is the LAST normal fight`);
+      console.log(`   → Winner ${winnerId} advances to Additional Match`);
       
+      // Find Round 2 (Additional Match)
+      const round2Match = await prisma.tb_match.findFirst({
+        where: {
+          id_bagan: match.id_bagan,
+          ronde: 2
+        }
+      });
+      
+      if (!round2Match) {
+        console.error(`   ❌ Round 2 (Additional Match) not found!`);
+        console.log(`═══════════════════════════════════════\n`);
+        return;
+      }
+      
+      // Place winner in Slot A of Additional Match
       await prisma.tb_match.update({
         where: { id_match: round2Match.id_match },
         data: { id_peserta_a: winnerId }
       });
       
       console.log(`   ✅ Winner ${winnerId} placed in Additional Match (Slot A)`);
+      console.log(`   📍 Additional Match ID: ${round2Match.id_match}`);
       console.log(`═══════════════════════════════════════\n`);
       return;
+      
     } else {
-      console.log(`   ❌ NO! This is NOT the last normal fight`);
-      console.log(`      Current match: ${match.id_match}`);
-      console.log(`      Last match should be: ${lastNormalFightMatch.id_match}`);
-      console.log(`   → Winner stays in Round 1 (DO NOT ADVANCE)`);
+      console.log(`   ❌ NO - This is NOT the last normal fight`);
+      console.log(`   → Winner ${winnerId} does NOT advance`);
+      console.log(`   → They stay eliminated at Round 1`);
       console.log(`═══════════════════════════════════════\n`);
       return;
     }
   }
-}
   
-  // ⭐ EXISTING LOGIC FOR PRESTASI (continue as normal)
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // ⭐ PRESTASI LOGIC: Standard tournament bracket advancement
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  console.log(`\n🏆 === PRESTASI ADVANCE LOGIC (Standard Bracket) ===`);
+  
+  // Get all matches in current round
   const currentRoundMatches = await prisma.tb_match.findMany({
     where: {
       id_bagan: match.id_bagan,
@@ -1553,6 +1580,7 @@ if (isPemula && currentRound === 1) {
     orderBy: { id_match: 'asc' }
   });
 
+  // Get all matches in next round
   const nextRoundMatches = await prisma.tb_match.findMany({
     where: {
       id_bagan: match.id_bagan,
@@ -1561,31 +1589,59 @@ if (isPemula && currentRound === 1) {
     orderBy: { id_match: 'asc' }
   });
 
+  console.log(`   Current Round ${currentRound}: ${currentRoundMatches.length} matches`);
+  console.log(`   Next Round ${nextRound}: ${nextRoundMatches.length} matches`);
+
   if (nextRoundMatches.length === 0) {
-    console.log(`   ℹ️ No next round (this was the final)`);
+    console.log(`   🏁 No next round - this was the FINAL`);
+    console.log(`   🎊 Winner ${winnerId} is the CHAMPION!`);
+    console.log(`═══════════════════════════════════════\n`);
     return;
   }
 
+  // Find current match position in round
   const currentMatchIndex = currentRoundMatches.findIndex(m => m.id_match === match.id_match);
   
   if (currentMatchIndex === -1) {
-    console.error(`   ❌ Could not find current match in round matches`);
+    console.error(`   ❌ ERROR: Could not find current match in round matches`);
+    console.log(`═══════════════════════════════════════\n`);
     return;
   }
 
+  console.log(`   📍 Current match index in round: ${currentMatchIndex}`);
+
+  // ⭐ CRITICAL FIX: Calculate next match using standard tournament bracket logic
+  // Match 0,1 → Next Match 0
+  // Match 2,3 → Next Match 1
+  // Match 4,5 → Next Match 2
+  // Match 6,7 → Next Match 3
   const nextMatchIndex = Math.floor(currentMatchIndex / 2);
   const nextMatch = nextRoundMatches[nextMatchIndex];
 
   if (!nextMatch) {
-    console.error(`   ❌ Could not find next match at index ${nextMatchIndex}`);
+    console.error(`   ❌ ERROR: Could not find next match at index ${nextMatchIndex}`);
+    console.log(`   Available next round matches:`, nextRoundMatches.map(m => m.id_match));
+    console.log(`═══════════════════════════════════════\n`);
     return;
   }
 
-  const isFirstSlot = currentMatchIndex % 2 === 0;
+  console.log(`   🎯 Target: Round ${nextRound} Match ${nextMatch.id_match} (index ${nextMatchIndex})`);
+
+  // ⭐ CRITICAL FIX: Determine slot using modulo
+  // Even index (0,2,4,6) → Slot A (top)
+  // Odd index (1,3,5,7) → Slot B (bottom)
+  const isSlotA = currentMatchIndex % 2 === 0;
+  const targetSlot = isSlotA ? 'A' : 'B';
   
-  if (isFirstSlot) {
+  console.log(`   📍 Placement: Slot ${targetSlot} (index ${currentMatchIndex} is ${isSlotA ? 'EVEN' : 'ODD'})`);
+
+  // Update next match with winner
+  if (isSlotA) {
+    // Check if slot already occupied
     if (nextMatch.id_peserta_a) {
-      console.log(`   ⚠️ Slot A already occupied - SKIPPING`);
+      console.log(`   ⚠️ WARNING: Slot A already occupied by participant ${nextMatch.id_peserta_a}`);
+      console.log(`   → SKIPPING placement to avoid overwrite`);
+      console.log(`═══════════════════════════════════════\n`);
       return;
     }
     
@@ -1594,10 +1650,14 @@ if (isPemula && currentRound === 1) {
       data: { id_peserta_a: winnerId }
     });
     
-    console.log(`   ✅ Winner ${winnerId} placed in Round ${nextRound} Match ${nextMatch.id_match} (Slot A)`);
+    console.log(`   ✅ SUCCESS: Winner ${winnerId} → Match ${nextMatch.id_match} Slot A`);
+    
   } else {
+    // Check if slot already occupied
     if (nextMatch.id_peserta_b) {
-      console.log(`   ⚠️ Slot B already occupied - SKIPPING`);
+      console.log(`   ⚠️ WARNING: Slot B already occupied by participant ${nextMatch.id_peserta_b}`);
+      console.log(`   → SKIPPING placement to avoid overwrite`);
+      console.log(`═══════════════════════════════════════\n`);
       return;
     }
     
@@ -1606,8 +1666,10 @@ if (isPemula && currentRound === 1) {
       data: { id_peserta_b: winnerId }
     });
     
-    console.log(`   ✅ Winner ${winnerId} placed in Round ${nextRound} Match ${nextMatch.id_match} (Slot B)`);
+    console.log(`   ✅ SUCCESS: Winner ${winnerId} → Match ${nextMatch.id_match} Slot B`);
   }
+  
+  console.log(`═══════════════════════════════════════\n`);
 }
 
   /**
