@@ -1428,7 +1428,7 @@ return (
     }
   }
 
-  const OFFSET_CONNECTOR = 100; // 🔥 Connect di middle-top card
+  const OFFSET_CONNECTOR = 140; // 🔥 Connect di middle-top card
 
 // Hitung posisi Y berdasarkan LOCAL column index
 const lastFightY = lastFightColumnIndex >= 0 
@@ -1439,7 +1439,7 @@ const byeMatchY = byeColumnIndex >= 0
   ? byeColumnIndex * CARD_HEIGHT + OFFSET_CONNECTOR
   : OFFSET_CONNECTOR;
 
-const ADDITIONAL_CARD_OFFSET = -50; // 🔥 TURUNKAN offset (dari -100 ke -20)
+const ADDITIONAL_CARD_OFFSET = -70; // 🔥 TURUNKAN offset (dari -100 ke -20)
 const additionalMatchY = (lastFightY + byeMatchY) / 2;
   
   console.log('📏 Last Fight Y:', lastFightY);
@@ -1663,7 +1663,7 @@ const additionalMatchY = (lastFightY + byeMatchY) / 2;
                 </g>
               )}
             </svg>
-            
+
             {/* Additional Match Card */}
             <div
               className="bg-white rounded-lg shadow-md border overflow-hidden"
