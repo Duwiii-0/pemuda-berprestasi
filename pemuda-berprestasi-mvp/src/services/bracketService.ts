@@ -59,6 +59,27 @@ export function isByeMatch(match: {
 }
 
 export class BracketService {
+
+   static async createBracket(
+    kompetisiId: number, 
+    kelasKejuaraanId: number,
+    dojangSeparation?: { enabled: boolean; mode: 'STRICT' | 'BALANCED' }
+  ): Promise<Bracket> {
+    // Check if bracket already exists
+    const existingBagan = await prisma.tb_bagan.findFirst({
+      where: { 
+        id_kompetisi: kompetisiId, 
+        id_kelas_kejuaraan: kelasKejuaraanId 
+      }
+    });
+
+    if (existingBagan) {
+      throw new Error('Bagan sudah dibuat untuk kelas kejuaraan ini');
+    }
+
+    // Call the existing generateBracket method
+    return this.generateBracket(kompetisiId, kelasKejuaraanId, undefined, dojangSeparation);
+  }
   
 static async generateBracket(
   kompetisiId: number, 
