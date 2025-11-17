@@ -492,7 +492,7 @@ static async getBracketsListPublic(req: Request, res: Response) {
 
     console.log(`📋 Fetching brackets list for kompetisi: ${kompetisiId}`);
 
-    // Fetch kelas yang sudah punya bracket
+    // ✅ Fetch kelas yang sudah punya bracket dengan include relations
     const kelasKejuaraan = await prisma.tb_kelas_kejuaraan.findMany({
       where: {
         id_kompetisi: kompetisiId,
@@ -501,12 +501,32 @@ static async getBracketsListPublic(req: Request, res: Response) {
         }
       },
       include: {
-        kategori_event: true,
-        kelompok: true,
-        kelas_berat: true,
-        poomsae: true,
+        kategori_event: {
+          select: {
+            nama_kategori: true
+          }
+        },
+        kelompok: {
+          select: {
+            nama_kelompok: true,
+            usia_min: true,
+            usia_max: true
+          }
+        },
+        kelas_berat: {
+          select: {
+            nama_kelas: true
+          }
+        },
+        poomsae: {
+          select: {
+            nama_kelas: true
+          }
+        },
         _count: {
-          select: { peserta_kompetisi: true }
+          select: { 
+            peserta_kompetisi: true 
+          }
         }
       },
       orderBy: [
@@ -518,18 +538,18 @@ static async getBracketsListPublic(req: Request, res: Response) {
 
     console.log(`✅ Found ${kelasKejuaraan.length} brackets`);
 
-    // Format data
+    // ✅ Format data dengan proper null handling
     const formattedData = kelasKejuaraan.map(kelas => ({
       id_kelas_kejuaraan: kelas.id_kelas_kejuaraan,
       cabang: kelas.cabang,
       kategori_event: {
         nama_kategori: kelas.kategori_event.nama_kategori
       },
-      kelompok: {
+      kelompok: kelas.kelompok ? {
         nama_kelompok: kelas.kelompok.nama_kelompok,
         usia_min: kelas.kelompok.usia_min,
         usia_max: kelas.kelompok.usia_max
-      },
+      } : null,
       kelas_berat: kelas.kelas_berat ? {
         nama_kelas: kelas.kelas_berat.nama_kelas
       } : null,
