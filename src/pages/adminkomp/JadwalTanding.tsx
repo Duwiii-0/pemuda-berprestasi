@@ -11,7 +11,7 @@ import {
   Download,
   Check,
   Zap,
-  X
+  X,
 } from "lucide-react";
 import { useKompetisi } from "../../context/KompetisiContext";
 import { useAuth } from "../../context/authContext";
@@ -86,8 +86,10 @@ const JadwalPertandingan: React.FC = () => {
   const [successMessage, setSuccessMessage] = useState("");
   const [isAdding, setIsAdding] = useState(false);
   const [showAutoNumberModal, setShowAutoNumberModal] = useState(false);
-  const [selectedAutoGenHari, setSelectedAutoGenHari] = useState<string>('');
-  const [selectedAutoGenLapangan, setSelectedAutoGenLapangan] = useState<number | null>(null);
+  const [selectedAutoGenHari, setSelectedAutoGenHari] = useState<string>("");
+  const [selectedAutoGenLapangan, setSelectedAutoGenLapangan] = useState<
+    number | null
+  >(null);
   const [previewData, setPreviewData] = useState<any | null>(null);
   const [generatingNumbers, setGeneratingNumbers] = useState(false);
   const [loadingPreview, setLoadingPreview] = useState(false);
@@ -96,9 +98,13 @@ const JadwalPertandingan: React.FC = () => {
   const [isSavingAntrian, setIsSavingAntrian] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
   const [selectedExportHari, setSelectedExportHari] = useState<string>("");
-  const [selectedExportLapangan, setSelectedExportLapangan] = useState<number[]>([]);
+  const [selectedExportLapangan, setSelectedExportLapangan] = useState<
+    number[]
+  >([]);
   const [exportingPDF, setExportingPDF] = useState(false);
-  const [lapanganSearchTerms, setLapanganSearchTerms] = useState<Record<number, string>>({});
+  const [lapanganSearchTerms, setLapanganSearchTerms] = useState<
+    Record<number, string>
+  >({});
 
   useEffect(() => {
     if (!idKompetisi) return;
@@ -244,14 +250,16 @@ const JadwalPertandingan: React.FC = () => {
   }, [hariList, idKompetisi, token, kelasKejuaraanList]);
 
   // 🆕 Auto-load preview saat lapangan dipilih
-useEffect(() => {
-  if (selectedAutoGenLapangan) {
-    console.log(`📊 Lapangan selected: ${selectedAutoGenLapangan}, fetching preview...`);
-    fetchPreviewNumbers(selectedAutoGenLapangan);
-  } else {
-    setPreviewData(null);
-  }
-}, [selectedAutoGenLapangan]);
+  useEffect(() => {
+    if (selectedAutoGenLapangan) {
+      console.log(
+        `📊 Lapangan selected: ${selectedAutoGenLapangan}, fetching preview...`
+      );
+      fetchPreviewNumbers(selectedAutoGenLapangan);
+    } else {
+      setPreviewData(null);
+    }
+  }, [selectedAutoGenLapangan]);
 
   // Pisahkan peserta approved
   useEffect(() => {
@@ -286,10 +294,10 @@ useEffect(() => {
   useEffect(() => {
     if (kelasKejuaraanList.length > 0) {
       const sortedList = [...kelasKejuaraanList].sort((a, b) => {
-        const countA =
-          (approvedPesertaByKelas[a.id_kelas_kejuaraan] || []).length;
-        const countB =
-          (approvedPesertaByKelas[b.id_kelas_kejuaraan] || []).length;
+        const countA = (approvedPesertaByKelas[a.id_kelas_kejuaraan] || [])
+          .length;
+        const countB = (approvedPesertaByKelas[b.id_kelas_kejuaraan] || [])
+          .length;
         return countB - countA;
       });
       setSortedKelasKejuaraanList(sortedList);
@@ -639,127 +647,140 @@ useEffect(() => {
   };
 
   // 🆕 ============================================================================
-// AUTO-GENERATE NOMOR PARTAI FUNCTIONS
-// 🆕 ============================================================================
+  // AUTO-GENERATE NOMOR PARTAI FUNCTIONS
+  // 🆕 ============================================================================
 
-/**
- * Fetch preview nomor partai tanpa save
- */
-const fetchPreviewNumbers = async (id_lapangan: number) => {
-  setLoadingPreview(true);
-  setErrorMessage('');
-  
-  try {
-    console.log(`🔮 Fetching preview for lapangan ${id_lapangan}...`);
-    
-    const res = await fetch(
-      `${import.meta.env.VITE_API_URL}/lapangan/${id_lapangan}/preview-numbers?starting_number=1`
-    );
-    
-    const data = await res.json();
-    
-    if (data.success) {
-      setPreviewData(data);
-      console.log('✅ Preview loaded:', data);
-    } else {
-      throw new Error(data.message || 'Gagal memuat preview');
-    }
-  } catch (err: any) {
-    console.error('❌ Error fetching preview:', err);
-    setErrorMessage(err.message || 'Gagal memuat preview nomor partai');
-    setTimeout(() => setErrorMessage(''), 5000);
-  } finally {
-    setLoadingPreview(false);
-  }
-};
+  /**
+   * Fetch preview nomor partai tanpa save
+   */
+  const fetchPreviewNumbers = async (id_lapangan: number) => {
+    setLoadingPreview(true);
+    setErrorMessage("");
 
-/**
- * Auto-generate dan save nomor partai
- */
-const handleAutoGenerateNumbers = async () => {
-  if (!selectedAutoGenLapangan) return;
-  
-  setGeneratingNumbers(true);
-  setErrorMessage('');
-  setSuccessMessage('');
-  
-  try {
-    console.log(`🎯 Generating numbers for lapangan ${selectedAutoGenLapangan}...`);
-    
-    const res = await fetch(
-      `${import.meta.env.VITE_API_URL}/lapangan/${selectedAutoGenLapangan}/auto-generate-numbers`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ starting_number: 1 })
+    try {
+      console.log(`🔮 Fetching preview for lapangan ${id_lapangan}...`);
+
+      const res = await fetch(
+        `${
+          import.meta.env.VITE_API_URL
+        }/lapangan/${id_lapangan}/preview-numbers?starting_number=1`
+      );
+
+      const data = await res.json();
+
+      if (data.success) {
+        setPreviewData(data);
+        console.log("✅ Preview loaded:", data);
+      } else {
+        throw new Error(data.message || "Gagal memuat preview");
       }
-    );
-    
-    const data = await res.json();
-    
-    if (data.success) {
-      setSuccessMessage(`✅ ${data.message} - Range: ${data.range}`);
-      
-      // Close modal
-      setShowAutoNumberModal(false);
-      setSelectedAutoGenHari('');
-      setSelectedAutoGenLapangan(null);
-      setPreviewData(null);
-      
-      // Refresh data
-      await fetchHariLapangan();
-      
-      console.log('✅ Numbers generated successfully');
-      
-      // Clear success message after 5 seconds
-      setTimeout(() => setSuccessMessage(''), 5000);
-    } else {
-      throw new Error(data.message || 'Gagal generate nomor partai');
+    } catch (err: any) {
+      console.error("❌ Error fetching preview:", err);
+      setErrorMessage(err.message || "Gagal memuat preview nomor partai");
+      setTimeout(() => setErrorMessage(""), 5000);
+    } finally {
+      setLoadingPreview(false);
     }
-  } catch (err: any) {
-    console.error('❌ Error auto-generate:', err);
-    setErrorMessage(err.message || 'Gagal generate nomor partai');
-    setTimeout(() => setErrorMessage(''), 5000);
-  } finally {
-    setGeneratingNumbers(false);
-  }
-};
+  };
 
-/**
- * Reset nomor partai di lapangan
- */
-const handleResetNumbers = async (id_lapangan: number, namaLapangan: string) => {
-  if (!confirm(`Yakin ingin reset semua nomor partai di Lapangan ${namaLapangan}?\n\nNomor partai akan dihapus dan harus di-generate ulang.`)) {
-    return;
-  }
-  
-  setErrorMessage('');
-  setSuccessMessage('');
-  
-  try {
-    console.log(`🗑️ Resetting numbers for lapangan ${id_lapangan}...`);
-    
-    const res = await fetch(
-      `${import.meta.env.VITE_API_URL}/lapangan/${id_lapangan}/reset-numbers`,
-      { method: 'DELETE' }
-    );
-    
-    const data = await res.json();
-    
-    if (data.success) {
-      setSuccessMessage(data.message);
-      await fetchHariLapangan();
-      setTimeout(() => setSuccessMessage(''), 3000);
-      console.log('✅ Numbers reset successfully');
-    } else {
-      throw new Error(data.message || 'Gagal reset nomor partai');
+  /**
+   * Auto-generate dan save nomor partai
+   */
+  const handleAutoGenerateNumbers = async () => {
+    if (!selectedAutoGenLapangan) return;
+
+    setGeneratingNumbers(true);
+    setErrorMessage("");
+    setSuccessMessage("");
+
+    try {
+      console.log(
+        `🎯 Generating numbers for lapangan ${selectedAutoGenLapangan}...`
+      );
+
+      const res = await fetch(
+        `${
+          import.meta.env.VITE_API_URL
+        }/lapangan/${selectedAutoGenLapangan}/auto-generate-numbers`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ starting_number: 1 }),
+        }
+      );
+
+      const data = await res.json();
+
+      if (data.success) {
+        setSuccessMessage(`✅ ${data.message} - Range: ${data.range}`);
+
+        // Close modal
+        setShowAutoNumberModal(false);
+        setSelectedAutoGenHari("");
+        setSelectedAutoGenLapangan(null);
+        setPreviewData(null);
+
+        // Refresh data
+        await fetchHariLapangan();
+
+        console.log("✅ Numbers generated successfully");
+
+        // Clear success message after 5 seconds
+        setTimeout(() => setSuccessMessage(""), 5000);
+      } else {
+        throw new Error(data.message || "Gagal generate nomor partai");
+      }
+    } catch (err: any) {
+      console.error("❌ Error auto-generate:", err);
+      setErrorMessage(err.message || "Gagal generate nomor partai");
+      setTimeout(() => setErrorMessage(""), 5000);
+    } finally {
+      setGeneratingNumbers(false);
     }
-  } catch (err: any) {
-    console.error('❌ Error reset:', err);
-    setErrorMessage(err.message || 'Gagal reset nomor partai');
-    setTimeout(() => setErrorMessage(''), 3000);
-  }
-};
+  };
+
+  /**
+   * Reset nomor partai di lapangan
+   */
+  const handleResetNumbers = async (
+    id_lapangan: number,
+    namaLapangan: string
+  ) => {
+    if (
+      !confirm(
+        `Yakin ingin reset semua nomor partai di Lapangan ${namaLapangan}?\n\nNomor partai akan dihapus dan harus di-generate ulang.`
+      )
+    ) {
+      return;
+    }
+
+    setErrorMessage("");
+    setSuccessMessage("");
+
+    try {
+      console.log(`🗑️ Resetting numbers for lapangan ${id_lapangan}...`);
+
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL}/lapangan/${id_lapangan}/reset-numbers`,
+        { method: "DELETE" }
+      );
+
+      const data = await res.json();
+
+      if (data.success) {
+        setSuccessMessage(data.message);
+        await fetchHariLapangan();
+        setTimeout(() => setSuccessMessage(""), 3000);
+        console.log("✅ Numbers reset successfully");
+      } else {
+        throw new Error(data.message || "Gagal reset nomor partai");
+      }
+    } catch (err: any) {
+      console.error("❌ Error reset:", err);
+      setErrorMessage(err.message || "Gagal reset nomor partai");
+      setTimeout(() => setErrorMessage(""), 3000);
+    }
+  };
 
   const generateNamaKelas = (kelas: any) => {
     const parts = [];
@@ -770,7 +791,7 @@ const handleResetNumbers = async (id_lapangan: number, namaLapangan: string) => 
     const isPoomsaePemula =
       kelas.cabang === "POOMSAE" &&
       kelas.kategori_event?.nama_kategori === "Pemula";
-    if (kelas.kelompok?.nama_kelompok && !isPoomsaePemula) {
+    if (kelas.kelompok?.nama_kelompok) {
       parts.push(kelas.kelompok.nama_kelompok);
     }
 
@@ -789,229 +810,271 @@ const handleResetNumbers = async (id_lapangan: number, namaLapangan: string) => 
 
   const handleLihatBagan = (kelasId: number) => {
     console.log(`🔗 Navigating to drawing bagan for kelas ${kelasId}`);
-  navigate(`/admin-kompetisi/drawing-bagan/${kelasId}`);
+    navigate(`/admin-kompetisi/drawing-bagan/${kelasId}`);
   };
 
-const handleExportLapangan = async () => {
-  if (!idKompetisi || selectedExportLapangan.length === 0) return;
+  const handleExportLapangan = async () => {
+    if (!idKompetisi || selectedExportLapangan.length === 0) return;
 
-  setExportingPDF(true);
-  setErrorMessage('');
-  setSuccessMessage('');
+    setExportingPDF(true);
+    setErrorMessage("");
+    setSuccessMessage("");
 
-  try {
-    const selectedHari = hariList.find(h => h.tanggal === selectedExportHari);
-    if (!selectedHari) throw new Error('Hari tidak ditemukan');
+    try {
+      const selectedHari = hariList.find(
+        (h) => h.tanggal === selectedExportHari
+      );
+      if (!selectedHari) throw new Error("Hari tidak ditemukan");
 
-    const bracketsToExport = [];
-    const failedKelas: string[] = [];
+      const bracketsToExport = [];
+      const failedKelas: string[] = [];
 
-    for (const lapanganId of selectedExportLapangan) {
-      const lapangan = selectedHari.lapangan.find(l => l.id_lapangan === lapanganId);
-      if (!lapangan) continue;
+      for (const lapanganId of selectedExportLapangan) {
+        const lapangan = selectedHari.lapangan.find(
+          (l) => l.id_lapangan === lapanganId
+        );
+        if (!lapangan) continue;
 
-      console.log(`\n📍 ========================================`);
-      console.log(`   Processing Lapangan ${lapangan.nama_lapangan}`);
-      console.log(`   Total kelas assigned: ${lapangan.kelasDipilih.length}`);
-      console.log(`========================================`);
+        console.log(`\n📍 ========================================`);
+        console.log(`   Processing Lapangan ${lapangan.nama_lapangan}`);
+        console.log(`   Total kelas assigned: ${lapangan.kelasDipilih.length}`);
+        console.log(`========================================`);
 
-// ⭐ STEP 1: MAP kelas dengan data lengkap (kategori + jumlah peserta)
-const kelasList = lapangan.kelasDipilih
-  .map(kelasId => {
-    const kelas = kelasKejuaraanList.find(k => k.id_kelas_kejuaraan === kelasId);
-    if (!kelas) {
-      console.warn(`   ⚠️ Kelas ${kelasId} tidak ditemukan di kelasKejuaraanList`);
-      return null;
-    }
-    
-    const isPemula = kelas.kategori_event.nama_kategori.toLowerCase().includes('pemula');
-    const jumlahPeserta = pesertaList.filter(
-      p => p.status === 'APPROVED' && p.kelas_kejuaraan?.id_kelas_kejuaraan === kelasId
-    ).length;
-    
-    return {
-      kelasId,
-      kelasData: kelas,
-      isPemula,
-      jumlahPeserta,
-      namaKelas: generateNamaKelas(kelas)
-    };
-  })
-  .filter((item): item is NonNullable<typeof item> => item !== null); // ✅ Type guard
-
-// ⭐ STEP 2: SORT sesuai logic auto-generate
-// Priority: PEMULA first, then by jumlah peserta (DESC)
-const sortedKelas = kelasList.sort((a, b) => {
-  // PEMULA always comes first
-  if (a.isPemula && !b.isPemula) return -1;
-  if (!a.isPemula && b.isPemula) return 1;
-  
-  // Within same category, sort by jumlah peserta (DESC - terbanyak dulu)
-  return b.jumlahPeserta - a.jumlahPeserta;
-});
-
-      // ⭐ STEP 3: LOG urutan export (untuk debugging)
-      console.log(`\n   📋 URUTAN EXPORT (sesuai auto-generate):`);
-      sortedKelas.forEach((kelas, idx) => {
-        const category = kelas.isPemula ? '🥋 PEMULA' : '🏆 PRESTASI';
-        console.log(`      ${idx + 1}. ${category} - ${kelas.namaKelas} (${kelas.jumlahPeserta} peserta)`);
-      });
-      console.log(''); // Empty line for readability
-
-      // ⭐ STEP 4: LOOP dengan urutan yang sudah di-sort
-      for (const kelas of sortedKelas) {
-        const kelasId = kelas.kelasId;
-        const kelasData = kelas.kelasData;
-
-        try {
-          console.log(`   🔄 Fetching bracket for: ${kelas.namaKelas}...`);
-          
-          // ✅ Fetch bracket data
-          const response = await fetch(
-            `${import.meta.env.VITE_API_URL}/kompetisi/${idKompetisi}/brackets/${kelasId}`,
-            {
-              headers: {
-                'Authorization': `Bearer ${token}`
-              }
+        // ⭐ STEP 1: MAP kelas dengan data lengkap (kategori + jumlah peserta)
+        const kelasList = lapangan.kelasDipilih
+          .map((kelasId) => {
+            const kelas = kelasKejuaraanList.find(
+              (k) => k.id_kelas_kejuaraan === kelasId
+            );
+            if (!kelas) {
+              console.warn(
+                `   ⚠️ Kelas ${kelasId} tidak ditemukan di kelasKejuaraanList`
+              );
+              return null;
             }
+
+            const isPemula = kelas.kategori_event.nama_kategori
+              .toLowerCase()
+              .includes("pemula");
+            const jumlahPeserta = pesertaList.filter(
+              (p) =>
+                p.status === "APPROVED" &&
+                p.kelas_kejuaraan?.id_kelas_kejuaraan === kelasId
+            ).length;
+
+            return {
+              kelasId,
+              kelasData: kelas,
+              isPemula,
+              jumlahPeserta,
+              namaKelas: generateNamaKelas(kelas),
+            };
+          })
+          .filter((item): item is NonNullable<typeof item> => item !== null); // ✅ Type guard
+
+        // ⭐ STEP 2: SORT sesuai logic auto-generate
+        // Priority: PEMULA first, then by jumlah peserta (DESC)
+        const sortedKelas = kelasList.sort((a, b) => {
+          // PEMULA always comes first
+          if (a.isPemula && !b.isPemula) return -1;
+          if (!a.isPemula && b.isPemula) return 1;
+
+          // Within same category, sort by jumlah peserta (DESC - terbanyak dulu)
+          return b.jumlahPeserta - a.jumlahPeserta;
+        });
+
+        // ⭐ STEP 3: LOG urutan export (untuk debugging)
+        console.log(`\n   📋 URUTAN EXPORT (sesuai auto-generate):`);
+        sortedKelas.forEach((kelas, idx) => {
+          const category = kelas.isPemula ? "🥋 PEMULA" : "🏆 PRESTASI";
+          console.log(
+            `      ${idx + 1}. ${category} - ${kelas.namaKelas} (${
+              kelas.jumlahPeserta
+            } peserta)`
           );
+        });
+        console.log(""); // Empty line for readability
 
-          // ❌ Handle 404 (bracket belum dibuat)
-          if (response.status === 404) {
-            failedKelas.push(`${kelas.namaKelas} (Lapangan ${lapangan.nama_lapangan})`);
-            console.warn(`      ⚠️ Bracket belum dibuat`);
-            continue;
-          }
+        // ⭐ STEP 4: LOOP dengan urutan yang sudah di-sort
+        for (const kelas of sortedKelas) {
+          const kelasId = kelas.kelasId;
+          const kelasData = kelas.kelasData;
 
-          if (!response.ok) {
-            throw new Error(`Failed to fetch bracket for kelas ${kelasId}`);
-          }
+          try {
+            console.log(`   🔄 Fetching bracket for: ${kelas.namaKelas}...`);
 
-          const result = await response.json();
-          
-          // ❌ Validate bracket data
-          if (!result.data || !result.data.matches || result.data.matches.length === 0) {
-            failedKelas.push(`${kelas.namaKelas} (Lapangan ${lapangan.nama_lapangan})`);
-            console.warn(`      ⚠️ Bracket kosong`);
-            continue;
-          }
+            // ✅ Fetch bracket data
+            const response = await fetch(
+              `${
+                import.meta.env.VITE_API_URL
+              }/kompetisi/${idKompetisi}/brackets/${kelasId}`,
+              {
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                },
+              }
+            );
 
-          console.log(`      ✅ Bracket loaded: ${result.data.matches.length} matches`);
+            // ❌ Handle 404 (bracket belum dibuat)
+            if (response.status === 404) {
+              failedKelas.push(
+                `${kelas.namaKelas} (Lapangan ${lapangan.nama_lapangan})`
+              );
+              console.warn(`      ⚠️ Bracket belum dibuat`);
+              continue;
+            }
 
-          // ✅ Transform peserta data
-          const pesertaKelas = pesertaList.filter(
-            p => p.status === 'APPROVED' && 
-            p.kelas_kejuaraan?.id_kelas_kejuaraan === kelasId
-          );
+            if (!response.ok) {
+              throw new Error(`Failed to fetch bracket for kelas ${kelasId}`);
+            }
 
-          // ✅ Siapkan data lengkap untuk export
-          bracketsToExport.push({
-            kelasData: {
-              id_kelas_kejuaraan: kelasId,
-              cabang: kelasData.cabang,
-              kategori_event: kelasData.kategori_event,
-              kelompok: kelasData.kelompok,
-              kelas_berat: kelasData.kelas_berat,
-              poomsae: kelasData.poomsae,
-              kompetisi: {
-                id_kompetisi: idKompetisi,
-                nama_event: "Sriwijaya International Taekwondo Championship 2025",
-                tanggal_mulai: selectedExportHari,
-                tanggal_selesai: selectedExportHari,
-                lokasi: "GOR Ranau JSC Palembang",
-                status: "SEDANG_DIMULAI" as const,
-              },
-              peserta_kompetisi: pesertaKelas.map(p => ({
-                id_peserta_kompetisi: p.id_peserta_kompetisi,
-                id_atlet: p.atlet?.id_atlet,
-                is_team: p.is_team,
-                status: p.status,
-                atlet: p.atlet ? {
-                  id_atlet: p.atlet.id_atlet,
-                  nama_atlet: p.atlet.nama_atlet,
-                  dojang: {
-                    nama_dojang: p.atlet.dojang?.nama_dojang || "",
-                  },
-                } : undefined,
-                anggota_tim: p.anggota_tim?.map(at => ({
-                  atlet: {
-                    nama_atlet: at.atlet.nama_atlet,
-                  },
+            const result = await response.json();
+
+            // ❌ Validate bracket data
+            if (
+              !result.data ||
+              !result.data.matches ||
+              result.data.matches.length === 0
+            ) {
+              failedKelas.push(
+                `${kelas.namaKelas} (Lapangan ${lapangan.nama_lapangan})`
+              );
+              console.warn(`      ⚠️ Bracket kosong`);
+              continue;
+            }
+
+            console.log(
+              `      ✅ Bracket loaded: ${result.data.matches.length} matches`
+            );
+
+            // ✅ Transform peserta data
+            const pesertaKelas = pesertaList.filter(
+              (p) =>
+                p.status === "APPROVED" &&
+                p.kelas_kejuaraan?.id_kelas_kejuaraan === kelasId
+            );
+
+            // ✅ Siapkan data lengkap untuk export
+            bracketsToExport.push({
+              kelasData: {
+                id_kelas_kejuaraan: kelasId,
+                cabang: kelasData.cabang,
+                kategori_event: kelasData.kategori_event,
+                kelompok: kelasData.kelompok,
+                kelas_berat: kelasData.kelas_berat,
+                poomsae: kelasData.poomsae,
+                kompetisi: {
+                  id_kompetisi: idKompetisi,
+                  nama_event:
+                    "Sriwijaya International Taekwondo Championship 2025",
+                  tanggal_mulai: selectedExportHari,
+                  tanggal_selesai: selectedExportHari,
+                  lokasi: "GOR Ranau JSC Palembang",
+                  status: "SEDANG_DIMULAI" as const,
+                },
+                peserta_kompetisi: pesertaKelas.map((p) => ({
+                  id_peserta_kompetisi: p.id_peserta_kompetisi,
+                  id_atlet: p.atlet?.id_atlet,
+                  is_team: p.is_team,
+                  status: p.status,
+                  atlet: p.atlet
+                    ? {
+                        id_atlet: p.atlet.id_atlet,
+                        nama_atlet: p.atlet.nama_atlet,
+                        dojang: {
+                          nama_dojang: p.atlet.dojang?.nama_dojang || "",
+                        },
+                      }
+                    : undefined,
+                  anggota_tim: p.anggota_tim?.map((at) => ({
+                    atlet: {
+                      nama_atlet: at.atlet.nama_atlet,
+                    },
+                  })),
                 })),
-              })),
-              bagan: [{
-                id_bagan: result.data.id_bagan || 1,
-                match: result.data.matches || [],
-                drawing_seed: result.data.drawing_seed || []
-              }],
-            },
-            bracketData: result.data,
-            lapanganNama: lapangan.nama_lapangan,
-            tanggal: selectedExportHari,
-            isPemula: kelas.isPemula,
-            namaKelas: kelas.namaKelas
-          });
+                bagan: [
+                  {
+                    id_bagan: result.data.id_bagan || 1,
+                    match: result.data.matches || [],
+                    drawing_seed: result.data.drawing_seed || [],
+                  },
+                ],
+              },
+              bracketData: result.data,
+              lapanganNama: lapangan.nama_lapangan,
+              tanggal: selectedExportHari,
+              isPemula: kelas.isPemula,
+              namaKelas: kelas.namaKelas,
+            });
 
-          console.log(`      ✅ Added to export queue`);
-
-        } catch (kelasError: any) {
-          console.error(`      ❌ Error fetching bracket:`, kelasError);
-          failedKelas.push(`${kelas.namaKelas} (Lapangan ${lapangan.nama_lapangan})`);
+            console.log(`      ✅ Added to export queue`);
+          } catch (kelasError: any) {
+            console.error(`      ❌ Error fetching bracket:`, kelasError);
+            failedKelas.push(
+              `${kelas.namaKelas} (Lapangan ${lapangan.nama_lapangan})`
+            );
+          }
         }
       }
-    }
 
-    console.log(`\n📦 ========================================`);
-    console.log(`   EXPORT SUMMARY`);
-    console.log(`   Total brackets to export: ${bracketsToExport.length}`);
-    console.log(`   Failed/skipped: ${failedKelas.length}`);
-    console.log(`========================================\n`);
+      console.log(`\n📦 ========================================`);
+      console.log(`   EXPORT SUMMARY`);
+      console.log(`   Total brackets to export: ${bracketsToExport.length}`);
+      console.log(`   Failed/skipped: ${failedKelas.length}`);
+      console.log(`========================================\n`);
 
-    // ✅ Validasi final
-    if (bracketsToExport.length === 0) {
+      // ✅ Validasi final
+      if (bracketsToExport.length === 0) {
+        if (failedKelas.length > 0) {
+          throw new Error(
+            `Tidak ada bracket yang siap untuk di-export.\n\n` +
+              `Kelas yang belum dibuat bracket:\n${failedKelas
+                .slice(0, 5)
+                .join("\n")}` +
+              (failedKelas.length > 5
+                ? `\n... dan ${failedKelas.length - 5} lainnya`
+                : "")
+          );
+        } else {
+          throw new Error("Tidak ada bracket yang siap untuk di-export");
+        }
+      }
+
+      // ✅ Export PDF dengan urutan yang sudah sorted
+      console.log(`📄 Generating PDF...`);
+      await exportMultipleBracketsByLapangan(bracketsToExport, {
+        namaKejuaraan: "Sriwijaya International Taekwondo Championship 2025",
+        logoPBTI: taekwondo,
+        logoEvent: sriwijaya,
+      });
+
+      // ✅ Success message
+      let message = `✅ Berhasil export ${bracketsToExport.length} bracket!`;
       if (failedKelas.length > 0) {
-        throw new Error(
-          `Tidak ada bracket yang siap untuk di-export.\n\n` +
-          `Kelas yang belum dibuat bracket:\n${failedKelas.slice(0, 5).join('\n')}` +
-          (failedKelas.length > 5 ? `\n... dan ${failedKelas.length - 5} lainnya` : '')
-        );
-      } else {
-        throw new Error('Tidak ada bracket yang siap untuk di-export');
+        message += `\n\n⚠️ ${
+          failedKelas.length
+        } kelas di-skip karena bracket belum dibuat:\n${failedKelas
+          .slice(0, 3)
+          .join("\n")}`;
+        if (failedKelas.length > 3) {
+          message += `\n... dan ${failedKelas.length - 3} lainnya`;
+        }
       }
+
+      setSuccessMessage(message);
+      setShowExportModal(false);
+      setSelectedExportHari("");
+      setSelectedExportLapangan([]);
+
+      console.log(`✅ Export complete!`);
+      setTimeout(() => setSuccessMessage(""), 5000);
+    } catch (err: any) {
+      console.error("❌ Error exporting brackets:", err);
+      setErrorMessage(err.message || "Gagal export brackets");
+    } finally {
+      setExportingPDF(false);
     }
-
-    // ✅ Export PDF dengan urutan yang sudah sorted
-    console.log(`📄 Generating PDF...`);
-    await exportMultipleBracketsByLapangan(bracketsToExport, {
-      namaKejuaraan: 'Sriwijaya International Taekwondo Championship 2025',
-      logoPBTI: taekwondo,
-      logoEvent: sriwijaya,
-    });
-
-    // ✅ Success message
-    let message = `✅ Berhasil export ${bracketsToExport.length} bracket!`;
-    if (failedKelas.length > 0) {
-      message += `\n\n⚠️ ${failedKelas.length} kelas di-skip karena bracket belum dibuat:\n${failedKelas.slice(0, 3).join('\n')}`;
-      if (failedKelas.length > 3) {
-        message += `\n... dan ${failedKelas.length - 3} lainnya`;
-      }
-    }
-
-    setSuccessMessage(message);
-    setShowExportModal(false);
-    setSelectedExportHari('');
-    setSelectedExportLapangan([]);
-    
-    console.log(`✅ Export complete!`);
-    setTimeout(() => setSuccessMessage(''), 5000);
-
-  } catch (err: any) {
-    console.error('❌ Error exporting brackets:', err);
-    setErrorMessage(err.message || 'Gagal export brackets');
-  } finally {
-    setExportingPDF(false);
-  }
-};
+  };
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#F5FBEF" }}>
@@ -1289,12 +1352,17 @@ const sortedKelas = kelasList.sort((a, b) => {
                               type="text"
                               placeholder="Cari kelas kejuaraan..."
                               className="w-full px-3 py-2 text-sm rounded-lg border focus:outline-none focus:ring-2 focus:ring-[#990D35] mb-2"
-                              style={{ borderColor: "#990D35", backgroundColor: "#F5FBEF" }}
-                              value={lapanganSearchTerms[lap.id_lapangan] || ''}
-                              onChange={(e) => setLapanganSearchTerms(prev => ({
-                                ...prev,
-                                [lap.id_lapangan]: e.target.value
-                              }))}
+                              style={{
+                                borderColor: "#990D35",
+                                backgroundColor: "#F5FBEF",
+                              }}
+                              value={lapanganSearchTerms[lap.id_lapangan] || ""}
+                              onChange={(e) =>
+                                setLapanganSearchTerms((prev) => ({
+                                  ...prev,
+                                  [lap.id_lapangan]: e.target.value,
+                                }))
+                              }
                             />
 
                             <div
@@ -1302,11 +1370,18 @@ const sortedKelas = kelasList.sort((a, b) => {
                               style={{ backgroundColor: "#F5FBEF" }}
                             >
                               {(() => {
-                                const currentSearchTerm = lapanganSearchTerms[lap.id_lapangan]?.toLowerCase() || '';
-                                const filteredKelasKejuaraan = sortedKelasKejuaraanList.filter(kelas => {
-                                  const namaKelasDisplay = generateNamaKelas(kelas);
-                                  return namaKelasDisplay.toLowerCase().includes(currentSearchTerm);
-                                });
+                                const currentSearchTerm =
+                                  lapanganSearchTerms[
+                                    lap.id_lapangan
+                                  ]?.toLowerCase() || "";
+                                const filteredKelasKejuaraan =
+                                  sortedKelasKejuaraanList.filter((kelas) => {
+                                    const namaKelasDisplay =
+                                      generateNamaKelas(kelas);
+                                    return namaKelasDisplay
+                                      .toLowerCase()
+                                      .includes(currentSearchTerm);
+                                  });
 
                                 return (
                                   <>
@@ -1325,7 +1400,8 @@ const sortedKelas = kelasList.sort((a, b) => {
                                             key={kelas.id_kelas_kejuaraan}
                                             className="flex flex-col border rounded-md p-2 hover:bg-white cursor-pointer transition-colors"
                                             style={{
-                                              borderColor: "rgba(153,13,53,0.3)",
+                                              borderColor:
+                                                "rgba(153,13,53,0.3)",
                                             }}
                                           >
                                             <div className="flex justify-between items-center">
@@ -1384,9 +1460,12 @@ const sortedKelas = kelasList.sort((a, b) => {
                                                         )}
                                                       </li>
                                                     ))}
-                                                  {approvedPeserta.length > 3 && (
+                                                  {approvedPeserta.length >
+                                                    3 && (
                                                     <li className="text-[#990D35] font-medium">
-                                                      +{approvedPeserta.length - 3}{" "}
+                                                      +
+                                                      {approvedPeserta.length -
+                                                        3}{" "}
                                                       lainnya
                                                     </li>
                                                   )}
@@ -1399,7 +1478,10 @@ const sortedKelas = kelasList.sort((a, b) => {
                                       <div className="text-center py-8">
                                         <p
                                           className="text-xs font-medium mb-1"
-                                          style={{ color: "#050505", opacity: 0.6 }}
+                                          style={{
+                                            color: "#050505",
+                                            opacity: 0.6,
+                                          }}
                                         >
                                           Tidak ada kelas kejuaraan tersedia
                                         </p>
@@ -1457,26 +1539,26 @@ const sortedKelas = kelasList.sort((a, b) => {
             <>
               <div className="mb-6">
                 <div className="mb-6">
-                <button
-                  onClick={saveAllAntrian}
-                  disabled={isSavingAntrian}
-                  className="flex items-center gap-2 px-4 py-3 rounded-xl font-medium transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
-                  style={{ backgroundColor: "#16a34a", color: "#F5FBEF" }}
-                >
-                  {isSavingAntrian ? (
-                    <>
-                      <Loader size={16} className="animate-spin" />
-                      Menyimpan...
-                    </>
-                  ) : (
-                    <>
-                      <Save size={16} />
-                      Simpan Semua Antrian
-                    </>
-                  )}
-                </button>
+                  <button
+                    onClick={saveAllAntrian}
+                    disabled={isSavingAntrian}
+                    className="flex items-center gap-2 px-4 py-3 rounded-xl font-medium transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{ backgroundColor: "#16a34a", color: "#F5FBEF" }}
+                  >
+                    {isSavingAntrian ? (
+                      <>
+                        <Loader size={16} className="animate-spin" />
+                        Menyimpan...
+                      </>
+                    ) : (
+                      <>
+                        <Save size={16} />
+                        Simpan Semua Antrian
+                      </>
+                    )}
+                  </button>
                 </div>
-                 {/* 🆕 BUTTON EXPORT PER LAPANGAN */}
+                {/* 🆕 BUTTON EXPORT PER LAPANGAN */}
                 <button
                   onClick={() => setShowExportModal(true)}
                   disabled={hariList.length === 0}
@@ -1487,18 +1569,18 @@ const sortedKelas = kelasList.sort((a, b) => {
                   Export Bracket per Lapangan
                 </button>
               </div>
-                    {/* 🆕 BUTTON AUTO-GENERATE */}
-      <div className="mb-6 flex gap-3">
-        <button
-          onClick={() => setShowAutoNumberModal(true)}
-          disabled={hariList.length === 0}
-          className="flex items-center gap-2 px-4 py-3 rounded-xl font-medium transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
-          style={{ backgroundColor: '#6366F1', color: '#F5FBEF' }}
-        >
-          <Zap size={16} />
-          Auto-Generate Nomor Partai
-        </button>
-      </div>
+              {/* 🆕 BUTTON AUTO-GENERATE */}
+              <div className="mb-6 flex gap-3">
+                <button
+                  onClick={() => setShowAutoNumberModal(true)}
+                  disabled={hariList.length === 0}
+                  className="flex items-center gap-2 px-4 py-3 rounded-xl font-medium transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{ backgroundColor: "#6366F1", color: "#F5FBEF" }}
+                >
+                  <Zap size={16} />
+                  Auto-Generate Nomor Partai
+                </button>
+              </div>
               {hariAntrianList.length === 0 ? (
                 <div className="text-center py-12">
                   <ClipboardList
@@ -1817,451 +1899,693 @@ const sortedKelas = kelasList.sort((a, b) => {
           )}
       </div>
       {/* 🆕 MODAL EXPORT PER LAPANGAN */}
-{showExportModal && (
-  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-    <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto">
-      <div className="p-6 border-b sticky top-0 bg-white z-10" style={{ borderColor: '#990D35' }}>
-        <h3 className="text-xl font-bold" style={{ color: '#050505' }}>
-          Export Bracket per Lapangan
-        </h3>
-        <p className="text-sm mt-1" style={{ color: '#050505', opacity: 0.6 }}>
-          Pilih hari dan lapangan yang ingin di-export ke PDF
-        </p>
-      </div>
-      
-      <div className="p-6 space-y-4">
-        {/* Pilih Hari */}
-        <div>
-          <label className="block text-sm font-medium mb-2" style={{ color: '#050505' }}>
-            Pilih Hari Pertandingan
-          </label>
-          <select
-            value={selectedExportHari}
-            onChange={(e) => {
-              setSelectedExportHari(e.target.value);
-              setSelectedExportLapangan([]);
-            }}
-            className="w-full px-3 py-2 rounded-lg border"
-            style={{ borderColor: '#990D35' }}
-          >
-            <option value="">-- Pilih Hari --</option>
-            {hariList.map((hari, idx) => (
-              <option key={hari.tanggal} value={hari.tanggal}>
-                Hari ke-{idx + 1} - {new Date(hari.tanggal).toLocaleDateString('id-ID', {
-                  weekday: 'long',
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric'
-                })}
-              </option>
-            ))}
-          </select>
-        </div>
+      {showExportModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+            <div
+              className="p-6 border-b sticky top-0 bg-white z-10"
+              style={{ borderColor: "#990D35" }}
+            >
+              <h3 className="text-xl font-bold" style={{ color: "#050505" }}>
+                Export Bracket per Lapangan
+              </h3>
+              <p
+                className="text-sm mt-1"
+                style={{ color: "#050505", opacity: 0.6 }}
+              >
+                Pilih hari dan lapangan yang ingin di-export ke PDF
+              </p>
+            </div>
 
-        {/* Pilih Lapangan */}
-        {selectedExportHari && (
-          <div>
-            <label className="block text-sm font-medium mb-2" style={{ color: '#050505' }}>
-              Pilih Lapangan (bisa pilih lebih dari 1)
-            </label>
-            <div className="space-y-2 max-h-64 overflow-y-auto border rounded-lg p-3" style={{ backgroundColor: '#F5FBEF' }}>
-              {hariList
-                .find(h => h.tanggal === selectedExportHari)
-                ?.lapangan.map((lap) => {
-                  const isSelected = selectedExportLapangan.includes(lap.id_lapangan);
-                  const kelasCount = lap.kelasDipilih.length;
-                  
-                  return (
-                    <label
-                      key={lap.id_lapangan}
-                      className={`flex items-center justify-between p-3 rounded-lg border-2 cursor-pointer transition-all ${
-                        isSelected ? 'bg-white' : 'hover:bg-white'
-                      }`}
-                      style={{
-                        borderColor: isSelected ? '#990D35' : 'rgba(153,13,53,0.3)',
-                      }}
-                    >
-                      <div className="flex items-center gap-3">
-                        <input
-                          type="checkbox"
-                          checked={isSelected}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setSelectedExportLapangan([...selectedExportLapangan, lap.id_lapangan]);
-                            } else {
-                              setSelectedExportLapangan(
-                                selectedExportLapangan.filter(id => id !== lap.id_lapangan)
-                              );
+            <div className="p-6 space-y-4">
+              {/* Pilih Hari */}
+              <div>
+                <label
+                  className="block text-sm font-medium mb-2"
+                  style={{ color: "#050505" }}
+                >
+                  Pilih Hari Pertandingan
+                </label>
+                <select
+                  value={selectedExportHari}
+                  onChange={(e) => {
+                    setSelectedExportHari(e.target.value);
+                    setSelectedExportLapangan([]);
+                  }}
+                  className="w-full px-3 py-2 rounded-lg border"
+                  style={{ borderColor: "#990D35" }}
+                >
+                  <option value="">-- Pilih Hari --</option>
+                  {hariList.map((hari, idx) => (
+                    <option key={hari.tanggal} value={hari.tanggal}>
+                      Hari ke-{idx + 1} -{" "}
+                      {new Date(hari.tanggal).toLocaleDateString("id-ID", {
+                        weekday: "long",
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      })}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Pilih Lapangan */}
+              {selectedExportHari && (
+                <div>
+                  <label
+                    className="block text-sm font-medium mb-2"
+                    style={{ color: "#050505" }}
+                  >
+                    Pilih Lapangan (bisa pilih lebih dari 1)
+                  </label>
+                  <div
+                    className="space-y-2 max-h-64 overflow-y-auto border rounded-lg p-3"
+                    style={{ backgroundColor: "#F5FBEF" }}
+                  >
+                    {hariList
+                      .find((h) => h.tanggal === selectedExportHari)
+                      ?.lapangan.map((lap) => {
+                        const isSelected = selectedExportLapangan.includes(
+                          lap.id_lapangan
+                        );
+                        const kelasCount = lap.kelasDipilih.length;
+
+                        return (
+                          <label
+                            key={lap.id_lapangan}
+                            className={`flex items-center justify-between p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                              isSelected ? "bg-white" : "hover:bg-white"
+                            }`}
+                            style={{
+                              borderColor: isSelected
+                                ? "#990D35"
+                                : "rgba(153,13,53,0.3)",
+                            }}
+                          >
+                            <div className="flex items-center gap-3">
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setSelectedExportLapangan([
+                                      ...selectedExportLapangan,
+                                      lap.id_lapangan,
+                                    ]);
+                                  } else {
+                                    setSelectedExportLapangan(
+                                      selectedExportLapangan.filter(
+                                        (id) => id !== lap.id_lapangan
+                                      )
+                                    );
+                                  }
+                                }}
+                                className="w-5 h-5 accent-[#990D35]"
+                              />
+                              <div>
+                                <p
+                                  className="font-bold"
+                                  style={{ color: "#050505" }}
+                                >
+                                  Lapangan {lap.nama_lapangan}
+                                </p>
+                                <p
+                                  className="text-xs"
+                                  style={{ color: "#050505", opacity: 0.6 }}
+                                >
+                                  {kelasCount} Kelas Kejuaraan
+                                </p>
+                              </div>
+                            </div>
+                            {isSelected && (
+                              <Check size={20} style={{ color: "#990D35" }} />
+                            )}
+                          </label>
+                        );
+                      })}
+                  </div>
+                </div>
+              )}
+
+              {/* Info terpilih */}
+              {selectedExportLapangan.length > 0 && (
+                <div
+                  className="p-3 rounded-lg"
+                  style={{ backgroundColor: "rgba(153,13,53,0.1)" }}
+                >
+                  <p
+                    className="text-sm font-medium"
+                    style={{ color: "#990D35" }}
+                  >
+                    {selectedExportLapangan.length} lapangan terpilih
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <div className="p-6 border-t flex gap-3 sticky bottom-0 bg-white z-10">
+              <button
+                onClick={() => {
+                  setShowExportModal(false);
+                  setSelectedExportHari("");
+                  setSelectedExportLapangan([]);
+                }}
+                className="flex-1 py-3 px-4 rounded-lg border-2 font-medium"
+                style={{ borderColor: "#990D35", color: "#990D35" }}
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleExportLapangan}
+                disabled={selectedExportLapangan.length === 0 || exportingPDF}
+                className="flex-1 py-3 px-4 rounded-lg font-medium disabled:opacity-50"
+                style={{ backgroundColor: "#990D35", color: "#F5FBEF" }}
+              >
+                {exportingPDF ? (
+                  <>
+                    <Loader size={16} className="animate-spin inline mr-2" />
+                    Generating PDF...
+                  </>
+                ) : (
+                  <>
+                    <Download size={16} className="inline mr-2" />
+                    Export PDF
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* ============================================================================ */}
+      {/* MODAL AUTO-GENERATE NOMOR PARTAI */}
+      {/* ============================================================================ */}
+      {showAutoNumberModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div
+              className="p-6 border-b sticky top-0 bg-white z-10"
+              style={{ borderColor: "#990D35" }}
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3
+                    className="text-xl font-bold"
+                    style={{ color: "#050505" }}
+                  >
+                    🎯 Auto-Generate Nomor Partai
+                  </h3>
+                  <p
+                    className="text-sm mt-1"
+                    style={{ color: "#050505", opacity: 0.6 }}
+                  >
+                    Sistem akan generate nomor partai otomatis berdasarkan
+                    jumlah peserta
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    setShowAutoNumberModal(false);
+                    setSelectedAutoGenHari("");
+                    setSelectedAutoGenLapangan(null);
+                    setPreviewData(null);
+                  }}
+                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                >
+                  <X size={20} style={{ color: "#990D35" }} />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-4">
+              {/* STEP 1: PILIH HARI */}
+              <div>
+                <label
+                  className="block text-sm font-bold mb-2 flex items-center gap-2"
+                  style={{ color: "#050505" }}
+                >
+                  <span className="bg-gradient-to-r from-purple-500 to-pink-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">
+                    1
+                  </span>
+                  Pilih Hari Pertandingan
+                </label>
+
+                <select
+                  value={selectedAutoGenHari}
+                  onChange={(e) => {
+                    setSelectedAutoGenHari(e.target.value);
+                    setSelectedAutoGenLapangan(null);
+                    setPreviewData(null);
+                  }}
+                  className="w-full px-4 py-3 rounded-lg border-2 focus:outline-none focus:ring-2 transition-all"
+                  style={{ borderColor: "#990D35" }}
+                >
+                  <option value="">-- Pilih Hari --</option>
+                  {hariList.map((hari, idx) => (
+                    <option key={hari.tanggal} value={hari.tanggal}>
+                      Hari ke-{idx + 1} -{" "}
+                      {new Date(hari.tanggal).toLocaleDateString("id-ID", {
+                        weekday: "long",
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      })}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* STEP 2: PILIH LAPANGAN */}
+              {selectedAutoGenHari && (
+                <div>
+                  <label
+                    className="block text-sm font-bold mb-2 flex items-center gap-2"
+                    style={{ color: "#050505" }}
+                  >
+                    <span className="bg-gradient-to-r from-purple-500 to-pink-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">
+                      2
+                    </span>
+                    Pilih Lapangan
+                  </label>
+
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                    {hariList
+                      .find((h) => h.tanggal === selectedAutoGenHari)
+                      ?.lapangan.filter((lap) => lap.kelasDipilih.length > 0)
+                      .map((lap) => {
+                        const isSelected =
+                          selectedAutoGenLapangan === lap.id_lapangan;
+                        const kelasCount = lap.kelasDipilih.length;
+                        const pesertaCount = lap.kelasDipilih.reduce(
+                          (total, kelasId) =>
+                            total +
+                            (approvedPesertaByKelas[kelasId]?.length || 0),
+                          0
+                        );
+
+                        return (
+                          <button
+                            key={lap.id_lapangan}
+                            onClick={() =>
+                              setSelectedAutoGenLapangan(lap.id_lapangan)
                             }
-                          }}
-                          className="w-5 h-5 accent-[#990D35]"
-                        />
-                        <div>
-                          <p className="font-bold" style={{ color: '#050505' }}>
-                            Lapangan {lap.nama_lapangan}
-                          </p>
-                          <p className="text-xs" style={{ color: '#050505', opacity: 0.6 }}>
-                            {kelasCount} Kelas Kejuaraan
-                          </p>
-                        </div>
-                      </div>
-                      {isSelected && <Check size={20} style={{ color: '#990D35' }} />}
-                    </label>
-                  );
-                })}
-            </div>
-          </div>
-        )}
+                            className={`p-4 rounded-lg border-2 text-left transition-all ${
+                              isSelected
+                                ? "shadow-lg scale-105"
+                                : "hover:border-opacity-60 hover:scale-102"
+                            }`}
+                            style={{
+                              borderColor: isSelected
+                                ? "#990D35"
+                                : "rgba(153,13,53,0.3)",
+                              backgroundColor: isSelected
+                                ? "rgba(153,13,53,0.05)"
+                                : "white",
+                            }}
+                          >
+                            <div className="flex items-center justify-between mb-2">
+                              <span
+                                className="font-bold text-lg"
+                                style={{ color: "#990D35" }}
+                              >
+                                Lapangan {lap.nama_lapangan}
+                              </span>
+                              {isSelected && (
+                                <Check size={20} style={{ color: "#990D35" }} />
+                              )}
+                            </div>
 
-        {/* Info terpilih */}
-        {selectedExportLapangan.length > 0 && (
-          <div className="p-3 rounded-lg" style={{ backgroundColor: 'rgba(153,13,53,0.1)' }}>
-            <p className="text-sm font-medium" style={{ color: '#990D35' }}>
-              {selectedExportLapangan.length} lapangan terpilih
-            </p>
-          </div>
-        )}
-      </div>
-      
-      <div className="p-6 border-t flex gap-3 sticky bottom-0 bg-white z-10">
-        <button
-          onClick={() => {
-            setShowExportModal(false);
-            setSelectedExportHari('');
-            setSelectedExportLapangan([]);
-          }}
-          className="flex-1 py-3 px-4 rounded-lg border-2 font-medium"
-          style={{ borderColor: '#990D35', color: '#990D35' }}
-        >
-          Batal
-        </button>
-        <button
-          onClick={handleExportLapangan}
-          disabled={selectedExportLapangan.length === 0 || exportingPDF}
-          className="flex-1 py-3 px-4 rounded-lg font-medium disabled:opacity-50"
-          style={{ backgroundColor: '#990D35', color: '#F5FBEF' }}
-        >
-          {exportingPDF ? (
-            <>
-              <Loader size={16} className="animate-spin inline mr-2" />
-              Generating PDF...
-            </>
-          ) : (
-            <>
-              <Download size={16} className="inline mr-2" />
-              Export PDF
-            </>
-          )}
-        </button>
-      </div>
-    </div>
-  </div>
-)}
-{/* ============================================================================ */}
-{/* MODAL AUTO-GENERATE NOMOR PARTAI */}
-{/* ============================================================================ */}
-{showAutoNumberModal && (
-  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-    <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+                            <div className="space-y-1">
+                              <p
+                                className="text-xs"
+                                style={{ color: "#050505", opacity: 0.7 }}
+                              >
+                                📚 {kelasCount} Kelas
+                              </p>
+                              <p
+                                className="text-xs"
+                                style={{ color: "#050505", opacity: 0.7 }}
+                              >
+                                👥 {pesertaCount} Peserta
+                              </p>
+                            </div>
+                          </button>
+                        );
+                      })}
+                  </div>
 
-      {/* Header */}
-      <div className="p-6 border-b sticky top-0 bg-white z-10" style={{ borderColor: '#990D35' }}>
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-xl font-bold" style={{ color: '#050505' }}>
-              🎯 Auto-Generate Nomor Partai
-            </h3>
-            <p className="text-sm mt-1" style={{ color: '#050505', opacity: 0.6 }}>
-              Sistem akan generate nomor partai otomatis berdasarkan jumlah peserta
-            </p>
-          </div>
-          <button
-            onClick={() => {
-              setShowAutoNumberModal(false);
-              setSelectedAutoGenHari('');
-              setSelectedAutoGenLapangan(null);
-              setPreviewData(null);
-            }}
-            className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-          >
-            <X size={20} style={{ color: '#990D35' }} />
-          </button>
-        </div>
-      </div>
-
-      <div className="p-6 space-y-4">
-
-        {/* STEP 1: PILIH HARI */}
-        <div>
-          <label className="block text-sm font-bold mb-2 flex items-center gap-2" style={{ color: '#050505' }}>
-            <span className="bg-gradient-to-r from-purple-500 to-pink-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">1</span>
-            Pilih Hari Pertandingan
-          </label>
-
-          <select
-            value={selectedAutoGenHari}
-            onChange={(e) => {
-              setSelectedAutoGenHari(e.target.value);
-              setSelectedAutoGenLapangan(null);
-              setPreviewData(null);
-            }}
-            className="w-full px-4 py-3 rounded-lg border-2 focus:outline-none focus:ring-2 transition-all"
-            style={{ borderColor: '#990D35' }}
-          >
-            <option value="">-- Pilih Hari --</option>
-            {hariList.map((hari, idx) => (
-              <option key={hari.tanggal} value={hari.tanggal}>
-                Hari ke-{idx + 1} - {new Date(hari.tanggal).toLocaleDateString('id-ID', {
-                  weekday: 'long',
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric'
-                })}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* STEP 2: PILIH LAPANGAN */}
-        {selectedAutoGenHari && (
-          <div>
-            <label className="block text-sm font-bold mb-2 flex items-center gap-2" style={{ color: '#050505' }}>
-              <span className="bg-gradient-to-r from-purple-500 to-pink-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">2</span>
-              Pilih Lapangan
-            </label>
-
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-              {hariList
-                .find(h => h.tanggal === selectedAutoGenHari)
-                ?.lapangan.filter(lap => lap.kelasDipilih.length > 0)
-                .map((lap) => {
-                  const isSelected = selectedAutoGenLapangan === lap.id_lapangan;
-                  const kelasCount = lap.kelasDipilih.length;
-                  const pesertaCount = lap.kelasDipilih.reduce(
-                    (total, kelasId) => total + (approvedPesertaByKelas[kelasId]?.length || 0),
-                    0
-                  );
-
-                  return (
-                    <button
-                      key={lap.id_lapangan}
-                      onClick={() => setSelectedAutoGenLapangan(lap.id_lapangan)}
-                      className={`p-4 rounded-lg border-2 text-left transition-all ${
-                        isSelected ? 'shadow-lg scale-105' : 'hover:border-opacity-60 hover:scale-102'
-                      }`}
+                  {hariList
+                    .find((h) => h.tanggal === selectedAutoGenHari)
+                    ?.lapangan.filter((lap) => lap.kelasDipilih.length > 0)
+                    .length === 0 && (
+                    <div
+                      className="mt-3 p-4 rounded-lg border-2"
                       style={{
-                        borderColor: isSelected ? '#990D35' : 'rgba(153,13,53,0.3)',
-                        backgroundColor: isSelected ? 'rgba(153,13,53,0.05)' : 'white'
+                        borderColor: "#F5B700",
+                        backgroundColor: "rgba(245, 183, 0, 0.1)",
                       }}
                     >
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="font-bold text-lg" style={{ color: '#990D35' }}>
-                          Lapangan {lap.nama_lapangan}
-                        </span>
-                        {isSelected && <Check size={20} style={{ color: '#990D35' }} />}
-                      </div>
-
-                      <div className="space-y-1">
-                        <p className="text-xs" style={{ color: '#050505', opacity: 0.7 }}>
-                          📚 {kelasCount} Kelas
-                        </p>
-                        <p className="text-xs" style={{ color: '#050505', opacity: 0.7 }}>
-                          👥 {pesertaCount} Peserta
-                        </p>
-                      </div>
-                    </button>
-                  );
-                })}
-            </div>
-
-            {hariList.find(h => h.tanggal === selectedAutoGenHari)?.lapangan.filter(lap => lap.kelasDipilih.length > 0).length === 0 && (
-              <div className="mt-3 p-4 rounded-lg border-2" style={{ borderColor: '#F5B700', backgroundColor: 'rgba(245, 183, 0, 0.1)' }}>
-                <p className="text-sm font-medium" style={{ color: '#F5B700' }}>
-                  ⚠️ Tidak ada lapangan dengan kelas yang sudah di-assign
-                </p>
-                <p className="text-xs mt-1" style={{ color: '#050505', opacity: 0.7 }}>
-                  Silakan assign kelas ke lapangan terlebih dahulu di tab "Setup Jadwal"
-                </p>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* STEP 3: PREVIEW */}
-        {loadingPreview && (
-          <div className="flex flex-col items-center justify-center py-12">
-            <Loader className="animate-spin mb-3" size={48} style={{ color: '#990D35' }} />
-            <span className="text-sm font-medium" style={{ color: '#990D35' }}>
-              Memuat preview nomor partai...
-            </span>
-          </div>
-        )}
-
-        {previewData && !loadingPreview && (
-          <div>
-            <label className="block text-sm font-bold mb-2 flex items-center gap-2" style={{ color: '#050505' }}>
-              <span className="bg-gradient-to-r from-purple-500 to-pink-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">3</span>
-              Preview Penomoran
-            </label>
-
-            <div className="border-2 rounded-lg p-4 space-y-4" style={{ borderColor: '#990D35', backgroundColor: 'rgba(153,13,53,0.02)' }}>
-
-{/* Summary Cards */}
-<div className="grid grid-cols-4 gap-3">
-  <div className="p-4 rounded-lg shadow-sm" style={{ backgroundColor: 'white', borderLeft: '4px solid #990D35' }}>
-    <p className="text-xs mb-1" style={{ color: '#050505', opacity: 0.6 }}>Total Matches</p>
-    <p className="text-3xl font-bold" style={{ color: '#990D35' }}>
-      {previewData.total_matches}
-    </p>
-  </div>
-
-  {/* ⭐ NEW CARD: BYE Skipped */}
-  <div className="p-4 rounded-lg shadow-sm" style={{ backgroundColor: 'white', borderLeft: '4px solid #F5B700' }}>
-    <p className="text-xs mb-1" style={{ color: '#050505', opacity: 0.6 }}>BYE Skipped</p>
-    <p className="text-3xl font-bold" style={{ color: '#F5B700' }}>
-      {previewData.total_bye_skipped || 0}
-    </p>
-  </div>
-
-  <div className="p-4 rounded-lg shadow-sm" style={{ backgroundColor: 'white', borderLeft: '4px solid #6366F1' }}>
-    <p className="text-xs mb-1" style={{ color: '#050505', opacity: 0.6 }}>Range Nomor</p>
-    <p className="text-xl font-bold" style={{ color: '#6366F1' }}>
-      {previewData.range}
-    </p>
-  </div>
-
-  <div className="p-4 rounded-lg shadow-sm" style={{ backgroundColor: 'white', borderLeft: '4px solid #16a34a' }}>
-    <p className="text-xs mb-1" style={{ color: '#050505', opacity: 0.6 }}>Total Kelas</p>
-    <p className="text-3xl font-bold" style={{ color: '#16a34a' }}>
-      {(previewData.summary.pemula?.length || 0) + (previewData.summary.prestasi?.length || 0)}
-    </p>
-  </div>
-</div>
-
-              {/* PEMULA */}
-              {previewData.summary.pemula?.length > 0 && (
-                <div>
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="px-3 py-1 rounded-full text-xs font-bold" style={{ backgroundColor: 'rgba(22,163,74,0.2)', color: '#16a34a' }}>
-                      🥋 PEMULA
+                      <p
+                        className="text-sm font-medium"
+                        style={{ color: "#F5B700" }}
+                      >
+                        ⚠️ Tidak ada lapangan dengan kelas yang sudah di-assign
+                      </p>
+                      <p
+                        className="text-xs mt-1"
+                        style={{ color: "#050505", opacity: 0.7 }}
+                      >
+                        Silakan assign kelas ke lapangan terlebih dahulu di tab
+                        "Setup Jadwal"
+                      </p>
                     </div>
-                    <span className="text-xs" style={{ color: '#050505', opacity: 0.6 }}>
-                      {previewData.summary.pemula.length} kelas (habis per kelas)
-                    </span>
-                  </div>
-
-                  <div className="space-y-2 max-h-48 overflow-y-auto">
-                    {previewData.summary.pemula.map((kelas: any, idx: number) => (
-                      <div key={idx} className="p-3 rounded-lg bg-white shadow-sm border flex justify-between items-center" style={{ borderColor: 'rgba(22,163,74,0.2)' }}>
-                        <div className="flex-1">
-                          <p className="text-sm font-semibold" style={{ color: '#050505' }}>{kelas.kelas}</p>
-                          <p className="text-xs mt-0.5" style={{ color: '#050505', opacity: 0.6 }}>
-                            👥 {kelas.peserta} peserta • 🥊 {kelas.matches} matches
-                          </p>
-                        </div>
-
-                        <div className="text-right">
-                          <span className="text-sm font-bold px-3 py-1 rounded-full" style={{ backgroundColor: 'rgba(22,163,74,0.1)', color: '#16a34a' }}>
-                            {kelas.range}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                  )}
                 </div>
               )}
 
-              {/* PRESTASI */}
-              {previewData.summary.prestasi?.length > 0 && (
-                <div>
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="px-3 py-1 rounded-full text-xs font-bold" style={{ backgroundColor: 'rgba(153,13,53,0.2)', color: '#990D35' }}>
-                      🏆 PRESTASI
-                    </div>
-                    <span className="text-xs" style={{ color: '#050505', opacity: 0.6 }}>
-                      {previewData.summary.prestasi.length} kelas (habis per round)
-                    </span>
-                  </div>
-
-                  <div className="space-y-2 max-h-48 overflow-y-auto">
-                    {previewData.summary.prestasi.map((kelas: any, idx: number) => (
-                      <div key={idx} className="p-3 rounded-lg bg-white shadow-sm border flex justify-between items-center" style={{ borderColor: 'rgba(153,13,53,0.2)' }}>
-                        <div className="flex-1">
-                          <p className="text-sm font-semibold" style={{ color: '#050505' }}>{kelas.kelas}</p>
-                          <p className="text-xs mt-0.5" style={{ color: '#050505', opacity: 0.6 }}>
-                            👥 {kelas.peserta} peserta • 🥊 {kelas.matches} matches
-                          </p>
-                        </div>
-
-                        <div className="text-right">
-                          <span className="text-sm font-bold px-3 py-1 rounded-full" style={{ backgroundColor: 'rgba(153,13,53,0.1)', color: '#990D35' }}>
-                            {kelas.range}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+              {/* STEP 3: PREVIEW */}
+              {loadingPreview && (
+                <div className="flex flex-col items-center justify-center py-12">
+                  <Loader
+                    className="animate-spin mb-3"
+                    size={48}
+                    style={{ color: "#990D35" }}
+                  />
+                  <span
+                    className="text-sm font-medium"
+                    style={{ color: "#990D35" }}
+                  >
+                    Memuat preview nomor partai...
+                  </span>
                 </div>
               )}
 
-              {/* INFO */}
-              <div className="p-3 rounded-lg" style={{ backgroundColor: 'rgba(99,102,241,0.1)' }}>
-                <p className="text-xs font-medium" style={{ color: '#6366F1' }}>
-                  ℹ️ <strong>Catatan:</strong> Nomor akan di-generate otomatis berdasarkan urutan:
-                </p>
-                <ul className="text-xs mt-2 space-y-1 ml-4" style={{ color: '#050505', opacity: 0.7 }}>
-                  <li>• PEMULA: Dihabiskan per kelas (jumlah peserta terbanyak dulu)</li>
-                  <li>• PRESTASI: Dihabiskan per round (R1 → Quarter → Semi → Final)</li>
-                </ul>
-              </div>
+              {previewData && !loadingPreview && (
+                <div>
+                  <label
+                    className="block text-sm font-bold mb-2 flex items-center gap-2"
+                    style={{ color: "#050505" }}
+                  >
+                    <span className="bg-gradient-to-r from-purple-500 to-pink-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">
+                      3
+                    </span>
+                    Preview Penomoran
+                  </label>
 
+                  <div
+                    className="border-2 rounded-lg p-4 space-y-4"
+                    style={{
+                      borderColor: "#990D35",
+                      backgroundColor: "rgba(153,13,53,0.02)",
+                    }}
+                  >
+                    {/* Summary Cards */}
+                    <div className="grid grid-cols-4 gap-3">
+                      <div
+                        className="p-4 rounded-lg shadow-sm"
+                        style={{
+                          backgroundColor: "white",
+                          borderLeft: "4px solid #990D35",
+                        }}
+                      >
+                        <p
+                          className="text-xs mb-1"
+                          style={{ color: "#050505", opacity: 0.6 }}
+                        >
+                          Total Matches
+                        </p>
+                        <p
+                          className="text-3xl font-bold"
+                          style={{ color: "#990D35" }}
+                        >
+                          {previewData.total_matches}
+                        </p>
+                      </div>
+
+                      {/* ⭐ NEW CARD: BYE Skipped */}
+                      <div
+                        className="p-4 rounded-lg shadow-sm"
+                        style={{
+                          backgroundColor: "white",
+                          borderLeft: "4px solid #F5B700",
+                        }}
+                      >
+                        <p
+                          className="text-xs mb-1"
+                          style={{ color: "#050505", opacity: 0.6 }}
+                        >
+                          BYE Skipped
+                        </p>
+                        <p
+                          className="text-3xl font-bold"
+                          style={{ color: "#F5B700" }}
+                        >
+                          {previewData.total_bye_skipped || 0}
+                        </p>
+                      </div>
+
+                      <div
+                        className="p-4 rounded-lg shadow-sm"
+                        style={{
+                          backgroundColor: "white",
+                          borderLeft: "4px solid #6366F1",
+                        }}
+                      >
+                        <p
+                          className="text-xs mb-1"
+                          style={{ color: "#050505", opacity: 0.6 }}
+                        >
+                          Range Nomor
+                        </p>
+                        <p
+                          className="text-xl font-bold"
+                          style={{ color: "#6366F1" }}
+                        >
+                          {previewData.range}
+                        </p>
+                      </div>
+
+                      <div
+                        className="p-4 rounded-lg shadow-sm"
+                        style={{
+                          backgroundColor: "white",
+                          borderLeft: "4px solid #16a34a",
+                        }}
+                      >
+                        <p
+                          className="text-xs mb-1"
+                          style={{ color: "#050505", opacity: 0.6 }}
+                        >
+                          Total Kelas
+                        </p>
+                        <p
+                          className="text-3xl font-bold"
+                          style={{ color: "#16a34a" }}
+                        >
+                          {(previewData.summary.pemula?.length || 0) +
+                            (previewData.summary.prestasi?.length || 0)}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* PEMULA */}
+                    {previewData.summary.pemula?.length > 0 && (
+                      <div>
+                        <div className="flex items-center gap-2 mb-3">
+                          <div
+                            className="px-3 py-1 rounded-full text-xs font-bold"
+                            style={{
+                              backgroundColor: "rgba(22,163,74,0.2)",
+                              color: "#16a34a",
+                            }}
+                          >
+                            🥋 PEMULA
+                          </div>
+                          <span
+                            className="text-xs"
+                            style={{ color: "#050505", opacity: 0.6 }}
+                          >
+                            {previewData.summary.pemula.length} kelas (habis per
+                            kelas)
+                          </span>
+                        </div>
+
+                        <div className="space-y-2 max-h-48 overflow-y-auto">
+                          {previewData.summary.pemula.map(
+                            (kelas: any, idx: number) => (
+                              <div
+                                key={idx}
+                                className="p-3 rounded-lg bg-white shadow-sm border flex justify-between items-center"
+                                style={{ borderColor: "rgba(22,163,74,0.2)" }}
+                              >
+                                <div className="flex-1">
+                                  <p
+                                    className="text-sm font-semibold"
+                                    style={{ color: "#050505" }}
+                                  >
+                                    {kelas.kelas}
+                                  </p>
+                                  <p
+                                    className="text-xs mt-0.5"
+                                    style={{ color: "#050505", opacity: 0.6 }}
+                                  >
+                                    👥 {kelas.peserta} peserta • 🥊{" "}
+                                    {kelas.matches} matches
+                                  </p>
+                                </div>
+
+                                <div className="text-right">
+                                  <span
+                                    className="text-sm font-bold px-3 py-1 rounded-full"
+                                    style={{
+                                      backgroundColor: "rgba(22,163,74,0.1)",
+                                      color: "#16a34a",
+                                    }}
+                                  >
+                                    {kelas.range}
+                                  </span>
+                                </div>
+                              </div>
+                            )
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* PRESTASI */}
+                    {previewData.summary.prestasi?.length > 0 && (
+                      <div>
+                        <div className="flex items-center gap-2 mb-3">
+                          <div
+                            className="px-3 py-1 rounded-full text-xs font-bold"
+                            style={{
+                              backgroundColor: "rgba(153,13,53,0.2)",
+                              color: "#990D35",
+                            }}
+                          >
+                            🏆 PRESTASI
+                          </div>
+                          <span
+                            className="text-xs"
+                            style={{ color: "#050505", opacity: 0.6 }}
+                          >
+                            {previewData.summary.prestasi.length} kelas (habis
+                            per round)
+                          </span>
+                        </div>
+
+                        <div className="space-y-2 max-h-48 overflow-y-auto">
+                          {previewData.summary.prestasi.map(
+                            (kelas: any, idx: number) => (
+                              <div
+                                key={idx}
+                                className="p-3 rounded-lg bg-white shadow-sm border flex justify-between items-center"
+                                style={{ borderColor: "rgba(153,13,53,0.2)" }}
+                              >
+                                <div className="flex-1">
+                                  <p
+                                    className="text-sm font-semibold"
+                                    style={{ color: "#050505" }}
+                                  >
+                                    {kelas.kelas}
+                                  </p>
+                                  <p
+                                    className="text-xs mt-0.5"
+                                    style={{ color: "#050505", opacity: 0.6 }}
+                                  >
+                                    👥 {kelas.peserta} peserta • 🥊{" "}
+                                    {kelas.matches} matches
+                                  </p>
+                                </div>
+
+                                <div className="text-right">
+                                  <span
+                                    className="text-sm font-bold px-3 py-1 rounded-full"
+                                    style={{
+                                      backgroundColor: "rgba(153,13,53,0.1)",
+                                      color: "#990D35",
+                                    }}
+                                  >
+                                    {kelas.range}
+                                  </span>
+                                </div>
+                              </div>
+                            )
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* INFO */}
+                    <div
+                      className="p-3 rounded-lg"
+                      style={{ backgroundColor: "rgba(99,102,241,0.1)" }}
+                    >
+                      <p
+                        className="text-xs font-medium"
+                        style={{ color: "#6366F1" }}
+                      >
+                        ℹ️ <strong>Catatan:</strong> Nomor akan di-generate
+                        otomatis berdasarkan urutan:
+                      </p>
+                      <ul
+                        className="text-xs mt-2 space-y-1 ml-4"
+                        style={{ color: "#050505", opacity: 0.7 }}
+                      >
+                        <li>
+                          • PEMULA: Dihabiskan per kelas (jumlah peserta
+                          terbanyak dulu)
+                        </li>
+                        <li>
+                          • PRESTASI: Dihabiskan per round (R1 → Quarter → Semi
+                          → Final)
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* FOOTER */}
+            <div className="p-6 border-t flex gap-3 sticky bottom-0 bg-white z-10">
+              <button
+                onClick={() => {
+                  setShowAutoNumberModal(false);
+                  setSelectedAutoGenHari("");
+                  setSelectedAutoGenLapangan(null);
+                  setPreviewData(null);
+                }}
+                className="flex-1 py-3 px-4 rounded-lg border-2 font-medium transition-all hover:bg-gray-50"
+                style={{ borderColor: "#990D35", color: "#990D35" }}
+              >
+                Batal
+              </button>
+
+              <button
+                onClick={handleAutoGenerateNumbers}
+                disabled={!previewData || generatingNumbers}
+                className="flex-1 py-3 px-4 rounded-lg font-medium transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+                style={{ backgroundColor: "#990D35", color: "#F5FBEF" }}
+              >
+                {generatingNumbers ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <Loader size={16} className="animate-spin" />
+                    Generating...
+                  </span>
+                ) : (
+                  <span className="flex items-center justify-center gap-2">
+                    <Zap size={16} />
+                    Generate Nomor Partai
+                  </span>
+                )}
+              </button>
             </div>
           </div>
-        )}
-
-      </div>
-
-      {/* FOOTER */}
-      <div className="p-6 border-t flex gap-3 sticky bottom-0 bg-white z-10">
-
-        <button
-          onClick={() => {
-            setShowAutoNumberModal(false);
-            setSelectedAutoGenHari('');
-            setSelectedAutoGenLapangan(null);
-            setPreviewData(null);
-          }}
-          className="flex-1 py-3 px-4 rounded-lg border-2 font-medium transition-all hover:bg-gray-50"
-          style={{ borderColor: '#990D35', color: '#990D35' }}
-        >
-          Batal
-        </button>
-
-        <button
-          onClick={handleAutoGenerateNumbers}
-          disabled={!previewData || generatingNumbers}
-          className="flex-1 py-3 px-4 rounded-lg font-medium transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
-          style={{ backgroundColor: '#990D35', color: '#F5FBEF' }}
-        >
-          {generatingNumbers ? (
-            <span className="flex items-center justify-center gap-2">
-              <Loader size={16} className="animate-spin" />
-              Generating...
-            </span>
-          ) : (
-            <span className="flex items-center justify-center gap-2">
-              <Zap size={16} />
-              Generate Nomor Partai
-            </span>
-          )}
-        </button>
-
-      </div>
-
-    </div>
-  </div>
-)}
-
+        </div>
+      )}
     </div>
   );
 };

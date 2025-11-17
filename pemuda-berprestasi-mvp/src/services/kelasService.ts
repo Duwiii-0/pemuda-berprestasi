@@ -211,7 +211,6 @@ export const kelasService = {
               "super-pracadet",
               "super pracadet",
               "pracadet",
-              "cadet",
             ];
 
             const isExcluded = excludedKelompok.some((excluded) =>
