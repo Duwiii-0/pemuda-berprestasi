@@ -424,7 +424,7 @@ export const exportBracketFromData = async (
       // Ambil semua match cards dari bracket
       const allMatchCards = bracketElement.querySelectorAll('.bg-white.rounded-lg.shadow-md.border');
       const totalMatches = allMatchCards.length;
-      const matchesPerPage = 70; // 70 peserta = 35 match (2 peserta per match)
+      const matchesPerPage = 50; // 50 peserta = 25 match (2 peserta per match)
       const totalPages = Math.ceil(totalMatches / (matchesPerPage / 2));
       
       console.log(`📊 Total matches: ${totalMatches}, Pages needed: ${totalPages}`);
