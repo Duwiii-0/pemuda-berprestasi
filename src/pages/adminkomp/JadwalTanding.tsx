@@ -770,9 +770,8 @@ const handleResetNumbers = async (id_lapangan: number, namaLapangan: string) => 
     const isPoomsaePemula =
       kelas.cabang === "POOMSAE" &&
       kelas.kategori_event?.nama_kategori === "Pemula";
-    if (kelas.kelompok?.nama_kelompok && !isPoomsaePemula) {
-      parts.push(kelas.kelompok.nama_kelompok);
-    }
+            if (kelas.kelompok?.nama_kelompok) {
+                parts.push(kelas.kelompok.nama_kelompok);    }
 
     if (kelas.kelas_berat) {
       const gender =
