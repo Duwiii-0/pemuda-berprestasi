@@ -1428,19 +1428,19 @@ return (
     }
   }
 
-  const OFFSET_CONNECTOR = 180;
+  const OFFSET_CONNECTOR = 70; // 🔥 Connect di middle-top card
 
-  // 🔥 FIX: Hitung posisi Y berdasarkan LOCAL column index
-  const lastFightY = lastFightColumnIndex >= 0 
-    ? lastFightColumnIndex * CARD_HEIGHT + OFFSET_CONNECTOR
-    : OFFSET_CONNECTOR;
+// Hitung posisi Y berdasarkan LOCAL column index
+const lastFightY = lastFightColumnIndex >= 0 
+  ? lastFightColumnIndex * CARD_HEIGHT + OFFSET_CONNECTOR
+  : OFFSET_CONNECTOR;
 
-  const byeMatchY = byeColumnIndex >= 0 
-    ? byeColumnIndex * CARD_HEIGHT + OFFSET_CONNECTOR
-    : OFFSET_CONNECTOR + 50;
+const byeMatchY = byeColumnIndex >= 0 
+  ? byeColumnIndex * CARD_HEIGHT + OFFSET_CONNECTOR
+  : OFFSET_CONNECTOR;
 
-  const ADDITIONAL_CARD_OFFSET = -100;
-  const additionalMatchY = (lastFightY + byeMatchY) / 2;
+const ADDITIONAL_CARD_OFFSET = -20; // 🔥 TURUNKAN offset (dari -100 ke -20)
+const additionalMatchY = (lastFightY + byeMatchY) / 2;
   
   console.log('📏 Last Fight Y:', lastFightY);
   console.log('📏 BYE Y:', byeMatchY);
