@@ -594,14 +594,6 @@ const exportPesertaToExcel = () => {
   }
 };
 
-const splitMatchesIntoColumns = (matches: Match[], matchesPerColumn: number = 8) => {
-  const columns: Match[][] = [];
-  for (let i = 0; i < matches.length; i += matchesPerColumn) {
-    columns.push(matches.slice(i, i + matchesPerColumn));
-  }
-  return columns;
-};
-
   const clearBracketResults = async () => {
     if (!kelasData) return;
     
@@ -1362,9 +1354,35 @@ return (
   const CARD_WIDTH = 320;
   const COLUMN_GAP = 120;
   
-  const columns: Match[][] = [];
-  for (let i = 0; i < round1Matches.length; i += matchesPerColumn) {
-    columns.push(round1Matches.slice(i, i + matchesPerColumn));
+// 🔥 SMART COLUMN SPLIT
+  let columns: Match[][] = [];
+  
+  if (hasAdditionalMatch) {
+    // Find BYE and Last Fight
+    const byeMatch = round1Matches.find(m => m.peserta_a && !m.peserta_b);
+    const byeIndex = byeMatch ? round1Matches.findIndex(m => m.id_match === byeMatch.id_match) : -1;
+    const lastFightIndex = byeIndex > 0 ? byeIndex - 1 : -1;
+    
+    // 🚨 CHECK: Apakah Last Fight di akhir kolom?
+    const isLastFightAtColumnEnd = lastFightIndex >= 0 && (lastFightIndex + 1) % matchesPerColumn === 0;
+    
+    if (isLastFightAtColumnEnd) {
+      console.log('⚠️ Last Fight di posisi', lastFightIndex + 1, '(akhir kolom) - Splitting smartly...');
+      
+      // Split SEBELUM Last Fight
+      columns.push(round1Matches.slice(0, lastFightIndex)); // Kolom 1: sebelum Last Fight
+      columns.push(round1Matches.slice(lastFightIndex));     // Kolom 2: Last Fight + BYE + sisanya
+    } else {
+      // Normal split
+      for (let i = 0; i < round1Matches.length; i += matchesPerColumn) {
+        columns.push(round1Matches.slice(i, i + matchesPerColumn));
+      }
+    }
+  } else {
+    // Scenario GENAP: Normal split
+    for (let i = 0; i < round1Matches.length; i += matchesPerColumn) {
+      columns.push(round1Matches.slice(i, i + matchesPerColumn));
+    }
   }
   
   // ⭐ CRITICAL FIX: Find BYE match
