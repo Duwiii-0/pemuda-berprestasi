@@ -367,6 +367,7 @@ const renderBracketComponent = async (
 // ✅ MAIN: SINGLE BRACKET EXPORT
 // =================================================================================================
 
+// ✅ MODIFIED: exportBracketFromData dengan Multi-Page Support untuk Pemula
 export const exportBracketFromData = async (
   kelasData: any, 
   bracketElement: HTMLElement,
@@ -380,13 +381,18 @@ export const exportBracketFromData = async (
     lokasi?: string;
   }
 ): Promise<void> => {
-  console.log('🚀 Starting PDF export (Optimized)...');
+  console.log('🚀 Starting PDF export (Multi-Page Support)...');
   
   const approvedParticipants = kelasData.peserta_kompetisi.filter((p: any) => p.status === 'APPROVED');
   const participantCount = approvedParticipants.length;
   const scaleFactor = getScaleFactor(participantCount);
   
   console.log(`👥 Participants: ${participantCount}, Scale: ${scaleFactor}`);
+  
+  // ✅ Deteksi Pemula
+  const isPemula = !kelasData?.kelompok?.nama_kelompok?.toLowerCase().includes('prestasi') &&
+                   !kelasData?.kelompok?.nama_kelompok?.toLowerCase().includes('poomsae') &&
+                   !kelasData?.poomsae;
   
   // ✅ Config dengan prioritas metadata
   const config: ExportConfig = {
@@ -411,89 +417,163 @@ export const exportBracketFromData = async (
       compress: true 
     });
 
-    const bracketImg = await convertElementToImage(bracketElement, scaleFactor);
-    await addHeaderAndFooter(doc, config);
+    // ✅ MULTI-PAGE LOGIC untuk Pemula
+    if (isPemula && participantCount > 70) {
+      console.log('📄 Multi-page export untuk Pemula...');
+      
+      // Ambil semua match cards dari bracket
+      const allMatchCards = bracketElement.querySelectorAll('.bg-white.rounded-lg.shadow-md.border');
+      const totalMatches = allMatchCards.length;
+      const matchesPerPage = 70; // 70 peserta = 35 match (2 peserta per match)
+      const totalPages = Math.ceil(totalMatches / (matchesPerPage / 2));
+      
+      console.log(`📊 Total matches: ${totalMatches}, Pages needed: ${totalPages}`);
+      
+      for (let pageNum = 0; pageNum < totalPages; pageNum++) {
+        if (pageNum > 0) {
+          doc.addPage();
+        }
+        
+        console.log(`📄 Processing page ${pageNum + 1}/${totalPages}...`);
+        
+        // Clone bracket element
+        const clonedBracket = bracketElement.cloneNode(true) as HTMLElement;
+        
+        // Sembunyikan semua match cards
+        const clonedCards = clonedBracket.querySelectorAll('.bg-white.rounded-lg.shadow-md.border');
+        clonedCards.forEach((card: any) => {
+          card.style.display = 'none';
+        });
+        
+        // Tampilkan hanya match untuk halaman ini
+        const startIdx = pageNum * (matchesPerPage / 2);
+        const endIdx = Math.min(startIdx + (matchesPerPage / 2), totalMatches);
+        
+        for (let i = startIdx; i < endIdx; i++) {
+          if (clonedCards[i]) {
+            (clonedCards[i] as HTMLElement).style.display = 'block';
+          }
+        }
+        
+        // Append temporary clone ke body
+        clonedBracket.style.position = 'absolute';
+        clonedBracket.style.left = '-9999px';
+        document.body.appendChild(clonedBracket);
+        
+        try {
+          // Capture image
+          const bracketImg = await convertElementToImage(clonedBracket, scaleFactor);
+          
+          // Add header dengan page indicator
+          await addHeaderAndFooter(doc, config);
+          
+          // ✅ Tambahkan page number
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(10);
+          doc.setTextColor(THEME.primary);
+          doc.text(
+            `Halaman ${pageNum + 1} dari ${totalPages}`, 
+            PAGE_WIDTH - MARGIN_RIGHT - 30, 
+            HEADER_HEIGHT + 5, 
+            { align: 'right' }
+          );
 
-    // Calculate layout
-    const contentStartY = HEADER_HEIGHT + MARGIN_TOP;
-    const contentEndY = PAGE_HEIGHT - FOOTER_HEIGHT - MARGIN_BOTTOM;
-    const maxWidth = PAGE_WIDTH - MARGIN_LEFT - MARGIN_RIGHT;
-    const maxHeight = contentEndY - contentStartY;
+          // Calculate layout
+          const contentStartY = HEADER_HEIGHT + MARGIN_TOP;
+          const contentEndY = PAGE_HEIGHT - FOOTER_HEIGHT - MARGIN_BOTTOM;
+          const maxWidth = PAGE_WIDTH - MARGIN_LEFT - MARGIN_RIGHT;
+          const maxHeight = contentEndY - contentStartY;
 
-    const imgAspectRatio = bracketImg.width / bracketImg.height;
-    let displayWidth = maxWidth;
-    let displayHeight = displayWidth / imgAspectRatio;
+          const imgAspectRatio = bracketImg.width / bracketImg.height;
+          let displayWidth = maxWidth;
+          let displayHeight = displayWidth / imgAspectRatio;
 
-// Hitung total peserta dalam bracket
-const totalPeserta = kelasData?.peserta_kompetisi?.length || 0;
+          // Zoom untuk Pemula
+          let zoom = 1.0;
+          if (participantCount <= 8) zoom = 1.1;
+          else if (participantCount <= 16) zoom = 1.05;
+          else if (participantCount <= 32) zoom = 1;
+          else zoom = 0.75;
 
-// 🔍 DEBUG: Lihat struktur data kelasData
-console.log('🔍 DEBUG kelasData:', {
-  kelompok: kelasData?.kelompok,
-  kelas_berat: kelasData?.kelas_berat,
-  poomsae: kelasData?.poomsae,
-  kompetisi: kelasData?.kompetisi,
-  fullData: kelasData
-});
+          const HEADER_MARGIN_BOTTOM = 5;
+          displayWidth *= zoom;
+          displayHeight *= zoom;
 
-// ✅ Deteksi bracket Prestasi dengan berbagai cara
-const isPrestasi = 
-  // Cek dari kelompok
-  kelasData?.kelompok?.nama_kelompok?.toLowerCase().includes('prestasi') ||
-  kelasData?.kelompok?.nama_kelompok?.toLowerCase().includes('poomsae') ||
-  // Cek dari kelas_berat
-  kelasData?.kelas_berat?.kategori?.toLowerCase().includes('prestasi') ||
-  // Cek jika ada data poomsae (berarti prestasi)
-  (kelasData?.poomsae !== null && kelasData?.poomsae !== undefined) ||
-  // Cek dari kompetisi
-  kelasData?.kompetisi?.jenis_kompetisi?.toLowerCase().includes('prestasi') ||
-  // Fallback: jika tidak ada kelas_berat tapi ada poomsae
-  (!kelasData?.kelas_berat && kelasData?.poomsae);
+          const x = (PAGE_WIDTH - displayWidth) / 2;
+          const y = HEADER_HEIGHT + HEADER_MARGIN_BOTTOM;
 
-console.log('✅ isPrestasi:', isPrestasi);
+          doc.addImage(
+            bracketImg.src,
+            'JPEG',
+            x,
+            y,
+            displayWidth,
+            displayHeight,
+            undefined,
+            'FAST'
+          );
+          
+          console.log(`✅ Page ${pageNum + 1} added (matches ${startIdx + 1}-${endIdx})`);
+          
+        } finally {
+          // Cleanup clone
+          if (document.body.contains(clonedBracket)) {
+            document.body.removeChild(clonedBracket);
+          }
+        }
+      }
+      
+    } else {
+      // ✅ SINGLE PAGE (Prestasi atau Pemula < 70 peserta)
+      console.log('📄 Single-page export...');
+      
+      const bracketImg = await convertElementToImage(bracketElement, scaleFactor);
+      await addHeaderAndFooter(doc, config);
 
-// ✅ ZOOM LOGIC: Hanya zoom in untuk PRESTASI, Pemula diperkecil
-let zoom = 1.0;
+      // Calculate layout
+      const contentStartY = HEADER_HEIGHT + MARGIN_TOP;
+      const contentEndY = PAGE_HEIGHT - FOOTER_HEIGHT - MARGIN_BOTTOM;
+      const maxWidth = PAGE_WIDTH - MARGIN_LEFT - MARGIN_RIGHT;
+      const maxHeight = contentEndY - contentStartY;
 
-if (isPrestasi) {
-  // Zoom dinamis untuk Pemula (zoom in)
-  if (totalPeserta <= 8) zoom = 0.35;
-  else if (totalPeserta <= 16) zoom = 0.25;
-  else if (totalPeserta <= 32) zoom = 0.15;
-  else zoom = 0.10;
-  console.log('📏 PRESTASI zoom:', zoom);
-} else {
-  // ✅ Zoom diperkecil untuk Prestasi (zoom out)
-  if (totalPeserta <= 8) zoom = 1.1;
-  else if (totalPeserta <= 16) zoom = 1.05;
-  else if (totalPeserta <= 32) zoom = 1;
-  else zoom = 0.75;
-  console.log('📏 PEMULA zoom:', zoom);
-}
+      const imgAspectRatio = bracketImg.width / bracketImg.height;
+      let displayWidth = maxWidth;
+      let displayHeight = displayWidth / imgAspectRatio;
 
-// Margin bawah header
-const HEADER_MARGIN_BOTTOM = 5;
+      const totalPeserta = kelasData?.peserta_kompetisi?.length || 0;
 
-// --- Hitung ulang ukuran gambar ---
-displayWidth *= zoom;
-displayHeight *= zoom;
+      // Zoom logic
+      let zoom = 1.0;
+      if (isPemula) {
+        if (totalPeserta <= 8) zoom = 1.1;
+        else if (totalPeserta <= 16) zoom = 1.05;
+        else if (totalPeserta <= 32) zoom = 1;
+        else zoom = 0.75;
+      } else {
+        if (totalPeserta <= 8) zoom = 0.35;
+        else if (totalPeserta <= 16) zoom = 0.25;
+        else if (totalPeserta <= 32) zoom = 0.15;
+        else zoom = 0.10;
+      }
 
-// Posisi tengah halaman
-const x = (PAGE_WIDTH - displayWidth) / 2;
-const y = HEADER_HEIGHT + HEADER_MARGIN_BOTTOM;
+      const HEADER_MARGIN_BOTTOM = 5;
+      displayWidth *= zoom;
+      displayHeight *= zoom;
 
-// Tambahkan gambar ke PDF
-doc.addImage(
-  bracketImg.src,
-  'JPEG',
-  x,
-  y,
-  displayWidth,
-  displayHeight,
-  undefined,
-  'FAST'
-);
+      const x = (PAGE_WIDTH - displayWidth) / 2;
+      const y = HEADER_HEIGHT + HEADER_MARGIN_BOTTOM;
 
+      doc.addImage(
+        bracketImg.src,
+        'JPEG',
+        x,
+        y,
+        displayWidth,
+        displayHeight,
+        undefined,
+        'FAST'
+      );
+    }
 
     const dateStr = new Date().toISOString().split('T')[0];
     const filename = `Bracket_${config.eventName.replace(/[^a-z0-9]/gi, '_')}_${config.categoryName.replace(/ /g, '_')}_${dateStr}.pdf`;
