@@ -572,6 +572,9 @@ static async getBracketsListPublic(req: Request, res: Response) {
 /**
  * Get bracket by specific class
  */
+/**
+ * Get bracket by specific class
+ */
 static async getBracketByClass(req: Request, res: Response) {
   try {
     const { id, kelasKejuaraanId } = req.params;
@@ -585,7 +588,7 @@ static async getBracketByClass(req: Request, res: Response) {
 
     console.log(`🔍 Fetching bracket for kompetisi: ${kompetisiId}, kelas: ${kelasId}`);
 
-    // ✅ PERBAIKAN: Query lebih lengkap dengan proper includes
+    // ✅ QUERY LENGKAP dengan ALL INCLUDES
     const kelas = await prisma.tb_kelas_kejuaraan.findUnique({
       where: { id_kelas_kejuaraan: kelasId },
       include: {
@@ -691,6 +694,7 @@ static async getBracketByClass(req: Request, res: Response) {
             }
           }
         },
+        // ✅ KRUSIAL: INCLUDE PESERTA KOMPETISI
         peserta_kompetisi: {
           where: {
             status: 'APPROVED'
@@ -737,10 +741,10 @@ static async getBracketByClass(req: Request, res: Response) {
     const bagan = kelas.bagan[0];
     
     console.log(`✅ Bracket found with ${bagan.match.length} matches`);
+    console.log(`✅ Found ${kelas.peserta_kompetisi.length} APPROVED participants`); // ⭐ LOG PENTING
 
     // ✅ Transform matches ke format yang expected frontend
     const matches = bagan.match.map(match => {
-      // Helper untuk get participant info
       const getParticipantData = (peserta: any) => {
         if (!peserta) return null;
         
@@ -778,13 +782,14 @@ static async getBracketByClass(req: Request, res: Response) {
       };
     });
 
-    // ✅ Transform participants - PERBAIKAN TYPE SAFETY
+    // ✅ Transform participants dengan PROPER NULL HANDLING
     const participants = kelas.peserta_kompetisi.map(p => {
-      // Safely access nested properties
+      // Handle team dojang
       const teamDojangName = p.anggota_tim && p.anggota_tim.length > 0 
         ? (p.anggota_tim[0].atlet as any)?.dojang?.nama_dojang || ''
         : '';
       
+      // Handle solo athlete
       const soloAtletName = p.atlet?.nama_atlet || '';
       const soloDojoName = (p.atlet as any)?.dojang?.nama_dojang || '';
       
@@ -802,7 +807,9 @@ static async getBracketByClass(req: Request, res: Response) {
       };
     });
 
-    // ✅ Build response dengan semua data yang dibutuhkan
+    console.log(`📤 Sending ${participants.length} participants to frontend`); // ⭐ LOG PENTING
+
+    // ✅ Build response dengan SEMUA DATA
     const response = {
       success: true,
       data: {
@@ -813,7 +820,7 @@ static async getBracketByClass(req: Request, res: Response) {
         poomsae: kelas.poomsae,
         jenis_kelamin: kelas.kelas_berat?.jenis_kelamin || kelas.poomsae?.jenis_kelamin || null,
         kompetisi: kelas.kompetisi,
-        participants: participants,
+        participants: participants, // ⭐ INI YANG DIKIRIM KE FRONTEND
         matches: matches,
         totalRounds: Math.max(...matches.map(m => m.round), 0)
       }
