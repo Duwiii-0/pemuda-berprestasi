@@ -1360,8 +1360,14 @@ return (
   let lastNormalFightIndex = -1;
   let byeMatchIndex = -1;
   
+  // 🆕 Track posisi dalam kolom (bukan global index!)
+  let lastFightColumnIndex = -1;
+  let byeColumnIndex = -1;
+  let lastFightColumn = -1;
+  let byeColumn = -1;
+  
   if (hasAdditionalMatch) {
-    // Find BYE match (yang punya peserta_a tapi TIDAK punya peserta_b)
+    // Find BYE match
     byeMatch = round1Matches.find(m => m.peserta_a && !m.peserta_b) || null;
     byeMatchIndex = byeMatch ? round1Matches.findIndex(m => m.id_match === byeMatch!.id_match) : -1;
     
@@ -1371,8 +1377,8 @@ return (
       lastNormalFightMatch = round1Matches[lastNormalFightIndex];
     }
     
-    console.log('🔍 BYE Match Index:', byeMatchIndex);
-    console.log('🔍 Last Fight Index:', lastNormalFightIndex);
+    console.log('🔍 BYE Match Index (global):', byeMatchIndex);
+    console.log('🔍 Last Fight Index (global):', lastNormalFightIndex);
     console.log('🔍 Last Fight Nomor Partai:', lastNormalFightMatch?.nomor_partai);
     
     // 🚨 CHECK: Apakah Last Fight di akhir kolom?
@@ -1382,18 +1388,37 @@ return (
     if (isLastFightAtColumnEnd) {
       console.log('⚠️ DETECTED: Last Fight at column end (position', lastNormalFightIndex + 1, ') - Splitting smartly!');
       
-      // Split SEBELUM Last Fight agar dia dan BYE jadi 1 kolom
+      // Split SEBELUM Last Fight
       columns.push(round1Matches.slice(0, lastNormalFightIndex));  // Kolom 1
       columns.push(round1Matches.slice(lastNormalFightIndex));      // Kolom 2: Last Fight + BYE + rest
       
+      // 🆕 Calculate LOCAL index dalam kolom
+      lastFightColumn = 1; // Kolom ke-2 (index 1)
+      lastFightColumnIndex = 0; // First match dalam kolom ke-2
+      
+      byeColumn = 1; // Kolom ke-2 juga
+      byeColumnIndex = 1; // Second match dalam kolom ke-2
+      
       console.log('📦 Column 1:', columns[0].length, 'matches');
       console.log('📦 Column 2:', columns[1].length, 'matches');
+      console.log('📍 Last Fight: Column', lastFightColumn, 'Index', lastFightColumnIndex);
+      console.log('📍 BYE: Column', byeColumn, 'Index', byeColumnIndex);
     } else {
       console.log('✅ Normal split - Last Fight NOT at column end');
       // Normal split
       for (let i = 0; i < round1Matches.length; i += matchesPerColumn) {
         columns.push(round1Matches.slice(i, i + matchesPerColumn));
       }
+      
+      // 🆕 Calculate LOCAL index untuk normal split
+      lastFightColumn = Math.floor(lastNormalFightIndex / matchesPerColumn);
+      lastFightColumnIndex = lastNormalFightIndex % matchesPerColumn;
+      
+      byeColumn = Math.floor(byeMatchIndex / matchesPerColumn);
+      byeColumnIndex = byeMatchIndex % matchesPerColumn;
+      
+      console.log('📍 Last Fight: Column', lastFightColumn, 'Index', lastFightColumnIndex);
+      console.log('📍 BYE: Column', byeColumn, 'Index', byeColumnIndex);
     }
   } else {
     console.log('ℹ️ No Additional Match - Using normal split');
@@ -1405,17 +1430,31 @@ return (
 
   const OFFSET_CONNECTOR = 180;
 
-  // Hitung posisi konektor
-  const lastFightY = lastNormalFightIndex >= 0 
-    ? (lastNormalFightIndex % matchesPerColumn) * CARD_HEIGHT + OFFSET_CONNECTOR
+  // 🔥 FIX: Hitung posisi Y berdasarkan LOCAL column index
+  const lastFightY = lastFightColumnIndex >= 0 
+    ? lastFightColumnIndex * CARD_HEIGHT + OFFSET_CONNECTOR
     : OFFSET_CONNECTOR;
 
-  const byeMatchY = byeMatchIndex >= 0 
-    ? (byeMatchIndex % matchesPerColumn) * CARD_HEIGHT + OFFSET_CONNECTOR
+  const byeMatchY = byeColumnIndex >= 0 
+    ? byeColumnIndex * CARD_HEIGHT + OFFSET_CONNECTOR
     : OFFSET_CONNECTOR + 50;
 
   const ADDITIONAL_CARD_OFFSET = -100;
   const additionalMatchY = (lastFightY + byeMatchY) / 2;
+  
+  console.log('📏 Last Fight Y:', lastFightY);
+  console.log('📏 BYE Y:', byeMatchY);
+  console.log('📏 Additional Y:', additionalMatchY);
+  
+  // 🆕 Calculate horizontal offset based on which column
+  const additionalColumnX = columns.length * (CARD_WIDTH + 24); // 24 = columnGap dari grid
+  const lastFightColumnX = lastFightColumn * (CARD_WIDTH + 24);
+  const byeColumnX = byeColumn * (CARD_WIDTH + 24);
+  
+  // 🆕 Connector start position (relative to Additional Match)
+  const connectorStartX = lastFightColumn === byeColumn 
+    ? -COLUMN_GAP 
+    : -(additionalColumnX - lastFightColumnX);
   
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>
@@ -1430,6 +1469,7 @@ return (
                 const isByeMatch = byeMatch && match.id_match === byeMatch.id_match;
                 const isLastFightMatch = lastNormalFightMatch && match.id_match === lastNormalFightMatch.id_match;
                 const shouldShowConnector = hasAdditionalMatch && (isByeMatch || isLastFightMatch);
+                
                 return (
                   <div 
                     key={match.id_match}
@@ -1439,8 +1479,8 @@ return (
                     <div
                       className="bg-white rounded-lg shadow-md border overflow-hidden"
                       style={{ 
-                        borderColor: '#DC143C',  // ⬅️ UBAH: selalu merah
-                        borderWidth: '1px',      // ⬅️ UBAH: selalu 1px
+                        borderColor: '#DC143C',
+                        borderWidth: '1px',
                         position: 'relative',
                         zIndex: 10,
                         background: 'white'
@@ -1449,7 +1489,7 @@ return (
                       <div 
                         className="px-3 py-2 border-b flex items-center justify-between"
                         style={{ 
-                          backgroundColor: '#FFF5F5',  // ⬅️ UBAH: selalu merah muda
+                          backgroundColor: '#FFF5F5',
                           borderColor: '#DC143C'
                         }}
                       >
@@ -1467,8 +1507,8 @@ return (
                       <button
                         onClick={() => setEditingMatch(match)}
                         className="p-1 rounded hover:bg-black/5 transition-all"
-                        disabled={viewOnly} // ⭐ TAMBAHKAN
-                        style={{ opacity: viewOnly ? 0.3 : 1, cursor: viewOnly ? 'not-allowed' : 'pointer' }} // ⭐ TAMBAHKAN
+                        disabled={viewOnly}
+                        style={{ opacity: viewOnly ? 0.3 : 1, cursor: viewOnly ? 'not-allowed' : 'pointer' }}
                       >
                         <Edit3 size={14} style={{ color: '#DC143C' }} />
                       </button>
@@ -1558,14 +1598,14 @@ return (
         {/* ADDITIONAL MATCH */}
         {hasAdditionalMatch && additionalMatch && (
           <div style={{ position: 'relative' }}>
-            {/* CONNECTORS */}
+            {/* 🔥 FIXED CONNECTORS */}
             <svg
               style={{
                 position: 'absolute',
                 left: `-${COLUMN_GAP}px`,
                 top: 0,
                 width: `${COLUMN_GAP}px`,
-                height: '600px',
+                height: '800px', // Increased height
                 pointerEvents: 'none',
                 zIndex: 5,
                 overflow: 'visible'
@@ -1574,7 +1614,6 @@ return (
               {/* Line dari Last Fight Match */}
               {lastNormalFightMatch && (
                 <g>
-                  {/* Horizontal dari last fight */}
                   <line 
                     x1="0" 
                     y1={lastFightY} 
@@ -1583,7 +1622,6 @@ return (
                     stroke="#DC143C" 
                     strokeWidth="3" 
                   />
-                  {/* Vertical ke tengah */}
                   <line 
                     x1={COLUMN_GAP / 2} 
                     y1={lastFightY} 
@@ -1592,7 +1630,6 @@ return (
                     stroke="#DC143C" 
                     strokeWidth="3" 
                   />
-                  {/* Horizontal ke additional */}
                   <line 
                     x1={COLUMN_GAP / 2} 
                     y1={additionalMatchY} 
@@ -1607,7 +1644,6 @@ return (
               {/* Line dari BYE Match */}
               {byeMatch && (
                 <g>
-                  {/* Horizontal dari bye */}
                   <line 
                     x1="0" 
                     y1={byeMatchY} 
@@ -1616,7 +1652,6 @@ return (
                     stroke="#DC143C" 
                     strokeWidth="3" 
                   />
-                  {/* Vertical ke tengah (reuse yang sama) */}
                   <line 
                     x1={COLUMN_GAP / 2} 
                     y1={byeMatchY} 
@@ -1646,17 +1681,17 @@ return (
             </div>
 
             {/* Additional Match Card */}
-              <div
-                className="bg-white rounded-lg shadow-md border overflow-hidden"
-                style={{ 
-                  borderColor: '#FFFBEA',
-                  borderWidth: '3px',
-                  position: 'relative',
-                  zIndex: 10,
-                  width: `${CARD_WIDTH}px`,
-                  top: `${additionalMatchY + ADDITIONAL_CARD_OFFSET}px`
-                }}
-              >
+            <div
+              className="bg-white rounded-lg shadow-md border overflow-hidden"
+              style={{ 
+                borderColor: '#FFFBEA',
+                borderWidth: '3px',
+                position: 'relative',
+                zIndex: 10,
+                width: `${CARD_WIDTH}px`,
+                top: `${additionalMatchY + ADDITIONAL_CARD_OFFSET}px`
+              }}
+            >
               <div 
                 className="px-3 py-2 border-b flex items-center justify-between"
                 style={{ backgroundColor: '#FFFBEA', borderColor: '#DC143C' }}
@@ -1754,6 +1789,7 @@ return (
           </div>
         )}
       </div>
+
 
 {/* LEADERBOARD - Grid Layout */}
 <div className="w-full">
