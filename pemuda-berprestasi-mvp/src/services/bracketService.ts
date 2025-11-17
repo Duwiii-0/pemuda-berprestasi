@@ -345,14 +345,137 @@ static async generateBracket(
     // ... implementation unchanged
   }
 
-  static async shuffleBracket(kompetisiId: number, kelasKejuaraanId: number, participantIds?: number[], dojangSeparation?: { enabled: boolean; mode: 'STRICT' | 'BALANCED' }): Promise<Bracket> {
-    // ... implementation unchanged
-    throw new Error("Not implemented");
+  static async shuffleBracket(
+
+    kompetisiId: number, 
+
+    kelasKejuaraanId: number,
+
+    participantIds?: number[],
+
+    dojangSeparation?: { enabled: boolean; mode: 'STRICT' | 'BALANCED' }
+
+  ): Promise<Bracket> {
+
+    try {
+
+      console.log(`\n🔀 Shuffling PRESTASI bracket...`);
+
+      console.log(`   Kompetisi: ${kompetisiId}, Kelas: ${kelasKejuaraanId}`);
+
+      console.log(`   Dojang Separation:`, dojangSeparation);
+
+  
+
+      // ⭐ STEP 1: DELETE EXISTING BRACKET
+
+      const existingBagan = await prisma.tb_bagan.findFirst({
+
+        where: {
+
+          id_kompetisi: kompetisiId,
+
+          id_kelas_kejuaraan: kelasKejuaraanId
+
+        },
+
+        include: {
+
+          match: true
+
+        }
+
+      });
+
+  
+
+      if (existingBagan) {
+
+        console.log(`   🗑️ Deleting existing bracket (${existingBagan.match.length} matches)...`);
+
+  
+
+        // Delete in correct order to avoid foreign key constraints
+
+        await prisma.tb_match_audit.deleteMany({
+
+          where: {
+
+            match: {
+
+              id_bagan: existingBagan.id_bagan
+
+            }
+
+          }
+
+        });
+
+  
+
+        await prisma.tb_match.deleteMany({
+
+          where: { id_bagan: existingBagan.id_bagan }
+
+        });
+
+  
+
+        await prisma.tb_drawing_seed.deleteMany({
+
+          where: { id_bagan: existingBagan.id_bagan }
+
+        });
+
+  
+
+        await prisma.tb_bagan.delete({
+
+          where: { id_bagan: existingBagan.id_bagan }
+
+        });
+
+  
+
+        console.log(`   ✅ Bracket deleted successfully`);
+
+      }
+
+  
+
+      // ⭐ STEP 2: GENERATE NEW BRACKET (auto BYE selection)
+
+      console.log(`   🎲 Generating new bracket with dojang separation...`);
+
+      const newBracket = await this.generateBracket(kompetisiId, kelasKejuaraanId, undefined, dojangSeparation);
+
+      
+
+      console.log(`   ✅ New bracket generated with ${newBracket.matches.length} matches`);
+
+      return newBracket;
+
+  
+
+    } catch (error: any) {
+
+      console.error('❌ Error shuffling bracket:', error);
+
+      throw new Error(error.message || 'Failed to shuffle bracket');
+
+    }
+
   }
 
-  static async shufflePemulaBracket(kompetisiId: number, kelasKejuaraanId: number, dojangSeparation?: { enabled: boolean; mode: 'STRICT' | 'BALANCED' }): Promise<Bracket> {
-    try {
-        console.log(`\n🔀 === SHUFFLING PEMULA BRACKET ===`);
+static async shufflePemulaBracket(
+  kompetisiId: number,
+  kelasKejuaraanId: number,
+  dojangSeparation?: { enabled: boolean; mode: 'STRICT' | 'BALANCED' }
+): Promise<Bracket> {
+  try {
+    console.log(`\n🔀 === SHUFFLING PEMULA BRACKET ===`);
+    console.log(`   Kompetisi: ${kompetisiId}, Kelas: ${kelasKejuaraanId}`);
+    console.log(`   Dojang Separation:`, dojangSeparation);
         const bagan = await prisma.tb_bagan.findFirst({
             where: { id_kompetisi: kompetisiId, id_kelas_kejuaraan: kelasKejuaraanId },
             include: { match: true, drawing_seed: { include: { peserta_kompetisi: { include: { atlet: { include: { dojang: true } } } } } } }

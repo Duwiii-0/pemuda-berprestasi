@@ -910,7 +910,7 @@ static async shuffleBrackets(req: Request, res: Response) {
 
     if (isPemulaCategory) {
       // PEMULA: Use special shuffle (re-assign only)
-      bracket = await BracketService.shufflePemulaBracket(kompetisiId, kelasId);
+      bracket = await BracketService.shufflePemulaBracket(kompetisiId, kelasId, dojangSeparation);
     } else {
       // PRESTASI: Delete + regenerate with new BYE and dojang separation
       bracket = await BracketService.shuffleBracket(
