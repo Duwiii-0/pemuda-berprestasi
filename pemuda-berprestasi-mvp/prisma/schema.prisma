@@ -239,7 +239,11 @@ model tb_kelas_kejuaraan {
   id_poomsae         Int?
   id_kompetisi       Int
   cabang             Cabang
-  poomsae_type       String?            @db.VarChar(50)
+  poomsae_type       String?                @db.VarChar(50)
+  
+  // ✅ TAMBAHKAN FIELD INI
+  jenis_kelamin      JenisKelamin?          // Gender filter untuk kelas
+  bracket_status     BracketStatus          @default(not_created) // Status bracket
 
   kompetisi          tb_kompetisi           @relation(fields: [id_kompetisi], references: [id_kompetisi])
   kategori_event     tb_kategori_event      @relation(fields: [id_kategori_event], references: [id_kategori_event])
@@ -248,7 +252,7 @@ model tb_kelas_kejuaraan {
   poomsae            tb_kelas_poomsae?      @relation(fields: [id_poomsae], references: [id_poomsae])
   bagan              tb_bagan[]
   peserta_kompetisi  tb_peserta_kompetisi[]
-  lapangan_list      tb_lapangan_kelas[]    // ← Tambahkan ini
+  lapangan_list      tb_lapangan_kelas[]
 
   @@index([id_kompetisi])
   @@index([cabang])
@@ -257,6 +261,7 @@ model tb_kelas_kejuaraan {
   @@index([id_kelompok])
   @@index([id_kelas_berat])
 }
+
 model tb_peserta_kompetisi {
   id_peserta_kompetisi Int                @id @default(autoincrement())
   id_atlet             Int?
@@ -463,4 +468,11 @@ enum StatusKompetisi {
   PENDAFTARAN
   SEDANG_DIMULAI
   SELESAI
+}
+
+enum BracketStatus {
+  not_created
+  created
+  in_progress
+  completed
 }
