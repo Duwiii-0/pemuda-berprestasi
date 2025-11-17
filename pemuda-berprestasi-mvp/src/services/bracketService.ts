@@ -1663,66 +1663,135 @@ static async shuffleBracket(
   kompetisiId: number, 
   kelasKejuaraanId: number,
   participantIds?: number[],
-  dojangSeparation?: { enabled: boolean; mode: 'STRICT' | 'BALANCED' } // ⭐ TAMBAHKAN INI
+  dojangSeparation?: { enabled: boolean; mode: 'STRICT' | 'BALANCED' }
 ): Promise<Bracket> {
   try {
     console.log(`\n🔀 Shuffling PRESTASI bracket...`);
     console.log(`   Kompetisi: ${kompetisiId}, Kelas: ${kelasKejuaraanId}`);
     console.log(`   Dojang Separation:`, dojangSeparation);
 
-    // ⭐ STEP 1: DELETE EXISTING BRACKET
+    // ⭐ 1. Ambil bagan existing (jangan dihapus)
     const existingBagan = await prisma.tb_bagan.findFirst({
       where: {
         id_kompetisi: kompetisiId,
         id_kelas_kejuaraan: kelasKejuaraanId
-      },
-      include: {
-        match: true
       }
     });
 
-    if (existingBagan) {
-      console.log(`   🗑️ Deleting existing bracket (${existingBagan.match.length} matches)...`);
-
-      await prisma.tb_match_audit.deleteMany({
-        where: {
-          match: {
-            id_bagan: existingBagan.id_bagan
-          }
-        }
-      });
-
-      await prisma.tb_match.deleteMany({
-        where: { id_bagan: existingBagan.id_bagan }
-      });
-
-      await prisma.tb_drawing_seed.deleteMany({
-        where: { id_bagan: existingBagan.id_bagan }
-      });
-
-      await prisma.tb_bagan.delete({
-        where: { id_bagan: existingBagan.id_bagan }
-      });
-
-      console.log(`   ✅ Bracket deleted successfully`);
+    if (!existingBagan) {
+      throw new Error('Bagan belum dibuat. Tidak bisa shuffle.');
     }
 
-    // ⭐ STEP 2: GENERATE NEW BRACKET dengan dojang separation
-    console.log(`   🎲 Generating new bracket...`);
-    const newBracket = await this.generateBracket(
-      kompetisiId, 
-      kelasKejuaraanId, 
-      undefined, 
-      dojangSeparation // ⭐ PASS DOJANG SEPARATION
+    // ⭐ 2. Pastikan tidak ada skor
+    const hasScores = await prisma.tb_match.findFirst({
+      where: {
+        id_bagan: existingBagan.id_bagan,
+        OR: [
+          { skor_a: { gt: 0 } },
+          { skor_b: { gt: 0 } }
+        ]
+      }
+    });
+
+    if (hasScores) {
+      throw new Error('Tidak dapat shuffle! Ada pertandingan yang sudah memiliki skor.');
+    }
+
+    // ⭐ 3. Hapus semua match + seeding, TAPI JANGAN hapus bagan
+    console.log(`   🗑️ Clearing matches & seeding...`);
+    await prisma.tb_match.deleteMany({
+      where: { id_bagan: existingBagan.id_bagan }
+    });
+
+    await prisma.tb_drawing_seed.deleteMany({
+      where: { id_bagan: existingBagan.id_bagan }
+    });
+
+    // ⭐ 4. Ambil ulang peserta bracket ini
+    console.log(`   👥 Fetching participants...`);
+
+    const peserta = await prisma.tb_peserta.findMany({
+      where: {
+        id_kelas_kejuaraan: kelasKejuaraanId,
+        id_kompetisi: kompetisiId,
+        id_peserta: participantIds
+          ? { in: participantIds }
+          : undefined
+      },
+      include: { dojang: true }
+    });
+
+    if (peserta.length === 0) {
+      throw new Error('Tidak ada peserta untuk generate bracket.');
+    }
+
+    // ⭐ 5. Terapkan DOJANG SEPARATION sama seperti PEMULA
+    console.log(`   🧩 Applying dojang separation for PRESTASI...`);
+
+    const separated = await this.applyDojangSeparation(peserta, dojangSeparation);
+
+    // ⭐ 6. Generate ulang MATCH (tanpa buat bagan baru)
+    console.log(`   🎲 Generating matches...`);
+
+    const matches = await this.generatePrestasiBracket(
+      existingBagan.id_bagan,
+      separated
     );
+
+    console.log(`   ✅ PRESTASI bracket shuffled successfully`);
     
-    console.log(`   ✅ New bracket generated with ${newBracket.matches.length} matches`);
-    return newBracket;
+    return {
+      ...existingBagan,
+      matches
+    };
 
   } catch (error: any) {
     console.error('❌ Error shuffling bracket:', error);
     throw new Error(error.message || 'Failed to shuffle bracket');
   }
+}
+
+static applyDojangSeparation(
+  participants: Participant[],
+  dojangSeparation?: { enabled: boolean; mode: 'STRICT' | 'BALANCED' }
+): Participant[] {
+
+  if (!dojangSeparation?.enabled) {
+    return this.shuffleArray([...participants]);
+  }
+
+  console.log('🏠 Applying Dojang Separation...');
+
+  let workingList: Participant[] = [];
+  let pairedIds = new Set<number>();
+
+  let available = this.shuffleArray([...participants]);
+
+  while (available.length > 1) {
+    const p1 = available.shift()!;
+    if (pairedIds.has(p1.id)) continue;
+
+    let partnerIndex = available.findIndex(
+      p => !pairedIds.has(p.id) && p.dojang !== p1.dojang
+    );
+
+    if (partnerIndex === -1) {
+      partnerIndex = available.findIndex(p => !pairedIds.has(p.id));
+    }
+
+    if (partnerIndex !== -1) {
+      const p2 = available.splice(partnerIndex, 1)[0];
+      workingList.push(p1, p2);
+      pairedIds.add(p1.id).add(p2.id);
+    } else {
+      workingList.push(p1);
+      pairedIds.add(p1.id);
+    }
+  }
+
+  if (available.length > 0) workingList.push(available[0]);
+
+  return workingList;
 }
 
 /**
