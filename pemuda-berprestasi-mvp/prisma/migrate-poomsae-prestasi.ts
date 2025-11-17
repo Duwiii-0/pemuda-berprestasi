@@ -11,7 +11,7 @@ async function main() {
     where: {
       is_team: false, // Hanya peserta individu
       atlet: {
-        jenis_kelamin: { not: null }, // Pastikan atlet punya data gender
+        jenis_kelamin: { in: ['LAKI_LAKI', 'PEREMPUAN'] }, // Pastikan atlet punya data gender
       },
       kelas_kejuaraan: {
         cabang: "POOMSAE",
@@ -53,13 +53,14 @@ async function main() {
 
   // 2. Iterasi setiap peserta
   for (const participant of sourceParticipants) {
-    if (!participant.atlet || !participant.kelas_kejuaraan) {
+    const participantData = participant as any; // Menggunakan type assertion untuk mengatasi masalah TSError
+    if (!participantData.atlet || !participantData.kelas_kejuaraan) {
       console.log(`- ⏭️ Melewatkan peserta ${participant.id_peserta_kompetisi} karena data atlet/kelas tidak lengkap.`);
       continue;
     }
 
-    const athlete = participant.atlet;
-    const sourceClass = participant.kelas_kejuaraan;
+    const athlete = participantData.atlet;
+    const sourceClass = participantData.kelas_kejuaraan;
     const athleteGender = athlete.jenis_kelamin;
 
     // 3. Mencari kelas tujuan yang benar
