@@ -203,31 +203,7 @@ static async generateBracket(
     return shuffled;
   }
 
-  static shuffleWithDojangSeparation(participants: Participant[]): Participant[] {
-    console.log(`\n🏠 === Shuffling with Dojang Separation for PEMULA ===`);
-    const dojangGroups = this.groupByDojang(participants);
-    
-    dojangGroups.forEach((group) => this.shuffleArray(group));
-  
-    const separatedList: Participant[] = [];
-    let maxGroupSize = 0;
-    dojangGroups.forEach(group => {
-      if (group.length > maxGroupSize) {
-        maxGroupSize = group.length;
-      }
-    });
-  
-    for (let i = 0; i < maxGroupSize; i++) {
-      dojangGroups.forEach(group => {
-        if (i < group.length) {
-          separatedList.push(group[i]);
-        }
-      });
-    }
-  
-    console.log(`   ✅ Separated list created:`, separatedList.map(p => `${p.name} (${p.dojang})`));
-    return separatedList;
-  }
+
 
   static distributeBYEForMirroredBracket( participantCount: number, targetSize: number ): number[] {
     // ... implementation unchanged
@@ -282,51 +258,81 @@ static async generateBracket(
     dojangSeparation?: { enabled: boolean; mode: 'STRICT' | 'BALANCED' }
   ): Promise<Match[]> {
     const matches: Match[] = [];
-    
-    console.log(`\n🥋 === GENERATING PEMULA BRACKET ===`);
-    console.log(`Total participants: ${participants.length}`);
+    console.log(`\n🥋 === GENERATING PEMULA BRACKET (v2) ===`);
 
-    let shuffled: Participant[];
+    let workingList: Participant[] = [];
+    let byeParticipant: Participant | null = null;
+
+    let allParticipants = this.shuffleArray([...participants]);
+    
     if (dojangSeparation?.enabled) {
-      shuffled = this.shuffleWithDojangSeparation(participants);
+        console.log('🏠 Applying Dojang Separation for PEMULA');
+        let dojangAwareList: Participant[] = [];
+        let pairedIds = new Set<number>();
+        
+        // Create a copy to safely mutate
+        let availableParticipants = [...allParticipants];
+
+        while(availableParticipants.length > 1) {
+            const p1 = availableParticipants.shift()!;
+            if (pairedIds.has(p1.id)) continue;
+
+            let partner: Participant | undefined;
+            let partnerIndex = -1;
+
+            // Find a suitable partner (different dojang) from the remaining list
+            partnerIndex = availableParticipants.findIndex(p2 => !pairedIds.has(p2.id) && p2.dojang !== p1.dojang);
+            
+            // If no different dojang partner found, find any available partner
+            if (partnerIndex === -1) {
+                partnerIndex = availableParticipants.findIndex(p2 => !pairedIds.has(p2.id));
+            }
+
+            if (partnerIndex !== -1) {
+                partner = availableParticipants.splice(partnerIndex, 1)[0];
+                workingList.push(p1, partner);
+                pairedIds.add(p1.id).add(partner.id);
+            } else {
+                // Should only happen if p1 is the last one
+                workingList.push(p1);
+                pairedIds.add(p1.id);
+            }
+        }
+        // Add the very last participant if any remains
+        if (availableParticipants.length > 0) {
+            workingList.push(availableParticipants[0]);
+        }
+
     } else {
-      shuffled = this.shuffleArray([...participants]);
+        workingList = allParticipants;
     }
     
-    const totalParticipants = shuffled.length;
+    const totalParticipants = workingList.length;
     const isOdd = totalParticipants % 2 === 1;
-    
+
+    const normalPairsCount = Math.floor(totalParticipants / 2);
+    for (let i = 0; i < normalPairsCount; i++) {
+        const p1 = workingList[i * 2];
+        const p2 = workingList[i * 2 + 1];
+        const match = await prisma.tb_match.create({
+            data: { id_bagan: baganId, ronde: 1, id_peserta_a: p1.id, id_peserta_b: p2.id, skor_a: 0, skor_b: 0 }
+        });
+        matches.push({ id: match.id_match, round: 1, position: i, participant1: p1, participant2: p2, status: 'pending', scoreA: 0, scoreB: 0 });
+    }
+
     if (isOdd) {
-      console.log(`\n📊 ODD participants detected → 3 cards structure`);
-      const normalPairs = Math.floor((totalParticipants - 1) / 2);
-      for (let i = 0; i < normalPairs; i++) {
-        const p1 = shuffled[i * 2];
-        const p2 = shuffled[i * 2 + 1];
-        const match = await prisma.tb_match.create({
-          data: { id_bagan: baganId, ronde: 1, id_peserta_a: p1.id, id_peserta_b: p2.id, skor_a: 0, skor_b: 0 }
+        byeParticipant = workingList[totalParticipants - 1];
+        const byeMatch = await prisma.tb_match.create({
+            data: { id_bagan: baganId, ronde: 1, id_peserta_a: byeParticipant.id, id_peserta_b: null, skor_a: 0, skor_b: 0 }
         });
-        matches.push({ id: match.id_match, round: 1, position: matches.length, participant1: p1, participant2: p2, status: 'pending', scoreA: 0, scoreB: 0 });
-      }
-      const byeParticipant = shuffled[totalParticipants - 1];
-      const byeMatch = await prisma.tb_match.create({
-        data: { id_bagan: baganId, ronde: 1, id_peserta_a: byeParticipant.id, id_peserta_b: null, skor_a: 0, skor_b: 0 }
-      });
-      matches.push({ id: byeMatch.id_match, round: 1, position: matches.length, participant1: byeParticipant, participant2: null, status: 'bye', scoreA: 0, scoreB: 0 });
-      const additionalMatch = await prisma.tb_match.create({
-        data: { id_bagan: baganId, ronde: 2, id_peserta_a: null, id_peserta_b: byeParticipant.id, skor_a: 0, skor_b: 0 }
-      });
-      matches.push({ id: additionalMatch.id_match, round: 2, position: 0, participant1: null, participant2: byeParticipant, status: 'pending', scoreA: 0, scoreB: 0 });
-    } else {
-      console.log(`\n📊 EVEN participants → Normal matches only`);
-      const normalPairs = totalParticipants / 2;
-      for (let i = 0; i < normalPairs; i++) {
-        const p1 = shuffled[i * 2];
-        const p2 = shuffled[i * 2 + 1];
-        const match = await prisma.tb_match.create({
-          data: { id_bagan: baganId, ronde: 1, id_peserta_a: p1.id, id_peserta_b: p2.id, skor_a: 0, skor_b: 0 }
-        });
-        matches.push({ id: match.id_match, round: 1, position: matches.length, participant1: p1, participant2: p2, status: 'pending', scoreA: 0, scoreB: 0 });
-      }
+        matches.push({ id: byeMatch.id_match, round: 1, position: normalPairsCount, participant1: byeParticipant, participant2: null, status: 'bye', scoreA: 0, scoreB: 0 });
+        
+        if (matches.length > 1) { 
+            const additionalMatch = await prisma.tb_match.create({
+                data: { id_bagan: baganId, ronde: 2, id_peserta_a: null, id_peserta_b: byeParticipant.id, skor_a: 0, skor_b: 0 }
+            });
+            matches.push({ id: additionalMatch.id_match, round: 2, position: 0, participant1: null, participant2: byeParticipant, status: 'pending', scoreA: 0, scoreB: 0 });
+        }
     }
     return matches;
   }
@@ -473,62 +479,26 @@ static async shufflePemulaBracket(
   dojangSeparation?: { enabled: boolean; mode: 'STRICT' | 'BALANCED' }
 ): Promise<Bracket> {
   try {
-    console.log(`\n🔀 === SHUFFLING PEMULA BRACKET ===`);
-    console.log(`   Kompetisi: ${kompetisiId}, Kelas: ${kelasKejuaraanId}`);
-    console.log(`   Dojang Separation:`, dojangSeparation);
-        const bagan = await prisma.tb_bagan.findFirst({
-            where: { id_kompetisi: kompetisiId, id_kelas_kejuaraan: kelasKejuaraanId },
-            include: { match: true, drawing_seed: { include: { peserta_kompetisi: { include: { atlet: { include: { dojang: true } } } } } } }
-        });
+    console.log(`\n🔀 Deleting and Regenerating PEMULA BRACKET...`);
+    const existingBagan = await prisma.tb_bagan.findFirst({
+      where: { id_kompetisi: kompetisiId, id_kelas_kejuaraan: kelasKejuaraanId }
+    });
 
-        if (!bagan) throw new Error('Bagan tidak ditemukan');
-        if (bagan.match.some(m => m.skor_a > 0 || m.skor_b > 0)) {
-            throw new Error('Tidak dapat shuffle! Ada pertandingan yang sudah memiliki skor.');
-        }
-
-        const participants: Participant[] = bagan.drawing_seed.map(seed => {
-          const reg = seed.peserta_kompetisi;
-          return {
-            id: reg.id_peserta_kompetisi,
-            name: reg.atlet!.nama_atlet,
-            dojang: reg.atlet!.dojang?.nama_dojang,
-            atletId: reg.id_atlet!,
-            isTeam: false
-          };
-        }).filter(Boolean) as Participant[];
-        
-        let shuffled: Participant[];
-        if (dojangSeparation?.enabled) {
-          shuffled = this.shuffleWithDojangSeparation(participants);
-        } else {
-          shuffled = this.shuffleArray([...participants]);
-        }
-
-        const round1Matches = bagan.match.filter(m => m.ronde === 1).sort((a, b) => a.id_match - b.id_match);
-        const isOdd = shuffled.length % 2 === 1;
-
-        if (isOdd) {
-            const normalPairs = Math.floor((shuffled.length - 1) / 2);
-            for (let i = 0; i < normalPairs; i++) {
-                await prisma.tb_match.update({ where: { id_match: round1Matches[i].id_match }, data: { id_peserta_a: shuffled[i*2].id, id_peserta_b: shuffled[i*2+1].id, skor_a: 0, skor_b: 0 }});
-            }
-            const byeParticipant = shuffled[shuffled.length - 1];
-            await prisma.tb_match.update({ where: { id_match: round1Matches[normalPairs].id_match }, data: { id_peserta_a: byeParticipant.id, id_peserta_b: null, skor_a: 0, skor_b: 0 }});
-            const round2Match = bagan.match.find(m => m.ronde === 2);
-            if (round2Match) {
-                await prisma.tb_match.update({ where: { id_match: round2Match.id_match }, data: { id_peserta_a: null, id_peserta_b: byeParticipant.id, skor_a: 0, skor_b: 0 }});
-            }
-        } else {
-            for (let i = 0; i < shuffled.length / 2; i++) {
-                await prisma.tb_match.update({ where: { id_match: round1Matches[i].id_match }, data: { id_peserta_a: shuffled[i*2].id, id_peserta_b: shuffled[i*2+1].id, skor_a: 0, skor_b: 0 }});
-            }
-        }
-        return await this.getBracket(kompetisiId, kelasKejuaraanId) as Bracket;
-    } catch (error: any) {
-        console.error('❌ Error shuffling PEMULA bracket:', error);
-        throw new Error(error.message || 'Gagal shuffle bracket');
+    if (existingBagan) {
+      const hasScores = await prisma.tb_match.findFirst({ where: { id_bagan: existingBagan.id_bagan, OR: [{skor_a: {gt: 0}}, {skor_b: {gt: 0}}] }});
+      if (hasScores) throw new Error('Tidak dapat shuffle! Ada pertandingan yang sudah memiliki skor.');
+      
+      await prisma.tb_match.deleteMany({ where: { id_bagan: existingBagan.id_bagan } });
+      await prisma.tb_drawing_seed.deleteMany({ where: { id_bagan: existingBagan.id_bagan } });
+      await prisma.tb_bagan.delete({ where: { id_bagan: existingBagan.id_bagan } });
     }
+
+    return this.generateBracket(kompetisiId, kelasKejuaraanId, undefined, dojangSeparation);
+  } catch (error: any) {
+    console.error('❌ Error shuffling PEMULA bracket:', error);
+    throw new Error(error.message || 'Gagal shuffle bracket');
   }
+}
 
   static calculateTotalRounds(participantCount: number, isPemula: boolean): number {
     if (isPemula) {
