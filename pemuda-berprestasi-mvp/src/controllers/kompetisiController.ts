@@ -569,12 +569,6 @@ static async getBracketsListPublic(req: Request, res: Response) {
   }
 }
 
-/**
- * Get bracket by specific class
- */
-/**
- * Get bracket by specific class
- */
 static async getBracketByClass(req: Request, res: Response) {
   try {
     const { id, kelasKejuaraanId } = req.params;
@@ -588,7 +582,7 @@ static async getBracketByClass(req: Request, res: Response) {
 
     console.log(`🔍 Fetching bracket for kompetisi: ${kompetisiId}, kelas: ${kelasId}`);
 
-    // ✅ QUERY LENGKAP dengan ALL INCLUDES
+    // ⭐ QUERY dengan SORT BY POSITION
     const kelas = await prisma.tb_kelas_kejuaraan.findUnique({
       where: { id_kelas_kejuaraan: kelasId },
       include: {
@@ -634,9 +628,10 @@ static async getBracketByClass(req: Request, res: Response) {
           },
           include: {
             match: {
-              orderBy: {
-                ronde: 'asc'
-              },
+              orderBy: [
+                { ronde: 'asc' },
+                { position: 'asc' }  // ⭐ SORT BY POSITION
+              ],
               include: {
                 peserta_a: {
                   include: {
@@ -694,7 +689,6 @@ static async getBracketByClass(req: Request, res: Response) {
             }
           }
         },
-        // ✅ KRUSIAL: INCLUDE PESERTA KOMPETISI
         peserta_kompetisi: {
           where: {
             status: 'APPROVED'
@@ -732,7 +726,6 @@ static async getBracketByClass(req: Request, res: Response) {
       return sendError(res, 'Kelas kejuaraan tidak ditemukan', 404);
     }
 
-    // ✅ Check if bracket exists
     if (!kelas.bagan || kelas.bagan.length === 0) {
       console.log(`❌ No bracket found for kelas ${kelasId}`);
       return sendError(res, 'Bracket belum dibuat untuk kelas ini', 404);
@@ -741,9 +734,9 @@ static async getBracketByClass(req: Request, res: Response) {
     const bagan = kelas.bagan[0];
     
     console.log(`✅ Bracket found with ${bagan.match.length} matches`);
-    console.log(`✅ Found ${kelas.peserta_kompetisi.length} APPROVED participants`); // ⭐ LOG PENTING
+    console.log(`✅ Found ${kelas.peserta_kompetisi.length} APPROVED participants`);
 
-    // ✅ Transform matches ke format yang expected frontend
+    // Transform matches
     const matches = bagan.match.map(match => {
       const getParticipantData = (peserta: any) => {
         if (!peserta) return null;
@@ -771,6 +764,7 @@ static async getBracketByClass(req: Request, res: Response) {
       return {
         id: match.id_match,
         round: match.ronde,
+        position: match.position,  // ⭐ INCLUDE POSITION
         scoreA: match.skor_a,
         scoreB: match.skor_b,
         participant1: getParticipantData(match.peserta_a),
@@ -782,14 +776,12 @@ static async getBracketByClass(req: Request, res: Response) {
       };
     });
 
-    // ✅ Transform participants dengan PROPER NULL HANDLING
+    // Transform participants
     const participants = kelas.peserta_kompetisi.map(p => {
-      // Handle team dojang
       const teamDojangName = p.anggota_tim && p.anggota_tim.length > 0 
         ? (p.anggota_tim[0].atlet as any)?.dojang?.nama_dojang || ''
         : '';
       
-      // Handle solo athlete
       const soloAtletName = p.atlet?.nama_atlet || '';
       const soloDojoName = (p.atlet as any)?.dojang?.nama_dojang || '';
       
@@ -807,9 +799,8 @@ static async getBracketByClass(req: Request, res: Response) {
       };
     });
 
-    console.log(`📤 Sending ${participants.length} participants to frontend`); // ⭐ LOG PENTING
+    console.log(`📤 Sending ${participants.length} participants to frontend`);
 
-    // ✅ Build response dengan SEMUA DATA
     const response = {
       success: true,
       data: {
@@ -820,7 +811,7 @@ static async getBracketByClass(req: Request, res: Response) {
         poomsae: kelas.poomsae,
         jenis_kelamin: kelas.kelas_berat?.jenis_kelamin || kelas.poomsae?.jenis_kelamin || null,
         kompetisi: kelas.kompetisi,
-        participants: participants, // ⭐ INI YANG DIKIRIM KE FRONTEND
+        participants: participants,
         matches: matches,
         totalRounds: Math.max(...matches.map(m => m.round), 0)
       }

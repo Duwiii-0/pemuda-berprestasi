@@ -325,31 +325,32 @@ model tb_drawing_seed {
 }
 
 model tb_match {
-  id_match     Int                   @id @default(autoincrement())
-  id_bagan     Int
-  ronde        Int
-  id_peserta_a Int?
-  id_peserta_b Int?
-  skor_a       Int                   @default(0)
-  skor_b       Int                   @default(0)
-  id_venue     Int?
+  id_match            Int                   @id @default(autoincrement())
+  id_bagan            Int
+  ronde               Int
+  position            Int?                  // ⭐ NEW - Position in round (0-based)
+  id_peserta_a        Int?
+  id_peserta_b        Int?
+  skor_a              Int                   @default(0)
+  skor_b              Int                   @default(0)
+  id_venue            Int?
   tanggal_pertandingan DateTime?  
-  nomor_antrian   Int?      // Urutan antrian: 1, 2, 3, ...
-  nomor_lapangan  String?   @db.VarChar(10)  // Kode lapangan: "A", "B", "C"
-  nomor_partai    String?   @db.VarChar(50)  // "5A", "12B" (optional, bisa auto-generate)
+  nomor_antrian       Int?
+  nomor_lapangan      String?               @db.VarChar(10)
+  nomor_partai        String?               @db.VarChar(50)
 
-  bagan        tb_bagan              @relation(fields: [id_bagan], references: [id_bagan])
-  peserta_a    tb_peserta_kompetisi? @relation("PesertaA", fields: [id_peserta_a], references: [id_peserta_kompetisi])
-  peserta_b    tb_peserta_kompetisi? @relation("PesertaB", fields: [id_peserta_b], references: [id_peserta_kompetisi])
-  venue        tb_venue?             @relation(fields: [id_venue], references: [id_venue])
-  match_audit  tb_match_audit[]
+  bagan               tb_bagan              @relation(fields: [id_bagan], references: [id_bagan])
+  peserta_a           tb_peserta_kompetisi? @relation("PesertaA", fields: [id_peserta_a], references: [id_peserta_kompetisi])
+  peserta_b           tb_peserta_kompetisi? @relation("PesertaB", fields: [id_peserta_b], references: [id_peserta_kompetisi])
+  venue               tb_venue?             @relation(fields: [id_venue], references: [id_venue])
+  match_audit         tb_match_audit[]
 
   @@index([id_bagan], map: "tb_match_id_bagan_fkey")
   @@index([id_peserta_a], map: "tb_match_id_peserta_a_fkey")
   @@index([id_peserta_b], map: "tb_match_id_peserta_b_fkey")
   @@index([id_venue], map: "tb_match_id_venue_fkey")
-  
   @@index([nomor_antrian, nomor_lapangan])
+  @@index([id_bagan, ronde, position], map: "idx_match_bagan_round_position") // ⭐ NEW INDEX
 }
 
 model tb_match_audit {
