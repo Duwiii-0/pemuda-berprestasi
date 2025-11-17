@@ -333,11 +333,12 @@ static async getAvailableClassesForParticipant(req: Request, res: Response) {
 static async generateBrackets(req: Request, res: Response) {
   try {
     const { id } = req.params;
-    const { kelasKejuaraanId } = req.body;
+    const { kelasKejuaraanId, dojangSeparation } = req.body;
 
     console.log(`\n📥 Generate Bracket Request:`);
     console.log(`   Kompetisi ID: ${id}`);
     console.log(`   Kelas Kejuaraan ID: ${kelasKejuaraanId}`);
+    console.log(`   Dojang Separation:`, dojangSeparation);
 
     const kompetisiId = parseInt(id);
     const kelasId = parseInt(kelasKejuaraanId);
@@ -408,8 +409,9 @@ static async generateBrackets(req: Request, res: Response) {
     // ⭐ Generate bracket (BYE auto-calculated in service)
     const bracket = await BracketService.generateBracket(
       kompetisiId, 
-      kelasId
-      // byeParticipantIds REMOVED
+      kelasId,
+      undefined, // byeParticipantIds is managed by the service now
+      dojangSeparation
     );
 
     console.log(`✅ Bracket generated with ${bracket.matches.length} matches`);
@@ -831,7 +833,7 @@ static async getBracketByClass(req: Request, res: Response) {
 static async shuffleBrackets(req: Request, res: Response) {
   try {
     const { id } = req.params;
-    const { kelasKejuaraanId, isPemula } = req.body; // ⭐ TAMBAH isPemula
+    const { kelasKejuaraanId, isPemula, dojangSeparation } = req.body; // ⭐ TAMBAH dojangSeparation
 
     const kompetisiId = parseInt(id);
     const kelasId = parseInt(kelasKejuaraanId);
@@ -884,6 +886,7 @@ static async shuffleBrackets(req: Request, res: Response) {
     const isPemulaCategory = isPemula ?? kategori.includes('pemula');
 
     console.log(`\n🔀 Shuffle request for: ${isPemulaCategory ? 'PEMULA' : 'PRESTASI'}`);
+    console.log(`   Dojang Separation:`, dojangSeparation);
 
     // Check if any matches have been played
     const existingBagan = await prisma.tb_bagan.findFirst({
@@ -909,8 +912,13 @@ static async shuffleBrackets(req: Request, res: Response) {
       // PEMULA: Use special shuffle (re-assign only)
       bracket = await BracketService.shufflePemulaBracket(kompetisiId, kelasId);
     } else {
-      // PRESTASI: Delete + regenerate with new BYE
-      bracket = await BracketService.shuffleBracket(kompetisiId, kelasId);
+      // PRESTASI: Delete + regenerate with new BYE and dojang separation
+      bracket = await BracketService.shuffleBracket(
+        kompetisiId, 
+        kelasId,
+        undefined, // participantIds
+        dojangSeparation
+      );
     }
 
     return sendSuccess(res, bracket, 'Bagan turnamen berhasil diacak ulang');

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Trophy, Edit3, CheckCircle, ArrowLeft, AlertTriangle, RefreshCw, Download, Shuffle } from 'lucide-react';
+import { Trophy, Edit3, CheckCircle, ArrowLeft, AlertTriangle, RefreshCw, Download, Shuffle, Users } from 'lucide-react';
 import { exportBracketFromData } from '../utils/exportBracketPDF';
 import { useAuth } from '../context/authContext';
 import { useNavigate } from 'react-router-dom';
@@ -101,6 +101,11 @@ interface TournamentBracketPemulaProps {
   viewOnly?: boolean; // ⭐ TAMBAHKAN
 }
 
+interface DojangSeparationConfig {
+  enabled: boolean;
+  mode: 'STRICT' | 'BALANCED';
+}
+
 const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({ 
   kelasData, 
   onBack,
@@ -133,6 +138,12 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
     title: '',
     message: '',
   });
+
+  const [dojangSeparation, setDojangSeparation] = useState<DojangSeparationConfig>({
+    enabled: false,
+    mode: 'BALANCED'
+  });
+  const [showDojangModal, setShowDojangModal] = useState(false);
 
   const showNotification = (
     type: 'success' | 'error' | 'warning' | 'info',
@@ -271,10 +282,11 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
   const generateBracket = async () => {
     if (!kelasData) return;
     
-    console.log('🥋 PEMULA: Generating bracket (auto, no BYE selection)');
+    console.log('🥋 PEMULA: Generating bracket...');
+    console.log('🏠 Dojang Separation:', dojangSeparation);
     
     setLoading(true);
-    setShowParticipantPreview(false); // ⭐ CLOSE PREVIEW SAAT GENERATE
+    setShowParticipantPreview(false);
     
     try {
       const kompetisiId = kelasData.kompetisi.id_kompetisi;
@@ -290,6 +302,10 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
         },
         body: JSON.stringify({
           kelasKejuaraanId: kelasKejuaraanId,
+          dojangSeparation: dojangSeparation.enabled ? {
+            enabled: true,
+            mode: dojangSeparation.mode,
+          } : undefined,
         })
       });
 
@@ -327,6 +343,7 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
     if (!kelasData) return;
     
     console.log('🔀 Shuffling PEMULA bracket...');
+    console.log('🏠 Dojang Separation:', dojangSeparation);
     
     setLoading(true);
     
@@ -344,7 +361,11 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
         },
         body: JSON.stringify({
           kelasKejuaraanId: kelasKejuaraanId,
-          isPemula: true
+          isPemula: true,
+          dojangSeparation: dojangSeparation.enabled ? {
+            enabled: true,
+            mode: dojangSeparation.mode
+          } : undefined
         })
       });
 
@@ -1158,6 +1179,20 @@ return (
               >
                 Export Peserta
               </button>
+            <button
+              onClick={() => setShowDojangModal(true)}
+              disabled={loading || approvedParticipants.length < 2 || !bracketGenerated}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50 ${
+                dojangSeparation.enabled ? 'ring-2 ring-green-500' : ''
+              }`}
+              style={{ 
+                backgroundColor: dojangSeparation.enabled ? '#10B981' : '#6366F1', 
+                color: '#F5FBEF' 
+              }}
+            >
+              <Users size={16} />
+              <span>{dojangSeparation.enabled ? '✓ Dojang Separated' : 'Dojang Separation'}</span>
+            </button>
             <button
               onClick={shuffleBracket}
               disabled={loading || approvedParticipants.length < 2 || !bracketGenerated}
@@ -2187,6 +2222,72 @@ const additionalMatchY = (lastFightY + byeMatchY) / 2;
               }}
             >
               {modalConfig.confirmText || 'OK'}
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+
+    {/* Dojang Separation Modal */}
+    {showDojangModal && (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
+          <div className="p-6 border-b" style={{ borderColor: '#990D35' }}>
+            <h3 className="text-xl font-bold" style={{ color: '#050505' }}>
+              Dojang Separation Settings
+            </h3>
+            <p className="text-sm mt-1" style={{ color: '#050505', opacity: 0.6 }}>
+              Pisahkan atlet dari dojang yang sama
+            </p>
+          </div>
+          
+          <div className="p-6 space-y-4">
+            <div className="flex items-center justify-between p-4 rounded-lg border-2" 
+              style={{ borderColor: dojangSeparation.enabled ? '#10B981' : '#990D35' }}>
+              <div>
+                <p className="font-bold" style={{ color: '#050505' }}>Aktifkan Pemisahan</p>
+                <p className="text-xs" style={{ color: '#050505', opacity: 0.6 }}>
+                  Atlet se-dojang tidak bertemu di awal
+                </p>
+              </div>
+              <button
+                onClick={() => setDojangSeparation(prev => ({ ...prev, enabled: !prev.enabled }))}
+                className={`w-14 h-8 rounded-full transition-all ${
+                  dojangSeparation.enabled ? 'bg-green-500' : 'bg-gray-300'
+                }`}
+              >
+                <div className={`w-6 h-6 bg-white rounded-full shadow-md transform transition-transform ${
+                  dojangSeparation.enabled ? 'translate-x-7' : 'translate-x-1'
+                }`} />
+              </button>
+            </div>
+            {/* Mode selection is removed for Pemula as it's not applicable */}
+          </div>
+          
+          <div className="p-6 border-t flex gap-3">
+            <button
+              onClick={() => setShowDojangModal(false)}
+              className="flex-1 py-2 px-4 rounded-lg border"
+              style={{ borderColor: '#990D35', color: '#990D35' }}
+            >
+              Close
+            </button>
+            <button
+              onClick={() => {
+                setShowDojangModal(false);
+                if (dojangSeparation.enabled) {
+                  showNotification(
+                    'success',
+                    'Dojang Separation Enabled',
+                    `Generate/Shuffle bracket untuk apply.`,
+                    () => setShowModal(false)
+                  );
+                }
+              }}
+              className="flex-1 py-2 px-4 rounded-lg"
+              style={{ backgroundColor: '#990D35', color: '#F5FBEF' }}
+            >
+              Apply
             </button>
           </div>
         </div>
