@@ -4,6 +4,15 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
+// ✅ TAMBAHKAN TYPE DEFINITION untuk Kompetisi
+interface KompetisiInfo {
+  id_kompetisi: number;
+  nama_event: string;
+  status: string;
+  tanggal_mulai: Date;
+  tanggal_selesai: Date;
+}
+
 export class DojangController {
   // PUBLIC
   static async checkNameAvailability(req: Request, res: Response) {
@@ -164,7 +173,7 @@ export class DojangController {
     }
   }
 
-  // ✅ PERBAIKAN UTAMA: getById dengan kompetisi info
+  // ✅ PERBAIKAN: getById dengan proper typing
   static async getById(req: Request, res: Response) {
     try {
       const id = parseInt(req.params.id);
@@ -207,38 +216,128 @@ export class DojangController {
 
       console.log(`✅ Dojang found: ${dojang.nama_dojang}`);
 
-      // ✅ CARI KOMPETISI AKTIF UNTUK DOJANG INI
-      const activeKompetisi = await prisma.tb_kompetisi.findFirst({
-        where: {
-          OR: [
-            { status: 'PENDAFTARAN' },
-            { status: 'SEDANG_DIMULAI' }
-          ],
-          kelas_kejuaraan: {
-            some: {
-              peserta_kompetisi: {
-                some: {
-                  atlet: {
-                    id_dojang: id
+      // ✅ DEKLARASI dengan tipe yang jelas
+      let activeKompetisi: KompetisiInfo | null = null;
+
+      // Try 1: Cari kompetisi yang punya peserta dari dojang ini
+      try {
+        const kompetisiWithParticipants = await prisma.tb_kompetisi.findFirst({
+          where: {
+            status: {
+              in: ['PENDAFTARAN', 'SEDANG_DIMULAI']
+            },
+            kelas_kejuaraan: {
+              some: {
+                peserta_kompetisi: {
+                  some: {
+                    atlet: {
+                      id_dojang: id
+                    }
                   }
                 }
               }
             }
+          },
+          orderBy: {
+            tanggal_mulai: 'desc'
+          },
+          select: {
+            id_kompetisi: true,
+            nama_event: true,
+            status: true,
+            tanggal_mulai: true,
+            tanggal_selesai: true
           }
-        },
-        orderBy: {
-          tanggal_mulai: 'desc'
-        },
-        select: {
-          id_kompetisi: true,
-          nama_event: true,
-          status: true,
-          tanggal_mulai: true,
-          tanggal_selesai: true
-        }
-      });
+        });
 
-      console.log(`🏆 Active kompetisi found:`, activeKompetisi ? activeKompetisi.nama_event : 'None');
+        if (kompetisiWithParticipants) {
+          activeKompetisi = {
+            id_kompetisi: kompetisiWithParticipants.id_kompetisi,
+            nama_event: kompetisiWithParticipants.nama_event,
+            status: kompetisiWithParticipants.status,
+            tanggal_mulai: kompetisiWithParticipants.tanggal_mulai,
+            tanggal_selesai: kompetisiWithParticipants.tanggal_selesai
+          };
+          console.log(`✅ Found kompetisi with participants: ${activeKompetisi.nama_event}`);
+        }
+      } catch (err) {
+        console.error('⚠️ Error finding kompetisi with participants:', err);
+      }
+
+      // Try 2: Jika tidak ada, ambil kompetisi aktif terbaru (ANY)
+      if (!activeKompetisi) {
+        console.log('⚠️ No kompetisi with participants, trying latest active...');
+        try {
+          const latestActive = await prisma.tb_kompetisi.findFirst({
+            where: {
+              status: {
+                in: ['PENDAFTARAN', 'SEDANG_DIMULAI']
+              }
+            },
+            orderBy: {
+              tanggal_mulai: 'desc'
+            },
+            select: {
+              id_kompetisi: true,
+              nama_event: true,
+              status: true,
+              tanggal_mulai: true,
+              tanggal_selesai: true
+            }
+          });
+
+          if (latestActive) {
+            activeKompetisi = {
+              id_kompetisi: latestActive.id_kompetisi,
+              nama_event: latestActive.nama_event,
+              status: latestActive.status,
+              tanggal_mulai: latestActive.tanggal_mulai,
+              tanggal_selesai: latestActive.tanggal_selesai
+            };
+            console.log(`✅ Found latest active kompetisi: ${activeKompetisi.nama_event}`);
+          }
+        } catch (err) {
+          console.error('⚠️ Error finding latest kompetisi:', err);
+        }
+      }
+
+      // Try 3: Jika masih tidak ada, ambil kompetisi terbaru (ANY status)
+      if (!activeKompetisi) {
+        console.log('⚠️ No active kompetisi, trying any latest...');
+        try {
+          const anyLatest = await prisma.tb_kompetisi.findFirst({
+            orderBy: {
+              id_kompetisi: 'desc'
+            },
+            select: {
+              id_kompetisi: true,
+              nama_event: true,
+              status: true,
+              tanggal_mulai: true,
+              tanggal_selesai: true
+            }
+          });
+
+          if (anyLatest) {
+            activeKompetisi = {
+              id_kompetisi: anyLatest.id_kompetisi,
+              nama_event: anyLatest.nama_event,
+              status: anyLatest.status,
+              tanggal_mulai: anyLatest.tanggal_mulai,
+              tanggal_selesai: anyLatest.tanggal_selesai
+            };
+            console.log(`✅ Found any kompetisi: ${activeKompetisi.nama_event}`);
+          }
+        } catch (err) {
+          console.error('⚠️ Error finding any kompetisi:', err);
+        }
+      }
+
+      if (!activeKompetisi) {
+        console.log('❌ No kompetisi found at all');
+      } else {
+        console.log(`🏆 Final kompetisi selected: ${activeKompetisi.nama_event} (ID: ${activeKompetisi.id_kompetisi})`);
+      }
 
       // ✅ Format response dengan kompetisi info
       const result = {
