@@ -572,6 +572,9 @@ static async getBracketsListPublic(req: Request, res: Response) {
 /**
  * Get bracket by specific class
  */
+/**
+ * Get bracket by specific class
+ */
 static async getBracketByClass(req: Request, res: Response) {
   try {
     const { id, kelasKejuaraanId } = req.params;
@@ -583,16 +586,237 @@ static async getBracketByClass(req: Request, res: Response) {
       return sendError(res, 'Parameter tidak valid', 400);
     }
 
-    const bracket = await BracketService.getBracket(kompetisiId, kelasId);
-    
-    if (!bracket) {
-      return sendError(res, 'Bagan tidak ditemukan untuk kelas ini', 404);
+    console.log(`🔍 Fetching bracket for kompetisi: ${kompetisiId}, kelas: ${kelasId}`);
+
+    // ✅ PERBAIKAN: Query lebih lengkap dengan proper includes
+    const kelas = await prisma.tb_kelas_kejuaraan.findUnique({
+      where: { id_kelas_kejuaraan: kelasId },
+      include: {
+        kompetisi: {
+          select: {
+            id_kompetisi: true,
+            nama_event: true,
+            tanggal_mulai: true,
+            tanggal_selesai: true,
+            lokasi: true,
+            status: true
+          }
+        },
+        kategori_event: {
+          select: {
+            nama_kategori: true
+          }
+        },
+        kelompok: {
+          select: {
+            nama_kelompok: true,
+            usia_min: true,
+            usia_max: true
+          }
+        },
+        kelas_berat: {
+          select: {
+            nama_kelas: true,
+            jenis_kelamin: true,
+            batas_min: true,
+            batas_max: true
+          }
+        },
+        poomsae: {
+          select: {
+            nama_kelas: true,
+            jenis_kelamin: true
+          }
+        },
+        bagan: {
+          where: {
+            id_kompetisi: kompetisiId
+          },
+          include: {
+            match: {
+              orderBy: {
+                ronde: 'asc'
+              },
+              include: {
+                peserta_a: {
+                  include: {
+                    atlet: {
+                      include: {
+                        dojang: {
+                          select: {
+                            nama_dojang: true
+                          }
+                        }
+                      }
+                    },
+                    anggota_tim: {
+                      include: {
+                        atlet: {
+                          select: {
+                            nama_atlet: true,
+                            dojang: {
+                              select: {
+                                nama_dojang: true
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                peserta_b: {
+                  include: {
+                    atlet: {
+                      include: {
+                        dojang: {
+                          select: {
+                            nama_dojang: true
+                          }
+                        }
+                      }
+                    },
+                    anggota_tim: {
+                      include: {
+                        atlet: {
+                          select: {
+                            nama_atlet: true,
+                            dojang: {
+                              select: {
+                                nama_dojang: true
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        peserta_kompetisi: {
+          where: {
+            status: 'APPROVED'
+          },
+          include: {
+            atlet: {
+              include: {
+                dojang: {
+                  select: {
+                    nama_dojang: true
+                  }
+                }
+              }
+            },
+            anggota_tim: {
+              include: {
+                atlet: {
+                  select: {
+                    nama_atlet: true
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    });
+
+    if (!kelas) {
+      console.log(`❌ Kelas ${kelasId} not found`);
+      return sendError(res, 'Kelas kejuaraan tidak ditemukan', 404);
     }
 
-    return sendSuccess(res, bracket, 'Bagan kelas kejuaraan berhasil diambil');
+    // ✅ Check if bracket exists
+    if (!kelas.bagan || kelas.bagan.length === 0) {
+      console.log(`❌ No bracket found for kelas ${kelasId}`);
+      return sendError(res, 'Bracket belum dibuat untuk kelas ini', 404);
+    }
+
+    const bagan = kelas.bagan[0];
+    
+    console.log(`✅ Bracket found with ${bagan.match.length} matches`);
+
+    // ✅ Transform matches ke format yang expected frontend
+    const matches = bagan.match.map(match => {
+      // Helper untuk get participant info
+      const getParticipantData = (peserta: any) => {
+        if (!peserta) return null;
+        
+        if (peserta.is_team) {
+          return {
+            id: peserta.id_peserta_kompetisi,
+            atletId: null,
+            name: peserta.anggota_tim?.map((t: any) => t.atlet.nama_atlet).join(', ') || 'Team',
+            dojang: peserta.anggota_tim?.[0]?.atlet?.dojang?.nama_dojang || '',
+            isTeam: true,
+            teamMembers: peserta.anggota_tim?.map((t: any) => t.atlet.nama_atlet) || []
+          };
+        } else {
+          return {
+            id: peserta.id_peserta_kompetisi,
+            atletId: peserta.id_atlet,
+            name: peserta.atlet?.nama_atlet || '',
+            dojang: peserta.atlet?.dojang?.nama_dojang || '',
+            isTeam: false
+          };
+        }
+      };
+
+      return {
+        id: match.id_match,
+        round: match.ronde,
+        scoreA: match.skor_a,
+        scoreB: match.skor_b,
+        participant1: getParticipantData(match.peserta_a),
+        participant2: getParticipantData(match.peserta_b),
+        tanggalPertandingan: match.tanggal_pertandingan,
+        nomorPartai: match.nomor_partai,
+        nomorAntrian: match.nomor_antrian,
+        nomorLapangan: match.nomor_lapangan
+      };
+    });
+
+    // ✅ Transform participants
+    const participants = kelas.peserta_kompetisi.map(p => ({
+      id: p.id_peserta_kompetisi,
+      atletId: p.id_atlet,
+      name: p.is_team 
+        ? p.anggota_tim?.map(t => t.atlet.nama_atlet).join(', ') || 'Team'
+        : p.atlet?.nama_atlet || '',
+      dojang: p.is_team
+        ? p.anggota_tim?.[0]?.atlet?.dojang?.nama_dojang || ''
+        : p.atlet?.dojang?.nama_dojang || '',
+      isTeam: p.is_team,
+      teamMembers: p.is_team 
+        ? p.anggota_tim?.map(t => t.atlet.nama_atlet) || []
+        : undefined
+    }));
+
+    // ✅ Build response dengan semua data yang dibutuhkan
+    const response = {
+      success: true,
+      data: {
+        cabang: kelas.cabang,
+        kategori_event: kelas.kategori_event,
+        kelompok: kelas.kelompok,
+        kelas_berat: kelas.kelas_berat,
+        poomsae: kelas.poomsae,
+        jenis_kelamin: kelas.kelas_berat?.jenis_kelamin || kelas.poomsae?.jenis_kelamin || null,
+        kompetisi: kelas.kompetisi,
+        participants: participants,
+        matches: matches,
+        totalRounds: Math.max(...matches.map(m => m.round), 0)
+      }
+    };
+
+    return res.status(200).json(response);
+    
   } catch (error: any) {
     console.error('Controller - Error getting bracket by class:', error);
-    return sendError(res, error.message || 'Gagal mengambil bagan kelas', 400);
+    return sendError(res, error.message || 'Gagal mengambil bagan kelas', 500);
   }
 }
 
