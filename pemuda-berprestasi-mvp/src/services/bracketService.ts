@@ -924,12 +924,10 @@ static async generatePrestasiBracket(
     throw new Error("Minimal 2 peserta diperlukan untuk bracket prestasi");
   }
 
-  // ✅ HANDLE 2 PARTICIPANTS
+  // Handle 2 & 3 participants (unchanged)
   if (participantCount === 2) {
     console.log(`🎯 PRESTASI: 2 participants → Direct Final`);
-    
     const shuffled = this.shuffleArray([...participants]);
-    
     const finalMatch = await prisma.tb_match.create({
       data: {
         id_bagan: baganId,
@@ -940,7 +938,6 @@ static async generatePrestasiBracket(
         skor_b: 0,
       },
     });
-
     matches.push({
       id: finalMatch.id_match,
       round: 1,
@@ -951,17 +948,12 @@ static async generatePrestasiBracket(
       scoreA: 0,
       scoreB: 0,
     });
-
-    console.log(`   ✅ Final match created`);
     return matches;
   }
 
-  // ✅ HANDLE 3 PARTICIPANTS
   if (participantCount === 3) {
     console.log(`🎯 PRESTASI: 3 participants → 1 BYE + 1 Match → Final`);
-    
     const shuffled = this.shuffleArray([...participants]);
-    
     const round1Match = await prisma.tb_match.create({
       data: {
         id_bagan: baganId,
@@ -972,7 +964,6 @@ static async generatePrestasiBracket(
         skor_b: 0,
       },
     });
-
     matches.push({
       id: round1Match.id_match,
       round: 1,
@@ -983,7 +974,6 @@ static async generatePrestasiBracket(
       scoreA: 0,
       scoreB: 0,
     });
-
     const finalMatch = await prisma.tb_match.create({
       data: {
         id_bagan: baganId,
@@ -994,7 +984,6 @@ static async generatePrestasiBracket(
         skor_b: 0,
       },
     });
-
     matches.push({
       id: finalMatch.id_match,
       round: 2,
@@ -1005,12 +994,10 @@ static async generatePrestasiBracket(
       scoreA: 0,
       scoreB: 0,
     });
-
-    console.log(`   ✅ Round 1 + Final created`);
     return matches;
   }
 
-  // ✅ EXISTING LOGIC 4+ participants
+  // ✅ 4+ PARTICIPANTS
   const targetSize = Math.pow(2, Math.ceil(Math.log2(participantCount)));
   const byesNeeded = targetSize - participantCount;
   const totalMatchesR1 = targetSize / 2;
@@ -1021,21 +1008,20 @@ static async generatePrestasiBracket(
   console.log(`   Target size: ${targetSize}`);
   console.log(`   BYEs needed: ${byesNeeded}`);
   console.log(`   Total R1 matches: ${totalMatchesR1}`);
+  console.log(`   Half size: ${halfSize}`);
 
-  // ⭐ VALIDATION
+  // Validation
   let isUnavoidable = false;
-  
   if (dojangSeparation?.enabled) {
     console.log(`\n🔒 STRICT MODE ENABLED`);
     const validation = this.validatePrestasiR1Separation(participants, targetSize);
     isUnavoidable = validation.isUnavoidable;
-    
     if (validation.warnings.length > 0) {
       validation.warnings.forEach(w => console.log(w));
     }
   }
 
-  // ✅ TENTUKAN BYE & ACTIVE PARTICIPANTS
+  // ✅ SEPARATE BYE & ACTIVE
   let byeParticipants: Participant[] = [];
   let activeParticipants: Participant[] = [...participants];
 
@@ -1048,51 +1034,92 @@ static async generatePrestasiBracket(
     activeParticipants = shuffled.slice(byesNeeded);
   }
 
-  console.log(`   🎁 BYE participants (${byeParticipants.length}):`, byeParticipants.map(p => p.name));
-  console.log(`   ⚔️ Active participants (${activeParticipants.length}):`, activeParticipants.map(p => p.name));
+  console.log(`\n   📊 Participant breakdown:`);
+  console.log(`      BYE participants: ${byeParticipants.length}`);
+  console.log(`      Active participants: ${activeParticipants.length}`);
 
-  // ✅ DISTRIBUSI BYE POSITIONS
+  // ✅ CALCULATE POSITIONS
   const byePositions = this.distributeBYEForMirroredBracket(participantCount, targetSize);
-  
-  // ✅ DISTRIBUSI FIGHT POSITIONS
   const allPositions = Array.from({ length: totalMatchesR1 }, (_, i) => i);
   const fightPositions = allPositions.filter(pos => !byePositions.includes(pos));
-  const distributedFightPositions = this.distributeFightPositions(fightPositions, totalMatchesR1);
+  
+  console.log(`\n   📍 Position distribution:`);
+  console.log(`      Total R1 positions: ${totalMatchesR1}`);
+  console.log(`      BYE positions: ${byePositions.length} →`, byePositions);
+  console.log(`      FIGHT positions: ${fightPositions.length} →`, fightPositions);
 
-  console.log(`   📊 BYE positions:`, byePositions);
-  console.log(`   📊 FIGHT positions:`, distributedFightPositions);
+  // ✅ CRITICAL: Calculate participants needed per side
+  const leftFightPositions = fightPositions.filter(pos => pos < halfSize);
+  const rightFightPositions = fightPositions.filter(pos => pos >= halfSize);
+  
+  const leftParticipantsNeeded = leftFightPositions.length * 2;
+  const rightParticipantsNeeded = rightFightPositions.length * 2;
+  
+  console.log(`\n   🎯 Participants needed per side:`);
+  console.log(`      LEFT: ${leftFightPositions.length} fights × 2 = ${leftParticipantsNeeded} participants`);
+  console.log(`      RIGHT: ${rightFightPositions.length} fights × 2 = ${rightParticipantsNeeded} participants`);
+  console.log(`      TOTAL needed: ${leftParticipantsNeeded + rightParticipantsNeeded}`);
+  console.log(`      Available: ${activeParticipants.length}`);
 
-  // ✅ FIX: SPLIT PARTICIPANTS CORRECTLY
+  // ✅ SANITY CHECK
+  if (leftParticipantsNeeded + rightParticipantsNeeded !== activeParticipants.length) {
+    console.error(`\n   ❌ CRITICAL ERROR: Mismatch in calculation!`);
+    console.error(`      Needed: ${leftParticipantsNeeded + rightParticipantsNeeded}`);
+    console.error(`      Available: ${activeParticipants.length}`);
+    throw new Error(
+      `Bracket calculation error: Need ${leftParticipantsNeeded + rightParticipantsNeeded} participants ` +
+      `but have ${activeParticipants.length} active participants`
+    );
+  }
+
+  // ✅ DISTRIBUTE PARTICIPANTS
   let leftPool: Participant[] = [];
   let rightPool: Participant[] = [];
 
   if (dojangSeparation?.enabled) {
-    // STRICT SEPARATION
+    console.log(`\n   🔒 STRICT DOJANG SEPARATION`);
     [leftPool, rightPool] = this.distributeDojangSeparatedStrict(activeParticipants);
+    
+    // Shuffle within pools
     leftPool = this.shuffleArray(leftPool);
     rightPool = this.shuffleArray(rightPool);
     
-  } else {
-    // RANDOM SPLIT
-    console.log(`\n🎲 Random distribution (no dojang separation)`);
+    console.log(`\n   📦 Pool distribution (after STRICT):`);
+    console.log(`      LEFT pool: ${leftPool.length} participants`);
+    console.log(`      RIGHT pool: ${rightPool.length} participants`);
     
+    // ⚠️ ADJUST if pool sizes don't match needed
+    if (leftPool.length !== leftParticipantsNeeded || rightPool.length !== rightParticipantsNeeded) {
+      console.warn(`\n   ⚠️ Pool size adjustment needed!`);
+      console.warn(`      LEFT: have ${leftPool.length}, need ${leftParticipantsNeeded}`);
+      console.warn(`      RIGHT: have ${rightPool.length}, need ${rightParticipantsNeeded}`);
+      
+      // Rebalance pools
+      const allActive = [...leftPool, ...rightPool];
+      leftPool = allActive.slice(0, leftParticipantsNeeded);
+      rightPool = allActive.slice(leftParticipantsNeeded);
+      
+      console.log(`      ✅ Rebalanced to: LEFT=${leftPool.length}, RIGHT=${rightPool.length}`);
+    }
+    
+  } else {
+    console.log(`\n   🎲 RANDOM DISTRIBUTION (no dojang separation)`);
     const shuffledActive = this.shuffleArray([...activeParticipants]);
     
-    // ✅ FIX: Calculate needed per side correctly
-    const leftFights = distributedFightPositions.filter(pos => pos < halfSize);
-    const rightFights = distributedFightPositions.filter(pos => pos >= halfSize);
+    leftPool = shuffledActive.slice(0, leftParticipantsNeeded);
+    rightPool = shuffledActive.slice(leftParticipantsNeeded, leftParticipantsNeeded + rightParticipantsNeeded);
     
-    const leftNeeded = leftFights.length * 2;
-    const rightNeeded = rightFights.length * 2;
-    
-    console.log(`   LEFT side: ${leftFights.length} fights = ${leftNeeded} participants needed`);
-    console.log(`   RIGHT side: ${rightFights.length} fights = ${rightNeeded} participants needed`);
-    
-    leftPool = shuffledActive.slice(0, leftNeeded);
-    rightPool = shuffledActive.slice(leftNeeded);
-    
-    console.log(`   LEFT pool: ${leftPool.length} participants`);
-    console.log(`   RIGHT pool: ${rightPool.length} participants`);
+    console.log(`\n   📦 Pool distribution (random):`);
+    console.log(`      LEFT pool: ${leftPool.length} participants`);
+    console.log(`      RIGHT pool: ${rightPool.length} participants`);
+  }
+
+  // ✅ FINAL VALIDATION BEFORE CREATING MATCHES
+  if (leftPool.length !== leftParticipantsNeeded) {
+    throw new Error(`LEFT pool mismatch: have ${leftPool.length}, need ${leftParticipantsNeeded}`);
+  }
+  if (rightPool.length !== rightParticipantsNeeded) {
+    throw new Error(`RIGHT pool mismatch: have ${rightPool.length}, need ${rightParticipantsNeeded}`);
   }
 
   // ✅ CREATE R1 MATCHES
@@ -1100,9 +1127,9 @@ static async generatePrestasiBracket(
   let rightIndex = 0;
   let byeIndex = 0;
 
-  const allSortedPositions = [...byePositions, ...distributedFightPositions].sort((a, b) => a - b);
+  const allSortedPositions = [...byePositions, ...fightPositions].sort((a, b) => a - b);
 
-  console.log(`\n   🎮 Creating Round 1 matches...`);
+  console.log(`\n   🎮 Creating ${allSortedPositions.length} Round 1 matches...`);
 
   for (const pos of allSortedPositions) {
     let p1: Participant | null = null;
@@ -1110,7 +1137,7 @@ static async generatePrestasiBracket(
     let status: Match["status"] = "pending";
 
     if (byePositions.includes(pos)) {
-      // BYE match
+      // BYE MATCH
       if (byeIndex < byeParticipants.length) {
         p1 = byeParticipants[byeIndex++];
         p2 = null;
@@ -1118,26 +1145,37 @@ static async generatePrestasiBracket(
         console.log(`      Match ${pos + 1}: ${p1.name} (BYE)`);
       }
     } else {
-      // FIGHT match
+      // FIGHT MATCH
       const isLeftSide = pos < halfSize;
       
       if (isLeftSide) {
-        p1 = leftPool[leftIndex++] || null;
-        p2 = leftPool[leftIndex++] || null;
+        if (leftIndex + 1 < leftPool.length) {
+          p1 = leftPool[leftIndex++];
+          p2 = leftPool[leftIndex++];
+        } else if (leftIndex < leftPool.length) {
+          p1 = leftPool[leftIndex++];
+          p2 = null;
+          status = "bye";
+        }
       } else {
-        p1 = rightPool[rightIndex++] || null;
-        p2 = rightPool[rightIndex++] || null;
+        if (rightIndex + 1 < rightPool.length) {
+          p1 = rightPool[rightIndex++];
+          p2 = rightPool[rightIndex++];
+        } else if (rightIndex < rightPool.length) {
+          p1 = rightPool[rightIndex++];
+          p2 = null;
+          status = "bye";
+        }
       }
       
-      if (p1 && !p2) {
-        status = "bye";
-        console.log(`      Match ${pos + 1}: ${p1.name} (BYE - odd fighter)`);
-      } else if (p1 && p2) {
+      if (p1 && p2) {
         const isSameDojang = p1.dojang === p2.dojang;
         console.log(
           `      Match ${pos + 1}: ${p1.name} vs ${p2.name} ` +
-          `${isSameDojang ? '⚠️ SAME DOJANG' : '✅'}`
+          `${isSameDojang ? '⚠️ SAME' : '✅'}`
         );
+      } else if (p1) {
+        console.log(`      Match ${pos + 1}: ${p1.name} (BYE - odd fighter)`);
       }
     }
 
@@ -1164,27 +1202,25 @@ static async generatePrestasiBracket(
     });
   }
 
-  // ✅ CHECK FOR LEFTOVERS
-  if (leftIndex < leftPool.length || rightIndex < rightPool.length) {
-    console.warn(`\n   ⚠️⚠️⚠️ CRITICAL WARNING ⚠️⚠️⚠️`);
-    console.warn(`   LEFT index: ${leftIndex}/${leftPool.length}`);
-    console.warn(`   RIGHT index: ${rightIndex}/${rightPool.length}`);
-    console.warn(`   Leftover participants detected! This should NOT happen!`);
-    
+  // ✅ CHECK LEFTOVERS
+  console.log(`\n   📊 Index check:`);
+  console.log(`      LEFT: ${leftIndex}/${leftPool.length}`);
+  console.log(`      RIGHT: ${rightIndex}/${rightPool.length}`);
+  console.log(`      BYE: ${byeIndex}/${byeParticipants.length}`);
+
+  if (leftIndex !== leftPool.length || rightIndex !== rightPool.length) {
     throw new Error(
-      `Bracket generation error: ${leftPool.length - leftIndex + rightPool.length - rightIndex} participants not placed. ` +
-      `This indicates a logic error in distribution.`
+      `Participant placement error:\n` +
+      `  LEFT: used ${leftIndex}/${leftPool.length}\n` +
+      `  RIGHT: used ${rightIndex}/${rightPool.length}\n` +
+      `  Total unused: ${(leftPool.length - leftIndex) + (rightPool.length - rightIndex)}`
     );
   }
 
-  // ✅ CREATE PLACEHOLDER ROUNDS
+  // Create placeholder rounds
   const totalRounds = Math.log2(targetSize);
-  console.log(`\n   🏗️ Creating ${totalRounds - 1} placeholder rounds...`);
-  
   for (let round = 2; round <= totalRounds; round++) {
     const matchesInRound = Math.pow(2, totalRounds - round);
-    console.log(`      Round ${round}: ${matchesInRound} matches`);
-    
     for (let i = 0; i < matchesInRound; i++) {
       const created = await prisma.tb_match.create({
         data: {
@@ -1196,7 +1232,6 @@ static async generatePrestasiBracket(
           skor_b: 0,
         },
       });
-
       matches.push({
         id: created.id_match,
         round,
@@ -1210,8 +1245,7 @@ static async generatePrestasiBracket(
     }
   }
 
-  // ✅ AUTO-ADVANCE BYE WINNERS
-  console.log(`\n   ⚡ Auto-advancing BYE winners...`);
+  // Auto-advance BYE winners
   const createdR1Matches = matches.filter(m => m.round === 1);
   for (const m of createdR1Matches) {
     if (m.participant1 && !m.participant2 && m.id) {
@@ -1219,27 +1253,25 @@ static async generatePrestasiBracket(
         { id_bagan: baganId, ronde: 1, id_match: m.id },
         m.participant1.id
       );
-      console.log(`      ✅ ${m.participant1.name} advanced`);
     }
   }
 
-  // ✅ FINAL VALIDATION
+  // Validation
   if (dojangSeparation?.enabled) {
     const r1Validation = this.validateR1MatchesStrict(matches, isUnavoidable);
-    
     if (r1Validation.hasViolation && !isUnavoidable) {
       throw new Error(
-        `❌ STRICT MODE ERROR: Round 1 has same-dojang match(es)!\n\n` +
-        `Violations:\n${r1Validation.violations.map(v => 
-          `  • Match ${v.position + 1}: ${v.p1} vs ${v.p2} (both from "${v.dojang}")`
-        ).join('\n')}`
+        `STRICT MODE ERROR: Round 1 has same-dojang match(es)!\n` +
+        r1Validation.violations.map(v => 
+          `  Match ${v.position + 1}: ${v.p1} vs ${v.p2} (${v.dojang})`
+        ).join('\n')
       );
     }
   }
 
-  console.log(`\n✅ PRESTASI BRACKET GENERATED SUCCESSFULLY`);
+  console.log(`\n✅ PRESTASI BRACKET GENERATED`);
   console.log(`   Total matches: ${matches.length}`);
-  console.log(`   Dojang separation: ${dojangSeparation?.enabled ? 'STRICT ✅' : 'DISABLED'}`);
+  console.log(`   Dojang separation: ${dojangSeparation?.enabled ? 'STRICT ✅' : 'DISABLED'}\n`);
   
   return matches;
 }

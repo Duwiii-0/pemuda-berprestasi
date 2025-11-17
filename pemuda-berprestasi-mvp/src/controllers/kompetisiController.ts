@@ -829,7 +829,14 @@ static async getBracketByClass(req: Request, res: Response) {
 static async shuffleBrackets(req: Request, res: Response) {
   try {
     const { id } = req.params;
-    const { kelasKejuaraanId, isPemula, dojangSeparation } = req.body; // ⭐ TAMBAH dojangSeparation
+    const { kelasKejuaraanId, isPemula, dojangSeparation } = req.body;
+
+    // ⭐ ADD DETAILED LOGGING
+    console.log(`\n🔀 === SHUFFLE BRACKET REQUEST ===`);
+    console.log(`   Kompetisi ID: ${id}`);
+    console.log(`   Kelas ID: ${kelasKejuaraanId}`);
+    console.log(`   Request Body:`, JSON.stringify(req.body, null, 2));
+    console.log(`   dojangSeparation param:`, dojangSeparation);
 
     const kompetisiId = parseInt(id);
     const kelasId = parseInt(kelasKejuaraanId);
@@ -877,12 +884,12 @@ static async shuffleBrackets(req: Request, res: Response) {
       return sendError(res, 'Tidak memiliki akses untuk mengacak bagan', 403);
     }
 
-    // ⭐ DETECT category from flag or database
+    // ⭐ DETECT category
     const kategori = kompetisi.kelas_kejuaraan[0]?.kategori_event?.nama_kategori?.toLowerCase() || '';
     const isPemulaCategory = isPemula ?? kategori.includes('pemula');
 
-    console.log(`\n🔀 Shuffle request for: ${isPemulaCategory ? 'PEMULA' : 'PRESTASI'}`);
-    console.log(`   Dojang Separation:`, dojangSeparation);
+    console.log(`\n   Category: ${isPemulaCategory ? 'PEMULA' : 'PRESTASI'}`);
+    console.log(`   Dojang Separation enabled: ${dojangSeparation?.enabled ? 'YES' : 'NO'}`);
 
     // Check if any matches have been played
     const existingBagan = await prisma.tb_bagan.findFirst({
@@ -905,21 +912,31 @@ static async shuffleBrackets(req: Request, res: Response) {
     let bracket;
 
     if (isPemulaCategory) {
-      // PEMULA: Use special shuffle (re-assign only)
-      bracket = await BracketService.shufflePemulaBracket(kompetisiId, kelasId);
+      // ✅ FIX: PASS dojangSeparation parameter!
+      console.log(`   🥋 Calling shufflePemulaBracket with separation:`, dojangSeparation);
+      
+      bracket = await BracketService.shufflePemulaBracket(
+        kompetisiId, 
+        kelasId,
+        dojangSeparation // ✅ NOW PASSED!
+      );
     } else {
-      // PRESTASI: Delete + regenerate dengan dojang separation
+      // ✅ PRESTASI: Also pass dojangSeparation
+      console.log(`   🏆 Calling shuffleBracket with separation:`, dojangSeparation);
+      
       bracket = await BracketService.shuffleBracket(
         kompetisiId, 
         kelasId,
-        undefined,
-        dojangSeparation // ⭐ PASS DOJANG SEPARATION
+        undefined, // byeParticipantIds
+        dojangSeparation // ✅ PASSED!
       );
     }
 
+    console.log(`   ✅ Bracket shuffled successfully with ${bracket.matches.length} matches\n`);
+
     return sendSuccess(res, bracket, 'Bagan turnamen berhasil diacak ulang');
   } catch (error: any) {
-    console.error('Controller - Error shuffling bracket:', error);
+    console.error('❌ Controller - Error shuffling bracket:', error);
     return sendError(res, error.message || 'Gagal mengacak ulang bagan', 400);
   }
 }
