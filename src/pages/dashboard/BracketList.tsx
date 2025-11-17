@@ -112,8 +112,13 @@ const BracketList: React.FC = () => {
               );
               
               if (dojangResponse.ok) {
-                const dojangData = await dojangResponse.json();
-                const kompetisiId = dojangData.data?.id_kompetisi || dojangData.id_kompetisi;
+                const dojangResult = await dojangResponse.json();
+                
+                // ✅ Handle new response structure
+                const kompetisiId = dojangResult.success 
+                  ? dojangResult.data?.id_kompetisi 
+                  : dojangResult.id_kompetisi;
+                  
                 if (kompetisiId) {
                   console.log('✅ Found from dojang API:', kompetisiId);
                   return kompetisiId;

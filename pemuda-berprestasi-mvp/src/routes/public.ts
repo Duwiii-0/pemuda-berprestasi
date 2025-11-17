@@ -43,12 +43,10 @@ router.get('/kompetisi/:id', (req, res, next) => {
   KompetisiController.getById(req, res);
 });
 
-// Get all published competitions (untuk public viewing)
+// ✅ PERBAIKAN: Get all competitions (tanpa filter status yang ketat)
 router.get('/kompetisi', (req, res, next) => {
   console.log(`📋 All Kompetisi Request (public)`);
   
-  // Add filter for published only
-  req.query.status = 'SEDANG_DIMULAI,SELESAI'; // Only show ongoing/finished
   KompetisiController.getAll(req, res);
 });
 
