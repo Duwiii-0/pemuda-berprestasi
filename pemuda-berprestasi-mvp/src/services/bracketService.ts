@@ -830,6 +830,7 @@ static async generatePrestasiBracket(
   const targetSize = Math.pow(2, Math.ceil(Math.log2(participantCount)));
   const byesNeeded = targetSize - participantCount;
   const totalMatchesR1 = targetSize / 2;
+  const halfSize = totalMatchesR1 / 2; // ⭐ SPLIT POINT kiri-kanan
   
   console.log(`📊 PRESTASI: participants=${participantCount}, targetSize=${targetSize}, byesNeeded=${byesNeeded}`);
   console.log(`   Total R1 matches: ${totalMatchesR1}`);
@@ -873,91 +874,104 @@ static async generatePrestasiBracket(
 
   console.log(`   ✅ FIGHT positions (after distribution):`, distributedFightPositions);
 
-  // 6️⃣ Prepare left and right pools with optional dojang separation
-  let leftPool: Participant[] = [];
-  let rightPool: Participant[] = [];
+  // 6️⃣ ⭐ PERBAIKAN: Split participants dengan LEFT-RIGHT logic
+let leftPool: Participant[] = [];
+let rightPool: Participant[] = [];
 
-  if (dojangSeparation?.enabled) {
-    console.log(`\n🏛️ === DOJANG SEPARATION ENABLED (${dojangSeparation.mode}) ===`);
-    [leftPool, rightPool] = this.distributeDojangSeparated(activeParticipants, dojangSeparation.mode);
-    
-    // Shuffle within each pool
-    leftPool = this.shuffleArray(leftPool);
-    rightPool = this.shuffleArray(rightPool);
-    
-    console.log(`   LEFT pool (${leftPool.length}):`, leftPool.map(p => `${p.name} (${p.dojang})`));
-    console.log(`   RIGHT pool (${rightPool.length}):`, rightPool.map(p => `${p.name} (${p.dojang})`));
-  } else {
-    console.log(`\n🎲 === RANDOM DISTRIBUTION (No Dojang Separation) ===`);
-    const shuffledActive = this.shuffleArray([...activeParticipants]);
-    const mid = Math.ceil(shuffledActive.length / 2);
-    leftPool = shuffledActive.slice(0, mid);
-    rightPool = shuffledActive.slice(mid);
-  }
+if (dojangSeparation?.enabled) {
+  console.log(`\n🏛️ === DOJANG SEPARATION ENABLED (${dojangSeparation.mode}) ===`);
+  [leftPool, rightPool] = this.distributeDojangSeparated(activeParticipants, dojangSeparation.mode);
+  
+  // Shuffle within each pool
+  leftPool = this.shuffleArray(leftPool);
+  rightPool = this.shuffleArray(rightPool);
+  
+  console.log(`   LEFT pool (${leftPool.length}):`, leftPool.map(p => `${p.name} (${p.dojang})`));
+  console.log(`   RIGHT pool (${rightPool.length}):`, rightPool.map(p => `${p.name} (${p.dojang})`));
+} else {
+  console.log(`\n🎲 === RANDOM DISTRIBUTION (No Dojang Separation) ===`);
+  const shuffledActive = this.shuffleArray([...activeParticipants]);
+  
+  // ⭐ SPLIT BERDASARKAN FIGHT POSITIONS
+  const leftFights = distributedFightPositions.filter(pos => pos < halfSize);
+  const rightFights = distributedFightPositions.filter(pos => pos >= halfSize);
+  
+  // Hitung berapa peserta yang dibutuhkan untuk LEFT dan RIGHT
+  const leftNeeded = leftFights.length * 2; // Setiap fight match butuh 2 peserta
+  const rightNeeded = rightFights.length * 2;
+  
+  console.log(`   LEFT fights: ${leftFights.length} matches (need ${leftNeeded} participants)`);
+  console.log(`   RIGHT fights: ${rightFights.length} matches (need ${rightNeeded} participants)`);
+  
+  leftPool = shuffledActive.slice(0, leftNeeded);
+  rightPool = shuffledActive.slice(leftNeeded);
+  
+  console.log(`   LEFT pool: ${leftPool.length} participants`);
+  console.log(`   RIGHT pool: ${rightPool.length} participants`);
+}
 
-  const halfSize = totalMatchesR1 / 2;
-  let leftIndex = 0;
-  let rightIndex = 0;
-  let byeIndex = 0;
+let leftIndex = 0;
+let rightIndex = 0;
+let byeIndex = 0;
 
-  // 7️⃣ CREATE MATCHES dengan posisi yang sudah didistribusi
-  const allSortedPositions = [...byePositions, ...distributedFightPositions].sort((a, b) => a - b);
+// 7️⃣ CREATE MATCHES dengan posisi yang sudah didistribusi
+const allSortedPositions = [...byePositions, ...distributedFightPositions].sort((a, b) => a - b);
 
-  for (const pos of allSortedPositions) {
-    let p1: Participant | null = null;
-    let p2: Participant | null = null;
-    let status: Match["status"] = "pending";
+for (const pos of allSortedPositions) {
+  let p1: Participant | null = null;
+  let p2: Participant | null = null;
+  let status: Match["status"] = "pending";
 
-    if (byePositions.includes(pos)) {
-      // BYE match
-      if (byeIndex < byeParticipants.length) {
-        p1 = byeParticipants[byeIndex++];
-        p2 = null;
-        status = "bye";
-      }
-    } else {
-      // FIGHT match - distribute from appropriate pool
-      const isLeftSide = pos < halfSize;
-      
-      if (isLeftSide) {
-        // Take from LEFT pool
-        p1 = leftPool[leftIndex++] || null;
-        p2 = leftPool[leftIndex++] || null;
-      } else {
-        // Take from RIGHT pool
-        p1 = rightPool[rightIndex++] || null;
-        p2 = rightPool[rightIndex++] || null;
-      }
-      
-      if (p1 && !p2) {
-        status = "bye";
-      }
+  if (byePositions.includes(pos)) {
+    // BYE match
+    if (byeIndex < byeParticipants.length) {
+      p1 = byeParticipants[byeIndex++];
+      p2 = null;
+      status = "bye";
     }
-
-    const created = await prisma.tb_match.create({
-      data: {
-        id_bagan: baganId,
-        ronde: 1,
-        id_peserta_a: p1 ? p1.id : null,
-        id_peserta_b: p2 ? p2.id : null,
-        skor_a: 0,
-        skor_b: 0,
-      },
-    });
-
-    matches.push({
-      id: created.id_match,
-      round: 1,
-      position: pos,
-      participant1: p1,
-      participant2: p2,
-      status,
-      scoreA: 0,
-      scoreB: 0,
-    });
-
-    console.log(`   🎮 R1 match position ${pos}: ${p1 ? p1.name : "BYE"} vs ${p2 ? p2.name : "BYE"} (${status})`);
+  } else {
+    // ⭐ FIGHT match - ambil dari LEFT atau RIGHT pool berdasarkan posisi
+    const isLeftSide = pos < halfSize;
+    
+    if (isLeftSide) {
+      // Take from LEFT pool
+      p1 = leftPool[leftIndex++] || null;
+      p2 = leftPool[leftIndex++] || null;
+    } else {
+      // Take from RIGHT pool
+      p1 = rightPool[rightIndex++] || null;
+      p2 = rightPool[rightIndex++] || null;
+    }
+    
+    if (p1 && !p2) {
+      status = "bye";
+    }
   }
+
+  const created = await prisma.tb_match.create({
+    data: {
+      id_bagan: baganId,
+      ronde: 1,
+      id_peserta_a: p1 ? p1.id : null,
+      id_peserta_b: p2 ? p2.id : null,
+      skor_a: 0,
+      skor_b: 0,
+    },
+  });
+
+  matches.push({
+    id: created.id_match,
+    round: 1,
+    position: pos,
+    participant1: p1,
+    participant2: p2,
+    status,
+    scoreA: 0,
+    scoreB: 0,
+  });
+
+  console.log(`   🎮 R1 match position ${pos}: ${p1 ? p1.name : "BYE"} vs ${p2 ? p2.name : "BYE"} (${status})`);
+}
 
   // 8️⃣ Pastikan tidak ada peserta tersisa (Safety check)
   while (leftIndex < leftPool.length) {
@@ -1725,10 +1739,6 @@ if (isPemula && currentRound === 1) {
   }
 }
 
-  /**
-   * Shuffle/regenerate bracket
-   * ⭐ NOW supports participantIds parameter
-   */
 static async shuffleBracket(
   kompetisiId: number, 
   kelasKejuaraanId: number,
@@ -1738,6 +1748,7 @@ static async shuffleBracket(
   try {
     console.log(`\n🔀 Shuffling PRESTASI bracket...`);
     console.log(`   Kompetisi: ${kompetisiId}, Kelas: ${kelasKejuaraanId}`);
+    console.log(`   Dojang Separation:`, dojangSeparation);
 
     // ⭐ STEP 1: DELETE EXISTING BRACKET
     const existingBagan = await prisma.tb_bagan.findFirst({
@@ -1753,7 +1764,6 @@ static async shuffleBracket(
     if (existingBagan) {
       console.log(`   🗑️ Deleting existing bracket (${existingBagan.match.length} matches)...`);
 
-      // Delete in correct order to avoid foreign key constraints
       await prisma.tb_match_audit.deleteMany({
         where: {
           match: {
@@ -1777,9 +1787,14 @@ static async shuffleBracket(
       console.log(`   ✅ Bracket deleted successfully`);
     }
 
-// ⭐ STEP 2: GENERATE NEW BRACKET (auto BYE selection)
-console.log(`   🎲 Generating new bracket with random BYE...`);
-const newBracket = await this.generateBracket(kompetisiId, kelasKejuaraanId, undefined, dojangSeparation); // ⭐ TAMBAHKAN dojangSeparation
+    // ⭐ STEP 2: GENERATE NEW BRACKET dengan dojang separation
+    console.log(`   🎲 Generating new bracket...`);
+    const newBracket = await this.generateBracket(
+      kompetisiId, 
+      kelasKejuaraanId, 
+      undefined, 
+      dojangSeparation // ⭐ PASS DOJANG SEPARATION
+    );
     
     console.log(`   ✅ New bracket generated with ${newBracket.matches.length} matches`);
     return newBracket;

@@ -826,9 +826,6 @@ static async getBracketByClass(req: Request, res: Response) {
   }
 }
 
-/**
- * Shuffle/regenerate bracket
- */
 static async shuffleBrackets(req: Request, res: Response) {
   try {
     const { id } = req.params;
@@ -907,12 +904,18 @@ static async shuffleBrackets(req: Request, res: Response) {
 
     let bracket;
 
-    bracket = await BracketService.shuffleBracket(
-      kompetisiId, 
-      kelasId,
-      isPemulaCategory, // Pass isPemulaCategory to the unified shuffle method
-      dojangSeparation
-    );
+    if (isPemulaCategory) {
+      // PEMULA: Use special shuffle (re-assign only)
+      bracket = await BracketService.shufflePemulaBracket(kompetisiId, kelasId);
+    } else {
+      // PRESTASI: Delete + regenerate dengan dojang separation
+      bracket = await BracketService.shuffleBracket(
+        kompetisiId, 
+        kelasId,
+        undefined,
+        dojangSeparation // ⭐ PASS DOJANG SEPARATION
+      );
+    }
 
     return sendSuccess(res, bracket, 'Bagan turnamen berhasil diacak ulang');
   } catch (error: any) {
