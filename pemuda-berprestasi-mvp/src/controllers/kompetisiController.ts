@@ -407,10 +407,9 @@ static async generateBrackets(req: Request, res: Response) {
     }
 
     // ⭐ Generate bracket (BYE auto-calculated in service)
-    const bracket = await BracketService.generateBracket(
+    const bracket = await BracketService.createBracket(
       kompetisiId, 
       kelasId,
-      undefined, // byeParticipantIds is managed by the service now
       dojangSeparation
     );
 

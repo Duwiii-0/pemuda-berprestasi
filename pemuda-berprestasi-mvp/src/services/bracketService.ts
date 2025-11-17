@@ -367,7 +367,11 @@ static async generateBracket(
 
       console.log(`\n🔀 Shuffling PRESTASI bracket...`);
 
+  
+
       console.log(`   Kompetisi: ${kompetisiId}, Kelas: ${kelasKejuaraanId}`);
+
+  
 
       console.log(`   Dojang Separation:`, dojangSeparation);
 
@@ -472,7 +476,6 @@ static async generateBracket(
     }
 
   }
-
 static async shufflePemulaBracket(
   kompetisiId: number,
   kelasKejuaraanId: number,
@@ -480,9 +483,7 @@ static async shufflePemulaBracket(
 ): Promise<Bracket> {
   try {
     console.log(`\n🔀 Deleting and Regenerating PEMULA BRACKET...`);
-    const existingBagan = await prisma.tb_bagan.findFirst({
-      where: { id_kompetisi: kompetisiId, id_kelas_kejuaraan: kelasKejuaraanId }
-    });
+    const existingBagan = await prisma.tb_bagan.findFirst({ where: { id_kompetisi: kompetisiId, id_kelas_kejuaraan: kelasKejuaraanId }});
 
     if (existingBagan) {
       const hasScores = await prisma.tb_match.findFirst({ where: { id_bagan: existingBagan.id_bagan, OR: [{skor_a: {gt: 0}}, {skor_b: {gt: 0}}] }});
