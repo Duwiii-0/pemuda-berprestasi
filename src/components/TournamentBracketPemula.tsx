@@ -1403,21 +1403,19 @@ return (
     }
   }
 
-const OFFSET_CONNECTOR = 180;
+  const OFFSET_CONNECTOR = 180;
 
-// Hitung posisi konektor (buat line)
-const lastFightY = lastNormalFightIndex >= 0 
-  ? (lastNormalFightIndex % matchesPerColumn) * CARD_HEIGHT + OFFSET_CONNECTOR
-  : OFFSET_CONNECTOR;
+  // Hitung posisi konektor
+  const lastFightY = lastNormalFightIndex >= 0 
+    ? (lastNormalFightIndex % matchesPerColumn) * CARD_HEIGHT + OFFSET_CONNECTOR
+    : OFFSET_CONNECTOR;
 
-const byeMatchY = byeMatchIndex >= 0 
-  ? (byeMatchIndex % matchesPerColumn) * CARD_HEIGHT + OFFSET_CONNECTOR
-  : OFFSET_CONNECTOR + 50;
+  const byeMatchY = byeMatchIndex >= 0 
+    ? (byeMatchIndex % matchesPerColumn) * CARD_HEIGHT + OFFSET_CONNECTOR
+    : OFFSET_CONNECTOR + 50;
 
-const ADDITIONAL_CARD_OFFSET = -100
-
-// Hitung posisi tambahan match — tetap pakai base offset kecil
-const additionalMatchY = (lastFightY + byeMatchY) / 2;
+  const ADDITIONAL_CARD_OFFSET = -100;
+  const additionalMatchY = (lastFightY + byeMatchY) / 2;
   
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>
@@ -1429,13 +1427,9 @@ const additionalMatchY = (lastFightY + byeMatchY) / 2;
           {columns.map((columnMatches, colIndex) => (
             <div key={colIndex} className="space-y-4">
               {columnMatches.map((match) => {
-                // ⭐ CEK: Apakah match ini BYE atau LAST normal fight?
                 const isByeMatch = byeMatch && match.id_match === byeMatch.id_match;
                 const isLastFightMatch = lastNormalFightMatch && match.id_match === lastNormalFightMatch.id_match;
-                
-                // HANYA 2 match ini yang connect ke Additional
                 const shouldShowConnector = hasAdditionalMatch && (isByeMatch || isLastFightMatch);
-                
                 return (
                   <div 
                     key={match.id_match}
