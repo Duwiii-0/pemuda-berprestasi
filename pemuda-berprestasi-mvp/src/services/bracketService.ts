@@ -2209,12 +2209,20 @@ static async shuffleBracket(
 static async shufflePemulaBracket(
   kompetisiId: number,
   kelasKejuaraanId: number,
-  dojangSeparation?: { enabled: boolean; mode?: 'STRICT' | 'BALANCED' } // ⭐ mode is optional
+  dojangSeparation?: { enabled: boolean; mode?: 'STRICT' | 'BALANCED' }
 ): Promise<Bracket> {
   try {
     console.log(`\n🔀 === SHUFFLING PEMULA BRACKET ===`);
     console.log(`   Kompetisi: ${kompetisiId}, Kelas: ${kelasKejuaraanId}`);
-    console.log(`   Dojang Separation:`, dojangSeparation?.enabled ? 'ENABLED (STRICT)' : 'DISABLED');
+    console.log(`   Dojang Separation Input:`, dojangSeparation);
+
+    // ⭐ FIX: Normalize dojangSeparation parameter
+    // PEMULA always uses STRICT mode, so enforce it
+    const normalizedSeparation = dojangSeparation?.enabled
+      ? { enabled: true, mode: 'STRICT' as const }
+      : undefined;
+
+    console.log(`   Normalized Separation:`, normalizedSeparation);
 
     // ⭐ STEP 1: DELETE EXISTING BRACKET
     const existingBagan = await prisma.tb_bagan.findFirst({
@@ -2259,13 +2267,13 @@ static async shufflePemulaBracket(
       console.log(`   ✅ Bracket deleted`);
     }
 
-    // ✅ FIX: Pass dojangSeparation as-is (mode is optional in generateBracket)
+    // ✅ FIX: Pass normalized separation (with required mode)
     console.log(`   🎲 Generating new bracket...`);
     const newBracket = await this.generateBracket(
       kompetisiId,
       kelasKejuaraanId,
       undefined, // byeParticipantIds
-      dojangSeparation // ✅ This is fine - mode is optional
+      normalizedSeparation // ✅ Now has mode: 'STRICT' if enabled
     );
     
     console.log(`   ✅ New bracket generated with ${newBracket.matches.length} matches`);
