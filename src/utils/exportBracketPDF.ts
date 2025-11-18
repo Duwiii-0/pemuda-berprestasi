@@ -553,7 +553,7 @@ export const exportBracketFromData = async (
         if (totalPeserta <= 8) zoom = 0.35;
         else if (totalPeserta <= 16) zoom = 0.25;
         else if (totalPeserta <= 32) zoom = 0.15;
-        else zoom = 0.10;
+        else zoom = 0.11;
       }
 
       const HEADER_MARGIN_BOTTOM = 5;
