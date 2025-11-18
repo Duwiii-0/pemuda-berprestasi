@@ -2488,217 +2488,168 @@ static async assignAthleteToMatch(
       console.log(`   ✅ Assignment completed`);
     }
 
-    // ⭐ ========================================
-    // ⭐ CASCADING LOGIC (BIDIRECTIONAL)
-    // ⭐ ========================================
+// ⭐ ========================================
+// ⭐ ROBUST BIDIRECTIONAL CASCADE SYSTEM
+// ⭐ ========================================
     
-    console.log(`\n🔗 === CASCADING UPDATE CHECK ===`);
+console.log(`\n🔗 === ROBUST CASCADE SYSTEM ===`);
 
-    // Fetch updated target match
-    const updatedTargetMatch = await prisma.tb_match.findUnique({
-      where: { id_match: matchId },
-      include: {
-        peserta_a: true,
-        peserta_b: true
-      }
-    });
+// ⭐ PHASE 1: COLLECT ALL AFFECTED MATCHES
+const affectedMatches = new Map<number, {
+  matchId: number;
+  position: number;
+  round: number;
+  beforeParticipantA: number | null;
+  beforeParticipantB: number | null;
+  afterParticipantA: number | null;
+  afterParticipantB: number | null;
+}>();
 
-    // ⭐ ========================================
-    // ⭐ CASE 1: FORWARD CASCADE (R1 BYE → R2)
-    // ⭐ ========================================
+// Add TARGET match
+affectedMatches.set(matchId, {
+  matchId,
+  position: targetMatch.position ?? 0,
+  round: targetMatch.ronde,
+  beforeParticipantA: targetMatch.id_peserta_a,
+  beforeParticipantB: targetMatch.id_peserta_b,
+  afterParticipantA: slot === 'A' ? newParticipantId : targetMatch.id_peserta_a,
+  afterParticipantB: slot === 'B' ? newParticipantId : targetMatch.id_peserta_b
+});
+
+// Add EXISTING match (if swapped)
+if (swapped && existingMatch) {
+  const swappedOutId = slot === 'A' ? targetMatch.id_peserta_a : targetMatch.id_peserta_b;
+  const isInSlotA = existingMatch.id_peserta_a === newParticipantId;
+  
+  affectedMatches.set(existingMatch.id_match, {
+    matchId: existingMatch.id_match,
+    position: existingMatch.position ?? 0,
+    round: existingMatch.ronde,
+    beforeParticipantA: existingMatch.id_peserta_a,
+    beforeParticipantB: existingMatch.id_peserta_b,
+    afterParticipantA: isInSlotA ? swappedOutId : existingMatch.id_peserta_a,
+    afterParticipantB: !isInSlotA ? swappedOutId : existingMatch.id_peserta_b
+  });
+}
+
+console.log(`   📊 Affected matches: ${affectedMatches.size}`);
+for (const [id, info] of affectedMatches) {
+  console.log(`      Match ${id} (R${info.round} pos ${info.position}):`);
+  console.log(`         BEFORE: A=${info.beforeParticipantA}, B=${info.beforeParticipantB}`);
+  console.log(`         AFTER:  A=${info.afterParticipantA}, B=${info.afterParticipantB}`);
+}
+
+// ⭐ PHASE 2: SYNC FORWARD CASCADE (R1 → R2+)
+console.log(`\n   🔽 FORWARD CASCADE: R1 → R2+`);
+
+for (const [id, match] of affectedMatches) {
+  if (match.round !== 1) {
+    console.log(`      ℹ️ Skip Match ${id} (not R1)`);
+    continue;
+  }
+  
+  // Check if this is a BYE match AFTER the changes
+  const isAfterBye = 
+    (match.afterParticipantA && !match.afterParticipantB) ||
+    (!match.afterParticipantA && match.afterParticipantB);
+  
+  if (isAfterBye) {
+    const byeWinner = match.afterParticipantA || match.afterParticipantB;
+    console.log(`      🎯 R1 Match ${id} (pos ${match.position}) is BYE → Winner: ${byeWinner}`);
     
-    if (targetMatch.ronde === 1) {
-      console.log(`   🔽 FORWARD CASCADE: Checking R1 → R2...`);
-
-      const isR1ByeMatch = 
-        (updatedTargetMatch!.id_peserta_a && !updatedTargetMatch!.id_peserta_b) ||
-        (!updatedTargetMatch!.id_peserta_a && updatedTargetMatch!.id_peserta_b);
-
-      if (isR1ByeMatch) {
-        console.log(`   ⚠️ R1 BYE match detected - updating next round...`);
-
-        const byeWinnerId = updatedTargetMatch!.id_peserta_a || updatedTargetMatch!.id_peserta_b;
-
-        if (byeWinnerId) {
-          console.log(`   🎯 BYE winner ID: ${byeWinnerId}`);
-
-          if (isPemula) {
-            // ⭐ PEMULA: Update Additional Match (R2, Slot B)
-            console.log(`   🥋 PEMULA: Updating Additional Match (R2)...`);
-
-            const additionalMatch = await prisma.tb_match.findFirst({
-              where: {
-                id_bagan: targetMatch.id_bagan,
-                ronde: 2
-              }
-            });
-
-            if (additionalMatch) {
-              await prisma.tb_match.update({
-                where: { id_match: additionalMatch.id_match },
-                data: { id_peserta_b: byeWinnerId }
-              });
-              console.log(`   ✅ Updated R2 Match ${additionalMatch.id_match}, Slot B = ${byeWinnerId}`);
-            }
-
-          } else {
-            // ⭐ PRESTASI: Calculate next round position
-            console.log(`   🏆 PRESTASI: Calculating next round position...`);
-
-            const currentPosition = targetMatch.position ?? 0;
-            const nextMatchIndex = Math.floor(currentPosition / 2);
-            const isFirstSlot = currentPosition % 2 === 0;
-
-            console.log(`   📊 Current position: ${currentPosition}`);
-            console.log(`   📊 Next match index: ${nextMatchIndex}`);
-            console.log(`   📊 Target slot: ${isFirstSlot ? 'A' : 'B'}`);
-
-            const nextRoundMatches = await prisma.tb_match.findMany({
-              where: {
-                id_bagan: targetMatch.id_bagan,
-                ronde: targetMatch.ronde + 1
-              },
-              orderBy: { position: 'asc' }
-            });
-
-            if (nextRoundMatches.length > 0 && nextRoundMatches[nextMatchIndex]) {
-              const nextMatch = nextRoundMatches[nextMatchIndex];
-              const updateData = isFirstSlot
-                ? { id_peserta_a: byeWinnerId }
-                : { id_peserta_b: byeWinnerId };
-
-              await prisma.tb_match.update({
-                where: { id_match: nextMatch.id_match },
-                data: updateData
-              });
-
-              console.log(
-                `   ✅ Updated R${targetMatch.ronde + 1} Match ${nextMatch.id_match}, ` +
-                `Slot ${isFirstSlot ? 'A' : 'B'} = ${byeWinnerId}`
-              );
-            } else {
-              console.log(`   ℹ️ No next round match found`);
-            }
-          }
+    if (isPemula) {
+      // PEMULA: Update Additional Match (R2, Slot B)
+      const additionalMatch = await prisma.tb_match.findFirst({
+        where: {
+          id_bagan: targetMatch.id_bagan,
+          ronde: 2
         }
-      } else {
-        console.log(`   ℹ️ Not a R1 BYE match - no forward cascade needed`);
-      }
-    }
-
-    // ⭐ ========================================
-    // ⭐ CASE 2: REVERSE CASCADE (R2 → R1 BYE)
-    // ⭐ ========================================
-    
-    if (targetMatch.ronde > 1) {
-      console.log(`   🔼 REVERSE CASCADE: Checking R${targetMatch.ronde} → R1 BYE...`);
-
-      // ⭐ UPDATE R1 BYE untuk OLD participant (yang di-remove dari target match)
-      if (oldParticipantId) {
-        await this.updateR1ByeForParticipant(
-          targetMatch.id_bagan,
-          oldParticipantId,
-          null,
-          'OLD participant (removed from target match)'
-        );
-      }
-
-      // ⭐ UPDATE R1 BYE untuk NEW participant (yang di-add ke target match)
-      if (newParticipantId) {
-        await this.updateR1ByeForParticipant(
-          targetMatch.id_bagan,
-          newParticipantId,
-          newParticipantId,
-          'NEW participant (added to target match)'
-        );
-      }
-    }
-
-    // ⭐ ========================================
-    // ⭐ CASE 3: SWAP CASCADE DALAM R1 (BYE ↔ BYE)
-    // ⭐ ========================================
-    
-    if (targetMatch.ronde === 1 && swapped && existingMatch) {
-      console.log(`   🔄 SWAP CASCADE: Checking R1 swap impact...`);
-      
-      // Cek apakah ini swap antara 2 BYE matches
-      const targetIsBye = !updatedTargetMatch!.id_peserta_b || !updatedTargetMatch!.id_peserta_a;
-      
-      const updatedExistingMatch = await prisma.tb_match.findUnique({
-        where: { id_match: existingMatch.id_match }
       });
       
-      const existingIsBye = !updatedExistingMatch!.id_peserta_a || !updatedExistingMatch!.id_peserta_b;
-      
-      if (targetIsBye && existingIsBye) {
-        console.log(`   🎯 Both are BYE matches - updating BOTH QF slots!`);
-        
-        // ⭐ UPDATE QF for TARGET match (now has newParticipantId)
-        const targetByeWinner = updatedTargetMatch!.id_peserta_a || updatedTargetMatch!.id_peserta_b;
-        if (targetByeWinner) {
-          const targetPosition = targetMatch.position ?? 0;
-          const targetNextMatchIndex = Math.floor(targetPosition / 2);
-          const targetIsFirstSlot = targetPosition % 2 === 0;
-          
-          const nextRoundMatches = await prisma.tb_match.findMany({
-            where: {
-              id_bagan: targetMatch.id_bagan,
-              ronde: 2
-            },
-            orderBy: { position: 'asc' }
-          });
-          
-          if (nextRoundMatches[targetNextMatchIndex]) {
-            await prisma.tb_match.update({
-              where: { id_match: nextRoundMatches[targetNextMatchIndex].id_match },
-              data: targetIsFirstSlot 
-                ? { id_peserta_a: targetByeWinner }
-                : { id_peserta_b: targetByeWinner }
-            });
-            
-            console.log(
-              `      ✅ Updated TARGET's QF: Match ${nextRoundMatches[targetNextMatchIndex].id_match}, ` +
-              `Slot ${targetIsFirstSlot ? 'A' : 'B'} = ${targetByeWinner}`
-            );
-          }
-        }
-        
-        // ⭐ UPDATE QF for EXISTING match (now has oldParticipantId)
-        const existingByeWinner = updatedExistingMatch!.id_peserta_a || updatedExistingMatch!.id_peserta_b;
-        if (existingByeWinner) {
-          const existingPosition = existingMatch.position ?? 0;
-          const existingNextMatchIndex = Math.floor(existingPosition / 2);
-          const existingIsFirstSlot = existingPosition % 2 === 0;
-          
-          const nextRoundMatches = await prisma.tb_match.findMany({
-            where: {
-              id_bagan: targetMatch.id_bagan,
-              ronde: 2
-            },
-            orderBy: { position: 'asc' }
-          });
-          
-          if (nextRoundMatches[existingNextMatchIndex]) {
-            await prisma.tb_match.update({
-              where: { id_match: nextRoundMatches[existingNextMatchIndex].id_match },
-              data: existingIsFirstSlot
-                ? { id_peserta_a: existingByeWinner }
-                : { id_peserta_b: existingByeWinner }
-            });
-            
-            console.log(
-              `      ✅ Updated EXISTING's QF: Match ${nextRoundMatches[existingNextMatchIndex].id_match}, ` +
-              `Slot ${existingIsFirstSlot ? 'A' : 'B'} = ${existingByeWinner}`
-            );
-          }
-        }
-        
-      } else {
-        console.log(`   ℹ️ Not both BYE matches - forward cascade already handled`);
+      if (additionalMatch) {
+        await prisma.tb_match.update({
+          where: { id_match: additionalMatch.id_match },
+          data: { id_peserta_b: byeWinner }
+        });
+        console.log(`         ✅ PEMULA Additional Match updated (Slot B = ${byeWinner})`);
       }
+    } else {
+      // PRESTASI: Sync to QF
+      await this.syncByeWinnerToNextRound(
+        targetMatch.id_bagan,
+        match.position,
+        byeWinner,
+        2
+      );
     }
+  } else {
+    console.log(`      ℹ️ R1 Match ${id} (pos ${match.position}) is NOT BYE - skip`);
+  }
+}
 
-    console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+// ⭐ PHASE 3: SYNC REVERSE CASCADE (R2+ → R1)
+console.log(`\n   🔼 REVERSE CASCADE: R2+ → R1`);
+
+for (const [id, match] of affectedMatches) {
+  if (match.round === 1) {
+    console.log(`      ℹ️ Skip Match ${id} (already R1)`);
+    continue;
+  }
+  
+  console.log(`      🔍 Processing R${match.round} Match ${id}...`);
+  
+  // Track changes in Slot A
+  if (match.beforeParticipantA !== match.afterParticipantA) {
+    console.log(`         📍 Slot A changed: ${match.beforeParticipantA} → ${match.afterParticipantA}`);
+    
+    // OLD participant removed - clear its R1 BYE advancement
+    if (match.beforeParticipantA) {
+      await this.updateR1ByeForParticipant(
+        targetMatch.id_bagan,
+        match.beforeParticipantA,
+        null,
+        `R${match.round} Slot A (removed)`
+      );
+    }
+    
+    // NEW participant added - set its R1 BYE advancement
+    if (match.afterParticipantA) {
+      await this.updateR1ByeForParticipant(
+        targetMatch.id_bagan,
+        match.afterParticipantA,
+        match.afterParticipantA,
+        `R${match.round} Slot A (added)`
+      );
+    }
+  }
+  
+  // Track changes in Slot B
+  if (match.beforeParticipantB !== match.afterParticipantB) {
+    console.log(`         📍 Slot B changed: ${match.beforeParticipantB} → ${match.afterParticipantB}`);
+    
+    // OLD participant removed
+    if (match.beforeParticipantB) {
+      await this.updateR1ByeForParticipant(
+        targetMatch.id_bagan,
+        match.beforeParticipantB,
+        null,
+        `R${match.round} Slot B (removed)`
+      );
+    }
+    
+    // NEW participant added
+    if (match.afterParticipantB) {
+      await this.updateR1ByeForParticipant(
+        targetMatch.id_bagan,
+        match.afterParticipantB,
+        match.afterParticipantB,
+        `R${match.round} Slot B (added)`
+      );
+    }
+  }
+}
+
+console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
 
     // ⭐ STEP 7: Fetch updated matches for response
     const updatedMatches = await prisma.tb_match.findMany({
@@ -2834,6 +2785,52 @@ static async updateR1ByeForParticipant(
     );
   } else {
     console.log(`      ℹ️ No R1 BYE match found (participant came from normal fight)`);
+  }
+}
+
+/**
+ * 🆕 Helper: Get child match (next round) for a given R1 match
+ */
+static getChildMatch(
+  currentPosition: number
+): { childPosition: number; childSlot: 'A' | 'B' } {
+  const childPosition = Math.floor(currentPosition / 2);
+  const childSlot = currentPosition % 2 === 0 ? 'A' : 'B';
+  return { childPosition, childSlot };
+}
+
+/**
+ * 🆕 Helper: Sync BYE winner to next round
+ */
+static async syncByeWinnerToNextRound(
+  baganId: number,
+  r1Position: number,
+  byeWinnerId: number | null,
+  nextRound: number
+): Promise<void> {
+  const { childPosition, childSlot } = this.getChildMatch(r1Position);
+  
+  console.log(`      🔄 Syncing R1 pos ${r1Position} → R${nextRound} pos ${childPosition} slot ${childSlot}`);
+  
+  const nextRoundMatches = await prisma.tb_match.findMany({
+    where: {
+      id_bagan: baganId,
+      ronde: nextRound
+    },
+    orderBy: { position: 'asc' }
+  });
+  
+  if (nextRoundMatches[childPosition]) {
+    const updateData = childSlot === 'A'
+      ? { id_peserta_a: byeWinnerId }
+      : { id_peserta_b: byeWinnerId };
+    
+    await prisma.tb_match.update({
+      where: { id_match: nextRoundMatches[childPosition].id_match },
+      data: updateData
+    });
+    
+    console.log(`         ✅ R${nextRound} Match ${nextRoundMatches[childPosition].id_match} slot ${childSlot} = ${byeWinnerId}`);
   }
 }
 
