@@ -61,6 +61,7 @@ const [filterKelasUsia, setFilterKelasUsia] = useState<
 >("ALL");
 const [filterKelasBerat, setFilterKelasBerat] = useState<string>("ALL");
   const [filterStatus, setFilterStatus] = useState<"ALL" | "not_created" | "created" | "in_progress" | "completed">("ALL");
+  const [sortOrderBerat, setSortOrderBerat] = useState<"none" | "asc" | "desc">("none");
 
   // ← TAMBAHKAN DI SINI
   const kompetisiId =
@@ -263,6 +264,31 @@ if (filterKelasUsia !== "ALL") {
     );
   }
 
+  // NEW SORTING LOGIC: Sort by weight, Poomsae at bottom
+  if (sortOrderBerat !== 'none') {
+    filtered.sort((a, b) => {
+      // 1. Poomsae always goes to the bottom
+      const isAPoomsae = a.cabang === 'POOMSAE';
+      const isBPoomsae = b.cabang === 'POOMSAE';
+
+      if (isAPoomsae && !isBPoomsae) return 1;
+      if (!isAPoomsae && isBPoomsae) return -1;
+      if (isAPoomsae && isBPoomsae) { // If both are Poomsae, maintain original order
+        return 0;
+      }
+
+      // 2. If both are Kyorugi (or if Poomsae are already handled), sort by weight
+      const weightA = parseWeight(a.kelas_berat?.nama_kelas);
+      const weightB = parseWeight(b.kelas_berat?.nama_kelas);
+
+      if (sortOrderBerat === 'asc') {
+        return weightA - weightB;
+      } else {
+        return weightB - weightA;
+      }
+    });
+  }
+
   setFilteredKelas(filtered);
 }, [
   kelasKejuaraan,
@@ -273,6 +299,7 @@ if (filterKelasUsia !== "ALL") {
   filterKelasUsia, // TAMBAHKAN ini
   filterKelasBerat, // TAMBAHKAN ini
   filterStatus,
+  sortOrderBerat, // TAMBAHKAN ini
 ]);
 
   useEffect(() => {
@@ -289,6 +316,38 @@ if (filterKelasUsia !== "ALL") {
   }, [kelasId, kelasKejuaraan, showBracket]);
 
   const navigate = useNavigate();
+
+  const parseWeight = (weightString?: string): number => {
+    if (!weightString) return Infinity;
+
+    const s = weightString.toLowerCase().trim();
+
+    // Handle "Under X" / "U-X"
+    const underMatch = s.match(/^(?:under|u\s*[-\s]?)\s*(\d+)/);
+    if (underMatch) {
+      return parseInt(underMatch[1], 10);
+    }
+
+    // Handle "Over X" / "O-X"
+    const overMatch = s.match(/^(?:over|o\s*[-\s]?)\s*(\d+)/);
+    if (overMatch) {
+      return parseInt(overMatch[1], 10) + 0.1; // Add a fraction to sort it after the number itself
+    }
+
+    // Handle "X-Y" range
+    const rangeMatch = s.match(/^(\d+)\s*-\s*(\d+)/);
+    if (rangeMatch) {
+      return parseInt(rangeMatch[1], 10); // Use lower bound for sorting
+    }
+
+    // Handle single number "X kg"
+    const singleMatch = s.match(/^(\d+)/);
+    if (singleMatch) {
+      return parseInt(singleMatch[1], 10);
+    }
+
+    return Infinity; // Default for non-parsable or Poomsae classes
+  };
 
   const getStatusBadge = (status: KelasKejuaraan["bracket_status"]) => {
     const statusConfig = {
@@ -680,7 +739,7 @@ if (filterKelasUsia !== "ALL") {
             </div>
 
             {/* Filters - Urutan diubah, Status di paling kanan */}
-<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
   {/* Filter Cabang */}
   <div>
     <label
@@ -870,6 +929,43 @@ if (filterKelasUsia !== "ALL") {
   </div>
 </div>
 
+{/* Filter Urutan Berat */}
+<div>
+  <label
+    className="block text-xs mb-2 font-bold"
+    style={{ color: "#050505", opacity: 0.7 }}
+  >
+    Urutan Berat
+  </label>
+  <div className="relative">
+    <select
+      value={sortOrderBerat}
+      onChange={(e) => setSortOrderBerat(e.target.value as "none" | "asc" | "desc")}
+      className="w-full px-4 py-3 rounded-xl border-2 shadow-sm text-sm font-medium focus:outline-none focus:ring-2 transition-all appearance-none cursor-pointer"
+      style={{
+        borderColor: "rgba(153, 13, 53, 0.2)",
+        backgroundColor: "white",
+        color: "#050505",
+      }}
+    >
+      <option value="none">Normal</option>
+      <option value="asc">Terendah ke Tertinggi</option>
+      <option value="desc">Tertinggi ke Terendah</option>
+    </select>
+    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+      <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+        <path
+          d="M5 7.5L10 12.5L15 7.5"
+          stroke="#990D35"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    </div>
+  </div>
+</div>
+
   {/* Filter Status - DIPINDAH KE PALING KANAN */}
   <div>
     <label
@@ -933,6 +1029,7 @@ if (filterKelasUsia !== "ALL") {
       setFilterKelasUsia("ALL");
       setFilterKelasBerat("ALL");
       setFilterStatus("ALL");
+      setSortOrderBerat("none"); // Reset sort order
     }}
     className="px-6 py-3 rounded-xl border-2 font-bold text-sm shadow-sm hover:shadow-md transition-all transform hover:scale-[1.02]"
     style={{
