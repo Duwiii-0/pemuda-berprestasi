@@ -334,7 +334,32 @@ const convertElementToImage = async (
 };
 
 // =================================================================================================
-// ✅ MAIN: SINGLE BRACKET EXPORT WITH A3 SUPPORT FOR PRESTASI > 32
+// ✅ HELPER: Deteksi Prestasi dengan Logging
+// =================================================================================================
+
+const isPrestasiBracket = (kelasData: any): boolean => {
+  const kelompokNama = kelasData?.kelompok?.nama_kelompok?.toLowerCase() || '';
+  const hasPoomsae = !!kelasData?.poomsae;
+  
+  // Cek berbagai kondisi Prestasi
+  const isPrestasi = kelompokNama.includes('prestasi') || 
+                     kelompokNama.includes('poomsae') || 
+                     hasPoomsae ||
+                     kelompokNama.includes('kyorugi') ||
+                     kelompokNama.includes('sparring');
+  
+  console.log('🔍 Bracket Type Detection:', {
+    kelompokNama: kelasData?.kelompok?.nama_kelompok,
+    hasPoomsae,
+    isPrestasi,
+    detectedAs: isPrestasi ? 'PRESTASI' : 'PEMULA'
+  });
+  
+  return isPrestasi;
+};
+
+// =================================================================================================
+// ✅ MAIN: SINGLE BRACKET EXPORT WITH IMPROVED DETECTION
 // =================================================================================================
 
 export const exportBracketFromData = async (
@@ -358,17 +383,15 @@ export const exportBracketFromData = async (
   
   console.log(`👥 Participants: ${participantCount}, Scale: ${scaleFactor}`);
   
-  // ✅ Deteksi Pemula
-  const isPemula = !kelasData?.kelompok?.nama_kelompok?.toLowerCase().includes('prestasi') &&
-                   !kelasData?.kelompok?.nama_kelompok?.toLowerCase().includes('poomsae') &&
-                   !kelasData?.poomsae;
+  // ✅ PERBAIKAN: Gunakan helper function
+  const isPemula = !isPrestasiBracket(kelasData);
   
   // ✅ Determine paper size: A3 for Prestasi > 32 participants
   const useA3 = !isPemula && participantCount > 32;
   const PAGE_WIDTH = useA3 ? PAGE_WIDTH_A3 : PAGE_WIDTH_A4;
   const PAGE_HEIGHT = useA3 ? PAGE_HEIGHT_A3 : PAGE_HEIGHT_A4;
   
-  console.log(`📄 Paper size: ${useA3 ? 'A3' : 'A4'} (Prestasi: ${!isPemula}, Participants: ${participantCount})`);
+  console.log(`📄 Paper size: ${useA3 ? 'A3' : 'A4'} (isPemula: ${isPemula}, Participants: ${participantCount})`);
   
   // ✅ Config dengan prioritas metadata
   const config: ExportConfig = {
