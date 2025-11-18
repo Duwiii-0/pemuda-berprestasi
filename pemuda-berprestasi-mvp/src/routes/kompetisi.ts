@@ -84,7 +84,6 @@ router.put(
 // TOURNAMENT/BRACKET MANAGEMENT ROUTES
 // ============================================================
 
-// ✅ NEW: Get list of all brackets (HARUS SEBELUM /:id/brackets/:kelasKejuaraanId)
 router.get(
   "/:id/brackets/list",
   KompetisiController.getBracketsListPublic
@@ -106,6 +105,13 @@ router.get(
   KompetisiController.exportBracketToPdf
 );
 
+// 🆕 NEW: Assign athlete to match
+router.put(
+  "/:id/brackets/:kelasKejuaraanId/matches/:matchId/assign",
+  KompetisiController.assignAthleteToMatch
+);
+
+// Existing: Update match (scores/schedule)
 router.put(
   "/:id/brackets/match/:matchId",
   validateRequest(kompetisiValidation.updateMatch),
@@ -132,13 +138,11 @@ router.delete(
   KompetisiController.deleteBracket
 );
 
-// ✅ Get specific bracket by class (HARUS SETELAH /list)
 router.get(
   "/:id/brackets/:kelasKejuaraanId",
   KompetisiController.getBracketByClass
 );
 
-// ✅ Get all brackets (general)
 router.get(
   "/:id/brackets", 
   KompetisiController.getBrackets

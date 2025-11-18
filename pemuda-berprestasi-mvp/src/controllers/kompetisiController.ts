@@ -941,6 +941,100 @@ static async shuffleBrackets(req: Request, res: Response) {
   }
 }
 
+// ==========================================
+// ADD TO kompetisiController.ts
+// Place after updateMatch method
+// ==========================================
+
+/**
+ * 🆕 Assign athlete to match manually (with smart swap)
+ */
+static async assignAthleteToMatch(req: Request, res: Response) {
+  try {
+    const { id, kelasKejuaraanId, matchId } = req.params;
+    const { slot, participantId } = req.body;
+
+    console.log(`\n🔧 === ASSIGN ATHLETE REQUEST ===`);
+    console.log(`   Kompetisi ID: ${id}`);
+    console.log(`   Kelas ID: ${kelasKejuaraanId}`);
+    console.log(`   Match ID: ${matchId}`);
+    console.log(`   Slot: ${slot}`);
+    console.log(`   Participant ID: ${participantId}`);
+
+    // ⭐ VALIDATION
+    const kompetisiId = parseInt(id);
+    const kelasId = parseInt(kelasKejuaraanId);
+    const matchIdInt = parseInt(matchId);
+    const participantIdInt = parseInt(participantId);
+
+    if (isNaN(kompetisiId) || isNaN(kelasId) || isNaN(matchIdInt) || isNaN(participantIdInt)) {
+      return sendError(res, 'Parameter tidak valid', 400);
+    }
+
+    // Validate slot
+    if (slot !== 'A' && slot !== 'B') {
+      return sendError(res, 'Slot harus "A" atau "B"', 400);
+    }
+
+    // ⭐ AUTHORIZATION
+    const user = req.user;
+    if (!user) {
+      return sendError(res, 'User tidak ditemukan', 401);
+    }
+
+    // Verify competition exists and user has access
+    const kompetisi = await prisma.tb_kompetisi.findUnique({
+      where: { id_kompetisi: kompetisiId },
+      include: {
+        admin: true,
+        kelas_kejuaraan: {
+          where: { id_kelas_kejuaraan: kelasId }
+        }
+      }
+    });
+
+    if (!kompetisi) {
+      return sendError(res, 'Kompetisi tidak ditemukan', 404);
+    }
+
+    if (kompetisi.kelas_kejuaraan.length === 0) {
+      return sendError(res, 'Kelas kejuaraan tidak ditemukan dalam kompetisi ini', 404);
+    }
+
+    // Authorization check
+    if (user.role === 'ADMIN_KOMPETISI') {
+      const isAdminOfThisKompetisi = kompetisi.admin.some(
+        admin => admin.id_akun === user.id_akun
+      );
+      if (!isAdminOfThisKompetisi) {
+        return sendError(res, 'Anda tidak memiliki akses untuk mengubah match di kompetisi ini', 403);
+      }
+    } else if (user.role !== 'ADMIN') {
+      return sendError(res, 'Tidak memiliki akses untuk mengubah match', 403);
+    }
+
+    // ⭐ CALL SERVICE
+    const result = await BracketService.assignAthleteToMatch(
+      matchIdInt,
+      slot,
+      participantIdInt,
+      kelasId
+    );
+
+    console.log(`   ✅ Assignment successful`);
+    console.log(`   Swapped: ${result.swapped ? 'YES' : 'NO'}`);
+    if (result.swappedMatch) {
+      console.log(`   Swapped Match: ${result.swappedMatch.id} (Round ${result.swappedMatch.round}, Pos ${result.swappedMatch.position})`);
+    }
+
+    return sendSuccess(res, result, result.message);
+
+  } catch (error: any) {
+    console.error('❌ Controller - Error assigning athlete:', error);
+    return sendError(res, error.message || 'Gagal assign peserta ke match', 400);
+  }
+}
+
 /**
  * Regenerate bracket for specific class
  */

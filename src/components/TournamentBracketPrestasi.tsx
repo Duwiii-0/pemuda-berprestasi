@@ -118,6 +118,15 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
   const { token } = useAuth();
   const [matches, setMatches] = useState<Match[]>([]);
   const [editingMatch, setEditingMatch] = useState<Match | null>(null);
+  const [editAthleteModal, setEditAthleteModal] = useState<{
+    show: boolean;
+    match: Match | null;
+    slot: 'A' | 'B' | null;
+  }>({
+    show: false,
+    match: null,
+    slot: null
+  });
   const [loading, setLoading] = useState(false);
   const [bracketGenerated, setBracketGenerated] = useState(false);
   const [clearing, setClearing] = useState(false);
@@ -1071,53 +1080,59 @@ const getRoundName = (round: number, totalRounds: number): string => {
     return leaderboard;
   };
 
-/**
- * 🆕 Render single match card
- */
-const renderMatchCard = (match: Match, key: string | number) => {
+const renderMatchCard = (match: Match, key: string | number, matchIndex: number) => {
   const hasScores = match.skor_a > 0 || match.skor_b > 0;
   const winner = hasScores 
     ? (match.skor_a > match.skor_b ? match.peserta_a : match.peserta_b)
     : null;
   
-return (
-  <div
-    className="match-card bg-white rounded-xl shadow-lg border-2 overflow-hidden hover:shadow-xl transition-all"
-    style={{ 
-      borderColor: winner ? '#22c55e' : '#990D35',
-      width: `${CARD_WIDTH}px`,
-      minHeight: `${CARD_HEIGHT}px`,
-      position: 'relative',    // ✅ TAMBAH
-      zIndex: 10,              // ✅ TAMBAH - Above connectors
-      background: 'white'      // ✅ TAMBAH - Solid background
-    }}
-  >
-    {/* Header */}
-<div 
-  className="px-3 py-2 border-b flex items-center justify-between"
-  style={{ 
-    backgroundColor: 'rgba(153, 13, 53, 0.05)',
-    borderColor: '#990D35'
-  }}
->
-  <div className="flex items-center gap-2">
-    {/* ⭐ UPDATED: Show BYE label ONLY for Round 1 with one participant */}
-    {match.nomor_partai ? (
-      <span 
-        className="text-xs px-2 py-1 rounded-full font-bold"
-        style={{ backgroundColor: '#990D35', color: 'white' }}
+  return (
+    <div
+      className="match-card bg-white rounded-xl shadow-lg border-2 overflow-hidden hover:shadow-xl transition-all"
+      style={{ 
+        borderColor: winner ? '#22c55e' : '#990D35',
+        width: `${CARD_WIDTH}px`,
+        minHeight: `${CARD_HEIGHT}px`,
+        position: 'relative',
+        zIndex: 10,
+        background: 'white'
+      }}
+    >
+      {/* ⭐ NEW: Match Number Badge */}
+      <div className="absolute -top-2 -left-2 z-20">
+        <div 
+          className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shadow-lg"
+          style={{ backgroundColor: '#990D35', color: 'white' }}
+        >
+          #{matchIndex + 1}
+        </div>
+      </div>
+
+      {/* Header */}
+      <div 
+        className="px-3 py-2 border-b flex items-center justify-between"
+        style={{ 
+          backgroundColor: 'rgba(153, 13, 53, 0.05)',
+          borderColor: '#990D35'
+        }}
       >
-        No. Partai: {match.nomor_partai}
-      </span>
-    ) : match.ronde === 1 && ((match.peserta_a && !match.peserta_b) || (!match.peserta_a && match.peserta_b)) ? (
-      <span 
-        className="text-xs px-2 py-1 rounded-full font-medium"
-        style={{ backgroundColor: 'rgba(245, 183, 0, 0.15)', color: '#F5B700' }}
-      >
-        BYE - No Number
-      </span>
-    ) : null}
-  </div>
+        <div className="flex items-center gap-2">
+          {match.nomor_partai ? (
+            <span 
+              className="text-xs px-2 py-1 rounded-full font-bold"
+              style={{ backgroundColor: '#990D35', color: 'white' }}
+            >
+              No. Partai: {match.nomor_partai}
+            </span>
+          ) : match.ronde === 1 && ((match.peserta_a && !match.peserta_b) || (!match.peserta_a && match.peserta_b)) ? (
+            <span 
+              className="text-xs px-2 py-1 rounded-full font-medium"
+              style={{ backgroundColor: 'rgba(245, 183, 0, 0.15)', color: '#F5B700' }}
+            >
+              BYE - No Number
+            </span>
+          ) : null}
+        </div>
         
         <div className="flex items-center gap-2">
           {match.tanggal_pertandingan && (
@@ -1128,14 +1143,32 @@ return (
               })}
             </span>
           )}
-<button
-  onClick={() => setEditingMatch(match)}
-  className="p-1 rounded hover:bg-black/5 transition-all"
-  disabled={viewOnly} // ⭐ TAMBAHKAN
-  style={{ opacity: viewOnly ? 0.3 : 1, cursor: viewOnly ? 'not-allowed' : 'pointer' }} // ⭐ TAMBAHKAN
->
-  <Edit3 size={14} style={{ color: '#DC143C' }} />
-</button>
+          
+          {/* ⭐ UPDATED: Edit Button dengan conditional disable */}
+          <button
+            onClick={() => {
+              // ⭐ Check if match has scores (already started)
+              if (hasScores) {
+                showNotification(
+                  'warning',
+                  'Match Sudah Dimulai',
+                  'Tidak dapat mengubah peserta karena match sudah memiliki skor.',
+                  () => setShowModal(false)
+                );
+                return;
+              }
+              setEditAthleteModal({ show: true, match: match, slot: null });
+            }}
+            className="p-1 rounded hover:bg-black/5 transition-all"
+            disabled={viewOnly || hasScores}
+            style={{ 
+              opacity: viewOnly || hasScores ? 0.3 : 1, 
+              cursor: viewOnly || hasScores ? 'not-allowed' : 'pointer' 
+            }}
+            title={hasScores ? 'Match sudah dimulai - tidak dapat diubah' : 'Edit athletes'}
+          >
+            <Edit3 size={14} style={{ color: '#DC143C' }} />
+          </button>
         </div>
       </div>
 
@@ -1417,7 +1450,7 @@ const renderCenterFinal = () => {
           }}
         >
           {finalMatch ? (
-            renderMatchCard(finalMatch, `final-${finalMatch.id_match}`)
+            renderMatchCard(finalMatch, `final-${finalMatch.id_match}`, matches.findIndex(m => m.id_match === finalMatch.id_match))
           ) : (
             <div 
               className="w-full p-6 rounded-xl border-2 text-center"
@@ -1806,7 +1839,7 @@ const renderBracketSide = (
                       zIndex: 10,
                     }}
                   >
-                    {renderMatchCard(match, match.id_match)}
+                    {renderMatchCard(match, match.id_match, matches.findIndex(m => m.id_match === match.id_match))}
                   </div>
                 );
               })}
@@ -1963,6 +1996,66 @@ const splitMatchesBySide = (matches: Match[], totalRounds: number) => {
 /**
  * Get left matches only (untuk render bracket side)
  */
+const handleAssignAthlete = async (
+  matchId: number,
+  slot: 'A' | 'B',
+  participantId: number
+) => {
+  if (!kelasData) return;
+  
+  try {
+    const kompetisiId = kelasData.kompetisi.id_kompetisi;
+    const kelasKejuaraanId = kelasData.id_kelas_kejuaraan;
+    
+    console.log('🔄 Assigning athlete:', { matchId, slot, participantId });
+    
+    const response = await fetch(
+      `${apiBaseUrl}/kompetisi/${kompetisiId}/brackets/${kelasKejuaraanId}/matches/${matchId}/assign`,
+      {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { 'Authorization': `Bearer ${token}` })
+        },
+        body: JSON.stringify({
+          slot,
+          participantId
+        })
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to assign athlete');
+    }
+
+    const result = await response.json();
+    
+    // Close modal
+    setEditAthleteModal({ show: false, match: null, slot: null });
+    
+    // Refresh bracket data
+    await fetchBracketData(kompetisiId, kelasKejuaraanId);
+    
+    // Show notification
+    showNotification(
+      'success',
+      result.data.swapped ? 'Athlete Swapped!' : 'Athlete Assigned!',
+      result.data.message || 'Athlete successfully assigned to match.',
+      () => setShowModal(false)
+    );
+    
+  } catch (error: any) {
+    console.error('❌ Error assigning athlete:', error);
+    showNotification(
+      'error',
+      'Failed to Assign',
+      error.message || 'Failed to assign athlete to match.',
+      () => setShowModal(false)
+    );
+  }
+};
+
 const getLeftMatches = () => {
   const totalRounds = getTotalRounds();
   const split = splitMatchesBySide(matches, totalRounds);
@@ -2566,6 +2659,161 @@ const calculateCardPosition = (
           </div>
         </div>
       )}
+
+{/* ============================================
+    🆕 EDIT ATHLETE MODAL
+    ============================================ */}
+{/* ============================================
+    🆕 EDIT ATHLETE MODAL
+    ============================================ */}
+{editAthleteModal.show && editAthleteModal.match && (
+  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
+      {/* Header */}
+      <div className="p-6 border-b" style={{ borderColor: '#990D35' }}>
+        <h3 className="text-xl font-bold" style={{ color: '#050505' }}>
+          Edit Match #{matches.findIndex(m => m.id_match === editAthleteModal.match?.id_match) + 1} Athletes
+        </h3>
+        <p className="text-sm mt-1" style={{ color: '#050505', opacity: 0.6 }}>
+          Round {editAthleteModal.match?.ronde ?? 'N/A'}
+        </p>
+      </div>
+      
+      <div className="p-6 space-y-4">
+        {/* Current Participants Display */}
+        <div className="bg-gray-50 p-4 rounded-lg">
+          <p className="text-xs font-bold mb-2" style={{ color: '#050505', opacity: 0.6 }}>
+            Current Match:
+          </p>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <span className="text-xs px-2 py-1 rounded" style={{ backgroundColor: '#3B82F6', color: 'white' }}>
+                A
+              </span>
+              <p className="text-sm font-medium" style={{ color: '#050505' }}>
+                {editAthleteModal.match.peserta_a 
+                  ? getParticipantName(editAthleteModal.match.peserta_a)
+                  : 'TBD'}
+              </p>
+            </div>
+            
+            {/* ⭐ Show BYE label or Participant B */}
+            {!editAthleteModal.match.peserta_b && editAthleteModal.match.ronde === 1 ? (
+              <div className="flex items-center gap-2">
+                <span className="text-xs px-2 py-1 rounded" style={{ backgroundColor: '#F5B700', color: 'white' }}>
+                  BYE
+                </span>
+                <p className="text-sm font-medium" style={{ color: '#050505', opacity: 0.5 }}>
+                  (Cannot edit BYE slot)
+                </p>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <span className="text-xs px-2 py-1 rounded" style={{ backgroundColor: '#EF4444', color: 'white' }}>
+                  B
+                </span>
+                <p className="text-sm font-medium" style={{ color: '#050505' }}>
+                  {editAthleteModal.match.peserta_b 
+                    ? getParticipantName(editAthleteModal.match.peserta_b)
+                    : 'TBD'}
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Slot Selection */}
+        <div>
+          <label className="block text-sm font-bold mb-2" style={{ color: '#050505' }}>
+            Select Slot to Edit:
+          </label>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setEditAthleteModal(prev => ({ ...prev, slot: 'A' }))}
+              className={`flex-1 py-2 px-4 rounded-lg border-2 font-medium transition-all ${
+                editAthleteModal.slot === 'A' ? 'ring-2 ring-offset-1' : ''
+              }`}
+              style={{ 
+                borderColor: '#3B82F6',
+                backgroundColor: editAthleteModal.slot === 'A' ? '#3B82F6' : 'white',
+                color: editAthleteModal.slot === 'A' ? 'white' : '#3B82F6'
+              }}
+            >
+              Participant A
+            </button>
+            
+            <button
+              onClick={() => setEditAthleteModal(prev => ({ ...prev, slot: 'B' }))}
+              disabled={!editAthleteModal.match.peserta_b && editAthleteModal.match.ronde === 1}
+              className={`flex-1 py-2 px-4 rounded-lg border-2 font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
+                editAthleteModal.slot === 'B' ? 'ring-2 ring-offset-1' : ''
+              }`}
+              style={{ 
+                borderColor: '#EF4444',
+                backgroundColor: editAthleteModal.slot === 'B' ? '#EF4444' : 'white',
+                color: editAthleteModal.slot === 'B' ? 'white' : '#EF4444'
+              }}
+            >
+              Participant B
+            </button>
+          </div>
+        </div>
+
+        {/* Athlete Selection */}
+        {editAthleteModal.slot && (
+          <div>
+            <label className="block text-sm font-bold mb-2" style={{ color: '#050505' }}>
+              Select New Athlete:
+            </label>
+            <select
+              className="w-full px-3 py-2 rounded-lg border-2 focus:ring-2"
+              style={{ borderColor: '#990D35' }}
+              onChange={(e) => {
+                const participantId = parseInt(e.target.value);
+                if (isNaN(participantId)) return;
+                
+                // ✅ PERBAIKAN: Validasi null sebelum call function
+                if (!editAthleteModal.match || !editAthleteModal.slot) {
+                  console.error('Match or slot is null');
+                  return;
+                }
+                
+                handleAssignAthlete(
+                  editAthleteModal.match.id_match,
+                  editAthleteModal.slot,
+                  participantId
+                );
+              }}
+            >
+              <option value="">-- Select Athlete --</option>
+              {approvedParticipants
+                .filter(p => {
+                  // Don't show participants already in THIS match
+                  return p.id_peserta_kompetisi !== editAthleteModal.match?.id_peserta_a &&
+                         p.id_peserta_kompetisi !== editAthleteModal.match?.id_peserta_b;
+                })
+                .map(p => (
+                  <option key={p.id_peserta_kompetisi} value={p.id_peserta_kompetisi}>
+                    {getParticipantName(p)} ({getDojoName(p)})
+                  </option>
+                ))}
+            </select>
+          </div>
+        )}
+      </div>
+      
+      <div className="p-6 border-t flex gap-3 bg-gray-50">
+        <button
+          onClick={() => setEditAthleteModal({ show: false, match: null, slot: null })}
+          className="flex-1 py-2.5 px-4 rounded-lg border-2 font-medium transition-all hover:bg-white"
+          style={{ borderColor: '#990D35', color: '#990D35' }}
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+)}
 
       {/* Notification Modal - Animated */}
       {showModal && (

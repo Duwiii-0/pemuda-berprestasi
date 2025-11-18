@@ -2261,6 +2261,310 @@ static async shufflePemulaBracket(
   }
 }
 
+// ==========================================
+// ADD TO bracketService.ts
+// ==========================================
+
+/**
+ * 🆕 Assign athlete to match with smart swap logic
+ * 
+ * @param matchId - Match ID to assign athlete
+ * @param slot - 'A' or 'B' (which participant slot)
+ * @param newParticipantId - Participant ID to assign
+ * @param kelasKejuaraanId - For validation
+ * @returns Result with swap info if applicable
+ */
+static async assignAthleteToMatch(
+  matchId: number,
+  slot: 'A' | 'B',
+  newParticipantId: number,
+  kelasKejuaraanId: number
+): Promise<{
+  success: boolean;
+  swapped: boolean;
+  swappedMatch?: {
+    id: number;
+    position: number;
+    round: number;
+  };
+  message: string;
+  updatedMatches: Match[];
+}> {
+  try {
+    console.log(`\n🔄 === ASSIGN ATHLETE TO MATCH ===`);
+    console.log(`   Match ID: ${matchId}`);
+    console.log(`   Slot: ${slot}`);
+    console.log(`   New Participant ID: ${newParticipantId}`);
+    console.log(`   Kelas ID: ${kelasKejuaraanId}`);
+
+    // ⭐ STEP 1: Validate match exists and get full data
+    const targetMatch = await prisma.tb_match.findUnique({
+      where: { id_match: matchId },
+      include: {
+        bagan: {
+          include: {
+            kelas_kejuaraan: true
+          }
+        },
+        peserta_a: {
+          include: {
+            atlet: {
+              include: {
+                dojang: true
+              }
+            },
+            anggota_tim: {
+              include: {
+                atlet: true
+              }
+            }
+          }
+        },
+        peserta_b: {
+          include: {
+            atlet: {
+              include: {
+                dojang: true
+              }
+            },
+            anggota_tim: {
+              include: {
+                atlet: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    if (!targetMatch) {
+      throw new Error('Match tidak ditemukan');
+    }
+
+    if (targetMatch.bagan.id_kelas_kejuaraan !== kelasKejuaraanId) {
+      throw new Error('Match tidak termasuk dalam kelas kejuaraan ini');
+    }
+
+    console.log(`   ✅ Match found: Round ${targetMatch.ronde}, Position ${targetMatch.position}`);
+
+    // ⭐ STEP 2: Validate match not started
+    if (targetMatch.skor_a > 0 || targetMatch.skor_b > 0) {
+      throw new Error('Tidak dapat mengubah peserta - pertandingan sudah dimulai');
+    }
+
+    console.log(`   ✅ Match not started (scores: ${targetMatch.skor_a}-${targetMatch.skor_b})`);
+
+    // ⭐ STEP 3: Validate new participant
+    const newParticipant = await prisma.tb_peserta_kompetisi.findUnique({
+      where: { id_peserta_kompetisi: newParticipantId },
+      include: {
+        atlet: {
+          include: {
+            dojang: true
+          }
+        },
+        anggota_tim: {
+          include: {
+            atlet: true
+          }
+        }
+      }
+    });
+
+    if (!newParticipant) {
+      throw new Error('Peserta tidak ditemukan');
+    }
+
+    if (newParticipant.id_kelas_kejuaraan !== kelasKejuaraanId) {
+      throw new Error('Peserta tidak terdaftar di kelas kejuaraan ini');
+    }
+
+    if (newParticipant.status !== 'APPROVED') {
+      throw new Error('Hanya peserta APPROVED yang dapat di-assign ke match');
+    }
+
+    console.log(`   ✅ New participant validated: ${newParticipant.atlet?.nama_atlet || 'Team'}`);
+
+    // ⭐ STEP 4: Check if participant already in this match
+    if (targetMatch.id_peserta_a === newParticipantId || targetMatch.id_peserta_b === newParticipantId) {
+      throw new Error('Peserta sudah ada di match ini');
+    }
+
+    // ⭐ STEP 5: Check for BYE slot
+    const isByeMatch = !targetMatch.id_peserta_a || !targetMatch.id_peserta_b;
+    
+    if (isByeMatch) {
+      // BYE match - only allow assignment to non-BYE slot
+      if (slot === 'B' && !targetMatch.id_peserta_b) {
+        throw new Error('Tidak dapat assign ke slot BYE. Slot BYE hanya bisa diisi otomatis.');
+      }
+      
+      console.log(`   ⚠️ BYE match detected - limited editing`);
+    }
+
+    // ⭐ STEP 6: Check if participant already in another match (SAME ROUND)
+    const existingMatch = await prisma.tb_match.findFirst({
+      where: {
+        id_bagan: targetMatch.id_bagan,
+        ronde: targetMatch.ronde,
+        id_match: { not: matchId },
+        OR: [
+          { id_peserta_a: newParticipantId },
+          { id_peserta_b: newParticipantId }
+        ]
+      }
+    });
+
+    let swappedMatchInfo: { id: number; position: number; round: number } | undefined;
+    let swapped = false;
+
+    if (existingMatch) {
+      // ⭐ SMART SWAP LOGIC
+      console.log(`\n   🔄 Participant already in Match ${existingMatch.id_match} (Round ${existingMatch.ronde})`);
+      console.log(`   Executing SMART SWAP...`);
+
+      // Determine which slot new participant is currently in
+      const isInSlotA = existingMatch.id_peserta_a === newParticipantId;
+      const currentOccupiedSlot = isInSlotA ? 'A' : 'B';
+
+      // Get the participant that will be swapped OUT
+      const swappedOutParticipantId = slot === 'A' 
+        ? targetMatch.id_peserta_a 
+        : targetMatch.id_peserta_b;
+
+      if (!swappedOutParticipantId) {
+        throw new Error('Tidak dapat swap - slot target kosong (BYE)');
+      }
+
+      console.log(`   📍 Current participant in target slot: ${swappedOutParticipantId}`);
+      console.log(`   📍 Will be moved to Match ${existingMatch.id_match}, Slot ${currentOccupiedSlot}`);
+
+      // ⭐ EXECUTE SWAP
+      // Update existing match (where new participant currently is)
+      await prisma.tb_match.update({
+        where: { id_match: existingMatch.id_match },
+        data: {
+          [currentOccupiedSlot === 'A' ? 'id_peserta_a' : 'id_peserta_b']: swappedOutParticipantId
+        }
+      });
+
+      // Update target match (assign new participant)
+      await prisma.tb_match.update({
+        where: { id_match: matchId },
+        data: {
+          [slot === 'A' ? 'id_peserta_a' : 'id_peserta_b']: newParticipantId
+        }
+      });
+
+      swappedMatchInfo = {
+        id: existingMatch.id_match,
+        position: existingMatch.position,
+        round: existingMatch.ronde
+      };
+      swapped = true;
+
+      console.log(`   ✅ SWAP completed successfully`);
+
+    } else {
+      // ⭐ DIRECT ASSIGNMENT (no swap needed)
+      console.log(`\n   ✅ No conflict - Direct assignment`);
+
+      await prisma.tb_match.update({
+        where: { id_match: matchId },
+        data: {
+          [slot === 'A' ? 'id_peserta_a' : 'id_peserta_b']: newParticipantId
+        }
+      });
+
+      console.log(`   ✅ Assignment completed`);
+    }
+
+    // ⭐ STEP 7: Fetch updated matches
+    const updatedMatches = await prisma.tb_match.findMany({
+      where: {
+        id_bagan: targetMatch.id_bagan,
+        ronde: targetMatch.ronde
+      },
+      include: {
+        peserta_a: {
+          include: {
+            atlet: {
+              include: {
+                dojang: true
+              }
+            },
+            anggota_tim: {
+              include: {
+                atlet: {
+                  include: {
+                    dojang: true
+                  }
+                }
+              }
+            }
+          }
+        },
+        peserta_b: {
+          include: {
+            atlet: {
+              include: {
+                dojang: true
+              }
+            },
+            anggota_tim: {
+              include: {
+                atlet: {
+                  include: {
+                    dojang: true
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      orderBy: { position: 'asc' }
+    });
+
+    // Transform to Match[] format
+    const transformedMatches: Match[] = updatedMatches.map(m => ({
+      id: m.id_match,
+      round: m.ronde,
+      position: m.position,
+      participant1: m.peserta_a ? this.transformParticipant(m.peserta_a) : null,
+      participant2: m.peserta_b ? this.transformParticipant(m.peserta_b) : null,
+      winner: this.determineWinner(m),
+      scoreA: m.skor_a,
+      scoreB: m.skor_b,
+      status: this.determineMatchStatus(m),
+      tanggalPertandingan: m.tanggal_pertandingan,
+      nomorPartai: m.nomor_partai,
+      nomorAntrian: m.nomor_antrian,
+      nomorLapangan: m.nomor_lapangan
+    }));
+
+    const message = swapped
+      ? `Berhasil assign peserta dengan swap ke Match #${existingMatch!.position + 1}`
+      : `Berhasil assign peserta ke Match #${targetMatch.position + 1}`;
+
+    console.log(`\n✅ ASSIGNMENT COMPLETED`);
+    console.log(`   Message: ${message}`);
+    console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`);
+
+    return {
+      success: true,
+      swapped,
+      swappedMatch: swappedMatchInfo,
+      message,
+      updatedMatches: transformedMatches
+    };
+
+  } catch (error: any) {
+    console.error('❌ Error assigning athlete to match:', error);
+    throw new Error(error.message || 'Gagal assign peserta ke match');
+  }
+}
+
   /**
    * Advance bye winners to next round automatically
    */
