@@ -286,8 +286,8 @@ const convertElementToImage = async (
     cacheBust: true,
     skipFonts: true,
     style: {
-      transform: 'scale(1.0)',
-      transformOrigin: 'center center',
+      transform: `scale(${scaleFactor})`,
+      transformOrigin: 'top left',
       margin: '0',
     },
     filter: (node) => {
@@ -461,32 +461,7 @@ export const exportBracketFromData = async (
       let displayWidth = maxWidth;
       let displayHeight = displayWidth / imgAspectRatio;
 
-      const totalPeserta = kelasData?.peserta_kompetisi?.length || 0;
-
-      let zoom = 1.0;
-      if (isPemula) {
-        if (totalPeserta <= 8) zoom = 1.1;
-        else if (totalPeserta <= 16) zoom = 1.05;
-        else if (totalPeserta <= 32) zoom = 1;
-        else zoom = 0.95;
-      } else {
-        // ✅ Prestasi zoom (adjusted for A3!)
-        if (useA3) {
-          if (totalPeserta <= 8) zoom = 1.0;
-          else if (totalPeserta <= 16) zoom = 0.75;
-          else if (totalPeserta <= 32) zoom = 0.45;
-          else zoom = 0.35;
-        } else {
-          if (totalPeserta <= 8) zoom = 0.7;
-          else if (totalPeserta <= 16) zoom = 0.5;
-          else if (totalPeserta <= 32) zoom = 0.3;
-          else zoom = 0.25;
-        }
-      }
-
       const HEADER_MARGIN_BOTTOM = 5;
-      displayWidth *= zoom;
-      displayHeight *= zoom;
 
       const x = (PAGE_WIDTH - displayWidth) / 2;
       const y = HEADER_HEIGHT + HEADER_MARGIN_BOTTOM;
