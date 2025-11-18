@@ -54,6 +54,40 @@ const getScaleFactor = (participantCount: number): number => {
 };
 
 // =================================================================================================
+// ✅ FIXED: Deteksi PEMULA (Simple & Clear!)
+// =================================================================================================
+
+const isPemulaBracket = (kelasData: any): boolean => {
+  const kelompokNama = kelasData?.kelompok?.nama_kelompok?.toLowerCase() || '';
+  
+  // ✅ PEMULA = ada kata "pemula" atau "beginner"
+  // Selain itu = PRESTASI (Junior, Senior, Cadet, dll)
+  const isPemula = kelompokNama.includes('pemula') || 
+                   kelompokNama.includes('beginner');
+  
+  console.log('🔍 Bracket Type:', {
+    kelompok: kelasData?.kelompok?.nama_kelompok,
+    result: isPemula ? '🥇 PEMULA' : '🥋 PRESTASI'
+  });
+  
+  return isPemula;
+};
+
+// =================================================================================================
+// ✅ Deteksi dari DOM (Backup method)
+// =================================================================================================
+
+const detectBracketTypeFromElement = (bracketElement: HTMLElement): 'PRESTASI' | 'PEMULA' => {
+  const hasSVG = bracketElement.querySelector('svg') !== null;
+  const hasTournamentLayout = bracketElement.querySelector('.tournament-layout') !== null ||
+                              bracketElement.classList.contains('tournament-layout');
+  
+  // SVG lines = PRESTASI bracket
+  // Tournament layout cards = PEMULA bracket
+  return (hasSVG && !hasTournamentLayout) ? 'PRESTASI' : 'PEMULA';
+};
+
+// =================================================================================================
 // LOAD IMAGE HELPER
 // =================================================================================================
 
@@ -68,7 +102,7 @@ const loadImage = (src: string): Promise<HTMLImageElement> => {
 };
 
 // =================================================================================================
-// ✅ NEW: IMAGE COMPRESSION (PNG → JPEG)
+// IMAGE COMPRESSION (PNG → JPEG)
 // =================================================================================================
 
 const compressImage = async (dataUrl: string): Promise<HTMLImageElement> => {
@@ -81,12 +115,10 @@ const compressImage = async (dataUrl: string): Promise<HTMLImageElement> => {
       canvas.width = img.width;
       canvas.height = img.height;
       
-      // Fill white background
       ctx.fillStyle = '#FFFFFF';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(img, 0, 0);
       
-      // ✅ Convert to JPEG with 85% quality (sweet spot)
       const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
       
       const compressedImg = new Image();
@@ -100,7 +132,7 @@ const compressImage = async (dataUrl: string): Promise<HTMLImageElement> => {
 };
 
 // =================================================================================================
-// ✅ MODIFIED: HEADER & FOOTER with dynamic page width
+// HEADER & FOOTER (with dynamic page width)
 // =================================================================================================
 
 const addHeaderAndFooter = async (
@@ -136,34 +168,30 @@ const addHeaderAndFooter = async (
   const centerX = pageWidth / 2;
   let textY = headerY + 6;
 
-  // Nama Event
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(14);
   doc.setTextColor(THEME.primary);
   doc.text(config.eventName, centerX, textY, { align: 'center' });
   textY += 6;
 
-  // Kategori
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(11);
   doc.setTextColor(THEME.text);
   doc.text(config.categoryName, centerX, textY, { align: 'center' });
   textY += 5;
 
-  // ✅ Tanggal (NO prefix)
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
   doc.setTextColor(THEME.textSecondary);
   doc.text(config.dateRange, centerX, textY, { align: 'center' });
   textY += 4;
 
-  // Lokasi & Kompetitor
   doc.setFontSize(9);
   doc.text(`${config.location}  •  ${config.totalParticipants} Kompetitor`, centerX, textY, { align: 'center' });
 };
 
 // =================================================================================================
-// ✅ OPTIMIZED: DOM-TO-IMAGE CAPTURE
+// DOM-TO-IMAGE CAPTURE
 // =================================================================================================
 
 const convertElementToImage = async (
@@ -175,7 +203,6 @@ const convertElementToImage = async (
   let bracketVisual: HTMLElement | null = null;
   let bracketType: 'PRESTASI' | 'PEMULA' | 'UNKNOWN' = 'UNKNOWN';
   
-  // Find bracket container
   if (element.classList.contains('tournament-layout')) {
     bracketVisual = element;
     bracketType = 'PEMULA';
@@ -217,16 +244,11 @@ const convertElementToImage = async (
   
   console.log(`✅ Found bracket (${bracketType})`);
 
-  // Hide unwanted elements
   const hiddenElements: Array<{ el: HTMLElement; originalDisplay: string; originalVisibility: string }> = [];
   
-  // Hide leaderboards
-  const leaderboards = document.querySelectorAll(
-    '[id$="-leaderboard"]'
-  );
+  const leaderboards = document.querySelectorAll('[id$="-leaderboard"]');
   leaderboards.forEach(el => {
     const htmlEl = el as HTMLElement;
-    // ✅ HANYA hide jika BENAR-BENAR di luar bracketVisual
     const isInsideBracket = bracketVisual!.contains(htmlEl);
     const isInsideExportArea = document.getElementById('bracket-export-area')?.contains(htmlEl);
     
@@ -241,7 +263,6 @@ const convertElementToImage = async (
     }
   });
 
-  // Hide header with logos
   const headerWithLogos = element.querySelector('.flex.items-start.justify-between.gap-4.mb-3') as HTMLElement;
   if (headerWithLogos) {
     hiddenElements.push({
@@ -253,7 +274,6 @@ const convertElementToImage = async (
     headerWithLogos.style.visibility = 'hidden';
   }
 
-  // Hide all buttons outside bracket
   const allButtons = document.querySelectorAll('button');
   allButtons.forEach(btn => {
     const htmlBtn = btn as HTMLElement;
@@ -267,7 +287,6 @@ const convertElementToImage = async (
     }
   });
 
-  // Hide edit buttons inside bracket (PEMULA)
   if (bracketType === 'PEMULA') {
     const editButtons = bracketVisual.querySelectorAll('button');
     editButtons.forEach(btn => {
@@ -285,25 +304,23 @@ const convertElementToImage = async (
 
   await new Promise(resolve => setTimeout(resolve, 100));
 
-  // Get dimensions
   const width = Math.max(bracketVisual.scrollWidth, bracketVisual.offsetWidth);
   const height = Math.max(bracketVisual.scrollHeight, bracketVisual.offsetHeight);
 
   console.log('📐 Dimensions:', { width, height });
 
-  // ✅ OPTIMIZED: Fixed pixel ratio (bukan 3 * scaleFactor)
   const pixelRatio = 2;
 
   console.log('📸 Capturing with pixelRatio:', pixelRatio);
   
   const dataUrl = await htmlToImage.toPng(bracketVisual, {
-    quality: 0.92, // ✅ Reduced dari 1.0
-    pixelRatio: pixelRatio, // ✅ Fixed 2x
+    quality: 0.92,
+    pixelRatio: pixelRatio,
     width: width,
     height: height,
     backgroundColor: '#FFFFFF',
     cacheBust: true,
-    skipFonts: true, // ✅ Faster rendering
+    skipFonts: true,
     style: {
       transform: 'scale(1.0)',
       transformOrigin: 'center center',
@@ -318,7 +335,6 @@ const convertElementToImage = async (
     }
   });
 
-  // Restore hidden elements
   hiddenElements.forEach(({ el, originalDisplay, originalVisibility }) => {
     el.style.display = originalDisplay;
     el.style.visibility = originalVisibility;
@@ -326,7 +342,6 @@ const convertElementToImage = async (
 
   console.log('✅ Image captured, compressing...');
 
-  // ✅ COMPRESS: PNG → JPEG
   const compressedImg = await compressImage(dataUrl);
   console.log('✅ Compressed:', { width: compressedImg.width, height: compressedImg.height });
   
@@ -334,32 +349,7 @@ const convertElementToImage = async (
 };
 
 // =================================================================================================
-// ✅ HELPER: Deteksi Prestasi dengan Logging
-// =================================================================================================
-
-const isPrestasiBracket = (kelasData: any): boolean => {
-  const kelompokNama = kelasData?.kelompok?.nama_kelompok?.toLowerCase() || '';
-  const hasPoomsae = !!kelasData?.poomsae;
-  
-  // Cek berbagai kondisi Prestasi
-  const isPrestasi = kelompokNama.includes('prestasi') || 
-                     kelompokNama.includes('poomsae') || 
-                     hasPoomsae ||
-                     kelompokNama.includes('kyorugi') ||
-                     kelompokNama.includes('sparring');
-  
-  console.log('🔍 Bracket Type Detection:', {
-    kelompokNama: kelasData?.kelompok?.nama_kelompok,
-    hasPoomsae,
-    isPrestasi,
-    detectedAs: isPrestasi ? 'PRESTASI' : 'PEMULA'
-  });
-  
-  return isPrestasi;
-};
-
-// =================================================================================================
-// ✅ MAIN: SINGLE BRACKET EXPORT WITH IMPROVED DETECTION
+// ✅ MAIN: SINGLE BRACKET EXPORT (FIXED!)
 // =================================================================================================
 
 export const exportBracketFromData = async (
@@ -375,7 +365,7 @@ export const exportBracketFromData = async (
     lokasi?: string;
   }
 ): Promise<void> => {
-  console.log('🚀 Starting PDF export (Multi-Page Support)...');
+  console.log('🚀 Starting PDF export...');
   
   const approvedParticipants = kelasData.peserta_kompetisi.filter((p: any) => p.status === 'APPROVED');
   const participantCount = approvedParticipants.length;
@@ -383,17 +373,16 @@ export const exportBracketFromData = async (
   
   console.log(`👥 Participants: ${participantCount}, Scale: ${scaleFactor}`);
   
-  // ✅ PERBAIKAN: Gunakan helper function
-  const isPemula = !isPrestasiBracket(kelasData);
+  // ✅ FIXED: Deteksi isPemula (Simple!)
+  const isPemula = isPemulaBracket(kelasData);
   
-  // ✅ Determine paper size: A3 for Prestasi > 32 participants
+  // ✅ Determine paper size: A3 for PRESTASI > 32 participants
   const useA3 = !isPemula && participantCount > 32;
   const PAGE_WIDTH = useA3 ? PAGE_WIDTH_A3 : PAGE_WIDTH_A4;
   const PAGE_HEIGHT = useA3 ? PAGE_HEIGHT_A3 : PAGE_HEIGHT_A4;
   
-  console.log(`📄 Paper size: ${useA3 ? 'A3' : 'A4'} (isPemula: ${isPemula}, Participants: ${participantCount})`);
+  console.log(`📄 Paper: ${useA3 ? '📋 A3' : '📄 A4'} | Type: ${isPemula ? '🥇 PEMULA' : '🥋 PRESTASI'} | Participants: ${participantCount}`);
   
-  // ✅ Config dengan prioritas metadata
   const config: ExportConfig = {
     eventName: metadata?.namaKejuaraan || kelasData.kompetisi.nama_event,
     categoryName: metadata?.kelas || `${kelasData.kelompok?.nama_kelompok || ''} ${
@@ -409,7 +398,6 @@ export const exportBracketFromData = async (
   };
 
   try {
-    // ✅ Create PDF with dynamic format
     const doc = new jsPDF({ 
       orientation: 'landscape', 
       unit: 'mm', 
@@ -417,57 +405,42 @@ export const exportBracketFromData = async (
       compress: true 
     });
 
-    // ✅ MULTI-PAGE LOGIC untuk Pemula
+    // Multi-page untuk Pemula > 70
     if (isPemula && participantCount > 70) {
       console.log('📄 Multi-page export untuk Pemula...');
       
-      // Ambil semua match cards dari bracket
       const allMatchCards = bracketElement.querySelectorAll('.bg-white.rounded-lg.shadow-md.border');
       const totalMatches = allMatchCards.length;
-      const matchesPerPage = 50; // 50 peserta = 25 match (2 peserta per match)
+      const matchesPerPage = 50;
       const totalPages = Math.ceil(totalMatches / (matchesPerPage / 2));
       
-      console.log(`📊 Total matches: ${totalMatches}, Pages needed: ${totalPages}`);
+      console.log(`📊 Total matches: ${totalMatches}, Pages: ${totalPages}`);
       
       for (let pageNum = 0; pageNum < totalPages; pageNum++) {
-        if (pageNum > 0) {
-          doc.addPage();
-        }
+        if (pageNum > 0) doc.addPage();
         
-        console.log(`📄 Processing page ${pageNum + 1}/${totalPages}...`);
+        console.log(`📄 Page ${pageNum + 1}/${totalPages}...`);
         
-        // Clone bracket element
         const clonedBracket = bracketElement.cloneNode(true) as HTMLElement;
-        
-        // Sembunyikan semua match cards
         const clonedCards = clonedBracket.querySelectorAll('.bg-white.rounded-lg.shadow-md.border');
-        clonedCards.forEach((card: any) => {
-          card.style.display = 'none';
-        });
         
-        // Tampilkan hanya match untuk halaman ini
+        clonedCards.forEach((card: any) => card.style.display = 'none');
+        
         const startIdx = pageNum * (matchesPerPage / 2);
         const endIdx = Math.min(startIdx + (matchesPerPage / 2), totalMatches);
         
         for (let i = startIdx; i < endIdx; i++) {
-          if (clonedCards[i]) {
-            (clonedCards[i] as HTMLElement).style.display = 'block';
-          }
+          if (clonedCards[i]) (clonedCards[i] as HTMLElement).style.display = 'block';
         }
         
-        // Append temporary clone ke body
         clonedBracket.style.position = 'absolute';
         clonedBracket.style.left = '-9999px';
         document.body.appendChild(clonedBracket);
         
         try {
-          // Capture image
           const bracketImg = await convertElementToImage(clonedBracket, scaleFactor);
-          
-          // Add header dengan page indicator
           await addHeaderAndFooter(doc, config, PAGE_WIDTH);
           
-          // ✅ Tambahkan page number
           doc.setFont('helvetica', 'bold');
           doc.setFontSize(10);
           doc.setTextColor(THEME.primary);
@@ -478,17 +451,12 @@ export const exportBracketFromData = async (
             { align: 'right' }
           );
 
-          // Calculate layout
           const contentStartY = HEADER_HEIGHT + MARGIN_TOP;
-          const contentEndY = PAGE_HEIGHT - FOOTER_HEIGHT - MARGIN_BOTTOM;
           const maxWidth = PAGE_WIDTH - MARGIN_LEFT - MARGIN_RIGHT;
-          const maxHeight = contentEndY - contentStartY;
-
           const imgAspectRatio = bracketImg.width / bracketImg.height;
           let displayWidth = maxWidth;
           let displayHeight = displayWidth / imgAspectRatio;
 
-          // Zoom untuk Pemula
           let zoom = 1.0;
           if (participantCount <= 8) zoom = 1.1;
           else if (participantCount <= 16) zoom = 1.05;
@@ -502,21 +470,11 @@ export const exportBracketFromData = async (
           const x = (PAGE_WIDTH - displayWidth) / 2;
           const y = HEADER_HEIGHT + HEADER_MARGIN_BOTTOM;
 
-          doc.addImage(
-            bracketImg.src,
-            'JPEG',
-            x,
-            y,
-            displayWidth,
-            displayHeight,
-            undefined,
-            'FAST'
-          );
+          doc.addImage(bracketImg.src, 'JPEG', x, y, displayWidth, displayHeight, undefined, 'FAST');
           
-          console.log(`✅ Page ${pageNum + 1} added (matches ${startIdx + 1}-${endIdx})`);
+          console.log(`✅ Page ${pageNum + 1} added`);
           
         } finally {
-          // Cleanup clone
           if (document.body.contains(clonedBracket)) {
             document.body.removeChild(clonedBracket);
           }
@@ -524,13 +482,12 @@ export const exportBracketFromData = async (
       }
       
     } else {
-      // ✅ SINGLE PAGE (Prestasi atau Pemula < 70 peserta)
+      // Single page
       console.log('📄 Single-page export...');
       
       const bracketImg = await convertElementToImage(bracketElement, scaleFactor);
       await addHeaderAndFooter(doc, config, PAGE_WIDTH);
 
-      // Calculate layout
       const contentStartY = HEADER_HEIGHT + MARGIN_TOP;
       const contentEndY = PAGE_HEIGHT - FOOTER_HEIGHT - MARGIN_BOTTOM;
       const maxWidth = PAGE_WIDTH - MARGIN_LEFT - MARGIN_RIGHT;
@@ -542,7 +499,6 @@ export const exportBracketFromData = async (
 
       const totalPeserta = kelasData?.peserta_kompetisi?.length || 0;
 
-      // ✅ Zoom logic with A3 adjustment for Prestasi
       let zoom = 1.0;
       if (isPemula) {
         if (totalPeserta <= 8) zoom = 1.1;
@@ -550,15 +506,13 @@ export const exportBracketFromData = async (
         else if (totalPeserta <= 32) zoom = 1;
         else zoom = 0.95;
       } else {
-        // Prestasi zoom logic
+        // ✅ Prestasi zoom (adjusted for A3!)
         if (useA3) {
-          // A3: Lebih besar, zoom disesuaikan
           if (totalPeserta <= 8) zoom = 0.50;
           else if (totalPeserta <= 16) zoom = 0.38;
           else if (totalPeserta <= 32) zoom = 0.22;
-          else zoom = 0.16; // > 32 peserta di A3
+          else zoom = 0.16;
         } else {
-          // A4: Original zoom
           if (totalPeserta <= 8) zoom = 0.35;
           else if (totalPeserta <= 16) zoom = 0.25;
           else if (totalPeserta <= 32) zoom = 0.15;
@@ -573,16 +527,7 @@ export const exportBracketFromData = async (
       const x = (PAGE_WIDTH - displayWidth) / 2;
       const y = HEADER_HEIGHT + HEADER_MARGIN_BOTTOM;
 
-      doc.addImage(
-        bracketImg.src,
-        'JPEG',
-        x,
-        y,
-        displayWidth,
-        displayHeight,
-        undefined,
-        'FAST'
-      );
+      doc.addImage(bracketImg.src, 'JPEG', x, y, displayWidth, displayHeight, undefined, 'FAST');
     }
 
     const dateStr = new Date().toISOString().split('T')[0];
@@ -599,7 +544,7 @@ export const exportBracketFromData = async (
 };
 
 // =================================================================================================
-// ✅ BULK EXPORT WITH A3 SUPPORT
+// ✅ BULK EXPORT (FIXED!)
 // =================================================================================================
 
 export const exportMultipleBracketsByLapangan = async (
@@ -619,8 +564,13 @@ export const exportMultipleBracketsByLapangan = async (
 ): Promise<void> => {
   console.log(`🚀 Starting bulk export for ${brackets.length} brackets...`);
   
-  // ✅ Determine if any bracket needs A3
-  const needsA3 = brackets.some(b => {
+  // ✅ RE-VALIDATE isPemula
+  const validatedBrackets = brackets.map(b => ({
+    ...b,
+    isPemula: isPemulaBracket(b.kelasData)
+  }));
+  
+  const needsA3 = validatedBrackets.some(b => {
     const approvedCount = b.kelasData.peserta_kompetisi?.filter((p: any) => p.status === 'APPROVED').length || 0;
     return !b.isPemula && approvedCount > 32;
   });
@@ -628,7 +578,7 @@ export const exportMultipleBracketsByLapangan = async (
   const PAGE_WIDTH = needsA3 ? PAGE_WIDTH_A3 : PAGE_WIDTH_A4;
   const PAGE_HEIGHT = needsA3 ? PAGE_HEIGHT_A3 : PAGE_HEIGHT_A4;
   
-  console.log(`📄 Using ${needsA3 ? 'A3' : 'A4'} format for bulk export`);
+  console.log(`📄 Bulk export using ${needsA3 ? 'A3' : 'A4'}`);
   
   const doc = new jsPDF({ 
     orientation: 'landscape', 
@@ -637,37 +587,32 @@ export const exportMultipleBracketsByLapangan = async (
     compress: true
   });
 
-  // Group by lapangan
-  const bracketsByLapangan = brackets.reduce((acc, bracket) => {
+  const bracketsByLapangan = validatedBrackets.reduce((acc, bracket) => {
     if (!acc[bracket.lapanganNama]) {
       acc[bracket.lapanganNama] = [];
     }
     acc[bracket.lapanganNama].push(bracket);
     return acc;
-  }, {} as Record<string, typeof brackets>);
+  }, {} as Record<string, typeof validatedBrackets>);
 
   let pageIndex = 0;
 
   for (const [lapanganNama, lapanganBrackets] of Object.entries(bracketsByLapangan)) {
-    console.log(`\n📍 Processing Lapangan ${lapanganNama} (${lapanganBrackets.length} brackets)...`);
+    console.log(`\n📍 Lapangan ${lapanganNama} (${lapanganBrackets.length} brackets)...`);
 
     for (let i = 0; i < lapanganBrackets.length; i++) {
       const { kelasData, isPemula, tanggal, namaKelas } = lapanganBrackets[i];
       
       console.log(`  📄 Bracket ${i + 1}/${lapanganBrackets.length}: ${namaKelas}`);
       
-      if (pageIndex > 0) {
-        doc.addPage();
-      }
+      if (pageIndex > 0) doc.addPage();
       pageIndex++;
 
-      // ✅ Create container for React component
       const tempContainer = document.createElement('div');
       tempContainer.id = `bracket-container-${pageIndex}`;
       document.body.appendChild(tempContainer);
 
       try {
-        // ✅ Render React component and wait for completion
         const bracketElement = await new Promise<HTMLElement>((resolve, reject) => {
           const root = ReactDOM.createRoot(tempContainer);
           
@@ -676,7 +621,6 @@ export const exportMultipleBracketsByLapangan = async (
             resolve(element);
           };
 
-          // ✅ WRAP dengan BracketExportWrapper
           root.render(
             React.createElement(BracketExportWrapper, null,
               React.createElement(BracketRenderer, {
@@ -687,19 +631,15 @@ export const exportMultipleBracketsByLapangan = async (
             )
           );
 
-          // ✅ Timeout diperbesar jadi 15 detik (karena ada banyak context)
-          setTimeout(() => {
-            reject(new Error('Render timeout'));
-          }, 10000);
+          setTimeout(() => reject(new Error('Render timeout')), 10000);
         });
 
-        console.log('  📸 Capturing bracket screenshot...');
+        console.log('  📸 Capturing bracket...');
 
         const approvedParticipants = kelasData.peserta_kompetisi?.filter((p: any) => p.status === 'APPROVED') || [];
         const participantCount = approvedParticipants.length;
         const scaleFactor = getScaleFactor(participantCount);
 
-        // Config for PDF header
         const config: ExportConfig = {
           eventName: eventMetadata.namaKejuaraan,
           categoryName: namaKelas,
@@ -712,19 +652,14 @@ export const exportMultipleBracketsByLapangan = async (
           logoEvent: eventMetadata.logoEvent,
         };
 
-        // Capture image
         const bracketImg = await convertElementToImage(bracketElement, scaleFactor);
-        
-        // Add header
         await addHeaderAndFooter(doc, config, PAGE_WIDTH);
 
-        // Add Lapangan indicator
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(12);
         doc.setTextColor(THEME.primary);
         doc.text(`Lapangan ${lapanganNama}`, PAGE_WIDTH - MARGIN_RIGHT - 25, HEADER_HEIGHT + 5, { align: 'right' });
 
-        // Calculate positioning
         const contentStartY = HEADER_HEIGHT + MARGIN_TOP;
         const contentEndY = PAGE_HEIGHT - FOOTER_HEIGHT - MARGIN_BOTTOM;
         const maxWidth = PAGE_WIDTH - MARGIN_LEFT - MARGIN_RIGHT;
