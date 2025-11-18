@@ -932,6 +932,7 @@ static async generatePrestasiBracket(
       data: {
         id_bagan: baganId,
         ronde: 1,
+        position: 0, // ⭐ ADD THIS!
         id_peserta_a: shuffled[0].id,
         id_peserta_b: shuffled[1].id,
         skor_a: 0,
@@ -958,6 +959,7 @@ static async generatePrestasiBracket(
       data: {
         id_bagan: baganId,
         ronde: 1,
+        position: 0, // ⭐ ADD THIS!
         id_peserta_a: shuffled[0].id,
         id_peserta_b: shuffled[1].id,
         skor_a: 0,
@@ -978,6 +980,7 @@ static async generatePrestasiBracket(
       data: {
         id_bagan: baganId,
         ronde: 2,
+        position: 0, // ⭐ ADD THIS!
         id_peserta_a: shuffled[2].id,
         id_peserta_b: null,
         skor_a: 0,
@@ -1179,10 +1182,12 @@ static async generatePrestasiBracket(
       }
     }
 
+    // ⭐⭐⭐ CRITICAL FIX: ADD POSITION FIELD! ⭐⭐⭐
     const created = await prisma.tb_match.create({
       data: {
         id_bagan: baganId,
         ronde: 1,
+        position: pos,  // ← ⭐ ADD THIS LINE!
         id_peserta_a: p1 ? p1.id : null,
         id_peserta_b: p2 ? p2.id : null,
         skor_a: 0,
@@ -1193,7 +1198,7 @@ static async generatePrestasiBracket(
     matches.push({
       id: created.id_match,
       round: 1,
-      position: pos,
+      position: pos,  // ← This was already correct
       participant1: p1,
       participant2: p2,
       status,
@@ -1217,15 +1222,17 @@ static async generatePrestasiBracket(
     );
   }
 
-  // Create placeholder rounds
+  // ⭐⭐⭐ CREATE PLACEHOLDER ROUNDS (WITH POSITION!) ⭐⭐⭐
   const totalRounds = Math.log2(targetSize);
   for (let round = 2; round <= totalRounds; round++) {
     const matchesInRound = Math.pow(2, totalRounds - round);
     for (let i = 0; i < matchesInRound; i++) {
+      // ⭐ FIX: ADD POSITION FIELD!
       const created = await prisma.tb_match.create({
         data: {
           id_bagan: baganId,
           ronde: round,
+          position: i,  // ← ⭐ ADD THIS LINE!
           id_peserta_a: null,
           id_peserta_b: null,
           skor_a: 0,
@@ -1235,7 +1242,7 @@ static async generatePrestasiBracket(
       matches.push({
         id: created.id_match,
         round,
-        position: i,
+        position: i,  // ← This was already correct
         participant1: null,
         participant2: null,
         status: "pending",
@@ -1590,10 +1597,12 @@ static async generatePemulaBracket(
     const p1 = workingList[i * 2];
     const p2 = workingList[i * 2 + 1];
     
+    // ⭐⭐⭐ CRITICAL FIX: ADD POSITION FIELD! ⭐⭐⭐
     const match = await prisma.tb_match.create({
       data: { 
         id_bagan: baganId, 
-        ronde: 1, 
+        ronde: 1,
+        position: i,  // ← ⭐ ADD THIS LINE!
         id_peserta_a: p1.id, 
         id_peserta_b: p2.id, 
         skor_a: 0, 
@@ -1621,10 +1630,12 @@ static async generatePemulaBracket(
 
   // Handle BYE participant (if exists)
   if (byeParticipant) {
+    // ⭐ FIX: ADD POSITION FIELD!
     const byeMatch = await prisma.tb_match.create({
       data: { 
         id_bagan: baganId, 
-        ronde: 1, 
+        ronde: 1,
+        position: normalPairsCount,  // ← ⭐ ADD THIS LINE!
         id_peserta_a: byeParticipant.id, 
         id_peserta_b: null, 
         skor_a: 0, 
@@ -1646,11 +1657,13 @@ static async generatePemulaBracket(
     console.log(`   Match ${normalPairsCount + 1}: ${byeParticipant.name} (BYE)`);
     
     // Create additional match for BYE winner (if more than 1 match exists)
-    if (matches.length > 1) { 
+    if (matches.length > 1) {
+      // ⭐ FIX: ADD POSITION FIELD!
       const additionalMatch = await prisma.tb_match.create({
         data: { 
           id_bagan: baganId, 
-          ronde: 2, 
+          ronde: 2,
+          position: 0,  // ← ⭐ ADD THIS LINE!
           id_peserta_a: null, 
           id_peserta_b: byeParticipant.id, 
           skor_a: 0, 
