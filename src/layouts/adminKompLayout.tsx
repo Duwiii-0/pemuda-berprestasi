@@ -14,6 +14,7 @@ import {
   Award,
   GitBranch,
   CreditCard,
+  Scale,
 } from "lucide-react";
 import { useAuth } from "../context/authContext";
 import path from "path";
@@ -79,6 +80,13 @@ const AdminKompetisiLayout: React.FC = () => {
       path: "/admin-kompetisi/jadwal-tanding",
       active: location.pathname === "/admin-kompetisi/jadwal-tanding",
       description: "Atur jadwal pertandingan kompetisi",
+    },
+    {
+      icon: Scale,
+      label: "Penimbangan",
+      path: "/admin-kompetisi/penimbangan",
+      active: location.pathname === "/admin-kompetisi/penimbangan",
+      description: "Input hasil penimbangan berat badan",
     },
   ];
 

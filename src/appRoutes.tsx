@@ -73,6 +73,7 @@ import ValidasiDojangAdminKomp from "./pages/adminkomp/ValidasiDojang";
 
 // Import the new Drawing Bagan component
 import DrawingBagan from "./pages/adminkomp/DrawingBagan";
+import Penimbangan from "./pages/adminkomp/Penimbangan";
 
 // Protected Route Component
 interface ProtectedRouteProps {
@@ -200,6 +201,7 @@ export default function AppRoutes() {
           <Route path="drawing-bagan" element={<DrawingBagan />} />
           <Route path="drawing-bagan/:kelasId?" element={<DrawingBagan />} />
           <Route path="jadwal-tanding" element={<JadwalPertandingan />} />
+          <Route path="penimbangan" element={<Penimbangan />} />
         </Route>
 
         {/* Admin routes - protected for ADMIN role only */}
