@@ -1098,15 +1098,6 @@ const renderMatchCard = (match: Match, key: string | number, matchIndex: number)
         background: 'white'
       }}
     >
-      {/* ⭐ NEW: Match Number Badge */}
-      <div className="absolute -top-2 -left-2 z-20">
-        <div 
-          className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shadow-lg"
-          style={{ backgroundColor: '#990D35', color: 'white' }}
-        >
-          #{matchIndex + 1}
-        </div>
-      </div>
 
       {/* Header */}
       <div 

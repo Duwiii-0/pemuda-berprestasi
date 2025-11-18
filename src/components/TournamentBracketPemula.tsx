@@ -1578,15 +1578,6 @@ const additionalMatchY = (lastFightY + byeMatchY) / 2;
                     style={{ position: 'relative' }}
                     id={`match-${match.id_match}`}
                   >
-                    {/* ⭐ NEW: Match Number Badge */}
-                    <div className="absolute -top-2 -left-2 z-20">
-                      <div 
-                        className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shadow-lg"
-                        style={{ backgroundColor: '#990D35', color: 'white' }}
-                      >
-                        #{matchIndex + 1}
-                      </div>
-                    </div>
 
                     <div
                       className="bg-white rounded-lg shadow-md border overflow-hidden"
