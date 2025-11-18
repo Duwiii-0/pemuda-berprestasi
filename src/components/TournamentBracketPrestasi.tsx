@@ -2328,7 +2328,7 @@ const getFinalMatch = (): Match | null => {
   </div>
 </div>
 
-<div ref={bracketRef} className="overflow-x-auto overflow-y-visible pb-8">
+<div ref={bracketRef} id="prestasi-bracket-export-area" className="relative p-6 tournament-container">
         {/* ✅ PERBAIKAN: Jika hanya 2 peserta, render center final saja */}
         {approvedParticipants.length === 2 ? (
           <div 

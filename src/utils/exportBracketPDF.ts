@@ -200,49 +200,13 @@ const convertElementToImage = async (
 ): Promise<HTMLImageElement> => {
   console.log('🎯 Starting bracket capture...');
   
-  let bracketVisual: HTMLElement | null = null;
-  let bracketType: 'PRESTASI' | 'PEMULA' | 'UNKNOWN' = 'UNKNOWN';
-  
-  if (element.classList.contains('tournament-layout')) {
-    bracketVisual = element;
+  const bracketVisual: HTMLElement = element;
+  let bracketType: 'PRESTASI' | 'PEMULA' = 'PRESTASI';
+  if (element.id === 'pemula-bracket-export-area') {
     bracketType = 'PEMULA';
   }
   
-  if (!bracketVisual) {
-    bracketVisual = element.querySelector('.tournament-layout') as HTMLElement;
-    if (bracketVisual) bracketType = 'PEMULA';
-  }
-  
-  if (!bracketVisual) {
-    const relativeContainer = element.querySelector('.relative') as HTMLElement;
-    if (relativeContainer && relativeContainer.querySelector('svg')) {
-      bracketVisual = relativeContainer;
-      bracketType = 'PRESTASI';
-    }
-  }
-  
-  if (!bracketVisual) {
-    const allRelatives = element.querySelectorAll('.relative');
-    for (const rel of allRelatives) {
-      if (rel.querySelector('svg')) {
-        bracketVisual = rel as HTMLElement;
-        bracketType = 'PRESTASI';
-        break;
-      }
-    }
-  }
-  
-  if (!bracketVisual && element.children.length > 0) {
-    bracketVisual = element;
-    if (element.querySelector('svg')) bracketType = 'PRESTASI';
-    else if (element.querySelector('.bg-white.rounded-lg')) bracketType = 'PEMULA';
-  }
-  
-  if (!bracketVisual) {
-    throw new Error('Bracket visual container not found');
-  }
-  
-  console.log(`✅ Found bracket (${bracketType})`);
+  console.log(`✅ Found bracket (${bracketType}) with ID: ${element.id}`);
 
   const hiddenElements: Array<{ el: HTMLElement; originalDisplay: string; originalVisibility: string }> = [];
   
@@ -508,15 +472,15 @@ export const exportBracketFromData = async (
       } else {
         // ✅ Prestasi zoom (adjusted for A3!)
         if (useA3) {
-          if (totalPeserta <= 8) zoom = 0.50;
-          else if (totalPeserta <= 16) zoom = 0.38;
-          else if (totalPeserta <= 32) zoom = 0.22;
-          else zoom = 0.16;
+          if (totalPeserta <= 8) zoom = 1.0;
+          else if (totalPeserta <= 16) zoom = 0.75;
+          else if (totalPeserta <= 32) zoom = 0.45;
+          else zoom = 0.35;
         } else {
-          if (totalPeserta <= 8) zoom = 0.35;
-          else if (totalPeserta <= 16) zoom = 0.25;
-          else if (totalPeserta <= 32) zoom = 0.15;
-          else zoom = 0.50;
+          if (totalPeserta <= 8) zoom = 0.7;
+          else if (totalPeserta <= 16) zoom = 0.5;
+          else if (totalPeserta <= 32) zoom = 0.3;
+          else zoom = 0.25;
         }
       }
 

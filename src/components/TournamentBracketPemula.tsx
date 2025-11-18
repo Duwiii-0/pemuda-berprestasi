@@ -1432,7 +1432,7 @@ return (
         {/* ============================================
             🆕 RENDER BRACKET dengan ADDITIONAL MATCH
             ============================================ */}
-<div ref={bracketRef} className="tournament-layout bg-white p-6 rounded-lg">
+<div ref={bracketRef} id="pemula-bracket-export-area" className="tournament-layout bg-white p-6 rounded-lg">
 {(() => {
   const round1Matches = matches.filter(m => m.ronde === 1);
   const round2Matches = matches.filter(m => m.ronde === 2);
