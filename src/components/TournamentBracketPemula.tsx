@@ -408,18 +408,6 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
     }
   };
 
-  // ✅ STEP 1: Tambahkan helper function untuk detect last match
-const getLastMatchInRound1 = () => {
-  const round1Matches = matches.filter(m => m.ronde === 1);
-  return round1Matches.length > 0 ? round1Matches[round1Matches.length - 1] : null;
-};
-
-const getAdditionalMatch = () => {
-  const round2Matches = matches.filter(m => m.ronde === 2);
-  return round2Matches.length > 0 ? round2Matches[0] : null;
-};
-
-
 const exportPesertaToExcel = () => {
   // ✅ PERBAIKAN KRUSIAL: Gunakan data ASLI dari kelasData, BUKAN dari state matches!
   if (!kelasData?.peserta_kompetisi?.length) {

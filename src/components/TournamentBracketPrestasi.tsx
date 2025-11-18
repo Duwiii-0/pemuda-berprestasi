@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Trophy, Edit3, ArrowLeft, AlertTriangle, RefreshCw, Download, Shuffle, CheckCircle, Users, FilePenLine } from 'lucide-react';
 import { exportBracketFromData } from '../utils/exportBracketPDF';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/authContext';
 import sriwijaya from "../assets/logo/sriwijaya.png";
 import taekwondo from "../assets/logo/taekwondo.png";
@@ -190,8 +189,6 @@ const CENTER_GAP = 100;
     });
     setShowModal(true);
   };
-
-const navigate = useNavigate();
 
 const [dojangSeparation, setDojangSeparation] = useState<DojangSeparationConfig>({
   enabled: false,
@@ -1301,8 +1298,6 @@ const calculateVerticalPositions = (matchesBySide: Match[][]) => {
   for (let roundIdx = 1; roundIdx < matchesBySide.length; roundIdx++) {
     positions[roundIdx] = [];
     const currentRoundMatches = matchesBySide[roundIdx];
-    const prevRoundMatches = matchesBySide[roundIdx - 1];
-
 
     for (let matchIdx = 0; matchIdx < currentRoundMatches.length; matchIdx++) {
       const parent1Idx = matchIdx * 2;
@@ -1752,7 +1747,6 @@ const renderBracketSide = (
         if (partnerY === undefined) return null;
 
         const partnerCenterY = partnerY + CARD_HEIGHT / 2;
-        const targetCenterY = targetY + CARD_HEIGHT / 2;
         
         // Posisi X vertical line (di tengah gap)
         const verticalLineX = isRight 
@@ -1865,20 +1859,6 @@ React.useEffect(() => {
 }, [matches]);
 
   const prestasiLeaderboard = generatePrestasiLeaderboard();
-  const totalRounds = getTotalRounds();
-
-  const calculateCenterOffset = () => {
-  if (matches.length === 0) return 400;
-  
-  const firstRoundMatches = getMatchesByRound(1).length;
-  const baseSpacing = 280;
-  const firstRoundHeight = (firstRoundMatches - 1) * baseSpacing + CARD_HEIGHT;
-  return (firstRoundHeight / 2) + 200;
-};
-
-const centerOffset = calculateCenterOffset();
-
-
 
 React.useEffect(() => {
   const style = document.createElement('style');
@@ -2096,46 +2076,6 @@ const getFinalMatch = (): Match | null => {
   const totalRounds = getTotalRounds();
   const finalMatches = getMatchesByRound(totalRounds);
   return finalMatches.length > 0 ? finalMatches[0] : null;
-};
-
-/**
- * Calculate card position for split bracket
- */
-const calculateCardPosition = (
-  side: 'left' | 'right' | 'final',
-  roundIndex: number,
-  matchIndex: number,
-  totalMatchesInRound: number,
-  centerOffset: number
-): { x: number; y: number } => {
-  
-  if (side === 'final') {
-    // Final card di tengah
-    const totalRounds = getTotalRounds();
-    const finalX = (totalRounds - 1) * (CARD_WIDTH + ROUND_GAP) + 32;
-    return { x: finalX, y: centerOffset - (CARD_HEIGHT / 2) };
-  }
-  
-  const baseSpacing = 280;
-  const spacingMultiplier = Math.pow(2, roundIndex);
-  const spacing = baseSpacing * spacingMultiplier;
-  
-  // Vertical position
-  const totalHeight = (totalMatchesInRound - 1) * spacing;
-  const startOffset = -totalHeight / 2;
-  const y = centerOffset + startOffset + (matchIndex * spacing);
-  
-  // Horizontal position
-  let x: number;
-  if (side === 'left') {
-    x = roundIndex * (CARD_WIDTH + ROUND_GAP) + 32;
-  } else {
-    // Right side: mirror position dari kanan
-    const leftSideWidth = (getTotalRounds() - 1) * (CARD_WIDTH + ROUND_GAP);
-    x = leftSideWidth + (roundIndex * (CARD_WIDTH + ROUND_GAP)) + 32;
-  }
-  
-  return { x, y };
 };
 
   return (
@@ -2546,7 +2486,7 @@ const calculateCardPosition = (
               <div className="space-y-3 pb-4 border-b" style={{ borderColor: 'rgba(153, 13, 53, 0.1)' }}>
                 <div>
                   <label className="block text-sm font-medium mb-2 flex items-center gap-2">
-                    📅 Tanggal Pertandingan
+                    Tanggal Pertandingan
                   </label>
                   <input
                     type="date"
@@ -2564,7 +2504,7 @@ const calculateCardPosition = (
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-sm font-medium mb-2 flex items-center gap-2">
-                      🔢 Nomor Antrian
+                      Nomor Antrian
                     </label>
                     <input
                       type="number"
@@ -2578,7 +2518,7 @@ const calculateCardPosition = (
 
                   <div>
                     <label className="block text-sm font-medium mb-2 flex items-center gap-2">
-                      📍 Nomor Lapangan
+                      Nomor Lapangan
                     </label>
                     <input
                       type="text"
