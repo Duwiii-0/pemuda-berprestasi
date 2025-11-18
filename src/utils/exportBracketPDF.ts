@@ -47,10 +47,10 @@ const THEME = {
 };
 
 const getScaleFactor = (participantCount: number): number => {
-  if (participantCount > 16) return 2;
-  else if (participantCount > 8) return 2.20;
-  else if (participantCount > 4) return 2.80;
-  else return 3.00;
+  if (participantCount > 16) return 1.50;
+  else if (participantCount > 8) return 1.40;
+  else if (participantCount > 4) return 1.30;
+  else return 1.25;
 };
 
 // =================================================================================================
