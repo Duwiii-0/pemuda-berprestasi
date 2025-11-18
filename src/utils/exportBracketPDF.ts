@@ -531,7 +531,7 @@ export const exportBracketFromData = async (
           // ✅ NEW: PRESTASI zoom with A3 support
           if (useA3) {
             // A3 for >32 participants - ✅ ADJUST THIS VALUE
-            zoom = 0.10; // ← Kamu bisa ganti sesuai kebutuhan
+            zoom = 0.80; // ← Kamu bisa ganti sesuai kebutuhan
             console.log(`🔍 Using A3 zoom: ${zoom}`);
           } else {
             // A4 for ≤32 participants
