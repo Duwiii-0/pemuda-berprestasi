@@ -1147,32 +1147,30 @@ const renderMatchCard = (match: Match, key: string | number, matchIndex: number)
           </button>
           
           {/* Edit athletes button */}
-          {match.ronde === 1 && (
-            <button
-              onClick={() => {
-                // ⭐ Check if match has scores (already started)
-                if (hasScores) {
-                  showNotification(
-                    'warning',
-                    'Match Sudah Dimulai',
-                    'Tidak dapat mengubah peserta karena match sudah memiliki skor.',
-                    () => setShowModal(false)
-                  );
-                  return;
-                }
-                setEditAthleteModal({ show: true, match: match, slot: null });
-              }}
-              className="p-1 rounded hover:bg-black/5 transition-all"
-              disabled={viewOnly || hasScores}
-              style={{ 
-                opacity: viewOnly || hasScores ? 0.3 : 1, 
-                cursor: viewOnly || hasScores ? 'not-allowed' : 'pointer' 
-              }}
-              title={hasScores ? 'Match sudah dimulai - tidak dapat diubah' : 'Edit athletes'}
-            >
-              <Edit3 size={14} style={{ color: '#DC143C' }} />
-            </button>
-          )}
+          <button
+            onClick={() => {
+              // ⭐ Check if match has scores (already started)
+              if (hasScores) {
+                showNotification(
+                  'warning',
+                  'Match Sudah Dimulai',
+                  'Tidak dapat mengubah peserta karena match sudah memiliki skor.',
+                  () => setShowModal(false)
+                );
+                return;
+              }
+              setEditAthleteModal({ show: true, match: match, slot: null });
+            }}
+            className="p-1 rounded hover:bg-black/5 transition-all"
+            disabled={viewOnly || hasScores}
+            style={{ 
+              opacity: viewOnly || hasScores ? 0.3 : 1, 
+              cursor: viewOnly || hasScores ? 'not-allowed' : 'pointer' 
+            }}
+            title={hasScores ? 'Match sudah dimulai - tidak dapat diubah' : 'Edit athletes'}
+          >
+            <Edit3 size={14} style={{ color: '#DC143C' }} />
+          </button>
         </div>
       </div>
 
