@@ -61,6 +61,12 @@ router.delete(
   KompetisiController.deleteParticipant
 );
 
+// ✅ UPDATE weigh-in data
+router.put(
+  "/:id/peserta/:participantId/penimbangan",
+  KompetisiController.updatePenimbangan
+);
+
 // ============================================================
 // LEGACY ROUTES (for backward compatibility - bisa dihapus kalau tidak dipakai)
 // ============================================================

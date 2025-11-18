@@ -268,6 +268,8 @@ model tb_peserta_kompetisi {
   id_kelas_kejuaraan   Int
   is_team              Boolean            @default(false)
   status               StatusPendaftaran  @default(PENDING)
+  penimbangan1         Float?
+  penimbangan2         Float?
 
   atlet                tb_atlet?          @relation(fields: [id_atlet], references: [id_atlet])
   kelas_kejuaraan      tb_kelas_kejuaraan @relation(fields: [id_kelas_kejuaraan], references: [id_kelas_kejuaraan])

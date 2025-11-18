@@ -993,4 +993,30 @@ static async validateParticipantEligibility(participant: any, newKelas: any) {
   }
 }
 
+
+  static async updatePenimbangan(participantId: number, data: { penimbangan1?: number | null; penimbangan2?: number | null; }) {
+    const { penimbangan1, penimbangan2 } = data;
+
+    const existingPeserta = await prisma.tb_peserta_kompetisi.findUnique({
+      where: { id_peserta_kompetisi: participantId },
+    });
+
+    if (!existingPeserta) {
+      throw new Error('Peserta tidak ditemukan');
+    }
+    
+    if (existingPeserta.is_team) {
+      throw new Error('Penimbangan berat badan hanya untuk peserta individu');
+    }
+
+    const updatedPeserta = await prisma.tb_peserta_kompetisi.update({
+      where: { id_peserta_kompetisi: participantId },
+      data: {
+        penimbangan1: penimbangan1,
+        penimbangan2: penimbangan2,
+      },
+    });
+
+    return updatedPeserta;
+  }
 }

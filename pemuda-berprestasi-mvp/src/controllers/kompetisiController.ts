@@ -1866,5 +1866,32 @@ static async getAvailableClassesWithDetails(req: Request, res: Response) {
   }
 }
 
+  static async updatePenimbangan(req: Request, res: Response) {
+    try {
+      const { participantId } = req.params;
+      const { penimbangan1, penimbangan2 } = req.body;
+
+      const id = parseInt(participantId, 10);
+      if (isNaN(id)) {
+        return sendError(res, 'ID peserta tidak valid', 400);
+      }
+
+      // Basic validation
+      if (penimbangan1 === undefined && penimbangan2 === undefined) {
+        return sendError(res, 'Tidak ada data penimbangan yang dikirim', 400);
+      }
+
+      const data = {
+        penimbangan1: penimbangan1 ? parseFloat(penimbangan1) : null,
+        penimbangan2: penimbangan2 ? parseFloat(penimbangan2) : null,
+      };
+
+      const updatedPeserta = await KompetisiService.updatePenimbangan(id, data);
+      return sendSuccess(res, updatedPeserta, 'Data penimbangan berhasil diperbarui');
+    } catch (error: any) {
+      console.error('Controller - Error updating weigh-in:', error);
+      return sendError(res, error.message, 400);
+    }
+  }
 }
 
