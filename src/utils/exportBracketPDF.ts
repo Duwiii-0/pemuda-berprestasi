@@ -47,10 +47,10 @@ const THEME = {
 };
 
 const getScaleFactor = (participantCount: number): number => {
-  if (participantCount > 16) return 1.50;
-  else if (participantCount > 8) return 1.40;
-  else if (participantCount > 4) return 1.30;
-  else return 1.25;
+  if (participantCount > 16) return 1.65;
+  else if (participantCount > 8) return 1.75;
+  else if (participantCount > 4) return 1.80;
+  else return 2.00;
 };
 
 // =================================================================================================
@@ -200,13 +200,49 @@ const convertElementToImage = async (
 ): Promise<HTMLImageElement> => {
   console.log('🎯 Starting bracket capture...');
   
-  const bracketVisual: HTMLElement = element;
-  let bracketType: 'PRESTASI' | 'PEMULA' = 'PRESTASI';
-  if (element.id === 'pemula-bracket-export-area') {
+  let bracketVisual: HTMLElement | null = null;
+  let bracketType: 'PRESTASI' | 'PEMULA' | 'UNKNOWN' = 'UNKNOWN';
+  
+  if (element.classList.contains('tournament-layout')) {
+    bracketVisual = element;
     bracketType = 'PEMULA';
   }
   
-  console.log(`✅ Found bracket (${bracketType}) with ID: ${element.id}`);
+  if (!bracketVisual) {
+    bracketVisual = element.querySelector('.tournament-layout') as HTMLElement;
+    if (bracketVisual) bracketType = 'PEMULA';
+  }
+  
+  if (!bracketVisual) {
+    const relativeContainer = element.querySelector('.relative') as HTMLElement;
+    if (relativeContainer && relativeContainer.querySelector('svg')) {
+      bracketVisual = relativeContainer;
+      bracketType = 'PRESTASI';
+    }
+  }
+  
+  if (!bracketVisual) {
+    const allRelatives = element.querySelectorAll('.relative');
+    for (const rel of allRelatives) {
+      if (rel.querySelector('svg')) {
+        bracketVisual = rel as HTMLElement;
+        bracketType = 'PRESTASI';
+        break;
+      }
+    }
+  }
+  
+  if (!bracketVisual && element.children.length > 0) {
+    bracketVisual = element;
+    if (element.querySelector('svg')) bracketType = 'PRESTASI';
+    else if (element.querySelector('.bg-white.rounded-lg')) bracketType = 'PEMULA';
+  }
+  
+  if (!bracketVisual) {
+    throw new Error('Bracket visual container not found');
+  }
+  
+  console.log(`✅ Found bracket (${bracketType})`);
 
   const hiddenElements: Array<{ el: HTMLElement; originalDisplay: string; originalVisibility: string }> = [];
   
@@ -286,8 +322,8 @@ const convertElementToImage = async (
     cacheBust: true,
     skipFonts: true,
     style: {
-      transform: `scale(${scaleFactor})`,
-      transformOrigin: 'top left',
+      transform: 'scale(1.0)',
+      transformOrigin: 'center center',
       margin: '0',
     },
     filter: (node) => {
@@ -461,7 +497,32 @@ export const exportBracketFromData = async (
       let displayWidth = maxWidth;
       let displayHeight = displayWidth / imgAspectRatio;
 
+      const totalPeserta = kelasData?.peserta_kompetisi?.length || 0;
+
+      let zoom = 1.0;
+      if (isPemula) {
+        if (totalPeserta <= 8) zoom = 1.1;
+        else if (totalPeserta <= 16) zoom = 1.05;
+        else if (totalPeserta <= 32) zoom = 1;
+        else zoom = 0.95;
+      } else {
+        // ✅ Prestasi zoom (adjusted for A3!)
+        if (useA3) {
+          if (totalPeserta <= 8) zoom = 0.50;
+          else if (totalPeserta <= 16) zoom = 0.38;
+          else if (totalPeserta <= 32) zoom = 0.22;
+          else zoom = 0.16;
+        } else {
+          if (totalPeserta <= 8) zoom = 0.35;
+          else if (totalPeserta <= 16) zoom = 0.25;
+          else if (totalPeserta <= 32) zoom = 0.15;
+          else zoom = 0.50;
+        }
+      }
+
       const HEADER_MARGIN_BOTTOM = 5;
+      displayWidth *= zoom;
+      displayHeight *= zoom;
 
       const x = (PAGE_WIDTH - displayWidth) / 2;
       const y = HEADER_HEIGHT + HEADER_MARGIN_BOTTOM;
