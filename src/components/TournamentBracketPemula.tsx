@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Trophy, Edit3, CheckCircle, ArrowLeft, AlertTriangle, RefreshCw, Download, Shuffle, Users } from 'lucide-react';
+import { Trophy, Edit3, CheckCircle, ArrowLeft, AlertTriangle, RefreshCw, Download, Shuffle, Users, FilePenLine } from 'lucide-react';
 import { exportBracketFromData } from '../utils/exportBracketPDF';
 import { useAuth } from '../context/authContext';
 import { useNavigate } from 'react-router-dom';
@@ -1616,30 +1616,44 @@ const additionalMatchY = (lastFightY + byeMatchY) / 2;
                           )}
                         </div>
                         
-                      <button
-                        onClick={() => {
-                          const hasScores = match.skor_a > 0 || match.skor_b > 0;
-                          if (hasScores) {
-                            showNotification(
-                              'warning',
-                              'Match Sudah Dimulai',
-                              'Tidak dapat mengubah peserta karena match sudah memiliki skor.',
-                              () => setShowModal(false)
-                            );
-                            return;
-                          }
-                          setEditAthleteModal({ show: true, match: match, slot: null });
-                        }}
-                        className="p-1 rounded hover:bg-black/5 transition-all"
-                        disabled={viewOnly || (match.skor_a > 0 || match.skor_b > 0)}
-                        style={{ 
-                          opacity: viewOnly || (match.skor_a > 0 || match.skor_b > 0) ? 0.3 : 1, 
-                          cursor: viewOnly || (match.skor_a > 0 || match.skor_b > 0) ? 'not-allowed' : 'pointer' 
-                        }}
-                        title={(match.skor_a > 0 || match.skor_b > 0) ? 'Match sudah dimulai - tidak dapat diubah' : 'Edit athletes'}
-                      >
-                        <Edit3 size={14} style={{ color: '#DC143C' }} />
-                      </button>
+                        <div className="flex items-center gap-2">
+                          {/* Edit match scores/details button */}
+                          <button
+                            onClick={() => setEditingMatch(match)}
+                            className="p-1 rounded hover:bg-black/5 transition-all"
+                            disabled={viewOnly}
+                            style={{ opacity: viewOnly ? 0.3 : 1, cursor: viewOnly ? 'not-allowed' : 'pointer' }}
+                            title="Edit match scores and details"
+                          >
+                            <FilePenLine size={14} style={{ color: '#3B82F6' }} />
+                          </button>
+
+                          {/* Edit athletes button */}
+                          <button
+                            onClick={() => {
+                              const hasScores = match.skor_a > 0 || match.skor_b > 0;
+                              if (hasScores) {
+                                showNotification(
+                                  'warning',
+                                  'Match Sudah Dimulai',
+                                  'Tidak dapat mengubah peserta karena match sudah memiliki skor.',
+                                  () => setShowModal(false)
+                                );
+                                return;
+                              }
+                              setEditAthleteModal({ show: true, match: match, slot: null });
+                            }}
+                            className="p-1 rounded hover:bg-black/5 transition-all"
+                            disabled={viewOnly || (match.skor_a > 0 || match.skor_b > 0)}
+                            style={{ 
+                              opacity: viewOnly || (match.skor_a > 0 || match.skor_b > 0) ? 0.3 : 1, 
+                              cursor: viewOnly || (match.skor_a > 0 || match.skor_b > 0) ? 'not-allowed' : 'pointer' 
+                            }}
+                            title={(match.skor_a > 0 || match.skor_b > 0) ? 'Match sudah dimulai - tidak dapat diubah' : 'Edit athletes'}
+                          >
+                            <Edit3 size={14} style={{ color: '#DC143C' }} />
+                          </button>
+                        </div>
                       </div>
 
                       <div className="flex flex-col">
@@ -1819,12 +1833,44 @@ const additionalMatchY = (lastFightY + byeMatchY) / 2;
                   )}
                 </div>
                 
-                <button
-                  onClick={() => setEditingMatch(additionalMatch)}
-                  className="p-1 rounded hover:bg-black/5 transition-all"
-                >
-                  <Edit3 size={14} style={{ color: '#DC143C' }} />
-                </button>
+                <div className="flex items-center gap-2">
+                  {/* Edit match scores/details button */}
+                  <button
+                    onClick={() => setEditingMatch(additionalMatch)}
+                    className="p-1 rounded hover:bg-black/5 transition-all"
+                    disabled={viewOnly}
+                    style={{ opacity: viewOnly ? 0.3 : 1, cursor: viewOnly ? 'not-allowed' : 'pointer' }}
+                    title="Edit match scores and details"
+                  >
+                    <FilePenLine size={14} style={{ color: '#3B82F6' }} />
+                  </button>
+                  
+                  {/* Edit athletes button */}
+                  <button
+                    onClick={() => {
+                      const hasScores = additionalMatch.skor_a > 0 || additionalMatch.skor_b > 0;
+                      if (hasScores) {
+                        showNotification(
+                          'warning',
+                          'Match Sudah Dimulai',
+                          'Tidak dapat mengubah peserta karena match sudah memiliki skor.',
+                          () => setShowModal(false)
+                        );
+                        return;
+                      }
+                      setEditAthleteModal({ show: true, match: additionalMatch, slot: null });
+                    }}
+                    className="p-1 rounded hover:bg-black/5 transition-all"
+                    disabled={viewOnly || (additionalMatch.skor_a > 0 || additionalMatch.skor_b > 0)}
+                    style={{ 
+                      opacity: viewOnly || (additionalMatch.skor_a > 0 || additionalMatch.skor_b > 0) ? 0.3 : 1, 
+                      cursor: viewOnly || (additionalMatch.skor_a > 0 || additionalMatch.skor_b > 0) ? 'not-allowed' : 'pointer' 
+                    }}
+                    title={(additionalMatch.skor_a > 0 || additionalMatch.skor_b > 0) ? 'Match sudah dimulai - tidak dapat diubah' : 'Edit athletes'}
+                  >
+                    <Edit3 size={14} style={{ color: '#DC143C' }} />
+                  </button>
+                </div>
               </div>
 
               <div className="flex flex-col">

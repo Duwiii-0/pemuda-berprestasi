@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Trophy, Edit3, ArrowLeft, AlertTriangle, RefreshCw, Download, Shuffle, CheckCircle, Users } from 'lucide-react';
+import { Trophy, Edit3, ArrowLeft, AlertTriangle, RefreshCw, Download, Shuffle, CheckCircle, Users, FilePenLine } from 'lucide-react';
 import { exportBracketFromData } from '../utils/exportBracketPDF';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/authContext';
@@ -1144,7 +1144,18 @@ const renderMatchCard = (match: Match, key: string | number, matchIndex: number)
             </span>
           )}
           
-          {/* ⭐ UPDATED: Edit Button dengan conditional disable */}
+          {/* Edit match scores/details button */}
+          <button
+            onClick={() => setEditingMatch(match)}
+            className="p-1 rounded hover:bg-black/5 transition-all"
+            disabled={viewOnly}
+            style={{ opacity: viewOnly ? 0.3 : 1, cursor: viewOnly ? 'not-allowed' : 'pointer' }}
+            title="Edit match scores and details"
+          >
+            <FilePenLine size={14} style={{ color: '#3B82F6' }} />
+          </button>
+          
+          {/* Edit athletes button */}
           <button
             onClick={() => {
               // ⭐ Check if match has scores (already started)

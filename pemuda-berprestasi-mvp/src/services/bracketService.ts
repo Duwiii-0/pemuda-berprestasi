@@ -2266,7 +2266,7 @@ static async shufflePemulaBracket(
 // ==========================================
 
 /**
- * 🆕 Assign athlete to match with smart swap logic
+ * 🆕 Assign athlete to match with smart swap logic + cascading update
  * 
  * @param matchId - Match ID to assign athlete
  * @param slot - 'A' or 'B' (which participant slot)
@@ -2303,7 +2303,11 @@ static async assignAthleteToMatch(
       include: {
         bagan: {
           include: {
-            kelas_kejuaraan: true
+            kelas_kejuaraan: {
+              include: {
+                kategori_event: true
+              }
+            }
           }
         },
         peserta_a: {
@@ -2345,7 +2349,14 @@ static async assignAthleteToMatch(
       throw new Error('Match tidak termasuk dalam kelas kejuaraan ini');
     }
 
-    console.log(`   ✅ Match found: Round ${targetMatch.ronde}, Position ${targetMatch.position}`);
+    console.log(`   ✅ Match found: Round ${targetMatch.ronde}, Position ${targetMatch.position ?? 0}`);
+
+    // ⭐ STEP 1.5: Detect category (PEMULA or PRESTASI)
+    const isPemula = targetMatch.bagan.kelas_kejuaraan?.kategori_event?.nama_kategori
+      ?.toLowerCase()
+      .includes('pemula') || false;
+
+    console.log(`   📊 Category: ${isPemula ? 'PEMULA' : 'PRESTASI'}`);
 
     // ⭐ STEP 2: Validate match not started
     if (targetMatch.skor_a > 0 || targetMatch.skor_b > 0) {
@@ -2394,12 +2405,15 @@ static async assignAthleteToMatch(
     const isByeMatch = !targetMatch.id_peserta_a || !targetMatch.id_peserta_b;
     
     if (isByeMatch) {
-      // BYE match - only allow assignment to non-BYE slot
-      if (slot === 'B' && !targetMatch.id_peserta_b) {
-        throw new Error('Tidak dapat assign ke slot BYE. Slot BYE hanya bisa diisi otomatis.');
-      }
+      console.log(`   ⚠️ BYE match detected`);
       
-      console.log(`   ⚠️ BYE match detected - limited editing`);
+      // Don't allow editing the BYE slot itself
+      if (slot === 'A' && !targetMatch.id_peserta_a) {
+        throw new Error('Tidak dapat assign ke slot BYE (Slot A kosong)');
+      }
+      if (slot === 'B' && !targetMatch.id_peserta_b) {
+        throw new Error('Tidak dapat assign ke slot BYE (Slot B kosong)');
+      }
     }
 
     // ⭐ STEP 6: Check if participant already in another match (SAME ROUND)
@@ -2456,10 +2470,9 @@ static async assignAthleteToMatch(
         }
       });
 
-      // SESUDAH (Perbaikan)
       swappedMatchInfo = {
         id: existingMatch.id_match,
-        position: existingMatch.position ?? 0, // ✅ Fallback to 0 if null
+        position: existingMatch.position ?? 0,
         round: existingMatch.ronde
       };
       swapped = true;
@@ -2480,7 +2493,119 @@ static async assignAthleteToMatch(
       console.log(`   ✅ Assignment completed`);
     }
 
-    // ⭐ STEP 7: Fetch updated matches
+    // ⭐ ========================================
+    // ⭐ NEW LOGIC: CASCADE UPDATE TO NEXT ROUND
+    // ⭐ ========================================
+    
+    console.log(`\n🔗 === CASCADING UPDATE CHECK ===`);
+
+    // Fetch updated target match
+    const updatedTargetMatch = await prisma.tb_match.findUnique({
+      where: { id_match: matchId },
+      include: {
+        peserta_a: true,
+        peserta_b: true
+      }
+    });
+
+    // Check if this match is a BYE match (auto-advanced winner)
+    const isCurrentlyByeMatch = 
+      (updatedTargetMatch!.id_peserta_a && !updatedTargetMatch!.id_peserta_b) ||
+      (!updatedTargetMatch!.id_peserta_a && updatedTargetMatch!.id_peserta_b);
+
+    if (isCurrentlyByeMatch) {
+      console.log(`   ⚠️ BYE match detected - updating next round...`);
+
+      // Determine the BYE winner (the participant that is NOT null)
+      const byeWinnerId = updatedTargetMatch!.id_peserta_a || updatedTargetMatch!.id_peserta_b;
+
+      if (byeWinnerId) {
+        console.log(`   🎯 BYE winner ID: ${byeWinnerId}`);
+
+        // ⭐ FIND AND UPDATE NEXT ROUND MATCH
+        if (isPemula && targetMatch.ronde === 1) {
+          // ⭐ PEMULA: BYE winner goes to Additional Match (Round 2, Slot B)
+          console.log(`   🥋 PEMULA: Updating Additional Match (R2)...`);
+
+          const additionalMatch = await prisma.tb_match.findFirst({
+            where: {
+              id_bagan: targetMatch.id_bagan,
+              ronde: 2
+            }
+          });
+
+          if (additionalMatch) {
+            await prisma.tb_match.update({
+              where: { id_match: additionalMatch.id_match },
+              data: { id_peserta_b: byeWinnerId } // BYE winner always in Slot B for PEMULA
+            });
+            console.log(`   ✅ Updated R2 Match ${additionalMatch.id_match}, Slot B = ${byeWinnerId}`);
+          } else {
+            console.log(`   ⚠️ No Additional Match found in R2`);
+          }
+
+        } else {
+          // ⭐ PRESTASI: Calculate next round position
+          console.log(`   🏆 PRESTASI: Calculating next round position...`);
+
+          const currentRoundMatches = await prisma.tb_match.findMany({
+            where: {
+              id_bagan: targetMatch.id_bagan,
+              ronde: targetMatch.ronde
+            },
+            orderBy: { id_match: 'asc' }
+          });
+
+          const nextRoundMatches = await prisma.tb_match.findMany({
+            where: {
+              id_bagan: targetMatch.id_bagan,
+              ronde: targetMatch.ronde + 1
+            },
+            orderBy: { id_match: 'asc' }
+          });
+
+          if (nextRoundMatches.length > 0) {
+            const currentMatchIndex = currentRoundMatches.findIndex(
+              m => m.id_match === matchId
+            );
+
+            if (currentMatchIndex !== -1) {
+              const nextMatchIndex = Math.floor(currentMatchIndex / 2);
+              const nextMatch = nextRoundMatches[nextMatchIndex];
+
+              if (nextMatch) {
+                const isFirstSlot = currentMatchIndex % 2 === 0;
+                const updateData = isFirstSlot
+                  ? { id_peserta_a: byeWinnerId }
+                  : { id_peserta_b: byeWinnerId };
+
+                await prisma.tb_match.update({
+                  where: { id_match: nextMatch.id_match },
+                  data: updateData
+                });
+
+                console.log(
+                  `   ✅ Updated R${targetMatch.ronde + 1} Match ${nextMatch.id_match}, ` +
+                  `Slot ${isFirstSlot ? 'A' : 'B'} = ${byeWinnerId}`
+                );
+              } else {
+                console.log(`   ⚠️ Next match not found at index ${nextMatchIndex}`);
+              }
+            } else {
+              console.log(`   ⚠️ Current match not found in round matches`);
+            }
+          } else {
+            console.log(`   ℹ️ No next round (this is the final round)`);
+          }
+        }
+      }
+    } else {
+      console.log(`   ℹ️ Not a BYE match - no cascading update needed`);
+    }
+
+    console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+
+    // ⭐ STEP 7: Fetch updated matches for response
     const updatedMatches = await prisma.tb_match.findMany({
       where: {
         id_bagan: targetMatch.id_bagan,
@@ -2527,11 +2652,11 @@ static async assignAthleteToMatch(
       orderBy: { position: 'asc' }
     });
 
-    // SESUDAH (Perbaikan)
+    // Transform to Match[] format
     const transformedMatches: Match[] = updatedMatches.map(m => ({
       id: m.id_match,
       round: m.ronde,
-      position: m.position ?? 0, // ✅ Fallback to 0 if null
+      position: m.position ?? 0, // ✅ Fixed null handling
       participant1: m.peserta_a ? this.transformParticipant(m.peserta_a) : null,
       participant2: m.peserta_b ? this.transformParticipant(m.peserta_b) : null,
       winner: this.determineWinner(m),
@@ -2544,14 +2669,13 @@ static async assignAthleteToMatch(
       nomorLapangan: m.nomor_lapangan
     }));
 
+    const message = swapped
+      ? `Berhasil assign peserta dengan swap ke Match #${(existingMatch!.position ?? 0) + 1}`
+      : `Berhasil assign peserta ke Match #${(targetMatch.position ?? 0) + 1}`;
 
-  // SESUDAH (Perbaikan)
-  const message = swapped
-    ? `Berhasil assign peserta dengan swap ke Match #${(existingMatch!.position ?? 0) + 1}`
-    : `Berhasil assign peserta ke Match #${(targetMatch.position ?? 0) + 1}`;
-
-    console.log(`\n✅ ASSIGNMENT COMPLETED`);
+    console.log(`\n✅ === ASSIGNMENT COMPLETED ===`);
     console.log(`   Message: ${message}`);
+    console.log(`   Updated ${transformedMatches.length} matches`);
     console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`);
 
     return {
