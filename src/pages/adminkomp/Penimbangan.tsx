@@ -315,22 +315,23 @@ const Penimbangan: React.FC = () => {
           </div>
           
           <div className="hidden lg:block">
-              <div className="rounded-xl shadow-sm border overflow-hidden" style={{ backgroundColor: "#F5FBEF", borderColor: "#990D35" }}>
+              <div className="rounded-xl shadow-sm border overflow-hidden" style={{ backgroundColor: "white", borderColor: "rgba(153, 13, 53, 0.1)" }}>
                 <div className="overflow-x-auto">
                   <table className="w-full">
-                    <thead style={{ backgroundColor: "#F5B700" }}>
+                    <thead style={{ backgroundColor: "rgba(153, 13, 53, 0.05)" }}>
                       <tr>
-                        {["Nama Peserta", "Kategori", "Usia", "Kelas", "Dojang", "Penimbangan #1", "Penimbangan #2", "Aksi"].map((header) => (
-                          <th key={header} className="py-3 px-4 font-semibold text-sm text-left" style={{ color: "#050505" }}>
+                        {["Nama Peserta", "Jenis Kelamin", "Kategori", "Usia", "Kelas", "Dojang", "Penimbangan #1", "Penimbangan #2", "Aksi"].map((header) => (
+                          <th key={header} className="py-4 px-4 font-bold text-sm text-left" style={{ color: "#990D35" }}>
                             {header}
                           </th>
                         ))}
                       </tr>
                     </thead>
-                    <tbody className="divide-y" style={{ borderColor: "#990D35" }}>
+                    <tbody className="divide-y" style={{ borderColor: "rgba(153, 13, 53, 0.1)" }}>
                       {currentPesertas.map((peserta: any) => (
-                          <tr key={peserta.id_peserta_kompetisi} onClick={() => handleRowClick(peserta)} className="transition-colors hover:bg-yellow-100 cursor-pointer">
+                          <tr key={peserta.id_peserta_kompetisi} onClick={() => handleRowClick(peserta)} className="transition-colors hover:bg-red-50 cursor-pointer">
                             <td className="py-3 px-4 font-medium text-sm" style={{ color: "#050505" }}>{peserta.atlet?.nama_atlet || '-'}</td>
+                            <td className="py-3 px-4 text-sm" style={{ color: "#050505", opacity: 0.7 }}>{peserta.atlet?.jenis_kelamin === 'LAKI_LAKI' ? 'Laki-laki' : 'Perempuan'}</td>
                             <td className="py-3 px-4 text-sm" style={{ color: "#050505", opacity: 0.7 }}>{`${peserta.kelas_kejuaraan?.cabang} - ${peserta.kelas_kejuaraan?.kategori_event?.nama_kategori}`}</td>
                             <td className="py-3 px-4 text-sm" style={{ color: "#050505", opacity: 0.7 }}>{peserta.kelas_kejuaraan?.kelompok?.nama_kelompok || '-'}</td>
                             <td className="py-3 px-4 text-sm" style={{ color: "#050505", opacity: 0.7 }}>{peserta.kelas_kejuaraan?.kelas_berat?.nama_kelas || '-'}</td>
@@ -339,9 +340,10 @@ const Penimbangan: React.FC = () => {
                             <td className="py-3 px-4 text-sm font-semibold" style={{ color: "#050505" }}>{peserta.penimbangan2 ? `${peserta.penimbangan2} kg` : '-'}</td>
                             <td className="py-3 px-4">
                                 <button onClick={(e) => { e.stopPropagation(); handleRejection(peserta.id_peserta_kompetisi); }} disabled={processing === peserta.id_peserta_kompetisi}
-                                  className="inline-flex items-center gap-1 px-3 py-2 text-white rounded-lg hover:shadow-md disabled:opacity-50 transition-all text-sm font-medium"
+                                  className="inline-flex items-center gap-2 px-3 py-2 text-white rounded-lg hover:shadow-md disabled:opacity-50 transition-all text-sm font-medium"
                                   style={{ backgroundColor: "#990D35" }} title="Tolak Peserta">
                                   {processing === peserta.id_peserta_kompetisi ? <Loader size={16} className="animate-spin" /> : <XCircle size={16} />}
+                                  <span>Tolak</span>
                                 </button>
                             </td>
                           </tr>
