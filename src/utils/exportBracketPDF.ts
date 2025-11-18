@@ -22,8 +22,14 @@ interface ExportConfig {
   logoEvent?: string;
 }
 
-const PAGE_WIDTH = 297;
-const PAGE_HEIGHT = 210;
+// ✅ A4 Constants
+const PAGE_WIDTH_A4 = 297;
+const PAGE_HEIGHT_A4 = 210;
+
+// ✅ A3 Constants (2x A4)
+const PAGE_WIDTH_A3 = 420;
+const PAGE_HEIGHT_A3 = 297;
+
 const MARGIN_TOP = 10;
 const MARGIN_BOTTOM = 8;
 const MARGIN_LEFT = 10;
@@ -94,12 +100,13 @@ const compressImage = async (dataUrl: string): Promise<HTMLImageElement> => {
 };
 
 // =================================================================================================
-// HEADER & FOOTER
+// ✅ MODIFIED: HEADER & FOOTER with dynamic page width
 // =================================================================================================
 
 const addHeaderAndFooter = async (
   doc: jsPDF,
-  config: ExportConfig
+  config: ExportConfig,
+  pageWidth: number = PAGE_WIDTH_A4
 ) => {
   const headerY = MARGIN_TOP;
   const logoSize = 20;
@@ -119,14 +126,14 @@ const addHeaderAndFooter = async (
   if (config.logoEvent) {
     try {
       const eventImg = await loadImage(config.logoEvent);
-      doc.addImage(eventImg, 'PNG', PAGE_WIDTH - MARGIN_RIGHT - logoSize - 2, logoY, logoSize, logoSize, undefined, 'FAST');
+      doc.addImage(eventImg, 'PNG', pageWidth - MARGIN_RIGHT - logoSize - 2, logoY, logoSize, logoSize, undefined, 'FAST');
     } catch (error) {
       console.warn('⚠️ Failed to load Event logo:', error);
     }
   }
 
   // TEXT INFO (Tengah)
-  const centerX = PAGE_WIDTH / 2;
+  const centerX = pageWidth / 2;
   let textY = headerY + 6;
 
   // Nama Event
@@ -327,10 +334,9 @@ const convertElementToImage = async (
 };
 
 // =================================================================================================
-// ✅ MAIN: SINGLE BRACKET EXPORT
+// ✅ MAIN: SINGLE BRACKET EXPORT WITH A3 SUPPORT FOR PRESTASI > 32
 // =================================================================================================
 
-// ✅ MODIFIED: exportBracketFromData dengan Multi-Page Support untuk Pemula
 export const exportBracketFromData = async (
   kelasData: any, 
   bracketElement: HTMLElement,
@@ -357,6 +363,13 @@ export const exportBracketFromData = async (
                    !kelasData?.kelompok?.nama_kelompok?.toLowerCase().includes('poomsae') &&
                    !kelasData?.poomsae;
   
+  // ✅ Determine paper size: A3 for Prestasi > 32 participants
+  const useA3 = !isPemula && participantCount > 32;
+  const PAGE_WIDTH = useA3 ? PAGE_WIDTH_A3 : PAGE_WIDTH_A4;
+  const PAGE_HEIGHT = useA3 ? PAGE_HEIGHT_A3 : PAGE_HEIGHT_A4;
+  
+  console.log(`📄 Paper size: ${useA3 ? 'A3' : 'A4'} (Prestasi: ${!isPemula}, Participants: ${participantCount})`);
+  
   // ✅ Config dengan prioritas metadata
   const config: ExportConfig = {
     eventName: metadata?.namaKejuaraan || kelasData.kompetisi.nama_event,
@@ -373,10 +386,11 @@ export const exportBracketFromData = async (
   };
 
   try {
+    // ✅ Create PDF with dynamic format
     const doc = new jsPDF({ 
       orientation: 'landscape', 
       unit: 'mm', 
-      format: 'a4',
+      format: useA3 ? 'a3' : 'a4',
       compress: true 
     });
 
@@ -428,7 +442,7 @@ export const exportBracketFromData = async (
           const bracketImg = await convertElementToImage(clonedBracket, scaleFactor);
           
           // Add header dengan page indicator
-          await addHeaderAndFooter(doc, config);
+          await addHeaderAndFooter(doc, config, PAGE_WIDTH);
           
           // ✅ Tambahkan page number
           doc.setFont('helvetica', 'bold');
@@ -491,7 +505,7 @@ export const exportBracketFromData = async (
       console.log('📄 Single-page export...');
       
       const bracketImg = await convertElementToImage(bracketElement, scaleFactor);
-      await addHeaderAndFooter(doc, config);
+      await addHeaderAndFooter(doc, config, PAGE_WIDTH);
 
       // Calculate layout
       const contentStartY = HEADER_HEIGHT + MARGIN_TOP;
@@ -505,7 +519,7 @@ export const exportBracketFromData = async (
 
       const totalPeserta = kelasData?.peserta_kompetisi?.length || 0;
 
-      // Zoom logic
+      // ✅ Zoom logic with A3 adjustment for Prestasi
       let zoom = 1.0;
       if (isPemula) {
         if (totalPeserta <= 8) zoom = 1.1;
@@ -513,10 +527,20 @@ export const exportBracketFromData = async (
         else if (totalPeserta <= 32) zoom = 1;
         else zoom = 0.95;
       } else {
-        if (totalPeserta <= 8) zoom = 0.35;
-        else if (totalPeserta <= 16) zoom = 0.25;
-        else if (totalPeserta <= 32) zoom = 0.15;
-        else zoom = 0.10;
+        // Prestasi zoom logic
+        if (useA3) {
+          // A3: Lebih besar, zoom disesuaikan
+          if (totalPeserta <= 8) zoom = 0.50;
+          else if (totalPeserta <= 16) zoom = 0.38;
+          else if (totalPeserta <= 32) zoom = 0.22;
+          else zoom = 0.16; // > 32 peserta di A3
+        } else {
+          // A4: Original zoom
+          if (totalPeserta <= 8) zoom = 0.35;
+          else if (totalPeserta <= 16) zoom = 0.25;
+          else if (totalPeserta <= 32) zoom = 0.15;
+          else zoom = 0.11;
+        }
       }
 
       const HEADER_MARGIN_BOTTOM = 5;
@@ -539,7 +563,8 @@ export const exportBracketFromData = async (
     }
 
     const dateStr = new Date().toISOString().split('T')[0];
-    const filename = `Bracket_${config.eventName.replace(/[^a-z0-9]/gi, '_')}_${config.categoryName.replace(/ /g, '_')}_${dateStr}.pdf`;
+    const paperSize = useA3 ? 'A3' : 'A4';
+    const filename = `Bracket_${config.eventName.replace(/[^a-z0-9]/gi, '_')}_${config.categoryName.replace(/ /g, '_')}_${paperSize}_${dateStr}.pdf`;
     
     doc.save(filename);
     console.log(`✅ PDF saved: ${filename}`);
@@ -549,6 +574,10 @@ export const exportBracketFromData = async (
     throw error;
   }
 };
+
+// =================================================================================================
+// ✅ BULK EXPORT WITH A3 SUPPORT
+// =================================================================================================
 
 export const exportMultipleBracketsByLapangan = async (
   brackets: Array<{
@@ -567,10 +596,21 @@ export const exportMultipleBracketsByLapangan = async (
 ): Promise<void> => {
   console.log(`🚀 Starting bulk export for ${brackets.length} brackets...`);
   
+  // ✅ Determine if any bracket needs A3
+  const needsA3 = brackets.some(b => {
+    const approvedCount = b.kelasData.peserta_kompetisi?.filter((p: any) => p.status === 'APPROVED').length || 0;
+    return !b.isPemula && approvedCount > 32;
+  });
+  
+  const PAGE_WIDTH = needsA3 ? PAGE_WIDTH_A3 : PAGE_WIDTH_A4;
+  const PAGE_HEIGHT = needsA3 ? PAGE_HEIGHT_A3 : PAGE_HEIGHT_A4;
+  
+  console.log(`📄 Using ${needsA3 ? 'A3' : 'A4'} format for bulk export`);
+  
   const doc = new jsPDF({ 
     orientation: 'landscape', 
     unit: 'mm', 
-    format: 'a4',
+    format: needsA3 ? 'a3' : 'a4',
     compress: true
   });
 
@@ -606,29 +646,30 @@ export const exportMultipleBracketsByLapangan = async (
       try {
         // ✅ Render React component and wait for completion
         const bracketElement = await new Promise<HTMLElement>((resolve, reject) => {
-  const root = ReactDOM.createRoot(tempContainer);
-  
-  const handleRenderComplete = (element: HTMLElement) => {
-    console.log('  ✅ Bracket render complete');
-    resolve(element);
-  };
+          const root = ReactDOM.createRoot(tempContainer);
+          
+          const handleRenderComplete = (element: HTMLElement) => {
+            console.log('  ✅ Bracket render complete');
+            resolve(element);
+          };
 
-  // ✅ WRAP dengan BracketExportWrapper
-  root.render(
-    React.createElement(BracketExportWrapper, null,
-      React.createElement(BracketRenderer, {
-        kelasData: kelasData,
-        isPemula: isPemula,
-        onRenderComplete: handleRenderComplete
-      })
-    )
-  );
+          // ✅ WRAP dengan BracketExportWrapper
+          root.render(
+            React.createElement(BracketExportWrapper, null,
+              React.createElement(BracketRenderer, {
+                kelasData: kelasData,
+                isPemula: isPemula,
+                onRenderComplete: handleRenderComplete
+              })
+            )
+          );
 
-  // ✅ Timeout diperbesar jadi 15 detik (karena ada banyak context)
-  setTimeout(() => {
-    reject(new Error('Render timeout'));
-  }, 10000); // Dari 10000 jadi 15000
-      });
+          // ✅ Timeout diperbesar jadi 15 detik (karena ada banyak context)
+          setTimeout(() => {
+            reject(new Error('Render timeout'));
+          }, 10000);
+        });
+
         console.log('  📸 Capturing bracket screenshot...');
 
         const approvedParticipants = kelasData.peserta_kompetisi?.filter((p: any) => p.status === 'APPROVED') || [];
@@ -652,7 +693,7 @@ export const exportMultipleBracketsByLapangan = async (
         const bracketImg = await convertElementToImage(bracketElement, scaleFactor);
         
         // Add header
-        await addHeaderAndFooter(doc, config);
+        await addHeaderAndFooter(doc, config, PAGE_WIDTH);
 
         // Add Lapangan indicator
         doc.setFont('helvetica', 'bold');
@@ -708,7 +749,8 @@ export const exportMultipleBracketsByLapangan = async (
 
   // Save PDF
   const dateStr = new Date().toISOString().split('T')[0];
-  const filename = `Brackets_Lapangan_${eventMetadata.namaKejuaraan.replace(/[^a-z0-9]/gi, '_')}_${dateStr}.pdf`;
+  const paperSize = needsA3 ? 'A3' : 'A4';
+  const filename = `Brackets_Lapangan_${eventMetadata.namaKejuaraan.replace(/[^a-z0-9]/gi, '_')}_${paperSize}_${dateStr}.pdf`;
   
   doc.save(filename);
   console.log(`\n✅ PDF saved: ${filename} (${pageIndex} pages)`);
