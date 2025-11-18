@@ -2261,6 +2261,52 @@ static async shufflePemulaBracket(
   }
 }
 
+static async updateR1ByeForParticipant(
+  baganId: number,
+  participantId: number,
+  newValue: number | null,
+  label: string
+): Promise<void> {
+  console.log(`\n   🔍 Checking ${label}: Participant ${participantId}`);
+
+  // Find R1 BYE match where this participant is auto-advanced
+  const r1ByeMatch = await prisma.tb_match.findFirst({
+    where: {
+      id_bagan: baganId,
+      ronde: 1,
+      OR: [
+        { id_peserta_a: participantId, id_peserta_b: null },
+        { id_peserta_a: null, id_peserta_b: participantId }
+      ]
+    }
+  });
+
+  if (r1ByeMatch) {
+    console.log(`      🎯 Found R1 BYE match: ${r1ByeMatch.id_match}`);
+
+    // Determine which slot (A or B) contains this participant
+    const isSlotA = r1ByeMatch.id_peserta_a === participantId;
+    const slotName = isSlotA ? 'A' : 'B';
+
+    // Update the R1 BYE match
+    const updateData = isSlotA
+      ? { id_peserta_a: newValue }
+      : { id_peserta_b: newValue };
+
+    await prisma.tb_match.update({
+      where: { id_match: r1ByeMatch.id_match },
+      data: updateData
+    });
+
+    console.log(
+      `      ✅ R1 BYE match ${r1ByeMatch.id_match} updated: ` +
+      `Slot ${slotName}: ${participantId} → ${newValue || 'NULL'}`
+    );
+  } else {
+    console.log(`      ℹ️ No R1 BYE match found (participant came from normal fight)`);
+  }
+}
+
 /**
  * 🆕 Assign athlete to match with ROBUST cascading (bidirectional)
  * Handles:
@@ -2585,44 +2631,33 @@ static async assignAthleteToMatch(
       }
     }
 
-    // ⭐ ========================================
-    // ⭐ CASE 2: REVERSE CASCADE (R2 → R1 BYE)
-    // ⭐ ========================================
-    
-    if (targetMatch.ronde > 1 && oldParticipantId) {
-      console.log(`   🔼 REVERSE CASCADE: Checking R${targetMatch.ronde} → R1 BYE...`);
+// ⭐ ========================================
+// ⭐ CASE 2: REVERSE CASCADE (R2 → R1 BYE)
+// ⭐ ========================================
 
-      // Find which R1 BYE match auto-advanced this participant
-      const r1ByeMatch = await prisma.tb_match.findFirst({
-        where: {
-          id_bagan: targetMatch.id_bagan,
-          ronde: 1,
-          OR: [
-            { id_peserta_a: oldParticipantId, id_peserta_b: null },
-            { id_peserta_a: null, id_peserta_b: oldParticipantId }
-          ]
-        }
-      });
+if (targetMatch.ronde > 1) {
+  console.log(`   🔼 REVERSE CASCADE: Checking R${targetMatch.ronde} → R1 BYE...`);
 
-      if (r1ByeMatch) {
-        console.log(`   🎯 Found R1 BYE match: ${r1ByeMatch.id_match}`);
-        console.log(`   📝 Updating R1 BYE match with new participant...`);
+  // ⭐ UPDATE R1 BYE untuk OLD participant (yang di-remove dari target match)
+  if (oldParticipantId) {
+    await this.updateR1ByeForParticipant(
+      targetMatch.id_bagan,
+      oldParticipantId,
+      null, // Clear karena dia sudah di-remove
+      'OLD participant (removed from target match)'
+    );
+  }
 
-        // Update R1 BYE match with new participant
-        const updateData = r1ByeMatch.id_peserta_a === oldParticipantId
-          ? { id_peserta_a: newParticipantId }
-          : { id_peserta_b: newParticipantId };
-
-        await prisma.tb_match.update({
-          where: { id_match: r1ByeMatch.id_match },
-          data: updateData
-        });
-
-        console.log(`   ✅ R1 BYE match updated: Old ${oldParticipantId} → New ${newParticipantId}`);
-      } else {
-        console.log(`   ℹ️ No R1 BYE match found for participant ${oldParticipantId}`);
-      }
-    }
+  // ⭐ UPDATE R1 BYE untuk NEW participant (yang di-add ke target match)
+  if (newParticipantId) {
+    await this.updateR1ByeForParticipant(
+      targetMatch.id_bagan,
+      newParticipantId,
+      newParticipantId, // Keep karena dia sekarang di target match
+      'NEW participant (added to target match)'
+    );
+  }
+}
 
     console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
 

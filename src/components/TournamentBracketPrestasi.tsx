@@ -1120,7 +1120,7 @@ const renderMatchCard = (match: Match, key: string | number, matchIndex: number)
               className="text-xs px-2 py-1 rounded-full font-medium"
               style={{ backgroundColor: 'rgba(245, 183, 0, 0.15)', color: '#F5B700' }}
             >
-              BYE - No Number
+              BYE
             </span>
           ) : null}
         </div>
