@@ -2456,9 +2456,10 @@ static async assignAthleteToMatch(
         }
       });
 
+      // SESUDAH (Perbaikan)
       swappedMatchInfo = {
         id: existingMatch.id_match,
-        position: existingMatch.position,
+        position: existingMatch.position ?? 0, // ✅ Fallback to 0 if null
         round: existingMatch.ronde
       };
       swapped = true;
@@ -2526,11 +2527,11 @@ static async assignAthleteToMatch(
       orderBy: { position: 'asc' }
     });
 
-    // Transform to Match[] format
+    // SESUDAH (Perbaikan)
     const transformedMatches: Match[] = updatedMatches.map(m => ({
       id: m.id_match,
       round: m.ronde,
-      position: m.position,
+      position: m.position ?? 0, // ✅ Fallback to 0 if null
       participant1: m.peserta_a ? this.transformParticipant(m.peserta_a) : null,
       participant2: m.peserta_b ? this.transformParticipant(m.peserta_b) : null,
       winner: this.determineWinner(m),
@@ -2543,9 +2544,11 @@ static async assignAthleteToMatch(
       nomorLapangan: m.nomor_lapangan
     }));
 
-    const message = swapped
-      ? `Berhasil assign peserta dengan swap ke Match #${existingMatch!.position + 1}`
-      : `Berhasil assign peserta ke Match #${targetMatch.position + 1}`;
+
+  // SESUDAH (Perbaikan)
+  const message = swapped
+    ? `Berhasil assign peserta dengan swap ke Match #${(existingMatch!.position ?? 0) + 1}`
+    : `Berhasil assign peserta ke Match #${(targetMatch.position ?? 0) + 1}`;
 
     console.log(`\n✅ ASSIGNMENT COMPLETED`);
     console.log(`   Message: ${message}`);
