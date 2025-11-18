@@ -1842,9 +1842,71 @@ static async generatePemulaBracket(
     }
   }
 
-  /**
-   * Update match result with queue fields
-   */
+/**
+ * 🆕 HELPER: Remove participant from next round
+ * Called when winner changes (score edited)
+ */
+static async removeFromNextRound(match: any, participantId: number): Promise<void> {
+  const nextRound = match.ronde + 1;
+  
+  console.log(`\n🗑️ === REMOVING OLD WINNER FROM NEXT ROUND ===`);
+  console.log(`   Participant ID: ${participantId}`);
+  console.log(`   Current Round: ${match.ronde}`);
+  console.log(`   Next Round: ${nextRound}`);
+  
+  // ⭐ Check if this is final round (no next round)
+  const nextRoundMatches = await prisma.tb_match.findMany({
+    where: {
+      id_bagan: match.id_bagan,
+      ronde: nextRound
+    },
+    orderBy: { position: 'asc' }
+  });
+  
+  if (nextRoundMatches.length === 0) {
+    console.log(`   ℹ️ No next round (this was the final) - nothing to remove`);
+    return;
+  }
+  
+  // Find which match contains this participant
+  for (const nextMatch of nextRoundMatches) {
+    let removed = false;
+    
+    if (nextMatch.id_peserta_a === participantId) {
+      await prisma.tb_match.update({
+        where: { id_match: nextMatch.id_match },
+        data: { id_peserta_a: null, skor_a: 0 } // Reset score too!
+      });
+      console.log(`   ✅ Removed from Match ${nextMatch.id_match} (Slot A)`);
+      removed = true;
+    }
+    
+    if (nextMatch.id_peserta_b === participantId) {
+      await prisma.tb_match.update({
+        where: { id_match: nextMatch.id_match },
+        data: { id_peserta_b: null, skor_b: 0 } // Reset score too!
+      });
+      console.log(`   ✅ Removed from Match ${nextMatch.id_match} (Slot B)`);
+      removed = true;
+    }
+    
+    if (removed) {
+      console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`);
+      return;
+    }
+  }
+  
+  console.log(`   ⚠️ Participant not found in next round (might be BYE or not advanced yet)`);
+  console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`);
+}
+
+/**
+ * 🔄 UPDATED: Update match with smart winner replacement
+ * Supports:
+ * - Result updates (scores + winner detection)
+ * - Schedule updates (queue fields)
+ * - Automatic winner replacement when scores change
+ */
 static async updateMatch(
   matchId: number, 
   winnerId?: number | null,             
@@ -1855,20 +1917,81 @@ static async updateMatch(
   nomorLapangan?: string | null
 ): Promise<Match> {
   try {
+    console.log(`\n🔄 === UPDATE MATCH ${matchId} ===`);
+    
+    // ⭐ STEP 0: Fetch ORIGINAL match data (before update)
+    const matchBeforeUpdate = await prisma.tb_match.findUnique({
+      where: { id_match: matchId },
+      include: {
+        peserta_a: {
+          include: {
+            atlet: {
+              include: {
+                dojang: true
+              }
+            },
+            anggota_tim: {
+              include: {
+                atlet: {
+                  include: {
+                    dojang: true
+                  }
+                }
+              }
+            }
+          }
+        },
+        peserta_b: {
+          include: {
+            atlet: {
+              include: {
+                dojang: true
+              }
+            },
+            anggota_tim: {
+              include: {
+                atlet: {
+                  include: {
+                    dojang: true
+                  }
+                }
+              }
+            }
+          }
+        },
+        venue: true
+      }
+    });
+
+    if (!matchBeforeUpdate) {
+      throw new Error('Match tidak ditemukan');
+    }
+
+    // ⭐ Calculate OLD winner (before update)
+    const oldWinnerId = matchBeforeUpdate.skor_a > matchBeforeUpdate.skor_b
+      ? matchBeforeUpdate.id_peserta_a
+      : matchBeforeUpdate.skor_b > matchBeforeUpdate.skor_a
+        ? matchBeforeUpdate.id_peserta_b
+        : null;
+
+    console.log(`   📊 Before update:`);
+    console.log(`      Scores: ${matchBeforeUpdate.skor_a} - ${matchBeforeUpdate.skor_b}`);
+    console.log(`      Old Winner: ${oldWinnerId || 'NONE'}`);
+
     const updateData: any = {};
     
     // ⭐ MODE DETECTION
-    const isResultUpdate = winnerId !== undefined && winnerId !== null;
+    const isResultUpdate = scoreA !== undefined || scoreB !== undefined;
     const isScheduleUpdate = nomorAntrian !== undefined || nomorLapangan !== undefined || tanggalPertandingan !== undefined;
     
-    console.log(`🔄 Update mode: ${isResultUpdate ? 'RESULT' : 'SCHEDULE'}`);
+    console.log(`   🎯 Update mode: ${isResultUpdate ? 'RESULT' : ''} ${isScheduleUpdate ? 'SCHEDULE' : ''}`);
 
-    // ⭐ RESULT UPDATE - Update scores & advance winner
+    // ⭐ RESULT UPDATE - Update scores
     if (isResultUpdate) {
-      updateData.skor_a = scoreA;
-      updateData.skor_b = scoreB;
+      updateData.skor_a = scoreA ?? matchBeforeUpdate.skor_a;
+      updateData.skor_b = scoreB ?? matchBeforeUpdate.skor_b;
       
-      console.log(`   📊 Updating scores: ${scoreA} - ${scoreB}, Winner: ${winnerId}`);
+      console.log(`   📊 New scores: ${updateData.skor_a} - ${updateData.skor_b}`);
     }
 
     // ⭐ SCHEDULING UPDATE - Update queue fields
@@ -1887,13 +2010,12 @@ static async updateMatch(
       console.log(`   🏟️ Updating nomor lapangan: ${nomorLapangan}`);
     }
     
-    // ⭐ AUTO-GENERATE nomor_partai HANYA jika KEDUA field diisi
+    // ⭐ AUTO-GENERATE nomor_partai
     if (nomorAntrian !== null && nomorAntrian !== undefined && 
         nomorLapangan !== null && nomorLapangan !== undefined) {
       updateData.nomor_partai = `${nomorAntrian}${nomorLapangan}`;
       console.log(`   🎯 Auto-generated nomor_partai: ${updateData.nomor_partai}`);
     } else if (nomorAntrian === null && nomorLapangan === null) {
-      // ⭐ CLEAR nomor_partai jika kedua field di-clear
       updateData.nomor_partai = null;
       console.log(`   🗑️ Clearing nomor_partai`);
     }
@@ -1943,11 +2065,50 @@ static async updateMatch(
       }
     });
 
-    // ⭐ ONLY advance winner if result update mode
-    if (isResultUpdate && winnerId) {
-      console.log(`   ➡️ Advancing winner to next round...`);
-      await this.advanceWinnerToNextRound(updatedMatch, winnerId);
+    // ⭐⭐⭐ SMART WINNER REPLACEMENT LOGIC ⭐⭐⭐
+    if (isResultUpdate) {
+      // ⭐ Calculate NEW winner (from updated scores)
+      const newWinnerId = updatedMatch.skor_a > updatedMatch.skor_b
+        ? updatedMatch.id_peserta_a
+        : updatedMatch.skor_b > updatedMatch.skor_a
+          ? updatedMatch.id_peserta_b
+          : null;
+
+      console.log(`\n   🏆 Winner analysis:`);
+      console.log(`      Old Winner: ${oldWinnerId || 'NONE'}`);
+      console.log(`      New Winner: ${newWinnerId || 'NONE'}`);
+
+      // ⭐ CRITICAL CHECK: Did winner change?
+      if (oldWinnerId !== newWinnerId) {
+        console.log(`   ⚠️ WINNER CHANGED! Updating next round...`);
+
+        // STEP 1: Remove old winner from next round (if exists)
+        if (oldWinnerId) {
+          console.log(`   🗑️ Removing old winner ${oldWinnerId}...`);
+          await this.removeFromNextRound(updatedMatch, oldWinnerId);
+        }
+
+        // STEP 2: Advance new winner to next round (if exists)
+        if (newWinnerId) {
+          console.log(`   ➡️ Advancing new winner ${newWinnerId}...`);
+          await this.advanceWinnerToNextRound(updatedMatch, newWinnerId);
+        } else {
+          console.log(`   ℹ️ No new winner (draw or 0-0) - next round remains empty`);
+        }
+
+        console.log(`   ✅ Winner replacement completed!`);
+      } else {
+        console.log(`   ✅ Winner unchanged - no next round update needed`);
+        
+        // ⭐ BUT: If this is first time setting scores (0-0 → winner)
+        if (oldWinnerId === null && newWinnerId !== null) {
+          console.log(`   ℹ️ First score entry - advancing winner...`);
+          await this.advanceWinnerToNextRound(updatedMatch, newWinnerId);
+        }
+      }
     }
+
+    console.log(`\n✅ Match ${matchId} updated successfully\n`);
 
     return {
       id: updatedMatch.id_match,
@@ -1966,8 +2127,92 @@ static async updateMatch(
     };
   } catch (error: any) {
     console.error('❌ Error updating match:', error);
-    throw new Error('Failed to update match');
+    throw new Error(error.message || 'Failed to update match');
   }
+} 
+
+/**
+ * 🆕 BONUS: Validate and fix next round consistency
+ * Call this after bulk updates or data import
+ */
+static async validateAndFixNextRound(baganId: number, round: number): Promise<{
+  valid: boolean;
+  fixed: number;
+  errors: string[];
+}> {
+  console.log(`\n🔍 === VALIDATING NEXT ROUND CONSISTENCY ===`);
+  console.log(`   Bagan: ${baganId}, Round: ${round}`);
+  
+  const errors: string[] = [];
+  let fixedCount = 0;
+  
+  // Get current round matches
+  const currentRoundMatches = await prisma.tb_match.findMany({
+    where: { id_bagan: baganId, ronde: round },
+    orderBy: { position: 'asc' }
+  });
+  
+  // Get next round matches
+  const nextRoundMatches = await prisma.tb_match.findMany({
+    where: { id_bagan: baganId, ronde: round + 1 },
+    orderBy: { position: 'asc' }
+  });
+  
+  if (nextRoundMatches.length === 0) {
+    console.log(`   ✅ No next round (final round)`);
+    return { valid: true, fixed: 0, errors: [] };
+  }
+  
+  // Validate each current round match
+  for (let i = 0; i < currentRoundMatches.length; i++) {
+    const match = currentRoundMatches[i];
+    const nextMatchIndex = Math.floor(i / 2);
+    const isFirstSlot = i % 2 === 0;
+    const nextMatch = nextRoundMatches[nextMatchIndex];
+    
+    if (!nextMatch) continue;
+    
+    // Determine winner
+    const winner = match.skor_a > match.skor_b
+      ? match.id_peserta_a
+      : match.skor_b > match.skor_a
+        ? match.id_peserta_b
+        : null;
+    
+    // Check if winner is correctly placed in next round
+    const expectedSlot = isFirstSlot ? nextMatch.id_peserta_a : nextMatch.id_peserta_b;
+    
+    if (winner !== expectedSlot) {
+      errors.push(
+        `Match ${match.id_match}: Winner ${winner} not in next round ` +
+        `(expected slot ${isFirstSlot ? 'A' : 'B'} of Match ${nextMatch.id_match})`
+      );
+      
+      // Auto-fix
+      const updateData = isFirstSlot
+        ? { id_peserta_a: winner }
+        : { id_peserta_b: winner };
+      
+      await prisma.tb_match.update({
+        where: { id_match: nextMatch.id_match },
+        data: updateData
+      });
+      
+      fixedCount++;
+      console.log(`   🔧 Fixed: Match ${nextMatch.id_match} slot ${isFirstSlot ? 'A' : 'B'} = ${winner}`);
+    }
+  }
+  
+  console.log(`\n   📊 Validation result:`);
+  console.log(`      Errors found: ${errors.length}`);
+  console.log(`      Auto-fixed: ${fixedCount}`);
+  console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`);
+  
+  return {
+    valid: errors.length === 0,
+    fixed: fixedCount,
+    errors
+  };
 }
 
   /**
