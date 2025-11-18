@@ -2505,11 +2505,27 @@ const affectedMatches = new Map<number, {
   afterParticipantB: number | null;
 }>();
 
+// ⭐ RE-FETCH target match untuk dapat position yang BENAR
+const freshTargetMatch = await prisma.tb_match.findUnique({
+  where: { id_match: matchId },
+  select: {
+    id_match: true,
+    position: true,
+    ronde: true,
+    id_peserta_a: true,
+    id_peserta_b: true
+  }
+});
+
+if (!freshTargetMatch) {
+  throw new Error('Failed to fetch target match');
+}
+
 // Add TARGET match
 affectedMatches.set(matchId, {
   matchId,
-  position: targetMatch.position ?? 0,
-  round: targetMatch.ronde,
+  position: freshTargetMatch.position ?? 0, // ← USE FRESH DATA!
+  round: freshTargetMatch.ronde,
   beforeParticipantA: targetMatch.id_peserta_a,
   beforeParticipantB: targetMatch.id_peserta_b,
   afterParticipantA: slot === 'A' ? newParticipantId : targetMatch.id_peserta_a,
@@ -2518,13 +2534,29 @@ affectedMatches.set(matchId, {
 
 // Add EXISTING match (if swapped)
 if (swapped && existingMatch) {
+  // ⭐ RE-FETCH existing match untuk dapat position yang BENAR
+  const freshExistingMatch = await prisma.tb_match.findUnique({
+    where: { id_match: existingMatch.id_match },
+    select: {
+      id_match: true,
+      position: true,
+      ronde: true,
+      id_peserta_a: true,
+      id_peserta_b: true
+    }
+  });
+
+  if (!freshExistingMatch) {
+    throw new Error('Failed to fetch existing match');
+  }
+
   const swappedOutId = slot === 'A' ? targetMatch.id_peserta_a : targetMatch.id_peserta_b;
   const isInSlotA = existingMatch.id_peserta_a === newParticipantId;
   
   affectedMatches.set(existingMatch.id_match, {
     matchId: existingMatch.id_match,
-    position: existingMatch.position ?? 0,
-    round: existingMatch.ronde,
+    position: freshExistingMatch.position ?? 0, // ← USE FRESH DATA!
+    round: freshExistingMatch.ronde,
     beforeParticipantA: existingMatch.id_peserta_a,
     beforeParticipantB: existingMatch.id_peserta_b,
     afterParticipantA: isInSlotA ? swappedOutId : existingMatch.id_peserta_a,
