@@ -216,11 +216,11 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
 
                     )}
 
-                    <p className="text-lg font-medium text-center">
+                              <p className="text-lg font-semibold text-center">
 
-                      {nama || "Nama peserta tidak tersedia"}
+                                {nama || "Nama peserta tidak tersedia"}
 
-                    </p>
+                              </p>
 
                   </div>
 
@@ -238,11 +238,11 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
 
                 >
 
-                  <div className="absolute top-2 left-2 w-12 h-12 bg-white/70 rounded-full flex items-center justify-center text-xl font-bold">
+                          <div className="absolute top-2 left-2 w-14 h-14 bg-white/70 rounded-full flex items-center justify-center text-2xl font-bold">
 
-                    {matchNumber}
+                            {matchNumber}
 
-                  </div>
+                          </div>
 
                   {match ? (
 
