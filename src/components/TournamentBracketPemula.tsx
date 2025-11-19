@@ -189,55 +189,58 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
     setShowModal(true);
   };
 
-  const clearScheduling = async () => {
-  if (!confirm('Hapus semua nomor partai (scheduling)?\n\n⚠️ Ini akan menghapus:\n• Nomor Antrian\n• Nomor Lapangan\n• Nomor Partai\n• Tanggal Pertandingan\n\nBracket dan skor TIDAK akan terpengaruh.')) {
-    return;
-  }
-
-  setClearingScheduling(true);
+const clearScheduling = async () => {
+  if (!kelasData) return;
   
-  try {
-    const kompetisiId = kelasData.kompetisi.id_kompetisi;
-    const kelasKejuaraanId = kelasData.id_kelas_kejuaraan;
-    
-    const response = await fetch(
-      `${apiBaseUrl}/kompetisi/${kompetisiId}/kelas/${kelasKejuaraanId}/scheduling`,
-      {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
+  const kompetisiId = kelasData.kompetisi.id_kompetisi;
+  const kelasKejuaraanId = kelasData.id_kelas_kejuaraan;
+
+  showConfirmation(
+    'Hapus Semua Nomor Partai?',
+    '⚠️ Ini akan menghapus:\n\n• Nomor Antrian\n• Nomor Lapangan\n• Nomor Partai\n• Tanggal Pertandingan\n\n✅ Bracket dan skor TIDAK akan terpengaruh.\n\nAksi ini tidak dapat dibatalkan.',
+    async () => {
+      setClearingScheduling(true);
+      try {
+        const response = await fetch(
+          `${apiBaseUrl}/kompetisi/${kompetisiId}/kelas/${kelasKejuaraanId}/scheduling`,
+          {
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(token && { 'Authorization': `Bearer ${token}` })
+            }
+          }
+        );
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Gagal menghapus scheduling');
+        }
+
+        const result = await response.json();
+
+        await fetchBracketData(kompetisiId, kelasKejuaraanId);
+
+        showNotification(
+          'success',
+          'Berhasil!',
+          result.message || 'Semua scheduling berhasil dihapus',
+          () => setShowModal(false)
+        );
+      } catch (error: any) {
+        console.error('❌ Error clearing scheduling:', error);
+        showNotification(
+          'error',
+          'Gagal Menghapus Scheduling',
+          error.message || 'Terjadi kesalahan saat menghapus scheduling.',
+          () => setShowModal(false)
+        );
+      } finally {
+        setClearingScheduling(false);
       }
-    );
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Gagal menghapus scheduling');
-    }
-
-    const result = await response.json();
-    
-    showNotification(
-      'success',
-      'Berhasil!',
-      result.message || 'Scheduling berhasil dihapus!',
-      () => setShowModal(false)
-    );
-    
-    // Refresh bracket data
-    await fetchBracketData(kompetisiId, kelasKejuaraanId);
-    
-  } catch (error: any) {
-    console.error('Error clearing scheduling:', error);
-    showNotification(
-      'error',
-      'Gagal',
-      error.message || 'Gagal menghapus scheduling',
-      () => setShowModal(false)
-    );
-  } finally {
-    setClearingScheduling(false);
-  }
+    },
+    () => setShowModal(false)
+  );
 };
 
   const approvedParticipants = kelasData.peserta_kompetisi.filter(p => p.status === 'APPROVED');
