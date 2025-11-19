@@ -151,20 +151,22 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
 
   const currentHari = hariList.find((h) => h.tanggal === selectedHari);
 
-  const renderMatchDetails = (
-    lap: LapanganData,
-    match: MatchData | undefined,
-    title: string,
-    colorClass: string
-  ) => {
-    const bgColor = colorClass.replace("text", "bg").replace("700", "300");
-    const matchNumber =
-      title === "Bertanding"
-        ? lap.antrian?.bertanding
-        : title === "Persiapan"
-        ? lap.antrian?.persiapan
-        : lap.antrian?.pemanasan;
-
+      const renderMatchDetails = (
+        lap: LapanganData,
+        match: MatchData | undefined,
+        title: string,
+        colorClass: string
+      ) => {
+        let bgColor = colorClass.replace("text", "bg").replace("700", "300");
+        if (title === "Persiapan") {
+          bgColor = "bg-red-500"; // Temporary override for testing
+        }
+        const matchNumber =
+          title === "Bertanding"
+            ? lap.antrian?.bertanding
+            : title === "Persiapan"
+            ? lap.antrian?.persiapan
+            : lap.antrian?.pemanasan;
     const renderAtlet = (nama: string, foto: string | undefined) => {
       const photoUrl = foto ? getPhotoUrl(foto) : null;
       return (
