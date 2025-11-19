@@ -9,6 +9,7 @@ import {
   ChevronRight,
   Save,
   Scale,
+  UserRound,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useAuth } from "../../context/authContext";
