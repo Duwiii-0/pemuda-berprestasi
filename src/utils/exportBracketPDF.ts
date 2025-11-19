@@ -523,10 +523,10 @@ export const exportBracketFromData = async (
       if (!customZoom) { // Only use auto-zoom if no custom zoom
         if (isPemula) {
           // PEMULA zoom (A4 only)
-          if (totalPeserta <= 8) zoom = 1.1;
-          else if (totalPeserta <= 16) zoom = 1.05;
-          else if (totalPeserta <= 32) zoom = 1;
-          else zoom = 0.95;
+          if (totalPeserta <= 8) zoom = 0.35;
+          else if (totalPeserta <= 16) zoom = 0.25;
+          else if (totalPeserta <= 32) zoom = 0.15;
+          else zoom = 0.10;
         } else {
           // ✅ NEW: PRESTASI zoom with A3 support
           if (useA3) {
@@ -535,9 +535,9 @@ export const exportBracketFromData = async (
             console.log(`🔍 Using A3 zoom: ${zoom}`);
           } else {
             // A4 for ≤32 participants
-            if (totalPeserta <= 8) zoom = 0.35;
-            else if (totalPeserta <= 16) zoom = 0.25;
-            else if (totalPeserta <= 32) zoom = 0.15;
+            if (totalPeserta <= 8) zoom = 1.1;
+            else if (totalPeserta <= 16) zoom = 1.05;
+            else if (totalPeserta <= 32) zoom = 1;
           }
         }
       }
