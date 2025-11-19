@@ -31,6 +31,8 @@ interface MatchData {
   nomor_lapangan: string;
   nama_atlet_a: string;
   nama_atlet_b: string;
+  foto_atlet_a?: string;
+  foto_atlet_b?: string;
 }
 
 const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
@@ -143,6 +145,39 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
   };
 
   const currentHari = hariList.find((h) => h.tanggal === selectedHari);
+
+  const renderMatchDetails = (lap: LapanganData, match: MatchData | undefined, title: string, colorClass: string) => {
+    const bgColor = colorClass.replace('text', 'bg').replace('700', '100');
+    return (
+      <div className={`flex flex-col items-center justify-center w-full ${colorClass} ${bgColor} px-4 py-4 rounded-lg`}>
+        <span className="text-5xl font-bold mb-2">
+          {title === 'Bertanding' ? lap.antrian?.bertanding : title === 'Persiapan' ? lap.antrian?.persiapan : lap.antrian?.pemanasan}
+        </span>
+        <span className="text-2xl font-semibold">
+          {title}
+        </span>
+        {match ? (
+          <div className="text-center mt-2 text-lg font-medium w-full">
+            <div className="flex justify-around items-center w-full">
+              <div className="flex flex-col items-center">
+                <img src={match.foto_atlet_a || 'https://via.placeholder.com/80'} alt={match.nama_atlet_a} className="w-20 h-20 rounded-full object-cover mb-2" />
+                <p>{match.nama_atlet_a || "Nama peserta tidak tersedia"}</p>
+              </div>
+              <span className="text-2xl font-bold">VS</span>
+              <div className="flex flex-col items-center">
+                <img src={match.foto_atlet_b || 'https://via.placeholder.com/80'} alt={match.nama_atlet_b} className="w-20 h-20 rounded-full object-cover mb-2" />
+                <p>{match.nama_atlet_b || "Nama peserta tidak tersedia"}</p>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="text-center mt-2 text-lg font-medium">
+            <p>Nama peserta tidak tersedia</p>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   if (loading) {
     return (
@@ -279,62 +314,11 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
 
                   {lap.antrian && (
                     <div className="mb-4 space-y-3 w-full">
-                      <div className="flex flex-col items-center justify-center w-full text-green-700 bg-green-100 px-4 py-4 rounded-lg">
-                        <span className="text-5xl font-bold mb-2">
-                          {lap.antrian.bertanding}
-                        </span>
-                        <span className="text-2xl font-semibold">
-                          Bertanding
-                        </span>
-                        {bertandingMatch ? (
-                          <div className="text-center mt-2 text-lg font-medium">
-                            <p>Peserta 1: {bertandingMatch.nama_atlet_a || "Nama peserta tidak tersedia"}</p>
-                            <p>Peserta 2: {bertandingMatch.nama_atlet_b || "Nama peserta tidak tersedia"}</p>
-                          </div>
-                        ) : (
-                          <div className="text-center mt-2 text-lg font-medium">
-                            <p>Nama peserta tidak tersedia</p>
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex flex-col items-center justify-center w-full text-orange-700 bg-orange-100 px-4 py-4 rounded-lg">
-                        <span className="text-5xl font-bold mb-2">
-                          {lap.antrian.persiapan}
-                        </span>
-                        <span className="text-2xl font-semibold">
-                          Persiapan
-                        </span>
-                        {persiapanMatch ? (
-                          <div className="text-center mt-2 text-lg font-medium">
-                            <p>Peserta 1: {persiapanMatch.nama_atlet_a || "Nama peserta tidak tersedia"}</p>
-                            <p>Peserta 2: {persiapanMatch.nama_atlet_b || "Nama peserta tidak tersedia"}</p>
-                          </div>
-                        ) : (
-                          <div className="text-center mt-2 text-lg font-medium">
-                            <p>Nama peserta tidak tersedia</p>
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex flex-col items-center justify-center w-full text-yellow-700 bg-yellow-100 px-4 py-4 rounded-lg">
-                        <span className="text-5xl font-bold mb-2">
-                          {lap.antrian.pemanasan}
-                        </span>
-                        <span className="text-2xl font-semibold">
-                          Pemanasan
-                        </span>
-                        {pemanasanMatch ? (
-                          <div className="text-center mt-2 text-lg font-medium">
-                            <p>Peserta 1: {pemanasanMatch.nama_atlet_a || "Nama peserta tidak tersedia"}</p>
-                            <p>Peserta 2: {pemanasanMatch.nama_atlet_b || "Nama peserta tidak tersedia"}</p>
-                          </div>
-                        ) : (
-                          <div className="text-center mt-2 text-lg font-medium">
-                            <p>Nama peserta tidak tersedia</p>
-                          </div>
-                        )}
-                      </div>
+                      {renderMatchDetails(lap, bertandingMatch, "Bertanding", "text-green-700")}
+                      {renderMatchDetails(lap, persiapanMatch, "Persiapan", "text-orange-700")}
+                      {renderMatchDetails(lap, pemanasanMatch, "Pemanasan", "text-yellow-700")}
                     </div>
-                  )}
+  )}
                   <p
                     className="text-sm mb-4"
                     style={{ color: "#050505", opacity: 0.6 }}
