@@ -146,7 +146,7 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
 
   const currentHari = hariList.find((h) => h.tanggal === selectedHari);
 
-  const renderMatchDetails = (match: MatchData | undefined, title: string, colorClass: string) => {
+  const renderMatchDetails = (lap: LapanganData, match: MatchData | undefined, title: string, colorClass: string) => {
     const bgColor = colorClass.replace('text', 'bg').replace('700', '100');
     return (
       <div className={`flex flex-col items-center justify-center w-full ${colorClass} ${bgColor} px-4 py-4 rounded-lg`}>
@@ -314,9 +314,9 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
 
                   {lap.antrian && (
                     <div className="mb-4 space-y-3 w-full">
-                      {renderMatchDetails(bertandingMatch, "Bertanding", "text-green-700")}
-                      {renderMatchDetails(persiapanMatch, "Persiapan", "text-orange-700")}
-                      {renderMatchDetails(pemanasanMatch, "Pemanasan", "text-yellow-700")}
+                      {renderMatchDetails(lap, bertandingMatch, "Bertanding", "text-green-700")}
+                      {renderMatchDetails(lap, persiapanMatch, "Persiapan", "text-orange-700")}
+                      {renderMatchDetails(lap, pemanasanMatch, "Pemanasan", "text-yellow-700")}
                     </div>
   )}
                   <p
