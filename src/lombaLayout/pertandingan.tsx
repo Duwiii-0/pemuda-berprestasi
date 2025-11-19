@@ -157,7 +157,7 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
             title: string,
             colorClass: string
           ) => {
-            const bgColor = colorClass.replace("text", "bg").replace("700", "500");
+            const bgColor = colorClass.replace("text", "bg").replace("700", "100");
             const matchNumber =
               title === "Bertanding"
                 ? lap.antrian?.bertanding
