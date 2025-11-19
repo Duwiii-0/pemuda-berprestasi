@@ -20,6 +20,7 @@ export const getAtletMatchInfo = async (id_kompetisi: number) => {
             atlet: {
               select: {
                 nama_atlet: true,
+                pas_foto: true,
               },
             },
           },
@@ -29,6 +30,7 @@ export const getAtletMatchInfo = async (id_kompetisi: number) => {
             atlet: {
               select: {
                 nama_atlet: true,
+                pas_foto: true,
               },
             },
           },
@@ -41,6 +43,8 @@ export const getAtletMatchInfo = async (id_kompetisi: number) => {
       nomor_lapangan: match.nomor_lapangan,
       nama_atlet_a: match.peserta_a?.atlet?.nama_atlet,
       nama_atlet_b: match.peserta_b?.atlet?.nama_atlet,
+      foto_atlet_a: match.peserta_a?.atlet?.pas_foto,
+      foto_atlet_b: match.peserta_b?.atlet?.pas_foto,
     }));
   } catch (error: any) {
     throw new Error(`Failed to get match info: ${error.message}`);
