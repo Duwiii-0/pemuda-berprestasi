@@ -1708,144 +1708,109 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
                   let lastFightColumn = -1;
                   let byeColumn = -1;
 
-                  if (hasAdditionalMatch) {
-                    // ═══════════════════════════════════════════════════════════
-                    // SCENARIO GANJIL - Ada Additional Match
-                    // ═══════════════════════════════════════════════════════════
+if (hasAdditionalMatch) {
+  // ═══════════════════════════════════════════════════════════
+  // SCENARIO GANJIL - Ada Additional Match
+  // ═══════════════════════════════════════════════════════════
 
-                    // Find BYE match
-                    byeMatch =
-                      round1Matches.find((m) => m.peserta_a && !m.peserta_b) ||
-                      null;
-                    byeMatchIndex = byeMatch
-                      ? round1Matches.findIndex(
-                          (m) => m.id_match === byeMatch!.id_match
-                        )
-                      : -1;
+  // 🎯 STEP 1: Find BYE match & Last Fight BEFORE any splitting
+  byeMatch =
+    round1Matches.find((m) => m.peserta_a && !m.peserta_b) || null;
+  
+  const byeMatchGlobalIndex = byeMatch
+    ? round1Matches.findIndex((m) => m.id_match === byeMatch!.id_match)
+    : -1;
 
-                    // Last normal fight = match TEPAT SEBELUM BYE
-                    if (byeMatchIndex > 0) {
-                      lastNormalFightIndex = byeMatchIndex - 1;
-                      lastNormalFightMatch =
-                        round1Matches[lastNormalFightIndex];
-                    }
+  // Last normal fight = match TEPAT SEBELUM BYE
+  const lastNormalFightGlobalIndex =
+    byeMatchGlobalIndex > 0 ? byeMatchGlobalIndex - 1 : -1;
 
-                    console.log("🔍 BYE Match Index (global):", byeMatchIndex);
-                    console.log(
-                      "🔍 Last Fight Index (global):",
-                      lastNormalFightIndex
-                    );
-                    console.log(
-                      "🔍 Last Fight Nomor Partai:",
-                      lastNormalFightMatch?.nomor_partai
-                    );
+  lastNormalFightMatch =
+    lastNormalFightGlobalIndex >= 0
+      ? round1Matches[lastNormalFightGlobalIndex]
+      : null;
 
-                    // 🆕 SMART BALANCED SPLIT - Gunakan dynamic calculation
-                    const numColumns = Math.max(
-                      2,
-                      Math.ceil(round1Matches.length / MAX_MATCHES_PER_COL)
-                    );
-                    const matchesPerCol = Math.ceil(
-                      round1Matches.length / numColumns
-                    );
+  console.log("🔍 BYE Match Index (global):", byeMatchGlobalIndex);
+  console.log(
+    "🔍 Last Fight Index (global):",
+    lastNormalFightGlobalIndex
+  );
+  console.log(
+    "🔍 Last Fight Nomor Partai:",
+    lastNormalFightMatch?.nomor_partai
+  );
 
-                    console.log(
-                      `📊 Smart Split: ${round1Matches.length} matches → ${numColumns} columns (${matchesPerCol} matches/col)`
-                    );
+  // 🎯 STEP 2: Get NORMAL matches (exclude Last Fight & BYE)
+  const normalMatches = round1Matches.filter(
+    (m, idx) =>
+      idx !== lastNormalFightGlobalIndex && idx !== byeMatchGlobalIndex
+  );
 
-                    // ⭐ CHECK: Apakah Last Fight & BYE ada di column yang sama?
-                    lastFightColumn = Math.floor(
-                      lastNormalFightIndex / matchesPerCol
-                    );
-                    lastFightColumnIndex = lastNormalFightIndex % matchesPerCol;
+  console.log(
+    `📊 Normal matches (excluding Last Fight & BYE): ${normalMatches.length}`
+  );
 
-                    byeColumn = Math.floor(byeMatchIndex / matchesPerCol);
-                    byeColumnIndex = byeMatchIndex % matchesPerCol;
+  // 🎯 STEP 3: Calculate balanced split for NORMAL matches only
+  const numColumns = Math.max(
+    2,
+    Math.ceil(normalMatches.length / MAX_MATCHES_PER_COL)
+  );
+  const matchesPerCol = Math.ceil(normalMatches.length / numColumns);
 
-                    const isSameColumn = lastFightColumn === byeColumn;
-                    const isLastFightAtEnd =
-                      lastFightColumnIndex + 1 === matchesPerCol;
+  console.log(
+    `📊 Split Strategy: ${normalMatches.length} normal matches → ${numColumns} columns (${matchesPerCol} matches/col)`
+  );
 
-                    console.log(
-                      "📍 Last Fight: Column",
-                      lastFightColumn,
-                      "Index",
-                      lastFightColumnIndex
-                    );
-                    console.log(
-                      "📍 BYE: Column",
-                      byeColumn,
-                      "Index",
-                      byeColumnIndex
-                    );
-                    console.log(
-                      "🔍 Same Column?",
-                      isSameColumn,
-                      "| Last at End?",
-                      isLastFightAtEnd
-                    );
+  // 🎯 STEP 4: Build columns from NORMAL matches
+  for (let i = 0; i < normalMatches.length; i += matchesPerCol) {
+    columns.push(normalMatches.slice(i, i + matchesPerCol));
+  }
 
-                    // 🎯 DECISION: Split strategy
-                    if (
-                      isSameColumn &&
-                      isLastFightAtEnd &&
-                      byeColumnIndex === 0
-                    ) {
-                      // EDGE CASE: Last Fight di akhir column, BYE di awal column berikutnya
-                      console.log(
-                        "⚠️ EDGE CASE: Splitting before Last Fight to keep it with BYE"
-                      );
+  // 🎯 STEP 5: FORCE Last Fight & BYE to LAST column
+  if (lastNormalFightMatch && byeMatch) {
+    const lastColumnIndex = columns.length - 1;
 
-                      columns.push(
-                        round1Matches.slice(0, lastNormalFightIndex)
-                      ); // All before Last Fight
-                      columns.push(round1Matches.slice(lastNormalFightIndex)); // Last Fight + BYE + rest
+    // Append to last column
+    columns[lastColumnIndex].push(lastNormalFightMatch);
+    columns[lastColumnIndex].push(byeMatch);
 
-                      // Recalculate indices
-                      lastFightColumn = 1;
-                      lastFightColumnIndex = 0;
-                      byeColumn = 1;
-                      byeColumnIndex = 1;
-                    } else {
-                      // NORMAL CASE: Use balanced split
-                      console.log("✅ Using BALANCED split");
+    // Calculate indices within that column
+    lastFightColumn = lastColumnIndex;
+    lastFightColumnIndex = columns[lastColumnIndex].length - 2; // Second to last
 
-                      for (
-                        let i = 0;
-                        i < round1Matches.length;
-                        i += matchesPerCol
-                      ) {
-                        columns.push(round1Matches.slice(i, i + matchesPerCol));
-                      }
-                    }
-                  } else {
-                    // ═══════════════════════════════════════════════════════════
-                    // SCENARIO GENAP - No Additional Match
-                    // ═══════════════════════════════════════════════════════════
-                    console.log(
-                      "ℹ️ No Additional Match - Using balanced split"
-                    );
+    byeColumn = lastColumnIndex;
+    byeColumnIndex = columns[lastColumnIndex].length - 1; // Last position
 
-                    const numColumns = Math.max(
-                      2,
-                      Math.ceil(round1Matches.length / MAX_MATCHES_PER_COL)
-                    );
-                    const matchesPerCol = Math.ceil(
-                      round1Matches.length / numColumns
-                    );
+    console.log("✅ FORCED Last Fight & BYE to same column!");
+    console.log("   📍 Column:", lastFightColumn);
+    console.log("   📍 Last Fight Index:", lastFightColumnIndex);
+    console.log("   📍 BYE Index:", byeColumnIndex);
+    console.log(
+      "   📦 Column size:",
+      columns[lastColumnIndex].length,
+      "matches"
+    );
+  }
+} else {
+  // ═══════════════════════════════════════════════════════════
+  // SCENARIO GENAP - No Additional Match
+  // ═══════════════════════════════════════════════════════════
+  console.log("ℹ️ No Additional Match - Using balanced split");
 
-                    console.log(
-                      `📊 Balanced Split: ${round1Matches.length} matches → ${numColumns} columns (${matchesPerCol} matches/col)`
-                    );
+  const numColumns = Math.max(
+    2,
+    Math.ceil(round1Matches.length / MAX_MATCHES_PER_COL)
+  );
+  const matchesPerCol = Math.ceil(round1Matches.length / numColumns);
 
-                    for (
-                      let i = 0;
-                      i < round1Matches.length;
-                      i += matchesPerCol
-                    ) {
-                      columns.push(round1Matches.slice(i, i + matchesPerCol));
-                    }
-                  }
+  console.log(
+    `📊 Balanced Split: ${round1Matches.length} matches → ${numColumns} columns (${matchesPerCol} matches/col)`
+  );
+
+  for (let i = 0; i < round1Matches.length; i += matchesPerCol) {
+    columns.push(round1Matches.slice(i, i + matchesPerCol));
+  }
+}
 
                   console.log(
                     "📦 Final Columns:",
