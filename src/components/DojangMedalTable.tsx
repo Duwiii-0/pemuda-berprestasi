@@ -181,15 +181,6 @@ const DojangMedalTable: React.FC<{
                 <Download size={16} />
                 <span>CSV</span>
               </button>
-              
-              <button
-                onClick={() => exportToJSON(sortedDojangs, eventName)}
-                className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg font-medium text-xs sm:text-sm transition-all hover:shadow-lg hover:scale-105"
-                style={{ backgroundColor: '#F59E0B', color: 'white' }}
-              >
-                <Download size={16} />
-                <span>JSON</span>
-              </button>
             </div>
           </div>
           
