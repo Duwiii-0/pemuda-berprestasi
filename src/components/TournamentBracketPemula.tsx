@@ -1695,7 +1695,7 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
 
                   // 🆕 SMART COLUMN BALANCING LOGIC
                   const MIN_MATCHES_PER_COL = 5;
-                  const MAX_MATCHES_PER_COL = 8;
+                  const MAX_MATCHES_PER_COL = 5;
 
                   let columns: Match[][] = [];
                   let byeMatch: Match | null = null;
