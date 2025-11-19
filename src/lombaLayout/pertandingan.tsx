@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Loader, Radio, Youtube } from "lucide-react";
+import { Loader, Radio, User } from "lucide-react";
 
 interface KelasLapangan {
   id_kelas_kejuaraan: number;
@@ -34,6 +34,13 @@ interface MatchData {
   foto_atlet_a?: string;
   foto_atlet_b?: string;
 }
+
+const getPhotoUrl = (filename: string): string | null => {
+  if (!filename) return null;
+  return `${
+    process.env.REACT_APP_API_BASE_URL || "http://cjvmanagementevent.com"
+  }/uploads/atlet/pas_foto/${filename}`;
+};
 
 const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
   idKompetisi,
@@ -74,7 +81,6 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
     fetchLiveData();
     fetchMatchData();
 
-    // Auto refresh setiap 10 detik
     const interval = setInterval(() => {
       fetchLiveData();
       fetchMatchData();
@@ -101,7 +107,7 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
               (kelasItem: any, index: number) => ({
                 id_kelas_kejuaraan: kelasItem.id_kelas_kejuaraan,
                 nama_kelas: generateNamaKelas(kelasItem.kelas_kejuaraan),
-                jumlah_peserta: 0, // This can be populated if the API provides it
+                jumlah_peserta: 0,
                 status_antrian:
                   index === 0
                     ? "bertanding"
@@ -118,7 +124,6 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
 
         setHariList(hariData);
 
-        // Auto select hari pertama jika belum ada
         if (!selectedHari && hariData.length > 0) {
           setSelectedHari(hariData[0].tanggal);
         }
@@ -146,32 +151,59 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
 
   const currentHari = hariList.find((h) => h.tanggal === selectedHari);
 
-  const renderMatchDetails = (lap: LapanganData, match: MatchData | undefined, title: string, colorClass: string) => {
-    const bgColor = colorClass.replace('text', 'bg').replace('700', '100');
-    return (
-      <div className={`flex flex-col items-center justify-center w-full ${colorClass} ${bgColor} px-4 py-4 rounded-lg`}>
-        <span className="text-5xl font-bold mb-2">
-          {title === 'Bertanding' ? lap.antrian?.bertanding : title === 'Persiapan' ? lap.antrian?.persiapan : lap.antrian?.pemanasan}
-        </span>
-        <span className="text-2xl font-semibold">
-          {title}
-        </span>
-        {match ? (
-          <div className="text-center mt-2 text-lg font-medium w-full">
-            <div className="flex justify-around items-center w-full">
-              <div className="flex flex-col items-center">
-                <img src={match.foto_atlet_a || 'https://via.placeholder.com/80'} alt={match.nama_atlet_a} className="w-20 h-20 rounded-full object-cover mb-2" />
-                <p>{match.nama_atlet_a || "Nama peserta tidak tersedia"}</p>
-              </div>
-              <span className="text-2xl font-bold">VS</span>
-              <div className="flex flex-col items-center">
-                <img src={match.foto_atlet_b || 'https://via.placeholder.com/80'} alt={match.nama_atlet_b} className="w-20 h-20 rounded-full object-cover mb-2" />
-                <p>{match.nama_atlet_b || "Nama peserta tidak tersedia"}</p>
-              </div>
+  const renderMatchDetails = (
+    lap: LapanganData,
+    match: MatchData | undefined,
+    title: string,
+    colorClass: string
+  ) => {
+    const bgColor = colorClass.replace("text", "bg").replace("700", "100");
+    const matchNumber =
+      title === "Bertanding"
+        ? lap.antrian?.bertanding
+        : title === "Persiapan"
+        ? lap.antrian?.persiapan
+        : lap.antrian?.pemanasan;
+
+    const renderAtlet = (nama: string, foto: string | undefined) => {
+      const photoUrl = foto ? getPhotoUrl(foto) : null;
+      return (
+        <div className="flex flex-col items-center justify-center w-full">
+          {photoUrl ? (
+            <img
+              src={photoUrl}
+              alt={nama}
+              className="w-16 h-16 rounded-full object-cover mb-2"
+            />
+          ) : (
+            <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center mb-2">
+              <User className="w-8 h-8 text-gray-500" />
             </div>
+          )}
+          <p className="text-lg font-medium text-center">
+            {nama || "Nama peserta tidak tersedia"}
+          </p>
+        </div>
+      );
+    };
+
+    return (
+      <div
+        className={`relative w-full ${colorClass} ${bgColor} p-4 rounded-lg`}
+      >
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 w-10 h-10 bg-white/50 rounded-full flex items-center justify-center text-lg font-bold">
+          {matchNumber}
+        </div>
+        {match ? (
+          <div className="flex flex-col gap-4 mt-8">
+            {renderAtlet(match.nama_atlet_a, match.foto_atlet_a)}
+            <div className="flex items-center justify-center">
+              <span className="text-xl font-bold">VS</span>
+            </div>
+            {renderAtlet(match.nama_atlet_b, match.foto_atlet_b)}
           </div>
         ) : (
-          <div className="text-center mt-2 text-lg font-medium">
+          <div className="text-center mt-8 text-lg font-medium">
             <p>Nama peserta tidak tersedia</p>
           </div>
         )}
@@ -238,9 +270,8 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
           </p>
         </div>
 
-        {/* Tabs Hari */}
         {hariList.length > 1 && (
-          <div className="flex gap-2 mb-8 overflow-x-auto pb-2">
+          <div className="flex justify-center gap-2 my-8 overflow-x-auto pb-2">
             {hariList.map((hari, idx) => (
               <button
                 key={hari.tanggal}
@@ -273,9 +304,8 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
           </div>
         )}
 
-        {/* Grid Lapangan */}
         {currentHari && currentHari.lapangan.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16 w-full">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16 w-full">
             {currentHari.lapangan.map((lap) => {
               const bertandingMatch = matchData.find(
                 (m) =>
@@ -302,9 +332,9 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
                     borderColor: "rgba(153, 13, 53, 0.1)",
                   }}
                 >
-                  <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center justify-between mb-6">
                     <h3
-                      className="text-2xl font-bebas"
+                      className="text-3xl font-bebas"
                       style={{ color: "#990D35" }}
                     >
                       Lapangan {lap.nama_lapangan}
@@ -313,14 +343,44 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
                   </div>
 
                   {lap.antrian && (
-                    <div className="mb-4 space-y-3 w-full">
-                      {renderMatchDetails(lap, bertandingMatch, "Bertanding", "text-green-700")}
-                      {renderMatchDetails(lap, persiapanMatch, "Persiapan", "text-orange-700")}
-                      {renderMatchDetails(lap, pemanasanMatch, "Pemanasan", "text-yellow-700")}
+                    <div className="space-y-6">
+                      <div>
+                        <h4 className="text-2xl font-semibold text-green-700 mb-2">
+                          Bertanding
+                        </h4>
+                        {renderMatchDetails(
+                          lap,
+                          bertandingMatch,
+                          "Bertanding",
+                          "text-green-700"
+                        )}
+                      </div>
+                      <div>
+                        <h4 className="text-2xl font-semibold text-orange-700 mb-2">
+                          Persiapan
+                        </h4>
+                        {renderMatchDetails(
+                          lap,
+                          persiapanMatch,
+                          "Persiapan",
+                          "text-orange-700"
+                        )}
+                      </div>
+                      <div>
+                        <h4 className="text-2xl font-semibold text-yellow-700 mb-2">
+                          Pemanasan
+                        </h4>
+                        {renderMatchDetails(
+                          lap,
+                          pemanasanMatch,
+                          "Pemanasan",
+                          "text-yellow-700"
+                        )}
+                      </div>
                     </div>
-  )}
+                  )}
                   <p
-                    className="text-sm mb-4"
+                    className="text-sm mt-6 text-center"
                     style={{ color: "#050505", opacity: 0.6 }}
                   >
                     {new Date(lap.tanggal).toLocaleDateString("id-ID", {
