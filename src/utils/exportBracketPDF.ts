@@ -535,7 +535,8 @@ export const exportBracketFromData = async (
             console.log(`🔍 Using A3 zoom: ${zoom}`);
           } else {
             // A4 for ≤32 participants
-            if (totalPeserta <= 8) zoom = 1.1;
+            if (totalPeserta <= 4) zoom = 1.5;
+            else if (totalPeserta <= 8) zoom = 1.2;
             else if (totalPeserta <= 16) zoom = 1.05;
             else if (totalPeserta <= 32) zoom = 1;
           }
