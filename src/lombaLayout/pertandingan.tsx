@@ -53,9 +53,9 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
 
   // Mapping for status colors to avoid JIT/Purge CSS issues with dynamic classes
   const statusColors = {
-    "Bertanding": { text: "text-green-700", bg: "bg-green-100" },
-    "Persiapan": { text: "text-orange-700", bg: "bg-orange-100" },
-    "Pemanasan": { text: "text-yellow-700", bg: "bg-yellow-100" },
+    Bertanding: { text: "text-green-700", bg: "bg-green-100" },
+    Persiapan: { text: "text-orange-700", bg: "bg-orange-100" },
+    Pemanasan: { text: "text-yellow-700", bg: "bg-yellow-100" },
   };
 
   const generateNamaKelas = (kelas: any) => {
@@ -158,123 +158,72 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
 
   const currentHari = hariList.find((h) => h.tanggal === selectedHari);
 
-            const renderMatchDetails = (
+  const renderMatchDetails = (
+    lap: LapanganData,
 
-              lap: LapanganData,
+    match: MatchData | undefined,
 
-              match: MatchData | undefined,
+    title: string
 
-              title: string,
+    // colorClass: string // No longer needed directly for bgColor
+  ) => {
+    const { bg: bgColor, text: textColor } = statusColors[title];
 
-              // colorClass: string // No longer needed directly for bgColor
+    const matchNumber =
+      title === "Bertanding"
+        ? lap.antrian?.bertanding
+        : title === "Persiapan"
+        ? lap.antrian?.persiapan
+        : lap.antrian?.pemanasan;
 
-            ) => {
+    const renderAtlet = (nama: string, foto: string | undefined) => {
+      const photoUrl = foto ? getPhotoUrl(foto) : null;
 
-              const { bg: bgColor, text: textColor } = statusColors[title];
+      return (
+        <div className="flex flex-col items-center justify-center w-full">
+          {photoUrl ? (
+            <img
+              src={photoUrl}
+              alt={nama}
+              className="w-16 h-16 rounded-full object-cover mb-2"
+            />
+          ) : (
+            <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center mb-2">
+              <User className="w-8 h-8 text-gray-500" />
+            </div>
+          )}
 
-              const matchNumber =
+          <p className="text-lg font-semibold text-center">
+            {nama || "Nama peserta tidak tersedia"}
+          </p>
+        </div>
+      );
+    };
 
-                title === "Bertanding"
+    return (
+      <div className={`relative w-full ${textColor} ${bgColor} p-4 rounded-lg`}>
+        <div className="absolute top-2 left-2 w-14 h-14 bg-white/30 rounded-full flex items-center justify-center text-5xl font-bold">
+          {matchNumber}
+        </div>
 
-                  ? lap.antrian?.bertanding
+        {match ? (
+          <div className="flex flex-col gap-4 mt-8">
+            {renderAtlet(match.nama_atlet_a, match.foto_atlet_a)}
 
-                  : title === "Persiapan"
+            <div className="flex items-center justify-center">
+              <span className="text-xl font-bold">VS</span>
+            </div>
 
-                  ? lap.antrian?.persiapan
-
-                  : lap.antrian?.pemanasan;
-
-          
-
-              const renderAtlet = (nama: string, foto: string | undefined) => {
-
-                const photoUrl = foto ? getPhotoUrl(foto) : null;
-
-                return (
-
-                  <div className="flex flex-col items-center justify-center w-full">
-
-                    {photoUrl ? (
-
-                      <img
-
-                        src={photoUrl}
-
-                        alt={nama}
-
-                        className="w-16 h-16 rounded-full object-cover mb-2"
-
-                      />
-
-                    ) : (
-
-                      <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center mb-2">
-
-                        <User className="w-8 h-8 text-gray-500" />
-
-                      </div>
-
-                    )}
-
-                              <p className="text-lg font-semibold text-center">
-
-                                {nama || "Nama peserta tidak tersedia"}
-
-                              </p>
-
-                  </div>
-
-                );
-
-              };
-
-          
-
-              return (
-
-                <div
-
-                  className={`relative w-full ${textColor} ${bgColor} p-4 rounded-lg`}
-
-                >
-
-                                          <div className={`absolute top-2 left-2 w-16 h-16 ${textColor.replace('text', 'bg')} rounded-full flex items-center justify-center text-3xl font-bold text-white`}>
-
-                                            {matchNumber}
-
-                                          </div>
-
-                  {match ? (
-
-                    <div className="flex flex-col gap-4 mt-8">
-
-                      {renderAtlet(match.nama_atlet_a, match.foto_atlet_a)}
-
-                      <div className="flex items-center justify-center">
-
-                        <span className="text-xl font-bold">VS</span>
-
-                      </div>
-
-                      {renderAtlet(match.nama_atlet_b, match.foto_atlet_b)}
-
-                    </div>
-
-                  ) : (
-
-                    <div className="text-center mt-8 text-lg font-medium">
-
-                      <p>Nama peserta tidak tersedia</p>
-
-                    </div>
-
-                  )}
-
-                </div>
-
-              );
-
-            };
+            {renderAtlet(match.nama_atlet_b, match.foto_atlet_b)}
+          </div>
+        ) : (
+          <div className="text-center mt-8 text-lg font-medium">
+            <p>Nama peserta tidak tersedia</p>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   if (loading) {
     return (
@@ -413,31 +362,19 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
                         <h4 className="text-2xl font-semibold text-green-700 mb-2">
                           Bertanding
                         </h4>
-                        {renderMatchDetails(
-                          lap,
-                          bertandingMatch,
-                          "Bertanding"
-                        )}
+                        {renderMatchDetails(lap, bertandingMatch, "Bertanding")}
                       </div>
                       <div>
                         <h4 className="text-2xl font-semibold text-orange-700 mb-2">
                           Persiapan
                         </h4>
-                        {renderMatchDetails(
-                          lap,
-                          persiapanMatch,
-                          "Persiapan"
-                        )}
+                        {renderMatchDetails(lap, persiapanMatch, "Persiapan")}
                       </div>
                       <div>
                         <h4 className="text-2xl font-semibold text-yellow-700 mb-2">
                           Pemanasan
                         </h4>
-                        {renderMatchDetails(
-                          lap,
-                          pemanasanMatch,
-                          "Pemanasan"
-                        )}
+                        {renderMatchDetails(lap, pemanasanMatch, "Pemanasan")}
                       </div>
                     </div>
                   )}
