@@ -157,7 +157,7 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
     title: string,
     colorClass: string
   ) => {
-    const bgColor = colorClass.replace("text", "bg").replace("700", "100");
+    const bgColor = colorClass.replace("text", "bg").replace("700", "300");
     const matchNumber =
       title === "Bertanding"
         ? lap.antrian?.bertanding
@@ -191,7 +191,7 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
       <div
         className={`relative w-full ${colorClass} ${bgColor} p-4 rounded-lg`}
       >
-        <div className="absolute top-2 left-1/2 -translate-x-1/2 w-10 h-10 bg-white/50 rounded-full flex items-center justify-center text-lg font-bold">
+        <div className="absolute top-2 left-2 w-12 h-12 bg-white/70 rounded-full flex items-center justify-center text-xl font-bold">
           {matchNumber}
         </div>
         {match ? (
