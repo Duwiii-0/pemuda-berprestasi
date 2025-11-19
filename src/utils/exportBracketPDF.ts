@@ -526,7 +526,7 @@ export const exportBracketFromData = async (
           if (totalPeserta <= 8) zoom = 0.85;
           else if (totalPeserta <= 16) zoom = 0.80;
           else if (totalPeserta <= 32) zoom = 0.75;
-          else zoom = 0.70;
+          else zoom = 0.75;
         } else {
           // ✅ NEW: PRESTASI zoom with A3 support
           if (useA3) {
