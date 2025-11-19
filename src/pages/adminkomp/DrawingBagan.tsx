@@ -36,6 +36,7 @@ interface KelasKejuaraan {
   poomsae?: {
     nama_kelas: string;
   };
+  poomsae_type?: string;
   jenis_kelamin: "LAKI_LAKI" | "PEREMPUAN";
   peserta_count: number;
   bracket_status: "not_created" | "created" | "in_progress" | "completed";
@@ -106,6 +107,7 @@ useEffect(() => {
             kelompok: kelas.kelompok,
             kelas_berat: kelas.kelas_berat,
             poomsae: kelas.poomsae,
+            poomsae_type: kelas.poomsae_type, // Add this line
             jenis_kelamin: jenisKelamin || "LAKI_LAKI",
             peserta_count: 1,
             bracket_status: "not_created",
@@ -1099,6 +1101,7 @@ if (filterKelasUsia !== "ALL") {
                   {kelas.jenis_kelamin === "LAKI_LAKI" ? "Putra" : "Putri"}
                   {kelas.kelas_berat && ` - ${kelas.kelas_berat.nama_kelas}`}
                   {kelas.poomsae && ` - ${kelas.poomsae.nama_kelas}`}
+                  {kelas.cabang === "POOMSAE" && kelas.poomsae_type && ` (${kelas.poomsae_type})`}
                 </p>
 
                 <div className="mt-3">
