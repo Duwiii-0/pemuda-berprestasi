@@ -523,9 +523,9 @@ export const exportBracketFromData = async (
       if (!customZoom) { // Only use auto-zoom if no custom zoom
         if (isPemula) {
           // PEMULA zoom (A4 only)
-          if (totalPeserta <= 8) zoom = 1.5;
-          else if (totalPeserta <= 16) zoom = 1.2;
-          else if (totalPeserta <= 32) zoom = 1.05;
+          if (totalPeserta <= 8) zoom = 1.2;
+          else if (totalPeserta <= 16) zoom = 1.0;
+          else if (totalPeserta <= 32) zoom = 0.90;
           else zoom = 0.10;
         } else {
           // ✅ NEW: PRESTASI zoom with A3 support
