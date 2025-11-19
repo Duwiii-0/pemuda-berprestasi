@@ -35,6 +35,13 @@ interface MatchData {
   foto_atlet_b?: string;
 }
 
+const getPhotoUrl = (filename: string): string | null => {
+  if (!filename) return null;
+  return `${
+    process.env.REACT_APP_API_BASE_URL || "http://cjvmanagementevent.com"
+  }/uploads/atlet/pas_foto/${filename}`;
+};
+
 const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
   idKompetisi,
 }) => {
@@ -148,18 +155,21 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
     const bgColor = colorClass.replace('text', 'bg').replace('700', '100');
     const matchNumber = title === 'Bertanding' ? lap.antrian?.bertanding : title === 'Persiapan' ? lap.antrian?.persiapan : lap.antrian?.pemanasan;
 
-    const renderAtlet = (nama: string, foto: string | undefined) => (
-      <div className="flex items-center gap-4 w-full">
-        {foto ? (
-          <img src={foto} alt={nama} className="w-16 h-16 rounded-full object-cover" />
-        ) : (
-          <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center">
-            <User className="w-8 h-8 text-gray-500" />
-          </div>
-        )}
-        <p className="text-lg font-medium">{nama || "Nama peserta tidak tersedia"}</p>
-      </div>
-    );
+    const renderAtlet = (nama: string, foto: string | undefined) => {
+      const photoUrl = foto ? getPhotoUrl(foto) : null;
+      return (
+        <div className="flex items-center gap-4 w-full">
+          {photoUrl ? (
+            <img src={photoUrl} alt={nama} className="w-16 h-16 rounded-full object-cover" />
+          ) : (
+            <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center">
+              <User className="w-8 h-8 text-gray-500" />
+            </div>
+          )}
+          <p className="text-lg font-medium">{nama || "Nama peserta tidak tersedia"}</p>
+        </div>
+      );
+    };
 
     return (
       <div className={`relative w-full ${colorClass} ${bgColor} p-4 rounded-lg`}>
