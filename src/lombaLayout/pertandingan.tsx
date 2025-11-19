@@ -202,7 +202,7 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
 
     return (
       <div className={`relative w-full ${textColor} ${bgColor} p-4 rounded-lg`}>
-        <div className="absolute top-2 left-2  flex items-center justify-center text-5xl font-bold">
+        <div className="absolute top-2 left-6 flex items-center justify-center text-5xl font-bold">
           {matchNumber}
         </div>
 
