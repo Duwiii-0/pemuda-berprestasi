@@ -640,7 +640,7 @@ export const exportMultipleBracketsByLapangan = async (
           );
 
           setTimeout(() => {
-            reject(new Error('Render timeout'));
+            reject(new Error('Render timeout, Pastikan Seluruh Bracket Sudah Tergenerate'));
           }, 10000);
         });
         
