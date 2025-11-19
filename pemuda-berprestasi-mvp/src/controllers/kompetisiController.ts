@@ -1357,6 +1357,67 @@ static async clearBracketResults(req: Request, res: Response) {
 }
 
 /**
+ * Clear scheduling data (nomor partai) for all matches
+ */
+static async clearScheduling(req: Request, res: Response) {
+  try {
+    const { id, kelasKejuaraanId } = req.params;
+
+    const kompetisiId = parseInt(id);
+    const kelasId = parseInt(kelasKejuaraanId);
+
+    if (isNaN(kompetisiId) || isNaN(kelasId)) {
+      return sendError(res, 'Parameter tidak valid', 400);
+    }
+
+    // Check authorization
+    const user = req.user;
+    if (!user) {
+      return sendError(res, 'User tidak ditemukan', 401);
+    }
+
+    // Verify competition exists and user has access
+    const kompetisi = await prisma.tb_kompetisi.findUnique({
+      where: { id_kompetisi: kompetisiId },
+      include: {
+        admin: true,
+        kelas_kejuaraan: {
+          where: { id_kelas_kejuaraan: kelasId }
+        }
+      }
+    });
+
+    if (!kompetisi) {
+      return sendError(res, 'Kompetisi tidak ditemukan', 404);
+    }
+
+    if (kompetisi.kelas_kejuaraan.length === 0) {
+      return sendError(res, 'Kelas kejuaraan tidak ditemukan dalam kompetisi ini', 404);
+    }
+
+    // Authorization check
+    if (user.role === 'ADMIN_KOMPETISI') {
+      const isAdminOfThisKompetisi = kompetisi.admin.some(
+        admin => admin.id_akun === user.id_akun
+      );
+      if (!isAdminOfThisKompetisi) {
+        return sendError(res, 'Anda tidak memiliki akses untuk menghapus scheduling di kompetisi ini', 403);
+      }
+    } else if (user.role !== 'ADMIN') {
+      return sendError(res, 'Tidak memiliki akses untuk menghapus scheduling', 403);
+    }
+
+    // Clear scheduling
+    const result = await BracketService.clearScheduling(kompetisiId, kelasId);
+
+    return sendSuccess(res, result, result.message);
+  } catch (error: any) {
+    console.error('Controller - Error clearing scheduling:', error);
+    return sendError(res, error.message || 'Gagal menghapus scheduling', 400);
+  }
+}
+
+/**
  * Delete entire bracket (permanent deletion)
  */
 static async deleteBracket(req: Request, res: Response) {

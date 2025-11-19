@@ -1900,6 +1900,64 @@ static async removeFromNextRound(match: any, participantId: number): Promise<voi
   console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`);
 }
 
+static async clearScheduling(
+  kompetisiId: number, 
+  kelasKejuaraanId: number
+): Promise<{
+  success: boolean;
+  message: string;
+  clearedMatches: number;
+}> {
+  try {
+    console.log(`\n🧹 === CLEARING SCHEDULING DATA ===`);
+    console.log(`   Kompetisi: ${kompetisiId}, Kelas: ${kelasKejuaraanId}`);
+
+    // Find bagan
+    const bagan = await prisma.tb_bagan.findFirst({
+      where: {
+        id_kompetisi: kompetisiId,
+        id_kelas_kejuaraan: kelasKejuaraanId
+      },
+      include: {
+        match: true
+      }
+    });
+
+    if (!bagan) {
+      throw new Error('Bagan tidak ditemukan');
+    }
+
+    console.log(`   Total matches: ${bagan.match.length}`);
+
+    // Update ALL matches - clear scheduling data
+    await prisma.tb_match.updateMany({
+      where: { id_bagan: bagan.id_bagan },
+      data: {
+        nomor_antrian: null,
+        nomor_lapangan: null,
+        nomor_partai: null,
+        tanggal_pertandingan: null
+      }
+    });
+
+    console.log(`   ✅ Cleared scheduling for ${bagan.match.length} matches`);
+    console.log(`      • nomor_antrian → NULL`);
+    console.log(`      • nomor_lapangan → NULL`);
+    console.log(`      • nomor_partai → NULL`);
+    console.log(`      • tanggal_pertandingan → NULL`);
+    console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`);
+
+    return {
+      success: true,
+      message: `Berhasil menghapus scheduling untuk ${bagan.match.length} pertandingan`,
+      clearedMatches: bagan.match.length
+    };
+  } catch (error: any) {
+    console.error('❌ Error clearing scheduling:', error);
+    throw new Error(error.message || 'Gagal menghapus scheduling');
+  }
+}
+
 /**
  * 🔄 UPDATED: Update match with smart winner replacement
  * Supports:

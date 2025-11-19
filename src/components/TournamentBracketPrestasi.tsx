@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Trophy, Edit3, ArrowLeft, AlertTriangle, RefreshCw, Download, Shuffle, CheckCircle, Users, FilePenLine } from 'lucide-react';
+import { Trophy, Edit3, ArrowLeft, AlertTriangle, RefreshCw, Download, Shuffle, CheckCircle, Users, FilePenLine, Calendar } from 'lucide-react';
 import { exportBracketFromData } from '../utils/exportBracketPDF';
 import { useAuth } from '../context/authContext';
 import sriwijaya from "../assets/logo/sriwijaya.png";
@@ -134,6 +134,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
   const [showParticipantPreview, setShowParticipantPreview] = useState(false);
   const bracketRef = React.useRef<HTMLDivElement>(null);
   const [showDojangModal, setShowDojangModal] = useState(false);
+  const [clearingScheduling, setClearingScheduling] = useState(false);
   
   const [showModal, setShowModal] = useState(false);
   const [modalConfig, setModalConfig] = useState<{
@@ -194,6 +195,57 @@ const [dojangSeparation, setDojangSeparation] = useState<DojangSeparationConfig>
   enabled: false,
   mode: 'BALANCED'
 });
+
+const clearScheduling = async () => {
+  if (!confirm('Hapus semua nomor partai (scheduling)?\n\n⚠️ Ini akan menghapus:\n• Nomor Antrian\n• Nomor Lapangan\n• Nomor Partai\n• Tanggal Pertandingan\n\nBracket dan skor TIDAK akan terpengaruh.')) {
+    return;
+  }
+
+  setClearingScheduling(true);
+  
+  try {
+    const kompetisiId = kelasData.kompetisi.id_kompetisi;
+    const kelasKejuaraanId = kelasData.id_kelas_kejuaraan;
+    
+    const response = await fetch(
+      `${apiBaseUrl}/kompetisi/${kompetisiId}/kelas/${kelasKejuaraanId}/scheduling`,
+      {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Gagal menghapus scheduling');
+    }
+
+    const result = await response.json();
+    
+    showNotification(
+      'success',
+      'Berhasil!',
+      result.message || 'Scheduling berhasil dihapus!',
+      () => setShowModal(false)
+    );
+    
+    // Refresh bracket data
+    await fetchBracketData(kompetisiId, kelasKejuaraanId);
+    
+  } catch (error: any) {
+    console.error('Error clearing scheduling:', error);
+    showNotification(
+      'error',
+      'Gagal',
+      error.message || 'Gagal menghapus scheduling',
+      () => setShowModal(false)
+    );
+  } finally {
+    setClearingScheduling(false);
+  }
+};
 
 const handleExportPDF = async () => {
   if (!kelasData || matches.length === 0) {
@@ -2129,6 +2181,28 @@ const getFinalMatch = (): Match | null => {
         <Download size={16} />
         <span className="hidden sm:inline">Export Peserta</span>
         <span className="sm:hidden">Excel</span>
+      </button>
+
+      {/* Clear Scheduling Button */}
+      <button
+        onClick={clearScheduling}
+        disabled={!bracketGenerated || clearingScheduling}
+        className="flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 shadow-md"
+        style={{ backgroundColor: '#8B5CF6', color: '#F5FBEF' }}
+        title="Hapus semua nomor partai (scheduling) - skor tetap"
+      >
+        {clearingScheduling ? (
+          <>
+            <RefreshCw size={16} className="animate-spin" />
+            <span className="hidden sm:inline">Clearing...</span>
+          </>
+        ) : (
+          <>
+            <Calendar size={16} />
+            <span className="hidden sm:inline">Clear Scheduling</span>
+            <span className="sm:hidden">📅🗑️</span>
+          </>
+        )}
       </button>
 
       {/* Dojang Separation Button */}

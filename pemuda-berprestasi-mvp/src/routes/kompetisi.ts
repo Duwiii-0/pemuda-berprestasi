@@ -144,6 +144,13 @@ router.delete(
   KompetisiController.deleteBracket
 );
 
+// Clear scheduling (nomor partai)
+router.delete(
+  '/:id/kelas/:kelasKejuaraanId/scheduling',
+  authenticate,
+  KompetisiController.clearScheduling
+);
+
 router.get(
   "/:id/brackets/:kelasKejuaraanId",
   KompetisiController.getBracketByClass
