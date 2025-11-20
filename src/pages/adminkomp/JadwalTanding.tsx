@@ -293,18 +293,30 @@ const JadwalPertandingan: React.FC = () => {
 
   useEffect(() => {
     if (kelasKejuaraanList.length > 0) {
-      const sortedList = [...kelasKejuaraanList].sort((a, b) => {
-        const countA = (approvedPesertaByKelas[a.id_kelas_kejuaraan] || [])
-          .length;
-        const countB = (approvedPesertaByKelas[b.id_kelas_kejuaraan] || [])
-          .length;
-        return countB - countA;
+      // 1. Buat Set dari semua ID kelas yang sudah dipilih di semua lapangan
+      const semuaKelasDipilih = new Set<number>();
+      hariList.forEach((hari) => {
+        hari.lapangan.forEach((lap) => {
+          lap.kelasDipilih.forEach((id) => semuaKelasDipilih.add(id));
+        });
       });
+
+      // 2. Filter daftar kelas utama
+      const sortedList = [...kelasKejuaraanList]
+        .filter((kelas) => !semuaKelasDipilih.has(kelas.id_kelas_kejuaraan))
+        .sort((a, b) => {
+          const countA = (approvedPesertaByKelas[a.id_kelas_kejuaraan] || [])
+            .length;
+          const countB = (approvedPesertaByKelas[b.id_kelas_kejuaraan] || [])
+            .length;
+          return countB - countA;
+        });
+
       setSortedKelasKejuaraanList(sortedList);
     } else {
       setSortedKelasKejuaraanList([]);
     }
-  }, [kelasKejuaraanList, approvedPesertaByKelas]);
+  }, [kelasKejuaraanList, approvedPesertaByKelas, hariList]);
 
   // Sync antrian list
   useEffect(() => {
@@ -1374,13 +1386,59 @@ const JadwalPertandingan: React.FC = () => {
                                   lapanganSearchTerms[
                                     lap.id_lapangan
                                   ]?.toLowerCase() || "";
-                                const filteredKelasKejuaraan =
-                                  sortedKelasKejuaraanList.filter((kelas) => {
+
+                                // Ambil kelas yang sudah dipilih untuk lapangan ini
+                                const kelasTerpilihDiLapanganIni =
+                                  kelasKejuaraanList.filter((k) =>
+                                    lap.kelasDipilih.includes(
+                                      k.id_kelas_kejuaraan
+                                    )
+                                  );
+
+                                // Gabungkan daftar kelas yang tersedia (belum dipilih di MANAPUN)
+                                // dengan kelas yang sudah dipilih DI LAPANGAN INI
+                                const daftarTampil = [
+                                  ...new Map(
+                                    [
+                                      ...sortedKelasKejuaraanList,
+                                      ...kelasTerpilihDiLapanganIni,
+                                    ].map((item) => [
+                                      item.id_kelas_kejuaraan,
+                                      item,
+                                    ])
+                                  ).values(),
+                                ];
+
+                                const filteredKelasKejuaraan = daftarTampil
+                                  .filter((kelas) => {
                                     const namaKelasDisplay =
                                       generateNamaKelas(kelas);
                                     return namaKelasDisplay
                                       .toLowerCase()
                                       .includes(currentSearchTerm);
+                                  })
+                                  .sort((a, b) => {
+                                    const isASelected =
+                                      lap.kelasDipilih.includes(
+                                        a.id_kelas_kejuaraan
+                                      );
+                                    const isBSelected =
+                                      lap.kelasDipilih.includes(
+                                        b.id_kelas_kejuaraan
+                                      );
+
+                                    if (isASelected && !isBSelected) return -1;
+                                    if (!isASelected && isBSelected) return 1;
+
+                                    const countA =
+                                      (approvedPesertaByKelas[
+                                        a.id_kelas_kejuaraan
+                                      ] || []).length;
+                                    const countB =
+                                      (approvedPesertaByKelas[
+                                        b.id_kelas_kejuaraan
+                                      ] || []).length;
+                                    return countB - countA;
                                   });
 
                                 return (

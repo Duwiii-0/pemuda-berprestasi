@@ -63,6 +63,7 @@ const [filterKelasUsia, setFilterKelasUsia] = useState<
 const [filterKelasBerat, setFilterKelasBerat] = useState<string>("ALL");
   const [filterStatus, setFilterStatus] = useState<"ALL" | "not_created" | "created" | "in_progress" | "completed">("ALL");
   const [sortOrderBerat, setSortOrderBerat] = useState<"none" | "asc" | "desc">("none");
+  const [filterPoomsaeType, setFilterPoomsaeType] = useState<"ALL" | "FREESTYLE" | "RECOGNIZED">("ALL");
 
   // ← TAMBAHKAN DI SINI
   const kompetisiId =
@@ -266,6 +267,13 @@ if (filterKelasUsia !== "ALL") {
     );
   }
 
+  if (filterPoomsaeType !== "ALL") {
+    filtered = filtered.filter((kelas) =>
+      kelas.cabang === "POOMSAE" &&
+      kelas.poomsae_type?.toUpperCase() === filterPoomsaeType.toUpperCase()
+    );
+  }
+
   // NEW SORTING LOGIC: Sort by weight, Poomsae at bottom
   if (sortOrderBerat !== 'none') {
     filtered.sort((a, b) => {
@@ -302,6 +310,7 @@ if (filterKelasUsia !== "ALL") {
   filterKelasBerat, // TAMBAHKAN ini
   filterStatus,
   sortOrderBerat, // TAMBAHKAN ini
+  filterPoomsaeType,
 ]);
 
   useEffect(() => {
@@ -838,6 +847,43 @@ if (filterKelasUsia !== "ALL") {
         <option value="ALL">Semua</option>
         <option value="LAKI_LAKI">Putra</option>
         <option value="PEREMPUAN">Putri</option>
+      </select>
+      <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+        <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+          <path
+            d="M5 7.5L10 12.5L15 7.5"
+            stroke="#990D35"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  {/* Filter Tipe Poomsae - BARU */}
+  <div>
+    <label
+      className="block text-xs mb-2 font-bold"
+      style={{ color: "#050505", opacity: 0.7 }}
+    >
+      Tipe Poomsae
+    </label>
+    <div className="relative">
+      <select
+        value={filterPoomsaeType}
+        onChange={(e) => setFilterPoomsaeType(e.target.value as any)}
+        className="w-full px-4 py-3 rounded-xl border-2 shadow-sm text-sm font-medium focus:outline-none focus:ring-2 transition-all appearance-none cursor-pointer"
+        style={{
+          borderColor: "rgba(153, 13, 53, 0.2)",
+          backgroundColor: "white",
+          color: "#050505",
+        }}
+      >
+        <option value="ALL">Semua Tipe Poomsae</option>
+        <option value="FREESTYLE">Freestyle</option>
+        <option value="RECOGNIZED">Recognized</option>
       </select>
       <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
         <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
