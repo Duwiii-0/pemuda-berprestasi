@@ -105,6 +105,29 @@ const JadwalPertandingan: React.FC = () => {
   const [lapanganSearchTerms, setLapanganSearchTerms] = useState<
     Record<number, string>
   >({});
+  const [lapanganFilters, setLapanganFilters] = useState<
+    Record<
+      number,
+      {
+        cabang: "SEMUA" | "KYORUGI" | "POOMSAE";
+        kategori: "SEMUA" | "PEMULA" | "PRESTASI";
+      }
+    >
+  >({});
+
+  const handleFilterChange = (
+    lapanganId: number,
+    filterType: "cabang" | "kategori",
+    value: "SEMUA" | "KYORUGI" | "POOMSAE" | "PEMULA" | "PRESTASI"
+  ) => {
+    setLapanganFilters((prev) => ({
+      ...prev,
+      [lapanganId]: {
+        ...(prev[lapanganId] || { cabang: "SEMUA", kategori: "SEMUA" }),
+        [filterType]: value,
+      },
+    }));
+  };
 
   useEffect(() => {
     if (!idKompetisi) return;
@@ -1377,6 +1400,74 @@ const JadwalPertandingan: React.FC = () => {
                               }
                             />
 
+                            {/* FILTERS */}
+                            <div className="flex gap-x-3 gap-y-2 mb-2 flex-wrap">
+                              <div>
+                                <span className="text-xs font-medium text-gray-500">
+                                  Cabang
+                                </span>
+                                <div className="flex items-center gap-1 mt-1">
+                                  {[
+                                    "SEMUA",
+                                    "KYORUGI",
+                                    "POOMSAE",
+                                  ].map((filter) => (
+                                    <button
+                                      key={filter}
+                                      onClick={() =>
+                                        handleFilterChange(
+                                          lap.id_lapangan,
+                                          "cabang",
+                                          filter as any
+                                        )
+                                      }
+                                      className={`px-2 py-1 text-xs rounded-md transition-colors ${
+                                        (lapanganFilters[lap.id_lapangan]
+                                          ?.cabang || "SEMUA") === filter
+                                          ? "bg-[#990D35] text-white"
+                                          : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                                      }`}
+                                    >
+                                      {filter.charAt(0) +
+                                        filter.slice(1).toLowerCase()}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                              <div>
+                                <span className="text-xs font-medium text-gray-500">
+                                  Kategori
+                                </span>
+                                <div className="flex items-center gap-1 mt-1">
+                                  {[
+                                    "SEMUA",
+                                    "PRESTASI",
+                                    "PEMULA",
+                                  ].map((filter) => (
+                                    <button
+                                      key={filter}
+                                      onClick={() =>
+                                        handleFilterChange(
+                                          lap.id_lapangan,
+                                          "kategori",
+                                          filter as any
+                                        )
+                                      }
+                                      className={`px-2 py-1 text-xs rounded-md transition-colors ${
+                                        (lapanganFilters[lap.id_lapangan]
+                                          ?.kategori || "SEMUA") === filter
+                                          ? "bg-[#990D35] text-white"
+                                          : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                                      }`}
+                                    >
+                                      {filter.charAt(0) +
+                                        filter.slice(1).toLowerCase()}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+
                             <div
                               className="max-h-64 overflow-y-auto space-y-2 border p-3 rounded-lg"
                               style={{ backgroundColor: "#F5FBEF" }}
@@ -1386,6 +1477,9 @@ const JadwalPertandingan: React.FC = () => {
                                   lapanganSearchTerms[
                                     lap.id_lapangan
                                   ]?.toLowerCase() || "";
+                                const currentFilters = lapanganFilters[
+                                  lap.id_lapangan
+                                ] || { cabang: "SEMUA", kategori: "SEMUA" };
 
                                 // Ambil kelas yang sudah dipilih untuk lapangan ini
                                 const kelasTerpilihDiLapanganIni =
@@ -1411,11 +1505,30 @@ const JadwalPertandingan: React.FC = () => {
 
                                 const filteredKelasKejuaraan = daftarTampil
                                   .filter((kelas) => {
+                                    // Filter search term
                                     const namaKelasDisplay =
                                       generateNamaKelas(kelas);
-                                    return namaKelasDisplay
+                                    const searchTermMatch = namaKelasDisplay
                                       .toLowerCase()
                                       .includes(currentSearchTerm);
+
+                                    // Filter cabang
+                                    const cabangMatch =
+                                      currentFilters.cabang === "SEMUA" ||
+                                      kelas.cabang === currentFilters.cabang;
+
+                                    // Filter kategori
+                                    const kategoriMatch =
+                                      currentFilters.kategori === "SEMUA" ||
+                                      kelas.kategori_event?.nama_kategori
+                                        .toUpperCase()
+                                        .includes(currentFilters.kategori);
+
+                                    return (
+                                      searchTermMatch &&
+                                      cabangMatch &&
+                                      kategoriMatch
+                                    );
                                   })
                                   .sort((a, b) => {
                                     const isASelected =
