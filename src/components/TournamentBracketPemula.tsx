@@ -1766,11 +1766,25 @@ if (hasAdditionalMatch) {
     columns.push(normalMatches.slice(i, i + matchesPerCol));
   }
 
-  // 🎯 STEP 5: FORCE Last Fight & BYE to LAST column
-  if (lastNormalFightMatch && byeMatch) {
+// 🎯 STEP 5: FORCE Last Fight & BYE to LAST column
+if (lastNormalFightMatch && byeMatch) {
+  // ✅ PERBAIKAN: Pastikan columns tidak kosong
+  if (columns.length === 0) {
+    // Jika belum ada column sama sekali, buat column baru
+    columns.push([lastNormalFightMatch, byeMatch]);
+    lastFightColumn = 0;
+    lastFightColumnIndex = 0;
+    byeColumn = 0;
+    byeColumnIndex = 1;
+  } else {
+    // Jika sudah ada columns, append ke column terakhir
     const lastColumnIndex = columns.length - 1;
 
-    // Append to last column
+    // ✅ SAFETY CHECK: Pastikan column terakhir adalah array
+    if (!Array.isArray(columns[lastColumnIndex])) {
+      columns[lastColumnIndex] = [];
+    }
+
     columns[lastColumnIndex].push(lastNormalFightMatch);
     columns[lastColumnIndex].push(byeMatch);
 
@@ -1780,17 +1794,18 @@ if (hasAdditionalMatch) {
 
     byeColumn = lastColumnIndex;
     byeColumnIndex = columns[lastColumnIndex].length - 1; // Last position
-
-    console.log("✅ FORCED Last Fight & BYE to same column!");
-    console.log("   📍 Column:", lastFightColumn);
-    console.log("   📍 Last Fight Index:", lastFightColumnIndex);
-    console.log("   📍 BYE Index:", byeColumnIndex);
-    console.log(
-      "   📦 Column size:",
-      columns[lastColumnIndex].length,
-      "matches"
-    );
   }
+
+  console.log("✅ FORCED Last Fight & BYE to same column!");
+  console.log("   📍 Column:", lastFightColumn);
+  console.log("   📍 Last Fight Index:", lastFightColumnIndex);
+  console.log("   📍 BYE Index:", byeColumnIndex);
+  console.log(
+    "   📦 Column size:",
+    columns[lastFightColumn]?.length || 0,
+    "matches"
+  );
+}
 } else {
   // ═══════════════════════════════════════════════════════════
   // SCENARIO GENAP - No Additional Match
