@@ -20,7 +20,37 @@ Struktur saat ini sangat baik dan modular, yang memudahkan pemetaan ke Laravel.
 | `prisma/schema.prisma`| Skema database & relasi | `database/migrations` & `app/Models` |
 | `utils` | Fungsi helper (response, JWT, dll.) | `app/Helpers` (dibuat manual) |
 
-### 2. Analisis Fungsionalitas Kunci
+### 2. Analisis Dependensi
+
+Berikut adalah pemetaan dependensi Node.js saat ini ke padanannya di Laravel/PHP:
+
+#### Dependensi Aplikasi (`dependencies`)
+
+| Dependensi (Node.js) | Fungsi | Padanan (Laravel/PHP) | Keterangan |
+| :--- | :--- | :--- | :--- |
+| `express` | Kerangka kerja web (Web Framework) | **Laravel Framework** | Laravel adalah pengganti utama untuk Express. |
+| `@prisma/client` | ORM (Object-Relational Mapper) | **Eloquent ORM** | Eloquent adalah ORM bawaan Laravel yang sangat powerful. |
+| `joi` / `express-validator` | Validasi data (Data Validation) | **Validation Facade** | Laravel memiliki sistem validasi bawaan yang terintegrasi. |
+| `jsonwebtoken` | Otentikasi berbasis Token (JWT) | **Laravel Sanctum** | Solusi resmi dan modern dari Laravel untuk otentikasi API. |
+| `bcrypt` | Hashing kata sandi | **Hash Facade** | Bawaan Laravel, sudah menggunakan Bcrypt secara default. |
+| `multer` | Penanganan unggahan file | **Request File Handling** | Laravel menangani file upload secara native melalui objek `Request`. |
+| `cors` | Cross-Origin Resource Sharing | `fruitcake/laravel-cors` | Paket ini biasanya sudah termasuk dalam instalasi Laravel baru. |
+| `dotenv` | Variabel lingkungan (.env) | **Bawaan Laravel** | Laravel menggunakan komponen `vlucas/phpdotenv` secara internal. |
+| `helmet` | Keamanan HTTP Headers | `bepsvpt/secure-headers` | Paket populer untuk menambahkan lapisan keamanan pada header. |
+| `morgan` | Pencatatan log permintaan HTTP | **Logging Bawaan** | Sistem logging Laravel sangat fleksibel dan dapat dikonfigurasi. |
+| `pdfkit` | Membuat dokumen PDF | `barryvdh/laravel-dompdf` | Paket yang sangat populer untuk mengubah HTML menjadi PDF. |
+
+#### Dependensi Pengembangan (`devDependencies`)
+
+| Dependensi (Node.js) | Fungsi | Padanan (Laravel/PHP) | Keterangan |
+| :--- | :--- | :--- | :--- |
+| `prisma` | Alat bantu CLI & Migrasi | **Artisan CLI** (`php artisan`) | `artisan` adalah tool command-line bawaan Laravel untuk migrasi, seeding, dll. |
+| `typescript` / `ts-node` | Menjalankan TypeScript | **PHP** | Kode akan ditulis dalam PHP, jadi ini tidak lagi diperlukan. |
+| `nodemon` | Auto-restart server | `php-watcher` atau `Vite` | `php-watcher` bisa digunakan untuk development. Untuk proyek modern, Vite (bawaan Laravel) akan me-refresh browser secara otomatis. |
+| `@types/*` | Definisi Tipe TypeScript | **Tidak ada** | Tidak diperlukan dalam lingkungan PHP. |
+
+### 3. Analisis Fungsionalitas Kunci
+
 
 #### a. Database & Model (`prisma/schema.prisma`)
 Ini adalah bagian paling KRUSIAL. Skema Prisma Anda adalah cetak biru untuk database.
