@@ -3406,7 +3406,9 @@ static async clearMatchResults(kompetisiId: number, kelasKejuaraanId: number): P
       const bagans = await prisma.tb_bagan.findMany({
         where: { id_kompetisi: kompetisiId },
         include: {
-          drawing_seed: { select: { id_drawing_seed: true } },
+          _count: {
+            select: { drawing_seed: true }
+          },
           match: {
             include: {
               peserta_a: { include: { atlet: { include: { dojang: true } }, anggota_tim: { include: { atlet: true } } } },
@@ -3423,7 +3425,7 @@ static async clearMatchResults(kompetisiId: number, kelasKejuaraanId: number): P
       let allMatches: Match[] = [];
 
       for (const bagan of bagans) {
-        const participantCount = bagan.drawing_seed.length;
+        const participantCount = bagan._count.drawing_seed;
         
         const transformedMatches: Match[] = bagan.match.map(match => {
             return {
