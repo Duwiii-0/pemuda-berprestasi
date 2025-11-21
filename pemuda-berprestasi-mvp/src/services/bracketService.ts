@@ -3338,15 +3338,7 @@ static async clearMatchResults(kompetisiId: number, kelasKejuaraanId: number): P
    * Aturan: stage ASC, participantCount DESC, position ASC, id ASC
    */
   static scheduleMatchesGlobally(matches: Match[]): Match[] {
-    console.log('\n\n[DEBUG] --- Global Sort ---');
-    const matchesToSort = [...matches];
-    
-    // Log the first 10 items to see what we are sorting
-    matchesToSort.slice(0, 10).forEach((m, i) => {
-      console.log(`[DEBUG] Item ${i}: Stage='${m.stageName}', Prio=${this.getStagePriority(m.stageName || '')}, Count=${m.bracketParticipantCount}, ID=${m.id}`);
-    });
-
-    const sorted = matchesToSort.sort((a, b) => {
+    const sorted = matches.sort((a, b) => {
       const stageA = a.stageName || '';
       const stageB = b.stageName || '';
 
@@ -3364,7 +3356,6 @@ static async clearMatchResults(kompetisiId: number, kelasKejuaraanId: number): P
 
       return (a.id || 0) - (b.id || 0);
     });
-    console.log('[DEBUG] --- Sorting Complete ---\n\n');
     return sorted;
   }
 
@@ -3436,10 +3427,21 @@ static async clearMatchResults(kompetisiId: number, kelasKejuaraanId: number): P
 
       for (const bagan of bagans) {
         const participantCount = bagan._count.drawing_seed;
+        // Calculate total rounds for this specific bracket to help determine stage names
+        const totalRounds = this.calculateTotalRounds(participantCount);
         
         const transformedMatches: Match[] = bagan.match.map(match => {
             const hasParticipant1 = !!match.peserta_a;
             const hasParticipant2 = !!match.peserta_b;
+
+            // --- DYNAMIC STAGE NAME CALCULATION ---
+            // If stage_name from DB is null, calculate it on the fly.
+            let finalStageName = match.stage_name;
+            if (!finalStageName) {
+              const matchesInThisRound = Math.pow(2, totalRounds - match.ronde);
+              finalStageName = this.determineAbsoluteStageName(matchesInThisRound);
+            }
+            
             return {
               id: match.id_match,
               round: match.ronde,
@@ -3457,7 +3459,7 @@ static async clearMatchResults(kompetisiId: number, kelasKejuaraanId: number): P
               nomorPartai: match.nomor_partai,
               nomorAntrian: match.nomor_antrian,
               nomorLapangan: match.nomor_lapangan,
-              stageName: match.stage_name || undefined,
+              stageName: finalStageName || undefined, // Use the calculated name
               bracketParticipantCount: participantCount,
               kelasKejuaraanId: bagan.id_kelas_kejuaraan
             };
