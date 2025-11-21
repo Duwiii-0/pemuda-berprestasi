@@ -182,7 +182,7 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
 
       return (
         <div className="flex flex-col items-center justify-center w-full">
-          {photoUrl ? (
+          {/* {photoUrl ? (
             <img
               src={photoUrl}
               alt={nama}
@@ -192,11 +192,11 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
             <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center mb-2">
               <User className="w-8 h-8 text-gray-500" />
             </div>
-          )}
+          )} */}
 
-          <p className="text-lg font-semibold text-center">
+          {/* <p className="text-lg font-semibold text-center">
             {nama || "Nama peserta tidak tersedia"}
-          </p>
+          </p> */}
         </div>
       );
     };
