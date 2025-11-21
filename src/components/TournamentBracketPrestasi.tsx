@@ -60,6 +60,7 @@ interface Match {
 interface KelasKejuaraan {
   id_kelas_kejuaraan: number;
   cabang: 'KYORUGI' | 'POOMSAE';
+  jenis_kelamin?: "LAKI_LAKI" | "PEREMPUAN"; // ✅ ADDED THIS
   kategori_event: {
     nama_kategori: string;
   };
@@ -2412,15 +2413,7 @@ const getFinalMatch = (): Match | null => {
                           <input
                             type="date"
                             id="tournament-date-display"
-                            value={
-                              tanggalPertandingan ||
-                              (kelasData.kompetisi.tanggal_mulai
-                                ? new Date(kelasData.kompetisi.tanggal_mulai)
-                                    .toISOString()
-                                    .split("T")[0]
-                                : "")
-                            }
-                            onChange={(e) => setTanggalPertandingan(e.target.value)}
+                                                  value={tanggalPertandingan || ""}                            onChange={(e) => setTanggalPertandingan(e.target.value)}
                             className="text-sm px-2 py-1 rounded border text-center mb-1"
                             style={{ borderColor: "#990D35", color: "#050505" }}
                           />      

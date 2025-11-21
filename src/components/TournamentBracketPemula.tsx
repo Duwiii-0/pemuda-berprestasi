@@ -70,6 +70,7 @@ interface Match {
 interface KelasKejuaraan {
   id_kelas_kejuaraan: number;
   cabang: "KYORUGI" | "POOMSAE";
+  jenis_kelamin?: "LAKI_LAKI" | "PEREMPUAN"; // ✅ ADDED THIS
   kategori_event: {
     nama_kategori: string;
   };
@@ -1350,9 +1351,11 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
         logoEvent: sriwijaya,
         namaKejuaraan: kelasData.kompetisi.nama_event,
         kelas: `${kelasData.kelompok?.nama_kelompok} ${
-          kelasData.kelas_berat?.jenis_kelamin === "LAKI_LAKI"
+          kelasData.jenis_kelamin === "LAKI_LAKI"
             ? "Male"
-            : "Female"
+            : kelasData.jenis_kelamin === "PEREMPUAN"
+            ? "Female"
+            : ""
         } ${
           kelasData.kelas_berat?.nama_kelas || kelasData.poomsae?.nama_kelas
         }`,
@@ -1612,14 +1615,19 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
           <div className="bg-red-50 border border-red-200 rounded-lg p-4">
             <div className="flex items-center justify-center gap-8 text-center">
               <div>
-                <h2 className="text-lg font-bold" style={{ color: "#990D35" }}>
-                  {kelasData.kelompok?.nama_kelompok}{" "}
-                  {kelasData.kelas_berat?.jenis_kelamin === "LAKI_LAKI"
-                    ? "Male"
-                    : "Female"}{" "}
-                  {kelasData.kelas_berat?.nama_kelas ||
-                    kelasData.poomsae?.nama_kelas}
-                </h2>
+                                <h2
+                                  className="text-lg font-bold"
+                                  style={{ color: "#990D35" }}
+                                >
+                                  {kelasData.kelompok?.nama_kelompok}{" "}
+                                  {kelasData.jenis_kelamin === "LAKI_LAKI"
+                                    ? "Male"
+                                    : kelasData.jenis_kelamin === "PEREMPUAN"
+                                    ? "Female"
+                                    : ""}{" "}
+                                  {kelasData.kelas_berat?.nama_kelas ||
+                                    kelasData.poomsae?.nama_kelas}
+                                </h2>
                 <p
                   className="text-sm mt-1"
                   style={{ color: "#050505", opacity: 0.7 }}
@@ -1668,9 +1676,11 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
                       style={{ color: "#050505" }}
                     >
                       {kelasData.kelompok?.nama_kelompok}{" "}
-                      {kelasData.kelas_berat?.jenis_kelamin === "LAKI_LAKI"
+                      {kelasData.jenis_kelamin === "LAKI_LAKI"
                         ? "Male"
-                        : "Female"}{" "}
+                        : kelasData.jenis_kelamin === "PEREMPUAN"
+                        ? "Female"
+                        : ""}{" "}
                       {kelasData.kelas_berat?.nama_kelas ||
                         kelasData.poomsae?.nama_kelas}
                     </p>
@@ -1678,14 +1688,7 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
                     <input
                       type="date"
                       id="tournament-date-display"
-                      value={
-                        tanggalPertandingan ||
-                        (kelasData.kompetisi.tanggal_mulai
-                          ? new Date(kelasData.kompetisi.tanggal_mulai)
-                              .toISOString()
-                              .split("T")[0]
-                          : "")
-                      }
+                      value={tanggalPertandingan || ""}
                       onChange={(e) => setTanggalPertandingan(e.target.value)}
                       className="text-sm px-2 py-1 rounded border text-center mb-1"
                       style={{ borderColor: "#990D35", color: "#050505" }}
