@@ -994,6 +994,161 @@ static determineStageName(
   return stageName;
 }
 
+/**
+ * Auto-assign nomor_antrian untuk SEMUA brackets dalam 1 kompetisi
+ * Call this AFTER all brackets are generated
+ * 
+ * Logic: Phase-by-Phase Sequential
+ * - Phase 1: ROUND_1 (semua bagan, terbesar duluan)
+ * - Phase 2: ROUND_2 (semua bagan, terbesar duluan)
+ * - Phase 3: QUARTER_FINAL (semua bagan, terbesar duluan)
+ * - Phase 4: SEMI_FINAL (semua bagan, terbesar duluan)
+ * - Phase 5: FINAL (semua bagan, terbesar duluan)
+ */
+static async autoAssignQueueNumbers(
+  kompetisiId: number,
+  lapangan: string // e.g., "C"
+): Promise<{
+  success: boolean;
+  totalAssigned: number;
+  byStage: Record<string, number>;
+  message: string;
+}> {
+  try {
+    console.log(`\n🎯 === AUTO-ASSIGN QUEUE NUMBERS ===`);
+    console.log(`   Kompetisi ID: ${kompetisiId}`);
+    console.log(`   Lapangan: ${lapangan}`);
+
+    // ⭐ STEP 1: Fetch ALL matches from ALL brackets with metadata
+    const allMatches = await prisma.tb_match.findMany({
+      where: {
+        bagan: {
+          id_kompetisi: kompetisiId
+        }
+      },
+      include: {
+        bagan: {
+          include: {
+            kelas_kejuaraan: {
+              include: {
+                peserta_kompetisi: {
+                  where: { status: 'APPROVED' }
+                }
+              }
+            }
+          }
+        }
+      },
+      orderBy: [
+        { ronde: 'asc' },
+        { position: 'asc' }
+      ]
+    });
+
+    console.log(`   📊 Total matches found: ${allMatches.length}`);
+
+    if (allMatches.length === 0) {
+      throw new Error('Tidak ada match yang ditemukan untuk kompetisi ini');
+    }
+
+    // ⭐ STEP 2: Add participant count metadata
+    const matchesWithMetadata = allMatches.map(match => ({
+      id_match: match.id_match,
+      id_bagan: match.id_bagan,
+      ronde: match.ronde,
+      position: match.position ?? 0,
+      stage_name: match.stage_name,
+      participantCount: match.bagan.kelas_kejuaraan.peserta_kompetisi.length
+    }));
+
+    // ⭐ STEP 3: Sort by STAGE PRIORITY + PARTICIPANT COUNT DESC
+    const stagePriority: Record<string, number> = {
+      'ROUND_1': 1,
+      'ROUND_2': 2,
+      'ROUND_3': 3,
+      'QUARTER_FINAL': 4,
+      'SEMI_FINAL': 5,
+      'FINAL': 6
+    };
+
+    matchesWithMetadata.sort((a, b) => {
+      // First: Sort by stage priority
+      const priorityA = stagePriority[a.stage_name || ''] || 999;
+      const priorityB = stagePriority[b.stage_name || ''] || 999;
+      
+      if (priorityA !== priorityB) {
+        return priorityA - priorityB;
+      }
+      
+      // Second: Within same stage, sort by participant count DESC (terbesar duluan)
+      if (a.participantCount !== b.participantCount) {
+        return b.participantCount - a.participantCount;
+      }
+      
+      // Third: Within same bagan, sort by position ASC
+      return a.position - b.position;
+    });
+
+    console.log(`\n   ✅ Matches sorted by stage priority + participant count`);
+
+    // ⭐ STEP 4: Assign nomor_antrian sequentially
+    let currentQueue = 1;
+    let lastStage = '';
+    const byStage: Record<string, number> = {};
+
+    console.log(`\n   🔢 Assigning queue numbers...`);
+
+    for (const match of matchesWithMetadata) {
+      // Log phase transitions
+      if (match.stage_name !== lastStage) {
+        console.log(`\n   📍 === ${match.stage_name || 'UNKNOWN'} ===`);
+        lastStage = match.stage_name || '';
+        byStage[lastStage] = 0;
+      }
+
+      // Update match with queue number
+      await prisma.tb_match.update({
+        where: { id_match: match.id_match },
+        data: {
+          nomor_antrian: currentQueue,
+          nomor_lapangan: lapangan,
+          nomor_partai: `${currentQueue}${lapangan}`
+        }
+      });
+
+      byStage[lastStage]++;
+
+      console.log(
+        `      Queue ${currentQueue}${lapangan}: ` +
+        `Bagan ${match.id_bagan} (${match.participantCount}p) - ` +
+        `R${match.ronde} Match ${match.position + 1}`
+      );
+
+      currentQueue++;
+    }
+
+    const totalAssigned = currentQueue - 1;
+
+    console.log(`\n   ✅ Total assigned: ${totalAssigned} queue numbers`);
+    console.log(`\n   📊 Breakdown by stage:`);
+    for (const [stage, count] of Object.entries(byStage)) {
+      console.log(`      ${stage}: ${count} matches`);
+    }
+    console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`);
+
+    return {
+      success: true,
+      totalAssigned,
+      byStage,
+      message: `Berhasil assign ${totalAssigned} nomor antrian (${Object.keys(byStage).length} stages)`
+    };
+
+  } catch (error: any) {
+    console.error('❌ Error auto-assigning queue numbers:', error);
+    throw new Error(error.message || 'Gagal auto-assign nomor antrian');
+  }
+}
+
 static async generatePrestasiBracket(
   baganId: number,
   participants: Participant[],
@@ -1003,59 +1158,106 @@ static async generatePrestasiBracket(
   const matches: Match[] = [];
   const participantCount = participants.length;
   
+  console.log(`\n🏆 === GENERATING PRESTASI BRACKET ===`);
+  console.log(`   Bagan ID: ${baganId}`);
+  console.log(`   Participants: ${participantCount}`);
+  console.log(`   Dojang Separation:`, dojangSeparation);
+  
   if (participantCount < 2) {
     throw new Error("Minimal 2 peserta diperlukan");
   }
 
-  // ⭐ HANDLE SPECIAL CASES (2-3 participants)
+  // ⭐ SPECIAL CASE: 2 participants (Direct Final)
   if (participantCount === 2) {
+    console.log(`   ✅ 2 participants → Direct FINAL`);
+    
     const shuffled = this.shuffleArray([...participants]);
+    
     const finalMatch = await prisma.tb_match.create({
       data: {
-        id_bagan: baganId, ronde: 1, position: 0,
-        stage_name: 'FINAL', // ← STAGE NAME
-        id_peserta_a: shuffled[0].id, id_peserta_b: shuffled[1].id,
-        skor_a: 0, skor_b: 0,
+        id_bagan: baganId,
+        ronde: 1,
+        position: 0,
+        stage_name: 'FINAL',
+        id_peserta_a: shuffled[0].id,
+        id_peserta_b: shuffled[1].id,
+        skor_a: 0,
+        skor_b: 0,
       },
     });
+    
     matches.push({
-      id: finalMatch.id_match, round: 1, position: 0,
-      participant1: shuffled[0], participant2: shuffled[1],
-      status: "pending", scoreA: 0, scoreB: 0,
+      id: finalMatch.id_match,
+      round: 1,
+      position: 0,
+      participant1: shuffled[0],
+      participant2: shuffled[1],
+      status: "pending",
+      scoreA: 0,
+      scoreB: 0,
     });
+    
+    console.log(`   ✅ Generated 1 match (FINAL)\n`);
     return matches;
   }
 
+  // ⭐ SPECIAL CASE: 3 participants (R1 + Final)
   if (participantCount === 3) {
+    console.log(`   ✅ 3 participants → SEMI_FINAL + FINAL`);
+    
     const shuffled = this.shuffleArray([...participants]);
-    // R1 = SEMI_FINAL
-    const r1 = await prisma.tb_match.create({
+    
+    // R1 = SEMI_FINAL (2 fighters)
+    const r1Match = await prisma.tb_match.create({
       data: {
-        id_bagan: baganId, ronde: 1, position: 0,
+        id_bagan: baganId,
+        ronde: 1,
+        position: 0,
         stage_name: 'SEMI_FINAL',
-        id_peserta_a: shuffled[0].id, id_peserta_b: shuffled[1].id,
-        skor_a: 0, skor_b: 0,
+        id_peserta_a: shuffled[0].id,
+        id_peserta_b: shuffled[1].id,
+        skor_a: 0,
+        skor_b: 0,
       },
     });
+    
     matches.push({
-      id: r1.id_match, round: 1, position: 0,
-      participant1: shuffled[0], participant2: shuffled[1],
-      status: "pending", scoreA: 0, scoreB: 0,
+      id: r1Match.id_match,
+      round: 1,
+      position: 0,
+      participant1: shuffled[0],
+      participant2: shuffled[1],
+      status: "pending",
+      scoreA: 0,
+      scoreB: 0,
     });
-    // R2 = FINAL
-    const r2 = await prisma.tb_match.create({
+    
+    // R2 = FINAL (BYE participant + winner from R1)
+    const r2Match = await prisma.tb_match.create({
       data: {
-        id_bagan: baganId, ronde: 2, position: 0,
+        id_bagan: baganId,
+        ronde: 2,
+        position: 0,
         stage_name: 'FINAL',
-        id_peserta_a: shuffled[2].id, id_peserta_b: null,
-        skor_a: 0, skor_b: 0,
+        id_peserta_a: shuffled[2].id, // BYE participant
+        id_peserta_b: null, // TBD (winner from R1)
+        skor_a: 0,
+        skor_b: 0,
       },
     });
+    
     matches.push({
-      id: r2.id_match, round: 2, position: 0,
-      participant1: shuffled[2], participant2: null,
-      status: "pending", scoreA: 0, scoreB: 0,
+      id: r2Match.id_match,
+      round: 2,
+      position: 0,
+      participant1: shuffled[2],
+      participant2: null,
+      status: "pending",
+      scoreA: 0,
+      scoreB: 0,
     });
+    
+    console.log(`   ✅ Generated 2 matches (SEMI_FINAL + FINAL)\n`);
     return matches;
   }
 
@@ -1066,74 +1268,115 @@ static async generatePrestasiBracket(
   const totalMatchesR1 = targetSize / 2;
   const halfSize = totalMatchesR1 / 2;
 
-  console.log(`\n🏆 PRESTASI BRACKET: ${participantCount} → ${targetSize} (${totalRounds} rounds)`);
+  console.log(`\n   📊 Bracket structure:`);
+  console.log(`      Target size: ${targetSize}`);
+  console.log(`      Total rounds: ${totalRounds}`);
+  console.log(`      BYEs needed: ${byesNeeded}`);
+  console.log(`      R1 matches: ${totalMatchesR1}`);
 
   // Get stage name for R1
   const r1Stage = this.determineStageName(participantCount, 1, totalRounds);
+  console.log(`      R1 stage: ${r1Stage}`);
 
-  // ... [REST OF EXISTING LOGIC: validation, distribution, etc.] ...
-  
-  // Simplified version - create R1 matches with stage_name
+  // ⭐ Validation (if dojang separation enabled)
   let isUnavoidable = false;
   if (dojangSeparation?.enabled) {
     const validation = this.validatePrestasiR1Separation(participants, targetSize);
     isUnavoidable = validation.isUnavoidable;
+    
+    if (validation.warnings.length > 0) {
+      validation.warnings.forEach(w => console.log(w));
+    }
   }
 
+  // ⭐ Determine BYE participants
   let byeParticipants: Participant[] = [];
   let activeParticipants = [...participants];
 
   if (byeParticipantIds?.length) {
     byeParticipants = participants.filter(p => byeParticipantIds.includes(p.id));
     activeParticipants = participants.filter(p => !byeParticipantIds.includes(p.id));
+    console.log(`\n   🎁 Manual BYE selection: ${byeParticipants.length} participants`);
   } else if (byesNeeded > 0) {
     const shuffled = this.shuffleArray([...participants]);
     byeParticipants = shuffled.slice(0, byesNeeded);
     activeParticipants = shuffled.slice(byesNeeded);
+    console.log(`\n   🎁 Auto BYE selection: ${byeParticipants.length} participants`);
   }
 
+  // ⭐ Distribute BYE positions
   const byePositions = this.distributeBYEForMirroredBracket(participantCount, targetSize);
   const allPositions = Array.from({ length: totalMatchesR1 }, (_, i) => i);
   const fightPositions = allPositions.filter(pos => !byePositions.includes(pos));
 
+  console.log(`\n   🎯 Position distribution:`);
+  console.log(`      BYE positions (${byePositions.length}):`, byePositions);
+  console.log(`      Fight positions (${fightPositions.length}):`, fightPositions);
+
+  // ⭐ Split fight positions into LEFT and RIGHT
   const leftFightPositions = fightPositions.filter(pos => pos < halfSize);
   const rightFightPositions = fightPositions.filter(pos => pos >= halfSize);
   const leftNeeded = leftFightPositions.length * 2;
   const rightNeeded = rightFightPositions.length * 2;
 
+  console.log(`\n   🔀 Pool distribution:`);
+  console.log(`      LEFT pool needed: ${leftNeeded} participants (${leftFightPositions.length} matches)`);
+  console.log(`      RIGHT pool needed: ${rightNeeded} participants (${rightFightPositions.length} matches)`);
+
+  // ⭐ Distribute participants (with or without dojang separation)
   let leftPool: Participant[], rightPool: Participant[];
+  
   if (dojangSeparation?.enabled) {
+    console.log(`\n   🏛️ Applying STRICT dojang separation...`);
     [leftPool, rightPool] = this.distributeDojangSeparatedStrict(activeParticipants);
+    
+    // Shuffle within pools
     leftPool = this.shuffleArray(leftPool);
     rightPool = this.shuffleArray(rightPool);
+    
+    // Adjust if sizes don't match exactly
     if (leftPool.length !== leftNeeded || rightPool.length !== rightNeeded) {
+      console.log(`   ⚠️ Pool sizes need adjustment:`);
+      console.log(`      LEFT: ${leftPool.length} → ${leftNeeded}`);
+      console.log(`      RIGHT: ${rightPool.length} → ${rightNeeded}`);
+      
       const all = [...leftPool, ...rightPool];
       leftPool = all.slice(0, leftNeeded);
-      rightPool = all.slice(leftNeeded);
+      rightPool = all.slice(leftNeeded, leftNeeded + rightNeeded);
     }
   } else {
+    console.log(`\n   🎲 Random distribution (no dojang separation)...`);
     const shuffled = this.shuffleArray([...activeParticipants]);
     leftPool = shuffled.slice(0, leftNeeded);
     rightPool = shuffled.slice(leftNeeded, leftNeeded + rightNeeded);
   }
 
-  // CREATE R1 MATCHES
+  console.log(`\n   ✅ Final pool sizes:`);
+  console.log(`      LEFT: ${leftPool.length} participants`);
+  console.log(`      RIGHT: ${rightPool.length} participants`);
+  console.log(`      BYE: ${byeParticipants.length} participants`);
+
+  // ⭐ CREATE ROUND 1 MATCHES
+  console.log(`\n   🎮 Creating Round 1 matches...`);
+  
   let leftIdx = 0, rightIdx = 0, byeIdx = 0;
   const sorted = [...byePositions, ...fightPositions].sort((a, b) => a - b);
 
   for (const pos of sorted) {
-    let p1: Participant | null = null, p2: Participant | null = null;
+    let p1: Participant | null = null;
+    let p2: Participant | null = null;
     let status: Match["status"] = "pending";
 
     if (byePositions.includes(pos)) {
+      // BYE match
       if (byeIdx < byeParticipants.length) {
         p1 = byeParticipants[byeIdx++];
         status = "bye";
       }
     } else {
+      // Fight match
       const isLeft = pos < halfSize;
       const pool = isLeft ? leftPool : rightPool;
-      const idx = isLeft ? leftIdx : rightIdx;
       
       if (isLeft) {
         if (leftIdx + 1 < leftPool.length) {
@@ -1148,49 +1391,82 @@ static async generatePrestasiBracket(
       }
     }
 
+    // Create match in database
     const created = await prisma.tb_match.create({
       data: {
-        id_bagan: baganId, ronde: 1, position: pos,
-        stage_name: r1Stage, // ← ⭐ STAGE NAME!
-        id_peserta_a: p1?.id ?? null, id_peserta_b: p2?.id ?? null,
-        skor_a: 0, skor_b: 0,
+        id_bagan: baganId,
+        ronde: 1,
+        position: pos,
+        stage_name: r1Stage,
+        id_peserta_a: p1?.id ?? null,
+        id_peserta_b: p2?.id ?? null,
+        skor_a: 0,
+        skor_b: 0,
+        // ⭐ NOTE: nomor_antrian will be assigned later by autoAssignQueueNumbers
       },
     });
 
     matches.push({
-      id: created.id_match, round: 1, position: pos,
-      participant1: p1, participant2: p2, status,
-      scoreA: 0, scoreB: 0,
+      id: created.id_match,
+      round: 1,
+      position: pos,
+      participant1: p1,
+      participant2: p2,
+      status,
+      scoreA: 0,
+      scoreB: 0,
     });
+
+    const side = pos < halfSize ? 'LEFT' : 'RIGHT';
+    console.log(
+      `      Match ${pos + 1} (${side}): ` +
+      `${p1?.name || 'TBD'} vs ${p2?.name || 'BYE'} ` +
+      `${status === 'bye' ? '🎁' : '⚔️'}`
+    );
   }
 
-  // CREATE PLACEHOLDER ROUNDS (R2+)
+  // ⭐ CREATE PLACEHOLDER ROUNDS (R2, R3, etc.)
+  console.log(`\n   📋 Creating placeholder rounds...`);
+  
   for (let round = 2; round <= totalRounds; round++) {
     const matchCount = Math.pow(2, totalRounds - round);
     const stageName = this.determineStageName(participantCount, round, totalRounds);
     
-    console.log(`   Round ${round}: ${stageName} (${matchCount} matches)`);
+    console.log(`      Round ${round} (${stageName}): ${matchCount} matches`);
     
     for (let i = 0; i < matchCount; i++) {
       const created = await prisma.tb_match.create({
         data: {
-          id_bagan: baganId, ronde: round, position: i,
-          stage_name: stageName, // ← ⭐ STAGE NAME!
-          id_peserta_a: null, id_peserta_b: null,
-          skor_a: 0, skor_b: 0,
+          id_bagan: baganId,
+          ronde: round,
+          position: i,
+          stage_name: stageName,
+          id_peserta_a: null,
+          id_peserta_b: null,
+          skor_a: 0,
+          skor_b: 0,
         },
       });
+      
       matches.push({
-        id: created.id_match, round, position: i,
-        participant1: null, participant2: null,
-        status: "pending", scoreA: 0, scoreB: 0,
+        id: created.id_match,
+        round,
+        position: i,
+        participant1: null,
+        participant2: null,
+        status: "pending",
+        scoreA: 0,
+        scoreB: 0,
       });
     }
   }
 
-  // Auto-advance BYEs
-  for (const m of matches.filter(x => x.round === 1)) {
-    if (m.participant1 && !m.participant2 && m.id) {
+  // ⭐ Auto-advance BYE winners to next round
+  console.log(`\n   ⏩ Auto-advancing BYE winners...`);
+  
+  for (const m of matches.filter(x => x.round === 1 && x.status === 'bye')) {
+    if (m.participant1 && m.id) {
+      console.log(`      Advancing ${m.participant1.name} from Match ${m.position + 1}`);
       await this.advanceWinnerToNextRound(
         { id_bagan: baganId, ronde: 1, id_match: m.id },
         m.participant1.id
@@ -1198,8 +1474,96 @@ static async generatePrestasiBracket(
     }
   }
 
-  console.log(`✅ Generated ${matches.length} matches\n`);
+  console.log(`\n   ✅ Bracket generation completed!`);
+  console.log(`      Total matches: ${matches.length}`);
+  console.log(`      R1 fights: ${matches.filter(m => m.round === 1 && m.status === 'pending').length}`);
+  console.log(`      R1 BYEs: ${matches.filter(m => m.round === 1 && m.status === 'bye').length}`);
+  console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`);
+
   return matches;
+}
+
+async function generateAllBracketsWithScheduling(
+  kompetisiId: number,
+  lapangan: string
+): Promise<{
+  totalBrackets: number;
+  totalMatches: number;
+  queueResult: {
+    success: boolean;
+    totalAssigned: number;
+    byStage: Record<string, number>;
+    message: string;
+  };
+}> {
+  console.log(`\n🚀 === GENERATE ALL BRACKETS + SCHEDULING ===`);
+  console.log(`   Kompetisi ID: ${kompetisiId}`);
+  console.log(`   Lapangan: ${lapangan}\n`);
+
+  // ⭐ STEP 1: Fetch all kelas kejuaraan
+  const kelasKejuaraans = await prisma.tb_kelas_kejuaraan.findMany({
+    where: {
+      id_kompetisi: kompetisiId,
+      kategori_event: {
+        nama_kategori: {
+          contains: 'Prestasi',
+          mode: 'insensitive'
+        }
+      }
+    },
+    include: {
+      peserta_kompetisi: {
+        where: { status: 'APPROVED' }
+      }
+    }
+  });
+
+  console.log(`📊 Found ${kelasKejuaraans.length} Prestasi classes\n`);
+
+  let totalMatches = 0;
+
+  // ⭐ STEP 2: Generate all brackets
+  for (const kelas of kelasKejuaraans) {
+    console.log(`\n🎯 Generating bracket for: ${kelas.nama_kelas}`);
+    console.log(`   Participants: ${kelas.peserta_kompetisi.length}`);
+
+    try {
+      const bracket = await BracketService.generateBracket(
+        kompetisiId,
+        kelas.id_kelas_kejuaraan
+      );
+
+      totalMatches += bracket.matches.length;
+      console.log(`   ✅ Generated ${bracket.matches.length} matches`);
+
+    } catch (error: any) {
+      console.error(`   ❌ Error:`, error.message);
+      throw error;
+    }
+  }
+
+  console.log(`\n✅ All brackets generated: ${totalMatches} total matches\n`);
+
+  // ⭐ STEP 3: Assign queue numbers (phase-by-phase)
+  console.log(`🔢 Assigning queue numbers (phase-by-phase)...\n`);
+
+  const queueResult = await BracketService.autoAssignQueueNumbers(
+    kompetisiId,
+    lapangan
+  );
+
+  console.log(`\n✅ === SCHEDULING COMPLETED ===`);
+  console.log(`   Total brackets: ${kelasKejuaraans.length}`);
+  console.log(`   Total matches: ${totalMatches}`);
+  console.log(`   Queue numbers assigned: ${queueResult.totalAssigned}`);
+  console.log(`   Stages processed: ${Object.keys(queueResult.byStage).length}`);
+  console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`);
+
+  return {
+    totalBrackets: kelasKejuaraans.length,
+    totalMatches,
+    queueResult
+  };
 }
 
 static getMatchesByRound(matches: Match[], round: number): Match[] {
