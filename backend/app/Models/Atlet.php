@@ -36,6 +36,13 @@ class Atlet extends Model
         'ktp',
     ];
 
+    protected $casts = [
+        'tanggal_lahir' => 'datetime',
+        'berat_badan' => 'double',
+        'tinggi_badan' => 'double',
+        'umur' => 'integer',
+    ];
+
     /**
      * Get the dojang that owns the Atlet
      *

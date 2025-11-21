@@ -2,63 +2,96 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Certificate;
+use App\Models\Atlet;
+use App\Models\PesertaKompetisi;
+use App\Http\Requests\GenerateCertificateRequest;
 use Illuminate\Http\Request;
 
 class CertificateController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Generate certificate number for athlete in specific class.
      */
-    public function index()
+    public function generateCertificateNumber(GenerateCertificateRequest $request)
     {
-        //
+        $validatedData = $request->validated();
+
+        $id_atlet = $validatedData['id_atlet'];
+        $id_peserta_kompetisi = $validatedData['id_peserta_kompetisi'];
+
+        // Check if certificate already exists
+        $existing = Certificate::where('id_atlet', $id_atlet)
+                               ->where('id_peserta_kompetisi', $id_peserta_kompetisi)
+                               ->first();
+        
+        if ($existing) {
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'certificateNumber' => $existing->certificate_number,
+                    'alreadyExists' => true,
+                ],
+            ]);
+        }
+
+        // Get next certificate number (GLOBAL counter)
+        $lastCert = Certificate::orderBy('id_certificate', 'desc')->first();
+        $nextNumber = $lastCert ? (int)$lastCert->certificate_number + 1 : 1;
+        $certificateNumber = str_pad($nextNumber, 5, '0', STR_PAD_LEFT);
+
+        // Create certificate record
+        $certificate = Certificate::create([
+            'certificate_number' => $certificateNumber,
+            'id_atlet' => $id_atlet,
+            'id_peserta_kompetisi' => $id_peserta_kompetisi,
+            'id_kompetisi' => $validatedData['id_kompetisi'],
+            'medal_status' => $validatedData['medal_status'] ?? null,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'certificateNumber' => $certificate->certificate_number,
+                'alreadyExists' => false,
+            ],
+        ]);
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Get all certificates for an athlete.
      */
-    public function create()
+    public function getAthleteCertificates(Atlet $atlet)
     {
-        //
+        $certificates = $atlet->certificates()->with([
+            'pesertaKompetisi.kelasKejuaraan.kategoriEvent',
+            'pesertaKompetisi.kelasKejuaraan.kelompok',
+            'pesertaKompetisi.kelasKejuaraan.kelasBerat',
+            'pesertaKompetisi.kelasKejuaraan.poomsae',
+            'pesertaKompetisi.kelasKejuaraan.kompetisi',
+        ])->orderBy('generated_at', 'desc')->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $certificates,
+        ]);
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Check if certificate exists.
      */
-    public function store(Request $request)
+    public function checkCertificateExists(Atlet $atlet, PesertaKompetisi $pesertaKompetisi)
     {
-        //
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
+        $existing = Certificate::where('id_atlet', $atlet->id_atlet)
+                               ->where('id_peserta_kompetisi', $pesertaKompetisi->id_peserta_kompetisi)
+                               ->first();
+        
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'exists' => !!$existing,
+                'certificateNumber' => $existing->certificate_number ?? null,
+            ],
+        ]);
     }
 }

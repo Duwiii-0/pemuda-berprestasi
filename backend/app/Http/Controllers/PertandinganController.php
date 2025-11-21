@@ -2,63 +2,42 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Match;
+use App\Models\Kompetisi;
 use Illuminate\Http\Request;
 
 class PertandinganController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Get live match information for a competition.
      */
-    public function index()
+    public function getPertandinganInfo(Kompetisi $kompetisi)
     {
-        //
-    }
+        $matches = Match::whereHas('bagan', function ($query) use ($kompetisi) {
+            $query->where('id_kompetisi', $kompetisi->id_kompetisi);
+        })
+        ->whereNotNull('id_peserta_a')
+        ->whereNotNull('id_peserta_b')
+        ->with([
+            'pesertaA.atlet',
+            'pesertaB.atlet',
+        ])
+        ->get();
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
+        $formattedMatches = $matches->map(function ($match) {
+            return [
+                'nomor_antrian' => $match->nomor_antrian,
+                'nomor_lapangan' => $match->nomor_lapangan,
+                'nama_atlet_a' => $match->pesertaA->atlet->nama_atlet ?? null,
+                'pas_foto_atlet_a' => $match->pesertaA->atlet->pas_foto ?? null,
+                'nama_atlet_b' => $match->pesertaB->atlet->nama_atlet ?? null,
+                'pas_foto_atlet_b' => $match->pesertaB->atlet->pas_foto ?? null,
+            ];
+        });
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        //
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
+        return response()->json([
+            'success' => true,
+            'data' => $formattedMatches,
+        ]);
     }
 }

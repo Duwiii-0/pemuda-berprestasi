@@ -2,7 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\BuktiTransfer;
+use App\Models\Dojang;
+use App\Models\Pelatih;
+use App\Http\Requests\StoreBuktiTransferRequest;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class BuktiTransferController extends Controller
 {
@@ -11,54 +16,64 @@ class BuktiTransferController extends Controller
      */
     public function index()
     {
-        //
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
+        return BuktiTransfer::with(['dojang', 'pelatih'])
+            ->orderBy('created_at', 'desc')
+            ->get();
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(StoreBuktiTransferRequest $request)
     {
-        //
+        $validatedData = $request->validated();
+        
+        $filePath = $request->file('bukti_transfer')->store('pelatih/BuktiTf', 'public');
+
+        $buktiTransfer = BuktiTransfer::create([
+            'id_dojang' => $validatedData['id_dojang'],
+            'id_pelatih' => $validatedData['id_pelatih'],
+            'bukti_transfer_path' => basename($filePath),
+        ]);
+
+        return response()->json($buktiTransfer, 201);
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(BuktiTransfer $buktiTransfer)
     {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
+        return $buktiTransfer->load(['dojang', 'pelatih']);
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(BuktiTransfer $buktiTransfer)
     {
-        //
+        if ($buktiTransfer->bukti_transfer_path) {
+            Storage::disk('public')->delete('pelatih/BuktiTf/' . $buktiTransfer->bukti_transfer_path);
+        }
+        
+        $buktiTransfer->delete();
+
+        return response()->json(null, 204);
+    }
+
+    /**
+     * Get proofs of transfer by dojang.
+     */
+    public function getByDojang(Dojang $dojang)
+    {
+        return $dojang->buktiTransfer()->with(['dojang', 'pelatih'])->orderBy('created_at', 'desc')->get();
+    }
+
+    /**
+     * Get proofs of transfer by pelatih.
+     */
+    public function getByPelatih(Pelatih $pelatih)
+    {
+        return $pelatih->buktiTransfer()->with(['dojang', 'pelatih'])->orderBy('created_at', 'desc')->get();
     }
 }

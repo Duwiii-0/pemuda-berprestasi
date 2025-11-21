@@ -47,4 +47,14 @@ class Dojang extends Model
     {
         return $this->hasMany(Atlet::class, 'id_dojang', 'id_dojang');
     }
+
+    /**
+     * Get all of the bukti transfer for the Dojang
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function buktiTransfer(): HasMany
+    {
+        return $this->hasMany(BuktiTransfer::class, 'id_dojang', 'id_dojang');
+    }
 }

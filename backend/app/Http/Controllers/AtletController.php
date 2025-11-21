@@ -1,56 +1,83 @@
-<?php
-
-namespace App\Http\Controllers;
-
-use App\Models\Atlet;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
+use App\Models\KelompokUsia;
+use App\Models\KelasBerat;
 
 class AtletController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        return Atlet::with(['dojang', 'pelatihPembuat'])->paginate(1000);
+        $query = Atlet::query()->with(['dojang', 'pelatihPembuat']);
+
+        // Search by name
+        $query->when($request->input('search'), function ($q, $search) {
+            return $q->where('nama_atlet', 'like', "%{$search}%");
+        });
+
+        // Filter by Dojang
+        $query->when($request->input('id_dojang'), function ($q, $id_dojang) {
+            return $q->where('id_dojang', $id_dojang);
+        });
+
+        // Filter by gender
+        $query->when($request->input('jenis_kelamin'), function ($q, $jenis_kelamin) {
+            return $q->where('jenis_kelamin', $jenis_kelamin);
+        });
+
+        // Filter by weight range
+        $query->when($request->input('min_weight'), function ($q, $min_weight) {
+            return $q->where('berat_badan', '>=', $min_weight);
+        });
+        $query->when($request->input('max_weight'), function ($q, $max_weight) {
+            return $q->where('berat_badan', '<=', $max_weight);
+        });
+
+        // Filter by age range
+        if ($request->has('min_age') || $request->has('max_age')) {
+            $today = Carbon::today();
+            if ($request->has('max_age')) {
+                $max_age = $request->input('max_age');
+                $minBirthDate = $today->copy()->subYears($max_age + 1);
+                $query->whereDate('tanggal_lahir', '>', $minBirthDate);
+            }
+            if ($request->has('min_age')) {
+                $min_age = $request->input('min_age');
+                $maxBirthDate = $today->copy()->subYears($min_age);
+                $query->whereDate('tanggal_lahir', '<=', $maxBirthDate);
+            }
+        }
+
+        return $query->orderBy('nama_atlet', 'asc')->paginate($request->input('limit', 100));
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(StoreAtletRequest $request)
     {
-        $validatedData = $request->validate([
-            'nama_atlet' => 'required|string|max:255',
-            'tanggal_lahir' => 'required|date',
-            'nik' => 'nullable|string|max:255',
-            'berat_badan' => 'required|numeric',
-            'provinsi' => 'nullable|string|max:255',
-            'kota' => 'nullable|string|max:255',
-            'belt' => 'nullable|string|max:255',
-            'alamat' => 'nullable|string',
-            'no_telp' => 'nullable|string|max:255',
-            'tinggi_badan' => 'required|numeric',
-            'jenis_kelamin' => 'required|in:LAKI_LAKI,PEREMPUAN',
-            'umur' => 'required|integer',
-            'id_dojang' => 'required|exists:tb_dojang,id_dojang',
-            'id_pelatih_pembuat' => 'required|exists:tb_pelatih,id_pelatih',
-            'akte_kelahiran' => 'nullable|file|mimes:jpg,jpeg,png,pdf',
-            'pas_foto' => 'nullable|file|mimes:jpg,jpeg,png,pdf',
-            'sertifikat_belt' => 'nullable|file|mimes:jpg,jpeg,png,pdf',
-            'ktp' => 'nullable|file|mimes:jpg,jpeg,png,pdf',
-        ]);
+        $validatedData = $request->validated();
 
+        $filePaths = [];
         $fileFields = ['akte_kelahiran', 'pas_foto', 'sertifikat_belt', 'ktp'];
 
         foreach ($fileFields as $field) {
             if ($request->hasFile($field)) {
-                $validatedData[$field] = $request->file($field)->store('public/atlet');
+                // Store file in public/atlet/{field_name}
+                $filePaths[$field] = $request->file($field)->store('atlet/' . $field, 'public');
             }
         }
 
-        $atlet = Atlet::create($validatedData);
+        // Calculate age from date of birth
+        $age = Carbon::parse($validatedData['tanggal_lahir'])->age;
+
+        $dataToCreate = array_merge(
+            $validatedData,
+            $filePaths,
+            ['umur' => $age]
+        );
+
+        $atlet = Atlet::create($dataToCreate);
 
         return response()->json($atlet, 201);
     }
@@ -66,41 +93,25 @@ class AtletController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(UpdateAtletRequest $request, Atlet $atlet)
     {
-        $atlet = Atlet::findOrFail($id);
-
-        $validatedData = $request->validate([
-            'nama_atlet' => 'sometimes|required|string|max:255',
-            'tanggal_lahir' => 'sometimes|required|date',
-            'nik' => 'nullable|string|max:255',
-            'berat_badan' => 'sometimes|required|numeric',
-            'provinsi' => 'nullable|string|max:255',
-            'kota' => 'nullable|string|max:255',
-            'belt' => 'nullable|string|max:255',
-            'alamat' => 'nullable|string',
-            'no_telp' => 'nullable|string|max:255',
-            'tinggi_badan' => 'sometimes|required|numeric',
-            'jenis_kelamin' => 'sometimes|required|in:LAKI_LAKI,PEREMPUAN',
-            'umur' => 'sometimes|required|integer',
-            'id_dojang' => 'sometimes|required|exists:tb_dojang,id_dojang',
-            'id_pelatih_pembuat' => 'sometimes|required|exists:tb_pelatih,id_pelatih',
-            'akte_kelahiran' => 'nullable|file|mimes:jpg,jpeg,png,pdf',
-            'pas_foto' => 'nullable|file|mimes:jpg,jpeg,png,pdf',
-            'sertifikat_belt' => 'nullable|file|mimes:jpg,jpeg,png,pdf',
-            'ktp' => 'nullable|file|mimes:jpg,jpeg,png,pdf',
-        ]);
+        $validatedData = $request->validated();
 
         $fileFields = ['akte_kelahiran', 'pas_foto', 'sertifikat_belt', 'ktp'];
-
         foreach ($fileFields as $field) {
             if ($request->hasFile($field)) {
                 // Delete old file if it exists
                 if ($atlet->{$field}) {
-                    Storage::delete($atlet->{$field});
+                    Storage::disk('public')->delete($atlet->{$field});
                 }
-                $validatedData[$field] = $request->file($field)->store('public/atlet');
+                // Store new file
+                $validatedData[$field] = $request->file($field)->store('atlet/' . $field, 'public');
             }
+        }
+
+        // Recalculate age if tanggal_lahir is being updated
+        if (isset($validatedData['tanggal_lahir'])) {
+            $validatedData['umur'] = Carbon::parse($validatedData['tanggal_lahir'])->age;
         }
 
         $atlet->update($validatedData);
@@ -111,14 +122,17 @@ class AtletController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(Atlet $atlet)
     {
-        $atlet = Atlet::findOrFail($id);
+        // Check if the athlete is registered in any competition
+        if ($atlet->pesertaKompetisi()->exists()) {
+            return response()->json(['message' => 'Tidak dapat menghapus atlet yang sudah terdaftar dalam kompetisi'], 400);
+        }
         
         $fileFields = ['akte_kelahiran', 'pas_foto', 'sertifikat_belt', 'ktp'];
         foreach ($fileFields as $field) {
             if ($atlet->{$field}) {
-                Storage::delete($atlet->{$field});
+                Storage::disk('public')->delete($atlet->{$field});
             }
         }
         
@@ -141,19 +155,42 @@ class AtletController extends Controller
     public function getEligible(Request $request)
     {
         $validatedData = $request->validate([
-            'id_dojang' => 'required|exists:tb_dojang,id_dojang',
+            'id_dojang' => 'required|integer|exists:tb_dojang,id_dojang',
             'jenis_kelamin' => 'required|in:LAKI_LAKI,PEREMPUAN',
-            // TODO: Add validation for kelompokUsiaId and kelasBeratId
+            'kompetisiId' => 'required|integer|exists:tb_kompetisi,id_kompetisi',
+            'kelompokUsiaId' => 'nullable|integer|exists:tb_kelompok_usia,id_kelompok',
+            'kelasBeratId' => 'nullable|integer|exists:tb_kelas_berat,id_kelas_berat',
         ]);
 
         $query = Atlet::query();
 
-        $query->where('id_dojang', $validatedData['id_dojang']);
-        $query->where('jenis_kelamin', $validatedData['jenis_kelamin']);
+        // Filter by dojang and gender
+        $query->where('id_dojang', $validatedData['id_dojang'])
+              ->where('jenis_kelamin', $validatedData['jenis_kelamin']);
 
-        // TODO: Implement filtering based on kelompokUsiaId and kelasBeratId
+        // Filter by age group
+        if (isset($validatedData['kelompokUsiaId'])) {
+            $kelompokUsia = KelompokUsia::find($validatedData['kelompokUsiaId']);
+            if ($kelompokUsia) {
+                $query->whereBetween('umur', [$kelompokUsia->usia_min, $kelompokUsia->usia_max]);
+            }
+        }
 
-        return $query->with(['dojang', 'pelatihPembuat'])->get();
+        // Filter by weight class
+        if (isset($validatedData['kelasBeratId'])) {
+            $kelasBerat = KelasBerat::find($validatedData['kelasBeratId']);
+            if ($kelasBerat) {
+                $query->whereBetween('berat_badan', [$kelasBerat->batas_min, $kelasBerat->batas_max]);
+            }
+        }
+
+        // Filter out athletes already registered in this competition
+        $kompetisiId = $validatedData['kompetisiId'];
+        $query->whereDoesntHave('pesertaKompetisi', function ($q) use ($kompetisiId) {
+            $q->where('id_kompetisi', $kompetisiId);
+        });
+
+        return $query->with('dojang:id_dojang,nama_dojang')->orderBy('nama_atlet', 'asc')->get();
     }
 
     /**
@@ -161,9 +198,40 @@ class AtletController extends Controller
      */
     public function getStats()
     {
-        return [
-            'total' => Atlet::count(),
+        $totalAtlet = Atlet::count();
+        $maleCount = Atlet::where('jenis_kelamin', 'LAKI_LAKI')->count();
+        $femaleCount = Atlet::where('jenis_kelamin', 'PEREMPUAN')->count();
+        $registeredInCompetition = Atlet::has('pesertaKompetisi')->count();
+
+        // Age group distribution
+        $allAtletTanggals = Atlet::pluck('tanggal_lahir');
+        $ageGroups = [
+            '5-8' => 0,
+            '9-12' => 0,
+            '13-16' => 0,
+            '17-20' => 0,
+            '21+' => 0,
         ];
+
+        foreach ($allAtletTanggals as $tanggal_lahir) {
+            $age = Carbon::parse($tanggal_lahir)->age;
+            if ($age >= 5 && $age <= 8) $ageGroups['5-8']++;
+            else if ($age >= 9 && $age <= 12) $ageGroups['9-12']++;
+            else if ($age >= 13 && $age <= 16) $ageGroups['13-16']++;
+            else if ($age >= 17 && $age <= 20) $ageGroups['17-20']++;
+            else if ($age >= 21) $ageGroups['21+']++;
+        }
+
+        return response()->json([
+            'totalAtlet' => $totalAtlet,
+            'genderDistribution' => [
+                'male' => $maleCount,
+                'female' => $femaleCount,
+            ],
+            'registeredInCompetition' => $registeredInCompetition,
+            'notRegisteredInCompetition' => $totalAtlet - $registeredInCompetition,
+            'ageGroupDistribution' => $ageGroups,
+        ]);
     }
 
     /**
