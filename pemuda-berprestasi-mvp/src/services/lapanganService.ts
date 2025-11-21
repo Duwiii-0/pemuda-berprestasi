@@ -578,7 +578,14 @@ private async generateMatchAssignments(
   const assignments: any[] = [];
 
   // 2. Iterate ONLY over the fight matches to assign numbers
+  let lastCabang: string | undefined = undefined;
   fightMatches.forEach(match => {
+    // Reset counter if the cabang changes
+    if (lastCabang !== undefined && match.cabang !== lastCabang) {
+      console.log(`   🔄 Cabang changed from ${lastCabang} to ${match.cabang}. Resetting number to ${startingNumber}.`);
+      currentNumber = startingNumber;
+    }
+
     assignments.push({
       id_match: match.id,
       nomor_antrian: currentNumber,
@@ -587,7 +594,9 @@ private async generateMatchAssignments(
       kelas_id: match.kelasKejuaraanId,
       round: match.round
     });
+    
     currentNumber++;
+    lastCabang = match.cabang; // Remember the cabang for the next iteration
   });
   console.log(`   ✅ Numbered ${fightMatches.length} matches.`);
 
