@@ -128,12 +128,7 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
 }) => {
   const { token } = useAuth();
 
-  const gender =
-    kelasData.cabang === "POOMSAE"
-      ? kelasData.poomsae?.jenis_kelamin
-      : kelasData.cabang === "KYORUGI"
-      ? kelasData.kelas_berat?.jenis_kelamin
-      : kelasData.jenis_kelamin;
+  const gender = kelasData.jenis_kelamin;
 
   const displayGender =
     gender === "LAKI_LAKI" ? "Male" : gender === "PEREMPUAN" ? "Female" : "";

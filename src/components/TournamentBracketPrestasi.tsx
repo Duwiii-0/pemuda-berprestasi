@@ -118,12 +118,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
 }) => {
   const { token } = useAuth();
 
-  const gender =
-    kelasData.cabang === "POOMSAE"
-      ? kelasData.poomsae?.jenis_kelamin
-      : kelasData.cabang === "KYORUGI"
-      ? kelasData.kelas_berat?.jenis_kelamin
-      : kelasData.jenis_kelamin;
+  const gender = kelasData.jenis_kelamin;
 
   const displayGender =
     gender === "LAKI_LAKI" ? "Male" : gender === "PEREMPUAN" ? "Female" : "";
@@ -2425,7 +2420,7 @@ const getFinalMatch = (): Match | null => {
       {/* Detail Kelas */}
       <p className="text-base font-semibold mb-1" style={{ color: '#050505' }}>
         {kelasData.kelompok?.nama_kelompok}{' '}
-        {kelasData.kelas_berat?.jenis_kelamin === 'LAKI_LAKI' ? 'Male' : 'Female'}{' '}
+        {displayGender}{' '}
         {kelasData.kelas_berat?.nama_kelas || kelasData.poomsae?.nama_kelas}
       </p>
       
