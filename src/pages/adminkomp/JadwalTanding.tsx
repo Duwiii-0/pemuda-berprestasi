@@ -1407,31 +1407,29 @@ const JadwalPertandingan: React.FC = () => {
                                   Cabang
                                 </span>
                                 <div className="flex items-center gap-1 mt-1">
-                                  {[
-                                    "SEMUA",
-                                    "KYORUGI",
-                                    "POOMSAE",
-                                  ].map((filter) => (
-                                    <button
-                                      key={filter}
-                                      onClick={() =>
-                                        handleFilterChange(
-                                          lap.id_lapangan,
-                                          "cabang",
-                                          filter as any
-                                        )
-                                      }
-                                      className={`px-2 py-1 text-xs rounded-md transition-colors ${
-                                        (lapanganFilters[lap.id_lapangan]
-                                          ?.cabang || "SEMUA") === filter
-                                          ? "bg-[#990D35] text-white"
-                                          : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                                      }`}
-                                    >
-                                      {filter.charAt(0) +
-                                        filter.slice(1).toLowerCase()}
-                                    </button>
-                                  ))}
+                                  {["SEMUA", "KYORUGI", "POOMSAE"].map(
+                                    (filter) => (
+                                      <button
+                                        key={filter}
+                                        onClick={() =>
+                                          handleFilterChange(
+                                            lap.id_lapangan,
+                                            "cabang",
+                                            filter as any
+                                          )
+                                        }
+                                        className={`px-2 py-1 text-xs rounded-md transition-colors ${
+                                          (lapanganFilters[lap.id_lapangan]
+                                            ?.cabang || "SEMUA") === filter
+                                            ? "bg-[#990D35] text-white"
+                                            : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                                        }`}
+                                      >
+                                        {filter.charAt(0) +
+                                          filter.slice(1).toLowerCase()}
+                                      </button>
+                                    )
+                                  )}
                                 </div>
                               </div>
                               <div>
@@ -1439,31 +1437,29 @@ const JadwalPertandingan: React.FC = () => {
                                   Kategori
                                 </span>
                                 <div className="flex items-center gap-1 mt-1">
-                                  {[
-                                    "SEMUA",
-                                    "PRESTASI",
-                                    "PEMULA",
-                                  ].map((filter) => (
-                                    <button
-                                      key={filter}
-                                      onClick={() =>
-                                        handleFilterChange(
-                                          lap.id_lapangan,
-                                          "kategori",
-                                          filter as any
-                                        )
-                                      }
-                                      className={`px-2 py-1 text-xs rounded-md transition-colors ${
-                                        (lapanganFilters[lap.id_lapangan]
-                                          ?.kategori || "SEMUA") === filter
-                                          ? "bg-[#990D35] text-white"
-                                          : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                                      }`}
-                                    >
-                                      {filter.charAt(0) +
-                                        filter.slice(1).toLowerCase()}
-                                    </button>
-                                  ))}
+                                  {["SEMUA", "PRESTASI", "PEMULA"].map(
+                                    (filter) => (
+                                      <button
+                                        key={filter}
+                                        onClick={() =>
+                                          handleFilterChange(
+                                            lap.id_lapangan,
+                                            "kategori",
+                                            filter as any
+                                          )
+                                        }
+                                        className={`px-2 py-1 text-xs rounded-md transition-colors ${
+                                          (lapanganFilters[lap.id_lapangan]
+                                            ?.kategori || "SEMUA") === filter
+                                            ? "bg-[#990D35] text-white"
+                                            : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                                        }`}
+                                      >
+                                        {filter.charAt(0) +
+                                          filter.slice(1).toLowerCase()}
+                                      </button>
+                                    )
+                                  )}
                                 </div>
                               </div>
                             </div>
@@ -1543,14 +1539,16 @@ const JadwalPertandingan: React.FC = () => {
                                     if (isASelected && !isBSelected) return -1;
                                     if (!isASelected && isBSelected) return 1;
 
-                                    const countA =
-                                      (approvedPesertaByKelas[
+                                    const countA = (
+                                      approvedPesertaByKelas[
                                         a.id_kelas_kejuaraan
-                                      ] || []).length;
-                                    const countB =
-                                      (approvedPesertaByKelas[
+                                      ] || []
+                                    ).length;
+                                    const countB = (
+                                      approvedPesertaByKelas[
                                         b.id_kelas_kejuaraan
-                                      ] || []).length;
+                                      ] || []
+                                    ).length;
                                     return countB - countA;
                                   });
 

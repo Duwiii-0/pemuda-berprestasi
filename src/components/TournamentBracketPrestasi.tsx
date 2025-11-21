@@ -135,6 +135,40 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
   const bracketRef = React.useRef<HTMLDivElement>(null);
   const [showDojangModal, setShowDojangModal] = useState(false);
   const [clearingScheduling, setClearingScheduling] = useState(false);
+  const [tanggalPertandingan, setTanggalPertandingan] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchTanggalPertandingan = async () => {
+      if (kelasData?.kompetisi?.id_kompetisi && kelasData?.id_kelas_kejuaraan) {
+        try {
+          const response = await fetch(
+            `${apiBaseUrl}/kompetisi/${kelasData.kompetisi.id_kompetisi}/brackets/${kelasData.id_kelas_kejuaraan}/tanggal`,
+            {
+              headers: {
+                ...(token && { Authorization: `Bearer ${token}` }),
+              },
+            }
+          );
+          if (response.ok) {
+            const result = await response.json();
+            if (result.data && result.data.tanggal) {
+              setTanggalPertandingan(
+                new Date(result.data.tanggal).toISOString().split("T")[0]
+              );
+            }
+          } else {
+            console.log(
+              "Tanggal pertandingan khusus kelas tidak ditemukan, menggunakan tanggal mulai kompetisi."
+            );
+          }
+        } catch (error) {
+          console.error('Error fetching tanggal pertandingan:', error);
+        }
+      }
+    };
+
+    fetchTanggalPertandingan();
+  }, [kelasData, apiBaseUrl, token]);
   
   const [showModal, setShowModal] = useState(false);
   const [modalConfig, setModalConfig] = useState<{
@@ -2375,14 +2409,21 @@ const getFinalMatch = (): Match | null => {
       </p>
       
       {/* Tanggal - Input Manual */}
-      <input
-        type="date"
-        id="tournament-date-display"
-        defaultValue={new Date(kelasData.kompetisi.tanggal_mulai).toISOString().split('T')[0]}
-        className="text-sm px-2 py-1 rounded border text-center mb-1"
-        style={{ borderColor: '#990D35', color: '#050505' }}
-      />
-      
+                          <input
+                            type="date"
+                            id="tournament-date-display"
+                            value={
+                              tanggalPertandingan ||
+                              (kelasData.kompetisi.tanggal_mulai
+                                ? new Date(kelasData.kompetisi.tanggal_mulai)
+                                    .toISOString()
+                                    .split("T")[0]
+                                : "")
+                            }
+                            onChange={(e) => setTanggalPertandingan(e.target.value)}
+                            className="text-sm px-2 py-1 rounded border text-center mb-1"
+                            style={{ borderColor: "#990D35", color: "#050505" }}
+                          />      
       {/* Lokasi */}
       <p className="text-sm mb-1" style={{ color: '#050505', opacity: 0.7 }}>
         GOR Ranau JSC Palembang

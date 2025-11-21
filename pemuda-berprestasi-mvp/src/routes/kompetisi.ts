@@ -152,6 +152,11 @@ router.delete(
 );
 
 router.get(
+  "/:id/brackets/:kelasKejuaraanId/tanggal",
+  KompetisiController.getTanggalPertandinganByKelas
+);
+
+router.get(
   "/:id/brackets/:kelasKejuaraanId",
   KompetisiController.getBracketByClass
 );
