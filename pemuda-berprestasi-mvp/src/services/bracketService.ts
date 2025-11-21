@@ -3451,7 +3451,7 @@ static async clearMatchResults(kompetisiId: number, kelasKejuaraanId: number): P
               winner: this.determineWinner(match),
               scoreA: match.skor_a,
               scoreB: match.skor_b,
-              status: (hasParticipant1 && !hasParticipant2) || (!hasParticipant1 && hasParticipant2)
+              status: match.ronde === 1 && ((hasParticipant1 && !hasParticipant2) || (!hasParticipant1 && hasParticipant2))
                 ? 'bye'
                 : this.determineMatchStatus(match),
               venue: match.venue?.nama_venue,
