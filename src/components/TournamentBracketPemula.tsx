@@ -87,6 +87,7 @@ interface KelasKejuaraan {
   };
   poomsae?: {
     nama_kelas: string;
+    jenis_kelamin: "LAKI_LAKI" | "PEREMPUAN";
   };
   kompetisi: {
     id_kompetisi: number;
@@ -126,6 +127,16 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
   viewOnly = false,
 }) => {
   const { token } = useAuth();
+
+  const gender =
+    kelasData.cabang === "POOMSAE"
+      ? kelasData.poomsae?.jenis_kelamin
+      : kelasData.cabang === "KYORUGI"
+      ? kelasData.kelas_berat?.jenis_kelamin
+      : kelasData.jenis_kelamin;
+
+  const displayGender =
+    gender === "LAKI_LAKI" ? "Male" : gender === "PEREMPUAN" ? "Female" : "";
   const [matches, setMatches] = useState<Match[]>([]);
   const [editingMatch, setEditingMatch] = useState<Match | null>(null);
   const [editAthleteModal, setEditAthleteModal] = useState<{
@@ -573,11 +584,7 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
         ],
         [
           "Kelas",
-          `${kelasData.kelompok?.nama_kelompok} ${
-            kelasData.kelas_berat?.jenis_kelamin === "LAKI_LAKI"
-              ? "Male"
-              : "Female"
-          } ${
+          `${kelasData.kelompok?.nama_kelompok} ${displayGender} ${
             kelasData.kelas_berat?.nama_kelas || kelasData.poomsae?.nama_kelas
           }`,
         ],
@@ -1350,13 +1357,7 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
         logoPBTI: taekwondo,
         logoEvent: sriwijaya,
         namaKejuaraan: kelasData.kompetisi.nama_event,
-        kelas: `${kelasData.kelompok?.nama_kelompok} ${
-          kelasData.jenis_kelamin === "LAKI_LAKI"
-            ? "Male"
-            : kelasData.jenis_kelamin === "PEREMPUAN"
-            ? "Female"
-            : ""
-        } ${
+        kelas: `${kelasData.kelompok?.nama_kelompok} ${displayGender} ${
           kelasData.kelas_berat?.nama_kelas || kelasData.poomsae?.nama_kelas
         }`,
         tanggalTanding: selectedDate, // ✅ Pakai tanggal dari input
@@ -1620,11 +1621,7 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
                                   style={{ color: "#990D35" }}
                                 >
                                   {kelasData.kelompok?.nama_kelompok}{" "}
-                                  {kelasData.jenis_kelamin === "LAKI_LAKI"
-                                    ? "Male"
-                                    : kelasData.jenis_kelamin === "PEREMPUAN"
-                                    ? "Female"
-                                    : ""}{" "}
+                                  {displayGender}{" "}
                                   {kelasData.kelas_berat?.nama_kelas ||
                                     kelasData.poomsae?.nama_kelas}
                                 </h2>
@@ -1676,11 +1673,7 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
                       style={{ color: "#050505" }}
                     >
                       {kelasData.kelompok?.nama_kelompok}{" "}
-                      {kelasData.jenis_kelamin === "LAKI_LAKI"
-                        ? "Male"
-                        : kelasData.jenis_kelamin === "PEREMPUAN"
-                        ? "Female"
-                        : ""}{" "}
+                      {displayGender}{" "}
                       {kelasData.kelas_berat?.nama_kelas ||
                         kelasData.poomsae?.nama_kelas}
                     </p>

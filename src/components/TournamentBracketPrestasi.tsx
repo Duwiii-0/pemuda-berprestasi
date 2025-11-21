@@ -77,6 +77,7 @@ interface KelasKejuaraan {
   };
   poomsae?: {
     nama_kelas: string;
+    jenis_kelamin: 'LAKI_LAKI' | 'PEREMPUAN';
   };
   kompetisi: {
     id_kompetisi: number;
@@ -116,6 +117,16 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
   viewOnly = false, // ⭐ TAMBAHKAN
 }) => {
   const { token } = useAuth();
+
+  const gender =
+    kelasData.cabang === "POOMSAE"
+      ? kelasData.poomsae?.jenis_kelamin
+      : kelasData.cabang === "KYORUGI"
+      ? kelasData.kelas_berat?.jenis_kelamin
+      : kelasData.jenis_kelamin;
+
+  const displayGender =
+    gender === "LAKI_LAKI" ? "Male" : gender === "PEREMPUAN" ? "Female" : "";
   const [matches, setMatches] = useState<Match[]>([]);
   const [editingMatch, setEditingMatch] = useState<Match | null>(null);
   const [editAthleteModal, setEditAthleteModal] = useState<{
@@ -323,7 +334,7 @@ const handleExportPDF = async () => {
       logoPBTI: taekwondo,
       logoEvent: sriwijaya,
       namaKejuaraan: kelasData.kompetisi.nama_event,
-      kelas: `${kelasData.kelompok?.nama_kelompok} ${kelasData.kelas_berat?.jenis_kelamin === 'LAKI_LAKI' ? 'Male' : 'Female'} ${kelasData.kelas_berat?.nama_kelas || kelasData.poomsae?.nama_kelas}`,
+      kelas: `${kelasData.kelompok?.nama_kelompok} ${displayGender} ${kelasData.kelas_berat?.nama_kelas || kelasData.poomsae?.nama_kelas}`,
       tanggalTanding: selectedDate, // ✅ Pakai tanggal dari input
       jumlahKompetitor: approvedParticipants.length,
       lokasi: kelasData.kompetisi.lokasi
@@ -876,7 +887,7 @@ const exportPesertaToExcel = () => {
     const headerInfo = [
       ['LAPORAN DATA PESERTA KOMPETISI - KATEGORI PRESTASI'],
       ['Nama Event', kelasData.kompetisi?.nama_event || 'Sriwijaya International Taekwondo Championship 2025'],
-      ['Kelas', `${kelasData.kelompok?.nama_kelompok} ${kelasData.kelas_berat?.jenis_kelamin === 'LAKI_LAKI' ? 'Male' : 'Female'} ${kelasData.kelas_berat?.nama_kelas || kelasData.poomsae?.nama_kelas}`],
+      ['Kelas', `${kelasData.kelompok?.nama_kelompok} ${displayGender} ${kelasData.kelas_berat?.nama_kelas || kelasData.poomsae?.nama_kelas}`],
       ['Lokasi', kelasData.kompetisi?.lokasi || 'GOR Ranau JSC Palembang'],
       ['Tanggal Export', currentDate],
       ['Total Peserta', approvedList.length.toString()],
@@ -2365,10 +2376,19 @@ const getFinalMatch = (): Match | null => {
           <div className="bg-red-50 border border-red-200 rounded-lg p-4">
             <div className="flex items-center justify-center gap-8 text-center">
               <div>
-                <h2 className="text-lg font-bold" style={{ color: '#990D35' }}>
-                  {kelasData.kelompok?.nama_kelompok} {kelasData.kelas_berat?.jenis_kelamin === 'LAKI_LAKI' ? 'Male' : 'Female'} {kelasData.kelas_berat?.nama_kelas || kelasData.poomsae?.nama_kelas}
-                </h2>
-                <p className="text-sm mt-1" style={{ color: '#050505', opacity: 0.7 }}>
+                                <h2
+                                  className="text-lg font-bold"
+                                  style={{ color: "#990D35" }}
+                                >
+                                  {kelasData.kelompok?.nama_kelompok}{" "}
+                                  {displayGender}{" "}
+                                  {kelasData.kelas_berat?.nama_kelas ||
+                                    kelasData.poomsae?.nama_kelas}
+                                </h2>
+                <p
+                  className="text-sm mt-1"
+                  style={{ color: '#050505', opacity: 0.7 }}
+                >
                   Contestants: {approvedParticipants.length}
                 </p>
               </div>
