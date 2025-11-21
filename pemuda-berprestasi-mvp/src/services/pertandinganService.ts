@@ -17,10 +17,10 @@ export const getAtletMatchInfo = async (id_kompetisi: number) => {
         },
         // Filter: hanya peserta yang approved
         peserta_a: {
-          status: "approved", // sesuaikan dengan nama field di database Anda
+          status: "APPROVED", // sesuaikan dengan nama field di database Anda
         },
         peserta_b: {
-          status: "approved", // sesuaikan dengan nama field di database Anda
+          status: "APPROVED", // sesuaikan dengan nama field di database Anda
         },
       },
       select: {
@@ -29,7 +29,7 @@ export const getAtletMatchInfo = async (id_kompetisi: number) => {
         stage_name: true, // Tambahkan stage_name di select
         peserta_a: {
           select: {
-            status_peserta: true, // Tambahkan untuk debugging
+            status: true, // Tambahkan untuk debugging
             atlet: {
               select: {
                 nama_atlet: true,
@@ -40,7 +40,7 @@ export const getAtletMatchInfo = async (id_kompetisi: number) => {
         },
         peserta_b: {
           select: {
-            status_peserta: true, // Tambahkan untuk debugging
+            status: true, // Tambahkan untuk debugging
             atlet: {
               select: {
                 nama_atlet: true,
@@ -60,8 +60,6 @@ export const getAtletMatchInfo = async (id_kompetisi: number) => {
       nama_atlet_b: match.peserta_b?.atlet?.nama_atlet,
       foto_atlet_a: match.peserta_a?.atlet?.pas_foto,
       foto_atlet_b: match.peserta_b?.atlet?.pas_foto,
-      status_atlet_a: match.peserta_a?.stauts, // Optional: untuk debugging
-      status_atlet_b: match.peserta_b?.status, // Optional: untuk debugging
     }));
   } catch (error: any) {
     throw new Error(`Failed to get match info: ${error.message}`);
