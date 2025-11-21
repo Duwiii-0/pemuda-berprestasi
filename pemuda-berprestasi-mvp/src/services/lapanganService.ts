@@ -554,60 +554,63 @@ private async generateMatchAssignments(
   saveToDb: boolean
 ): Promise<any> {
 
-  console.log(`\n📊 === GENERATING ASSIGNMENTS (NEW GLOBAL LOGIC) ===`);
+  console.log(`\n📊 === GENERATING ASSIGNMENTS (v3 - ROBUST BYE HANDLING) ===`);
   console.log(`   Lapangan: ${lapanganLetter}`);
   console.log(`   Starting Number: ${startingNumber}`);
 
-  // 1. Get the globally sorted list of all matches for the entire competition
   const allMatchesGloballySorted = await BracketService.getAllMatchesForScheduling(id_kompetisi);
   console.log(`   ✅ Fetched ${allMatchesGloballySorted.length} matches with global sorting.`);
 
-  // 2. Filter this global list to only include matches relevant to the classes assigned to THIS lapangan
   const kelasIdsForThisLapangan = new Set(kelasList.map(k => k.id_kelas_kejuaraan));
   const matchesForThisLapangan = allMatchesGloballySorted.filter(m => 
     m.kelasKejuaraanId && kelasIdsForThisLapangan.has(m.kelasKejuaraanId)
   );
   console.log(`   ✅ Filtered down to ${matchesForThisLapangan.length} matches for Lapangan ${lapanganLetter}.`);
 
+  // --- ROBUST BYE HANDLING ---
+  // 1. Physically separate BYE matches from FIGHT/TBD matches
+  const fightMatches = matchesForThisLapangan.filter(match => match.status !== 'bye');
+  const byeMatches = matchesForThisLapangan.filter(match => match.status === 'bye');
+  
+  console.log(`   แยก: Found ${fightMatches.length} fight/TBD matches and ${byeMatches.length} BYE matches.`);
+
   let currentNumber = startingNumber;
   const assignments: any[] = [];
-  let numberedCount = 0;
-  let byeCount = 0;
 
-  // 3. Iterate through the CORRECTLY sorted and filtered list to assign numbers
-  matchesForThisLapangan.forEach((match, idx) => {
-    const isBye = match.status === 'bye';
-
-    if (isBye) {
-      assignments.push({
-        id_match: match.id,
-        nomor_antrian: null,
-        nomor_lapangan: null,
-        nomor_partai: null,
-        kelas_id: match.kelasKejuaraanId,
-        note: 'BYE - Skipped'
-      });
-      byeCount++;
-    } else {
-      assignments.push({
-        id_match: match.id,
-        nomor_antrian: currentNumber,
-        nomor_lapangan: lapanganLetter,
-        nomor_partai: `${currentNumber}${lapanganLetter}`,
-        kelas_id: match.kelasKejuaraanId,
-        round: match.round
-      });
-      currentNumber++;
-      numberedCount++;
-    }
+  // 2. Iterate ONLY over the fight matches to assign numbers
+  fightMatches.forEach(match => {
+    assignments.push({
+      id_match: match.id,
+      nomor_antrian: currentNumber,
+      nomor_lapangan: lapanganLetter,
+      nomor_partai: `${currentNumber}${lapanganLetter}`,
+      kelas_id: match.kelasKejuaraanId,
+      round: match.round
+    });
+    currentNumber++;
   });
+  console.log(`   ✅ Numbered ${fightMatches.length} matches.`);
+
+  // 3. Add BYE matches to the assignments list without numbers
+  byeMatches.forEach(match => {
+    assignments.push({
+      id_match: match.id,
+      nomor_antrian: null,
+      nomor_lapangan: null,
+      nomor_partai: null,
+      kelas_id: match.kelasKejuaraanId,
+      note: 'BYE - Skipped'
+    });
+  });
+  console.log(`   ✅ Processed ${byeMatches.length} BYE matches.`);
+
 
   // Re-add logic for summary generation
   const pemulaClasses = kelasList.filter(k => k.kategori === 'PEMULA');
   const prestasiClasses = kelasList.filter(k => k.kategori === 'PRESTASI');
 
-  const totalNumbered = assignments.filter(a => a.nomor_antrian !== null).length;
-  const totalBye = assignments.filter(a => a.note === 'BYE - Skipped').length;
+  const totalNumbered = fightMatches.length;
+  const totalBye = byeMatches.length;
   const finalRange = totalNumbered > 0 
     ? `${startingNumber}${lapanganLetter}-${currentNumber - 1}${lapanganLetter}`
     : '-';

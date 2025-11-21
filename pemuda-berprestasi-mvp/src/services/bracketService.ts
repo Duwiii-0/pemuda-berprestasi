@@ -3338,7 +3338,15 @@ static async clearMatchResults(kompetisiId: number, kelasKejuaraanId: number): P
    * Aturan: stage ASC, participantCount DESC, position ASC, id ASC
    */
   static scheduleMatchesGlobally(matches: Match[]): Match[] {
-    return matches.sort((a, b) => {
+    console.log('\n\n[DEBUG] --- Global Sort ---');
+    const matchesToSort = [...matches];
+    
+    // Log the first 10 items to see what we are sorting
+    matchesToSort.slice(0, 10).forEach((m, i) => {
+      console.log(`[DEBUG] Item ${i}: Stage='${m.stageName}', Prio=${this.getStagePriority(m.stageName || '')}, Count=${m.bracketParticipantCount}, ID=${m.id}`);
+    });
+
+    const sorted = matchesToSort.sort((a, b) => {
       const stageA = a.stageName || '';
       const stageB = b.stageName || '';
 
@@ -3356,6 +3364,8 @@ static async clearMatchResults(kompetisiId: number, kelasKejuaraanId: number): P
 
       return (a.id || 0) - (b.id || 0);
     });
+    console.log('[DEBUG] --- Sorting Complete ---\n\n');
+    return sorted;
   }
 
   /**
