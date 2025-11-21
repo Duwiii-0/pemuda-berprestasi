@@ -28,6 +28,7 @@ export interface Participant {
     stageName?: string; // 'ROUND_1', 'QUARTER_FINAL', 'SEMI_FINAL', 'FINAL'
     bracketParticipantCount?: number; // Total participants in this bracket
     kelasKejuaraanId?: number; // For grouping
+    cabang?: 'KYORUGI' | 'POOMSAE'; // New field for sorting
   }
 
 export interface Bracket {
@@ -3339,6 +3340,19 @@ static async clearMatchResults(kompetisiId: number, kelasKejuaraanId: number): P
    */
   static scheduleMatchesGlobally(matches: Match[]): Match[] {
     const sorted = matches.sort((a, b) => {
+      // 1. Primary Sort: Cabang (Discipline Type - POOMSAE first)
+      // Assign numeric values: POOMSAE = 1, KYORUGI = 2. Unknown/other = 99.
+      const getCabangPriority = (cabang?: 'KYORUGI' | 'POOMSAE'): number => {
+        if (cabang === 'POOMSAE') return 1;
+        if (cabang === 'KYORUGI') return 2;
+        return 99; // Default for unknown/undefined
+      };
+
+      const pa_cabang = getCabangPriority(a.cabang);
+      const pb_cabang = getCabangPriority(b.cabang);
+      if (pa_cabang !== pb_cabang) return pa_cabang - pb_cabang;
+
+      // 2. Secondary Sort: Stage Priority (ASC) - Existing Logic
       const stageA = a.stageName || '';
       const stageB = b.stageName || '';
 
@@ -3346,14 +3360,17 @@ static async clearMatchResults(kompetisiId: number, kelasKejuaraanId: number): P
       const pb = this.getStagePriority(stageB);
       if (pa !== pb) return pa - pb;
 
+      // 3. Tertiary Sort: Bracket Participant Count (DESC) - Existing Logic
       const ca = a.bracketParticipantCount || 0;
       const cb = b.bracketParticipantCount || 0;
       if (ca !== cb) return cb - ca;
 
+      // 4. Quaternary Sort: Position (ASC) - Existing Logic
       if (a.position !== b.position) {
         return a.position - b.position;
       }
 
+      // 5. Fallback Sort: ID (ASC) - Existing Logic
       return (a.id || 0) - (b.id || 0);
     });
     return sorted;
@@ -3407,6 +3424,9 @@ static async clearMatchResults(kompetisiId: number, kelasKejuaraanId: number): P
       const bagans = await prisma.tb_bagan.findMany({
         where: { id_kompetisi: kompetisiId },
         include: {
+          kelas_kejuaraan: {
+            select: { cabang: true }
+          },
           _count: {
             select: { drawing_seed: true }
           },
@@ -3429,6 +3449,7 @@ static async clearMatchResults(kompetisiId: number, kelasKejuaraanId: number): P
         const participantCount = bagan._count.drawing_seed;
         // Calculate total rounds for this specific bracket to help determine stage names
         const totalRounds = this.calculateTotalRounds(participantCount);
+        const cabang = bagan.kelas_kejuaraan.cabang as 'KYORUGI' | 'POOMSAE'; // Get cabang from the included relation
         
         const transformedMatches: Match[] = bagan.match.map(match => {
             const hasParticipant1 = !!match.peserta_a;
@@ -3461,7 +3482,8 @@ static async clearMatchResults(kompetisiId: number, kelasKejuaraanId: number): P
               nomorLapangan: match.nomor_lapangan,
               stageName: finalStageName || undefined, // Use the calculated name
               bracketParticipantCount: participantCount,
-              kelasKejuaraanId: bagan.id_kelas_kejuaraan
+              kelasKejuaraanId: bagan.id_kelas_kejuaraan,
+              cabang: cabang // Add cabang here
             };
         });
 
