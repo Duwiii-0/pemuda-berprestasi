@@ -1968,5 +1968,114 @@ static async getAvailableClassesWithDetails(req: Request, res: Response) {
       return sendError(res, error.message, 400);
     }
   }
+  /**
+ * 🆕 Schedule matches for entire competition
+ * Assigns queue numbers sequentially across all brackets
+ */
+static async scheduleCompetitionMatches(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    const { tanggalPertandingan, lapanganIds } = req.body;
+    
+    const kompetisiId = parseInt(id);
+    
+    if (isNaN(kompetisiId)) {
+      return sendError(res, 'ID kompetisi tidak valid', 400);
+    }
+    
+    if (!tanggalPertandingan) {
+      return sendError(res, 'Tanggal pertandingan harus diisi', 400);
+    }
+    
+    if (!lapanganIds || !Array.isArray(lapanganIds) || lapanganIds.length === 0) {
+      return sendError(res, 'Minimal 1 lapangan harus dipilih', 400);
+    }
+    
+    console.log(`\n🗓️ === SCHEDULING COMPETITION MATCHES ===`);
+    console.log(`   Kompetisi ID: ${kompetisiId}`);
+    console.log(`   Tanggal: ${tanggalPertandingan}`);
+    console.log(`   Lapangan: ${lapanganIds.join(', ')}\n`);
+    
+    // ⭐ STEP 1: Fetch ALL brackets
+    const allKelas = await prisma.tb_kelas_kejuaraan.findMany({
+      where: {
+        id_kompetisi: kompetisiId,
+        bagan: {
+          some: {} // Only kelas with brackets
+        }
+      },
+      select: {
+        id_kelas_kejuaraan: true
+      }
+    });
+    
+    console.log(`   📊 Found ${allKelas.length} brackets to schedule\n`);
+    
+    // ⭐ STEP 2: Collect ALL matches
+    const allMatches: Match[] = [];
+    
+    for (const kelas of allKelas) {
+      const bracket = await BracketService.getBracket(
+        kompetisiId,
+        kelas.id_kelas_kejuaraan
+      );
+      
+      if (bracket) {
+        allMatches.push(...bracket.matches);
+      }
+    }
+    
+    console.log(`   📊 Total matches collected: ${allMatches.length}\n`);
+    
+    // ⭐ STEP 3: SORT by participant count + stage
+    const sortedMatches = BracketService.sortMatchesForScheduling(allMatches);
+    
+    // ⭐ STEP 4: Assign queue numbers
+    let queueNumber = 1;
+    let lapanganIndex = 0;
+    const tanggal = new Date(tanggalPertandingan);
+    
+    console.log(`   🔢 Assigning queue numbers...\n`);
+    
+    for (const match of sortedMatches) {
+      if (!match.id) continue;
+      
+      // Round-robin lapangan assignment
+      const lapangan = lapanganIds[lapanganIndex];
+      lapanganIndex = (lapanganIndex + 1) % lapanganIds.length;
+      
+      await BracketService.updateMatch(
+        match.id,
+        undefined, // winnerId
+        undefined, // scoreA
+        undefined, // scoreB
+        tanggal,
+        queueNumber,
+        lapangan
+      );
+      
+      console.log(
+        `   ✅ Match ${match.id}: ` +
+        `Queue ${queueNumber}, Lapangan ${lapangan} ` +
+        `(${match.bracketParticipantCount}p - ${match.stageName})`
+      );
+      
+      queueNumber++;
+    }
+    
+    console.log(`\n   ✅ Scheduled ${sortedMatches.length} matches`);
+    console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`);
+    
+    return sendSuccess(res, {
+      totalMatches: sortedMatches.length,
+      tanggalPertandingan: tanggal,
+      lapanganIds
+    }, 'Berhasil menjadwalkan semua pertandingan');
+    
+  } catch (error: any) {
+    console.error('❌ Error scheduling matches:', error);
+    return sendError(res, error.message || 'Gagal menjadwalkan pertandingan', 400);
+  }
+}
 }
 

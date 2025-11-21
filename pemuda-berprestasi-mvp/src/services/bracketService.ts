@@ -25,6 +25,9 @@ export interface Participant {
     nomorPartai?: string | null;  
     nomorAntrian?: number | null;
     nomorLapangan?: string | null;
+    stageName?: string; // 'ROUND_1', 'QUARTER_FINAL', 'SEMI_FINAL', 'FINAL'
+    bracketParticipantCount?: number; // Total participants in this bracket
+    kelasKejuaraanId?: number; // For grouping
   }
 
 export interface Bracket {
@@ -1615,151 +1618,154 @@ static async generatePemulaBracket(
   /**
    * Get bracket by competition and class
    */
-  static async getBracket(kompetisiId: number, kelasKejuaraanId: number): Promise<Bracket | null> {
-    try {
-      const bagan = await prisma.tb_bagan.findFirst({
-        where: {
-          id_kompetisi: kompetisiId,
-          id_kelas_kejuaraan: kelasKejuaraanId
-        },
-        include: {
-          drawing_seed: {
-            include: {
-              peserta_kompetisi: {
-                include: {
-                  atlet: {
-                    include: {
-                      dojang: true
+static async getBracket(kompetisiId: number, kelasKejuaraanId: number): Promise<Bracket | null> {
+  try {
+    const bagan = await prisma.tb_bagan.findFirst({
+      where: {
+        id_kompetisi: kompetisiId,
+        id_kelas_kejuaraan: kelasKejuaraanId
+      },
+      include: {
+        drawing_seed: {
+          include: {
+            peserta_kompetisi: {
+              include: {
+                atlet: {
+                  include: {
+                    dojang: true
+                  }
+                },
+                anggota_tim: {
+                  include: {
+                    atlet: {
+                      include: {
+                        dojang: true
+                      }
                     }
-                  },
-                  anggota_tim: {
-                    include: {
-                      atlet: {
-                        include: {
-                          dojang: true
-                        }
+                  }
+                }
+              }
+            }
+          },
+          orderBy: { seed_num: 'asc' }
+        },
+        match: {
+          include: {
+            peserta_a: {
+              include: {
+                atlet: {
+                  include: {
+                    dojang: true
+                  }
+                },
+                anggota_tim: {
+                  include: {
+                    atlet: {
+                      include: {
+                        dojang: true
                       }
                     }
                   }
                 }
               }
             },
-            orderBy: { seed_num: 'asc' }
-          },
-          match: {
-            include: {
-              peserta_a: {
-                include: {
-                  atlet: {
-                    include: {
-                      dojang: true
-                    }
-                  },
-                  anggota_tim: {
-                    include: {
-                      atlet: {
-                        include: {
-                          dojang: true
-                        }
+            peserta_b: {
+              include: {
+                atlet: {
+                  include: {
+                    dojang: true
+                  }
+                },
+                anggota_tim: {
+                  include: {
+                    atlet: {
+                      include: {
+                        dojang: true
                       }
                     }
                   }
                 }
-              },
-              peserta_b: {
-                include: {
-                  atlet: {
-                    include: {
-                      dojang: true
-                    }
-                  },
-                  anggota_tim: {
-                    include: {
-                      atlet: {
-                        include: {
-                          dojang: true
-                        }
-                      }
-                    }
-                  }
-                }
-              },
-              venue: true
+              }
             },
-            orderBy: [
-              { ronde: 'asc' },
-              { id_match: 'asc' }
-            ]
-          }
+            venue: true
+          },
+          orderBy: [
+            { ronde: 'asc' },
+            { position: 'asc' }  // ⭐ IMPORTANT: Sort by position
+          ]
         }
-      });
+      }
+    });
 
-      if (!bagan) return null;
+    if (!bagan) return null;
 
-      // Transform participants
-      const participants: Participant[] = bagan.drawing_seed.map(seed => {
-        const reg = seed.peserta_kompetisi;
-        if (reg.is_team && reg.anggota_tim.length > 0) {
-          return {
-            id: reg.id_peserta_kompetisi,
-            name: `Tim ${reg.anggota_tim.map(m => m.atlet.nama_atlet).join(' & ')}`,
-            dojang: reg.anggota_tim[0]?.atlet?.dojang?.nama_dojang,
-            isTeam: true,
-            teamMembers: reg.anggota_tim.map(m => m.atlet.nama_atlet)
-          };
-        } else if (reg.atlet) {
-          return {
-            id: reg.id_peserta_kompetisi,
-            name: reg.atlet.nama_atlet,
-            dojang: reg.atlet.dojang?.nama_dojang,
-            atletId: reg.atlet.id_atlet,
-            isTeam: false
-          };
-        }
-        return null;
-      }).filter(Boolean) as Participant[];
-
-      // Transform matches
-      const matches: Match[] = bagan.match.map(match => {
-        const hasParticipant1 = !!match.peserta_a;
-        const hasParticipant2 = !!match.peserta_b;
-        
+    // Transform participants
+    const participants: Participant[] = bagan.drawing_seed.map(seed => {
+      const reg = seed.peserta_kompetisi;
+      if (reg.is_team && reg.anggota_tim.length > 0) {
         return {
-          id: match.id_match,
-          round: match.ronde,
-          position: 0,
-          participant1: hasParticipant1 ? this.transformParticipant(match.peserta_a) : null,
-          participant2: hasParticipant2 ? this.transformParticipant(match.peserta_b) : null,
-          winner: this.determineWinner(match),
-          scoreA: match.skor_a,
-          scoreB: match.skor_b,
-          status: (hasParticipant1 && !hasParticipant2) || (!hasParticipant1 && hasParticipant2)
-            ? 'bye' 
-            : this.determineMatchStatus(match),
-          venue: match.venue?.nama_venue,
-          tanggalPertandingan: match.tanggal_pertandingan,
-          nomorPartai: match.nomor_partai,
-          
-          // ⭐ TAMBAHAN BARU
-          nomorAntrian: match.nomor_antrian,
-          nomorLapangan: match.nomor_lapangan
+          id: reg.id_peserta_kompetisi,
+          name: `Tim ${reg.anggota_tim.map(m => m.atlet.nama_atlet).join(' & ')}`,
+          dojang: reg.anggota_tim[0]?.atlet?.dojang?.nama_dojang,
+          isTeam: true,
+          teamMembers: reg.anggota_tim.map(m => m.atlet.nama_atlet)
         };
-      });
+      } else if (reg.atlet) {
+        return {
+          id: reg.id_peserta_kompetisi,
+          name: reg.atlet.nama_atlet,
+          dojang: reg.atlet.dojang?.nama_dojang,
+          atletId: reg.atlet.id_atlet,
+          isTeam: false
+        };
+      }
+      return null;
+    }).filter(Boolean) as Participant[];
 
+    // ⭐ Transform matches WITH metadata
+    const matches: Match[] = bagan.match.map(match => {
+      const hasParticipant1 = !!match.peserta_a;
+      const hasParticipant2 = !!match.peserta_b;
+      
       return {
-        id: bagan.id_bagan,
-        kompetisiId,
-        kelasKejuaraanId,
-        totalRounds: Math.max(...matches.map(m => m.round)),
-        isGenerated: true,
-        participants,
-        matches
+        id: match.id_match,
+        round: match.ronde,
+        position: match.position ?? 0,
+        participant1: hasParticipant1 ? this.transformParticipant(match.peserta_a) : null,
+        participant2: hasParticipant2 ? this.transformParticipant(match.peserta_b) : null,
+        winner: this.determineWinner(match),
+        scoreA: match.skor_a,
+        scoreB: match.skor_b,
+        status: (hasParticipant1 && !hasParticipant2) || (!hasParticipant1 && hasParticipant2)
+          ? 'bye' 
+          : this.determineMatchStatus(match),
+        venue: match.venue?.nama_venue,
+        tanggalPertandingan: match.tanggal_pertandingan,
+        nomorPartai: match.nomor_partai,
+        nomorAntrian: match.nomor_antrian,
+        nomorLapangan: match.nomor_lapangan,
+        
+        // ⭐ ADD METADATA FOR SCHEDULING
+        stageName: match.stage_name || undefined,
+        bracketParticipantCount: participants.length,
+        kelasKejuaraanId: kelasKejuaraanId
       };
-    } catch (error: any) {
-      console.error('Error getting bracket:', error);
-      throw new Error('Failed to get bracket');
-    }
+    });
+
+    return {
+      id: bagan.id_bagan,
+      kompetisiId,
+      kelasKejuaraanId,
+      totalRounds: Math.max(...matches.map(m => m.round)),
+      isGenerated: true,
+      participants,
+      matches
+    };
+  } catch (error: any) {
+    console.error('Error getting bracket:', error);
+    throw new Error('Failed to get bracket');
   }
+}
 
 /**
  * 🆕 HELPER: Remove participant from next round
