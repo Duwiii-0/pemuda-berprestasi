@@ -207,7 +207,7 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
           {matchNumber}
         </div>
 
-        {match ? (
+        {/* {match ? (
           <div className="flex flex-col gap-4 mt-8">
             {renderAtlet(match.nama_atlet_a, match.foto_atlet_a)}
 
@@ -221,7 +221,7 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
           <div className="text-center mt-8 text-lg font-medium">
             <p>Nama peserta tidak tersedia</p>
           </div>
-        )}
+        )} */}
       </div>
     );
   };
