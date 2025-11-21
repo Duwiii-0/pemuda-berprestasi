@@ -1,12 +1,26 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { KompetisiService } from '../services/kompetisiService';
 import { BracketService } from '../services/bracketService';
 import { sendSuccess, sendError } from '../utils/response';
 import { StatusKompetisi } from '@prisma/client';
 import prisma from '../config/database';
-import PDFDocument from 'pdfkit'; 
+import PDFDocument from 'pdfkit';
 
 export class KompetisiController {
+  static async getTanggalPertandinganByKelas(req: Request, res: Response, next: NextFunction) {
+    try {
+        const { kelasKejuaraanId } = req.params;
+        const tanggal = await KompetisiService.getTanggalByKelas(parseInt(kelasKejuaraanId));
+        if (tanggal) {
+            return sendSuccess(res, { tanggal });
+        } else {
+            return sendError(res, 'Tanggal pertandingan untuk kelas ini tidak ditemukan', 404);
+        }
+    } catch (error) {
+        next(error);
+    }
+  }
+
   // Create new kompetisi
   static async create(req: Request, res: Response) {
     try {

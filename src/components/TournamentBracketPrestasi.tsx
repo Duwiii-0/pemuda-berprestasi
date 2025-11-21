@@ -60,6 +60,7 @@ interface Match {
 interface KelasKejuaraan {
   id_kelas_kejuaraan: number;
   cabang: 'KYORUGI' | 'POOMSAE';
+  jenis_kelamin?: "LAKI_LAKI" | "PEREMPUAN"; // ✅ ADDED THIS
   kategori_event: {
     nama_kategori: string;
   };
@@ -76,6 +77,7 @@ interface KelasKejuaraan {
   };
   poomsae?: {
     nama_kelas: string;
+    jenis_kelamin: 'LAKI_LAKI' | 'PEREMPUAN';
   };
   kompetisi: {
     id_kompetisi: number;
@@ -115,6 +117,11 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
   viewOnly = false, // ⭐ TAMBAHKAN
 }) => {
   const { token } = useAuth();
+
+  const gender = kelasData.jenis_kelamin;
+
+  const displayGender =
+    gender === "LAKI_LAKI" ? "Male" : gender === "PEREMPUAN" ? "Female" : "";
   const [matches, setMatches] = useState<Match[]>([]);
   const [editingMatch, setEditingMatch] = useState<Match | null>(null);
   const [editAthleteModal, setEditAthleteModal] = useState<{
@@ -135,6 +142,40 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
   const bracketRef = React.useRef<HTMLDivElement>(null);
   const [showDojangModal, setShowDojangModal] = useState(false);
   const [clearingScheduling, setClearingScheduling] = useState(false);
+  const [tanggalPertandingan, setTanggalPertandingan] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchTanggalPertandingan = async () => {
+      if (kelasData?.kompetisi?.id_kompetisi && kelasData?.id_kelas_kejuaraan) {
+        try {
+          const response = await fetch(
+            `${apiBaseUrl}/kompetisi/${kelasData.kompetisi.id_kompetisi}/brackets/${kelasData.id_kelas_kejuaraan}/tanggal`,
+            {
+              headers: {
+                ...(token && { Authorization: `Bearer ${token}` }),
+              },
+            }
+          );
+          if (response.ok) {
+            const result = await response.json();
+            if (result.data && result.data.tanggal) {
+              setTanggalPertandingan(
+                new Date(result.data.tanggal).toISOString().split("T")[0]
+              );
+            }
+          } else {
+            console.log(
+              "Tanggal pertandingan khusus kelas tidak ditemukan, menggunakan tanggal mulai kompetisi."
+            );
+          }
+        } catch (error) {
+          console.error('Error fetching tanggal pertandingan:', error);
+        }
+      }
+    };
+
+    fetchTanggalPertandingan();
+  }, [kelasData, apiBaseUrl, token]);
   
   const [showModal, setShowModal] = useState(false);
   const [modalConfig, setModalConfig] = useState<{
@@ -288,7 +329,7 @@ const handleExportPDF = async () => {
       logoPBTI: taekwondo,
       logoEvent: sriwijaya,
       namaKejuaraan: kelasData.kompetisi.nama_event,
-      kelas: `${kelasData.kelompok?.nama_kelompok} ${kelasData.kelas_berat?.jenis_kelamin === 'LAKI_LAKI' ? 'Male' : 'Female'} ${kelasData.kelas_berat?.nama_kelas || kelasData.poomsae?.nama_kelas}`,
+      kelas: `${kelasData.kelompok?.nama_kelompok} ${displayGender} ${kelasData.kelas_berat?.nama_kelas || kelasData.poomsae?.nama_kelas}`,
       tanggalTanding: selectedDate, // ✅ Pakai tanggal dari input
       jumlahKompetitor: approvedParticipants.length,
       lokasi: kelasData.kompetisi.lokasi
@@ -841,7 +882,7 @@ const exportPesertaToExcel = () => {
     const headerInfo = [
       ['LAPORAN DATA PESERTA KOMPETISI - KATEGORI PRESTASI'],
       ['Nama Event', kelasData.kompetisi?.nama_event || 'Sriwijaya International Taekwondo Championship 2025'],
-      ['Kelas', `${kelasData.kelompok?.nama_kelompok} ${kelasData.kelas_berat?.jenis_kelamin === 'LAKI_LAKI' ? 'Male' : 'Female'} ${kelasData.kelas_berat?.nama_kelas || kelasData.poomsae?.nama_kelas}`],
+      ['Kelas', `${kelasData.kelompok?.nama_kelompok} ${displayGender} ${kelasData.kelas_berat?.nama_kelas || kelasData.poomsae?.nama_kelas}`],
       ['Lokasi', kelasData.kompetisi?.lokasi || 'GOR Ranau JSC Palembang'],
       ['Tanggal Export', currentDate],
       ['Total Peserta', approvedList.length.toString()],
@@ -2330,10 +2371,19 @@ const getFinalMatch = (): Match | null => {
           <div className="bg-red-50 border border-red-200 rounded-lg p-4">
             <div className="flex items-center justify-center gap-8 text-center">
               <div>
-                <h2 className="text-lg font-bold" style={{ color: '#990D35' }}>
-                  {kelasData.kelompok?.nama_kelompok} {kelasData.kelas_berat?.jenis_kelamin === 'LAKI_LAKI' ? 'Male' : 'Female'} {kelasData.kelas_berat?.nama_kelas || kelasData.poomsae?.nama_kelas}
-                </h2>
-                <p className="text-sm mt-1" style={{ color: '#050505', opacity: 0.7 }}>
+                                <h2
+                                  className="text-lg font-bold"
+                                  style={{ color: "#990D35" }}
+                                >
+                                  {kelasData.kelompok?.nama_kelompok}{" "}
+                                  {displayGender}{" "}
+                                  {kelasData.kelas_berat?.nama_kelas ||
+                                    kelasData.poomsae?.nama_kelas}
+                                </h2>
+                <p
+                  className="text-sm mt-1"
+                  style={{ color: '#050505', opacity: 0.7 }}
+                >
                   Contestants: {approvedParticipants.length}
                 </p>
               </div>
@@ -2370,19 +2420,18 @@ const getFinalMatch = (): Match | null => {
       {/* Detail Kelas */}
       <p className="text-base font-semibold mb-1" style={{ color: '#050505' }}>
         {kelasData.kelompok?.nama_kelompok}{' '}
-        {kelasData.kelas_berat?.jenis_kelamin === 'LAKI_LAKI' ? 'Male' : 'Female'}{' '}
+        {displayGender}{' '}
         {kelasData.kelas_berat?.nama_kelas || kelasData.poomsae?.nama_kelas}
       </p>
       
       {/* Tanggal - Input Manual */}
-      <input
-        type="date"
-        id="tournament-date-display"
-        defaultValue={new Date(kelasData.kompetisi.tanggal_mulai).toISOString().split('T')[0]}
-        className="text-sm px-2 py-1 rounded border text-center mb-1"
-        style={{ borderColor: '#990D35', color: '#050505' }}
-      />
-      
+                          <input
+                            type="date"
+                            id="tournament-date-display"
+                                                  value={tanggalPertandingan || ""}                            onChange={(e) => setTanggalPertandingan(e.target.value)}
+                            className="text-sm px-2 py-1 rounded border text-center mb-1"
+                            style={{ borderColor: "#990D35", color: "#050505" }}
+                          />      
       {/* Lokasi */}
       <p className="text-sm mb-1" style={{ color: '#050505', opacity: 0.7 }}>
         GOR Ranau JSC Palembang
