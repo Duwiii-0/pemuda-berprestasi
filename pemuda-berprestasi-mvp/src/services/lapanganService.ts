@@ -559,7 +559,6 @@ private async generateMatchAssignments(
   console.log(`   Starting Number: ${startingNumber}`);
 
   // 1. Get the globally sorted list of all matches for the entire competition
-  // This list is already sorted by: stage ASC, participantCount DESC, position ASC
   const allMatchesGloballySorted = await BracketService.getAllMatchesForScheduling(id_kompetisi);
   console.log(`   ✅ Fetched ${allMatchesGloballySorted.length} matches with global sorting.`);
 
@@ -577,14 +576,9 @@ private async generateMatchAssignments(
 
   // 3. Iterate through the CORRECTLY sorted and filtered list to assign numbers
   matchesForThisLapangan.forEach((match, idx) => {
-    console.log(`\n      🔍 Match ${idx + 1}/${matchesForThisLapangan.length} (ID: ${match.id})`);
-    
-    // The 'status' property from our new service makes this check simple and reliable
     const isBye = match.status === 'bye';
-    console.log(`         → Is BYE? ${isBye ? '✅ YES' : '❌ NO'}`);
 
     if (isBye) {
-      // BYE match - NO NUMBER assigned
       assignments.push({
         id_match: match.id,
         nomor_antrian: null,
@@ -594,9 +588,7 @@ private async generateMatchAssignments(
         note: 'BYE - Skipped'
       });
       byeCount++;
-      console.log(`         ⏭️  SKIPPED (BYE) - No number assigned`);
     } else {
-      // FIGHT/TBD match - ASSIGN NUMBER
       assignments.push({
         id_match: match.id,
         nomor_antrian: currentNumber,
@@ -605,13 +597,15 @@ private async generateMatchAssignments(
         kelas_id: match.kelasKejuaraanId,
         round: match.round
       });
-      console.log(`         ✅ NUMBERED: ${currentNumber}${lapanganLetter}`);
       currentNumber++;
       numberedCount++;
     }
   });
 
-  // FINAL SUMMARY
+  // Re-add logic for summary generation
+  const pemulaClasses = kelasList.filter(k => k.kategori === 'PEMULA');
+  const prestasiClasses = kelasList.filter(k => k.kategori === 'PRESTASI');
+
   const totalNumbered = assignments.filter(a => a.nomor_antrian !== null).length;
   const totalBye = assignments.filter(a => a.note === 'BYE - Skipped').length;
   const finalRange = totalNumbered > 0 
@@ -634,8 +628,7 @@ private async generateMatchAssignments(
     total_bye_skipped: totalBye,
     range: finalRange,
     assignments,
-    // The summary generation can be simplified or adapted if needed, for now, we pass the raw assignments
-    summary: {} 
+    summary: this.generateSummary(assignments, pemulaClasses, prestasiClasses, lapanganLetter)
   };
 }
 

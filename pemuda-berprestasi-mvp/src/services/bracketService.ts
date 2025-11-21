@@ -3428,6 +3428,8 @@ static async clearMatchResults(kompetisiId: number, kelasKejuaraanId: number): P
         const participantCount = bagan._count.drawing_seed;
         
         const transformedMatches: Match[] = bagan.match.map(match => {
+            const hasParticipant1 = !!match.peserta_a;
+            const hasParticipant2 = !!match.peserta_b;
             return {
               id: match.id_match,
               round: match.ronde,
@@ -3437,7 +3439,9 @@ static async clearMatchResults(kompetisiId: number, kelasKejuaraanId: number): P
               winner: this.determineWinner(match),
               scoreA: match.skor_a,
               scoreB: match.skor_b,
-              status: this.determineMatchStatus(match),
+              status: (hasParticipant1 && !hasParticipant2) || (!hasParticipant1 && hasParticipant2)
+                ? 'bye'
+                : this.determineMatchStatus(match),
               venue: match.venue?.nama_venue,
               tanggalPertandingan: match.tanggal_pertandingan,
               nomorPartai: match.nomor_partai,
