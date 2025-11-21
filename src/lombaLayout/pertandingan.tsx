@@ -209,13 +209,13 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
 
         {match ? (
           <div className="flex flex-col gap-4 mt-8">
-            {renderAtlet(match.nama_atlet_a, match.foto_atlet_a)}
+            {/* renderAtlet(match.nama_atlet_a, match.foto_atlet_a)} */}
 
             <div className="flex items-center justify-center">
               <span className="text-xl font-bold"></span>
             </div>
 
-            {renderAtlet(match.nama_atlet_b, match.foto_atlet_b)}
+            {/* {renderAtlet(match.nama_atlet_b, match.foto_atlet_b)} */}
           </div>
         ) : (
           <div className="text-center mt-8 text-lg font-medium">
