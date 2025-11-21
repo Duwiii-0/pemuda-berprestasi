@@ -117,6 +117,9 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
   viewOnly = false, // ⭐ TAMBAHKAN
 }) => {
   const { token } = useAuth();
+  const [viewMode, setViewMode] = useState<'bracket' | 'schedule'>('bracket');
+  const [globalSchedule, setGlobalSchedule] = useState<Match[]>([]);
+  const [isScheduleLoading, setIsScheduleLoading] = useState(false);
 
   const gender = kelasData.jenis_kelamin;
 
@@ -421,6 +424,106 @@ const handleExportPDF = async () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchGlobalSchedule = async () => {
+    // Prevent refetching if data is already loaded
+    if (globalSchedule.length > 0) return; 
+    
+    const kompetisiId = kelasData.kompetisi.id_kompetisi;
+    setIsScheduleLoading(true);
+    try {
+      const response = await fetch(
+        `${apiBaseUrl}/kompetisi/${kompetisiId}/schedule/global`,
+        {
+          headers: {
+            ...(token && { 'Authorization': `Bearer ${token}` })
+          }
+        }
+      );
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to fetch global schedule');
+      }
+      const result = await response.json();
+      console.log('🗓️ Global schedule data fetched:', result);
+      // The backend now returns the sorted data directly in `result.data`
+      setGlobalSchedule(result.data || []);
+    } catch (error: any) {
+      console.error('❌ Error fetching global schedule:', error);
+      showNotification(
+          'error',
+          'Gagal Memuat Jadwal',
+          error.message || 'Tidak dapat memuat jadwal global.',
+          () => setShowModal(false)
+        );
+    } finally {
+      setIsScheduleLoading(false);
+    }
+  }
+
+  const renderScheduleView = () => {
+    if (isScheduleLoading) {
+      return (
+        <div className="text-center py-20 px-6">
+          <RefreshCw size={48} className="mx-auto animate-spin text-gray-400" />
+          <p className="mt-4 text-lg font-semibold text-gray-600">Memuat Jadwal Global...</p>
+        </div>
+      );
+    }
+
+    if (globalSchedule.length === 0) {
+      return (
+        <div className="text-center py-20 px-6">
+          <AlertTriangle size={48} className="mx-auto text-yellow-500" />
+          <p className="mt-4 text-lg font-semibold text-gray-700">Jadwal Global Belum Tersedia</p>
+          <p className="text-gray-500 mt-2">Tidak ada pertandingan yang ditemukan atau bracket belum dibuat untuk kompetisi ini.</p>
+        </div>
+      )
+    }
+
+    return (
+      <div className="p-4 sm:p-6">
+        <div className="bg-white rounded-lg shadow-lg overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-100">
+              <tr>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Partai</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Stage</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Kelas Pertandingan</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Peserta</th>
+                <th scope="col"  className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Venue</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {globalSchedule.map((match) => (
+                <tr key={match.id_match} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-lg font-extrabold text-red-700">{match.nomorPartai || '-'}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                      {match.stageName?.replace('ROUND_OF_', 'R')}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-medium">
+                    {/* The class name would ideally come from a relation in the query */}
+                    {`Kelas ID: ${match.kelasKejuaraanId}`}
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="text-sm font-semibold text-blue-600">{getParticipantName(match.peserta_a) || 'TBD'}</div>
+                    <div className="text-xs text-gray-500">{getDojoName(match.peserta_a)}</div>
+                    <div className="text-sm font-semibold text-red-600 mt-1">{getParticipantName(match.peserta_b) || 'TBD'}</div>
+                    <div className="text-xs text-gray-500">{getDojoName(match.peserta_b)}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-semibold">{match.venue?.nama_venue || '-'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    )
   };
 
   const transformParticipantFromAPI = (participant: any): Peserta => {
@@ -2204,9 +2307,28 @@ const getFinalMatch = (): Match | null => {
                 <div className="flex items-center gap-4 text-sm" style={{ color: '#050505', opacity: 0.7 }}>
                   <span>🏆 KATEGORI PRESTASI</span>
                   <span>•</span>
-                  <span>{kelasData.kompetisi.lokasi}</span>
+                  <span>{viewMode === 'bracket' ? kelasData.kompetisi.lokasi : 'Jadwal Global'}</span>
                 </div>
               </div>
+            </div>
+            
+            {/* View Mode Toggle */}
+            <div className="flex items-center bg-gray-200 rounded-lg p-1">
+              <button
+                onClick={() => setViewMode('bracket')}
+                className={`px-4 py-2 text-sm font-semibold rounded-md ${viewMode === 'bracket' ? 'bg-white shadow' : 'bg-transparent text-gray-600'}`}
+              >
+                Bracket View
+              </button>
+              <button
+                onClick={() => {
+                  setViewMode('schedule');
+                  fetchGlobalSchedule(); // Fetch data when switching to schedule view
+                }}
+                className={`px-4 py-2 text-sm font-semibold rounded-md ${viewMode === 'schedule' ? 'bg-white shadow' : 'bg-transparent text-gray-600'}`}
+              >
+                Schedule View
+              </button>
             </div>
 
 {!viewOnly && (
@@ -2390,138 +2512,144 @@ const getFinalMatch = (): Match | null => {
         </div>
       </div>
 
-      {/* PRESTASI Layout dengan FIXED POSITIONING */}
-      {bracketGenerated && matches.length > 0 ? (
-        <div className="p-6">
-          <div id="bracket-export-area">
-            {/* Title for PDF */}
-{/* Header Sederhana - Tanpa Border */}
-<div className="mb-4">
-  {/* Header 3 Kolom - Compact */}
-  <div className="flex items-start justify-between gap-4 mb-3">
-    {/* KOLOM KIRI - Logo PBTI */}
-    <div className="flex-shrink-0 w-20">
-      <img 
-        src={taekwondo} 
-        alt="PBTI Logo" 
-        className="h-16 w-auto object-contain"
-      />
-    </div>
-    
-    {/* KOLOM TENGAH - Info Kejuaraan */}
-    <div className="flex-1 text-center px-3">
-      {/* Nama Kejuaraan */}
-      <h2 className="text-xl font-bold mb-1" style={{ color: '#990D35' }}>
-        {kelasData.kompetisi.nama_event}
-      </h2>
-      
-      {/* Detail Kelas */}
-      <p className="text-base font-semibold mb-1" style={{ color: '#050505' }}>
-        {kelasData.kelompok?.nama_kelompok}{' '}
-        {displayGender}{' '}
-        {kelasData.kelas_berat?.nama_kelas || kelasData.poomsae?.nama_kelas}
-      </p>
-      
-      {/* Tanggal - Input Manual */}
-                          <input
-                            type="date"
-                            id="tournament-date-display"
-                                                  value={tanggalPertandingan || ""}                            onChange={(e) => setTanggalPertandingan(e.target.value)}
-                            className="text-sm px-2 py-1 rounded border text-center mb-1"
-                            style={{ borderColor: "#990D35", color: "#050505" }}
-                          />      
-      {/* Lokasi */}
-      <p className="text-sm mb-1" style={{ color: '#050505', opacity: 0.7 }}>
-        GOR Ranau JSC Palembang
-      </p>
-      
-      {/* Jumlah Kompetitor */}
-      <p className="text-sm font-medium" style={{ color: '#990D35' }}>
-        {approvedParticipants.length} Kompetitor
-      </p>
-    </div>
-    
-    {/* KOLOM KANAN - Logo Event */}
-    <div className="flex-shrink-0 w-20">
-      <img 
-        src={sriwijaya} 
-        alt="Event Logo" 
-        className="h-16 w-auto object-contain"
-      />
-    </div>
-  </div>
-</div>
-
-<div ref={bracketRef} className="overflow-x-auto overflow-y-visible pb-8">
-        {/* ✅ PERBAIKAN: Jika hanya 2 peserta, render center final saja */}
-        {approvedParticipants.length === 2 ? (
-          <div 
-            className="tournament-layout"
-            style={{
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'flex-start',
-              minWidth: 'fit-content',
-              minHeight: '400px',
-              padding: '60px 40px 20px 40px',
-              position: 'relative'
-            }}
-          >
-            {/* Hanya render final match */}
-            {renderCenterFinal()}
-          </div>
-        ) : (
-          <div 
-            className="tournament-layout"
-            style={{
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'flex-start',
-              gap: `${CENTER_GAP}px`,
-              minWidth: 'fit-content',
-              minHeight: '800px',
-              padding: '60px 40px 20px 40px',
-              position: 'relative'
-            }}
-          >
-            {/* LEFT BRACKET */}
-            {renderBracketSide(getLeftMatches(), 'left', 1)}
-
-            {/* CENTER FINAL */}
-            {renderCenterFinal()}
-
-            {/* RIGHT BRACKET */}
-            {renderBracketSide(getRightMatches(), 'right', 1)}
-          </div>
-        )}
+      {viewMode === 'bracket' ? (
+        <>
+          {/* PRESTASI Layout dengan FIXED POSITIONING */}
+          {bracketGenerated && matches.length > 0 ? (
+            <div className="p-6">
+              <div id="bracket-export-area">
+                {/* Title for PDF */}
+    {/* Header Sederhana - Tanpa Border */}
+    <div className="mb-4">
+      {/* Header 3 Kolom - Compact */}
+      <div className="flex items-start justify-between gap-4 mb-3">
+        {/* KOLOM KIRI - Logo PBTI */}
+        <div className="flex-shrink-0 w-20">
+          <img 
+            src={taekwondo} 
+            alt="PBTI Logo" 
+            className="h-16 w-auto object-contain"
+          />
+        </div>
+        
+        {/* KOLOM TENGAH - Info Kejuaraan */}
+        <div className="flex-1 text-center px-3">
+          {/* Nama Kejuaraan */}
+          <h2 className="text-xl font-bold mb-1" style={{ color: '#990D35' }}>
+            {kelasData.kompetisi.nama_event}
+          </h2>
+          
+          {/* Detail Kelas */}
+          <p className="text-base font-semibold mb-1" style={{ color: '#050505' }}>
+            {kelasData.kelompok?.nama_kelompok}{' '}
+            {displayGender}{' '}
+            {kelasData.kelas_berat?.nama_kelas || kelasData.poomsae?.nama_kelas}
+          </p>
+          
+          {/* Tanggal - Input Manual */}
+                              <input
+                                type="date"
+                                id="tournament-date-display"
+                                                      value={tanggalPertandingan || ""}                            onChange={(e) => setTanggalPertandingan(e.target.value)}
+                                className="text-sm px-2 py-1 rounded border text-center mb-1"
+                                style={{ borderColor: "#990D35", color: "#050505" }}
+                              />      
+          {/* Lokasi */}
+          <p className="text-sm mb-1" style={{ color: '#050505', opacity: 0.7 }}>
+            GOR Ranau JSC Palembang
+          </p>
+          
+          {/* Jumlah Kompetitor */}
+          <p className="text-sm font-medium" style={{ color: '#990D35' }}>
+            {approvedParticipants.length} Kompetitor
+          </p>
+        </div>
+        
+        {/* KOLOM KANAN - Logo Event */}
+        <div className="flex-shrink-0 w-20">
+          <img 
+            src={sriwijaya} 
+            alt="Event Logo" 
+            className="h-16 w-auto object-contain"
+          />
+        </div>
       </div>
     </div>
-  </div>
-) : (
-        <div className="p-6">
-          <div className="text-center py-16">
-            <Trophy size={64} style={{ color: '#990D35', opacity: 0.4 }} className="mx-auto mb-4" />
-            <h3 className="text-xl font-semibold mb-2" style={{ color: '#050505' }}>
-              {approvedParticipants.length < 2 ? 'Insufficient Participants' : 'Tournament Bracket Not Generated'}
-            </h3>
-            <p className="text-base mb-6" style={{ color: '#050505', opacity: 0.6 }}>
-              {approvedParticipants.length < 2 
-                ? `Need at least 2 approved participants. Currently have ${approvedParticipants.length}.`
-                : 'Click "Preview & Generate Bracket" to create the tournament bracket'
-              }
-            </p>
-            {approvedParticipants.length >= 2 && (
-              <button
-                onClick={openParticipantPreview}
-                disabled={loading}
-                className="px-6 py-3 rounded-lg font-medium transition-all disabled:opacity-50"
-                style={{ backgroundColor: '#F5B700', color: '#F5FBEF' }}
+
+    <div ref={bracketRef} className="overflow-x-auto overflow-y-visible pb-8">
+            {/* ✅ PERBAIKAN: Jika hanya 2 peserta, render center final saja */}
+            {approvedParticipants.length === 2 ? (
+              <div 
+                className="tournament-layout"
+                style={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'flex-start',
+                  minWidth: 'fit-content',
+                  minHeight: '400px',
+                  padding: '60px 40px 20px 40px',
+                  position: 'relative'
+                }}
               >
-                {loading ? 'Processing...' : 'Preview & Generate Bracket'}
-              </button>
+                {/* Hanya render final match */}
+                {renderCenterFinal()}
+              </div>
+            ) : (
+              <div 
+                className="tournament-layout"
+                style={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'flex-start',
+                  gap: `${CENTER_GAP}px`,
+                  minWidth: 'fit-content',
+                  minHeight: '800px',
+                  padding: '60px 40px 20px 40px',
+                  position: 'relative'
+                }}
+              >
+                {/* LEFT BRACKET */}
+                {renderBracketSide(getLeftMatches(), 'left', 1)}
+
+                {/* CENTER FINAL */}
+                {renderCenterFinal()}
+
+                {/* RIGHT BRACKET */}
+                {renderBracketSide(getRightMatches(), 'right', 1)}
+              </div>
             )}
           </div>
         </div>
+      </div>
+    ) : (
+            <div className="p-6">
+              <div className="text-center py-16">
+                <Trophy size={64} style={{ color: '#990D35', opacity: 0.4 }} className="mx-auto mb-4" />
+                <h3 className="text-xl font-semibold mb-2" style={{ color: '#050505' }}>
+                  {approvedParticipants.length < 2 ? 'Insufficient Participants' : 'Tournament Bracket Not Generated'}
+                </h3>
+                <p className="text-base mb-6" style={{ color: '#050505', opacity: 0.6 }}>
+                  {approvedParticipants.length < 2 
+                    ? `Need at least 2 approved participants. Currently have ${approvedParticipants.length}.`
+                    : 'Click "Preview & Generate Bracket" to create the tournament bracket'
+                  }
+                </p>
+                {approvedParticipants.length >= 2 && (
+                  <button
+                    onClick={openParticipantPreview}
+                    disabled={loading}
+                    className="px-6 py-3 rounded-lg font-medium transition-all disabled:opacity-50"
+                    style={{ backgroundColor: '#F5B700', color: '#F5FBEF' }}
+                  >
+                    {loading ? 'Processing...' : 'Preview & Generate Bracket'}
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+        </>
+      ) : (
+        renderScheduleView()
       )}
 
       {/* Participant Preview Modal */}

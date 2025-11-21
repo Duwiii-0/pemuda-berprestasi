@@ -584,6 +584,32 @@ static async getBracketsListPublic(req: Request, res: Response) {
   }
 }
 
+/**
+ * 🆕 Get globally sorted schedule for an entire competition.
+ * This is the new main endpoint for the global scheduling page.
+ */
+static async getGlobalSchedule(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    const kompetisiId = parseInt(id);
+
+    if (isNaN(kompetisiId)) {
+      return sendError(res, 'ID kompetisi tidak valid', 400);
+    }
+
+    console.log(`🗓️ Fetching global schedule for kompetisi: ${kompetisiId}`);
+
+    // Call the new service function
+    const schedule = await BracketService.getAllMatchesForScheduling(kompetisiId);
+
+    return sendSuccess(res, schedule, 'Jadwal global berhasil diambil dan diurutkan');
+
+  } catch (error: any) {
+    console.error('❌ Controller - Error getting global schedule:', error);
+    return sendError(res, error.message || 'Gagal mengambil jadwal global', 500);
+  }
+}
+
 static async getBracketByClass(req: Request, res: Response) {
   try {
     const { id, kelasKejuaraanId } = req.params;

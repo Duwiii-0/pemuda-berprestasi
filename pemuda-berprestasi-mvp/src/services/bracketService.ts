@@ -3328,4 +3328,141 @@ static async clearMatchResults(kompetisiId: number, kelasKejuaraanId: number): P
       throw new Error(error.message || 'Gagal menghapus bracket');
     }
   }
+
+  // =================================================================
+  // ⭐ BARU: FUNGSI UNTUK PENJADWALAN GLOBAL
+  // =================================================================
+
+  /**
+   * Mengurutkan semua pertandingan berdasarkan aturan penjadwalan global.
+   * Aturan: stage ASC, participantCount DESC, position ASC, id ASC
+   */
+  static scheduleMatchesGlobally(matches: Match[]): Match[] {
+    return matches.sort((a, b) => {
+      const stageA = a.stageName || '';
+      const stageB = b.stageName || '';
+
+      const pa = this.getStagePriority(stageA);
+      const pb = this.getStagePriority(stageB);
+      if (pa !== pb) return pa - pb;
+
+      const ca = a.bracketParticipantCount || 0;
+      const cb = b.bracketParticipantCount || 0;
+      if (ca !== cb) return cb - ca;
+
+      if (a.position !== b.position) {
+        return a.position - b.position;
+      }
+
+      return (a.id || 0) - (b.id || 0);
+    });
+  }
+
+  /**
+   * Memberikan nomor urut pertandingan baru berdasarkan urutan stage.
+   * Nomor akan direset setiap kali stage berubah.
+   */
+  static renumberMatchesByStage(sortedMatches: Match[]): Match[] {
+    const stageCounters: { [key: string]: number } = {};
+    let globalMatchNumber = 1;
+
+    return sortedMatches.map(match => {
+      // Hanya berikan nomor pada match yang bukan BYE
+      if (match.status === 'bye') {
+        return {
+          ...match,
+          nomorAntrian: null, // Hapus nomor antrian untuk BYE
+          nomorPartai: null,
+        };
+      }
+
+      const stage = match.stageName || 'UNKNOWN';
+      if (!stageCounters[stage]) {
+        stageCounters[stage] = 1;
+      }
+      
+      const nomorAntrianDiStage = stageCounters[stage]++;
+      
+      return { 
+        ...match, 
+        // Anda bisa memilih mau pakai nomor urut global atau per-stage
+        // Saya akan set `nomorAntrian` sebagai nomor global sesuai urutan jadwal
+        nomorAntrian: globalMatchNumber++,
+        // `nomorPartai` bisa jadi kombinasi atau sama dengan nomor antrian
+        nomorPartai: `${globalMatchNumber - 1}`
+      };
+    });
+  }
+
+  /**
+   * Fungsi utama yang dipanggil dari controller untuk mendapatkan jadwal global.
+   * Mengambil semua pertandingan, mengurutkan, dan memberi nomor.
+   */
+  static async getAllMatchesForScheduling(kompetisiId: number): Promise<Match[]> {
+    try {
+      console.log(`\n🗓️ === GETTING ALL MATCHES FOR GLOBAL SCHEDULING ===`);
+      console.log(`   Kompetisi ID: ${kompetisiId}`);
+
+      const bagans = await prisma.tb_bagan.findMany({
+        where: { id_kompetisi: kompetisiId },
+        include: {
+          drawing_seed: { select: { id_drawing_seed: true } },
+          match: {
+            include: {
+              peserta_a: { include: { atlet: { include: { dojang: true } }, anggota_tim: { include: { atlet: true } } } },
+              peserta_b: { include: { atlet: { include: { dojang: true } }, anggota_tim: { include: { atlet: true } } } },
+              venue: true
+            }
+          }
+        }
+      });
+
+      console.log(`   Found ${bagans.length} bagans (brackets)`);
+      if (bagans.length === 0) return [];
+      
+      let allMatches: Match[] = [];
+
+      for (const bagan of bagans) {
+        const participantCount = bagan.drawing_seed.length;
+        
+        const transformedMatches: Match[] = bagan.match.map(match => {
+            return {
+              id: match.id_match,
+              round: match.ronde,
+              position: match.position ?? 0,
+              participant1: match.peserta_a ? this.transformParticipant(match.peserta_a) : null,
+              participant2: match.peserta_b ? this.transformParticipant(match.peserta_b) : null,
+              winner: this.determineWinner(match),
+              scoreA: match.skor_a,
+              scoreB: match.skor_b,
+              status: this.determineMatchStatus(match),
+              venue: match.venue?.nama_venue,
+              tanggalPertandingan: match.tanggal_pertandingan,
+              nomorPartai: match.nomor_partai,
+              nomorAntrian: match.nomor_antrian,
+              nomorLapangan: match.nomor_lapangan,
+              stageName: match.stage_name || undefined,
+              bracketParticipantCount: participantCount,
+              kelasKejuaraanId: bagan.id_kelas_kejuaraan
+            };
+        });
+
+        allMatches.push(...transformedMatches);
+      }
+      
+      console.log(`   Total matches from all bagans: ${allMatches.length}`);
+
+      const sortedMatches = this.scheduleMatchesGlobally(allMatches);
+      console.log(`   ✅ Matches sorted globally.`);
+
+      const finalSchedule = this.renumberMatchesByStage(sortedMatches);
+      console.log(`   ✅ Match numbering reset for each stage.`);
+      console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`);
+
+      return finalSchedule;
+    } catch (error: any) {
+      console.error('❌ Error getting all matches for scheduling:', error);
+      throw new Error(error.message || 'Failed to get and sort all matches');
+    }
+  }
 }
