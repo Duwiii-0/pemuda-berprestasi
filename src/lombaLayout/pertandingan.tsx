@@ -182,7 +182,7 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
 
       return (
         <div className="flex flex-col items-center justify-center w-full">
-          {/* {photoUrl ? (
+          {photoUrl ? (
             <img
               src={photoUrl}
               alt={nama}
@@ -192,11 +192,11 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
             <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center mb-2">
               <User className="w-8 h-8 text-gray-500" />
             </div>
-          )} */}
+          )}
 
-          {/* <p className="text-lg font-semibold text-center">
+          <p className="text-lg font-semibold text-center">
             {nama || "Nama peserta tidak tersedia"}
-          </p> */}
+          </p>
         </div>
       );
     };
@@ -207,12 +207,12 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
           {matchNumber}
         </div>
 
-        {/* {match ? (
+        {match ? (
           <div className="flex flex-col gap-4 mt-8">
             {renderAtlet(match.nama_atlet_a, match.foto_atlet_a)}
 
             <div className="flex items-center justify-center">
-              <span className="text-xl font-bold">VS</span>
+              <span className="text-xl font-bold"></span>
             </div>
 
             {renderAtlet(match.nama_atlet_b, match.foto_atlet_b)}
@@ -221,7 +221,7 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
           <div className="text-center mt-8 text-lg font-medium">
             <p>Nama peserta tidak tersedia</p>
           </div>
-        )} */}
+        )}
       </div>
     );
   };
