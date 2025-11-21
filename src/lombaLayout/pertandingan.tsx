@@ -203,23 +203,23 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
 
     return (
       <div className={`relative w-full ${textColor} ${bgColor} p-4 rounded-lg`}>
-        <div className="absolute top-2 left-2 rounded-xl w-16 h-16 bg-[#FFF] flex items-center justify-center text-5xl font-bold">
-          {matchNumber}
-        </div>
+        {/* <div className="absolute top-2 left-2 rounded-xl w-16 h-16 bg-[#FFF] flex items-center justify-center text-5xl font-bold"> */}
+        {/* {matchNumber} */}
+        {/* </div> */}
 
         {match ? (
           <div className="flex flex-col gap-4 mt-8">
             {/* renderAtlet(match.nama_atlet_a, match.foto_atlet_a)} */}
 
             <div className="flex items-center justify-center">
-              <span className="text-xl font-bold"></span>
+              <span className="text-xl font-bold">{matchNumber}</span>
             </div>
 
             {/* {renderAtlet(match.nama_atlet_b, match.foto_atlet_b)} */}
           </div>
         ) : (
           <div className="text-center mt-8 text-lg font-medium">
-            <p>Nama peserta tidak tersedia</p>
+            {/* <p>Nama peserta tidak tersedia</p> */}
           </div>
         )}
       </div>
