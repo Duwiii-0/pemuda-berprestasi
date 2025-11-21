@@ -33,6 +33,7 @@ interface MatchData {
   nama_atlet_b: string;
   foto_atlet_a?: string;
   foto_atlet_b?: string;
+  stage_name?: string;
 }
 
 const getPhotoUrl = (filename: string): string | null => {
