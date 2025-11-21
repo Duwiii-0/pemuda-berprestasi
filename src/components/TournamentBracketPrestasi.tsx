@@ -1069,34 +1069,32 @@ const getTotalRounds = (): number => {
 };
 
 const getRoundName = (round: number, totalRounds: number): string => {
-  // ✅ PERBAIKAN: Jika total round = 1, langsung final
-  if (totalRounds === 1) return 'Final';
+  // ✅ Get matches for this round to determine absolute stage
+  const roundMatches = getMatchesByRound(round);
+  const matchCount = roundMatches.length;
   
-  const fromEnd = totalRounds - round;
-  
-  switch (fromEnd) {
-    case 0: 
-      return 'Final';
-    case 1: 
-      // ✅ Jika 3 peserta (2 rounds), round 1 bukan "Semi Final"
-      if (totalRounds === 2 && approvedParticipants.length === 3) {
-        return 'Round 1';
-      }
+  // ✅ Use match count to determine absolute stage name
+  switch (matchCount) {
+    case 32:
+      return 'Round of 64';
+    case 16:
+      return 'Round of 32';
+    case 8:
+      return 'Round of 16';
+    case 4:
+      return 'Quarter Final';
+    case 2:
       return 'Semi Final';
-    case 2: 
-      if (totalRounds >= 3) {
-        if (approvedParticipants.length >= 8) {
-          return 'Quarter Final';
-        }
-      }
-      return 'Round 1';
-    case 3:
-      if (approvedParticipants.length >= 16) {
-        return 'Round of 16';
-      }
-      return 'Round 1';
-    default: 
-      return `Round ${round}`;
+    case 1:
+      return 'Final';
+    default:
+      // Fallback for edge cases
+      if (matchCount > 32) return 'Round of 64';
+      if (matchCount > 16) return 'Round of 32';
+      if (matchCount > 8) return 'Round of 16';
+      if (matchCount > 4) return 'Quarter Final';
+      if (matchCount > 2) return 'Semi Final';
+      return 'Final';
   }
 };
 

@@ -914,87 +914,51 @@ static validateR1MatchesStrict(
   };
 }
 
-/**
- * 🆕 Determine stage name based on participant count and round
- * Maps logical round (1, 2, 3...) to absolute stage name
- * 
- * LOGIC: Work BACKWARDS from FINAL
- * - roundsFromEnd = 0 → FINAL
- * - roundsFromEnd = 1 → SEMI_FINAL
- * - roundsFromEnd = 2 → QUARTER_FINAL
- * - roundsFromEnd = 3 → ROUND_1
- * - roundsFromEnd = 4 → ROUND_2
- * - roundsFromEnd = 5+ → ROUND_3
- */
-/**
- * 🎯 Determine ABSOLUTE stage name based on participant count and round
- * 
- * CORRECT LOGIC:
- * - Last round always = FINAL
- * - 2nd to last = SEMI_FINAL  
- * - 3rd to last = QUARTER_FINAL
- * - Earlier rounds = ROUND_1, ROUND_2, ROUND_3...
- * 
- * Examples:
- * - 4 participants (2 rounds):  SF → FINAL
- * - 8 participants (3 rounds):  QF → SF → FINAL
- * - 16 participants (4 rounds): R1 → QF → SF → FINAL
- * - 32 participants (5 rounds): R1 → R2 → QF → SF → FINAL
- * - 64 participants (6 rounds): R1 → R2 → R3 → QF → SF → FINAL
- */
-static determineStageName(
-  participantCount: number,
-  relativeRound: number,
-  totalRounds: number
-): 'ROUND_1' | 'ROUND_2' | 'ROUND_3' | 'QUARTER_FINAL' | 'SEMI_FINAL' | 'FINAL' {
+static determineAbsoluteStageName(
+  matchCountInRound: number
+): 'ROUND_OF_64' | 'ROUND_OF_32' | 'ROUND_OF_16' | 'QUARTER_FINAL' | 'SEMI_FINAL' | 'FINAL' {
   
-  console.log(`\n🎯 === DETERMINING STAGE NAME ===`);
-  console.log(`   Participant Count: ${participantCount}`);
-  console.log(`   Relative Round: ${relativeRound}/${totalRounds}`);
+  console.log(`   🎯 determineAbsoluteStageName: ${matchCountInRound} matches`);
   
-  // ⭐ SPECIAL CASE: 2 participants
-  if (participantCount === 2) {
-    console.log(`   ✅ 2 participants → FINAL`);
-    return 'FINAL';
-  }
-  
-  // ⭐ SPECIAL CASE: 3 participants
-  if (participantCount === 3) {
-    const stage = relativeRound === 1 ? 'SEMI_FINAL' : 'FINAL';
-    console.log(`   ✅ 3 participants → ${stage}`);
-    return stage;
-  }
-  
-  // ⭐ MAIN LOGIC: Calculate from END
-  const roundsFromEnd = totalRounds - relativeRound;
-  
-  let stageName: 'ROUND_1' | 'ROUND_2' | 'ROUND_3' | 'QUARTER_FINAL' | 'SEMI_FINAL' | 'FINAL';
-  
-  switch (roundsFromEnd) {
-    case 0:
-      stageName = 'FINAL';
-      break;
-    case 1:
-      stageName = 'SEMI_FINAL';
-      break;
-    case 2:
-      stageName = 'QUARTER_FINAL';
-      break;
-    case 3:
-      stageName = 'ROUND_1';
-      break;
+  switch (matchCountInRound) {
+    case 32:
+      return 'ROUND_OF_64';
+    case 16:
+      return 'ROUND_OF_32';
+    case 8:
+      return 'ROUND_OF_16';
     case 4:
-      stageName = 'ROUND_2';
-      break;
+      return 'QUARTER_FINAL';
+    case 2:
+      return 'SEMI_FINAL';
+    case 1:
+      return 'FINAL';
     default:
-      stageName = 'ROUND_3';
-      break;
+      // Fallback untuk edge cases (BYE membuat jumlah tidak genap)
+      if (matchCountInRound > 32) return 'ROUND_OF_64';
+      if (matchCountInRound > 16) return 'ROUND_OF_32';
+      if (matchCountInRound > 8) return 'ROUND_OF_16';
+      if (matchCountInRound > 4) return 'QUARTER_FINAL';
+      if (matchCountInRound > 2) return 'SEMI_FINAL';
+      return 'FINAL';
   }
+}
+
+/**
+ * Get stage priority for scheduling order
+ * Lower number = earlier in schedule
+ */
+static getStagePriority(stageName: string): number {
+  const priorities: Record<string, number> = {
+    'ROUND_OF_64': 1,
+    'ROUND_OF_32': 2,
+    'ROUND_OF_16': 3,
+    'QUARTER_FINAL': 4,
+    'SEMI_FINAL': 5,
+    'FINAL': 6,
+  };
   
-  console.log(`   📊 Result: ${stageName}`);
-  console.log(`   💡 ${totalRounds} rounds - round ${relativeRound} = ${roundsFromEnd} from end\n`);
-  
-  return stageName;
+  return priorities[stageName] || 99;
 }
 
 static async generatePrestasiBracket(
@@ -1016,7 +980,7 @@ static async generatePrestasiBracket(
     const finalMatch = await prisma.tb_match.create({
       data: {
         id_bagan: baganId, ronde: 1, position: 0,
-        stage_name: 'FINAL', // ← STAGE NAME
+        stage_name: 'FINAL', // ← 1 match = FINAL
         id_peserta_a: shuffled[0].id, id_peserta_b: shuffled[1].id,
         skor_a: 0, skor_b: 0,
       },
@@ -1031,11 +995,11 @@ static async generatePrestasiBracket(
 
   if (participantCount === 3) {
     const shuffled = this.shuffleArray([...participants]);
-    // R1 = SEMI_FINAL
+    // R1 = SEMI_FINAL (2 matches worth of participants, but 1 actual match + 1 BYE)
     const r1 = await prisma.tb_match.create({
       data: {
         id_bagan: baganId, ronde: 1, position: 0,
-        stage_name: 'SEMI_FINAL',
+        stage_name: 'SEMI_FINAL', // ← Feeds into final
         id_peserta_a: shuffled[0].id, id_peserta_b: shuffled[1].id,
         skor_a: 0, skor_b: 0,
       },
@@ -1072,12 +1036,15 @@ static async generatePrestasiBracket(
   console.log(`\n🏆 PRESTASI BRACKET: ${participantCount} → ${targetSize} (${totalRounds} rounds)`);
 
   // Get stage name for R1
-  const r1Stage = this.determineStageName(participantCount, 1, totalRounds);
+  const r1Stage = this.determineAbsoluteStageName(totalMatchesR1);
+
+  console.log(`\n🏆 PRESTASI BRACKET: ${participantCount} → ${targetSize} (${totalRounds} rounds)`);
+  console.log(`   R1: ${totalMatchesR1} matches → Stage: ${r1Stage}`);
 
   // ... [REST OF EXISTING LOGIC: validation, distribution, etc.] ...
   
   // Simplified version - create R1 matches with stage_name
-  let isUnavoidable = false;
+    let isUnavoidable = false;
   if (dojangSeparation?.enabled) {
     const validation = this.validatePrestasiR1Separation(participants, targetSize);
     isUnavoidable = validation.isUnavoidable;
@@ -1120,7 +1087,7 @@ static async generatePrestasiBracket(
     rightPool = shuffled.slice(leftNeeded, leftNeeded + rightNeeded);
   }
 
-  // CREATE R1 MATCHES
+  // ⭐ CREATE R1 MATCHES WITH ABSOLUTE STAGE NAME
   let leftIdx = 0, rightIdx = 0, byeIdx = 0;
   const sorted = [...byePositions, ...fightPositions].sort((a, b) => a - b);
 
@@ -1135,8 +1102,6 @@ static async generatePrestasiBracket(
       }
     } else {
       const isLeft = pos < halfSize;
-      const pool = isLeft ? leftPool : rightPool;
-      const idx = isLeft ? leftIdx : rightIdx;
       
       if (isLeft) {
         if (leftIdx + 1 < leftPool.length) {
@@ -1154,7 +1119,7 @@ static async generatePrestasiBracket(
     const created = await prisma.tb_match.create({
       data: {
         id_bagan: baganId, ronde: 1, position: pos,
-        stage_name: r1Stage, // ← ⭐ STAGE NAME!
+        stage_name: r1Stage, // ⭐ ABSOLUTE STAGE NAME!
         id_peserta_a: p1?.id ?? null, id_peserta_b: p2?.id ?? null,
         skor_a: 0, skor_b: 0,
       },
@@ -1167,18 +1132,18 @@ static async generatePrestasiBracket(
     });
   }
 
-  // CREATE PLACEHOLDER ROUNDS (R2+)
+  // ⭐ CREATE PLACEHOLDER ROUNDS (R2+) WITH ABSOLUTE STAGE NAME
   for (let round = 2; round <= totalRounds; round++) {
     const matchCount = Math.pow(2, totalRounds - round);
-    const stageName = this.determineStageName(participantCount, round, totalRounds);
+    const stageName = this.determineAbsoluteStageName(matchCount); // ⭐ ABSOLUTE!
     
-    console.log(`   Round ${round}: ${stageName} (${matchCount} matches)`);
+    console.log(`   Round ${round}: ${matchCount} matches → Stage: ${stageName}`);
     
     for (let i = 0; i < matchCount; i++) {
       const created = await prisma.tb_match.create({
         data: {
           id_bagan: baganId, ronde: round, position: i,
-          stage_name: stageName, // ← ⭐ STAGE NAME!
+          stage_name: stageName, // ⭐ ABSOLUTE STAGE NAME!
           id_peserta_a: null, id_peserta_b: null,
           skor_a: 0, skor_b: 0,
         },
