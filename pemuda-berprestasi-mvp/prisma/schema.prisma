@@ -332,6 +332,7 @@ model tb_match {
   id_bagan            Int
   ronde               Int
   position            Int?                  // ⭐ NEW - Position in round (0-based)
+  stage_name            String?   // ROUND_1, ROUND_2, QUARTER_FINAL, SEMI_FINAL, FINAL
   id_peserta_a        Int?
   id_peserta_b        Int?
   skor_a              Int                   @default(0)
@@ -349,6 +350,7 @@ model tb_match {
   match_audit         tb_match_audit[]
 
   @@index([id_bagan], map: "tb_match_id_bagan_fkey")
+  @@index([stage_name]) 
   @@index([id_peserta_a], map: "tb_match_id_peserta_a_fkey")
   @@index([id_peserta_b], map: "tb_match_id_peserta_b_fkey")
   @@index([id_venue], map: "tb_match_id_venue_fkey")
