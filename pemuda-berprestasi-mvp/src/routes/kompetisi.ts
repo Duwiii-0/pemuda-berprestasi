@@ -106,11 +106,6 @@ router.post(
   KompetisiController.shuffleBrackets
 );
 
-router.post(
-  '/:id/schedule-matches',
-  KompetisiController.scheduleCompetitionMatches
-);
-
 router.get(
   "/:id/brackets/pdf", 
   KompetisiController.exportBracketToPdf
