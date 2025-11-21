@@ -1020,14 +1020,13 @@ static async validateParticipantEligibility(participant: any, newKelas: any) {
     return updatedPeserta;
   }
 
-  static async getTanggalByKelas(id_kelas_kejuaraan: number) {
-    const lapanganKelas = await prisma.lapanganKelas.findFirst({
-      where: { id_kelas_kejuaraan },
-      include: {
-        lapangan: true,
-      },
-    });
-
+      static async getTanggalByKelas(id_kelas_kejuaraan: number) {
+        const lapanganKelas = await prisma.tb_lapangan_kelas.findFirst({
+          where: { id_kelas_kejuaraan },
+          include: {
+            lapangan: true,
+          },
+        });
     if (lapanganKelas && lapanganKelas.lapangan) {
       return lapanganKelas.lapangan.tanggal;
     }
