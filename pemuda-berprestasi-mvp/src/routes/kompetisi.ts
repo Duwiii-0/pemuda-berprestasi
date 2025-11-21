@@ -90,6 +90,12 @@ router.put(
 // TOURNAMENT/BRACKET MANAGEMENT ROUTES
 // ============================================================
 
+// 🆕 NEW: Get globally sorted schedule for the entire competition
+router.get(
+  "/:id/schedule/global",
+  KompetisiController.getGlobalSchedule
+);
+
 router.get(
   "/:id/brackets/list",
   KompetisiController.getBracketsListPublic

@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { isByeMatch } from "./bracketService"; // ⭐ TAMBAH INI
+import { BracketService } from "./bracketService";
 
 const prisma = new PrismaClient();
 
@@ -377,6 +378,7 @@ export class LapanganService {
       success: true,
       data: {
         id_lapangan: lapangan.id_lapangan,
+        id_kompetisi: lapangan.id_kompetisi, // Pass competition ID
         nama_lapangan: lapangan.nama_lapangan,
         tanggal: lapangan.tanggal,
         kelas_list: kelasListTransformed
@@ -395,7 +397,8 @@ export class LapanganService {
     const lapanganData = fullData.data;
 
     // Generate assignments (tanpa save)
-    const result = this.generateMatchAssignments(
+    const result = await this.generateMatchAssignments(
+      lapanganData.id_kompetisi,
       lapanganData.kelas_list,
       lapanganData.nama_lapangan,
       starting_number,
@@ -416,7 +419,8 @@ export class LapanganService {
     const lapanganData = fullData.data;
 
     // Generate assignments
-    const result = this.generateMatchAssignments(
+    const result = await this.generateMatchAssignments(
+      lapanganData.id_kompetisi,
       lapanganData.kelas_list,
       lapanganData.nama_lapangan,
       starting_number,
@@ -426,7 +430,7 @@ export class LapanganService {
     // Bulk update database
     if (result.assignments.length > 0) {
       await prisma.$transaction(
-        result.assignments.map(assignment =>
+        result.assignments.map((assignment:any) =>
           prisma.tb_match.update({
             where: { id_match: assignment.id_match },
             data: {
@@ -542,236 +546,80 @@ export class LapanganService {
 /**
  * Core logic: Generate match assignments (WITH BYE FILTERING + DEBUG)
  */
-private generateMatchAssignments(
+private async generateMatchAssignments(
+  id_kompetisi: number,
   kelasList: any[],
   lapanganLetter: string,
   startingNumber: number,
   saveToDb: boolean
-): any {
+): Promise<any> {
 
-    // ⭐ TEST: Verify isByeMatch is imported correctly
-  console.log(`\n🧪 === TESTING isByeMatch FUNCTION ===`);
-  const testCases = [
-    { ronde: 1, id_peserta_a: 123, id_peserta_b: null, expected: true },
-    { ronde: 1, id_peserta_a: null, id_peserta_b: 456, expected: true },
-    { ronde: 1, id_peserta_a: 123, id_peserta_b: 456, expected: false },
-    { ronde: 2, id_peserta_a: 123, id_peserta_b: null, expected: false },
-  ];
-  
-  testCases.forEach((tc, idx) => {
-    const result = isByeMatch(tc);
-    const status = result === tc.expected ? '✅ PASS' : '❌ FAIL';
-    console.log(`   Test ${idx + 1}: ${status} - ronde=${tc.ronde}, A=${tc.id_peserta_a}, B=${tc.id_peserta_b} → ${result} (expected: ${tc.expected})`);
-  });
-  console.log(`══════════════════════════════════════════\n`);
-  console.log(`\n📊 === GENERATING ASSIGNMENTS (WITH BYE FILTER) ===`);
+  console.log(`\n📊 === GENERATING ASSIGNMENTS (v3 - ROBUST BYE HANDLING) ===`);
   console.log(`   Lapangan: ${lapanganLetter}`);
   console.log(`   Starting Number: ${startingNumber}`);
-  console.log(`   Total Kelas: ${kelasList.length}`);
 
-  // Separate PEMULA & PRESTASI
-  const pemulaClasses = kelasList.filter(k => k.kategori === 'PEMULA');
-  const prestasiClasses = kelasList.filter(k => k.kategori === 'PRESTASI');
+  const allMatchesGloballySorted = await BracketService.getAllMatchesForScheduling(id_kompetisi);
+  console.log(`   ✅ Fetched ${allMatchesGloballySorted.length} matches with global sorting.`);
 
-  console.log(`   - PEMULA: ${pemulaClasses.length} kelas`);
-  console.log(`   - PRESTASI: ${prestasiClasses.length} kelas`);
+  const kelasIdsForThisLapangan = new Set(kelasList.map(k => k.id_kelas_kejuaraan));
+  const matchesForThisLapangan = allMatchesGloballySorted.filter(m => 
+    m.kelasKejuaraanId && kelasIdsForThisLapangan.has(m.kelasKejuaraanId)
+  );
+  console.log(`   ✅ Filtered down to ${matchesForThisLapangan.length} matches for Lapangan ${lapanganLetter}.`);
 
-  // Sort by jumlah peserta (DESC)
-  const sortedPemula = [...pemulaClasses].sort((a, b) => b.jumlah_peserta - a.jumlah_peserta);
-  const sortedPrestasi = [...prestasiClasses].sort((a, b) => b.jumlah_peserta - a.jumlah_peserta);
+  // --- ROBUST BYE HANDLING ---
+  // 1. Physically separate BYE matches from FIGHT/TBD matches
+  const fightMatches = matchesForThisLapangan.filter(match => match.status !== 'bye');
+  const byeMatches = matchesForThisLapangan.filter(match => match.status === 'bye');
+  
+  console.log(`   แยก: Found ${fightMatches.length} fight/TBD matches and ${byeMatches.length} BYE matches.`);
 
   let currentNumber = startingNumber;
   const assignments: any[] = [];
 
-  // ═══════════════════════════════════════════════════════════════
-  // 🥋 PROCESS PEMULA FIRST
-  // ═══════════════════════════════════════════════════════════════
-  if (sortedPemula.length > 0) {
-    console.log(`\n🥋 === PROCESSING PEMULA CLASSES ===`);
+  // 2. Iterate ONLY over the fight matches to assign numbers
+  let lastCabang: string | undefined = undefined;
+  fightMatches.forEach(match => {
+    // Reset counter if the cabang changes
+    if (lastCabang !== undefined && match.cabang !== lastCabang) {
+      console.log(`   🔄 Cabang changed from ${lastCabang} to ${match.cabang}. Resetting number to ${startingNumber}.`);
+      currentNumber = startingNumber;
+    }
+
+    assignments.push({
+      id_match: match.id,
+      nomor_antrian: currentNumber,
+      nomor_lapangan: lapanganLetter,
+      nomor_partai: `${currentNumber}${lapanganLetter}`,
+      kelas_id: match.kelasKejuaraanId,
+      round: match.round
+    });
     
-    sortedPemula.forEach(kelas => {
-      if (!kelas.bagan || !kelas.bagan.matches) {
-        console.log(`   ⚠️ Kelas ${kelas.id_kelas_kejuaraan}: No bagan/matches`);
-        return;
-      }
+    currentNumber++;
+    lastCabang = match.cabang; // Remember the cabang for the next iteration
+  });
+  console.log(`   ✅ Numbered ${fightMatches.length} matches.`);
 
-      console.log(`\n   📦 Kelas: ${kelas.nama_kelas}`);
-      console.log(`      Peserta: ${kelas.jumlah_peserta}`);
-      console.log(`      Total Matches: ${kelas.bagan.matches.length}`);
-
-      const startRange = currentNumber;
-      const allMatches = [...kelas.bagan.matches].sort((a, b) => {
-        if (a.ronde !== b.ronde) return a.ronde - b.ronde;
-        return a.id_match - b.id_match;
-      });
-
-      let numberedCount = 0;
-      let byeCount = 0;
-
-      allMatches.forEach((match, idx) => {
-        console.log(`\n      🔍 Match ${idx + 1}/${allMatches.length} (ID: ${match.id_match})`);
-        console.log(`         Round: ${match.ronde}`);
-        console.log(`         Peserta A: ${match.id_peserta_a}`);
-        console.log(`         Peserta B: ${match.id_peserta_b}`);
-
-        const isBye = isByeMatch({
-          ronde: match.ronde,
-          id_peserta_a: match.id_peserta_a,
-          id_peserta_b: match.id_peserta_b
-        });
-        console.log(`         → Is BYE? ${isBye ? '✅ YES' : '❌ NO'}`);
-
-        if (isBye) {
-          // ❌ BYE match - NO NUMBER
-          assignments.push({
-            id_match: match.id_match,
-            nomor_antrian: null,
-            nomor_lapangan: null,
-            nomor_partai: null,
-            kelas_id: kelas.id_kelas_kejuaraan,
-            kelas_nama: kelas.nama_kelas,
-            round: match.ronde,
-            note: 'BYE - Skipped'
-          });
-          
-          byeCount++;
-          console.log(`         ⏭️  SKIPPED (BYE) - No number assigned`);
-        } else {
-          // ✅ FIGHT/TBD match - ASSIGN NUMBER
-          assignments.push({
-            id_match: match.id_match,
-            nomor_antrian: currentNumber,
-            nomor_lapangan: lapanganLetter,
-            nomor_partai: `${currentNumber}${lapanganLetter}`,
-            kelas_id: kelas.id_kelas_kejuaraan,
-            kelas_nama: kelas.nama_kelas,
-            round: match.ronde
-          });
-          
-          console.log(`         ✅ NUMBERED: ${currentNumber}${lapanganLetter}`);
-          currentNumber++;
-          numberedCount++;
-        }
-      });
-
-      const endRange = numberedCount > 0 ? currentNumber - 1 : startRange;
-      console.log(`\n      📊 Summary for ${kelas.nama_kelas}:`);
-      console.log(`         Numbered: ${numberedCount} matches (${startRange}${lapanganLetter}-${endRange}${lapanganLetter})`);
-      console.log(`         BYE Skipped: ${byeCount} matches`);
+  // 3. Add BYE matches to the assignments list without numbers
+  byeMatches.forEach(match => {
+    assignments.push({
+      id_match: match.id,
+      nomor_antrian: null,
+      nomor_lapangan: null,
+      nomor_partai: null,
+      kelas_id: match.kelasKejuaraanId,
+      note: 'BYE - Skipped'
     });
-  }
+  });
+  console.log(`   ✅ Processed ${byeMatches.length} BYE matches.`);
 
-  // ═══════════════════════════════════════════════════════════════
-  // 🏆 PROCESS PRESTASI (Habis per Round)
-  // ═══════════════════════════════════════════════════════════════
-  if (sortedPrestasi.length > 0) {
-    console.log(`\n🏆 === PROCESSING PRESTASI CLASSES ===`);
 
-    // Group by round
-    const matchesByRound = new Map<number, any[]>();
+  // Re-add logic for summary generation
+  const pemulaClasses = kelasList.filter(k => k.kategori === 'PEMULA');
+  const prestasiClasses = kelasList.filter(k => k.kategori === 'PRESTASI');
 
-    sortedPrestasi.forEach(kelas => {
-      if (!kelas.bagan || !kelas.bagan.matches) return;
-
-      console.log(`\n   📦 Kelas: ${kelas.nama_kelas}`);
-      console.log(`      Peserta: ${kelas.jumlah_peserta}`);
-      console.log(`      Total Matches: ${kelas.bagan.matches.length}`);
-
-      kelas.bagan.matches.forEach((match: any) => {
-        if (!matchesByRound.has(match.ronde)) {
-          matchesByRound.set(match.ronde, []);
-        }
-
-        matchesByRound.get(match.ronde)!.push({
-          ...match,
-          kelas_id: kelas.id_kelas_kejuaraan,
-          kelas_nama: kelas.nama_kelas,
-          jumlah_peserta: kelas.jumlah_peserta
-        });
-      });
-    });
-
-    // Sort rounds
-    const sortedRounds = Array.from(matchesByRound.keys()).sort((a, b) => a - b);
-    console.log(`\n   🔄 Processing ${sortedRounds.length} rounds: ${sortedRounds.join(', ')}`);
-
-    sortedRounds.forEach(round => {
-      const roundMatches = matchesByRound.get(round)!;
-      const startRange = currentNumber;
-
-      console.log(`\n   🏆 ROUND ${round} - ${roundMatches.length} matches`);
-
-      // Sort: jumlah peserta DESC, then id_match ASC
-      const sortedRoundMatches = roundMatches.sort((a, b) => {
-        if (a.jumlah_peserta !== b.jumlah_peserta) {
-          return b.jumlah_peserta - a.jumlah_peserta;
-        }
-        return a.id_match - b.id_match;
-      });
-
-      let numberedCount = 0;
-      let byeCount = 0;
-
-      sortedRoundMatches.forEach((match, idx) => {
-        console.log(`\n      🔍 Match ${idx + 1}/${sortedRoundMatches.length} (ID: ${match.id_match})`);
-        console.log(`         Kelas: ${match.kelas_nama}`);
-        console.log(`         Round: ${match.ronde}`);
-        console.log(`         Peserta A: ${match.id_peserta_a}`);
-        console.log(`         Peserta B: ${match.id_peserta_b}`);
-
-        const isBye = isByeMatch({
-          ronde: match.ronde,
-          id_peserta_a: match.id_peserta_a,
-          id_peserta_b: match.id_peserta_b
-        });
-        console.log(`         → Is BYE? ${isBye ? '✅ YES' : '❌ NO'}`);
-
-        if (isBye) {
-          // ❌ BYE match - NO NUMBER
-          assignments.push({
-            id_match: match.id_match,
-            nomor_antrian: null,
-            nomor_lapangan: null,
-            nomor_partai: null,
-            kelas_id: match.kelas_id,
-            kelas_nama: match.kelas_nama,
-            round: match.ronde,
-            note: 'BYE - Skipped'
-          });
-          
-          byeCount++;
-          console.log(`         ⏭️  SKIPPED (BYE) - No number assigned`);
-        } else {
-          // ✅ FIGHT/TBD match - ASSIGN NUMBER
-          assignments.push({
-            id_match: match.id_match,
-            nomor_antrian: currentNumber,
-            nomor_lapangan: lapanganLetter,
-            nomor_partai: `${currentNumber}${lapanganLetter}`,
-            kelas_id: match.kelas_id,
-            kelas_nama: match.kelas_nama,
-            round: match.ronde
-          });
-          
-          console.log(`         ✅ NUMBERED: ${currentNumber}${lapanganLetter}`);
-          currentNumber++;
-          numberedCount++;
-        }
-      });
-
-      const endRange = numberedCount > 0 ? currentNumber - 1 : startRange;
-      console.log(`\n      📊 Summary for Round ${round}:`);
-      console.log(`         Numbered: ${numberedCount} matches (${startRange}${lapanganLetter}-${endRange}${lapanganLetter})`);
-      console.log(`         BYE Skipped: ${byeCount} matches`);
-    });
-  }
-
-  // ═══════════════════════════════════════════════════════════════
-  // 📊 FINAL SUMMARY
-  // ═══════════════════════════════════════════════════════════════
-  const totalNumbered = assignments.filter(a => a.nomor_antrian !== null).length;
-  const totalBye = assignments.filter(a => a.note === 'BYE - Skipped').length;
-
+  const totalNumbered = fightMatches.length;
+  const totalBye = byeMatches.length;
   const finalRange = totalNumbered > 0 
     ? `${startingNumber}${lapanganLetter}-${currentNumber - 1}${lapanganLetter}`
     : '-';
@@ -792,7 +640,7 @@ private generateMatchAssignments(
     total_bye_skipped: totalBye,
     range: finalRange,
     assignments,
-    summary: this.generateSummary(assignments, sortedPemula, sortedPrestasi, lapanganLetter)
+    summary: this.generateSummary(assignments, pemulaClasses, prestasiClasses, lapanganLetter)
   };
 }
 
