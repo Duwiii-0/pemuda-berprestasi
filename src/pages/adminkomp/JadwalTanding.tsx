@@ -26,6 +26,7 @@ interface Lapangan {
   nama_lapangan: string;
   tanggal: string;
   kelasDipilih: number[];
+  antrian: AntrianLapangan | null;
 }
 
 interface HariPertandingan {
@@ -170,6 +171,7 @@ const JadwalPertandingan: React.FC = () => {
             tanggal: lap.tanggal,
             kelasDipilih:
               lap.kelas_list?.map((kl: any) => kl.id_kelas_kejuaraan) || [],
+            antrian: lap.antrian || null,
           })),
         }));
         setHariList(hariData);
@@ -341,29 +343,24 @@ const JadwalPertandingan: React.FC = () => {
     }
   }, [kelasKejuaraanList, approvedPesertaByKelas, hariList]);
 
-  // Sync antrian list
+  // Sync antrian list from hariList
   useEffect(() => {
-    setHariAntrianList((prev) => {
-      return hariList.map((hari) => {
-        const existingHari = prev.find((h) => h.tanggal === hari.tanggal);
+    setHariAntrianList(
+      hariList.map((hari) => {
         const lapanganAntrian: Record<number, AntrianLapangan> = {};
-
         hari.lapangan.forEach((lap) => {
-          lapanganAntrian[lap.id_lapangan] = existingHari?.lapanganAntrian?.[
-            lap.id_lapangan
-          ] || {
+          lapanganAntrian[lap.id_lapangan] = lap.antrian || {
             bertanding: 0,
             persiapan: 0,
             pemanasan: 0,
           };
         });
-
         return {
           tanggal: hari.tanggal,
           lapanganAntrian,
         };
-      });
-    });
+      })
+    );
   }, [hariList]);
 
   const addHari = async () => {
