@@ -158,10 +158,7 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
 
   useEffect(() => {
     const fetchTanggalPertandingan = async () => {
-      if (
-        kelasData?.kompetisi?.id_kompetisi &&
-        kelasData?.id_kelas_kejuaraan
-      ) {
+      if (kelasData?.kompetisi?.id_kompetisi && kelasData?.id_kelas_kejuaraan) {
         try {
           const response = await fetch(
             `${apiBaseUrl}/kompetisi/${kelasData.kompetisi.id_kompetisi}/brackets/${kelasData.id_kelas_kejuaraan}/tanggal`,
@@ -1611,15 +1608,11 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
           <div className="bg-red-50 border border-red-200 rounded-lg p-4">
             <div className="flex items-center justify-center gap-8 text-center">
               <div>
-                                <h2
-                                  className="text-lg font-bold"
-                                  style={{ color: "#990D35" }}
-                                >
-                                  {kelasData.kelompok?.nama_kelompok}{" "}
-                                  {displayGender}{" "}
-                                  {kelasData.kelas_berat?.nama_kelas ||
-                                    kelasData.poomsae?.nama_kelas}
-                                </h2>
+                <h2 className="text-lg font-bold" style={{ color: "#990D35" }}>
+                  {kelasData.kelompok?.nama_kelompok} {displayGender}{" "}
+                  {kelasData.kelas_berat?.nama_kelas ||
+                    kelasData.poomsae?.nama_kelas}
+                </h2>
                 <p
                   className="text-sm mt-1"
                   style={{ color: "#050505", opacity: 0.7 }}
@@ -1667,8 +1660,7 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
                       className="text-base font-semibold mb-1"
                       style={{ color: "#050505" }}
                     >
-                      {kelasData.kelompok?.nama_kelompok}{" "}
-                      {displayGender}{" "}
+                      {kelasData.kelompok?.nama_kelompok} {displayGender}{" "}
                       {kelasData.kelas_berat?.nama_kelas ||
                         kelasData.poomsae?.nama_kelas}
                     </p>
@@ -1742,124 +1734,149 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
                   let lastFightColumn = -1;
                   let byeColumn = -1;
 
-if (hasAdditionalMatch) {
-  // ═══════════════════════════════════════════════════════════
-  // SCENARIO GANJIL - Ada Additional Match
-  // ═══════════════════════════════════════════════════════════
+                  if (hasAdditionalMatch) {
+                    // ═══════════════════════════════════════════════════════════
+                    // SCENARIO GANJIL - Ada Additional Match
+                    // ═══════════════════════════════════════════════════════════
 
-  // 🎯 STEP 1: Find BYE match & Last Fight BEFORE any splitting
-  byeMatch =
-    round1Matches.find((m) => m.peserta_a && !m.peserta_b) || null;
-  
-  const byeMatchGlobalIndex = byeMatch
-    ? round1Matches.findIndex((m) => m.id_match === byeMatch!.id_match)
-    : -1;
+                    // 🎯 STEP 1: Find BYE match & Last Fight BEFORE any splitting
+                    byeMatch =
+                      round1Matches.find((m) => m.peserta_a && !m.peserta_b) ||
+                      null;
 
-  // Last normal fight = match TEPAT SEBELUM BYE
-  const lastNormalFightGlobalIndex =
-    byeMatchGlobalIndex > 0 ? byeMatchGlobalIndex - 1 : -1;
+                    const byeMatchGlobalIndex = byeMatch
+                      ? round1Matches.findIndex(
+                          (m) => m.id_match === byeMatch!.id_match
+                        )
+                      : -1;
 
-  lastNormalFightMatch =
-    lastNormalFightGlobalIndex >= 0
-      ? round1Matches[lastNormalFightGlobalIndex]
-      : null;
+                    // Last normal fight = match TEPAT SEBELUM BYE
+                    const lastNormalFightGlobalIndex =
+                      byeMatchGlobalIndex > 0 ? byeMatchGlobalIndex - 1 : -1;
 
-  console.log("🔍 BYE Match Index (global):", byeMatchGlobalIndex);
-  console.log(
-    "🔍 Last Fight Index (global):",
-    lastNormalFightGlobalIndex
-  );
-  console.log(
-    "🔍 Last Fight Nomor Partai:",
-    lastNormalFightMatch?.nomor_partai
-  );
+                    lastNormalFightMatch =
+                      lastNormalFightGlobalIndex >= 0
+                        ? round1Matches[lastNormalFightGlobalIndex]
+                        : null;
 
-  // 🎯 STEP 2: Get NORMAL matches (exclude Last Fight & BYE)
-  const normalMatches = round1Matches.filter(
-    (m, idx) =>
-      idx !== lastNormalFightGlobalIndex && idx !== byeMatchGlobalIndex
-  );
+                    console.log(
+                      "🔍 BYE Match Index (global):",
+                      byeMatchGlobalIndex
+                    );
+                    console.log(
+                      "🔍 Last Fight Index (global):",
+                      lastNormalFightGlobalIndex
+                    );
+                    console.log(
+                      "🔍 Last Fight Nomor Partai:",
+                      lastNormalFightMatch?.nomor_partai
+                    );
 
-  console.log(
-    `📊 Normal matches (excluding Last Fight & BYE): ${normalMatches.length}`
-  );
+                    // 🎯 STEP 2: Get NORMAL matches (exclude Last Fight & BYE)
+                    const normalMatches = round1Matches.filter(
+                      (m, idx) =>
+                        idx !== lastNormalFightGlobalIndex &&
+                        idx !== byeMatchGlobalIndex
+                    );
 
-  // 🎯 STEP 3: Calculate balanced split for NORMAL matches only
-  const numColumns = Math.max(
-    2,
-    Math.ceil(normalMatches.length / MAX_MATCHES_PER_COL)
-  );
-  const matchesPerCol = Math.ceil(normalMatches.length / numColumns);
+                    console.log(
+                      `📊 Normal matches (excluding Last Fight & BYE): ${normalMatches.length}`
+                    );
 
-  console.log(
-    `📊 Split Strategy: ${normalMatches.length} normal matches → ${numColumns} columns (${matchesPerCol} matches/col)`
-  );
+                    // 🎯 STEP 3: Calculate balanced split for NORMAL matches only
+                    const numColumns = Math.max(
+                      2,
+                      Math.ceil(normalMatches.length / MAX_MATCHES_PER_COL)
+                    );
+                    const matchesPerCol = Math.ceil(
+                      normalMatches.length / numColumns
+                    );
 
-  // 🎯 STEP 4: Build columns from NORMAL matches
-  for (let i = 0; i < normalMatches.length; i += matchesPerCol) {
-    columns.push(normalMatches.slice(i, i + matchesPerCol));
-  }
+                    console.log(
+                      `📊 Split Strategy: ${normalMatches.length} normal matches → ${numColumns} columns (${matchesPerCol} matches/col)`
+                    );
 
-// 🎯 STEP 5: FORCE Last Fight & BYE to LAST column
-if (lastNormalFightMatch && byeMatch) {
-  // ✅ PERBAIKAN: Pastikan columns tidak kosong
-  if (columns.length === 0) {
-    // Jika belum ada column sama sekali, buat column baru
-    columns.push([lastNormalFightMatch, byeMatch]);
-    lastFightColumn = 0;
-    lastFightColumnIndex = 0;
-    byeColumn = 0;
-    byeColumnIndex = 1;
-  } else {
-    // Jika sudah ada columns, append ke column terakhir
-    const lastColumnIndex = columns.length - 1;
+                    // 🎯 STEP 4: Build columns from NORMAL matches
+                    for (
+                      let i = 0;
+                      i < normalMatches.length;
+                      i += matchesPerCol
+                    ) {
+                      columns.push(normalMatches.slice(i, i + matchesPerCol));
+                    }
 
-    // ✅ SAFETY CHECK: Pastikan column terakhir adalah array
-    if (!Array.isArray(columns[lastColumnIndex])) {
-      columns[lastColumnIndex] = [];
-    }
+                    // 🎯 STEP 5: FORCE Last Fight & BYE to LAST column
+                    if (lastNormalFightMatch && byeMatch) {
+                      // ✅ PERBAIKAN: Pastikan columns tidak kosong
+                      if (columns.length === 0) {
+                        // Jika belum ada column sama sekali, buat column baru
+                        columns.push([lastNormalFightMatch, byeMatch]);
+                        lastFightColumn = 0;
+                        lastFightColumnIndex = 0;
+                        byeColumn = 0;
+                        byeColumnIndex = 1;
+                      } else {
+                        // Jika sudah ada columns, append ke column terakhir
+                        const lastColumnIndex = columns.length - 1;
 
-    columns[lastColumnIndex].push(lastNormalFightMatch);
-    columns[lastColumnIndex].push(byeMatch);
+                        // ✅ SAFETY CHECK: Pastikan column terakhir adalah array
+                        if (!Array.isArray(columns[lastColumnIndex])) {
+                          columns[lastColumnIndex] = [];
+                        }
 
-    // Calculate indices within that column
-    lastFightColumn = lastColumnIndex;
-    lastFightColumnIndex = columns[lastColumnIndex].length - 2; // Second to last
+                        columns[lastColumnIndex].push(lastNormalFightMatch);
+                        columns[lastColumnIndex].push(byeMatch);
 
-    byeColumn = lastColumnIndex;
-    byeColumnIndex = columns[lastColumnIndex].length - 1; // Last position
-  }
+                        // Calculate indices within that column
+                        lastFightColumn = lastColumnIndex;
+                        lastFightColumnIndex =
+                          columns[lastColumnIndex].length - 2; // Second to last
 
-  console.log("✅ FORCED Last Fight & BYE to same column!");
-  console.log("   📍 Column:", lastFightColumn);
-  console.log("   📍 Last Fight Index:", lastFightColumnIndex);
-  console.log("   📍 BYE Index:", byeColumnIndex);
-  console.log(
-    "   📦 Column size:",
-    columns[lastFightColumn]?.length || 0,
-    "matches"
-  );
-}
-} else {
-  // ═══════════════════════════════════════════════════════════
-  // SCENARIO GENAP - No Additional Match
-  // ═══════════════════════════════════════════════════════════
-  console.log("ℹ️ No Additional Match - Using balanced split");
+                        byeColumn = lastColumnIndex;
+                        byeColumnIndex = columns[lastColumnIndex].length - 1; // Last position
+                      }
 
-  const numColumns = Math.max(
-    2,
-    Math.ceil(round1Matches.length / MAX_MATCHES_PER_COL)
-  );
-  const matchesPerCol = Math.ceil(round1Matches.length / numColumns);
+                      console.log("✅ FORCED Last Fight & BYE to same column!");
+                      console.log("   📍 Column:", lastFightColumn);
+                      console.log(
+                        "   📍 Last Fight Index:",
+                        lastFightColumnIndex
+                      );
+                      console.log("   📍 BYE Index:", byeColumnIndex);
+                      console.log(
+                        "   📦 Column size:",
+                        columns[lastFightColumn]?.length || 0,
+                        "matches"
+                      );
+                    }
+                  } else {
+                    // ═══════════════════════════════════════════════════════════
+                    // SCENARIO GENAP - No Additional Match
+                    // ═══════════════════════════════════════════════════════════
+                    console.log(
+                      "ℹ️ No Additional Match - Using balanced split"
+                    );
 
-  console.log(
-    `📊 Balanced Split: ${round1Matches.length} matches → ${numColumns} columns (${matchesPerCol} matches/col)`
-  );
+                    const numColumns = Math.max(
+                      2,
+                      Math.ceil(round1Matches.length / MAX_MATCHES_PER_COL)
+                    );
+                    const matchesPerCol = Math.ceil(
+                      round1Matches.length / numColumns
+                    );
 
-  for (let i = 0; i < round1Matches.length; i += matchesPerCol) {
-    columns.push(round1Matches.slice(i, i + matchesPerCol));
-  }
-}
+                    console.log(
+                      `📊 Balanced Split: ${round1Matches.length} matches → ${numColumns} columns (${matchesPerCol} matches/col)`
+                    );
+
+                    for (
+                      let i = 0;
+                      i < round1Matches.length;
+                      i += matchesPerCol
+                    ) {
+                      columns.push(round1Matches.slice(i, i + matchesPerCol));
+                    }
+                  }
 
                   console.log(
                     "📦 Final Columns:",
@@ -1956,10 +1973,9 @@ if (lastNormalFightMatch && byeMatch) {
                                         <div className="flex items-center gap-2 flex-1">
                                           {match.nomor_partai && (
                                             <span
-                                              className="text-xs px-2 py-1 rounded-full font-bold"
+                                              className="text-xl px-2 py-1 rounded-full font-bold"
                                               style={{
-                                                backgroundColor: "#990D35",
-                                                color: "white",
+                                                color: "#990D35",
                                               }}
                                             >
                                               No.Partai: {match.nomor_partai}
