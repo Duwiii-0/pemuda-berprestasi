@@ -80,6 +80,8 @@ const JadwalPertandingan: React.FC = () => {
   const [sortedKelasKejuaraanList, setSortedKelasKejuaraanList] = useState<
     any[]
   >([]);
+  const [matchesHariIni, setMatchesHariIni] = useState<any[]>([]);
+  const [loadingMatchesHariIni, setLoadingMatchesHariIni] = useState(false);
 
   const [loadingHari, setLoadingHari] = useState(false);
   const [loadingBagan, setLoadingBagan] = useState(false);
@@ -187,6 +189,56 @@ const JadwalPertandingan: React.FC = () => {
     }
   };
 
+  const fetchMatchesForHari = async (hariIndex: number) => {
+    if (!idKompetisi || !token || hariList.length <= hariIndex) {
+      return;
+    }
+
+    setLoadingMatchesHariIni(true);
+    const targetHari = hariList[hariIndex];
+    if (!targetHari) {
+      setLoadingMatchesHariIni(false);
+      return;
+    }
+
+    const allKelasIds = new Set<number>();
+    targetHari.lapangan.forEach((lap) => {
+      lap.kelasDipilih.forEach((kelasId) => allKelasIds.add(kelasId));
+    });
+
+    const allMatches: any[] = [];
+    try {
+      await Promise.all(
+        Array.from(allKelasIds).map(async (kelasId) => {
+          try {
+            const response = await fetch(
+              `${
+                import.meta.env.VITE_API_URL
+              }/kompetisi/${idKompetisi}/brackets/${kelasId}`,
+              { headers: { Authorization: `Bearer ${token}` } }
+            );
+            if (response.ok) {
+              const result = await response.json();
+              if (result.data?.matches) {
+                allMatches.push(...result.data.matches);
+              }
+            }
+          } catch (error) {
+            console.error(
+              `Error fetching matches for kelas ${kelasId}:`,
+              error
+            );
+          }
+        })
+      );
+      setMatchesHariIni(allMatches);
+    } catch (error) {
+      console.error("Error in fetchMatchesForHari:", error);
+    } finally {
+      setLoadingMatchesHariIni(false);
+    }
+  };
+
   // Fetch bagan info untuk semua kelas yang dipilih
   useEffect(() => {
     const fetchBaganInfo = async () => {
@@ -273,6 +325,18 @@ const JadwalPertandingan: React.FC = () => {
 
     fetchBaganInfo();
   }, [hariList, idKompetisi, token, kelasKejuaraanList]);
+
+  useEffect(() => {
+    if (
+      activeTab === "antrian" &&
+      hariList.length > 1 &&
+      idKompetisi &&
+      token
+    ) {
+      const hariIndex = 1; // Hardcode Hari ke-2
+      fetchMatchesForHari(hariIndex);
+    }
+  }, [activeTab, hariList, idKompetisi, token]);
 
   // 🆕 Auto-load preview saat lapangan dipilih
   useEffect(() => {
