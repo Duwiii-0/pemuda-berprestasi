@@ -68,6 +68,15 @@ const MedalTallyPage: React.FC<{ idKompetisi?: number }> = ({ idKompetisi }) => 
     fetchMedalData();
   }, [idKompetisi]);
 
+  const countUniqueParticipants = (matches: any[]): number => {
+  const participants = new Set<number>();
+  matches.forEach(match => {
+    if (match.participant1?.id) participants.add(match.participant1.id);
+    if (match.participant2?.id) participants.add(match.participant2.id);
+  });
+  return participants.size;
+};
+
   const fetchMedalData = async () => {
     if (!idKompetisi) return;
 
@@ -95,8 +104,13 @@ const MedalTallyPage: React.FC<{ idKompetisi?: number }> = ({ idKompetisi }) => 
         setKompetisi(result.data.kompetisi);
       }
 
-      const kelasWithLeaderboard = result.data.kelas
-        .filter((kelas: any) => kelas.bracket && kelas.bracket.matches.length > 0)
+        const kelasWithLeaderboard = result.data.kelas
+          .filter((kelas: any) => {
+            if (!kelas.bracket || !kelas.bracket.matches.length) return false;
+            
+            const participantCount = countUniqueParticipants(kelas.bracket.matches);
+            return participantCount >= 4;
+          })
         .map((kelas: any) => {
           console.log(`Processing kelas: ${kelas.id_kelas_kejuaraan}`);
           
