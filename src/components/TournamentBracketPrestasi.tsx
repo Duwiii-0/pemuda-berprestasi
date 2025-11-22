@@ -1440,7 +1440,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                 className="text-xl p1-2 rounded-full font-bold"
                 style={{ color: "#990D35" }}
               >
-                No. Partai: {match.nomor_partai}
+                NO.PARTAI: {match.nomor_partai}
               </span>
             ) : match.ronde === 1 &&
               ((match.peserta_a && !match.peserta_b) ||
