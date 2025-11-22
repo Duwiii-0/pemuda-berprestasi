@@ -2,27 +2,33 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-export const getAtletMatchInfo = async (id_kompetisi: number) => {
+export const getAtletMatchInfo = async (id_kompetisi: number, hari?: number) => { // NEW: Add hari parameter
   try {
-    const matches = await prisma.tb_match.findMany({
-      where: {
-        bagan: {
-          id_kompetisi: id_kompetisi,
-        },
-        id_peserta_a: { not: null },
-        id_peserta_b: { not: null },
-        // Filter: hanya yang memiliki stage_name
-        stage_name: {
-          not: null,
-        },
-        // Filter: hanya peserta yang approved
-        peserta_a: {
-          status: "APPROVED", // sesuaikan dengan nama field di database Anda
-        },
-        peserta_b: {
-          status: "APPROVED", // sesuaikan dengan nama field di database Anda
-        },
+    let matchWhereClause: any = { // NEW: Build where clause dynamically
+      bagan: {
+        id_kompetisi: id_kompetisi,
       },
+      id_peserta_a: { not: null },
+      id_peserta_b: { not: null },
+      // Filter: hanya yang memiliki stage_name
+      stage_name: {
+        not: null,
+      },
+      // Filter: hanya peserta yang approved
+      peserta_a: {
+        status: "APPROVED", // sesuaikan dengan nama field di database Anda
+      },
+      peserta_b: {
+        status: "APPROVED", // sesuaikan dengan nama field di database Anda
+      },
+    };
+
+    if (hari !== undefined) { // NEW: Add hari filter if provided
+      matchWhereClause.hari = hari;
+    }
+
+    const matches = await prisma.tb_match.findMany({
+      where: matchWhereClause, // NEW: Use dynamic where clause
       select: {
         nomor_antrian: true,
         nomor_lapangan: true,
