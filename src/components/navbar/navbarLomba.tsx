@@ -80,7 +80,7 @@ const navItems = [
   { to: "/event/timeline", label: "Timeline" },
   { to: "/event/faq", label: "FAQ" },
   { to: "/event/live-streaming", label: "Live Streaming" },
-  { to: `/event/medal-tally/${idKompetisi}`, label: "Perolehan Medali", icon: Medal }, // ✅ COMMENTED - Akan diaktifkan nanti
+  { to: `/event/medal-tally/${idKompetisi}`, label: "Perolehan Medali" }, // ✅ COMMENTED - Akan diaktifkan nanti
 ];
 
   const getDashboardLink = () => {
