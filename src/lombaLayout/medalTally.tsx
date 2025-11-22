@@ -104,13 +104,23 @@ const MedalTallyPage: React.FC<{ idKompetisi?: number }> = ({ idKompetisi }) => 
         setKompetisi(result.data.kompetisi);
       }
 
-        const kelasWithLeaderboard = result.data.kelas
-          .filter((kelas: any) => {
-            if (!kelas.bracket || !kelas.bracket.matches.length) return false;
-            
-            const participantCount = countUniqueParticipants(kelas.bracket.matches);
-            return participantCount >= 4;
-          })
+      const kelasWithLeaderboard = result.data.kelas
+        .filter((kelas: any) => {
+          if (!kelas.bracket || !kelas.bracket.matches.length) {
+            console.log(`❌ Kelas ${kelas.id_kelas_kejuaraan} - ${kelas.nama_kelas}: Tidak ada bracket/matches`);
+            return false;
+          }
+          
+          const participantCount = countUniqueParticipants(kelas.bracket.matches);
+          
+          if (participantCount >= 4) {
+            console.log(`✅ Kelas ${kelas.id_kelas_kejuaraan} - ${kelas.nama_kelas}: ${participantCount} peserta (TAMPIL)`);
+            return true;
+          } else {
+            console.log(`⚠️ Kelas ${kelas.id_kelas_kejuaraan} - ${kelas.nama_kelas}: ${participantCount} peserta (SKIP - kurang dari 4)`);
+            return false;
+          }
+        })
         .map((kelas: any) => {
           console.log(`Processing kelas: ${kelas.id_kelas_kejuaraan}`);
           
