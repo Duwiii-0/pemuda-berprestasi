@@ -1973,9 +1973,10 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
                                         <div className="flex items-center gap-2 flex-1">
                                           {match.nomor_partai && (
                                             <span
-                                              className="text-xl px-2 py-1 rounded-full font-bold"
+                                              className="text-xs px-2 py-1 rounded-full font-bold"
                                               style={{
-                                                color: "#990D35",
+                                                backgroundColor: "#990D35",
+                                                color: "white",
                                               }}
                                             >
                                               No.Partai: {match.nomor_partai}
