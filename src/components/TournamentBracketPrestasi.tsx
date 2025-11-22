@@ -1437,16 +1437,16 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
           <div className="flex items-center gap-2">
             {match.nomor_partai ? (
               <span
-                className="text-xl p1-2 rounded-full font-bold"
+                className="text-2xl p1-2 rounded-full font-bold"
                 style={{ color: "#990D35" }}
               >
-                NO.PARTAI: {match.nomor_partai}
+                {match.nomor_partai}
               </span>
             ) : match.ronde === 1 &&
               ((match.peserta_a && !match.peserta_b) ||
                 (!match.peserta_a && match.peserta_b)) ? (
               <span
-                className="text-xl px-1 rounded-full font-medium"
+                className="text-2xl px-1 rounded-full font-medium"
                 style={{
                   color: "#F5B700",
                 }}
