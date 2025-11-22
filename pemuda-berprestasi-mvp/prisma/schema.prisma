@@ -343,6 +343,7 @@ model tb_match {
   nomor_partai        String?               @db.VarChar(50)
   nomor_lapangan      String?               @db.VarChar(10)
   id_lapangan         Int?
+  hari                Int?
 
   bagan               tb_bagan              @relation(fields: [id_bagan], references: [id_bagan])
   lapangan            tb_lapangan?          @relation(fields: [id_lapangan], references: [id_lapangan])
@@ -423,6 +424,7 @@ model tb_lapangan {
   jadwal          tb_jadwal_pertandingan[]
   kelas_list      tb_lapangan_kelas[]    // Tambahkan baris ini
   antrian         tb_antrian?            // Tambahkan baris ini
+  match           tb_match[]
 
   @@index([id_kompetisi])
   @@index([tanggal])
