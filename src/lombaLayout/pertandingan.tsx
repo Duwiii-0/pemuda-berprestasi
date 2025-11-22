@@ -33,6 +33,7 @@ interface MatchData {
   nama_atlet_b: string;
   foto_atlet_a?: string;
   foto_atlet_b?: string;
+  stage_name?: string;
 }
 
 const getPhotoUrl = (filename: string): string | null => {
@@ -86,14 +87,27 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
   useEffect(() => {
     if (!idKompetisi) return;
     fetchLiveData();
-    fetchMatchData();
+    // fetchMatchData(); // Removed this call
 
     const interval = setInterval(() => {
       fetchLiveData();
-      fetchMatchData();
+      // fetchMatchData(); // Also remove this from interval if it's based on selectedHari
     }, 10000);
     return () => clearInterval(interval);
   }, [idKompetisi]);
+
+  // NEW useEffect for fetching match data based on selectedHari
+  useEffect(() => {
+    if (idKompetisi && selectedHari && hariList.length > 0) {
+      const selectedDayIndex = hariList.findIndex(hari => hari.tanggal === selectedHari);
+      const selectedDayNumber = selectedDayIndex >= 0 ? selectedDayIndex + 1 : undefined;
+
+      if (selectedDayNumber !== undefined) {
+        fetchMatchData(selectedDayNumber);
+      }
+    }
+  }, [idKompetisi, selectedHari, hariList]);
+
 
   const fetchLiveData = async () => {
     if (!idKompetisi) return;
@@ -132,7 +146,9 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
         setHariList(hariData);
 
         if (!selectedHari && hariData.length > 0) {
-          setSelectedHari(hariData[0].tanggal);
+          // Default to the second day if available and hariData has at least two days
+          const defaultDay = hariData.length > 1 ? hariData[1].tanggal : hariData[0].tanggal;
+          setSelectedHari(defaultDay);
         }
       }
     } catch (err: any) {
@@ -143,10 +159,14 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
     }
   };
 
-  const fetchMatchData = async () => {
+  const fetchMatchData = async (hari?: number) => { // NEW: Accept hari parameter
     if (!idKompetisi) return;
     try {
-      const res = await fetch(`/api/pertandingan/kompetisi/${idKompetisi}`);
+      const url = hari ? 
+        `/api/pertandingan/kompetisi/${idKompetisi}?hari=${hari}` :
+        `/api/pertandingan/kompetisi/${idKompetisi}`;
+      
+      const res = await fetch(url);
       const data = await res.json();
       if (data.success) {
         setMatchData(data.data);

@@ -2057,6 +2057,37 @@ static async updateMatch(
       }
     }
 
+    // NEW: Auto-increment antrian if this was a "bertanding" match
+    if (isResultUpdate && updatedMatch.id_lapangan && updatedMatch.nomor_antrian) {
+      console.log(`⚡️ Checking for queue auto-increment...`);
+      console.log(`   Lapangan ID: ${updatedMatch.id_lapangan}`);
+      console.log(`   Match Antrian No: ${updatedMatch.nomor_antrian}`);
+
+      const antrian = await prisma.tb_antrian.findUnique({
+        where: { id_lapangan: updatedMatch.id_lapangan },
+      });
+
+      if (antrian) {
+        console.log(`   Current queue for lapangan ${updatedMatch.id_lapangan}:`, antrian);
+        if (antrian.bertanding === updatedMatch.nomor_antrian) {
+          console.log(`   ✅ Match is 'bertanding'. Incrementing queue...`);
+          await prisma.tb_antrian.update({
+            where: { id_antrian: antrian.id_antrian },
+            data: {
+              bertanding: { increment: 1 },
+              persiapan: { increment: 1 },
+              pemanasan: { increment: 1 },
+            },
+          });
+          console.log(`   🚀 Queue incremented successfully!`);
+        } else {
+          console.log(`   ℹ️ Match is not the current 'bertanding' match. No increment.`);
+        }
+      } else {
+        console.log(`   ℹ️ No antrian record found for lapangan ${updatedMatch.id_lapangan}.`);
+      }
+    }
+
     console.log(`\n✅ Match ${matchId} updated successfully\n`);
 
     return {
