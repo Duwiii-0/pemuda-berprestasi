@@ -211,10 +211,11 @@ const JadwalPertandingan: React.FC = () => {
       await Promise.all(
         Array.from(allKelasIds).map(async (kelasId) => {
           try {
+            const dayNumber = hariIndex + 1; // Convert 0-based index to 1-based day number
             const response = await fetch(
               `${
                 import.meta.env.VITE_API_URL
-              }/kompetisi/${idKompetisi}/brackets/${kelasId}`,
+              }/kompetisi/${idKompetisi}/brackets/${kelasId}?hari=${dayNumber}`, // Pass hari as query param
               { headers: { Authorization: `Bearer ${token}` } }
             );
             if (response.ok) {

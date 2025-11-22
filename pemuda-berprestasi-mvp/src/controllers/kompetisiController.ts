@@ -613,6 +613,7 @@ static async getGlobalSchedule(req: Request, res: Response) {
 static async getBracketByClass(req: Request, res: Response) {
   try {
     const { id, kelasKejuaraanId } = req.params;
+    const { hari } = req.query; // NEW: Get hari from query
 
     const kompetisiId = parseInt(id);
     const kelasId = parseInt(kelasKejuaraanId);
@@ -621,9 +622,16 @@ static async getBracketByClass(req: Request, res: Response) {
       return sendError(res, 'Parameter tidak valid', 400);
     }
 
-    console.log(`🔍 Fetching bracket for kompetisi: ${kompetisiId}, kelas: ${kelasId}`);
+    console.log(`🔍 Fetching bracket for kompetisi: ${kompetisiId}, kelas: ${kelasId}, hari: ${hari}`); // NEW: Log hari
 
-    // ⭐ QUERY dengan SORT BY POSITION
+    let matchWhereClause: any = {};
+    if (hari) {
+      const hariInt = parseInt(hari as string);
+      if (!isNaN(hariInt)) {
+        matchWhereClause.hari = hariInt; // NEW: Filter by hari
+      }
+    }
+
     const kelas = await prisma.tb_kelas_kejuaraan.findUnique({
       where: { id_kelas_kejuaraan: kelasId },
       include: {
@@ -669,9 +677,10 @@ static async getBracketByClass(req: Request, res: Response) {
           },
           include: {
             match: {
+              where: matchWhereClause, // NEW: Apply hari filter here
               orderBy: [
                 { ronde: 'asc' },
-                { position: 'asc' }  // ⭐ SORT BY POSITION
+                { position: 'asc' }
               ],
               include: {
                 peserta_a: {
