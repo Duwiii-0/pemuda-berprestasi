@@ -1262,15 +1262,18 @@ const JadwalPertandingan: React.FC = () => {
                   </p>
                 </div>
               ) : (
-                hariList.map((hari, idx) => (
-                  <div
-                    key={hari.tanggal}
-                    className="rounded-xl shadow-sm border p-6 mb-6"
-                    style={{
-                      borderColor: "#990D35",
-                      backgroundColor: "#F5FBEF",
-                    }}
-                  >
+                hariList.map((hari, idx) => {
+                  if (idx === 0) return null; // Hide the first day
+
+                  return (
+                    <div
+                      key={hari.tanggal}
+                      className="rounded-xl shadow-sm border p-6 mb-6"
+                      style={{
+                        borderColor: "#990D35",
+                        backgroundColor: "#F5FBEF",
+                      }}
+                    >
                     {/* HEADER HARI */}
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
                       <div>
@@ -1736,7 +1739,7 @@ const JadwalPertandingan: React.FC = () => {
                 </button>
               </div>
               {/* 🆕 BUTTON AUTO-GENERATE */}
-              <div className="mb-6 flex gap-3">
+              {/* <div className="mb-6 flex gap-3">
                 <button
                   onClick={() => setShowAutoNumberModal(true)}
                   disabled={hariList.length === 0}
@@ -1746,7 +1749,7 @@ const JadwalPertandingan: React.FC = () => {
                   <Zap size={16} />
                   Auto-Generate Nomor Partai
                 </button>
-              </div>
+              </div> */}
               {hariAntrianList.length === 0 ? (
                 <div className="text-center py-12">
                   <ClipboardList
@@ -1774,6 +1777,7 @@ const JadwalPertandingan: React.FC = () => {
                   );
                   if (!hariJadwal || hariJadwal.lapangan.length === 0)
                     return null;
+                  if (idx === 0) return null; // Hide the first day
 
                   return (
                     <div

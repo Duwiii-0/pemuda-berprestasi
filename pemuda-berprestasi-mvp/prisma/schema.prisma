@@ -340,16 +340,18 @@ model tb_match {
   id_venue            Int?
   tanggal_pertandingan DateTime?  
   nomor_antrian       Int?
-  nomor_lapangan      String?               @db.VarChar(10)
   nomor_partai        String?               @db.VarChar(50)
+  id_lapangan         Int?
 
   bagan               tb_bagan              @relation(fields: [id_bagan], references: [id_bagan])
+  lapangan            tb_lapangan?          @relation(fields: [id_lapangan], references: [id_lapangan])
   peserta_a           tb_peserta_kompetisi? @relation("PesertaA", fields: [id_peserta_a], references: [id_peserta_kompetisi])
   peserta_b           tb_peserta_kompetisi? @relation("PesertaB", fields: [id_peserta_b], references: [id_peserta_kompetisi])
   venue               tb_venue?             @relation(fields: [id_venue], references: [id_venue])
   match_audit         tb_match_audit[]
 
   @@index([id_bagan], map: "tb_match_id_bagan_fkey")
+  @@index([id_lapangan])
   @@index([stage_name]) 
   @@index([id_peserta_a], map: "tb_match_id_peserta_a_fkey")
   @@index([id_peserta_b], map: "tb_match_id_peserta_b_fkey")
