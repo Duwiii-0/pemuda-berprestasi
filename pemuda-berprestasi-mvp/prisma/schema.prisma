@@ -341,6 +341,7 @@ model tb_match {
   tanggal_pertandingan DateTime?  
   nomor_antrian       Int?
   nomor_partai        String?               @db.VarChar(50)
+  nomor_lapangan      String?               @db.VarChar(10)
   id_lapangan         Int?
 
   bagan               tb_bagan              @relation(fields: [id_bagan], references: [id_bagan])
