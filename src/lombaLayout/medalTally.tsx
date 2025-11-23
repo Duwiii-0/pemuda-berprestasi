@@ -290,15 +290,34 @@ const MedalTallyPage: React.FC<{ idKompetisi?: number }> = ({ idKompetisi }) => 
     return leaderboard;
   };
 
-  const transformPrestasiLeaderboard = (matches: any[]) => {
-    const leaderboard = {
-      gold: [] as Array<{ id: number; name: string; dojo: string }>,
-      silver: [] as Array<{ id: number; name: string; dojo: string }>,
-      bronze: [] as Array<{ id: number; name: string; dojo: string }>
-    };
+const transformPrestasiLeaderboard = (matches: any[]) => {
+  console.log(`\n🔍 === DEBUG KELAS ===`);
+  console.log(`Total Matches: ${matches.length}`);
+  
+  // Group by round
+  const matchesByRound = matches.reduce((acc, m) => {
+    acc[m.round] = (acc[m.round] || 0) + 1;
+    return acc;
+  }, {} as Record<number, number>);
+  
+  console.log(`Matches per Round:`, matchesByRound);
+  
+  const leaderboard = {
+    gold: [],
+    silver: [],
+    bronze: []
+  };
 
-    const totalRounds = Math.max(...matches.map(m => m.round));
-    const finalMatch = matches.find(m => m.round === totalRounds);
+  const totalRounds = Math.max(...matches.map(m => m.round));
+  console.log(`Total Rounds: ${totalRounds}`);
+  
+  const finalMatch = matches.find(m => m.round === totalRounds);
+  console.log(`Final Match (Round ${totalRounds}):`, {
+    participant1: finalMatch?.participant1?.name,
+    participant2: finalMatch?.participant2?.name,
+    scoreA: finalMatch?.scoreA,
+    scoreB: finalMatch?.scoreB
+  });
 
     if (finalMatch && (finalMatch.scoreA > 0 || finalMatch.scoreB > 0)) {
       const winner = finalMatch.scoreA > finalMatch.scoreB 
@@ -325,25 +344,41 @@ const MedalTallyPage: React.FC<{ idKompetisi?: number }> = ({ idKompetisi }) => 
       }
     }
 
-    const semiRound = totalRounds - 1;
-    const semiMatches = matches.filter(m => m.round === semiRound);
+  const semiRound = totalRounds - 1;
+  const semiMatches = matches.filter(m => m.round === semiRound);
+  console.log(`\nSemi-Final (Round ${semiRound}): ${semiMatches.length} matches`);
 
-    semiMatches.forEach(match => {
-      if ((match.scoreA > 0 || match.scoreB > 0) && match.participant1 && match.participant2) {
-        const loser = match.scoreA > match.scoreB ? match.participant2 : match.participant1;
-
-        if (loser && !leaderboard.bronze.find(p => p.id === loser.id)) {
-          leaderboard.bronze.push({
-            id: loser.id,
-            name: loser.name,
-            dojo: loser.dojo || ''
-          });
-        }
-      }
+  semiMatches.forEach((match, idx) => {
+    console.log(`  Match ${idx + 1}:`, {
+      participant1: match.participant1?.name,
+      participant2: match.participant2?.name,
+      scoreA: match.scoreA,
+      scoreB: match.scoreB
     });
 
-    return leaderboard;
-  };
+    if ((match.scoreA > 0 || match.scoreB > 0) && match.participant1 && match.participant2) {
+      const loser = match.scoreA > match.scoreB ? match.participant2 : match.participant1;
+
+      if (loser && !leaderboard.bronze.find(p => p.id === loser.id)) {
+        console.log(`    ✅ Bronze: ${loser.name}`);
+        leaderboard.bronze.push({
+          id: loser.id,
+          name: loser.name,
+          dojo: loser.dojo || ''
+        });
+      } else {
+        console.log(`    ⚠️ Skipped (duplicate or no loser)`);
+      }
+    } else {
+      console.log(`    ⚠️ Skipped (no score or missing participant)`);
+    }
+  });
+
+  console.log(`\n📊 Final Count: Gold=${leaderboard.gold.length}, Silver=${leaderboard.silver.length}, Bronze=${leaderboard.bronze.length}`);
+  console.log(`=== END DEBUG ===\n`);
+
+  return leaderboard;
+};
 
   const extractLevel = (kelas: KelasKejuaraan): string => {
     const kelompokName = kelas.kelompok?.nama_kelompok?.toUpperCase() || '';
