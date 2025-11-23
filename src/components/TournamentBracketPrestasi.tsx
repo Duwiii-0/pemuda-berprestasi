@@ -1370,11 +1370,13 @@ const generatePrestasiLeaderboard = () => {
   if (matches.length === 0) return null;
 
   const leaderboard: {
-    first: { name: string; dojo: string; id: number } | null;
-    second: { name: string; dojo: string; id: number }[];
+    first: { name: string; dojo: string; id: number } | null; // Gold
+    second: { name: string; dojo: string; id: number }[]; // Silver (1 person)
+    third: { name: string; dojo: string; id: number }[]; // Bronze (2 people)
   } = {
     first: null,
     second: [],
+    third: [], // Initialize third place
   };
 
   const totalRounds = getTotalRounds();
@@ -1419,18 +1421,20 @@ const generatePrestasiLeaderboard = () => {
   // ═══════════════════════════════════════════════════════════════
   const semiRound = totalRounds - 1;
   const semiMatches = matches.filter((m) => m.ronde === semiRound);
+  const processedBronze = new Set<number>(); // To track unique bronze medalists
 
   semiMatches.forEach((match) => {
     if (match.skor_a > 0 || match.skor_b > 0) {
       const loser = match.skor_a > match.skor_b ? match.peserta_b : match.peserta_a;
 
-      if (loser && !processedSilver.has(loser.id_peserta_kompetisi)) {
-        leaderboard.second.push({
+      // Assign Bronze to semi-final losers
+      if (loser && !processedBronze.has(loser.id_peserta_kompetisi)) {
+        leaderboard.third.push({ // Assign BRONZE
           name: getParticipantName(loser),
           dojo: getDojoName(loser),
           id: loser.id_peserta_kompetisi,
         });
-        processedSilver.add(loser.id_peserta_kompetisi);
+        processedBronze.add(loser.id_peserta_kompetisi);
       }
     }
   });
@@ -1985,7 +1989,7 @@ const renderCenterFinal = () => {
 
         {/* 2nd Places - SILVER (termasuk yang kalah di semi) */}
         {prestasiLeaderboard.second.length > 0 && (
-          <div>
+          <div className="mb-3">
             <div className="flex items-center gap-2 mb-2 px-1">
               <span className="text-xs font-bold" style={{ color: "#C0C0C0" }}>
                 🥈 SILVER ({prestasiLeaderboard.second.length})
@@ -2002,18 +2006,63 @@ const renderCenterFinal = () => {
                 >
                   <div className="flex items-center gap-3">
                     <div
-                      className="w-10 h-10 rounded-full flex items-center justify-center shadow-sm flex-shrink-0"
+                      className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 shadow-md"
                       style={{ backgroundColor: "#C0C0C0" }}
                     >
-                      <span className="text-xl">🥈</span>
+                      <span className="text-2xl">🥈</span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h5
-                        className="text-sm font-bold truncate"
+                      <h4
+                        className="text-base font-bold truncate"
                         style={{ color: "#050505" }}
                       >
                         {participant.name}
-                      </h5>
+                      </h4>
+                      <p
+                        className="text-xs uppercase truncate"
+                        style={{ color: "#050505", opacity: 0.6 }}
+                      >
+                        {participant.dojo}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* 3rd Places - BRONZE */}
+        {prestasiLeaderboard.third.length > 0 && (
+          <div>
+            <div className="flex items-center gap-2 mb-2 px-1">
+              <span className="text-xs font-bold" style={{ color: "#CD7F32" }}>
+                🥉 BRONZE ({prestasiLeaderboard.third.length})
+              </span>
+            </div>
+            {prestasiLeaderboard.third.map((participant, index) => (
+              <div key={participant.id} className={index < prestasiLeaderboard.third.length - 1 ? "mb-2" : ""}>
+                <div
+                  className="p-3 rounded-lg border-2 shadow-sm"
+                  style={{
+                    backgroundColor: "rgba(205, 127, 50, 0.1)",
+                    borderColor: "#CD7F32",
+                  }}
+                >
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 shadow-md"
+                      style={{ backgroundColor: "#CD7F32" }}
+                    >
+                      <span className="text-2xl">🥉</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4
+                        className="text-base font-bold mt-1 truncate"
+                        style={{ color: "#050505" }}
+                      >
+                        {participant.name}
+                      </h4>
                       <p
                         className="text-xs uppercase truncate"
                         style={{ color: "#050505", opacity: 0.6 }}
