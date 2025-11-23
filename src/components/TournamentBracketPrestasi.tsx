@@ -1318,51 +1318,41 @@ const getRoundName = (round: number, totalRounds: number): string => {
   
   // ⭐ PRIORITAS 1: Gunakan stageName dari backend jika ada
   if (roundMatches.length > 0) {
-    // Cari match pertama yang punya stageName
-    const matchWithStageName = roundMatches.find(m => (m as any).stageName);
+    const matchWithStageName = roundMatches.find(m => m.stageName);
     
-    if (matchWithStageName && (matchWithStageName as any).stageName) {
-      const stageName = (matchWithStageName as any).stageName;
+    if (matchWithStageName && matchWithStageName.stageName) {
+      const stageName = matchWithStageName.stageName;
       
       switch (stageName) {
-        case 'ROUND_OF_64':
-          return 'Round of 64';
-        case 'ROUND_OF_32':
-          return 'Round of 32';
-        case 'ROUND_OF_16':
-          return 'Round of 16';
-        case 'QUARTER_FINAL':
-          return 'Quarter Final';
-        case 'SEMI_FINAL':
-          return 'Semi Final';
-        case 'FINAL':
-          return 'Final';
+        case 'ROUND_OF_64': return 'Round of 64';
+        case 'ROUND_OF_32': return 'Round of 32';
+        case 'ROUND_OF_16': return 'Round of 16';
+        case 'QUARTER_FINAL': return 'Quarter Final';
+        case 'SEMI_FINAL': return 'Semi Final';
+        case 'FINAL': return 'Final';
         default:
-          // Kalau format tidak dikenali, tampilkan as-is dengan formatting
           return stageName.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase());
       }
     }
   }
   
-  // ⭐ PRIORITAS 2: Fallback - Hitung berdasarkan match count
-  // (untuk backward compatibility jika stageName tidak ada)
+  // ⭐⭐⭐ PRIORITAS 2: HARDCODE untuk 3 peserta ⭐⭐⭐
+  if (approvedParticipants.length === 3) {
+    if (round === 1) return "Semi Final";
+    if (round === 2) return "Final";
+  }
+  
+  // ⭐ PRIORITAS 3: Fallback - Hitung berdasarkan match count
   const matchCount = roundMatches.length;
 
   switch (matchCount) {
-    case 32:
-      return "Round of 64";
-    case 16:
-      return "Round of 32";
-    case 8:
-      return "Round of 16";
-    case 4:
-      return "Quarter Final";
-    case 2:
-      return "Semi Final";
-    case 1:
-      return "Final";
+    case 32: return "Round of 64";
+    case 16: return "Round of 32";
+    case 8: return "Round of 16";
+    case 4: return "Quarter Final";
+    case 2: return "Semi Final";
+    case 1: return "Final";
     default:
-      // Fallback untuk edge cases
       if (matchCount > 32) return "Round of 64";
       if (matchCount > 16) return "Round of 32";
       if (matchCount > 8) return "Round of 16";
