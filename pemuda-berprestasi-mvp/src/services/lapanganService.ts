@@ -428,14 +428,13 @@ export class LapanganService {
       true // save to database
     );
 
-    // Bulk update database
+    // Bulk update database using BracketService.updateMatch
     if (result.assignments.length > 0) {
-      await prisma.$transaction(
-        result.assignments.map(async (assignment: any) => {
-          // Retrieve tanggal_pertandingan from assignment or calculate it if needed
+      const updatePromises = result.assignments.map(async (assignment: any) => {
+          // Retrieve tanggal_pertandingan from lapanganData
           const matchDate = lapanganData.tanggal; // Assuming lapanganData.tanggal is the correct date for this lapangan
-
-          await BracketService.updateMatch(
+          
+          return BracketService.updateMatch(
             assignment.id_match,
             null, // winnerId
             null, // scoreA
@@ -446,9 +445,8 @@ export class LapanganService {
             id_lapangan, // id_lapangan
             hari // hari
           );
-        })
-      );
-
+      });
+      await Promise.all(updatePromises);
       console.log(`✅ Successfully updated ${result.assignments.length} matches`);
     }
 
