@@ -781,45 +781,61 @@ const JadwalPertandingan: React.FC = () => {
     }
   };
 
-  /**
-   * Auto-generate dan save nomor partai
-   */
 /**
- * 🆕 Auto-generate dengan auto-reset dan auto-update antrian
+ * 🆕 Auto-generate dengan auto-reset, auto-update antrian, dan AUTO-ASSIGN HARI
  */
 const handleAutoGenerateNumbers = async () => {
-  if (!selectedAutoGenLapangan) return;
+  if (!selectedAutoGenLapangan || !selectedAutoGenHari) return;
 
   setGeneratingNumbers(true);
   setErrorMessage("");
   setSuccessMessage("");
 
   try {
+    // ✅ STEP 0: DAPATKAN NOMOR HARI (1-based index)
+    const selectedHariIndex = hariList.findIndex(
+      (h) => h.tanggal === selectedAutoGenHari
+    );
+    const hariNumber = selectedHariIndex + 1; // Convert 0-based to 1-based
+
+    console.log(`📅 Selected Hari: ${hariNumber} (${selectedAutoGenHari})`);
+
     // ✅ STEP 1: RESET NOMOR PARTAI (supaya mulai dari 1 lagi)
-    console.log(`🗑️ Resetting numbers for lapangan ${selectedAutoGenLapangan}...`);
-    
+    console.log(
+      `🗑️ Resetting numbers for lapangan ${selectedAutoGenLapangan}...`
+    );
+
     const resetRes = await fetch(
-      `${import.meta.env.VITE_API_URL}/lapangan/${selectedAutoGenLapangan}/reset-numbers`,
+      `${
+        import.meta.env.VITE_API_URL
+      }/lapangan/${selectedAutoGenLapangan}/reset-numbers`,
       { method: "DELETE" }
     );
-    
+
     const resetData = await resetRes.json();
-    
+
     if (!resetData.success) {
-      console.warn('⚠️ Reset failed or no numbers to reset, continuing anyway...');
+      console.warn(
+        "⚠️ Reset failed or no numbers to reset, continuing anyway..."
+      );
     } else {
-      console.log('✅ Numbers reset successfully');
+      console.log("✅ Numbers reset successfully");
     }
 
-    // ✅ STEP 2: GENERATE NOMOR PARTAI BARU (mulai dari 1)
-    console.log(`🎯 Generating new numbers starting from 1...`);
+    // ✅ STEP 2: GENERATE NOMOR PARTAI BARU dengan HARI (mulai dari 1)
+    console.log(`🎯 Generating new numbers for Hari ${hariNumber}...`);
 
     const genRes = await fetch(
-      `${import.meta.env.VITE_API_URL}/lapangan/${selectedAutoGenLapangan}/auto-generate-numbers`,
+      `${
+        import.meta.env.VITE_API_URL
+      }/lapangan/${selectedAutoGenLapangan}/auto-generate-numbers`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ starting_number: 1 }),
+        body: JSON.stringify({
+          starting_number: 1,
+          hari: hariNumber, // ⭐ KIRIM HARI KE BACKEND
+        }),
       }
     );
 
@@ -829,10 +845,13 @@ const handleAutoGenerateNumbers = async () => {
       throw new Error(genData.message || "Gagal generate nomor partai");
     }
 
-    console.log('✅ Numbers generated successfully:', genData.range);
+    console.log("✅ Numbers generated successfully:", genData.range);
+    console.log(`✅ Hari assigned: ${hariNumber}`);
 
     // ✅ STEP 3: AUTO-UPDATE ANTRIAN (bertanding = 1, persiapan = 2, pemanasan = 3)
-    console.log(`🔄 Auto-updating antrian for lapangan ${selectedAutoGenLapangan}...`);
+    console.log(
+      `🔄 Auto-updating antrian for lapangan ${selectedAutoGenLapangan}...`
+    );
 
     const antrianRes = await fetch(
       `${import.meta.env.VITE_API_URL}/lapangan/antrian`,
@@ -851,17 +870,27 @@ const handleAutoGenerateNumbers = async () => {
     const antrianData = await antrianRes.json();
 
     if (!antrianData.success) {
-      console.warn('⚠️ Failed to update antrian, but generation was successful');
+      console.warn(
+        "⚠️ Failed to update antrian, but generation was successful"
+      );
     } else {
-      console.log('✅ Antrian updated successfully');
+      console.log("✅ Antrian updated successfully");
     }
 
     // ✅ STEP 4: SUCCESS MESSAGE
     setSuccessMessage(
-      `✅ Berhasil generate nomor partai (${genData.range}) dan set antrian!\n` +
-      `🟢 Bertanding: #1\n` +
-      `🟠 Persiapan: #2\n` +
-      `🟡 Pemanasan: #3`
+      `✅ Berhasil generate nomor partai (${genData.range}) untuk Hari ke-${hariNumber}!\n` +
+        `📅 Hari: ${new Date(selectedAutoGenHari).toLocaleDateString(
+          "id-ID",
+          {
+            weekday: "long",
+            day: "numeric",
+            month: "long",
+          }
+        )}\n` +
+        `🟢 Bertanding: #1\n` +
+        `🟠 Persiapan: #2\n` +
+        `🟡 Pemanasan: #3`
     );
 
     // Close modal
@@ -872,16 +901,15 @@ const handleAutoGenerateNumbers = async () => {
 
     // ✅ STEP 5: REFRESH DATA
     await fetchHariLapangan();
-    console.log('✅ All done! Data refreshed.');
+    console.log("✅ All done! Data refreshed.");
 
     // Clear success message after 7 seconds
     setTimeout(() => setSuccessMessage(""), 7000);
-
   } catch (err: any) {
     console.error("❌ Error in auto-generate:", err);
     setErrorMessage(
-      err.message || 
-      "Gagal generate nomor partai. Pastikan semua bracket sudah dibuat."
+      err.message ||
+        "Gagal generate nomor partai. Pastikan semua bracket sudah dibuat."
     );
     setTimeout(() => setErrorMessage(""), 5000);
   } finally {
