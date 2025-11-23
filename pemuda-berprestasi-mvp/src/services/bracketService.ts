@@ -1923,7 +1923,8 @@ static async updateMatch(
   tanggalPertandingan?: Date | null,
     nomorAntrian?: number | null,
     nomorLapangan?: string | null,
-    id_lapangan?: number | null
+    id_lapangan?: number | null,
+    hari?: number | null
   ): Promise<Match> {
     try {
       console.log(`\n🔄 === UPDATE MATCH ${matchId} ===`);
@@ -2010,7 +2011,7 @@ static async updateMatch(
             if (tanggalPertandingan) {
               const date = new Date(tanggalPertandingan);
               const dayOfMonth = date.getDate();
-              let hari = null;
+              let hari: number | null = null;
               switch (dayOfMonth) {
                 case 22:
                   hari = 1;
