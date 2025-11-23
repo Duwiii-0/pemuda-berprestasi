@@ -292,7 +292,7 @@ async previewMatchNumbers(req: Request, res: Response) {
 async autoGenerateMatchNumbers(req: Request, res: Response) {
   try {
     const { id_lapangan } = req.params;
-    const { starting_number } = req.body;
+    const { starting_number, hari } = req.body; // Extract hari here
 
     if (!id_lapangan) {
       return res.status(400).json({
@@ -302,6 +302,7 @@ async autoGenerateMatchNumbers(req: Request, res: Response) {
     }
 
     const startNum = starting_number ? parseInt(starting_number) : 1;
+    const parsedHari = hari ? parseInt(hari) : undefined; // Parse hari
 
     if (startNum < 1) {
       return res.status(400).json({
@@ -312,7 +313,8 @@ async autoGenerateMatchNumbers(req: Request, res: Response) {
 
     const result = await lapanganService.autoGenerateMatchNumbers(
       parseInt(id_lapangan),
-      startNum
+      startNum,
+      parsedHari // Pass hari to the service
     );
 
     return res.status(200).json(result);
