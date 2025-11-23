@@ -2972,13 +2972,11 @@ approvedParticipants.length === 3 ? (
     {/* ========== CONNECTOR LINE dari Semi ke Final ========== */}
     <div
       style={{
-        display: "flex",
-        alignItems: "center",
-        alignSelf: "flex-start", // ⭐ Align ke atas
-        marginTop: `${55 + CARD_HEIGHT / 2}px`, // ⭐ Header (55px) + setengah card
-        marginLeft: "40px", // ⭐ geser garis 40px ke kanan
+        position: "absolute",
+        top: `${55 + CARD_HEIGHT / 2}px`,
+        left: "calc(50% - 200px)",   // titik start garis
+        width: "400px",             // jarak Semi → Final
         height: "2px",
-        width: `${CENTER_GAP + 140}px`, // ⭐ tambahin panjang biar makin nempel
       }}
     >
 <svg
