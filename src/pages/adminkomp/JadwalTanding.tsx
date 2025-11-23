@@ -1865,35 +1865,39 @@ const handleResetAndUpdateAntrian = async (
                               </div>
                             </div>
 
-                            {/* INFO KELAS TERPILIH */}
-                            {lap.kelasDipilih.length > 0 && (
-                              <div
-                                className="mt-3 p-2 rounded-md"
-                                style={{
-                                  backgroundColor: "rgba(153,13,53,0.05)",
-                                }}
-                              >
-                                <p
-                                  className="text-xs font-medium mb-1"
-                                  style={{ color: "#990D35" }}
-                                >
-                                  Kelas: {lap.kelasDipilih.length}
-                                </p>
-                                <p
-                                  className="text-xs"
-                                  style={{ color: "#050505", opacity: 0.7 }}
-                                >
-                                  Peserta:{" "}
-                                  {lap.kelasDipilih.reduce(
-                                    (total, kelasId) =>
-                                      total +
-                                      (approvedPesertaByKelas[kelasId]
-                                        ?.length || 0),
-                                    0
-                                  )}
-                                </p>
-                              </div>
-                              {/* 🆕 BUTTON RESET DENGAN AUTO-UPDATE ANTRIAN */}
+{/* INFO KELAS TERPILIH */}
+{lap.kelasDipilih.length > 0 && (
+  <div className="mt-3 space-y-2">
+    {/* Info Card */}
+    <div
+      className="p-3 rounded-lg"
+      style={{
+        backgroundColor: "rgba(153,13,53,0.05)",
+      }}
+    >
+      <div className="flex justify-between items-center">
+        <div>
+          <p
+            className="text-xs font-medium mb-1"
+            style={{ color: "#990D35" }}
+          >
+            Kelas: {lap.kelasDipilih.length}
+          </p>
+          <p
+            className="text-xs"
+            style={{ color: "#050505", opacity: 0.7 }}
+          >
+            Peserta:{" "}
+            {lap.kelasDipilih.reduce(
+              (total, kelasId) =>
+                total +
+                (approvedPesertaByKelas[kelasId]?.length || 0),
+              0
+            )}
+          </p>
+        </div>
+
+        {/* 🆕 BUTTON RESET */}
         <button
           onClick={() =>
             handleResetAndUpdateAntrian(
@@ -1911,7 +1915,10 @@ const handleResetAndUpdateAntrian = async (
           <X size={14} />
           Reset Nomor
         </button>
-                            )}
+      </div>
+    </div>
+  </div>
+)}
                           </div>
                         ))}
                       </div>
