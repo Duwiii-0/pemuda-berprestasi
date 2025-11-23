@@ -1332,75 +1332,77 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
     return matches.filter((match) => match.ronde === round);
   };
 
-  const generatePrestasiLeaderboard = () => {
-    if (matches.length === 0) return null;
+const generatePrestasiLeaderboard = () => {
+  if (matches.length === 0) return null;
 
-    const leaderboard: {
-      first: { name: string; dojo: string; id: number } | null;
-      second: { name: string; dojo: string; id: number } | null;
-      third: { name: string; dojo: string; id: number }[];
-    } = {
-      first: null,
-      second: null,
-      third: [],
-    };
+  const leaderboard: {
+    first: { name: string; dojo: string; id: number } | null;
+    second: { name: string; dojo: string; id: number }[];
+  } = {
+    first: null,
+    second: [],
+  };
 
-    const totalRounds = getTotalRounds();
+  const totalRounds = getTotalRounds();
+  const processedSilver = new Set<number>();
 
-    const finalMatch = matches.find((m) => m.ronde === totalRounds);
+  // ═══════════════════════════════════════════════════════════════
+  // FINAL: Menang = GOLD, Kalah = SILVER
+  // ═══════════════════════════════════════════════════════════════
+  const finalMatch = matches.find((m) => m.ronde === totalRounds);
 
-    if (finalMatch && (finalMatch.skor_a > 0 || finalMatch.skor_b > 0)) {
-      const winner =
-        finalMatch.skor_a > finalMatch.skor_b
-          ? finalMatch.peserta_a
-          : finalMatch.peserta_b;
+  if (finalMatch && (finalMatch.skor_a > 0 || finalMatch.skor_b > 0)) {
+    const winner = finalMatch.skor_a > finalMatch.skor_b
+      ? finalMatch.peserta_a
+      : finalMatch.peserta_b;
 
-      const loser =
-        finalMatch.skor_a > finalMatch.skor_b
-          ? finalMatch.peserta_b
-          : finalMatch.peserta_a;
+    const loser = finalMatch.skor_a > finalMatch.skor_b
+      ? finalMatch.peserta_b
+      : finalMatch.peserta_a;
 
-      if (winner) {
-        leaderboard.first = {
-          name: getParticipantName(winner),
-          dojo: getDojoName(winner),
-          id: winner.id_peserta_kompetisi,
-        };
-      }
+    // Winner Final → GOLD
+    if (winner) {
+      leaderboard.first = {
+        name: getParticipantName(winner),
+        dojo: getDojoName(winner),
+        id: winner.id_peserta_kompetisi,
+      };
+    }
 
-      if (loser) {
-        leaderboard.second = {
+    // Loser Final → SILVER
+    if (loser) {
+      leaderboard.second.push({
+        name: getParticipantName(loser),
+        dojo: getDojoName(loser),
+        id: loser.id_peserta_kompetisi,
+      });
+      processedSilver.add(loser.id_peserta_kompetisi);
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // SEMI-FINAL: Kalah = SILVER (bukan bronze!)
+  // ═══════════════════════════════════════════════════════════════
+  const semiRound = totalRounds - 1;
+  const semiMatches = matches.filter((m) => m.ronde === semiRound);
+
+  semiMatches.forEach((match) => {
+    if (match.skor_a > 0 || match.skor_b > 0) {
+      const loser = match.skor_a > match.skor_b ? match.peserta_b : match.peserta_a;
+
+      if (loser && !processedSilver.has(loser.id_peserta_kompetisi)) {
+        leaderboard.second.push({
           name: getParticipantName(loser),
           dojo: getDojoName(loser),
           id: loser.id_peserta_kompetisi,
-        };
+        });
+        processedSilver.add(loser.id_peserta_kompetisi);
       }
     }
+  });
 
-    const semiRound = totalRounds - 1;
-    const semiMatches = matches.filter((m) => m.ronde === semiRound);
-
-    semiMatches.forEach((match) => {
-      if (match.skor_a > 0 || match.skor_b > 0) {
-        const loser =
-          match.skor_a > match.skor_b ? match.peserta_b : match.peserta_a;
-
-        if (loser) {
-          const participant = {
-            name: getParticipantName(loser),
-            dojo: getDojoName(loser),
-            id: loser.id_peserta_kompetisi,
-          };
-
-          if (!leaderboard.third.find((p) => p.id === participant.id)) {
-            leaderboard.third.push(participant);
-          }
-        }
-      }
-    });
-
-    return leaderboard;
-  };
+  return leaderboard;
+};
 
   const renderMatchCard = (
     match: Match,
@@ -1987,56 +1989,6 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                     </div>
                   </div>
                 )}
-
-                {/* 3rd Places - Compact */}
-                {prestasiLeaderboard.third.map((participant, index) => (
-                  <div
-                    key={participant.id}
-                    className={
-                      index < prestasiLeaderboard.third.length - 1 ? "mb-2" : ""
-                    }
-                  >
-                    <div
-                      className="p-3 rounded-lg border-2 shadow-sm"
-                      style={{
-                        backgroundColor: "rgba(205, 127, 50, 0.1)",
-                        borderColor: "#CD7F32",
-                      }}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div
-                          className="w-10 h-10 rounded-full flex items-center justify-center shadow-sm flex-shrink-0"
-                          style={{ backgroundColor: "#CD7F32" }}
-                        >
-                          <span className="text-xl">🥉</span>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <span
-                            className="text-xs font-bold px-2 py-0.5 rounded-full"
-                            style={{
-                              backgroundColor: "#CD7F32",
-                              color: "white",
-                            }}
-                          >
-                            3RD
-                          </span>
-                          <h5
-                            className="text-sm font-bold mt-1 truncate"
-                            style={{ color: "#050505" }}
-                          >
-                            {participant.name}
-                          </h5>
-                          <p
-                            className="text-xs uppercase truncate"
-                            style={{ color: "#050505", opacity: 0.6 }}
-                          >
-                            {participant.dojo}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
 
                 {/* Empty State */}
                 {!prestasiLeaderboard.first &&

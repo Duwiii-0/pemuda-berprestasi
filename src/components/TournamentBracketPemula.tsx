@@ -1048,237 +1048,94 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
     }
   };
 
-  const generateLeaderboard = () => {
-    if (matches.length === 0) return null;
+const generateLeaderboard = () => {
+  if (matches.length === 0) return null;
 
-    const leaderboard: {
-      gold: { name: string; dojo: string; id: number }[];
-      silver: { name: string; dojo: string; id: number }[];
-      bronze: { name: string; dojo: string; id: number }[];
-    } = {
-      gold: [],
-      silver: [],
-      bronze: [],
-    };
-
-    const processedGold = new Set<number>();
-    const processedSilver = new Set<number>();
-    const processedBronze = new Set<number>();
-
-    const round1Matches = matches.filter((m) => m.ronde === 1);
-    const round2Matches = matches.filter((m) => m.ronde === 2);
-    const hasAdditionalMatch = round2Matches.length > 0;
-
-    if (!hasAdditionalMatch) {
-      // ═══════════════════════════════════════════════════════════════
-      // SCENARIO GENAP
-      // ═══════════════════════════════════════════════════════════════
-      round1Matches.forEach((match) => {
-        const hasScore = match.skor_a > 0 || match.skor_b > 0;
-
-        if (hasScore && match.peserta_a && match.peserta_b) {
-          const winner =
-            match.skor_a > match.skor_b ? match.peserta_a : match.peserta_b;
-          const loser =
-            match.skor_a > match.skor_b ? match.peserta_b : match.peserta_a;
-
-          const winnerId = winner.id_peserta_kompetisi;
-          const loserId = loser.id_peserta_kompetisi;
-
-          if (!processedGold.has(winnerId)) {
-            leaderboard.gold.push({
-              name: getParticipantName(winner),
-              dojo: getDojoName(winner),
-              id: winnerId,
-            });
-            processedGold.add(winnerId);
-          }
-
-          if (!processedSilver.has(loserId)) {
-            leaderboard.silver.push({
-              name: getParticipantName(loser),
-              dojo: getDojoName(loser),
-              id: loserId,
-            });
-            processedSilver.add(loserId);
-          }
-        }
-      });
-    } else {
-      // ═══════════════════════════════════════════════════════════════
-      // SCENARIO GANJIL - Ada Additional Match
-      // ═══════════════════════════════════════════════════════════════
-
-      const additionalMatch = round2Matches[0];
-
-      // 🔍 IDENTIFIKASI LAST NORMAL MATCH dengan BENAR
-      // Last match adalah match yang CONNECT ke Additional Match
-      // Bukan cuma match terakhir dalam array!
-
-      const byeMatch = round1Matches.find((m) => m.peserta_a && !m.peserta_b);
-
-      // Cari match yang winnernya masuk ke Additional Match sebagai peserta_a atau peserta_b
-      let lastNormalMatch: Match | null = null;
-
-      if (additionalMatch) {
-        // Cek siapa peserta di Additional Match yang BUKAN dari BYE
-        const byeWinnerId = byeMatch?.id_peserta_a;
-        const additionalParticipantIds = [
-          additionalMatch.id_peserta_a,
-          additionalMatch.id_peserta_b,
-        ].filter((id) => id !== byeWinnerId);
-
-        // Cari match Round 1 yang winnernya adalah salah satu peserta Additional
-        for (const match of round1Matches) {
-          if (match.id_match === byeMatch?.id_match) continue; // Skip BYE
-
-          const hasScore = match.skor_a > 0 || match.skor_b > 0;
-          if (!hasScore) continue;
-
-          const winnerId =
-            match.skor_a > match.skor_b
-              ? match.id_peserta_a
-              : match.id_peserta_b;
-
-          if (additionalParticipantIds.includes(winnerId)) {
-            lastNormalMatch = match;
-            break;
-          }
-        }
-      }
-
-      console.log(
-        "🔍 DEBUG: Last Normal Match:",
-        lastNormalMatch?.nomor_partai
-      );
-      console.log("🔍 DEBUG: BYE Match:", byeMatch?.nomor_partai);
-
-      // ═══════════════════════════════════════════════════════════════
-      // STEP 1: Process Additional Match DULU
-      // ═══════════════════════════════════════════════════════════════
-      if (
-        additionalMatch &&
-        (additionalMatch.skor_a > 0 || additionalMatch.skor_b > 0)
-      ) {
-        const winner =
-          additionalMatch.skor_a > additionalMatch.skor_b
-            ? additionalMatch.peserta_a
-            : additionalMatch.peserta_b;
-        const loser =
-          additionalMatch.skor_a > additionalMatch.skor_b
-            ? additionalMatch.peserta_b
-            : additionalMatch.peserta_a;
-
-        if (winner) {
-          const winnerId = winner.id_peserta_kompetisi;
-          leaderboard.gold.push({
-            name: getParticipantName(winner),
-            dojo: getDojoName(winner),
-            id: winnerId,
-          });
-          processedGold.add(winnerId);
-          console.log(
-            "✅ Additional Winner (GOLD):",
-            getParticipantName(winner)
-          );
-        }
-
-        if (loser) {
-          const loserId = loser.id_peserta_kompetisi;
-          leaderboard.silver.push({
-            name: getParticipantName(loser),
-            dojo: getDojoName(loser),
-            id: loserId,
-          });
-          processedSilver.add(loserId);
-          console.log(
-            "✅ Additional Loser (SILVER):",
-            getParticipantName(loser)
-          );
-        }
-      }
-
-      // ═══════════════════════════════════════════════════════════════
-      // STEP 2: Process Round 1 Matches
-      // ═══════════════════════════════════════════════════════════════
-      round1Matches.forEach((match) => {
-        const hasScore = match.skor_a > 0 || match.skor_b > 0;
-        const isLastMatch =
-          lastNormalMatch && match.id_match === lastNormalMatch.id_match;
-        const isByeMatch = byeMatch && match.id_match === byeMatch.id_match;
-
-        if (isByeMatch) {
-          console.log("⏭️  Skipping BYE Match:", match.nomor_partai);
-          return;
-        }
-
-        if (hasScore && match.peserta_a && match.peserta_b) {
-          const winner =
-            match.skor_a > match.skor_b ? match.peserta_a : match.peserta_b;
-          const loser =
-            match.skor_a > match.skor_b ? match.peserta_b : match.peserta_a;
-
-          const winnerId = winner.id_peserta_kompetisi;
-          const loserId = loser.id_peserta_kompetisi;
-
-          if (isLastMatch) {
-            // ═════════════════════════════════════════════════════════
-            // LAST NORMAL MATCH (yang kuning, connect ke Additional)
-            // ═════════════════════════════════════════════════════════
-            console.log("🟡 Last Normal Match:", match.nomor_partai);
-            console.log(
-              "   Winner:",
-              getParticipantName(winner),
-              "→ Goes to Additional"
-            );
-            console.log("   Loser:", getParticipantName(loser), "→ BRONZE");
-
-            // Loser → BRONZE
-            if (!processedBronze.has(loserId)) {
-              leaderboard.bronze.push({
-                name: getParticipantName(loser),
-                dojo: getDojoName(loser),
-                id: loserId,
-              });
-              processedBronze.add(loserId);
-            }
-
-            // Winner → Medal di-handle di Additional Match (STEP 1)
-          } else {
-            // ═════════════════════════════════════════════════════════
-            // NORMAL MATCHES (bukan last, bukan BYE)
-            // ═════════════════════════════════════════════════════════
-            console.log("🔵 Normal Match:", match.nomor_partai);
-            console.log("   Winner:", getParticipantName(winner), "→ GOLD");
-            console.log("   Loser:", getParticipantName(loser), "→ SILVER");
-
-            // Winner → GOLD
-            if (!processedGold.has(winnerId)) {
-              leaderboard.gold.push({
-                name: getParticipantName(winner),
-                dojo: getDojoName(winner),
-                id: winnerId,
-              });
-              processedGold.add(winnerId);
-            }
-
-            // Loser → SILVER
-            if (!processedSilver.has(loserId)) {
-              leaderboard.silver.push({
-                name: getParticipantName(loser),
-                dojo: getDojoName(loser),
-                id: loserId,
-              });
-              processedSilver.add(loserId);
-            }
-          }
-        }
-      });
-    }
-
-    console.log("📊 Final Leaderboard:", leaderboard);
-    return leaderboard;
+  const leaderboard: {
+    gold: { name: string; dojo: string; id: number }[];
+    silver: { name: string; dojo: string; id: number }[];
+  } = {
+    gold: [],
+    silver: [],
   };
+
+  const processedGold = new Set<number>();
+  const processedSilver = new Set<number>();
+
+  const round1Matches = matches.filter((m) => m.ronde === 1);
+  const round2Matches = matches.filter((m) => m.ronde === 2);
+  const hasAdditionalMatch = round2Matches.length > 0;
+
+  // ═══════════════════════════════════════════════════════════════
+  // PEMULA: Menang = GOLD, Kalah = SILVER (semua dapat medali)
+  // ═══════════════════════════════════════════════════════════════
+
+  // Process Additional Match first (jika ada)
+  if (hasAdditionalMatch) {
+    const additionalMatch = round2Matches[0];
+    if (additionalMatch && (additionalMatch.skor_a > 0 || additionalMatch.skor_b > 0)) {
+      const winner = additionalMatch.skor_a > additionalMatch.skor_b 
+        ? additionalMatch.peserta_a 
+        : additionalMatch.peserta_b;
+      const loser = additionalMatch.skor_a > additionalMatch.skor_b 
+        ? additionalMatch.peserta_b 
+        : additionalMatch.peserta_a;
+
+      if (winner && !processedGold.has(winner.id_peserta_kompetisi)) {
+        leaderboard.gold.push({
+          name: getParticipantName(winner),
+          dojo: getDojoName(winner),
+          id: winner.id_peserta_kompetisi,
+        });
+        processedGold.add(winner.id_peserta_kompetisi);
+      }
+
+      if (loser && !processedSilver.has(loser.id_peserta_kompetisi)) {
+        leaderboard.silver.push({
+          name: getParticipantName(loser),
+          dojo: getDojoName(loser),
+          id: loser.id_peserta_kompetisi,
+        });
+        processedSilver.add(loser.id_peserta_kompetisi);
+      }
+    }
+  }
+
+  // Process Round 1 Matches
+  round1Matches.forEach((match) => {
+    const hasScore = match.skor_a > 0 || match.skor_b > 0;
+
+    if (hasScore && match.peserta_a && match.peserta_b) {
+      const winner = match.skor_a > match.skor_b ? match.peserta_a : match.peserta_b;
+      const loser = match.skor_a > match.skor_b ? match.peserta_b : match.peserta_a;
+
+      const winnerId = winner.id_peserta_kompetisi;
+      const loserId = loser.id_peserta_kompetisi;
+
+      // Winner → GOLD (jika belum diproses)
+      if (!processedGold.has(winnerId) && !processedSilver.has(winnerId)) {
+        leaderboard.gold.push({
+          name: getParticipantName(winner),
+          dojo: getDojoName(winner),
+          id: winnerId,
+        });
+        processedGold.add(winnerId);
+      }
+
+      // Loser → SILVER (jika belum diproses)
+      if (!processedSilver.has(loserId) && !processedGold.has(loserId)) {
+        leaderboard.silver.push({
+          name: getParticipantName(loser),
+          dojo: getDojoName(loser),
+          id: loserId,
+        });
+        processedSilver.add(loserId);
+      }
+    }
+  });
+
+  return leaderboard;
+};
 
   const handleExportPDF = async () => {
     if (!kelasData || matches.length === 0) {
@@ -2653,65 +2510,6 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
                                 </div>
                               </div>
                             )}
-
-                            {/* BRONZE MEDALS */}
-                            {leaderboard &&
-                              leaderboard.bronze &&
-                              leaderboard.bronze.length > 0 && (
-                                <div>
-                                  <div className="flex items-center gap-2 mb-3 px-2">
-                                    <h4
-                                      className="font-bold text-base"
-                                      style={{ color: "#000" }}
-                                    >
-                                      BRONZE MEDALS ({leaderboard.bronze.length}
-                                      )
-                                    </h4>
-                                  </div>
-                                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-                                    {leaderboard.bronze.map(
-                                      (participant, idx) => (
-                                        <div
-                                          key={participant.id}
-                                          className="p-2 rounded border"
-                                          style={{
-                                            backgroundColor: "#FFF8F0",
-                                            borderColor: "#CD7F32",
-                                          }}
-                                        >
-                                          <div className="flex items-start gap-2">
-                                            <span
-                                              className="text-xs font-bold flex-shrink-0"
-                                              style={{ color: "#CD7F32" }}
-                                            >
-                                              {idx + 1}.
-                                            </span>
-                                            <div className="flex-1 min-w-0">
-                                              <p
-                                                className="font-bold text-xs leading-tight truncate"
-                                                style={{ color: "#000" }}
-                                                title={participant.name}
-                                              >
-                                                {participant.name}
-                                              </p>
-                                              <p
-                                                className="text-xs leading-tight truncate"
-                                                style={{
-                                                  color: "#DC143C",
-                                                  opacity: 0.7,
-                                                }}
-                                                title={participant.dojo}
-                                              >
-                                                {participant.dojo}
-                                              </p>
-                                            </div>
-                                          </div>
-                                        </div>
-                                      )
-                                    )}
-                                  </div>
-                                </div>
-                              )}
 
                             {/* Empty State */}
                             {leaderboard && leaderboard.gold.length === 0 && (
