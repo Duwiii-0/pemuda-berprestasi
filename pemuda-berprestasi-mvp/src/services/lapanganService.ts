@@ -411,9 +411,10 @@ export class LapanganService {
   /**
    * 3️⃣ Auto-Generate Match Numbers (dengan save)
    */
-  async autoGenerateMatchNumbers(id_lapangan: number, starting_number: number = 1) {
+  async autoGenerateMatchNumbers(id_lapangan: number, starting_number: number = 1, hari?: number) {
     console.log(`\n🎯 Auto-generating match numbers for lapangan ${id_lapangan}`);
     console.log(`   Starting number: ${starting_number}`);
+    if (hari) console.log(`   Hari: ${hari}`);
 
     const fullData = await this.getLapanganFullData(id_lapangan);
     const lapanganData = fullData.data;
@@ -427,21 +428,25 @@ export class LapanganService {
       true // save to database
     );
 
-    // Bulk update database
+    // Bulk update database using BracketService.updateMatch
     if (result.assignments.length > 0) {
-      await prisma.$transaction(
-        result.assignments.map((assignment:any) =>
-          prisma.tb_match.update({
-            where: { id_match: assignment.id_match },
-            data: {
-              nomor_antrian: assignment.nomor_antrian,
-              nomor_lapangan: assignment.nomor_lapangan,
-              nomor_partai: assignment.nomor_partai
-            }
-          })
-        )
-      );
-
+      const updatePromises = result.assignments.map(async (assignment: any) => {
+          // Retrieve tanggal_pertandingan from lapanganData
+          const matchDate = lapanganData.tanggal; // Assuming lapanganData.tanggal is the correct date for this lapangan
+          
+          return BracketService.updateMatch(
+            assignment.id_match,
+            null, // winnerId
+            null, // scoreA
+            null, // scoreB
+            matchDate, // tanggalPertandingan
+            assignment.nomor_antrian,
+            assignment.nomor_lapangan,
+            id_lapangan, // id_lapangan
+            hari // hari
+          );
+      });
+      await Promise.all(updatePromises);
       console.log(`✅ Successfully updated ${result.assignments.length} matches`);
     }
 

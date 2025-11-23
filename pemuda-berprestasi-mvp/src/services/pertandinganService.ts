@@ -2,9 +2,14 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-export const getAtletMatchInfo = async (id_kompetisi: number, hari?: number) => { // NEW: Add hari parameter
+export const getAtletMatchInfo = async (
+  id_kompetisi: number,
+  hari?: number
+) => {
+  // NEW: Add hari parameter
   try {
-    let matchWhereClause: any = { // NEW: Build where clause dynamically
+    let matchWhereClause: any = {
+      // NEW: Build where clause dynamically
       bagan: {
         id_kompetisi: id_kompetisi,
       },
@@ -23,7 +28,8 @@ export const getAtletMatchInfo = async (id_kompetisi: number, hari?: number) => 
       },
     };
 
-    if (hari !== undefined) { // NEW: Add hari filter if provided
+    if (hari !== undefined) {
+      // NEW: Add hari filter if provided
       matchWhereClause.hari = hari;
     }
 

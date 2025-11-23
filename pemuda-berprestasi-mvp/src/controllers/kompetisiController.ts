@@ -1127,7 +1127,8 @@ static async updateMatch(req: Request, res: Response) {
       tanggalPertandingan, 
       nomorAntrian,
       nomorLapangan,
-      nomorPartai
+      nomorPartai,
+      id_lapangan
     } = req.body;
 
     const kompetisiId = parseInt(id);
@@ -1251,7 +1252,8 @@ static async updateMatch(req: Request, res: Response) {
         scoreBInt,
         parsedTanggal,
         parsedAntrian,
-        parsedLapangan
+        parsedLapangan,
+        id_lapangan,
       );
 
       return sendSuccess(res, updatedMatch, 'Hasil pertandingan berhasil diupdate');
@@ -1264,7 +1266,8 @@ static async updateMatch(req: Request, res: Response) {
         null,              // No scoreB
         parsedTanggal,
         parsedAntrian,
-        parsedLapangan
+        parsedLapangan,
+        id_lapangan,
       );
 
       return sendSuccess(res, updatedMatch, 'Jadwal pertandingan berhasil diupdate');

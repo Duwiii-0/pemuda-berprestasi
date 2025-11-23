@@ -84,37 +84,42 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
     return parts.length > 0 ? parts.join(" - ") : "Kelas Tidak Lengkap";
   };
 
-useEffect(() => {
-  if (!idKompetisi) return;
-  fetchLiveData();
-
-  const interval = setInterval(() => {
+  useEffect(() => {
+    if (!idKompetisi) return;
     fetchLiveData();
-    // ⭐ Force refresh match data setiap interval
-    if (selectedHari && hariList.length > 0) {
-      const selectedDayIndex = hariList.findIndex(hari => hari.tanggal === selectedHari);
-      const selectedDayNumber = selectedDayIndex >= 0 ? selectedDayIndex + 1 : undefined;
-      if (selectedDayNumber !== undefined) {
-        fetchMatchData(selectedDayNumber, true);
+
+    const interval = setInterval(() => {
+      fetchLiveData();
+      // ⭐ Force refresh match data setiap interval
+      if (selectedHari && hariList.length > 0) {
+        const selectedDayIndex = hariList.findIndex(
+          (hari) => hari.tanggal === selectedHari
+        );
+        const selectedDayNumber =
+          selectedDayIndex >= 0 ? selectedDayIndex + 1 : undefined;
+        if (selectedDayNumber !== undefined) {
+          fetchMatchData(selectedDayNumber, true);
+        }
       }
-    }
-  }, 10000);
-  
-  return () => clearInterval(interval);
-}, [idKompetisi, selectedHari, hariList]);
+    }, 10000);
+
+    return () => clearInterval(interval);
+  }, [idKompetisi, selectedHari, hariList]);
 
   // NEW useEffect for fetching match data based on selectedHari
-useEffect(() => {
-  if (idKompetisi && selectedHari && hariList.length > 0) {
-    const selectedDayIndex = hariList.findIndex(hari => hari.tanggal === selectedHari);
-    const selectedDayNumber = selectedDayIndex >= 0 ? selectedDayIndex + 1 : undefined;
+  useEffect(() => {
+    if (idKompetisi && selectedHari && hariList.length > 0) {
+      const selectedDayIndex = hariList.findIndex(
+        (hari) => hari.tanggal === selectedHari
+      );
+      const selectedDayNumber =
+        selectedDayIndex >= 0 ? selectedDayIndex + 1 : undefined;
 
-    if (selectedDayNumber !== undefined) {
-      fetchMatchData(selectedDayNumber, true); // ⭐ Force refresh on mount
+      if (selectedDayNumber !== undefined) {
+        fetchMatchData(selectedDayNumber, true); // ⭐ Force refresh on mount
+      }
     }
-  }
-}, [idKompetisi, selectedHari, hariList]);
-
+  }, [idKompetisi, selectedHari, hariList]);
 
   const fetchLiveData = async () => {
     if (!idKompetisi) return;
@@ -154,7 +159,8 @@ useEffect(() => {
 
         if (!selectedHari && hariData.length > 0) {
           // Default to the second day if available and hariData has at least two days
-          const defaultDay = hariData.length > 1 ? hariData[1].tanggal : hariData[0].tanggal;
+          const defaultDay =
+            hariData.length > 1 ? hariData[1].tanggal : hariData[0].tanggal;
           setSelectedHari(defaultDay);
         }
       }
@@ -166,35 +172,38 @@ useEffect(() => {
     }
   };
 
-const fetchMatchData = async (hari?: number, forceRefresh = false) => {
-  if (!idKompetisi) return;
-  try {
-    const timestamp = forceRefresh ? `&_t=${Date.now()}` : '';
-    const url = hari ? 
-      `/api/pertandingan/kompetisi/${idKompetisi}?hari=${hari}${timestamp}` :
-      `/api/pertandingan/kompetisi/${idKompetisi}${timestamp}`;
-    
-    console.log('🔍 Fetching match data from:', url);
-    
-    const res = await fetch(url, {
-      cache: 'no-cache', // ⭐ Prevent caching
-      headers: {
-        'Cache-Control': 'no-cache',
-        'Pragma': 'no-cache'
+  const fetchMatchData = async (hari?: number, forceRefresh = false) => {
+    if (!idKompetisi) return;
+    try {
+      const timestamp = forceRefresh ? `&_t=${Date.now()}` : "";
+      const url = hari
+        ? `/api/pertandingan/kompetisi/${idKompetisi}?hari=${hari}${timestamp}`
+        : `/api/pertandingan/kompetisi/${idKompetisi}${timestamp}`;
+
+      console.log("🔍 Fetching match data from:", url);
+
+      const res = await fetch(url, {
+        cache: "no-cache", // ⭐ Prevent caching
+        headers: {
+          "Cache-Control": "no-cache",
+          Pragma: "no-cache",
+        },
+      });
+      const data = await res.json();
+
+      console.log("📊 Match data received:", data);
+      console.log(
+        "📋 Lapangan A matches:",
+        data.data?.filter((m) => m.nomor_lapangan === "A")
+      );
+
+      if (data.success) {
+        setMatchData(data.data);
       }
-    });
-    const data = await res.json();
-    
-    console.log('📊 Match data received:', data);
-    console.log('📋 Lapangan A matches:', data.data?.filter(m => m.nomor_lapangan === 'A'));
-    
-    if (data.success) {
-      setMatchData(data.data);
+    } catch (error) {
+      console.error("Error fetching match data:", error);
     }
-  } catch (error) {
-    console.error("Error fetching match data:", error);
-  }
-};
+  };
 
   const currentHari = hariList.find((h) => h.tanggal === selectedHari);
 

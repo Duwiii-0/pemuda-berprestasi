@@ -25,6 +25,8 @@ export interface Participant {
     nomorPartai?: string | null;  
     nomorAntrian?: number | null;
     nomorLapangan?: string | null;
+    id_lapangan?: number | null;
+    hari?: number | null;
     stageName?: string; // 'ROUND_1', 'QUARTER_FINAL', 'SEMI_FINAL', 'FINAL'
     bracketParticipantCount?: number; // Total participants in this bracket
     kelasKejuaraanId?: number; // For grouping
@@ -1765,6 +1767,8 @@ static async getBracket(kompetisiId: number, kelasKejuaraanId: number): Promise<
         nomorPartai: match.nomor_partai,
         nomorAntrian: match.nomor_antrian,
         nomorLapangan: match.nomor_lapangan,
+        id_lapangan: match.id_lapangan,
+        hari: match.hari,
         
         // ⭐ ADD METADATA FOR SCHEDULING
         stageName: match.stage_name || undefined,
@@ -1917,102 +1921,131 @@ static async updateMatch(
   scoreA?: number | null,               
   scoreB?: number | null,               
   tanggalPertandingan?: Date | null,
-  nomorAntrian?: number | null,
-  nomorLapangan?: string | null
-): Promise<Match> {
-  try {
-    console.log(`\n🔄 === UPDATE MATCH ${matchId} ===`);
-    
-    // ⭐ STEP 0: Fetch ORIGINAL match data (before update)
-    const matchBeforeUpdate = await prisma.tb_match.findUnique({
-      where: { id_match: matchId },
-      include: {
-        peserta_a: {
-          include: {
-            atlet: {
-              include: {
-                dojang: true
-              }
-            },
-            anggota_tim: {
-              include: {
-                atlet: {
-                  include: {
-                    dojang: true
-                  }
-                }
-              }
-            }
-          }
-        },
-        peserta_b: {
-          include: {
-            atlet: {
-              include: {
-                dojang: true
-              }
-            },
-            anggota_tim: {
-              include: {
-                atlet: {
-                  include: {
-                    dojang: true
-                  }
-                }
-              }
-            }
-          }
-        },
-        venue: true
-      }
-    });
-
-    if (!matchBeforeUpdate) {
-      throw new Error('Match tidak ditemukan');
-    }
-
-    // ⭐ Calculate OLD winner (before update)
-    const oldWinnerId = matchBeforeUpdate.skor_a > matchBeforeUpdate.skor_b
-      ? matchBeforeUpdate.id_peserta_a
-      : matchBeforeUpdate.skor_b > matchBeforeUpdate.skor_a
-        ? matchBeforeUpdate.id_peserta_b
-        : null;
-
-    console.log(`   📊 Before update:`);
-    console.log(`      Scores: ${matchBeforeUpdate.skor_a} - ${matchBeforeUpdate.skor_b}`);
-    console.log(`      Old Winner: ${oldWinnerId || 'NONE'}`);
-
-    const updateData: any = {};
-    
-    // ⭐ MODE DETECTION
-    const isResultUpdate = scoreA !== undefined || scoreB !== undefined;
-    const isScheduleUpdate = nomorAntrian !== undefined || nomorLapangan !== undefined || tanggalPertandingan !== undefined;
-    
-    console.log(`   🎯 Update mode: ${isResultUpdate ? 'RESULT' : ''} ${isScheduleUpdate ? 'SCHEDULE' : ''}`);
-
-    // ⭐ RESULT UPDATE - Update scores
-    if (isResultUpdate) {
-      updateData.skor_a = scoreA ?? matchBeforeUpdate.skor_a;
-      updateData.skor_b = scoreB ?? matchBeforeUpdate.skor_b;
+    nomorAntrian?: number | null,
+    nomorLapangan?: string | null,
+    id_lapangan?: number | null,
+    hari?: number | null
+  ): Promise<Match> {
+    try {
+      console.log(`\n🔄 === UPDATE MATCH ${matchId} ===`);
       
-      console.log(`   📊 New scores: ${updateData.skor_a} - ${updateData.skor_b}`);
-    }
-
-    // ⭐ SCHEDULING UPDATE - Update queue fields
-    if (tanggalPertandingan !== undefined) {
-      updateData.tanggal_pertandingan = tanggalPertandingan;
-      console.log(`   📅 Updating tanggal: ${tanggalPertandingan}`);
-    }
-    
-    if (nomorAntrian !== undefined) {
-      updateData.nomor_antrian = nomorAntrian;
-      console.log(`   🔢 Updating nomor antrian: ${nomorAntrian}`);
-    }
-    
-    if (nomorLapangan !== undefined) {
-      updateData.nomor_lapangan = nomorLapangan;
-      console.log(`   🏟️ Updating nomor lapangan: ${nomorLapangan}`);
-    }
+      // ⭐ STEP 0: Fetch ORIGINAL match data (before update)
+      const matchBeforeUpdate = await prisma.tb_match.findUnique({
+        where: { id_match: matchId },
+        include: {
+          peserta_a: {
+            include: {
+              atlet: {
+                include: {
+                  dojang: true
+                }
+              },
+              anggota_tim: {
+                include: {
+                  atlet: {
+                    include: {
+                      dojang: true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          peserta_b: {
+            include: {
+              atlet: {
+                include: {
+                  dojang: true
+                }
+              },
+              anggota_tim: {
+                include: {
+                  atlet: {
+                    include: {
+                      dojang: true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          venue: true
+        }
+      });
+  
+      if (!matchBeforeUpdate) {
+        throw new Error('Match tidak ditemukan');
+      }
+  
+      // ⭐ Calculate OLD winner (before update)
+      const oldWinnerId = matchBeforeUpdate.skor_a > matchBeforeUpdate.skor_b
+        ? matchBeforeUpdate.id_peserta_a
+        : matchBeforeUpdate.skor_b > matchBeforeUpdate.skor_a
+          ? matchBeforeUpdate.id_peserta_b
+          : null;
+  
+      console.log(`   📊 Before update:`);
+      console.log(`      Scores: ${matchBeforeUpdate.skor_a} - ${matchBeforeUpdate.skor_b}`);
+      console.log(`      Old Winner: ${oldWinnerId || 'NONE'}`);
+  
+      const updateData: any = {};
+      
+      // ⭐ MODE DETECTION
+      const isResultUpdate = scoreA !== undefined || scoreB !== undefined;
+      const isScheduleUpdate = nomorAntrian !== undefined || nomorLapangan !== undefined || tanggalPertandingan !== undefined || id_lapangan !== undefined;
+      
+      console.log(`   🎯 Update mode: ${isResultUpdate ? 'RESULT' : ''} ${isScheduleUpdate ? 'SCHEDULE' : ''}`);
+  
+      // ⭐ RESULT UPDATE - Update scores
+      if (isResultUpdate) {
+        updateData.skor_a = scoreA ?? matchBeforeUpdate.skor_a;
+        updateData.skor_b = scoreB ?? matchBeforeUpdate.skor_b;
+        
+        console.log(`   📊 New scores: ${updateData.skor_a} - ${updateData.skor_b}`);
+      }
+          // ⭐ SCHEDULING UPDATE - Update queue fields
+          if (tanggalPertandingan !== undefined) {
+            updateData.tanggal_pertandingan = tanggalPertandingan;
+            console.log(`   📅 Updating tanggal: ${tanggalPertandingan}`);
+      
+            if (tanggalPertandingan) {
+              const date = new Date(tanggalPertandingan);
+              const dayOfMonth = date.getDate();
+              let hari: number | null = null;
+              switch (dayOfMonth) {
+                case 22:
+                  hari = 1;
+                  break;
+                case 23:
+                  hari = 2;
+                  break;
+                case 24:
+                  hari = 3;
+                  break;
+                case 25:
+                  hari = 4;
+                  break;
+              }
+              updateData.hari = hari;
+              console.log(`   📅 Updating hari: ${hari}`);
+            } else {
+              updateData.hari = null;
+            }
+          }      
+      if (nomorAntrian !== undefined) {
+        updateData.nomor_antrian = nomorAntrian;
+        console.log(`   🔢 Updating nomor antrian: ${nomorAntrian}`);
+      }
+      
+      if (nomorLapangan !== undefined) {
+        updateData.nomor_lapangan = nomorLapangan;
+        console.log(`   🏟️ Updating nomor lapangan: ${nomorLapangan}`);
+      }
+  
+      if (id_lapangan !== undefined) {
+        updateData.id_lapangan = id_lapangan;
+        console.log(`   🏟️ Updating id lapangan: ${id_lapangan}`);
+      }
     
     // ⭐ AUTO-GENERATE nomor_partai
     if (nomorAntrian !== null && nomorAntrian !== undefined && 
@@ -2158,7 +2191,9 @@ static async updateMatch(
       tanggalPertandingan: updatedMatch.tanggal_pertandingan,
       nomorPartai: updatedMatch.nomor_partai,
       nomorAntrian: updatedMatch.nomor_antrian,
-      nomorLapangan: updatedMatch.nomor_lapangan
+      nomorLapangan: updatedMatch.nomor_lapangan,
+      id_lapangan: updatedMatch.id_lapangan,
+      hari: updatedMatch.hari
     };
   } catch (error: any) {
     console.error('❌ Error updating match:', error);
@@ -3618,6 +3653,8 @@ static async clearMatchResults(kompetisiId: number, kelasKejuaraanId: number): P
               nomorPartai: match.nomor_partai,
               nomorAntrian: match.nomor_antrian,
               nomorLapangan: match.nomor_lapangan,
+              id_lapangan: match.id_lapangan,
+              hari: match.hari,
               stageName: finalStageName || undefined, // Use the calculated name
               bracketParticipantCount: participantCount,
               kelasKejuaraanId: bagan.id_kelas_kejuaraan,
