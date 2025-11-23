@@ -2977,25 +2977,27 @@ approvedParticipants.length === 3 ? (
         alignSelf: "flex-start", // ⭐ Align ke atas
         marginTop: `${55 + CARD_HEIGHT / 2}px`, // ⭐ Header (55px) + setengah card
         height: "2px",
-        width: `${CENTER_GAP + 100}px`,
+        width: `${CENTER_GAP +100}px`,
       }}
     >
-      <svg
-        style={{
-          width: "100%",
-          height: 2,
-        }}
-      >
-        <line
-          x1="0"
-          y1="1"
-          x2="100%"
-          y2="1"
-          stroke="#990D35"
-          strokeWidth="2.5"
-          opacity="0.8"
-        />
-      </svg>
+<svg
+  style={{
+    width: "100%",
+    height: 2,
+  }}
+  viewBox="0 0 100 2"
+  preserveAspectRatio="none"
+>
+  <line
+    x1="0"
+    y1="1"
+    x2="100"
+    y2="1"
+    stroke="#990D35"
+    strokeWidth="2.5"
+    opacity="0.8"
+  />
+</svg>
     </div>
 
     {/* ========== FINAL (Round 2) ========== */}
