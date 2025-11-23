@@ -2973,7 +2973,7 @@ approvedParticipants.length === 3 ? (
     <div
       style={{
         position: "absolute",
-        top: `${55 + CARD_HEIGHT / 2 + 20}px`,
+        top: `${55 + CARD_HEIGHT / 2 + 70}px`,
         left: "calc(50% - 200px)",   // titik start garis
         width: "400px",             // jarak Semi → Final
         height: "2px",
