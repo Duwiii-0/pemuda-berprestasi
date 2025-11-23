@@ -1484,7 +1484,7 @@ const handleResetAndUpdateAntrian = async (
                 </div>
               ) : (
                 hariList.map((hari, idx) => {
-                  if (idx === 0) return null; // Hide the first day
+                  if (idx === 0 || idx === 1) return null; // Hide the first two days
 
                   return (
                     <div

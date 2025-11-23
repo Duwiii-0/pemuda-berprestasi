@@ -4,22 +4,14 @@ const prisma = new PrismaClient();
 
 export const getAtletMatchInfo = async (id_kompetisi: number, hari?: number) => { // NEW: Add hari parameter
   try {
-    let matchWhereClause: any = { // NEW: Build where clause dynamically
+    let matchWhereClause: any = { 
       bagan: {
         id_kompetisi: id_kompetisi,
       },
-      id_peserta_a: { not: null },
-      id_peserta_b: { not: null },
-      // Filter: hanya yang memiliki stage_name
+      // Hapus filter ketat untuk id_peserta_a, id_peserta_b, dan status APPROVED
+      // Ini akan memungkinkan pertandingan BYE dan pertandingan yang belum ditentukan peserta untuk ikut diambil.
       stage_name: {
-        not: null,
-      },
-      // Filter: hanya peserta yang approved
-      peserta_a: {
-        status: "APPROVED", // sesuaikan dengan nama field di database Anda
-      },
-      peserta_b: {
-        status: "APPROVED", // sesuaikan dengan nama field di database Anda
+        not: null, // Hanya pertandingan dengan stage_name yang sudah ditentukan
       },
     };
 
@@ -35,7 +27,6 @@ export const getAtletMatchInfo = async (id_kompetisi: number, hari?: number) => 
         stage_name: true, // Tambahkan stage_name di select
         peserta_a: {
           select: {
-            status: true, // Tambahkan untuk debugging
             atlet: {
               select: {
                 nama_atlet: true,
@@ -46,7 +37,6 @@ export const getAtletMatchInfo = async (id_kompetisi: number, hari?: number) => 
         },
         peserta_b: {
           select: {
-            status: true, // Tambahkan untuk debugging
             atlet: {
               select: {
                 nama_atlet: true,
@@ -58,15 +48,48 @@ export const getAtletMatchInfo = async (id_kompetisi: number, hari?: number) => 
       },
     });
 
-    return matches.map((match) => ({
-      nomor_antrian: match.nomor_antrian,
-      nomor_lapangan: match.nomor_lapangan,
-      stage_name: match.stage_name, // Tambahkan stage_name di return
-      nama_atlet_a: match.peserta_a?.atlet?.nama_atlet,
-      nama_atlet_b: match.peserta_b?.atlet?.nama_atlet,
-      foto_atlet_a: match.peserta_a?.atlet?.pas_foto,
-      foto_atlet_b: match.peserta_b?.atlet?.pas_foto,
-    }));
+    return matches.map((match) => {
+      let nama_atlet_a: string | undefined;
+      let foto_atlet_a: string | undefined;
+      let nama_atlet_b: string | undefined;
+      let foto_atlet_b: string | undefined;
+
+      if (match.peserta_a && match.peserta_b) {
+        // Both participants present (normal match)
+        nama_atlet_a = match.peserta_a.atlet?.nama_atlet;
+        foto_atlet_a = match.peserta_a.atlet?.pas_foto;
+        nama_atlet_b = match.peserta_b.atlet?.nama_atlet;
+        foto_atlet_b = match.peserta_b.atlet?.pas_foto;
+      } else if (match.peserta_a && !match.peserta_b) {
+        // Peserta A but no Peserta B (BYE for A)
+        nama_atlet_a = match.peserta_a.atlet?.nama_atlet;
+        foto_atlet_a = match.peserta_a.atlet?.pas_foto;
+        nama_atlet_b = "BYE"; // Placeholder for BYE
+        foto_atlet_b = undefined;
+      } else if (!match.peserta_a && match.peserta_b) {
+        // Peserta B but no Peserta A (BYE for B)
+        nama_atlet_a = "BYE"; // Placeholder for BYE
+        foto_atlet_a = undefined;
+        nama_atlet_b = match.peserta_b.atlet?.nama_atlet;
+        foto_atlet_b = match.peserta_b.atlet?.pas_foto;
+      } else {
+        // No participants (TBD match)
+        nama_atlet_a = "TBD"; // Placeholder for TBD
+        foto_atlet_a = undefined;
+        nama_atlet_b = "TBD"; // Placeholder for TBD
+        foto_atlet_b = undefined;
+      }
+
+      return {
+        nomor_antrian: match.nomor_antrian,
+        nomor_lapangan: match.nomor_lapangan,
+        stage_name: match.stage_name,
+        nama_atlet_a: nama_atlet_a,
+        nama_atlet_b: nama_atlet_b,
+        foto_atlet_a: foto_atlet_a,
+        foto_atlet_b: foto_atlet_b,
+      };
+    });
   } catch (error: any) {
     throw new Error(`Failed to get match info: ${error.message}`);
   }
