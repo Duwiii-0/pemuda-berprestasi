@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState } from "react";
 import { Loader, Radio, User } from "lucide-react";
 
 interface KelasLapangan {
@@ -84,35 +84,44 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
     return parts.length > 0 ? parts.join(" - ") : "Kelas Tidak Lengkap";
   };
 
-useEffect(() => {
-  if (!idKompetisi) return;
-  
-  // Initial fetch
-  fetchLiveData();
+  useEffect(() => {
+    if (!idKompetisi) return;
+    fetchLiveData();
 
-  const interval = setInterval(() => {
-    fetchLiveData(); // Refresh hariList
-    // This part relies on selectedHari and hariList being current
-    // which fetchLiveData updates. The second useEffect will react to it.
-  }, 10000);
-  
-  return () => clearInterval(interval);
-}, [idKompetisi, fetchLiveData]); // Removed hariList and selectedHari from here.
+    const interval = setInterval(() => {
+      fetchLiveData();
+      // ⭐ Force refresh match data setiap interval
+      if (selectedHari && hariList.length > 0) {
+        const selectedDayIndex = hariList.findIndex(
+          (hari) => hari.tanggal === selectedHari
+        );
+        const selectedDayNumber =
+          selectedDayIndex >= 0 ? selectedDayIndex + 1 : undefined;
+        if (selectedDayNumber !== undefined) {
+          fetchMatchData(selectedDayNumber, true);
+        }
+      }
+    }, 10000);
+
+    return () => clearInterval(interval);
+  }, [idKompetisi, selectedHari, hariList]);
 
   // NEW useEffect for fetching match data based on selectedHari
-useEffect(() => {
-  if (idKompetisi && selectedHari && hariList.length > 0) {
-    const selectedDayIndex = hariList.findIndex(hari => hari.tanggal === selectedHari);
-    const selectedDayNumber = selectedDayIndex >= 0 ? selectedDayIndex + 1 : undefined;
+  useEffect(() => {
+    if (idKompetisi && selectedHari && hariList.length > 0) {
+      const selectedDayIndex = hariList.findIndex(
+        (hari) => hari.tanggal === selectedHari
+      );
+      const selectedDayNumber =
+        selectedDayIndex >= 0 ? selectedDayIndex + 1 : undefined;
 
-    if (selectedDayNumber !== undefined) {
-      fetchMatchData(selectedDayNumber, true); // ⭐ Force refresh on mount
+      if (selectedDayNumber !== undefined) {
+        fetchMatchData(selectedDayNumber, true); // ⭐ Force refresh on mount
+      }
     }
-  }
-}, [idKompetisi, selectedHari, hariList, fetchMatchData]);
+  }, [idKompetisi, selectedHari, hariList]);
 
-
-  const fetchLiveData = useCallback(async () => {
+  const fetchLiveData = async () => {
     if (!idKompetisi) return;
 
     try {
@@ -149,15 +158,9 @@ useEffect(() => {
         setHariList(hariData);
 
         if (!selectedHari && hariData.length > 0) {
-          // Default to the third day (index 2) if available, otherwise fallback
-          let defaultDay;
-          if (hariData.length > 2) {
-            defaultDay = hariData[2].tanggal;
-          } else if (hariData.length > 1) { // Fallback to second day if only 2 days exist
-            defaultDay = hariData[1].tanggal;
-          } else { // Fallback to first day if only 1 day exists
-            defaultDay = hariData[0].tanggal;
-          }
+          // Default to the second day if available and hariData has at least two days
+          const defaultDay =
+            hariData.length > 1 ? hariData[1].tanggal : hariData[0].tanggal;
           setSelectedHari(defaultDay);
         }
       }
@@ -167,37 +170,40 @@ useEffect(() => {
     } finally {
       setLoading(false);
     }
-  }, [idKompetisi, setHariList, selectedHari, setSelectedHari, setError, setLoading]);
+  };
 
-const fetchMatchData = useCallback(async (hari?: number, forceRefresh = false) => {
-  if (!idKompetisi) return;
-  try {
-    const timestamp = forceRefresh ? `&_t=${Date.now()}` : '';
-    const url = hari ? 
-      `/api/pertandingan/kompetisi/${idKompetisi}?hari=${hari}${timestamp}` :
-      `/api/pertandingan/kompetisi/${idKompetisi}${timestamp}`;
-    
-    console.log('🔍 Fetching match data from:', url);
-    
-    const res = await fetch(url, {
-      cache: 'no-cache', // ⭐ Prevent caching
-      headers: {
-        'Cache-Control': 'no-cache',
-        'Pragma': 'no-cache'
+  const fetchMatchData = async (hari?: number, forceRefresh = false) => {
+    if (!idKompetisi) return;
+    try {
+      const timestamp = forceRefresh ? `&_t=${Date.now()}` : "";
+      const url = hari
+        ? `/api/pertandingan/kompetisi/${idKompetisi}?hari=${hari}${timestamp}`
+        : `/api/pertandingan/kompetisi/${idKompetisi}${timestamp}`;
+
+      console.log("🔍 Fetching match data from:", url);
+
+      const res = await fetch(url, {
+        cache: "no-cache", // ⭐ Prevent caching
+        headers: {
+          "Cache-Control": "no-cache",
+          Pragma: "no-cache",
+        },
+      });
+      const data = await res.json();
+
+      console.log("📊 Match data received:", data);
+      console.log(
+        "📋 Lapangan A matches:",
+        data.data?.filter((m) => m.nomor_lapangan === "A")
+      );
+
+      if (data.success) {
+        setMatchData(data.data);
       }
-    });
-    const data = await res.json();
-    
-    console.log('📊 Match data received:', data);
-    console.log('📋 Lapangan A matches:', data.data?.filter(m => m.nomor_lapangan === 'A'));
-    
-    if (data.success) {
-      setMatchData(data.data);
+    } catch (error) {
+      console.error("Error fetching match data:", error);
     }
-  } catch (error) {
-    console.error("Error fetching match data:", error);
-  }
-}, [idKompetisi, setMatchData]);
+  };
 
   const currentHari = hariList.find((h) => h.tanggal === selectedHari);
 
@@ -327,42 +333,40 @@ const fetchMatchData = useCallback(async (hari?: number, forceRefresh = false) =
           </p>
         </div>
 
-                    {hariList.length > 1 && (
-                      <div className="flex justify-center gap-2 my-8 overflow-x-auto pb-2">
-                        {hariList.map((hari, idx) => {
-                          if (idx === 0 || idx === 1) return null; // Hide Hari 1 and Hari 2
-                          return (
-                            <button
-                              key={hari.tanggal}
-                              onClick={() => setSelectedHari(hari.tanggal)}
-                              className={`px-6 py-3 rounded-xl font-medium whitespace-nowrap transition-all ${
-                                selectedHari === hari.tanggal
-                                  ? "shadow-lg"
-                                  : "opacity-60 hover:opacity-100"
-                              }`}
-                              style={{
-                                backgroundColor:
-                                  selectedHari === hari.tanggal ? "#990D35" : "#fff",
-                                color: selectedHari === hari.tanggal ? "#F5FBEF" : "#990D35",
-                                border: `2px solid ${
-                                  selectedHari === hari.tanggal
-                                    ? "#990D35"
-                                    : "rgba(153, 13, 53, 0.2)"
-                                }`,
-                              }}
-                            >
-                              Hari ke-{idx + 1}
-                              <div className="text-xs opacity-80 mt-1">
-                                {new Date(hari.tanggal).toLocaleDateString("id-ID", {
-                                  day: "numeric",
-                                  month: "short",
-                                })}
-                              </div>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
+        {hariList.length > 1 && (
+          <div className="flex justify-center gap-2 my-8 overflow-x-auto pb-2">
+            {hariList.map((hari, idx) => (
+              <button
+                key={hari.tanggal}
+                onClick={() => setSelectedHari(hari.tanggal)}
+                className={`px-6 py-3 rounded-xl font-medium whitespace-nowrap transition-all ${
+                  selectedHari === hari.tanggal
+                    ? "shadow-lg"
+                    : "opacity-60 hover:opacity-100"
+                }`}
+                style={{
+                  backgroundColor:
+                    selectedHari === hari.tanggal ? "#990D35" : "#fff",
+                  color: selectedHari === hari.tanggal ? "#F5FBEF" : "#990D35",
+                  border: `2px solid ${
+                    selectedHari === hari.tanggal
+                      ? "#990D35"
+                      : "rgba(153, 13, 53, 0.2)"
+                  }`,
+                }}
+              >
+                Hari ke-{idx + 1}
+                <div className="text-xs opacity-80 mt-1">
+                  {new Date(hari.tanggal).toLocaleDateString("id-ID", {
+                    day: "numeric",
+                    month: "short",
+                  })}
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+
         {currentHari && currentHari.lapangan.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16 w-full">
             {currentHari.lapangan.map((lap) => {
