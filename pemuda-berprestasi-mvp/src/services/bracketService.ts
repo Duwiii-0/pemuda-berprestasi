@@ -975,59 +975,98 @@ static async generatePrestasiBracket(
     throw new Error("Minimal 2 peserta diperlukan");
   }
 
-  // ⭐ HANDLE SPECIAL CASES (2-3 participants)
+  // ⭐ HANDLE SPECIAL CASE: 2 participants (langsung final)
   if (participantCount === 2) {
     const shuffled = this.shuffleArray([...participants]);
     const finalMatch = await prisma.tb_match.create({
       data: {
-        id_bagan: baganId, ronde: 1, position: 0,
-        stage_name: 'FINAL', // ← 1 match = FINAL
-        id_peserta_a: shuffled[0].id, id_peserta_b: shuffled[1].id,
-        skor_a: 0, skor_b: 0,
+        id_bagan: baganId, 
+        ronde: 1, 
+        position: 0,
+        stage_name: 'FINAL',
+        id_peserta_a: shuffled[0].id, 
+        id_peserta_b: shuffled[1].id,
+        skor_a: 0, 
+        skor_b: 0,
       },
     });
     matches.push({
-      id: finalMatch.id_match, round: 1, position: 0,
-      participant1: shuffled[0], participant2: shuffled[1],
-      status: "pending", scoreA: 0, scoreB: 0,
+      id: finalMatch.id_match, 
+      round: 1, 
+      position: 0,
+      participant1: shuffled[0], 
+      participant2: shuffled[1],
+      status: "pending", 
+      scoreA: 0, 
+      scoreB: 0,
+      stageName: 'FINAL',
     });
     return matches;
   }
 
+  // ⭐ HANDLE SPECIAL CASE: 3 participants (Semi-Final + Final)
   if (participantCount === 3) {
     const shuffled = this.shuffleArray([...participants]);
-    // R1 = SEMI_FINAL (2 matches worth of participants, but 1 actual match + 1 BYE)
+    
+    console.log(`\n🏆 PRESTASI BRACKET: 3 participants special case`);
+    console.log(`   R1 (Semi-Final): ${shuffled[0].name} vs ${shuffled[1].name}`);
+    console.log(`   R2 (Final): Winner R1 vs ${shuffled[2].name} (BYE)`);
+    
+    // ⭐ R1 = SEMI_FINAL (2 peserta bertanding)
     const r1 = await prisma.tb_match.create({
       data: {
-        id_bagan: baganId, ronde: 1, position: 0,
-        stage_name: 'SEMI_FINAL', // ← Feeds into final
-        id_peserta_a: shuffled[0].id, id_peserta_b: shuffled[1].id,
-        skor_a: 0, skor_b: 0,
+        id_bagan: baganId, 
+        ronde: 1, 
+        position: 0,
+        stage_name: 'SEMI_FINAL', // ← SEMI FINAL, bukan FINAL!
+        id_peserta_a: shuffled[0].id, 
+        id_peserta_b: shuffled[1].id,
+        skor_a: 0, 
+        skor_b: 0,
       },
     });
     matches.push({
-      id: r1.id_match, round: 1, position: 0,
-      participant1: shuffled[0], participant2: shuffled[1],
-      status: "pending", scoreA: 0, scoreB: 0,
+      id: r1.id_match, 
+      round: 1, 
+      position: 0,
+      participant1: shuffled[0], 
+      participant2: shuffled[1],
+      status: "pending", 
+      scoreA: 0, 
+      scoreB: 0,
+      stageName: 'SEMI_FINAL',
     });
-    // R2 = FINAL
+    
+    // ⭐ R2 = FINAL (TBD vs BYE participant)
+    // PENTING: BYE participant di slot B, TBD (winner R1) di slot A
     const r2 = await prisma.tb_match.create({
       data: {
-        id_bagan: baganId, ronde: 2, position: 0,
+        id_bagan: baganId, 
+        ronde: 2, 
+        position: 0,
         stage_name: 'FINAL',
-        id_peserta_a: shuffled[2].id, id_peserta_b: null,
-        skor_a: 0, skor_b: 0,
+        id_peserta_a: null,           // ← TBD: Menunggu winner dari R1
+        id_peserta_b: shuffled[2].id, // ← BYE participant sudah ada
+        skor_a: 0, 
+        skor_b: 0,
       },
     });
     matches.push({
-      id: r2.id_match, round: 2, position: 0,
-      participant1: shuffled[2], participant2: null,
-      status: "pending", scoreA: 0, scoreB: 0,
+      id: r2.id_match, 
+      round: 2, 
+      position: 0,
+      participant1: null,        // TBD
+      participant2: shuffled[2], // BYE participant
+      status: "pending", 
+      scoreA: 0, 
+      scoreB: 0,
+      stageName: 'FINAL',
     });
+    
     return matches;
   }
 
-  // ⭐ 4+ PARTICIPANTS - FULL BRACKET
+  // ⭐ 4+ PARTICIPANTS - FULL BRACKET (existing logic)
   const targetSize = Math.pow(2, Math.ceil(Math.log2(participantCount)));
   const totalRounds = Math.log2(targetSize);
   const byesNeeded = targetSize - participantCount;
@@ -1039,13 +1078,9 @@ static async generatePrestasiBracket(
   // Get stage name for R1
   const r1Stage = this.determineAbsoluteStageName(totalMatchesR1);
 
-  console.log(`\n🏆 PRESTASI BRACKET: ${participantCount} → ${targetSize} (${totalRounds} rounds)`);
   console.log(`   R1: ${totalMatchesR1} matches → Stage: ${r1Stage}`);
 
-  // ... [REST OF EXISTING LOGIC: validation, distribution, etc.] ...
-  
-  // Simplified version - create R1 matches with stage_name
-    let isUnavoidable = false;
+  let isUnavoidable = false;
   if (dojangSeparation?.enabled) {
     const validation = this.validatePrestasiR1Separation(participants, targetSize);
     isUnavoidable = validation.isUnavoidable;
@@ -1119,40 +1154,60 @@ static async generatePrestasiBracket(
 
     const created = await prisma.tb_match.create({
       data: {
-        id_bagan: baganId, ronde: 1, position: pos,
-        stage_name: r1Stage, // ⭐ ABSOLUTE STAGE NAME!
-        id_peserta_a: p1?.id ?? null, id_peserta_b: p2?.id ?? null,
-        skor_a: 0, skor_b: 0,
+        id_bagan: baganId, 
+        ronde: 1, 
+        position: pos,
+        stage_name: r1Stage,
+        id_peserta_a: p1?.id ?? null, 
+        id_peserta_b: p2?.id ?? null,
+        skor_a: 0, 
+        skor_b: 0,
       },
     });
 
     matches.push({
-      id: created.id_match, round: 1, position: pos,
-      participant1: p1, participant2: p2, status,
-      scoreA: 0, scoreB: 0,
+      id: created.id_match, 
+      round: 1, 
+      position: pos,
+      participant1: p1, 
+      participant2: p2, 
+      status,
+      scoreA: 0, 
+      scoreB: 0,
+      stageName: r1Stage,
     });
   }
 
   // ⭐ CREATE PLACEHOLDER ROUNDS (R2+) WITH ABSOLUTE STAGE NAME
   for (let round = 2; round <= totalRounds; round++) {
     const matchCount = Math.pow(2, totalRounds - round);
-    const stageName = this.determineAbsoluteStageName(matchCount); // ⭐ ABSOLUTE!
+    const stageName = this.determineAbsoluteStageName(matchCount);
     
     console.log(`   Round ${round}: ${matchCount} matches → Stage: ${stageName}`);
     
     for (let i = 0; i < matchCount; i++) {
       const created = await prisma.tb_match.create({
         data: {
-          id_bagan: baganId, ronde: round, position: i,
-          stage_name: stageName, // ⭐ ABSOLUTE STAGE NAME!
-          id_peserta_a: null, id_peserta_b: null,
-          skor_a: 0, skor_b: 0,
+          id_bagan: baganId, 
+          ronde: round, 
+          position: i,
+          stage_name: stageName,
+          id_peserta_a: null, 
+          id_peserta_b: null,
+          skor_a: 0, 
+          skor_b: 0,
         },
       });
       matches.push({
-        id: created.id_match, round, position: i,
-        participant1: null, participant2: null,
-        status: "pending", scoreA: 0, scoreB: 0,
+        id: created.id_match, 
+        round, 
+        position: i,
+        participant1: null, 
+        participant2: null,
+        status: "pending", 
+        scoreA: 0, 
+        scoreB: 0,
+        stageName: stageName,
       });
     }
   }
@@ -2195,16 +2250,13 @@ static async validateAndFixNextRound(baganId: number, round: number): Promise<{
   };
 }
 
-  /**
-   * Advance winner to next round
-   */
 static async advanceWinnerToNextRound(match: any, winnerId: number): Promise<void> {
   const currentRound = match.ronde;
   const nextRound = currentRound + 1;
   
   console.log(`🎯 Advancing winner ${winnerId} from Round ${currentRound} to Round ${nextRound}`);
   
-  // ⭐ CHECK: Is this PEMULA category?
+  // ⭐ Fetch bagan info untuk detect category dan participant count
   const bagan = await prisma.tb_bagan.findUnique({
     where: { id_bagan: match.id_bagan },
     include: {
@@ -2212,88 +2264,118 @@ static async advanceWinnerToNextRound(match: any, winnerId: number): Promise<voi
         include: {
           kategori_event: true
         }
-      }
+      },
+      drawing_seed: true // ← Untuk hitung participant count
     }
   });
   
   const isPemula = bagan?.kelas_kejuaraan?.kategori_event?.nama_kategori?.toLowerCase().includes('pemula') || false;
+  const participantCount = bagan?.drawing_seed?.length || 0;
   
-if (isPemula && currentRound === 1) {
-  console.log(`\n🥋 === PEMULA ADVANCE LOGIC ===`);
-  console.log(`   Current match ID: ${match.id_match}`);
-  
-  const round1Matches = await prisma.tb_match.findMany({
-    where: {
-      id_bagan: match.id_bagan,
-      ronde: 1
-    },
-    orderBy: { id_match: 'asc' }
-  });
-  
-  console.log(`   Total Round 1 matches: ${round1Matches.length}`);
-  console.log(`   Match IDs:`, round1Matches.map(m => m.id_match));
-  
-  const round2Match = await prisma.tb_match.findFirst({
-    where: {
-      id_bagan: match.id_bagan,
-      ronde: 2
-    }
-  });
-  
-  if (round2Match && round1Matches.length > 0) {
-    // ⭐ Find BYE match
-    const byeMatch = round1Matches.find(m => m.id_peserta_a && !m.id_peserta_b);
+  console.log(`   Category: ${isPemula ? 'PEMULA' : 'PRESTASI'}`);
+  console.log(`   Participant count: ${participantCount}`);
+
+  // ⭐ SPECIAL CASE: PRESTASI dengan 3 peserta
+  if (!isPemula && participantCount === 3 && currentRound === 1) {
+    console.log(`\n🏆 === PRESTASI 3 PESERTA: ADVANCE TO FINAL ===`);
     
-    if (!byeMatch) {
-      console.log(`   ℹ️ No BYE match found - no additional match needed`);
-      return;
-    }
+    const finalMatch = await prisma.tb_match.findFirst({
+      where: {
+        id_bagan: match.id_bagan,
+        ronde: 2
+      }
+    });
     
-    console.log(`   BYE match ID: ${byeMatch.id_match}`);
-    
-    // ⭐ Find LAST NORMAL FIGHT match (sebelum BYE)
-    const byeIndex = round1Matches.findIndex(m => m.id_match === byeMatch.id_match);
-    console.log(`   BYE match index: ${byeIndex}`);
-    
-    if (byeIndex <= 0) {
-      console.log(`   ⚠️ BYE match is first (index ${byeIndex}) - no last normal fight match`);
-      return;
-    }
-    
-    const lastNormalFightMatch = round1Matches[byeIndex - 1];
-    console.log(`   Last normal fight match ID: ${lastNormalFightMatch.id_match}`);
-    console.log(`   Checking: ${match.id_match} === ${lastNormalFightMatch.id_match}?`);
-    
-    // ⭐ CRITICAL CHECK: Is this match the LAST NORMAL FIGHT?
-    if (match.id_match === lastNormalFightMatch.id_match) {
-      console.log(`   ✅ YES! This is the LAST normal fight → Advance to Additional Match`);
-      
+    if (finalMatch) {
+      // Winner dari R1 (Semi-Final) masuk ke Final slot A
       await prisma.tb_match.update({
-        where: { id_match: round2Match.id_match },
+        where: { id_match: finalMatch.id_match },
         data: { id_peserta_a: winnerId }
       });
       
-      console.log(`   ✅ Winner ${winnerId} placed in Additional Match (Slot A)`);
-      console.log(`═══════════════════════════════════════\n`);
-      return;
-    } else {
-      console.log(`   ❌ NO! This is NOT the last normal fight`);
-      console.log(`      Current match: ${match.id_match}`);
-      console.log(`      Last match should be: ${lastNormalFightMatch.id_match}`);
-      console.log(`   → Winner stays in Round 1 (DO NOT ADVANCE)`);
+      console.log(`   ✅ Winner ${winnerId} placed in Final (Slot A)`);
       console.log(`═══════════════════════════════════════\n`);
       return;
     }
   }
-}
+
+  // ⭐ SPECIAL CASE: PEMULA
+  if (isPemula && currentRound === 1) {
+    console.log(`\n🥋 === PEMULA ADVANCE LOGIC ===`);
+    console.log(`   Current match ID: ${match.id_match}`);
+    
+    const round1Matches = await prisma.tb_match.findMany({
+      where: {
+        id_bagan: match.id_bagan,
+        ronde: 1
+      },
+      orderBy: { id_match: 'asc' }
+    });
+    
+    console.log(`   Total Round 1 matches: ${round1Matches.length}`);
+    console.log(`   Match IDs:`, round1Matches.map(m => m.id_match));
+    
+    const round2Match = await prisma.tb_match.findFirst({
+      where: {
+        id_bagan: match.id_bagan,
+        ronde: 2
+      }
+    });
+    
+    if (round2Match && round1Matches.length > 0) {
+      // ⭐ Find BYE match
+      const byeMatch = round1Matches.find(m => m.id_peserta_a && !m.id_peserta_b);
+      
+      if (!byeMatch) {
+        console.log(`   ℹ️ No BYE match found - no additional match needed`);
+        return;
+      }
+      
+      console.log(`   BYE match ID: ${byeMatch.id_match}`);
+      
+      // ⭐ Find LAST NORMAL FIGHT match (sebelum BYE)
+      const byeIndex = round1Matches.findIndex(m => m.id_match === byeMatch.id_match);
+      console.log(`   BYE match index: ${byeIndex}`);
+      
+      if (byeIndex <= 0) {
+        console.log(`   ⚠️ BYE match is first (index ${byeIndex}) - no last normal fight match`);
+        return;
+      }
+      
+      const lastNormalFightMatch = round1Matches[byeIndex - 1];
+      console.log(`   Last normal fight match ID: ${lastNormalFightMatch.id_match}`);
+      console.log(`   Checking: ${match.id_match} === ${lastNormalFightMatch.id_match}?`);
+      
+      // ⭐ CRITICAL CHECK: Is this match the LAST NORMAL FIGHT?
+      if (match.id_match === lastNormalFightMatch.id_match) {
+        console.log(`   ✅ YES! This is the LAST normal fight → Advance to Additional Match`);
+        
+        await prisma.tb_match.update({
+          where: { id_match: round2Match.id_match },
+          data: { id_peserta_a: winnerId }
+        });
+        
+        console.log(`   ✅ Winner ${winnerId} placed in Additional Match (Slot A)`);
+        console.log(`═══════════════════════════════════════\n`);
+        return;
+      } else {
+        console.log(`   ❌ NO! This is NOT the last normal fight`);
+        console.log(`      Current match: ${match.id_match}`);
+        console.log(`      Last match should be: ${lastNormalFightMatch.id_match}`);
+        console.log(`   → Winner stays in Round 1 (DO NOT ADVANCE)`);
+        console.log(`═══════════════════════════════════════\n`);
+        return;
+      }
+    }
+  }
   
-  // ⭐ EXISTING LOGIC FOR PRESTASI (continue as normal)
+  // ⭐ EXISTING LOGIC FOR PRESTASI 4+ participants
   const currentRoundMatches = await prisma.tb_match.findMany({
     where: {
       id_bagan: match.id_bagan,
       ronde: currentRound
     },
-    orderBy: { id_match: 'asc' }
+    orderBy: { position: 'asc' } // ← PENTING: Sort by position, bukan id_match
   });
 
   const nextRoundMatches = await prisma.tb_match.findMany({
@@ -2301,7 +2383,7 @@ if (isPemula && currentRound === 1) {
       id_bagan: match.id_bagan,
       ronde: nextRound
     },
-    orderBy: { id_match: 'asc' }
+    orderBy: { position: 'asc' } // ← PENTING: Sort by position
   });
 
   if (nextRoundMatches.length === 0) {
@@ -2309,27 +2391,32 @@ if (isPemula && currentRound === 1) {
     return;
   }
 
-  const currentMatchIndex = currentRoundMatches.findIndex(m => m.id_match === match.id_match);
+  // ⭐ PERBAIKAN: Cari berdasarkan position, bukan index di array
+  const currentMatch = currentRoundMatches.find(m => m.id_match === match.id_match);
   
-  if (currentMatchIndex === -1) {
+  if (!currentMatch) {
     console.error(`   ❌ Could not find current match in round matches`);
     return;
   }
 
-  const nextMatchIndex = Math.floor(currentMatchIndex / 2);
-  const nextMatch = nextRoundMatches[nextMatchIndex];
+  const currentPosition = currentMatch.position ?? 0;
+  const nextMatchPosition = Math.floor(currentPosition / 2);
+  const nextMatch = nextRoundMatches.find(m => m.position === nextMatchPosition);
 
   if (!nextMatch) {
-    console.error(`   ❌ Could not find next match at index ${nextMatchIndex}`);
+    console.error(`   ❌ Could not find next match at position ${nextMatchPosition}`);
     return;
   }
 
-  const isFirstSlot = currentMatchIndex % 2 === 0;
+  const isFirstSlot = currentPosition % 2 === 0;
+  
+  console.log(`   Current position: ${currentPosition}`);
+  console.log(`   Next match position: ${nextMatchPosition}`);
+  console.log(`   Slot: ${isFirstSlot ? 'A' : 'B'}`);
   
   if (isFirstSlot) {
     if (nextMatch.id_peserta_a) {
-      console.log(`   ⚠️ Slot A already occupied - SKIPPING`);
-      return;
+      console.log(`   ⚠️ Slot A already occupied by ${nextMatch.id_peserta_a} - REPLACING`);
     }
     
     await prisma.tb_match.update({
@@ -2340,8 +2427,7 @@ if (isPemula && currentRound === 1) {
     console.log(`   ✅ Winner ${winnerId} placed in Round ${nextRound} Match ${nextMatch.id_match} (Slot A)`);
   } else {
     if (nextMatch.id_peserta_b) {
-      console.log(`   ⚠️ Slot B already occupied - SKIPPING`);
-      return;
+      console.log(`   ⚠️ Slot B already occupied by ${nextMatch.id_peserta_b} - REPLACING`);
     }
     
     await prisma.tb_match.update({
@@ -3212,13 +3298,15 @@ static async clearMatchResults(kompetisiId: number, kelasKejuaraanId: number): P
           include: {
             peserta_a: true,
             peserta_b: true
-          }
+          },
+          orderBy: { ronde: 'asc' }
         },
         kelas_kejuaraan: {
           include: {
             kategori_event: true
           }
-        }
+        },
+        drawing_seed: true // ← Untuk hitung participant count
       }
     });
 
@@ -3226,14 +3314,16 @@ static async clearMatchResults(kompetisiId: number, kelasKejuaraanId: number): P
       throw new Error('Bagan tidak ditemukan');
     }
 
-    // ⭐ Detect if PEMULA
+    // ⭐ Detect category dan participant count
     const isPemula = bagan.kelas_kejuaraan?.kategori_event?.nama_kategori?.toLowerCase().includes('pemula') || false;
+    const participantCount = bagan.drawing_seed.length;
 
     console.log(`   Category: ${isPemula ? 'PEMULA' : 'PRESTASI'}`);
+    console.log(`   Participant count: ${participantCount}`);
     console.log(`   Total matches: ${bagan.match.length}`);
 
     const updatePromises = bagan.match.map((match) => {
-      console.log(`\n   Processing Match ${match.id_match} (Round ${match.ronde}):`);
+      console.log(`\n   Processing Match ${match.id_match} (Round ${match.ronde}, Stage: ${match.stage_name}):`);
       console.log(`      Before: peserta_a=${match.id_peserta_a}, peserta_b=${match.id_peserta_b}`);
       
       if (match.ronde === 1) {
@@ -3246,10 +3336,27 @@ static async clearMatchResults(kompetisiId: number, kelasKejuaraanId: number): P
             skor_b: 0
           }
         });
-      } else if (isPemula && match.ronde === 2) {
-        // ⭐ PEMULA Round 2 (Additional Match):
-        // - KEEP peserta_b (BYE participant - auto advanced)
-        // - CLEAR peserta_a (TBD - winner from fight match)
+      } 
+      
+      // ⭐ SPECIAL CASE: PRESTASI 3 peserta - Round 2 (Final)
+      if (!isPemula && participantCount === 3 && match.ronde === 2) {
+        // Final match: Clear slot A (TBD), KEEP slot B (BYE participant)
+        console.log(`      Action: PRESTASI 3 peserta Final - Keep peserta_b (BYE), clear peserta_a (TBD)`);
+        return prisma.tb_match.update({
+          where: { id_match: match.id_match },
+          data: {
+            skor_a: 0,
+            skor_b: 0,
+            id_peserta_a: null  // Clear TBD slot (winner dari Semi)
+            // id_peserta_b is KEPT (BYE participant)
+          }
+        });
+      }
+      
+      // ⭐ PEMULA Round 2 (Additional Match)
+      if (isPemula && match.ronde === 2) {
+        // KEEP peserta_b (BYE participant - auto advanced)
+        // CLEAR peserta_a (TBD - winner from fight match)
         console.log(`      Action: PEMULA R2 - Keep peserta_b (BYE), clear peserta_a (TBD)`);
         return prisma.tb_match.update({
           where: { id_match: match.id_match },
@@ -3260,19 +3367,19 @@ static async clearMatchResults(kompetisiId: number, kelasKejuaraanId: number): P
             // id_peserta_b is KEPT (BYE participant)
           }
         });
-      } else {
-        // ⭐ PRESTASI Round 2+: Clear both participants (will be filled by winners)
-        console.log(`      Action: PRESTASI R${match.ronde} - Clear both participants`);
-        return prisma.tb_match.update({
-          where: { id_match: match.id_match },
-          data: {
-            skor_a: 0,
-            skor_b: 0,
-            id_peserta_a: null,
-            id_peserta_b: null
-          }
-        });
       }
+      
+      // ⭐ PRESTASI Round 2+ (4+ participants): Clear both participants
+      console.log(`      Action: PRESTASI R${match.ronde} - Clear both participants`);
+      return prisma.tb_match.update({
+        where: { id_match: match.id_match },
+        data: {
+          skor_a: 0,
+          skor_b: 0,
+          id_peserta_a: null,
+          id_peserta_b: null
+        }
+      });
     });
 
     await Promise.all(updatePromises);

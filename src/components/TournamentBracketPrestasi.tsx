@@ -66,6 +66,7 @@ interface Match {
   nomor_lapangan?: string;
   positionY?: number;
   verticalCenter?: number;
+  stageName?: string;
 }
 
 interface KelasKejuaraan {
@@ -396,68 +397,82 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
     }
   }, [kelasData?.id_kelas_kejuaraan]);
 
-  const fetchBracketData = async (
-    kompetisiId: number,
-    kelasKejuaraanId: number
-  ) => {
-    try {
-      setLoading(true);
+const fetchBracketData = async (
+  kompetisiId: number,
+  kelasKejuaraanId: number
+) => {
+  try {
+    setLoading(true);
 
-      const response = await fetch(
-        `${apiBaseUrl}/kompetisi/${kompetisiId}/brackets/${kelasKejuaraanId}`,
-        {
-          headers: {
-            ...(token && { Authorization: `Bearer ${token}` }),
-          },
-        }
+    const response = await fetch(
+      `${apiBaseUrl}/kompetisi/${kompetisiId}/brackets/${kelasKejuaraanId}`,
+      {
+        headers: {
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
+      }
+    );
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        console.log("ℹ️ Bracket not yet generated for this class");
+        setBracketGenerated(false);
+        setMatches([]);
+        return;
+      }
+      throw new Error("Failed to fetch bracket data");
+    }
+
+    const result = await response.json();
+    console.log("📊 PRESTASI Bracket data fetched:", result);
+
+    if (result.data && result.data.matches) {
+      const transformedMatches: Match[] = result.data.matches.map(
+        (m: any) => ({
+          id_match: m.id,
+          ronde: m.round,
+          id_peserta_a: m.participant1?.id,
+          id_peserta_b: m.participant2?.id,
+          skor_a: m.scoreA || 0,
+          skor_b: m.scoreB || 0,
+          peserta_a: m.participant1
+            ? transformParticipantFromAPI(m.participant1)
+            : undefined,
+          peserta_b: m.participant2
+            ? transformParticipantFromAPI(m.participant2)
+            : undefined,
+          venue: m.venue ? { nama_venue: m.venue } : undefined,
+          tanggal_pertandingan: m.tanggalPertandingan,
+          nomor_partai: m.nomorPartai,
+          nomor_antrian: m.nomorAntrian,
+          nomor_lapangan: m.nomorLapangan,
+          // ⭐ TAMBAHKAN INI - Map stageName dari API
+          stageName: m.stageName,
+        })
       );
 
-      if (!response.ok) {
-        if (response.status === 404) {
-          console.log("ℹ️ Bracket not yet generated for this class");
-          setBracketGenerated(false);
-          setMatches([]);
-          return;
+      setMatches(transformedMatches);
+      setBracketGenerated(true);
+      console.log(`✅ Loaded ${transformedMatches.length} PRESTASI matches`);
+      
+      // ⭐ Debug: Log stage names untuk verifikasi
+      console.log("📊 Stage names per round:");
+      const roundsMap = new Map<number, string>();
+      transformedMatches.forEach(m => {
+        if (!roundsMap.has(m.ronde)) {
+          roundsMap.set(m.ronde, (m as any).stageName || 'NO_STAGE');
         }
-        throw new Error("Failed to fetch bracket data");
-      }
-
-      const result = await response.json();
-      console.log("📊 PRESTASI Bracket data fetched:", result);
-
-      if (result.data && result.data.matches) {
-        const transformedMatches: Match[] = result.data.matches.map(
-          (m: any) => ({
-            id_match: m.id,
-            ronde: m.round,
-            id_peserta_a: m.participant1?.id,
-            id_peserta_b: m.participant2?.id,
-            skor_a: m.scoreA || 0,
-            skor_b: m.scoreB || 0,
-            peserta_a: m.participant1
-              ? transformParticipantFromAPI(m.participant1)
-              : undefined,
-            peserta_b: m.participant2
-              ? transformParticipantFromAPI(m.participant2)
-              : undefined,
-            venue: m.venue ? { nama_venue: m.venue } : undefined,
-            tanggal_pertandingan: m.tanggalPertandingan,
-            nomor_partai: m.nomorPartai,
-            nomor_antrian: m.nomorAntrian,
-            nomor_lapangan: m.nomorLapangan,
-          })
-        );
-
-        setMatches(transformedMatches);
-        setBracketGenerated(true);
-        console.log(`✅ Loaded ${transformedMatches.length} PRESTASI matches`);
-      }
-    } catch (error: any) {
-      console.error("❌ Error fetching PRESTASI bracket:", error);
-    } finally {
-      setLoading(false);
+      });
+      roundsMap.forEach((stage, round) => {
+        console.log(`   Round ${round}: ${stage}`);
+      });
     }
-  };
+  } catch (error: any) {
+    console.error("❌ Error fetching PRESTASI bracket:", error);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const fetchGlobalSchedule = async () => {
     // Prevent refetching if data is already loaded
@@ -1298,35 +1313,64 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
     return rounds;
   };
 
-  const getRoundName = (round: number, totalRounds: number): string => {
-    // ✅ Get matches for this round to determine absolute stage
-    const roundMatches = getMatchesByRound(round);
-    const matchCount = roundMatches.length;
-
-    // ✅ Use match count to determine absolute stage name
-    switch (matchCount) {
-      case 32:
-        return "Round of 64";
-      case 16:
-        return "Round of 32";
-      case 8:
-        return "Round of 16";
-      case 4:
-        return "Quarter Final";
-      case 2:
-        return "Semi Final";
-      case 1:
-        return "Final";
-      default:
-        // Fallback for edge cases
-        if (matchCount > 32) return "Round of 64";
-        if (matchCount > 16) return "Round of 32";
-        if (matchCount > 8) return "Round of 16";
-        if (matchCount > 4) return "Quarter Final";
-        if (matchCount > 2) return "Semi Final";
-        return "Final";
+const getRoundName = (round: number, totalRounds: number): string => {
+  const roundMatches = getMatchesByRound(round);
+  
+  // ⭐ PRIORITAS 1: Gunakan stageName dari backend jika ada
+  if (roundMatches.length > 0) {
+    // Cari match pertama yang punya stageName
+    const matchWithStageName = roundMatches.find(m => (m as any).stageName);
+    
+    if (matchWithStageName && (matchWithStageName as any).stageName) {
+      const stageName = (matchWithStageName as any).stageName;
+      
+      switch (stageName) {
+        case 'ROUND_OF_64':
+          return 'Round of 64';
+        case 'ROUND_OF_32':
+          return 'Round of 32';
+        case 'ROUND_OF_16':
+          return 'Round of 16';
+        case 'QUARTER_FINAL':
+          return 'Quarter Final';
+        case 'SEMI_FINAL':
+          return 'Semi Final';
+        case 'FINAL':
+          return 'Final';
+        default:
+          // Kalau format tidak dikenali, tampilkan as-is dengan formatting
+          return stageName.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase());
+      }
     }
-  };
+  }
+  
+  // ⭐ PRIORITAS 2: Fallback - Hitung berdasarkan match count
+  // (untuk backward compatibility jika stageName tidak ada)
+  const matchCount = roundMatches.length;
+
+  switch (matchCount) {
+    case 32:
+      return "Round of 64";
+    case 16:
+      return "Round of 32";
+    case 8:
+      return "Round of 16";
+    case 4:
+      return "Quarter Final";
+    case 2:
+      return "Semi Final";
+    case 1:
+      return "Final";
+    default:
+      // Fallback untuk edge cases
+      if (matchCount > 32) return "Round of 64";
+      if (matchCount > 16) return "Round of 32";
+      if (matchCount > 8) return "Round of 16";
+      if (matchCount > 4) return "Quarter Final";
+      if (matchCount > 2) return "Semi Final";
+      return "Final";
+  }
+};
 
   const getMatchesByRound = (round: number) => {
     return matches.filter((match) => match.ronde === round);
@@ -1709,152 +1753,156 @@ const generatePrestasiLeaderboard = () => {
     return positions;
   };
 
-  /**
-   * 🆕 Render CENTER FINAL Match
-   */
-  const renderCenterFinal = () => {
-    const finalMatch = getFinalMatch();
-    const leftMatches = getLeftMatches();
-    const rightMatches = getRightMatches();
+const renderCenterFinal = () => {
+  const finalMatch = getFinalMatch();
+  const leftMatches = getLeftMatches();
+  const rightMatches = getRightMatches();
 
-    // ✅ PERBAIKAN: Deteksi jika hanya 2 peserta (langsung final)
-    const isDirectFinal = approvedParticipants.length === 2;
+  // ⭐ PERBAIKAN: Deteksi berbagai kasus special
+  const isDirectFinal = approvedParticipants.length === 2;
+  const isThreeParticipants = approvedParticipants.length === 3;
 
-    // Calculate positions
-    const leftPositions = calculateVerticalPositions(leftMatches);
-    const rightPositions = calculateVerticalPositions(rightMatches);
+  // Calculate positions
+  const leftPositions = calculateVerticalPositions(leftMatches);
+  const rightPositions = calculateVerticalPositions(rightMatches);
 
-    // Get semi-final Y positions
+  // Get semi-final Y positions
+  let finalYPosition = 0;
+  
+  if (isDirectFinal || isThreeParticipants) {
+    // Untuk 2 atau 3 peserta, posisi final di tengah
+    finalYPosition = 100;
+  } else {
     const leftSemiY = leftPositions[leftPositions.length - 1]?.[0] || 0;
     const rightSemiY = rightPositions[rightPositions.length - 1]?.[0] || 0;
+    finalYPosition = (leftSemiY + rightSemiY) / 2;
+  }
+  
+  const lineLength = CENTER_GAP / 2 + 60;
 
-    // Final Y position = rata-rata dari kedua semi-final
-    const finalYPosition = (leftSemiY + rightSemiY) / 2;
-    const lineLength = CENTER_GAP / 2 + 60;
-
-    return (
+  return (
+    <div
+      style={{
+        position: "relative",
+        width: `${CARD_WIDTH}px`,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+      }}
+    >
+      {/* Round Header */}
       <div
+        className="round-header"
         style={{
-          position: "relative",
           width: `${CARD_WIDTH}px`,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
+          textAlign: "center",
+          position: "relative",
+          zIndex: 20,
+          background: "#F5FBEF",
+          padding: "8px 12px",
         }}
       >
-        {/* Round Header */}
         <div
-          className="round-header"
+          className="px-4 py-2 rounded-lg font-bold text-sm shadow-md mb-5"
+          style={{ backgroundColor: "#990D35", color: "#F5FBEF" }}
+        >
+          Final
+        </div>
+      </div>
+
+      {/* Container untuk card + connectors */}
+      <div
+        style={{ position: "relative", width: "100%", minHeight: "600px" }}
+      >
+        {/* ⭐ HANYA RENDER CONNECTOR JIKA ADA SEMI-FINAL (> 3 peserta) */}
+        {!isDirectFinal && !isThreeParticipants && (
+          <>
+            {/* LEFT CONNECTOR ke Final */}
+            <svg
+              style={{
+                position: "absolute",
+                left: -lineLength,
+                top: `${finalYPosition + CARD_HEIGHT / 2 - 1}px`,
+                width: lineLength,
+                height: 2,
+                pointerEvents: "none",
+                zIndex: 1,
+              }}
+            >
+              <line
+                x1="0"
+                y1="1"
+                x2={lineLength}
+                y2="1"
+                stroke="#990D35"
+                strokeWidth="2.5"
+                opacity="0.8"
+              />
+            </svg>
+
+            {/* RIGHT CONNECTOR ke Final */}
+            <svg
+              style={{
+                position: "absolute",
+                right: -lineLength,
+                top: `${finalYPosition + CARD_HEIGHT / 2 - 1}px`,
+                width: lineLength,
+                height: 2,
+                pointerEvents: "none",
+                zIndex: 1,
+              }}
+            >
+              <line
+                x1="0"
+                y1="1"
+                x2={lineLength}
+                y2="1"
+                stroke="#990D35"
+                strokeWidth="2.5"
+                opacity="0.8"
+              />
+            </svg>
+          </>
+        )}
+
+        {/* Final Match Card */}
+        <div
           style={{
+            position: "absolute",
+            top: `${finalYPosition}px`,
+            left: 0,
             width: `${CARD_WIDTH}px`,
-            textAlign: "center",
-            position: "relative",
-            zIndex: 20,
-            background: "#F5FBEF",
-            padding: "8px 12px",
           }}
         >
-          <div
-            className="px-4 py-2 rounded-lg font-bold text-sm shadow-md mb-5"
-            style={{ backgroundColor: "#990D35", color: "#F5FBEF" }}
-          >
-            Final
-          </div>
-        </div>
-
-        {/* Container untuk card + connectors */}
-        <div
-          style={{ position: "relative", width: "100%", minHeight: "600px" }}
-        >
-          {/* ✅ HANYA RENDER CONNECTOR JIKA BUKAN DIRECT FINAL (> 2 peserta) */}
-          {!isDirectFinal && (
-            <>
-              {/* LEFT CONNECTOR ke Final */}
-              <svg
-                style={{
-                  position: "absolute",
-                  left: -lineLength,
-                  top: `${finalYPosition + CARD_HEIGHT / 2 - 1}px`,
-                  width: lineLength,
-                  height: 2,
-                  pointerEvents: "none",
-                  zIndex: 1,
-                }}
+          {finalMatch ? (
+            renderMatchCard(
+              finalMatch,
+              `final-${finalMatch.id_match}`,
+              matches.findIndex((m) => m.id_match === finalMatch.id_match)
+            )
+          ) : (
+            <div
+              className="w-full p-6 rounded-xl border-2 text-center"
+              style={{
+                borderColor: "#990D35",
+                backgroundColor: "rgba(153, 13, 53, 0.05)",
+              }}
+            >
+              <Trophy
+                size={48}
+                style={{ color: "#990D35", opacity: 0.3 }}
+                className="mx-auto mb-2"
+              />
+              <p
+                className="text-sm font-medium"
+                style={{ color: "#050505", opacity: 0.6 }}
               >
-                <line
-                  x1="0"
-                  y1="1"
-                  x2={lineLength}
-                  y2="1"
-                  stroke="#990D35"
-                  strokeWidth="2.5"
-                  opacity="0.8"
-                />
-              </svg>
-
-              {/* RIGHT CONNECTOR ke Final */}
-              <svg
-                style={{
-                  position: "absolute",
-                  right: -lineLength,
-                  top: `${finalYPosition + CARD_HEIGHT / 2 - 1}px`,
-                  width: lineLength,
-                  height: 2,
-                  pointerEvents: "none",
-                  zIndex: 1,
-                }}
-              >
-                <line
-                  x1="0"
-                  y1="1"
-                  x2={lineLength}
-                  y2="1"
-                  stroke="#990D35"
-                  strokeWidth="2.5"
-                  opacity="0.8"
-                />
-              </svg>
-            </>
+                Waiting for finalists
+              </p>
+            </div>
           )}
-
-          {/* Final Match Card */}
-          <div
-            style={{
-              position: "absolute",
-              top: `${finalYPosition}px`,
-              left: 0,
-              width: `${CARD_WIDTH}px`,
-            }}
-          >
-            {finalMatch ? (
-              renderMatchCard(
-                finalMatch,
-                `final-${finalMatch.id_match}`,
-                matches.findIndex((m) => m.id_match === finalMatch.id_match)
-              )
-            ) : (
-              <div
-                className="w-full p-6 rounded-xl border-2 text-center"
-                style={{
-                  borderColor: "#990D35",
-                  backgroundColor: "rgba(153, 13, 53, 0.05)",
-                }}
-              >
-                <Trophy
-                  size={48}
-                  style={{ color: "#990D35", opacity: 0.3 }}
-                  className="mx-auto mb-2"
-                />
-                <p
-                  className="text-sm font-medium"
-                  style={{ color: "#050505", opacity: 0.6 }}
-                >
-                  Waiting for finalists
-                </p>
-              </div>
-            )}
-          </div>
         </div>
+      </div>
 
 {/* ✅ LEADERBOARD - DIPERBAIKI */}
 {prestasiLeaderboard && (
@@ -2775,129 +2823,438 @@ const generatePrestasiLeaderboard = () => {
       {viewMode === "bracket" ? (
         <>
           {/* PRESTASI Layout dengan FIXED POSITIONING */}
-          {bracketGenerated && matches.length > 0 ? (
-            <div className="p-6">
-              <div id="bracket-export-area">
-                {/* Title for PDF */}
-                {/* Header Sederhana - Tanpa Border */}
-                <div className="mb-4">
-                  {/* Header 3 Kolom - Compact */}
-                  <div className="flex items-start justify-between gap-4 mb-3">
-                    {/* KOLOM KIRI - Logo PBTI */}
-                    <div className="flex-shrink-0 w-20">
-                      <img
-                        src={taekwondo}
-                        alt="PBTI Logo"
-                        className="h-16 w-auto object-contain"
-                      />
+{bracketGenerated && matches.length > 0 ? (
+  <div className="p-6">
+    <div id="bracket-export-area">
+      {/* Title for PDF */}
+      {/* Header Sederhana - Tanpa Border */}
+      <div className="mb-4">
+        {/* Header 3 Kolom - Compact */}
+        <div className="flex items-start justify-between gap-4 mb-3">
+          {/* KOLOM KIRI - Logo PBTI */}
+          <div className="flex-shrink-0 w-20">
+            <img
+              src={taekwondo}
+              alt="PBTI Logo"
+              className="h-16 w-auto object-contain"
+            />
+          </div>
+
+          {/* KOLOM TENGAH - Info Kejuaraan */}
+          <div className="flex-1 text-center px-3">
+            {/* Nama Kejuaraan */}
+            <h2
+              className="text-xl font-bold mb-1"
+              style={{ color: "#990D35" }}
+            >
+              {kelasData.kompetisi.nama_event}
+            </h2>
+
+            {/* Detail Kelas */}
+            <p
+              className="text-base font-semibold mb-1"
+              style={{ color: "#050505" }}
+            >
+              {kelasData.kelompok?.nama_kelompok} {displayGender}{" "}
+              {kelasData.kelas_berat?.nama_kelas ||
+                kelasData.poomsae?.nama_kelas}
+            </p>
+
+            {/* Tanggal - Input Manual */}
+            <input
+              type="date"
+              id="tournament-date-display"
+              value={tanggalPertandingan || ""}
+              onChange={(e) => setTanggalPertandingan(e.target.value)}
+              className="text-sm px-2 py-1 rounded border text-center mb-1"
+              style={{ borderColor: "#990D35", color: "#050505" }}
+            />
+            {/* Lokasi */}
+            <p
+              className="text-sm mb-1"
+              style={{ color: "#050505", opacity: 0.7 }}
+            >
+              GOR Ranau JSC Palembang
+            </p>
+
+            {/* Jumlah Kompetitor */}
+            <p
+              className="text-sm font-medium"
+              style={{ color: "#990D35" }}
+            >
+              {approvedParticipants.length} Kompetitor
+            </p>
+          </div>
+
+          {/* KOLOM KANAN - Logo Event */}
+          <div className="flex-shrink-0 w-20">
+            <img
+              src={sriwijaya}
+              alt="Event Logo"
+              className="h-16 w-auto object-contain"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div
+        ref={bracketRef}
+        className="overflow-x-auto overflow-y-visible pb-8"
+      >
+        {/* ⭐ CASE 1: 2 peserta - langsung final */}
+        {approvedParticipants.length === 2 ? (
+          <div
+            className="tournament-layout"
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "flex-start",
+              minWidth: "fit-content",
+              minHeight: "400px",
+              padding: "60px 40px 20px 40px",
+              position: "relative",
+            }}
+          >
+            {/* Hanya render final match */}
+            {renderCenterFinal()}
+          </div>
+        ) : /* ⭐ CASE 2: 3 peserta - Semi Final + Final (layout horizontal) */
+        approvedParticipants.length === 3 ? (
+          <div
+            className="tournament-layout"
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "flex-start",
+              gap: `${CENTER_GAP}px`,
+              minWidth: "fit-content",
+              minHeight: "500px",
+              padding: "60px 40px 20px 40px",
+              position: "relative",
+            }}
+          >
+            {/* ========== SEMI-FINAL (Round 1) ========== */}
+            <div
+              style={{
+                position: "relative",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+              }}
+            >
+              {/* Round Header - Semi Final */}
+              <div
+                className="round-header"
+                style={{
+                  width: `${CARD_WIDTH}px`,
+                  textAlign: "center",
+                  position: "relative",
+                  zIndex: 20,
+                  background: "#F5FBEF",
+                  padding: "8px 12px",
+                }}
+              >
+                <div
+                  className="px-4 py-2 rounded-lg font-bold text-sm shadow-md mb-5"
+                  style={{ backgroundColor: "#990D35", color: "#F5FBEF" }}
+                >
+                  {getRoundName(1, getTotalRounds())}
+                </div>
+              </div>
+
+              {/* Semi-Final Match Card */}
+              <div style={{ position: "relative" }}>
+                {getMatchesByRound(1).map((match, idx) => (
+                  <div
+                    key={`semi-${match.id_match}`}
+                    style={{
+                      marginBottom: "20px",
+                    }}
+                  >
+                    {renderMatchCard(
+                      match,
+                      match.id_match,
+                      matches.findIndex((m) => m.id_match === match.id_match)
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* ========== CONNECTOR LINE dari Semi ke Final ========== */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                height: `${CARD_HEIGHT}px`,
+                marginTop: "80px",
+              }}
+            >
+              <svg
+                style={{
+                  width: CENTER_GAP,
+                  height: 2,
+                }}
+              >
+                <line
+                  x1="0"
+                  y1="1"
+                  x2={CENTER_GAP}
+                  y2="1"
+                  stroke="#990D35"
+                  strokeWidth="2.5"
+                  opacity="0.8"
+                />
+              </svg>
+            </div>
+
+            {/* ========== FINAL (Round 2) ========== */}
+            <div
+              style={{
+                position: "relative",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+              }}
+            >
+              {/* Round Header - Final */}
+              <div
+                className="round-header"
+                style={{
+                  width: `${CARD_WIDTH}px`,
+                  textAlign: "center",
+                  position: "relative",
+                  zIndex: 20,
+                  background: "#F5FBEF",
+                  padding: "8px 12px",
+                }}
+              >
+                <div
+                  className="px-4 py-2 rounded-lg font-bold text-sm shadow-md mb-5"
+                  style={{ backgroundColor: "#990D35", color: "#F5FBEF" }}
+                >
+                  {getRoundName(2, getTotalRounds())}
+                </div>
+              </div>
+
+              {/* Final Match Card */}
+              <div style={{ position: "relative" }}>
+                {getMatchesByRound(2).map((match, idx) => (
+                  <div
+                    key={`final-${match.id_match}`}
+                    style={{
+                      marginBottom: "20px",
+                    }}
+                  >
+                    {renderMatchCard(
+                      match,
+                      match.id_match,
+                      matches.findIndex((m) => m.id_match === match.id_match)
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* ========== LEADERBOARD untuk 3 peserta ========== */}
+              {prestasiLeaderboard && (
+                <div
+                  id="prestasi-leaderboard"
+                  style={{
+                    width: "400px",
+                    marginTop: "40px",
+                    position: "relative",
+                    zIndex: 20,
+                  }}
+                >
+                  <div
+                    className="bg-white rounded-lg shadow-lg border-2"
+                    style={{ borderColor: "#990D35" }}
+                  >
+                    {/* Header */}
+                    <div
+                      className="p-4 border-b"
+                      style={{
+                        backgroundColor: "rgba(153, 13, 53, 0.05)",
+                        borderColor: "#990D35",
+                      }}
+                    >
+                      <div className="flex items-center gap-2 justify-center">
+                        <Trophy size={20} style={{ color: "#990D35" }} />
+                        <h3
+                          className="text-lg font-bold"
+                          style={{ color: "#990D35" }}
+                        >
+                          LEADERBOARD
+                        </h3>
+                      </div>
                     </div>
 
-                    {/* KOLOM TENGAH - Info Kejuaraan */}
-                    <div className="flex-1 text-center px-3">
-                      {/* Nama Kejuaraan */}
-                      <h2
-                        className="text-xl font-bold mb-1"
-                        style={{ color: "#990D35" }}
-                      >
-                        {kelasData.kompetisi.nama_event}
-                      </h2>
+                    <div className="p-4">
+                      {/* 1st Place - GOLD */}
+                      {prestasiLeaderboard.first && (
+                        <div className="mb-3">
+                          <div
+                            className="relative p-3 rounded-lg border-2 shadow-md"
+                            style={{
+                              backgroundColor: "rgba(255, 215, 0, 0.1)",
+                              borderColor: "#FFD700",
+                            }}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div
+                                className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 shadow-md"
+                                style={{ backgroundColor: "#FFD700" }}
+                              >
+                                <span className="text-2xl">🥇</span>
+                              </div>
 
-                      {/* Detail Kelas */}
-                      <p
-                        className="text-base font-semibold mb-1"
-                        style={{ color: "#050505" }}
-                      >
-                        {kelasData.kelompok?.nama_kelompok} {displayGender}{" "}
-                        {kelasData.kelas_berat?.nama_kelas ||
-                          kelasData.poomsae?.nama_kelas}
-                      </p>
+                              <div className="flex-1 min-w-0">
+                                <span
+                                  className="text-xs font-bold px-2 py-0.5 rounded-full"
+                                  style={{
+                                    backgroundColor: "#FFD700",
+                                    color: "white",
+                                  }}
+                                >
+                                  CHAMPION
+                                </span>
+                                <h4
+                                  className="text-base font-bold mt-1 truncate"
+                                  style={{ color: "#050505" }}
+                                >
+                                  {prestasiLeaderboard.first.name}
+                                </h4>
+                                <p
+                                  className="text-xs uppercase truncate"
+                                  style={{ color: "#050505", opacity: 0.6 }}
+                                >
+                                  {prestasiLeaderboard.first.dojo}
+                                </p>
+                              </div>
 
-                      {/* Tanggal - Input Manual */}
-                      <input
-                        type="date"
-                        id="tournament-date-display"
-                        value={tanggalPertandingan || ""}
-                        onChange={(e) => setTanggalPertandingan(e.target.value)}
-                        className="text-sm px-2 py-1 rounded border text-center mb-1"
-                        style={{ borderColor: "#990D35", color: "#050505" }}
-                      />
-                      {/* Lokasi */}
-                      <p
-                        className="text-sm mb-1"
-                        style={{ color: "#050505", opacity: 0.7 }}
-                      >
-                        GOR Ranau JSC Palembang
-                      </p>
+                              <Trophy
+                                size={24}
+                                style={{ color: "#FFD700" }}
+                                className="flex-shrink-0"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      )}
 
-                      {/* Jumlah Kompetitor */}
-                      <p
-                        className="text-sm font-medium"
-                        style={{ color: "#990D35" }}
-                      >
-                        {approvedParticipants.length} Kompetitor
-                      </p>
-                    </div>
+                      {/* 2nd Places - SILVER */}
+                      {prestasiLeaderboard.second.length > 0 && (
+                        <div>
+                          <div className="flex items-center gap-2 mb-2 px-1">
+                            <span
+                              className="text-xs font-bold"
+                              style={{ color: "#C0C0C0" }}
+                            >
+                              🥈 SILVER ({prestasiLeaderboard.second.length})
+                            </span>
+                          </div>
+                          {prestasiLeaderboard.second.map((participant, index) => (
+                            <div
+                              key={participant.id}
+                              className={
+                                index < prestasiLeaderboard.second.length - 1
+                                  ? "mb-2"
+                                  : ""
+                              }
+                            >
+                              <div
+                                className="p-3 rounded-lg border-2 shadow-sm"
+                                style={{
+                                  backgroundColor: "rgba(192, 192, 192, 0.1)",
+                                  borderColor: "#C0C0C0",
+                                }}
+                              >
+                                <div className="flex items-center gap-3">
+                                  <div
+                                    className="w-10 h-10 rounded-full flex items-center justify-center shadow-sm flex-shrink-0"
+                                    style={{ backgroundColor: "#C0C0C0" }}
+                                  >
+                                    <span className="text-xl">🥈</span>
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <h5
+                                      className="text-sm font-bold truncate"
+                                      style={{ color: "#050505" }}
+                                    >
+                                      {participant.name}
+                                    </h5>
+                                    <p
+                                      className="text-xs uppercase truncate"
+                                      style={{ color: "#050505", opacity: 0.6 }}
+                                    >
+                                      {participant.dojo}
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
 
-                    {/* KOLOM KANAN - Logo Event */}
-                    <div className="flex-shrink-0 w-20">
-                      <img
-                        src={sriwijaya}
-                        alt="Event Logo"
-                        className="h-16 w-auto object-contain"
-                      />
+                      {/* Empty State */}
+                      {!prestasiLeaderboard.first &&
+                        prestasiLeaderboard.second.length === 0 && (
+                          <div className="text-center py-8">
+                            <Trophy
+                              size={40}
+                              style={{ color: "#990D35", opacity: 0.3 }}
+                              className="mx-auto mb-2"
+                            />
+                            <p
+                              className="text-sm font-semibold mb-1"
+                              style={{ color: "#050505" }}
+                            >
+                              Belum Ada Hasil
+                            </p>
+                            <p
+                              className="text-xs"
+                              style={{ color: "#050505", opacity: 0.5 }}
+                            >
+                              Leaderboard akan muncul setelah pertandingan selesai
+                            </p>
+                          </div>
+                        )}
                     </div>
                   </div>
                 </div>
-
-                <div
-                  ref={bracketRef}
-                  className="overflow-x-auto overflow-y-visible pb-8"
-                >
-                  {/* ✅ PERBAIKAN: Jika hanya 2 peserta, render center final saja */}
-                  {approvedParticipants.length === 2 ? (
-                    <div
-                      className="tournament-layout"
-                      style={{
-                        display: "flex",
-                        justifyContent: "center",
-                        alignItems: "flex-start",
-                        minWidth: "fit-content",
-                        minHeight: "400px",
-                        padding: "60px 40px 20px 40px",
-                        position: "relative",
-                      }}
-                    >
-                      {/* Hanya render final match */}
-                      {renderCenterFinal()}
-                    </div>
-                  ) : (
-                    <div
-                      className="tournament-layout"
-                      style={{
-                        display: "flex",
-                        justifyContent: "center",
-                        alignItems: "flex-start",
-                        gap: `${CENTER_GAP}px`,
-                        minWidth: "fit-content",
-                        minHeight: "800px",
-                        padding: "60px 40px 20px 40px",
-                        position: "relative",
-                      }}
-                    >
-                      {/* LEFT BRACKET */}
-                      {renderBracketSide(getLeftMatches(), "left", 1)}
-
-                      {/* CENTER FINAL */}
-                      {renderCenterFinal()}
-
-                      {/* RIGHT BRACKET */}
-                      {renderBracketSide(getRightMatches(), "right", 1)}
-                    </div>
-                  )}
-                </div>
-              </div>
+              )}
             </div>
-          ) : (
+          </div>
+        ) : (
+          /* ⭐ CASE 3: 4+ peserta - Full bracket dengan LEFT-CENTER-RIGHT */
+          <div
+            className="tournament-layout"
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "flex-start",
+              gap: `${CENTER_GAP}px`,
+              minWidth: "fit-content",
+              minHeight: "800px",
+              padding: "60px 40px 20px 40px",
+              position: "relative",
+            }}
+          >
+            {/* LEFT BRACKET */}
+            {renderBracketSide(getLeftMatches(), "left", 1)}
+
+            {/* CENTER FINAL */}
+            {renderCenterFinal()}
+
+            {/* RIGHT BRACKET */}
+            {renderBracketSide(getRightMatches(), "right", 1)}
+          </div>
+        )}
+      </div>
+    </div>
+  </div>
+) : (
             <div className="p-6">
               <div className="text-center py-16">
                 <Trophy
