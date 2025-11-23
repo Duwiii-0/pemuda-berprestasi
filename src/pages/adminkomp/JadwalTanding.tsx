@@ -1815,7 +1815,7 @@ const JadwalPertandingan: React.FC = () => {
                 </button>
               </div>
               {/* 🆕 BUTTON AUTO-GENERATE */}
-              {/* <div className="mb-6 flex gap-3">
+              <div className="mb-6 flex gap-3">
                 <button
                   onClick={() => setShowAutoNumberModal(true)}
                   disabled={hariList.length === 0}
@@ -1825,7 +1825,7 @@ const JadwalPertandingan: React.FC = () => {
                   <Zap size={16} />
                   Auto-Generate Nomor Partai
                 </button>
-              </div> */}
+              </div>
               {hariAntrianList.length === 0 ? (
                 <div className="text-center py-12">
                   <ClipboardList
