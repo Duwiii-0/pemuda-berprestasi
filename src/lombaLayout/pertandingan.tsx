@@ -159,22 +159,28 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
     }
   };
 
-  const fetchMatchData = async (hari?: number) => { // NEW: Accept hari parameter
-    if (!idKompetisi) return;
-    try {
-      const url = hari ? 
-        `/api/pertandingan/kompetisi/${idKompetisi}?hari=${hari}` :
-        `/api/pertandingan/kompetisi/${idKompetisi}`;
-      
-      const res = await fetch(url);
-      const data = await res.json();
-      if (data.success) {
-        setMatchData(data.data);
-      }
-    } catch (error) {
-      console.error("Error fetching match data:", error);
+const fetchMatchData = async (hari?: number) => {
+  if (!idKompetisi) return;
+  try {
+    const url = hari ? 
+      `/api/pertandingan/kompetisi/${idKompetisi}?hari=${hari}` :
+      `/api/pertandingan/kompetisi/${idKompetisi}`;
+    
+    console.log('🔍 Fetching match data from:', url); // ⭐ DEBUG
+    
+    const res = await fetch(url);
+    const data = await res.json();
+    
+    console.log('📊 Match data received:', data); // ⭐ DEBUG
+    console.log('📋 Lapangan A matches:', data.data?.filter(m => m.nomor_lapangan === 'A')); // ⭐ DEBUG
+    
+    if (data.success) {
+      setMatchData(data.data);
     }
-  };
+  } catch (error) {
+    console.error("Error fetching match data:", error);
+  }
+};
 
   const currentHari = hariList.find((h) => h.tanggal === selectedHari);
 
