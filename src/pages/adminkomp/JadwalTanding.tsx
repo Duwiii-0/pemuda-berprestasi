@@ -104,6 +104,7 @@ const JadwalPertandingan: React.FC = () => {
   const [selectedExportLapangan, setSelectedExportLapangan] = useState<
     number[]
   >([]);
+  const [autoResetBeforeGenerate, setAutoResetBeforeGenerate] = useState(true); // Default true = selalu reset
   const [exportingPDF, setExportingPDF] = useState(false);
   const [lapanganSearchTerms, setLapanganSearchTerms] = useState<
     Record<number, string>
@@ -783,58 +784,110 @@ const JadwalPertandingan: React.FC = () => {
   /**
    * Auto-generate dan save nomor partai
    */
-  const handleAutoGenerateNumbers = async () => {
-    if (!selectedAutoGenLapangan) return;
+/**
+ * 🆕 Auto-generate dengan auto-reset dan auto-update antrian
+ */
+const handleAutoGenerateNumbers = async () => {
+  if (!selectedAutoGenLapangan) return;
 
-    setGeneratingNumbers(true);
-    setErrorMessage("");
-    setSuccessMessage("");
+  setGeneratingNumbers(true);
+  setErrorMessage("");
+  setSuccessMessage("");
 
-    try {
-      console.log(
-        `🎯 Generating numbers for lapangan ${selectedAutoGenLapangan}...`
-      );
-
-      const res = await fetch(
-        `${
-          import.meta.env.VITE_API_URL
-        }/lapangan/${selectedAutoGenLapangan}/auto-generate-numbers`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ starting_number: 1 }),
-        }
-      );
-
-      const data = await res.json();
-
-      if (data.success) {
-        setSuccessMessage(`✅ ${data.message} - Range: ${data.range}`);
-
-        // Close modal
-        setShowAutoNumberModal(false);
-        setSelectedAutoGenHari("");
-        setSelectedAutoGenLapangan(null);
-        setPreviewData(null);
-
-        // Refresh data
-        await fetchHariLapangan();
-
-        console.log("✅ Numbers generated successfully");
-
-        // Clear success message after 5 seconds
-        setTimeout(() => setSuccessMessage(""), 5000);
-      } else {
-        throw new Error(data.message || "Gagal generate nomor partai");
-      }
-    } catch (err: any) {
-      console.error("❌ Error auto-generate:", err);
-      setErrorMessage(err.message || "Gagal generate nomor partai");
-      setTimeout(() => setErrorMessage(""), 5000);
-    } finally {
-      setGeneratingNumbers(false);
+  try {
+    // ✅ STEP 1: RESET NOMOR PARTAI (supaya mulai dari 1 lagi)
+    console.log(`🗑️ Resetting numbers for lapangan ${selectedAutoGenLapangan}...`);
+    
+    const resetRes = await fetch(
+      `${import.meta.env.VITE_API_URL}/lapangan/${selectedAutoGenLapangan}/reset-numbers`,
+      { method: "DELETE" }
+    );
+    
+    const resetData = await resetRes.json();
+    
+    if (!resetData.success) {
+      console.warn('⚠️ Reset failed or no numbers to reset, continuing anyway...');
+    } else {
+      console.log('✅ Numbers reset successfully');
     }
-  };
+
+    // ✅ STEP 2: GENERATE NOMOR PARTAI BARU (mulai dari 1)
+    console.log(`🎯 Generating new numbers starting from 1...`);
+
+    const genRes = await fetch(
+      `${import.meta.env.VITE_API_URL}/lapangan/${selectedAutoGenLapangan}/auto-generate-numbers`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ starting_number: 1 }),
+      }
+    );
+
+    const genData = await genRes.json();
+
+    if (!genData.success) {
+      throw new Error(genData.message || "Gagal generate nomor partai");
+    }
+
+    console.log('✅ Numbers generated successfully:', genData.range);
+
+    // ✅ STEP 3: AUTO-UPDATE ANTRIAN (bertanding = 1, persiapan = 2, pemanasan = 3)
+    console.log(`🔄 Auto-updating antrian for lapangan ${selectedAutoGenLapangan}...`);
+
+    const antrianRes = await fetch(
+      `${import.meta.env.VITE_API_URL}/lapangan/antrian`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id_lapangan: selectedAutoGenLapangan,
+          bertanding: 1,
+          persiapan: 2,
+          pemanasan: 3,
+        }),
+      }
+    );
+
+    const antrianData = await antrianRes.json();
+
+    if (!antrianData.success) {
+      console.warn('⚠️ Failed to update antrian, but generation was successful');
+    } else {
+      console.log('✅ Antrian updated successfully');
+    }
+
+    // ✅ STEP 4: SUCCESS MESSAGE
+    setSuccessMessage(
+      `✅ Berhasil generate nomor partai (${genData.range}) dan set antrian!\n` +
+      `🟢 Bertanding: #1\n` +
+      `🟠 Persiapan: #2\n` +
+      `🟡 Pemanasan: #3`
+    );
+
+    // Close modal
+    setShowAutoNumberModal(false);
+    setSelectedAutoGenHari("");
+    setSelectedAutoGenLapangan(null);
+    setPreviewData(null);
+
+    // ✅ STEP 5: REFRESH DATA
+    await fetchHariLapangan();
+    console.log('✅ All done! Data refreshed.');
+
+    // Clear success message after 7 seconds
+    setTimeout(() => setSuccessMessage(""), 7000);
+
+  } catch (err: any) {
+    console.error("❌ Error in auto-generate:", err);
+    setErrorMessage(
+      err.message || 
+      "Gagal generate nomor partai. Pastikan semua bracket sudah dibuat."
+    );
+    setTimeout(() => setErrorMessage(""), 5000);
+  } finally {
+    setGeneratingNumbers(false);
+  }
+};
 
   /**
    * Reset nomor partai di lapangan
@@ -878,6 +931,81 @@ const JadwalPertandingan: React.FC = () => {
       setTimeout(() => setErrorMessage(""), 3000);
     }
   };
+
+  /**
+ * 🆕 Reset nomor partai DAN langsung update antrian
+ */
+const handleResetAndUpdateAntrian = async (
+  id_lapangan: number,
+  namaLapangan: string
+) => {
+  if (
+    !confirm(
+      `Yakin ingin reset semua nomor partai di Lapangan ${namaLapangan}?\n\n` +
+      `Nomor partai akan dihapus dan antrian akan di-reset ke 0.`
+    )
+  ) {
+    return;
+  }
+
+  setErrorMessage("");
+  setSuccessMessage("");
+
+  try {
+    console.log(`🗑️ Resetting numbers for lapangan ${id_lapangan}...`);
+
+    // STEP 1: Reset nomor partai
+    const resetRes = await fetch(
+      `${import.meta.env.VITE_API_URL}/lapangan/${id_lapangan}/reset-numbers`,
+      { method: "DELETE" }
+    );
+
+    const resetData = await resetRes.json();
+
+    if (!resetData.success) {
+      throw new Error(resetData.message || "Gagal reset nomor partai");
+    }
+
+    console.log('✅ Numbers reset successfully');
+
+    // STEP 2: Reset antrian ke 0
+    const antrianRes = await fetch(
+      `${import.meta.env.VITE_API_URL}/lapangan/antrian`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id_lapangan: id_lapangan,
+          bertanding: 0,
+          persiapan: 0,
+          pemanasan: 0,
+        }),
+      }
+    );
+
+    const antrianData = await antrianRes.json();
+
+    if (!antrianData.success) {
+      console.warn('⚠️ Failed to reset antrian');
+    } else {
+      console.log('✅ Antrian reset successfully');
+    }
+
+    setSuccessMessage(
+      `✅ ${resetData.message}\n` +
+      `Antrian telah di-reset. Silakan generate ulang nomor partai.`
+    );
+
+    await fetchHariLapangan();
+    setTimeout(() => setSuccessMessage(""), 5000);
+    console.log("✅ Reset complete!");
+
+  } catch (err: any) {
+    console.error("❌ Error reset:", err);
+    setErrorMessage(err.message || "Gagal reset nomor partai");
+    setTimeout(() => setErrorMessage(""), 3000);
+  }
+};
 
   const generateNamaKelas = (kelas: any) => {
     const parts = [];
@@ -1765,6 +1893,24 @@ const JadwalPertandingan: React.FC = () => {
                                   )}
                                 </p>
                               </div>
+                              {/* 🆕 BUTTON RESET DENGAN AUTO-UPDATE ANTRIAN */}
+        <button
+          onClick={() =>
+            handleResetAndUpdateAntrian(
+              lap.id_lapangan,
+              lap.nama_lapangan
+            )
+          }
+          className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:opacity-80"
+          style={{
+            backgroundColor: "rgba(220, 38, 38, 0.1)",
+            color: "#dc2626",
+          }}
+          title="Reset semua nomor partai dan antrian"
+        >
+          <X size={14} />
+          Reset Nomor
+        </button>
                             )}
                           </div>
                         ))}
