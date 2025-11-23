@@ -84,29 +84,36 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
     return parts.length > 0 ? parts.join(" - ") : "Kelas Tidak Lengkap";
   };
 
-  useEffect(() => {
-    if (!idKompetisi) return;
+useEffect(() => {
+  if (!idKompetisi) return;
+  fetchLiveData();
+
+  const interval = setInterval(() => {
     fetchLiveData();
-    // fetchMatchData(); // Removed this call
-
-    const interval = setInterval(() => {
-      fetchLiveData();
-      // fetchMatchData(); // Also remove this from interval if it's based on selectedHari
-    }, 10000);
-    return () => clearInterval(interval);
-  }, [idKompetisi]);
-
-  // NEW useEffect for fetching match data based on selectedHari
-  useEffect(() => {
-    if (idKompetisi && selectedHari && hariList.length > 0) {
+    // ⭐ Force refresh match data setiap interval
+    if (selectedHari && hariList.length > 0) {
       const selectedDayIndex = hariList.findIndex(hari => hari.tanggal === selectedHari);
       const selectedDayNumber = selectedDayIndex >= 0 ? selectedDayIndex + 1 : undefined;
-
       if (selectedDayNumber !== undefined) {
-        fetchMatchData(selectedDayNumber);
+        fetchMatchData(selectedDayNumber, true);
       }
     }
-  }, [idKompetisi, selectedHari, hariList]);
+  }, 10000);
+  
+  return () => clearInterval(interval);
+}, [idKompetisi, selectedHari, hariList]);
+
+  // NEW useEffect for fetching match data based on selectedHari
+useEffect(() => {
+  if (idKompetisi && selectedHari && hariList.length > 0) {
+    const selectedDayIndex = hariList.findIndex(hari => hari.tanggal === selectedHari);
+    const selectedDayNumber = selectedDayIndex >= 0 ? selectedDayIndex + 1 : undefined;
+
+    if (selectedDayNumber !== undefined) {
+      fetchMatchData(selectedDayNumber, true); // ⭐ Force refresh on mount
+    }
+  }
+}, [idKompetisi, selectedHari, hariList]);
 
 
   const fetchLiveData = async () => {
@@ -159,20 +166,27 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
     }
   };
 
-const fetchMatchData = async (hari?: number) => {
+const fetchMatchData = async (hari?: number, forceRefresh = false) => {
   if (!idKompetisi) return;
   try {
+    const timestamp = forceRefresh ? `&_t=${Date.now()}` : '';
     const url = hari ? 
-      `/api/pertandingan/kompetisi/${idKompetisi}?hari=${hari}` :
-      `/api/pertandingan/kompetisi/${idKompetisi}`;
+      `/api/pertandingan/kompetisi/${idKompetisi}?hari=${hari}${timestamp}` :
+      `/api/pertandingan/kompetisi/${idKompetisi}${timestamp}`;
     
-    console.log('🔍 Fetching match data from:', url); // ⭐ DEBUG
+    console.log('🔍 Fetching match data from:', url);
     
-    const res = await fetch(url);
+    const res = await fetch(url, {
+      cache: 'no-cache', // ⭐ Prevent caching
+      headers: {
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache'
+      }
+    });
     const data = await res.json();
     
-    console.log('📊 Match data received:', data); // ⭐ DEBUG
-    console.log('📋 Lapangan A matches:', data.data?.filter(m => m.nomor_lapangan === 'A')); // ⭐ DEBUG
+    console.log('📊 Match data received:', data);
+    console.log('📋 Lapangan A matches:', data.data?.filter(m => m.nomor_lapangan === 'A'));
     
     if (data.success) {
       setMatchData(data.data);
