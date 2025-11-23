@@ -2976,8 +2976,9 @@ approvedParticipants.length === 3 ? (
         alignItems: "center",
         alignSelf: "flex-start", // ⭐ Align ke atas
         marginTop: `${55 + CARD_HEIGHT / 2}px`, // ⭐ Header (55px) + setengah card
+        marginLeft: "40px", // ⭐ geser garis 40px ke kanan
         height: "2px",
-        width: `${CENTER_GAP}px`,
+        width: `${CENTER_GAP + 140}px`, // ⭐ tambahin panjang biar makin nempel
       }}
     >
 <svg
