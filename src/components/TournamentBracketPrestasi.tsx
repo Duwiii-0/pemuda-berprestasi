@@ -1276,10 +1276,10 @@ const fetchBracketData = async (
     if (!peserta) return "";
     if (peserta.is_team) {
       return (
-        peserta.anggota_tim?.map((t) => t.atlet.nama_atlet).join(", ") || "Team"
+        peserta.anggota_tim?.map((t) => t.atlet.nama_atlet.toUpperCase()).join(", ") || "Team"
       );
     }
-    return peserta.atlet?.nama_atlet || "";
+    return peserta.atlet?.nama_atlet.toUpperCase() || "";
   };
 
   const getDojoName = (peserta?: Peserta) => {
