@@ -242,7 +242,7 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
             </div>
           )}
 
-          <p className="text-lg font-semibold text-center">
+          <p className="text-lg font-semibold text-center uppercase">
             {nama || "Nama peserta tidak tersedia"}
           </p>
         </div>
