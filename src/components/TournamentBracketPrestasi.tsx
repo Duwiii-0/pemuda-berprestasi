@@ -1366,24 +1366,27 @@ const getRoundName = (round: number, totalRounds: number): string => {
     return matches.filter((match) => match.ronde === round);
   };
 
+// ...existing code...
+
 const generatePrestasiLeaderboard = () => {
   if (matches.length === 0) return null;
 
   const leaderboard: {
-    first: { name: string; dojo: string; id: number } | null; // Gold
-    second: { name: string; dojo: string; id: number }[]; // Silver (1 person)
-    third: { name: string; dojo: string; id: number }[]; // Bronze (2 people)
+    first: { name: string; dojo: string; id: number } | null;
+    second: { name: string; dojo: string; id: number }[];
+    third: { name: string; dojo: string; id: number }[];
   } = {
     first: null,
     second: [],
-    third: [], // Initialize third place
+    third: [],
   };
 
   const totalRounds = getTotalRounds();
   const processedSilver = new Set<number>();
+  const processedBronze = new Set<number>();
 
   // ═══════════════════════════════════════════════════════════════
-  // FINAL: Menang = GOLD, Kalah = SILVER
+  // FINAL: Winner = GOLD, Loser = SILVER
   // ═══════════════════════════════════════════════════════════════
   const finalMatch = matches.find((m) => m.ronde === totalRounds);
 
@@ -1417,19 +1420,20 @@ const generatePrestasiLeaderboard = () => {
   }
 
   // ═══════════════════════════════════════════════════════════════
-  // SEMI-FINAL: Kalah = SILVER (bukan bronze!)
+  // ⭐ PERBAIKAN: SEMI-FINAL - Loser = BRONZE (bukan SILVER!)
   // ═══════════════════════════════════════════════════════════════
   const semiRound = totalRounds - 1;
   const semiMatches = matches.filter((m) => m.ronde === semiRound);
-  const processedBronze = new Set<number>(); // To track unique bronze medalists
 
   semiMatches.forEach((match) => {
     if (match.skor_a > 0 || match.skor_b > 0) {
-      const loser = match.skor_a > match.skor_b ? match.peserta_b : match.peserta_a;
+      const loser = match.skor_a > match.skor_b 
+        ? match.peserta_b 
+        : match.peserta_a;
 
-      // Assign Bronze to semi-final losers
+      // ⭐ FIX: Semua loser semi-final langsung dapat BRONZE
       if (loser && !processedBronze.has(loser.id_peserta_kompetisi)) {
-        leaderboard.third.push({ // Assign BRONZE
+        leaderboard.third.push({
           name: getParticipantName(loser),
           dojo: getDojoName(loser),
           id: loser.id_peserta_kompetisi,
