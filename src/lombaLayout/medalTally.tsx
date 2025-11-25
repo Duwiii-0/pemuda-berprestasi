@@ -384,6 +384,9 @@ const transformPrestasiLeaderboard = (matches: any[]) => {
   const semiMatches = matches.filter(m => m.round === semiRound);
   console.log(`\nSemi-Final (Round ${semiRound}): ${semiMatches.length} matches`);
 
+  // ⭐ VALIDASI: Track dojang yang sudah dapat bronze
+  const dojangBronzeSet = new Set<string>();
+
   semiMatches.forEach((match, idx) => {
     console.log(`  Match ${idx + 1}:`, {
       participant1: `${match.participant1?.name || 'N/A'} - ${match.participant1?.dojo || 'N/A'}`,
@@ -394,14 +397,21 @@ const transformPrestasiLeaderboard = (matches: any[]) => {
 
     if ((match.scoreA > 0 || match.scoreB > 0) && match.participant1 && match.participant2) {
       const loser = match.scoreA > match.scoreB ? match.participant2 : match.participant1;
+      const loserDojo = loser?.dojo || '';
 
+      // ⭐ VALIDASI: Cek apakah dojang sudah punya bronze
       if (loser && !leaderboard.bronze.find(p => p.id === loser.id)) {
-        console.log(`    ✅ Bronze: ${loser.name} - ${loser.dojo || 'No Dojo'}`);
-        leaderboard.bronze.push({
-          id: loser.id,
-          name: loser.name,
-          dojo: loser.dojo || ''
-        });
+        if (dojangBronzeSet.has(loserDojo)) {
+          console.log(`    ⚠️ Skipped: ${loser.name} - ${loserDojo} (Dojang sudah memiliki medali perunggu)`);
+        } else {
+          console.log(`    ✅ Bronze: ${loser.name} - ${loserDojo}`);
+          leaderboard.bronze.push({
+            id: loser.id,
+            name: loser.name,
+            dojo: loserDojo
+          });
+          dojangBronzeSet.add(loserDojo); // ⭐ Tandai dojang sudah dapat bronze
+        }
       } else {
         console.log(`    ⚠️ Skipped (duplicate or no loser)`);
       }
@@ -411,6 +421,7 @@ const transformPrestasiLeaderboard = (matches: any[]) => {
   });
 
   console.log(`\n📊 Final Count: Gold=${leaderboard.gold.length}, Silver=${leaderboard.silver.length}, Bronze=${leaderboard.bronze.length}`);
+  console.log(`🏅 Bronze by Dojang:`, Array.from(dojangBronzeSet));
   console.log(`=== END DEBUG ===\n`);
 
   return leaderboard;
