@@ -30,7 +30,9 @@ interface MatchData {
   nomor_antrian: number;
   nomor_lapangan: string;
   nama_atlet_a: string;
+  nama_dojang_a?: string;
   nama_atlet_b: string;
+  nama_dojang_b?: string;
   foto_atlet_a?: string;
   foto_atlet_b?: string;
   stage_name?: string;
@@ -225,7 +227,11 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
         ? lap.antrian?.persiapan
         : lap.antrian?.pemanasan;
 
-    const renderAtlet = (nama: string, foto: string | undefined) => {
+    const renderAtlet = (
+      nama: string,
+      dojang: string | undefined,
+      foto: string | undefined
+    ) => {
       const photoUrl = foto ? getPhotoUrl(foto) : null;
 
       return (
@@ -242,9 +248,14 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
             </div>
           )}
 
-          <p className="text-lg font-semibold text-center">
+          <p className="text-lg font-semibold text-center uppercase">
             {nama || "Nama peserta tidak tersedia"}
           </p>
+          {dojang && (
+            <p className="text-sm text-gray-600 text-center mt-1">
+              {dojang}
+            </p>
+          )}
         </div>
       );
     };
@@ -257,13 +268,13 @@ const LivePertandinganView: React.FC<{ idKompetisi?: number }> = ({
 
         {match ? (
           <div className="flex flex-col gap-4 mt-8">
-            {renderAtlet(match.nama_atlet_a, match.foto_atlet_a)}
+            {renderAtlet(match.nama_atlet_a, match.nama_dojang_a, match.foto_atlet_a)}
 
             <div className="flex items-center justify-center">
               <span className="text-xl font-bold">VS</span>
             </div>
 
-            {renderAtlet(match.nama_atlet_b, match.foto_atlet_b)}
+            {renderAtlet(match.nama_atlet_b, match.nama_dojang_b, match.foto_atlet_b)}
           </div>
         ) : (
           <div className="text-center mt-8 text-lg font-medium">

@@ -46,6 +46,11 @@ export const getAtletMatchInfo = async (
               select: {
                 nama_atlet: true,
                 pas_foto: true,
+                dojang: {
+                  select: {
+                    nama_dojang: true,
+                  },
+                },
               },
             },
           },
@@ -57,6 +62,11 @@ export const getAtletMatchInfo = async (
               select: {
                 nama_atlet: true,
                 pas_foto: true,
+                dojang: {
+                  select: {
+                    nama_dojang: true,
+                  },
+                },
               },
             },
           },
@@ -69,7 +79,9 @@ export const getAtletMatchInfo = async (
       nomor_lapangan: match.nomor_lapangan,
       stage_name: match.stage_name, // Tambahkan stage_name di return
       nama_atlet_a: match.peserta_a?.atlet?.nama_atlet,
+      nama_dojang_a: match.peserta_a?.atlet?.dojang?.nama_dojang,
       nama_atlet_b: match.peserta_b?.atlet?.nama_atlet,
+      nama_dojang_b: match.peserta_b?.atlet?.dojang?.nama_dojang,
       foto_atlet_a: match.peserta_a?.atlet?.pas_foto,
       foto_atlet_b: match.peserta_b?.atlet?.pas_foto,
     }));
