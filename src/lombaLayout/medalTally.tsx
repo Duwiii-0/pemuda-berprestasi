@@ -1060,7 +1060,7 @@ const MedalTallyPage: React.FC<{ idKompetisi?: number }> = ({ idKompetisi }) => 
                             </div>
                           )}
                         </div>
-                      }
+                      )}
                     </>
                   );
                 })()}
