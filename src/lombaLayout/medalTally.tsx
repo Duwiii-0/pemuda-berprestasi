@@ -63,112 +63,134 @@ const MedalTallyPage: React.FC<{ idKompetisi?: number }> = ({ idKompetisi }) => 
   const [levelFilter, setLevelFilter] = useState<LevelFilter>('ALL');
   const [showJuaraUmum, setShowJuaraUmum] = useState(false);
 
+  // ⭐ AUTO-REFRESH: Fetch initial data dan setup interval
   useEffect(() => {
     if (!idKompetisi) return;
-    fetchMedalData();
+    
+    fetchMedalData(true); // Initial fetch with force refresh
+
+    // ⭐ Setup interval untuk auto-refresh setiap 10 detik
+    const interval = setInterval(() => {
+      fetchMedalData(true); // Force refresh setiap interval
+    }, 10000); // 10 seconds
+
+    return () => clearInterval(interval);
   }, [idKompetisi]);
 
   const countUniqueParticipants = (matches: any[]): number => {
-  const participants = new Set<number>();
-  matches.forEach(match => {
-    if (match.participant1?.id) participants.add(match.participant1.id);
-    if (match.participant2?.id) participants.add(match.participant2.id);
-  });
-  return participants.size;
-};
+    const participants = new Set<number>();
+    matches.forEach(match => {
+      if (match.participant1?.id) participants.add(match.participant1.id);
+      if (match.participant2?.id) participants.add(match.participant2.id);
+    });
+    return participants.size;
+  };
 
-  const fetchMedalData = async () => {
-  if (!idKompetisi) return;
+  const fetchMedalData = async (forceRefresh = false) => {
+    if (!idKompetisi) return;
 
-  try {
-    setLoading(true);
-    
-    console.log('Fetching medal data for kompetisi:', idKompetisi);
-    
-    const response = await fetch(`/api/public/kompetisi/${idKompetisi}/medal-tally`);
-    
-    console.log('Response status:', response.status);
-    
-    if (!response.ok) {
-      throw new Error(`Failed to fetch medal data: ${response.status} ${response.statusText}`);
-    }
-    
-    const result = await response.json();
-    console.log('Medal data response:', result);
-    
-    if (!result.success) {
-      throw new Error('Failed to fetch medal data');
-    }
+    try {
+      // ⭐ Jangan set loading true saat auto-refresh untuk menghindari flicker
+      if (!forceRefresh) {
+        setLoading(true);
+      }
+      
+      // ⭐ Add timestamp untuk force refresh dan prevent caching
+      const timestamp = forceRefresh ? `?_t=${Date.now()}` : '';
+      const url = `/api/public/kompetisi/${idKompetisi}/medal-tally${timestamp}`;
+      
+      console.log('🔍 Fetching medal data from:', url);
+      
+      const response = await fetch(url, {
+        cache: 'no-cache', // ⭐ Prevent caching
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache',
+        },
+      });
+      
+      console.log('Response status:', response.status);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch medal data: ${response.status} ${response.statusText}`);
+      }
+      
+      const result = await response.json();
+      console.log('📊 Medal data received:', result);
+      
+      if (!result.success) {
+        throw new Error('Failed to fetch medal data');
+      }
 
-    if (result.data.kompetisi) {
-      setKompetisi(result.data.kompetisi);
-    }
+      if (result.data.kompetisi) {
+        setKompetisi(result.data.kompetisi);
+      }
 
-    const kelasWithLeaderboard = result.data.kelas
-      .filter((kelas: any) => {
-        if (!kelas.bracket || !kelas.bracket.matches.length) {
-          console.log(`❌ Kelas ${kelas.id_kelas_kejuaraan}: Tidak ada bracket`);
-          return false;
-        }
-        
-        const participantCount = countUniqueParticipants(kelas.bracket.matches);
-        const isPemula = kelas.kategori_event?.nama_kategori?.toLowerCase().includes('pemula') || false;
-        const isPoomsae = kelas.cabang === 'POOMSAE';
-        
-        // 1. POOMSAE PRESTASI: minimal 3 peserta
-        if (isPoomsae && !isPemula) {
-          if (participantCount >= 3) {
-            console.log(`✅ ${kelas.nama_kelas}: POOMSAE PRESTASI (${participantCount} peserta - MASUK)`);
-            return true;
-          } else {
-            console.log(`⚠️ ${kelas.nama_kelas}: POOMSAE PRESTASI (${participantCount} peserta - TIDAK MASUK, butuh >= 3)`);
+      const kelasWithLeaderboard = result.data.kelas
+        .filter((kelas: any) => {
+          if (!kelas.bracket || !kelas.bracket.matches.length) {
+            console.log(`❌ Kelas ${kelas.id_kelas_kejuaraan}: Tidak ada bracket`);
             return false;
           }
-        }
-        
-        // 2 & 3. KYORUGI PRESTASI & PEMULA: minimal 4 peserta
-        if (participantCount >= 4) {
-          console.log(`✅ ${kelas.nama_kelas}: ${participantCount} peserta (MASUK)`);
-          return true;
-        } else {
-          console.log(`⚠️ ${kelas.nama_kelas}: ${participantCount} peserta (TIDAK MASUK, butuh >= 4)`);
-          return false;
-        }
-      })
-      .map((kelas: any) => {
-        console.log(`Processing kelas: ${kelas.id_kelas_kejuaraan}`);
-        
-        const isPemula = kelas.kategori_event?.nama_kategori?.toLowerCase().includes('pemula') || false;
-        
-        console.log(`Type: ${isPemula ? 'PEMULA' : 'PRESTASI'}`);
-        console.log(`Total matches: ${kelas.bracket.matches.length}`);
-        
-        const leaderboard = transformLeaderboard(kelas.bracket.matches, isPemula);
-        
-        console.log(`Leaderboard:`, leaderboard);
-        
-        return {
-          id_kelas_kejuaraan: kelas.id_kelas_kejuaraan,
-          nama_kelas: kelas.nama_kelas,
-          cabang: kelas.cabang,
-          kategori_event: kelas.kategori_event,
-          kelompok: kelas.kelompok,
-          kelas_berat: kelas.kelas_berat,
-          poomsae: kelas.poomsae,
-          leaderboard
-        };
-      });
+          
+          const participantCount = countUniqueParticipants(kelas.bracket.matches);
+          const isPemula = kelas.kategori_event?.nama_kategori?.toLowerCase().includes('pemula') || false;
+          const isPoomsae = kelas.cabang === 'POOMSAE';
+          
+          // 1. POOMSAE PRESTASI: minimal 3 peserta
+          if (isPoomsae && !isPemula) {
+            if (participantCount >= 3) {
+              console.log(`✅ ${kelas.nama_kelas}: POOMSAE PRESTASI (${participantCount} peserta - MASUK)`);
+              return true;
+            } else {
+              console.log(`⚠️ ${kelas.nama_kelas}: POOMSAE PRESTASI (${participantCount} peserta - TIDAK MASUK, butuh >= 3)`);
+              return false;
+            }
+          }
+          
+          // 2 & 3. KYORUGI PRESTASI & PEMULA: minimal 4 peserta
+          if (participantCount >= 4) {
+            console.log(`✅ ${kelas.nama_kelas}: ${participantCount} peserta (MASUK)`);
+            return true;
+          } else {
+            console.log(`⚠️ ${kelas.nama_kelas}: ${participantCount} peserta (TIDAK MASUK, butuh >= 4)`);
+            return false;
+          }
+        })
+        .map((kelas: any) => {
+          console.log(`Processing kelas: ${kelas.id_kelas_kejuaraan}`);
+          
+          const isPemula = kelas.kategori_event?.nama_kategori?.toLowerCase().includes('pemula') || false;
+          
+          console.log(`Type: ${isPemula ? 'PEMULA' : 'PRESTASI'}`);
+          console.log(`Total matches: ${kelas.bracket.matches.length}`);
+          
+          const leaderboard = transformLeaderboard(kelas.bracket.matches, isPemula);
+          
+          console.log(`Leaderboard:`, leaderboard);
+          
+          return {
+            id_kelas_kejuaraan: kelas.id_kelas_kejuaraan,
+            nama_kelas: kelas.nama_kelas,
+            cabang: kelas.cabang,
+            kategori_event: kelas.kategori_event,
+            kelompok: kelas.kelompok,
+            kelas_berat: kelas.kelas_berat,
+            poomsae: kelas.poomsae,
+            leaderboard
+          };
+        });
 
-    console.log(`Total kelas dengan medali: ${kelasWithLeaderboard.length}`);
-    setKelasList(kelasWithLeaderboard);
+      console.log(`Total kelas dengan medali: ${kelasWithLeaderboard.length}`);
+      setKelasList(kelasWithLeaderboard);
 
-  } catch (err: any) {
-    console.error('Error fetching medal data:', err);
-    setError(err.message || 'Gagal memuat data perolehan medali');
-  } finally {
-    setLoading(false);
-  }
-};
+    } catch (err: any) {
+      console.error('Error fetching medal data:', err);
+      setError(err.message || 'Gagal memuat data perolehan medali');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const transformLeaderboard = (matches: any[], isPemula: boolean) => {
     const leaderboard = {
@@ -333,30 +355,30 @@ const transformPrestasiLeaderboard = (matches: any[]) => {
     scoreB: finalMatch?.scoreB
   });
 
-    if (finalMatch && (finalMatch.scoreA > 0 || finalMatch.scoreB > 0)) {
-      const winner = finalMatch.scoreA > finalMatch.scoreB 
-        ? finalMatch.participant1 
-        : finalMatch.participant2;
-      const loser = finalMatch.scoreA > finalMatch.scoreB 
-        ? finalMatch.participant2 
-        : finalMatch.participant1;
+  if (finalMatch && (finalMatch.scoreA > 0 || finalMatch.scoreB > 0)) {
+    const winner = finalMatch.scoreA > finalMatch.scoreB 
+      ? finalMatch.participant1 
+      : finalMatch.participant2;
+    const loser = finalMatch.scoreA > finalMatch.scoreB 
+      ? finalMatch.participant2 
+      : finalMatch.participant1;
 
-      if (winner) {
-        leaderboard.gold.push({
-          id: winner.id,
-          name: winner.name,
-          dojo: winner.dojo || ''
-        });
-      }
-
-      if (loser) {
-        leaderboard.silver.push({
-          id: loser.id,
-          name: loser.name,
-          dojo: loser.dojo || ''
-        });
-      }
+    if (winner) {
+      leaderboard.gold.push({
+        id: winner.id,
+        name: winner.name,
+        dojo: winner.dojo || ''
+      });
     }
+
+    if (loser) {
+      leaderboard.silver.push({
+        id: loser.id,
+        name: loser.name,
+        dojo: loser.dojo || ''
+      });
+    }
+  }
 
   const semiRound = totalRounds - 1;
   const semiMatches = matches.filter(m => m.round === semiRound);
@@ -364,8 +386,8 @@ const transformPrestasiLeaderboard = (matches: any[]) => {
 
   semiMatches.forEach((match, idx) => {
     console.log(`  Match ${idx + 1}:`, {
-      participant1: match.participant1?.name,
-      participant2: match.participant2?.name,
+      participant1: `${match.participant1?.name || 'N/A'} - ${match.participant1?.dojo || 'N/A'}`,
+      participant2: `${match.participant2?.name || 'N/A'} - ${match.participant2?.dojo || 'N/A'}`,
       scoreA: match.scoreA,
       scoreB: match.scoreB
     });
@@ -374,7 +396,7 @@ const transformPrestasiLeaderboard = (matches: any[]) => {
       const loser = match.scoreA > match.scoreB ? match.participant2 : match.participant1;
 
       if (loser && !leaderboard.bronze.find(p => p.id === loser.id)) {
-        console.log(`    ✅ Bronze: ${loser.name}`);
+        console.log(`    ✅ Bronze: ${loser.name} - ${loser.dojo || 'No Dojo'}`);
         leaderboard.bronze.push({
           id: loser.id,
           name: loser.name,
