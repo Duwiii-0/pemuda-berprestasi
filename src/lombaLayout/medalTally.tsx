@@ -857,7 +857,7 @@ const transformPrestasiLeaderboard = (matches: any[]) => {
                               className="font-semibold hover:underline text-left transition-all hover:text-opacity-80"
                               style={{ color: '#990D35' }}
                             >
-                              {dojo.dojo} 🔍
+                              {dojo.dojo} 
                             </button>
                           </td>
                           <td className="px-4 py-4 text-center font-bold text-yellow-600">
