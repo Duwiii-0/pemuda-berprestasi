@@ -1047,7 +1047,7 @@ const MedalTallyPage: React.FC<{ idKompetisi?: number }> = ({ idKompetisi }) => 
                               </h4>
                               <div className="space-y-2">
                                 {medalDetail.bronze.map((medal, idx) => (
-                                  <div key={idx} className="p-3 rounded-lg" style={{ backgroundColor: 'rgba(205, 127, 50, 0.1)', borderColor: '#CD7F32', borderWidth: '1px' }}>
+                                  <div key={idx} className="p-3 rounded-lg border" style={{ backgroundColor: 'rgba(205, 127, 50, 0.1)', borderColor: '#CD7F32' }}>
                                     <div className="font-semibold" style={{ color: '#050505' }}>
                                       {medal.athleteName}
                                     </div>
