@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { Download, Eye, Award, AlertCircle, CheckCircle } from "lucide-react";
 import { PDFDocument, rgb } from "pdf-lib";
-import { useAuth } from "../context/authContext";
 
 interface Atlet {
   id_atlet?: number;
@@ -72,17 +71,16 @@ interface MedalStatus {
 // Koordinat dalam MM untuk penempatan teks pada sertifikat A4 Landscape (297mm x 210mm)
 const COORDS_MM = {
   nama: {
-    y: 115, // Posisi vertikal nama atlet dari atas
+    y: 125, // Posisi vertikal nama atlet dari atas (diturunkan dari 115)
     fontSize: 24,
   },
   achievement: {
-    y: 135, // Posisi vertikal achievement dari atas
+    y: 145, // Posisi vertikal achievement dari atas (diturunkan dari 135)
     fontSize: 14,
   },
 };
 
 export const CertificateGenerator = ({ atlet, isEditing }: CertificateGeneratorProps) => {
-  const { token } = useAuth();
   const [certificateStatus, setCertificateStatus] = useState<CertificateStatus>({});
   const [medalStatuses, setMedalStatuses] = useState<{ [id_peserta: number]: MedalStatus }>({});
   const [loadingMedals, setLoadingMedals] = useState(false);
@@ -279,7 +277,6 @@ export const CertificateGenerator = ({ atlet, isEditing }: CertificateGeneratorP
     const cabang = kj.cabang || "";
     const kelompokUsia = kj.kelompok?.nama_kelompok || "";
     const kategoriEvent = kj.kategori_event?.nama_kategori || "";
-    const jenisKelamin = kj.jenis_kelamin || "";
     
     let kelasDetail = "";
     if (cabang === "KYORUGI" && kj.kelas_berat?.nama_kelas) {
@@ -290,9 +287,9 @@ export const CertificateGenerator = ({ atlet, isEditing }: CertificateGeneratorP
     
     const parts = [];
     if (cabang) parts.push(cabang);
-    if (jenisKelamin) parts.push(jenisKelamin === "LAKI_LAKI" ? "Putra" : "Putri");
+    if (cabang === "KYORUGI" && kelasDetail) parts.push(kelasDetail);
     if (kelompokUsia) parts.push(kelompokUsia);
-    if (kelasDetail) parts.push(kelasDetail);
+    if (cabang === "POOMSAE" && kelasDetail) parts.push(kelasDetail);
     if (kategoriEvent) parts.push(kategoriEvent);
     
     return parts.join(" - ") || "-";
@@ -300,10 +297,10 @@ export const CertificateGenerator = ({ atlet, isEditing }: CertificateGeneratorP
 
   const getMedalText = (medalStatus: "GOLD" | "SILVER" | "BRONZE" | "PARTICIPANT"): string => {
     switch (medalStatus) {
-      case "GOLD": return "JUARA 1";
-      case "SILVER": return "JUARA 2";
-      case "BRONZE": return "JUARA 3";
-      case "PARTICIPANT": return "PESERTA";
+      case "GOLD": return "Gold Medal";
+      case "SILVER": return "Silver Medal";
+      case "BRONZE": return "Bronze Medal";
+      case "PARTICIPANT": return "Participant";
     }
   };
 
@@ -351,7 +348,7 @@ export const CertificateGenerator = ({ atlet, isEditing }: CertificateGeneratorP
       });
 
       // Achievement Text (centered)
-      const achievementText = `${getMedalText(medalStatus.status)} - ${medalStatus.kelasName}`;
+      const achievementText = `${getMedalText(medalStatus.status)} in ${medalStatus.kelasName}`;
       const achievementWidth = helvetica.widthOfTextAtSize(achievementText, COORDS_MM.achievement.fontSize);
       firstPage.drawText(achievementText, {
         x: (pageWidth - achievementWidth) / 2,
@@ -506,10 +503,10 @@ export const CertificateGenerator = ({ atlet, isEditing }: CertificateGeneratorP
                             : "bg-blue-100 text-blue-800"
                         }`}
                       >
-                        {medalStatus.status === "GOLD" && "🥇 Juara 1"}
-                        {medalStatus.status === "SILVER" && "🥈 Juara 2"}
-                        {medalStatus.status === "BRONZE" && "🥉 Juara 3"}
-                        {medalStatus.status === "PARTICIPANT" && "📋 Peserta"}
+                        {medalStatus.status === "GOLD" && "🥇 Gold Medal"}
+                        {medalStatus.status === "SILVER" && "🥈 Silver Medal"}
+                        {medalStatus.status === "BRONZE" && "🥉 Bronze Medal"}
+                        {medalStatus.status === "PARTICIPANT" && "📋 Participant"}
                       </span>
                     </div>
                   )}
