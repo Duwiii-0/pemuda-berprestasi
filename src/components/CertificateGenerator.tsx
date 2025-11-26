@@ -318,7 +318,7 @@ export const CertificateGenerator = ({ atlet, isEditing }: CertificateGeneratorP
 
     const cabang = kelasData.cabang || "";
     const kelompokUsia = kelasData.kelompok?.nama_kelompok || "";
-    const jenisKelamin = kelasData.jenis_kelamin?.toLowerCase() === 'laki_laki' ? 'male' : (kelasData.jenis_kelamin?.toLowerCase() === 'perempuan' ? 'female' : '');
+    const jenisKelamin = kelasData.jenis_kelamin?.toLowerCase() === 'laki_laki' ? 'Male' : (kelasData.jenis_kelamin?.toLowerCase() === 'perempuan' ? 'Female' : '');
     
     let kelasDetail = "";
     if (cabang === "KYORUGI" && kelasData.kelas_berat?.nama_kelas) {
@@ -405,7 +405,7 @@ export const CertificateGenerator = ({ atlet, isEditing }: CertificateGeneratorP
       });
 
       // Achievement Text (centered)
-      const achievementText = `${getMedalText(medalStatus.status)} in ${medalStatus.kelasName}`;
+      const achievementText = `${getMedalText(medalStatus.status)} ${medalStatus.kelasName}`;
       const achievementWidth = helvetica.widthOfTextAtSize(achievementText, COORDS_MM.achievement.fontSize);
       firstPage.drawText(achievementText, {
         x: (pageWidth - achievementWidth) / 2,
