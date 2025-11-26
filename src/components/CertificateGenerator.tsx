@@ -355,8 +355,8 @@ export const CertificateGenerator = ({ atlet, isEditing }: CertificateGeneratorP
   const getMedalText = (medalStatus: "GOLD" | "SILVER" | "BRONZE" | "PARTICIPANT"): string => {
     switch (medalStatus) {
       case "GOLD": return "First Winner";
-      case "SILVER": return "Second";
-      case "BRONZE": return "Third";
+      case "SILVER": return "Second Winner";
+      case "BRONZE": return "Third Winner";
       case "PARTICIPANT": return "Participant";
     }
   };
