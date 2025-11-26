@@ -318,7 +318,7 @@ export const CertificateGenerator = ({ atlet, isEditing }: CertificateGeneratorP
 
     const cabang = kelasData.cabang || "";
     const kelompokUsia = kelasData.kelompok?.nama_kelompok || "";
-    const kategoriEvent = kelasData.kategori_event?.nama_kategori || "";
+    const jenisKelamin = kelasData.jenis_kelamin?.toLowerCase() === 'laki_laki' ? 'male' : (kelasData.jenis_kelamin?.toLowerCase() === 'perempuan' ? 'female' : '');
     
     let kelasDetail = "";
     if (cabang === "KYORUGI" && kelasData.kelas_berat?.nama_kelas) {
@@ -330,13 +330,11 @@ export const CertificateGenerator = ({ atlet, isEditing }: CertificateGeneratorP
     console.log("📋 Extracted data:", {
       cabang,
       kelompokUsia,
-      kategoriEvent,
+      jenisKelamin,
       kelasDetail
     });
     
-    // ✅ FORMAT: Kategori - Cabang - Kelompok Usia - Kelas Detail
     const parts = [];
-    if (kategoriEvent) parts.push(kategoriEvent);
     if (cabang) parts.push(cabang);
     if (kelompokUsia && kelompokUsia.toLowerCase() !== 'pemula') {
       parts.push(kelompokUsia);
@@ -344,8 +342,11 @@ export const CertificateGenerator = ({ atlet, isEditing }: CertificateGeneratorP
     if (kelasDetail) {
       parts.push(kelasDetail);
     }
+    if (jenisKelamin) {
+      parts.push(jenisKelamin);
+    }
     
-    const result = parts.join(" - ") || "-";
+    const result = parts.join(" ") || "-";
     console.log("✅ FINAL Kelas Info:", result);
     
     return result;
@@ -353,9 +354,9 @@ export const CertificateGenerator = ({ atlet, isEditing }: CertificateGeneratorP
 
   const getMedalText = (medalStatus: "GOLD" | "SILVER" | "BRONZE" | "PARTICIPANT"): string => {
     switch (medalStatus) {
-      case "GOLD": return "Gold Medal";
-      case "SILVER": return "Silver Medal";
-      case "BRONZE": return "Bronze Medal";
+      case "GOLD": return "First Winner";
+      case "SILVER": return "Second";
+      case "BRONZE": return "Third";
       case "PARTICIPANT": return "Participant";
     }
   };
@@ -559,11 +560,10 @@ export const CertificateGenerator = ({ atlet, isEditing }: CertificateGeneratorP
                             : "bg-blue-100 text-blue-800"
                         }`}
                       >
-                        {medalStatus.status === "GOLD" && "🥇 Gold Medal"}
-                        {medalStatus.status === "SILVER" && "🥈 Silver Medal"}
-                        {medalStatus.status === "BRONZE" && "🥉 Bronze Medal"}
-                        {medalStatus.status === "PARTICIPANT" && "📋 Participant"}
-                      </span>
+                                              {medalStatus.status === "GOLD" && "🥇 First Winner"}
+                                              {medalStatus.status === "SILVER" && "🥈 Second"}
+                                              {medalStatus.status === "BRONZE" && "🥉 Third"}
+                                              {medalStatus.status === "PARTICIPANT" && "📋 Participant"}                      </span>
                     </div>
                   )}
                 </div>
