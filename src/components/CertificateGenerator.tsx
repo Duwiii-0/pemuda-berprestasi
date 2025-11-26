@@ -326,7 +326,7 @@ export const CertificateGenerator = ({ atlet, isEditing }: CertificateGeneratorP
       }
 
       // Generate PDF using piagam.pdf template
-      const templatePath = `/piagam.pdf`;
+      const templatePath = `/templates/piagam.pdf`;
       const existingPdfBytes = await fetch(templatePath).then(res => res.arrayBuffer());
       
       const pdfDoc = await PDFDocument.load(existingPdfBytes);
@@ -593,20 +593,6 @@ export const CertificateGenerator = ({ atlet, isEditing }: CertificateGeneratorP
             </div>
           );
         })}
-      </div>
-
-      {/* Info Section */}
-      <div className="mt-6 bg-amber-50 border border-amber-200 rounded-xl p-4">
-        <h4 className="font-semibold text-amber-900 mb-2 text-sm flex items-center gap-2">
-          <Award size={16} />
-          Informasi Piagam
-        </h4>
-        <ul className="text-xs text-amber-800 space-y-1 list-disc list-inside">
-          <li>Piagam akan dibuat untuk setiap kelas kejuaraan yang diikuti</li>
-          <li>Status juara otomatis terdeteksi dari hasil bracket pertandingan</li>
-          <li>Piagam menggunakan template dari file piagam.pdf</li>
-          <li>Piagam yang sudah di-generate dapat di-download ulang kapan saja</li>
-        </ul>
       </div>
     </div>
   );
