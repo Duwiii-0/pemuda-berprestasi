@@ -71,11 +71,11 @@ interface MedalStatus {
 // Koordinat dalam MM untuk penempatan teks pada sertifikat A4 Landscape (297mm x 210mm)
 const COORDS_MM = {
   nama: {
-    y: 125, // Posisi vertikal nama atlet dari atas (diturunkan dari 115)
+    y: 135, // Posisi vertikal nama atlet dari atas (diturunkan dari 115)
     fontSize: 24,
   },
   achievement: {
-    y: 145, // Posisi vertikal achievement dari atas (diturunkan dari 135)
+    y: 165, // Posisi vertikal achievement dari atas (diturunkan dari 135)
     fontSize: 14,
   },
 };
@@ -285,12 +285,18 @@ export const CertificateGenerator = ({ atlet, isEditing }: CertificateGeneratorP
       kelasDetail = kj.poomsae.nama_kelas;
     }
     
+    // ✅ FORMAT: Kategori - Cabang - Kelompok Usia - Kelas Detail
     const parts = [];
-    if (cabang) parts.push(cabang);
-    if (cabang === "KYORUGI" && kelasDetail) parts.push(kelasDetail);
-    if (kelompokUsia) parts.push(kelompokUsia);
-    if (cabang === "POOMSAE" && kelasDetail) parts.push(kelasDetail);
     if (kategoriEvent) parts.push(kategoriEvent);
+    if (cabang) parts.push(cabang);
+    
+    // Tampilkan keduanya jika ada
+    if (kelompokUsia && kelompokUsia.toLowerCase() !== 'pemula') {
+      parts.push(kelompokUsia);
+      if (kelasDetail) parts.push(kelasDetail);
+    } else if (kelasDetail) {
+      parts.push(kelasDetail);
+    }
     
     return parts.join(" - ") || "-";
   };
