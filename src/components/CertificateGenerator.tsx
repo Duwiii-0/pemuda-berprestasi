@@ -1,8 +1,8 @@
 import { useState, useEffect, useContext } from "react";
 import { Download, Eye, Award, AlertCircle, CheckCircle } from "lucide-react";
 import { PDFDocument, rgb } from "pdf-lib";
-import { AuthContext } from "../context/authContext";
-import { KompetisiContext } from "../context/KompetisiContext";
+import { useAuth } from "../context/authContext";
+import { useKompetisi } from "../context/KompetisiContext";
 
 interface Atlet {
   id_atlet?: number;
@@ -83,8 +83,8 @@ const COORDS_MM = {
 };
 
 export const CertificateGenerator = ({ atlet, isEditing }: CertificateGeneratorProps) => {
-  const { user } = useContext(AuthContext);
-  const { pesertaList, fetchAtletByKompetisi } = useContext(KompetisiContext);
+  const { user } = useAuth();
+  const { pesertaList, fetchAtletByKompetisi } = useKompetisi();
 
   const [certificateStatus, setCertificateStatus] = useState<CertificateStatus>({});
   const [medalStatuses, setMedalStatuses] = useState<{ [id_peserta: number]: MedalStatus }>({});
