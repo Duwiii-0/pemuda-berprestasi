@@ -57,7 +57,6 @@ interface CertificateGeneratorProps {
 interface CertificateStatus {
   [id_peserta_kompetisi: number]: {
     generated: boolean;
-    certificateNumber: string | null;
     pdfBlob: Blob | null;
     isGenerating: boolean;
     showPreview: boolean;
@@ -70,19 +69,15 @@ interface MedalStatus {
   kelasName: string;
 }
 
-// Koordinat dalam MM untuk penempatan teks pada sertifikat A4 Portrait
+// Koordinat dalam MM untuk penempatan teks pada sertifikat A4 Landscape (297mm x 210mm)
 const COORDS_MM = {
-  certNumber: {
-    y: 95,
-    fontSize: 10,
-  },
   nama: {
-    y: 157,
-    fontSize: 20,
+    y: 115, // Posisi vertikal nama atlet dari atas
+    fontSize: 24,
   },
   achievement: {
-    y: 170,
-    fontSize: 12,
+    y: 135, // Posisi vertikal achievement dari atas
+    fontSize: 14,
   },
 };
 
@@ -119,7 +114,15 @@ export const CertificateGenerator = ({ atlet, isEditing }: CertificateGeneratorP
       // Fetch medal tally for each kompetisi
       for (const [kompetisiId, pesertaList] of Object.entries(byKompetisi)) {
         try {
-          const response = await fetch(`/api/public/kompetisi/${kompetisiId}/medal-tally`);
+          const timestamp = `?_t=${Date.now()}`;
+          const response = await fetch(`/api/public/kompetisi/${kompetisiId}/medal-tally${timestamp}`, {
+            cache: 'no-cache',
+            headers: {
+              'Cache-Control': 'no-cache',
+              'Pragma': 'no-cache',
+            },
+          });
+          
           if (!response.ok) continue;
 
           const result = await response.json();
@@ -142,11 +145,12 @@ export const CertificateGenerator = ({ atlet, isEditing }: CertificateGeneratorP
               return;
             }
 
-            // Detect medal from bracket
+            // Detect medal from bracket using same logic as MedalTallyPage
+            const isPemula = kelasData.kategori_event?.nama_kategori?.toLowerCase().includes('pemula') || false;
             const medalStatus = detectMedalFromBracket(
               kelasData.bracket.matches,
               peserta.id_peserta_kompetisi!,
-              kelasData.kategori_event?.nama_kategori
+              isPemula
             );
 
             newMedalStatuses[peserta.id_peserta_kompetisi!] = {
@@ -161,39 +165,6 @@ export const CertificateGenerator = ({ atlet, isEditing }: CertificateGeneratorP
 
       setMedalStatuses(newMedalStatuses);
 
-      // Check existing certificates
-      const statusChecks: CertificateStatus = {};
-      for (const peserta of approvedPeserta) {
-        if (!peserta.id_peserta_kompetisi) continue;
-        
-        try {
-          const response = await fetch(
-            `/api/certificates/check/${atlet.id_atlet}/${peserta.id_peserta_kompetisi}`,
-            {
-              headers: { 'Authorization': `Bearer ${token}` }
-            }
-          );
-          
-          if (response.ok) {
-            const result = await response.json();
-            if (result.success && result.data.exists) {
-              statusChecks[peserta.id_peserta_kompetisi] = {
-                generated: true,
-                certificateNumber: result.data.certificateNumber,
-                pdfBlob: null,
-                isGenerating: false,
-                showPreview: false,
-                previewUrl: ""
-              };
-            }
-          }
-        } catch (error) {
-          console.error('Error checking certificate:', error);
-        }
-      }
-      
-      setCertificateStatus(prev => ({ ...prev, ...statusChecks }));
-
     } catch (error) {
       console.error('Error fetching medal statuses:', error);
     } finally {
@@ -204,15 +175,14 @@ export const CertificateGenerator = ({ atlet, isEditing }: CertificateGeneratorP
   const detectMedalFromBracket = (
     matches: any[],
     id_peserta: number,
-    kategori: string
+    isPemula: boolean
   ): "GOLD" | "SILVER" | "BRONZE" | "PARTICIPANT" => {
     if (!matches || matches.length === 0) return "PARTICIPANT";
 
-    const isPemula = kategori?.toLowerCase().includes('pemula');
     const totalRounds = Math.max(...matches.map((m: any) => m.round));
 
     if (isPemula) {
-      // PEMULA logic
+      // PEMULA logic (same as MedalTallyPage)
       const round1Matches = matches.filter((m: any) => m.round === 1);
       const round2Matches = matches.filter((m: any) => m.round === 2);
       const hasAdditionalMatch = round2Matches.length > 0;
@@ -272,7 +242,7 @@ export const CertificateGenerator = ({ atlet, isEditing }: CertificateGeneratorP
         }
       }
     } else {
-      // PRESTASI logic
+      // PRESTASI logic (same as MedalTallyPage)
       const finalMatch = matches.find((m: any) => m.round === totalRounds);
       if (finalMatch && (finalMatch.scoreA > 0 || finalMatch.scoreB > 0)) {
         const winnerId = finalMatch.scoreA > finalMatch.scoreB
@@ -330,10 +300,10 @@ export const CertificateGenerator = ({ atlet, isEditing }: CertificateGeneratorP
 
   const getMedalText = (medalStatus: "GOLD" | "SILVER" | "BRONZE" | "PARTICIPANT"): string => {
     switch (medalStatus) {
-      case "GOLD": return "Gold Medal in";
-      case "SILVER": return "Silver Medal in";
-      case "BRONZE": return "Bronze Medal in";
-      case "PARTICIPANT": return "Participating in";
+      case "GOLD": return "JUARA 1";
+      case "SILVER": return "JUARA 2";
+      case "BRONZE": return "JUARA 3";
+      case "PARTICIPANT": return "PESERTA";
     }
   };
 
@@ -355,64 +325,24 @@ export const CertificateGenerator = ({ atlet, isEditing }: CertificateGeneratorP
         throw new Error('Medal status not found');
       }
 
-      // Generate certificate number from backend
-      const certResponse = await fetch('/api/certificates/generate-number', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          id_atlet: atlet.id_atlet,
-          id_peserta_kompetisi: pesertaId,
-          id_kompetisi: peserta.kelas_kejuaraan?.kompetisi?.id_kompetisi,
-          medal_status: medalStatus.status
-        })
-      });
-
-      if (!certResponse.ok) {
-        throw new Error('Failed to generate certificate number');
-      }
-
-      const certResult = await certResponse.json();
-      const certificateNumber = certResult.data.certificateNumber;
-
-      // Generate PDF
-      const templatePath = `/templates/E-Certificate.jpg`;
-      const pdfDoc = await PDFDocument.create();
-      const page = pdfDoc.addPage([595.28, 841.89]);
-      const { width: pageWidth, height: pageHeight } = page.getSize();
-
-      const imageBytes = await fetch(templatePath).then(res => res.arrayBuffer());
-      const image = await pdfDoc.embedJpg(imageBytes);
+      // Generate PDF using piagam.pdf template
+      const templatePath = `/piagam.pdf`;
+      const existingPdfBytes = await fetch(templatePath).then(res => res.arrayBuffer());
       
-      page.drawImage(image, {
-        x: 0,
-        y: 0,
-        width: pageWidth,
-        height: pageHeight,
-      });
+      const pdfDoc = await PDFDocument.load(existingPdfBytes);
+      const pages = pdfDoc.getPages();
+      const firstPage = pages[0];
+      const { width: pageWidth, height: pageHeight } = firstPage.getSize();
 
       const helveticaBold = await pdfDoc.embedFont('Helvetica-Bold');
       const helvetica = await pdfDoc.embedFont('Helvetica');
       const mmToPt = (mm: number) => mm * 2.83465;
-      const textColor = rgb(0.04, 0.13, 0.41);
+      const textColor = rgb(0, 0, 0); // Black text
 
-      // Certificate Number
-      const certNumText = `No: ${certificateNumber}`;
-      const certNumWidth = helvetica.widthOfTextAtSize(certNumText, COORDS_MM.certNumber.fontSize);
-      page.drawText(certNumText, {
-        x: (pageWidth - certNumWidth) / 2,
-        y: pageHeight - mmToPt(COORDS_MM.certNumber.y),
-        size: COORDS_MM.certNumber.fontSize,
-        font: helvetica,
-        color: textColor,
-      });
-
-      // Nama Atlet
+      // Nama Atlet (centered)
       const namaText = atlet.nama_atlet.toUpperCase();
       const namaWidth = helveticaBold.widthOfTextAtSize(namaText, COORDS_MM.nama.fontSize);
-      page.drawText(namaText, {
+      firstPage.drawText(namaText, {
         x: (pageWidth - namaWidth) / 2,
         y: pageHeight - mmToPt(COORDS_MM.nama.y),
         size: COORDS_MM.nama.fontSize,
@@ -420,10 +350,10 @@ export const CertificateGenerator = ({ atlet, isEditing }: CertificateGeneratorP
         color: textColor,
       });
 
-      // Achievement Text
-      const achievementText = `${getMedalText(medalStatus.status)} ${medalStatus.kelasName}`;
+      // Achievement Text (centered)
+      const achievementText = `${getMedalText(medalStatus.status)} - ${medalStatus.kelasName}`;
       const achievementWidth = helvetica.widthOfTextAtSize(achievementText, COORDS_MM.achievement.fontSize);
-      page.drawText(achievementText, {
+      firstPage.drawText(achievementText, {
         x: (pageWidth - achievementWidth) / 2,
         y: pageHeight - mmToPt(COORDS_MM.achievement.y),
         size: COORDS_MM.achievement.fontSize,
@@ -438,14 +368,14 @@ export const CertificateGenerator = ({ atlet, isEditing }: CertificateGeneratorP
       // Download
       const link = document.createElement('a');
       link.href = url;
-      link.download = `Certificate-${certificateNumber}-${atlet.nama_atlet.replace(/\s/g, "-")}.pdf`;
+      const fileName = `Piagam-${getMedalText(medalStatus.status).replace(/\s/g, "-")}-${atlet.nama_atlet.replace(/\s/g, "-")}.pdf`;
+      link.download = fileName;
       link.click();
 
       setCertificateStatus(prev => ({
         ...prev,
         [pesertaId]: {
           generated: true,
-          certificateNumber,
           pdfBlob: blob,
           isGenerating: false,
           showPreview: false,
@@ -484,11 +414,13 @@ export const CertificateGenerator = ({ atlet, isEditing }: CertificateGeneratorP
 
   const handleDownloadAgain = (pesertaId: number) => {
     const status = certificateStatus[pesertaId];
-    if (status?.pdfBlob) {
+    const medalStatus = medalStatuses[pesertaId];
+    if (status?.pdfBlob && medalStatus) {
       const url = URL.createObjectURL(status.pdfBlob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `Certificate-${status.certificateNumber}-${atlet.nama_atlet.replace(/\s/g, "-")}.pdf`;
+      const fileName = `Piagam-${getMedalText(medalStatus.status).replace(/\s/g, "-")}-${atlet.nama_atlet.replace(/\s/g, "-")}.pdf`;
+      link.download = fileName;
       link.click();
       URL.revokeObjectURL(url);
     }
@@ -513,7 +445,7 @@ export const CertificateGenerator = ({ atlet, isEditing }: CertificateGeneratorP
     return (
       <div className="bg-white/60 backdrop-blur-sm rounded-2xl lg:rounded-3xl p-4 sm:p-6 lg:p-8 shadow-xl border-2 border-gray-200">
         <h3 className="font-bebas text-2xl lg:text-3xl text-black/80 tracking-wide mb-4">
-          SERTIFIKAT PARTISIPASI
+          PIAGAM PENGHARGAAN
         </h3>
         <div className="bg-yellow-50 border-2 border-yellow-200 rounded-xl p-4">
           <div className="flex items-start gap-3">
@@ -535,7 +467,7 @@ export const CertificateGenerator = ({ atlet, isEditing }: CertificateGeneratorP
   return (
     <div className="bg-white/60 backdrop-blur-sm rounded-2xl lg:rounded-3xl p-4 sm:p-6 lg:p-8 shadow-xl border-2 border-gray-200">
       <h3 className="font-bebas text-2xl lg:text-3xl text-black/80 tracking-wide mb-6">
-        SERTIFIKAT PARTISIPASI
+        PIAGAM PENGHARGAAN
       </h3>
 
       {/* List Kelas Kejuaraan */}
@@ -574,20 +506,20 @@ export const CertificateGenerator = ({ atlet, isEditing }: CertificateGeneratorP
                             : "bg-blue-100 text-blue-800"
                         }`}
                       >
-                        {medalStatus.status === "GOLD" && "🥇 Gold Medal"}
-                        {medalStatus.status === "SILVER" && "🥈 Silver Medal"}
-                        {medalStatus.status === "BRONZE" && "🥉 Bronze Medal"}
-                        {medalStatus.status === "PARTICIPANT" && "📋 Participant"}
+                        {medalStatus.status === "GOLD" && "🥇 Juara 1"}
+                        {medalStatus.status === "SILVER" && "🥈 Juara 2"}
+                        {medalStatus.status === "BRONZE" && "🥉 Juara 3"}
+                        {medalStatus.status === "PARTICIPANT" && "📋 Peserta"}
                       </span>
                     </div>
                   )}
                 </div>
 
-                {status?.generated && status.certificateNumber && (
+                {status?.generated && (
                   <div className="flex items-center gap-2 bg-green-50 px-3 py-1.5 rounded-lg">
                     <CheckCircle size={16} className="text-green-600" />
                     <span className="text-xs font-medium text-green-700">
-                      No: {status.certificateNumber}
+                      Tersedia
                     </span>
                   </div>
                 )}
@@ -603,7 +535,7 @@ export const CertificateGenerator = ({ atlet, isEditing }: CertificateGeneratorP
                       className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-yellow-600 to-yellow-500 hover:from-yellow-700 hover:to-yellow-600 text-white rounded-xl font-medium text-sm transition-all duration-300 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <Award size={16} />
-                      {status?.isGenerating ? "Generating..." : "Generate Certificate"}
+                      {status?.isGenerating ? "Generating..." : "Generate Piagam"}
                     </button>
                   ) : (
                     <>
@@ -633,7 +565,7 @@ export const CertificateGenerator = ({ atlet, isEditing }: CertificateGeneratorP
                 <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                   <div className="bg-white rounded-2xl p-6 max-w-4xl w-full max-h-[90vh] overflow-auto">
                     <div className="flex justify-between items-center mb-4">
-                      <h4 className="font-bebas text-2xl text-black/80">Preview Certificate</h4>
+                      <h4 className="font-bebas text-2xl text-black/80">Preview Piagam</h4>
                       <button
                         onClick={() => setCertificateStatus(prev => ({
                           ...prev,
@@ -667,13 +599,13 @@ export const CertificateGenerator = ({ atlet, isEditing }: CertificateGeneratorP
       <div className="mt-6 bg-amber-50 border border-amber-200 rounded-xl p-4">
         <h4 className="font-semibold text-amber-900 mb-2 text-sm flex items-center gap-2">
           <Award size={16} />
-          Informasi Certificate
+          Informasi Piagam
         </h4>
         <ul className="text-xs text-amber-800 space-y-1 list-disc list-inside">
-          <li>Certificate akan dibuat untuk setiap kelas kejuaraan yang diikuti</li>
-          <li>Nomor certificate adalah unik dan berurutan secara global</li>
-          <li>Medal status otomatis terdeteksi dari hasil bracket pertandingan</li>
-          <li>Certificate yang sudah di-generate dapat di-download ulang kapan saja</li>
+          <li>Piagam akan dibuat untuk setiap kelas kejuaraan yang diikuti</li>
+          <li>Status juara otomatis terdeteksi dari hasil bracket pertandingan</li>
+          <li>Piagam menggunakan template dari file piagam.pdf</li>
+          <li>Piagam yang sudah di-generate dapat di-download ulang kapan saja</li>
         </ul>
       </div>
     </div>
