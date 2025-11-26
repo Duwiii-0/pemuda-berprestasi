@@ -94,7 +94,7 @@ export const CertificateGenerator = ({ atlet, isEditing }: CertificateGeneratorP
     if (atlet.peserta_kompetisi && atlet.peserta_kompetisi.length > 0) {
       fetchMedalStatuses();
     }
-  }, [atlet.peserta_kompetisi]);
+  }, [atlet.peserta_kompetisi, pesertaList]);
 
   // ✅ Auto-fetch pesertaList jika belum ada
   useEffect(() => {
