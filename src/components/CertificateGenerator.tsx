@@ -71,11 +71,11 @@ interface MedalStatus {
 // Koordinat dalam MM untuk penempatan teks pada sertifikat A4 Landscape (297mm x 210mm)
 const COORDS_MM = {
   nama: {
-    y: 135, // Posisi vertikal nama atlet dari atas (diturunkan dari 115)
+    y: 140, // Posisi vertikal nama atlet dari atas (diturunkan dari 115)
     fontSize: 24,
   },
   achievement: {
-    y: 165, // Posisi vertikal achievement dari atas (diturunkan dari 135)
+    y: 155, // Posisi vertikal achievement dari atas (diturunkan dari 135)
     fontSize: 14,
   },
 };
@@ -91,6 +91,16 @@ export const CertificateGenerator = ({ atlet, isEditing }: CertificateGeneratorP
       fetchMedalStatuses();
     }
   }, [atlet.peserta_kompetisi]);
+
+  // ✅ Auto-fetch pesertaList jika belum ada
+  useEffect(() => {
+    const kompetisiId = user?.admin_kompetisi?.id_kompetisi;
+    
+    if (kompetisiId && (!pesertaList || pesertaList.length === 0)) {
+      console.log("🔄 Auto-fetching pesertaList for Certificate...");
+      fetchAtletByKompetisi(kompetisiId);
+    }
+  }, [user, pesertaList]);
 
   const fetchMedalStatuses = async () => {
     setLoadingMedals(true);
@@ -273,17 +283,52 @@ export const CertificateGenerator = ({ atlet, isEditing }: CertificateGeneratorP
   const getKelasKejuaraan = (peserta: any): string => {
     if (!peserta.kelas_kejuaraan) return "-";
 
-    const kj = peserta.kelas_kejuaraan;
-    const cabang = kj.cabang || "";
-    const kelompokUsia = kj.kelompok?.nama_kelompok || "";
-    const kategoriEvent = kj.kategori_event?.nama_kategori || "";
+    console.log("🔍 getKelasKejuaraan - Input peserta:", peserta);
+    
+    // ✅ CARI DATA LENGKAP DARI CONTEXT pesertaList
+    let kelasData = peserta.kelas_kejuaraan;
+    
+    if (pesertaList && pesertaList.length > 0) {
+      const fullPesertaData = pesertaList.find((p: any) => {
+        const match1 = p.id_peserta_kompetisi === peserta.id_peserta_kompetisi;
+        const match2 = p.id_atlet === atlet.id_atlet && p.status === 'APPROVED';
+        return match1 || match2;
+      });
+      
+      console.log("🔍 Search result from pesertaList:", fullPesertaData);
+      
+      if (fullPesertaData?.kelas_kejuaraan) {
+        const hasCompleteRelations = 
+          fullPesertaData.kelas_kejuaraan.kelompok || 
+          fullPesertaData.kelas_kejuaraan.kelas_berat ||
+          fullPesertaData.kelas_kejuaraan.poomsae;
+        
+        if (hasCompleteRelations) {
+          console.log("✅ Using COMPLETE data from pesertaList context");
+          kelasData = fullPesertaData.kelas_kejuaraan;
+        }
+      }
+    }
+
+    console.log("📚 Final kelas data to use:", kelasData);
+
+    const cabang = kelasData.cabang || "";
+    const kelompokUsia = kelasData.kelompok?.nama_kelompok || "";
+    const kategoriEvent = kelasData.kategori_event?.nama_kategori || "";
     
     let kelasDetail = "";
-    if (cabang === "KYORUGI" && kj.kelas_berat?.nama_kelas) {
-      kelasDetail = kj.kelas_berat.nama_kelas;
-    } else if (cabang === "POOMSAE" && kj.poomsae?.nama_kelas) {
-      kelasDetail = kj.poomsae.nama_kelas;
+    if (cabang === "KYORUGI" && kelasData.kelas_berat?.nama_kelas) {
+      kelasDetail = kelasData.kelas_berat.nama_kelas;
+    } else if (cabang === "POOMSAE" && kelasData.poomsae?.nama_kelas) {
+      kelasDetail = kelasData.poomsae.nama_kelas;
     }
+    
+    console.log("📋 Extracted data:", {
+      cabang,
+      kelompokUsia,
+      kategoriEvent,
+      kelasDetail
+    });
     
     // ✅ FORMAT: Kategori - Cabang - Kelompok Usia - Kelas Detail
     const parts = [];
@@ -298,7 +343,10 @@ export const CertificateGenerator = ({ atlet, isEditing }: CertificateGeneratorP
       parts.push(kelasDetail);
     }
     
-    return parts.join(" - ") || "-";
+    const result = parts.join(" - ") || "-";
+    console.log("✅ FINAL Kelas Info:", result);
+    
+    return result;
   };
 
   const getMedalText = (medalStatus: "GOLD" | "SILVER" | "BRONZE" | "PARTICIPANT"): string => {
