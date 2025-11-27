@@ -242,62 +242,63 @@ useEffect(() => {
     );
   }
 
-  if (error || !kelasData) {
-    return (
-      <div className="min-h-screen max-w-screen bg-gradient-to-br from-white via-red/5 to-yellow/10">
-        <NavbarDashboard />
-        
-        <div className="lg:ml-72 min-h-screen">
-          <div className="bg-white/40 backdrop-blur-md border-white/30 w-full min-h-screen flex flex-col gap-6 lg:gap-8 pt-6 lg:pt-8 pb-12 px-4 lg:px-8">
-            
-            {/* Mobile Menu Button */}
-            <div className="lg:hidden">
-              <button
-                onClick={() => setSidebarOpen(true)}
-                className="p-3 rounded-xl hover:bg-white/50 transition-all duration-300 border border-red/20"
-                aria-label="Open menu"
-              >
-                <Menu size={24} className="text-red" />
-              </button>
-            </div>
+if (error || !kelasData) {
+  return (
+    <div className="min-h-screen max-w-screen bg-gradient-to-br from-white via-red/5 to-yellow/10">
+      <NavbarDashboard />
+      
+      <div className="lg:ml-72 min-h-screen">
+        <div className="bg-white/40 backdrop-blur-md border-white/30 w-full min-h-screen flex flex-col gap-6 lg:gap-8 pt-6 lg:pt-8 pb-12 px-4 lg:px-8">
+          
+          {/* Mobile Menu Button */}
+          <div className="lg:hidden">
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="p-3 rounded-xl hover:bg-white/50 transition-all duration-300 border border-red/20"
+              aria-label="Open menu"
+            >
+              <Menu size={24} className="text-red" />
+            </button>
+          </div>
 
-            {/* Error Content */}
-            <div className="flex-1 flex items-center justify-center px-4">
-              <div className="bg-white/60 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 p-6 lg:p-8 max-w-md w-full text-center">
-                <AlertTriangle size={48} className="text-red mx-auto mb-4 opacity-50" />
-                <h3 className="font-bebas text-2xl lg:text-3xl text-black/80 mb-2">
-                  GAGAL MEMUAT BRACKET
-                </h3>
-                <p className="font-plex text-sm lg:text-base text-black/60 mb-6">
-                  {error || 'Bracket tidak ditemukan'}
-                </p>
-                <button
-                  onClick={handleBack}
-                  className="font-plex font-medium px-6 py-3 rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-lg active:scale-95 flex justify-center items-center cursor-pointer text-white bg-gradient-to-r from-red to-red/80 hover:from-red/90 hover:to-red/70 border-0 shadow-lg gap-2 mx-auto"
-                >
-                  <ArrowLeft size={18} />
-                  <span>Kembali</span>
-                </button>
-              </div>
+          {/* Error Content */}
+          <div className="flex-1 flex items-center justify-center px-4">
+            <div className="bg-white/60 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 p-6 lg:p-8 max-w-md w-full text-center">
+              <AlertTriangle size={48} className="text-red mx-auto mb-4 opacity-50" />
+              <h3 className="font-bebas text-2xl lg:text-3xl text-black/80 mb-2">
+                GAGAL MEMUAT BRACKET
+              </h3>
+              <p className="font-plex text-sm lg:text-base text-black/60 mb-6">
+                {error || 'Bracket tidak ditemukan'}
+              </p>
+              {/* ✅ PERBAIKAN: onClick langsung ke handleBack */}
+              <button
+                onClick={handleBack}
+                className="font-plex font-medium px-6 py-3 rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-lg active:scale-95 flex justify-center items-center cursor-pointer text-white bg-gradient-to-r from-red to-red/80 hover:from-red/90 hover:to-red/70 border-0 shadow-lg gap-2 mx-auto"
+              >
+                <ArrowLeft size={18} />
+                <span>Kembali</span>
+              </button>
             </div>
           </div>
         </div>
-
-        {/* Mobile Sidebar */}
-        {sidebarOpen && (
-          <>
-            <div
-              className="fixed inset-0 bg-black/60 z-40 lg:hidden"
-              onClick={() => setSidebarOpen(false)}
-            />
-            <div className="lg:hidden z-50">
-              <NavbarDashboard mobile onClose={() => setSidebarOpen(false)} />
-            </div>
-          </>
-        )}
       </div>
-    );
-  }
+
+      {/* Mobile Sidebar */}
+      {sidebarOpen && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/60 z-40 lg:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
+          <div className="lg:hidden z-50">
+            <NavbarDashboard mobile onClose={() => setSidebarOpen(false)} />
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
 
   const isPemula = kelasData.kategori_event?.nama_kategori?.toLowerCase().includes('pemula');
 
