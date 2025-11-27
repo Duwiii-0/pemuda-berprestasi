@@ -55,7 +55,7 @@ const LiveStreaming: React.FC = () => {
             <div className="aspect-w-4 aspect-h-3">
               <iframe
                 className="w-full h-full"
-                src="https://www.youtube.com/embed/unavailable"
+                src="https://www.youtube.com/watch?v=LfdrEziyU_4&t=28733s"
                 title="YouTube video player - Lapangan B"
                 frameBorder="0"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -77,7 +77,7 @@ const LiveStreaming: React.FC = () => {
             <div className="aspect-w-4 aspect-h-3">
               <iframe
                 className="w-full h-full"
-                src="https://www.youtube.com/embed/unavailable"
+                src="https://www.youtube.com/watch?v=AFd-GyM4dpM&t=2s"
                 title="YouTube video player - Lapangan C"
                 frameBorder="0"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -99,7 +99,7 @@ const LiveStreaming: React.FC = () => {
             <div className="aspect-w-4 aspect-h-3">
               <iframe
                 className="w-full h-full"
-                src="https://www.youtube.com/embed/unavailable"
+                src="https://www.youtube.com/watch?v=bvJeOk2hQwE&t=38796s"
                 title="YouTube video player - Lapangan D"
                 frameBorder="0"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"

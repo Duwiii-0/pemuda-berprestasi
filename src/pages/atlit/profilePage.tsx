@@ -44,6 +44,13 @@ interface AtletWithFiles
   kota?: string;
   dojang_name?: string;
   kelas_berat?: string;
+  peserta_kompetisi?: {
+    kelas_kejuaraan: {
+      kompetisi: {
+        id_kompetisi: number;
+      };
+    };
+  }[];
 }
 
 const provinsiKotaData: Record<string, string[]> = {
@@ -648,6 +655,7 @@ const Profile = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { user } = useAuth();
+  const [isNameDisabled, setIsNameDisabled] = useState(false);
 
   const { fetchAtletById, updateAtlet } = useAtletContext();
 
@@ -671,6 +679,15 @@ const Profile = () => {
           };
           setFormData(dataWithFiles);
           setOriginalData(dataWithFiles);
+
+          if (data.peserta_kompetisi && Array.isArray(data.peserta_kompetisi)) {
+            const isRegisteredInComp1 = data.peserta_kompetisi.some(
+              (p: any) => p.kelas_kejuaraan?.kompetisi?.id_kompetisi === 1
+            );
+            if (isRegisteredInComp1) {
+              setIsNameDisabled(true);
+            }
+          }
         }
       });
     }
@@ -959,7 +976,7 @@ const Profile = () => {
                   onChange={(e) =>
                     handleInputChange("nama_atlet", e.target.value)
                   }
-                  disabled={!isEditing}
+                  disabled={!isEditing || isNameDisabled}
                   value={formData?.nama_atlet}
                   placeholder="Nama"
                   icon={<User className="text-red" size={18} />}

@@ -21,6 +21,13 @@ export interface Atlet {
   pas_foto?: string; // ADD THIS
   sertifikat_belt?: string; // ADD THIS
   ktp?: string;
+  peserta_kompetisi?: {
+    kelas_kejuaraan: {
+      kompetisi: {
+        id_kompetisi: number;
+      };
+    };
+  }[];
   // tambahkan field lain sesuai API
 }
 
