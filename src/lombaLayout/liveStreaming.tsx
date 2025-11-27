@@ -30,7 +30,7 @@ const LiveStreaming: React.FC = () => {
         <div className="mt-12 sm:mt-16 md:mt-20 grid grid-cols-2 gap-8 lg:gap-12">
           {/* Video 1: Hari 1 */}
           <div className="rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-shadow duration-300 ease-in-out transform hover:-translate-y-1 group">
-            <div className="aspect-w-4 aspect-h-3">
+            <div className="aspect-w-16 aspect-h-9">
               <iframe
                 className="w-full h-full"
                 src="https://www.youtube.com/embed/vyz5VKM8RRE?si=4OFvTmCjQoFj6wrf"
@@ -52,7 +52,7 @@ const LiveStreaming: React.FC = () => {
 
           {/* Video 2: Hari 2 */}
           <div className="rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-shadow duration-300 ease-in-out transform hover:-translate-y-1 group">
-            <div className="aspect-w-4 aspect-h-3">
+            <div className="aspect-w-16 aspect-h-9">
               <iframe
                 className="w-full h-full"
                 src="https://www.youtube.com/embed/LfdrEziyU_4?si=LuzzQo9dVq7nQz3r"
@@ -74,7 +74,7 @@ const LiveStreaming: React.FC = () => {
 
           {/* Video 3: Hari 3 */}
           <div className="rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-shadow duration-300 ease-in-out transform hover:-translate-y-1 group">
-            <div className="aspect-w-4 aspect-h-3">
+            <div className="aspect-w-16 aspect-h-9">
               <iframe
                 className="w-full h-full"
                 src="https://www.youtube.com/embed/AFd-GyM4dpM?si=EaCyqxKcKWrYT3pv"
@@ -96,7 +96,7 @@ const LiveStreaming: React.FC = () => {
 
           {/* Video 4: Hari 4 */}
           <div className="rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-shadow duration-300 ease-in-out transform hover:-translate-y-1 group">
-            <div className="aspect-w-4 aspect-h-3">
+            <div className="aspect-w-16 aspect-h-9">
               <iframe
                 className="w-full h-full"
                 src="https://www.youtube.com/embed/bvJeOk2hQwE?si=x6aCRk8iALSDm1KB"
