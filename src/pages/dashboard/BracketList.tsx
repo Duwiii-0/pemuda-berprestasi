@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { GitBranch, Trophy, Eye, Loader, Menu, Award } from "lucide-react"; // ✅ Hapus Users dari import
+import { GitBranch, Trophy, Eye, Loader, Menu, Award, Filter } from "lucide-react"; 
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/authContext";
 import NavbarDashboard from "../../components/navbar/navbarDashboard";
@@ -74,6 +74,80 @@ const BracketList: React.FC = () => {
   const [kelasKejuaraan, setKelasKejuaraan] = useState<KelasKejuaraan[]>([]);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // ✅ TAMBAH FILTER STATE
+  const [filters, setFilters] = useState({
+    cabang: "ALL" as "ALL" | "KYORUGI" | "POOMSAE",
+    kategori: "ALL" as "ALL" | "Prestasi" | "Pemula",
+    kelompok: "ALL" as string,
+    status: "ALL" as "ALL" | "created" | "in_progress" | "completed",
+  });
+  const [showFilters, setShowFilters] = useState(false);
+
+  // ✅ TAMBAH FILTER STATE
+  const [filters, setFilters] = useState({
+    cabang: "ALL" as "ALL" | "KYORUGI" | "POOMSAE",
+    kategori: "ALL" as "ALL" | "Prestasi" | "Pemula",
+    kelompok: "ALL" as string,
+    status: "ALL" as "ALL" | "created" | "in_progress" | "completed",
+  });
+  const [showFilters, setShowFilters] = useState(false);
+
+  // ✅ FUNGSI UNTUK GET UNIQUE VALUES
+  const getUniqueKelompok = () => {
+    const kelompoks = kelasKejuaraan
+      .map(k => k.kelompok.nama_kelompok)
+      .filter((v, i, a) => a.indexOf(v) === i)
+      .sort();
+    return kelompoks;
+  };
+
+  // ✅ FUNGSI FILTER
+  const getFilteredBrackets = (brackets: KelasKejuaraan[]) => {
+    return brackets.filter(kelas => {
+      // Filter Cabang
+      if (filters.cabang !== "ALL" && kelas.cabang !== filters.cabang) {
+        return false;
+      }
+
+      // Filter Kategori
+      if (filters.kategori !== "ALL") {
+        const isPemula = kelas.kategori_event.nama_kategori.toLowerCase().includes('pemula');
+        if (filters.kategori === "Pemula" && !isPemula) return false;
+        if (filters.kategori === "Prestasi" && isPemula) return false;
+      }
+
+      // Filter Kelompok
+      if (filters.kelompok !== "ALL" && kelas.kelompok.nama_kelompok !== filters.kelompok) {
+        return false;
+      }
+
+      // Filter Status
+      if (filters.status !== "ALL" && kelas.bracket_status !== filters.status) {
+        return false;
+      }
+
+      return true;
+    });
+  };
+
+  // ✅ RESET FILTERS
+  const resetFilters = () => {
+    setFilters({
+      cabang: "ALL",
+      kategori: "ALL",
+      kelompok: "ALL",
+      status: "ALL",
+    });
+  };
+
+  // ✅ CHECK IF ANY FILTER ACTIVE
+  const hasActiveFilters = () => {
+    return filters.cabang !== "ALL" || 
+           filters.kategori !== "ALL" || 
+           filters.kelompok !== "ALL" || 
+           filters.status !== "ALL";
+  };
 
 useEffect(() => {
   const fetchBrackets = async () => {
@@ -297,6 +371,7 @@ useEffect(() => {
   };
 
   const availableBrackets = kelasKejuaraan.filter(k => k.bracket_status !== 'not_created');
+  const filteredBrackets = getFilteredBrackets(availableBrackets);
   const totalBrackets = availableBrackets.length;
   const inProgressCount = availableBrackets.filter(k => k.bracket_status === 'in_progress').length;
   const completedCount = availableBrackets.filter(k => k.bracket_status === 'completed').length;
@@ -371,22 +446,131 @@ useEffect(() => {
           {/* Content - Kelas Cards */}
           {!loading && (
             <div className="bg-white/60 backdrop-blur-sm rounded-2xl lg:rounded-3xl p-4 lg:p-6 xl:p-8 shadow-xl border border-white/50">
-              <div className="flex gap-3 lg:gap-4 items-center mb-4 lg:mb-6">
-                <div className="p-2 bg-red/10 rounded-xl">
-                  <GitBranch className="text-red" size={18} />
+              {/* Header with Filter Button */}
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                <div className="flex gap-3 lg:gap-4 items-center">
+                  <div className="p-2 bg-red/10 rounded-xl">
+                    <GitBranch className="text-red" size={18} />
+                  </div>
+                  <div>
+                    <h2 className="font-bebas text-xl lg:text-2xl text-black/80 tracking-wide">
+                      DAFTAR BRACKET
+                    </h2>
+                    <p className="font-plex text-sm text-black/60">
+                      Menampilkan {filteredBrackets.length} dari {availableBrackets.length} bracket
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h2 className="font-bebas text-xl lg:text-2xl text-black/80 tracking-wide">
-                    DAFTAR BRACKET
-                  </h2>
-                  <p className="font-plex text-sm text-black/60">
-                    Menampilkan {availableBrackets.length} bracket tersedia
-                  </p>
-                </div>
+
+                {/* Filter Toggle Button */}
+                <button
+                  onClick={() => setShowFilters(!showFilters)}
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-plex font-medium transition-all shadow-md hover:shadow-lg ${
+                    hasActiveFilters()
+                      ? 'bg-red text-white'
+                      : 'bg-white text-red border border-red/20'
+                  }`}
+                >
+                  <Filter size={18} />
+                  <span>Filter</span>
+                  {hasActiveFilters() && (
+                    <span className="bg-white text-red rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold">
+                      {Object.values(filters).filter(v => v !== "ALL").length}
+                    </span>
+                  )}
+                </button>
               </div>
 
+              {/* ✅ FILTER PANEL */}
+              {showFilters && (
+                <div className="bg-white/80 rounded-xl p-4 lg:p-6 mb-6 shadow-lg border border-white/50">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {/* Filter Cabang */}
+                    <div>
+                      <label className="font-plex font-medium text-sm text-black/70 mb-2 block">
+                        Cabang
+                      </label>
+                      <select
+                        value={filters.cabang}
+                        onChange={(e) => setFilters({ ...filters, cabang: e.target.value as any })}
+                        className="w-full px-4 py-2.5 rounded-lg border border-red/20 font-plex focus:outline-none focus:ring-2 focus:ring-red/30 bg-white"
+                      >
+                        <option value="ALL">Semua Cabang</option>
+                        <option value="KYORUGI">Kyorugi</option>
+                        <option value="POOMSAE">Poomsae</option>
+                      </select>
+                    </div>
+
+                    {/* Filter Kategori */}
+                    <div>
+                      <label className="font-plex font-medium text-sm text-black/70 mb-2 block">
+                        Kategori
+                      </label>
+                      <select
+                        value={filters.kategori}
+                        onChange={(e) => setFilters({ ...filters, kategori: e.target.value as any })}
+                        className="w-full px-4 py-2.5 rounded-lg border border-red/20 font-plex focus:outline-none focus:ring-2 focus:ring-red/30 bg-white"
+                      >
+                        <option value="ALL">Semua Kategori</option>
+                        <option value="Prestasi">Prestasi</option>
+                        <option value="Pemula">Pemula</option>
+                      </select>
+                    </div>
+
+                    {/* Filter Kelompok */}
+                    <div>
+                      <label className="font-plex font-medium text-sm text-black/70 mb-2 block">
+                        Kelompok Umur
+                      </label>
+                      <select
+                        value={filters.kelompok}
+                        onChange={(e) => setFilters({ ...filters, kelompok: e.target.value })}
+                        className="w-full px-4 py-2.5 rounded-lg border border-red/20 font-plex focus:outline-none focus:ring-2 focus:ring-red/30 bg-white"
+                      >
+                        <option value="ALL">Semua Kelompok</option>
+                        {getUniqueKelompok().map(kelompok => (
+                          <option key={kelompok} value={kelompok}>
+                            {kelompok}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Filter Status */}
+                    <div>
+                      <label className="font-plex font-medium text-sm text-black/70 mb-2 block">
+                        Status
+                      </label>
+                      <select
+                        value={filters.status}
+                        onChange={(e) => setFilters({ ...filters, status: e.target.value as any })}
+                        className="w-full px-4 py-2.5 rounded-lg border border-red/20 font-plex focus:outline-none focus:ring-2 focus:ring-red/30 bg-white"
+                      >
+                        <option value="ALL">Semua Status</option>
+                        <option value="created">Sudah Dibuat</option>
+                        <option value="in_progress">Berlangsung</option>
+                        <option value="completed">Selesai</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Reset Button */}
+                  {hasActiveFilters() && (
+                    <div className="mt-4 flex justify-end">
+                      <button
+                        onClick={resetFilters}
+                        className="px-4 py-2 rounded-lg font-plex font-medium text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 transition-all"
+                      >
+                        Reset Filter
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Bracket Cards */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
-                {availableBrackets.map((kelas) => (
+                {filteredBrackets.map((kelas) => (
                   <div
                     key={kelas.id_kelas_kejuaraan}
                     className="bg-white/80 rounded-xl overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:-translate-y-1 border border-white/50"
@@ -423,7 +607,26 @@ useEffect(() => {
                 ))}
               </div>
 
-              {/* Empty State */}
+              {/* Empty State - No Results */}
+              {filteredBrackets.length === 0 && availableBrackets.length > 0 && (
+                <div className="text-center py-12">
+                  <Filter size={64} className="text-red/40 mx-auto mb-4" />
+                  <h3 className="font-bebas text-2xl text-black/80 mb-2">
+                    TIDAK ADA HASIL
+                  </h3>
+                  <p className="font-plex text-base text-black/60 mb-4">
+                    Tidak ada bracket yang sesuai dengan filter yang dipilih
+                  </p>
+                  <button
+                    onClick={resetFilters}
+                    className="px-6 py-3 rounded-xl font-plex font-medium bg-red text-white hover:bg-red/90 transition-all shadow-md"
+                  >
+                    Reset Filter
+                  </button>
+                </div>
+              )}
+
+              {/* Empty State - No Brackets */}
               {availableBrackets.length === 0 && (
                 <div className="text-center py-12">
                   <Trophy size={64} className="text-red/40 mx-auto mb-4" />
