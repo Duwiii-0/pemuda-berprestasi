@@ -82,6 +82,7 @@ const BracketList: React.FC = () => {
     kelompok: "ALL" as string,
     status: "ALL" as "ALL" | "created" | "in_progress" | "completed",
   });
+  const [showFilters, setShowFilters] = useState(false);
 
 
   // ✅ FUNGSI UNTUK GET UNIQUE VALUES
