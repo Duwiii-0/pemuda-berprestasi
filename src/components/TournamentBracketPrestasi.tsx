@@ -2597,17 +2597,29 @@ const renderCenterFinal = () => {
       >
         <div className="p-6">
           <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-4">
-              {onBack && (
-                <button
-                  onClick={() => {
-                    // ✅ Method 1: Full page reload with redirect
-                    window.location.href = "/admin-kompetisi/drawing-bagan";
-
-                    // ❌ ATAU jika Method 1 tidak work, gunakan:
-                    // navigate("/admin-kompetisi/drawing-bagan");
-                    // window.location.reload();
-                  }}
+          <div className="flex items-center gap-4">
+            {onBack && !viewOnly && ( // ✅ TAMBAHKAN !viewOnly check
+              <button
+                onClick={() => {
+                  // ✅ PERBAIKAN: Deteksi dari mana user datang
+                  const currentPath = window.location.pathname;
+                  
+                  if (currentPath.includes('/bracket-viewer/')) {
+                    // Jika dari pelatih dashboard, redirect ke bracket list
+                    window.location.href = '/dashboard/bracket-viewer';
+                  } else if (currentPath.includes('/admin-kompetisi/')) {
+                    // Jika dari admin, redirect ke drawing bagan
+                    window.location.href = '/admin-kompetisi/drawing-bagan';
+                  } else {
+                    // Fallback: gunakan onBack callback
+                    onBack();
+                  }
+                }}
+                className="p-2 rounded-lg hover:bg-black/5 transition-all"
+              >
+                <ArrowLeft size={20} style={{ color: "#990D35" }} />
+              </button>
+            )}
                   className="p-2 rounded-lg hover:bg-black/5 transition-all"
                 >
                   <ArrowLeft size={20} style={{ color: "#990D35" }} />

@@ -242,17 +242,59 @@ const handleBack = () => {
 };
 
   if (loading) {
-    return (
-      <div className="min-h-screen max-w-screen bg-gradient-to-br from-white via-red/5 to-yellow/10">
-        <NavbarDashboard />
-        <div className="lg:ml-72 min-h-screen flex items-center justify-center">
-          <div className="flex flex-col items-center gap-3">
-            <Loader className="animate-spin" style={{ color: '#990D35' }} size={32} />
-            <p className="font-plex text-black/60">Memuat bracket...</p>
-          </div>
-        </div>
+// Di BracketViewer.tsx, HAPUS handleBack function dan langsung pass undefined:
+
+const BracketViewer: React.FC = () => {
+  const { kelasId } = useParams<{ kelasId: string }>();
+  const { token, user } = useAuth();
+  const navigate = useNavigate();
+  const [kelasData, setKelasData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // ✅ HAPUS handleBack function - tidak dibutuhkan lagi
+
+  // ... useEffect code ...
+
+  // Di render:
+  return (
+    <div className="min-h-screen max-w-screen bg-gradient-to-br from-white via-red/5 to-yellow/10">
+      <NavbarDashboard />
+
+      <div className="lg:ml-72 min-h-screen">
+        {isPemula ? (
+          <TournamentBracketPemula
+            kelasData={kelasData}
+            onBack={undefined} // ✅ PASS undefined - tidak ada back button
+            viewOnly={true}
+            apiBaseUrl={import.meta.env.VITE_API_URL || '/api'}
+          />
+        ) : (
+          <TournamentBracketPrestasi
+            kelasData={kelasData}
+            onBack={undefined} // ✅ PASS undefined - tidak ada back button
+            viewOnly={true}
+            apiBaseUrl={import.meta.env.VITE_API_URL || '/api'}
+          />
+        )}
       </div>
-    );
+
+      {/* Mobile Sidebar */}
+      {sidebarOpen && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/60 z-40 lg:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
+          <div className="lg:hidden z-50">
+            <NavbarDashboard mobile onClose={() => setSidebarOpen(false)} />
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
   }
 
 if (error || !kelasData) {
