@@ -3,7 +3,7 @@ import React from "react";
 const LiveStreaming: React.FC = () => {
   return (
     <div className="min-h-screen py-12 sm:py-16 md:py-20 pt-24 sm:pt-28 md:pt-32 lg:pt-36">
-      <div className="container mx-auto px-6 lg:px-12">
+      <div className="w-full px-6 lg:px-12 mx-auto">
         <div className="text-center space-y-4 sm:space-y-6 md:space-y-8">
           <div className="hidden lg:inline-block group">
             <span className="text-red font-plex font-semibold text-xs sm:text-sm uppercase tracking-[0.2em] border-l-4 border-red pl-3 sm:pl-4 md:pl-6 relative">
@@ -27,14 +27,14 @@ const LiveStreaming: React.FC = () => {
           </p>
         </div>
 
-        <div className="mt-12 sm:mt-16 md:mt-20 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-12">
-          {/* Video 1: Lapangan A */}
+        <div className="mt-12 sm:mt-16 md:mt-20 grid grid-cols-2 gap-8 lg:gap-12">
+          {/* Video 1: Hari 1 */}
           <div className="rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-shadow duration-300 ease-in-out transform hover:-translate-y-1 group">
-            <div className="aspect-w-4 aspect-h-3">
+            <div className="aspect-w-16 aspect-h-9">
               <iframe
                 className="w-full h-full"
-                src="https://www.youtube.com/embed/unavailable"
-                title="YouTube video player - Lapangan A"
+                src="https://www.youtube.com/embed/vyz5VKM8RRE?si=4OFvTmCjQoFj6wrf"
+                title="YouTube video player - Hari 1"
                 frameBorder="0"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
@@ -42,21 +42,21 @@ const LiveStreaming: React.FC = () => {
             </div>
             <div className="p-5 bg-white">
               <h3 className="font-bebas text-2xl text-gray-800 tracking-wider group-hover:text-red transition-colors duration-300">
-                Lapangan A
+                Hari 1
               </h3>
               <p className="font-plex text-sm text-gray-600 mt-1">
-                Pertandingan Taekwondo
+                Sriwijaya International Taekwondo Championship
               </p>
             </div>
           </div>
 
-          {/* Video 2: Lapangan B */}
+          {/* Video 2: Hari 2 */}
           <div className="rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-shadow duration-300 ease-in-out transform hover:-translate-y-1 group">
-            <div className="aspect-w-4 aspect-h-3">
+            <div className="aspect-w-16 aspect-h-9">
               <iframe
                 className="w-full h-full"
-                src="https://www.youtube.com/embed/unavailable"
-                title="YouTube video player - Lapangan B"
+                src="https://www.youtube.com/embed/LfdrEziyU_4?si=LuzzQo9dVq7nQz3r"
+                title="YouTube video player - Hari 2"
                 frameBorder="0"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
@@ -64,21 +64,21 @@ const LiveStreaming: React.FC = () => {
             </div>
             <div className="p-5 bg-white">
               <h3 className="font-bebas text-2xl text-gray-800 tracking-wider group-hover:text-red transition-colors duration-300">
-                Lapangan B
+                Hari 2
               </h3>
               <p className="font-plex text-sm text-gray-600 mt-1">
-                Pertandingan Taekwondo
+                Sriwijaya International Taekwondo Championship{" "}
               </p>
             </div>
           </div>
 
-          {/* Video 3: Lapangan C */}
+          {/* Video 3: Hari 3 */}
           <div className="rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-shadow duration-300 ease-in-out transform hover:-translate-y-1 group">
-            <div className="aspect-w-4 aspect-h-3">
+            <div className="aspect-w-16 aspect-h-9">
               <iframe
                 className="w-full h-full"
-                src="https://www.youtube.com/embed/unavailable"
-                title="YouTube video player - Lapangan C"
+                src="https://www.youtube.com/embed/AFd-GyM4dpM?si=EaCyqxKcKWrYT3pv"
+                title="YouTube video player - Hari 3"
                 frameBorder="0"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
@@ -86,21 +86,21 @@ const LiveStreaming: React.FC = () => {
             </div>
             <div className="p-5 bg-white">
               <h3 className="font-bebas text-2xl text-gray-800 tracking-wider group-hover:text-red transition-colors duration-300">
-                Lapangan C
+                Hari 3
               </h3>
               <p className="font-plex text-sm text-gray-600 mt-1">
-                Pertandingan Taekwondo
+                Sriwijaya International Taekwondo Championship{" "}
               </p>
             </div>
           </div>
 
-          {/* Video 4: Lapangan D */}
+          {/* Video 4: Hari 4 */}
           <div className="rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-shadow duration-300 ease-in-out transform hover:-translate-y-1 group">
-            <div className="aspect-w-4 aspect-h-3">
+            <div className="aspect-w-16 aspect-h-9">
               <iframe
                 className="w-full h-full"
-                src="https://www.youtube.com/embed/unavailable"
-                title="YouTube video player - Lapangan D"
+                src="https://www.youtube.com/embed/bvJeOk2hQwE?si=x6aCRk8iALSDm1KB"
+                title="YouTube video player - Hari 4"
                 frameBorder="0"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
@@ -108,32 +108,10 @@ const LiveStreaming: React.FC = () => {
             </div>
             <div className="p-5 bg-white">
               <h3 className="font-bebas text-2xl text-gray-800 tracking-wider group-hover:text-red transition-colors duration-300">
-                Lapangan D
+                Hari 4
               </h3>
               <p className="font-plex text-sm text-gray-600 mt-1">
-                Pertandingan Taekwondo
-              </p>
-            </div>
-          </div>
-
-          {/* Video 5: Lapangan E */}
-          <div className="rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-shadow duration-300 ease-in-out transform hover:-translate-y-1 group">
-            <div className="aspect-w-4 aspect-h-3">
-              <iframe
-                className="w-full h-full"
-                src="https://www.youtube.com/embed/unavailable"
-                title="YouTube video player - Lapangan E"
-                frameBorder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              ></iframe>
-            </div>
-            <div className="p-5 bg-white">
-              <h3 className="font-bebas text-2xl text-gray-800 tracking-wider group-hover:text-red transition-colors duration-300">
-                Lapangan E
-              </h3>
-              <p className="font-plex text-sm text-gray-600 mt-1">
-                Pertandingan Taekwondo
+                Sriwijaya International Taekwondo Championship{" "}
               </p>
             </div>
           </div>
