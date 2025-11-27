@@ -45,7 +45,7 @@ const LiveStreaming: React.FC = () => {
                 Hari 1
               </h3>
               <p className="font-plex text-sm text-gray-600 mt-1">
-                Pertandingan Taekwondo
+                Sriwijaya International Taekwondo Championship
               </p>
             </div>
           </div>
@@ -67,7 +67,7 @@ const LiveStreaming: React.FC = () => {
                 Hari 2
               </h3>
               <p className="font-plex text-sm text-gray-600 mt-1">
-                Pertandingan Taekwondo
+                Sriwijaya International Taekwondo Championship{" "}
               </p>
             </div>
           </div>
@@ -89,7 +89,7 @@ const LiveStreaming: React.FC = () => {
                 Hari 3
               </h3>
               <p className="font-plex text-sm text-gray-600 mt-1">
-                Pertandingan Taekwondo
+                Sriwijaya International Taekwondo Championship{" "}
               </p>
             </div>
           </div>
@@ -111,7 +111,7 @@ const LiveStreaming: React.FC = () => {
                 Hari 4
               </h3>
               <p className="font-plex text-sm text-gray-600 mt-1">
-                Pertandingan Taekwondo
+                Sriwijaya International Taekwondo Championship{" "}
               </p>
             </div>
           </div>
