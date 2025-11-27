@@ -38,6 +38,14 @@ const TutorialPage = () => {
       videoId: "3iqZ_c_u000",
       thumbnail: `https://img.youtube.com/vi/3iqZ_c_u000/maxresdefault.jpg`,
       icon: Award
+    },
+    {
+      id: 4,
+      title: "Tutorial Mengambil Sertifikat Atlet",
+      description: "Pelajari cara mengambil sertifikat atlet Anda dengan mudah melalui panduan video ini.",
+      videoId: "F43jH1sotQY",
+      thumbnail: `https://img.youtube.com/vi/F43jH1sotQY/maxresdefault.jpg`,
+      icon: Award
     }
   ];
 
