@@ -225,7 +225,7 @@ useEffect(() => {
   }, []);
 
   const handleBack = () => {
-    navigate(-1));
+    navigate(-1);
   };
 
   if (loading) {
