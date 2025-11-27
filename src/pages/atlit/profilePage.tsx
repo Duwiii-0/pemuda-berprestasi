@@ -660,6 +660,7 @@ const Profile = () => {
   const { fetchAtletById, updateAtlet } = useAtletContext();
 
   useEffect(() => {
+    setIsNameDisabled(false);
     if (id) {
       const atletId = Number(id);
       fetchAtletById(atletId).then((data) => {
@@ -684,9 +685,7 @@ const Profile = () => {
             const isRegisteredInComp1 = data.peserta_kompetisi.some(
               (p: any) => p.kelas_kejuaraan?.kompetisi?.id_kompetisi === 1
             );
-            if (isRegisteredInComp1) {
-              setIsNameDisabled(true);
-            }
+            setIsNameDisabled(isRegisteredInComp1);
           }
         }
       });
