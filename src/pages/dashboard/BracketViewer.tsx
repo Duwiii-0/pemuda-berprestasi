@@ -225,7 +225,7 @@ useEffect(() => {
   }, []);
 
   const handleBack = () => {
-    navigate('/dashboard/bracket-viewer');
+    navigate(-1));
   };
 
   if (loading) {
