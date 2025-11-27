@@ -20,7 +20,7 @@ import Event from "./pages/landingPage/event";
 import NotFound from "./pages/notFound";
 import TutorialPage from "./pages/landingPage/tutorial";
 import LapanganLiveView from "./lombaLayout/pertandingan";
-import LiveStreaming from "./lombaLayout/liveStreaming";
+import LiveStreamingPage from "./lombaLayout/liveStreaming";
 import MedalTally from "./lombaLayout/medalTally"; // ✅ NEW IMPORT
 
 const LapanganLiveViewWrapper = () => {
@@ -352,7 +352,7 @@ export default function AppRoutes() {
           <Route path="home" element={<LandingPage />} />
           <Route path="faq" element={<FAQ />} />
           <Route path="timeline" element={<Timeline />} />
-          <Route path="live-streaming" element={<LiveStreaming />} />
+          <Route path="live-streaming" element={<LiveStreamingPage />} />
           <Route
             path="pertandingan/:idKompetisi"
             element={<LapanganLiveViewWrapper />}
