@@ -20,7 +20,7 @@ const LiveStreamingPage = () => {
       title: "Live Streaming - Hari 1",
       description: "Saksikan pertandingan langsung dari Sriwijaya International Taekwondo Championship.",
       videoId: "vyz5VKM8RRE",
-      thumbnail: `https://img.youtube.com/vi/vyz5VKM8RRE/maxresdefault.jpg`,
+      thumbnail: `https://img.youtube.com/vi/vyz5VKM8RRE/hqdefault.jpg`,
       icon: Clapperboard
     },
     {
@@ -28,7 +28,7 @@ const LiveStreamingPage = () => {
       title: "Live Streaming - Hari 2",
       description: "Saksikan pertandingan langsung dari Sriwijaya International Taekwondo Championship.",
       videoId: "LfdrEziyU_4",
-      thumbnail: `https://img.youtube.com/vi/LfdrEziyU_4/maxresdefault.jpg`,
+      thumbnail: `https://img.youtube.com/vi/LfdrEziyU_4/hqdefault.jpg`,
       icon: Clapperboard
     },
     {
@@ -36,7 +36,7 @@ const LiveStreamingPage = () => {
       title: "Live Streaming - Hari 3",
       description: "Saksikan pertandingan langsung dari Sriwijaya International Taekwondo Championship.",
       videoId: "AFd-GyM4dpM",
-      thumbnail: `https://img.youtube.com/vi/AFd-GyM4dpM/maxresdefault.jpg`,
+      thumbnail: `https://img.youtube.com/vi/AFd-GyM4dpM/hqdefault.jpg`,
       icon: Clapperboard
     },
     {
@@ -44,7 +44,7 @@ const LiveStreamingPage = () => {
       title: "Live Streaming - Hari 4",
       description: "Saksikan pertandingan langsung dari Sriwijaya International Taekwondo Championship.",
       videoId: "bvJeOk2hQwE",
-      thumbnail: `https://img.youtube.com/vi/bvJeOk2hQwE/maxresdefault.jpg`,
+      thumbnail: `https://img.youtube.com/vi/bvJeOk2hQwE/hqdefault.jpg`,
       icon: Clapperboard
     }
   ];
