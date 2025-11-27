@@ -82,16 +82,7 @@ const BracketList: React.FC = () => {
     kelompok: "ALL" as string,
     status: "ALL" as "ALL" | "created" | "in_progress" | "completed",
   });
-  const [showFilters, setShowFilters] = useState(false);
 
-  // ✅ TAMBAH FILTER STATE
-  const [filters, setFilters] = useState({
-    cabang: "ALL" as "ALL" | "KYORUGI" | "POOMSAE",
-    kategori: "ALL" as "ALL" | "Prestasi" | "Pemula",
-    kelompok: "ALL" as string,
-    status: "ALL" as "ALL" | "created" | "in_progress" | "completed",
-  });
-  const [showFilters, setShowFilters] = useState(false);
 
   // ✅ FUNGSI UNTUK GET UNIQUE VALUES
   const getUniqueKelompok = () => {
