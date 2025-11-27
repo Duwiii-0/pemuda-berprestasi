@@ -145,36 +145,100 @@ useEffect(() => {
         return;
       }
 
-      console.log('🔍 Fetching brackets list for kompetisi:', kompetisiId);
+      console.log('🔍 Fetching medal tally data for kompetisi:', kompetisiId);
 
-      // ✅ FETCH LIST BRACKETS
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/kompetisi/${kompetisiId}/brackets/list`,
-        { headers: { 'Authorization': `Bearer ${token}` } }
-      );
+      // ✅ GUNAKAN ENDPOINT YANG SAMA DENGAN MEDAL TALLY
+      const timestamp = `?_t=${Date.now()}`;
+      const url = `${import.meta.env.VITE_API_URL}/public/kompetisi/${kompetisiId}/medal-tally${timestamp}`;
+      
+      const response = await fetch(url, {
+        cache: 'no-cache',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache',
+        },
+      });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch brackets');
+        throw new Error(`Failed to fetch medal tally: ${response.status}`);
       }
 
       const result = await response.json();
-      console.log('📊 Brackets list received:', result);
+      console.log('📊 Medal tally response:', result);
       
-      // ✅ TRANSFORM DATA dengan status yang benar
-      const transformedBrackets = (result.data || []).map((kelas: any) => ({
-        id_kelas_kejuaraan: kelas.id_kelas_kejuaraan,
-        cabang: kelas.cabang,
-        kategori_event: kelas.kategori_event,
-        kelompok: kelas.kelompok,
-        kelas_berat: kelas.kelas_berat,
-        poomsae: kelas.poomsae,
-        jenis_kelamin: kelas.jenis_kelamin,
-        peserta_count: kelas.peserta_count || 0,
-        bracket_status: kelas.bracket_status || 'not_created'
-      }));
+      if (!result.success || !result.data) {
+        throw new Error('Invalid response from medal tally');
+      }
+
+      // ✅ HELPER FUNCTION: Count unique participants dari matches
+      const countUniqueParticipants = (matches: any[]): number => {
+        const participants = new Set<number>();
+        matches.forEach(match => {
+          if (match.participant1?.id) participants.add(match.participant1.id);
+          if (match.participant2?.id) participants.add(match.participant2.id);
+        });
+        return participants.size;
+      };
+
+      // ✅ TRANSFORM DATA: Filter kelas yang memiliki bracket
+      const kelasWithBracket = result.data.kelas
+        .filter((kelas: any) => {
+          // Harus ada bracket dan matches
+          if (!kelas.bracket || !kelas.bracket.matches || kelas.bracket.matches.length === 0) {
+            return false;
+          }
+          
+          const participantCount = countUniqueParticipants(kelas.bracket.matches);
+          const isPemula = kelas.kategori_event?.nama_kategori?.toLowerCase().includes('pemula') || false;
+          const isPoomsae = kelas.cabang === 'POOMSAE';
+          
+          // Validasi minimum peserta
+          if (isPoomsae && !isPemula) {
+            return participantCount >= 3; // Poomsae Prestasi minimal 3
+          }
+          
+          return participantCount >= 4; // Lainnya minimal 4
+        })
+        .map((kelas: any) => {
+          const participantCount = countUniqueParticipants(kelas.bracket.matches);
+          
+          // Tentukan status bracket berdasarkan matches
+          let bracketStatus: 'created' | 'in_progress' | 'completed' = 'created';
+          
+          const hasMatchesWithScores = kelas.bracket.matches.some((m: any) => 
+            (m.scoreA > 0 || m.scoreB > 0)
+          );
+          
+          const totalMatches = kelas.bracket.matches.length;
+          const completedMatches = kelas.bracket.matches.filter((m: any) => 
+            (m.scoreA > 0 || m.scoreB > 0)
+          ).length;
+          
+          if (completedMatches === totalMatches && totalMatches > 0) {
+            bracketStatus = 'completed';
+          } else if (hasMatchesWithScores) {
+            bracketStatus = 'in_progress';
+          }
+
+          return {
+            id_kelas_kejuaraan: kelas.id_kelas_kejuaraan,
+            cabang: kelas.cabang,
+            kategori_event: kelas.kategori_event,
+            kelompok: kelas.kelompok,
+            kelas_berat: kelas.kelas_berat,
+            poomsae: kelas.poomsae,
+            jenis_kelamin: kelas.jenis_kelamin || 
+              kelas.kelas_berat?.jenis_kelamin || 
+              'LAKI_LAKI',
+            peserta_count: participantCount,
+            bracket_status: bracketStatus
+          };
+        });
       
-      console.log('✅ Transformed brackets:', transformedBrackets);
-      setKelasKejuaraan(transformedBrackets);
+      console.log('✅ Transformed brackets with medal tally data:', kelasWithBracket);
+      console.log('✅ Total brackets found:', kelasWithBracket.length);
+      
+      setKelasKejuaraan(kelasWithBracket);
       
     } catch (error) {
       console.error('❌ Error fetching brackets:', error);
