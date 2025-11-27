@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/authContext';
 import { Loader, AlertTriangle, ArrowLeft, Menu } from 'lucide-react';
 import TournamentBracketPemula from '../../components/TournamentBracketPemula';
@@ -39,7 +39,6 @@ const BracketViewer: React.FC = () => {
   const { kelasId } = useParams<{ kelasId: string }>();
   const { token, user } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
   const [kelasData, setKelasData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -225,24 +224,22 @@ useEffect(() => {
     return () => window.removeEventListener('resize', onResize);
   }, []);
 
- const handleBack = () => {
-    // ✅ Baca dari state atau fallback ke role-based routing
-    const fromPath = location.state?.from;
-    
-    if (fromPath) {
-      navigate(fromPath, { replace: true });
-    } else {
-      // Fallback: cek role
-      const currentUser = user as User | null;
-      const userRole = currentUser?.role?.toUpperCase();
-      
-      if (userRole === 'PELATIH') {
-        navigate('/dashboard/bracket-viewer', { replace: true });
-      } else {
-        navigate('/admin-kompetisi/drawing-bagan', { replace: true });
-      }
-    }
-  };
+const handleBack = () => {
+  const currentUser = user as User | null;
+  const userRole = currentUser?.role?.toUpperCase();
+
+  console.log('🔙 Back button clicked, role:', userRole);
+
+  // ✅ FORCE REDIRECT dengan window.location untuk pelatih
+  if (userRole === 'PELATIH') {
+    window.location.href = '/dashboard/bracket-viewer';
+  } else if (userRole === 'ADMIN' || userRole === 'ADMIN_KOMPETISI') {
+    window.location.href = '/admin-kompetisi/drawing-bagan';
+  } else {
+    // Default fallback
+    window.location.href = '/dashboard/bracket-viewer';
+  }
+};
 
   if (loading) {
     return (
