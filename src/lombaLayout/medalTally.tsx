@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Loader, Trophy, Medal, Calendar, MapPin, Award } from 'lucide-react';
+import { Loader, Trophy, Medal, Calendar, MapPin, Award, Download } from 'lucide-react';
 import DojangMedalTable from '../components/DojangMedalTable';
 import { useAuth } from '../context/authContext';
+import * as XLSX from 'xlsx';
 
 interface Kompetisi {
   id_kompetisi: number;
@@ -63,38 +64,56 @@ const MedalTallyPage: React.FC<{ idKompetisi?: number }> = ({ idKompetisi }) => 
   const [levelFilter, setLevelFilter] = useState<LevelFilter>('ALL');
   const [showJuaraUmum, setShowJuaraUmum] = useState(false);
 
+  // ⭐ State untuk modal detail dojang
+  const [selectedDojang, setSelectedDojang] = useState<string | null>(null);
+  const [showDojoDetailModal, setShowDojoDetailModal] = useState(false);
+
+  // ⭐ AUTO-REFRESH: Fetch initial data dan setup interval
   useEffect(() => {
     if (!idKompetisi) return;
-    fetchMedalData();
+    
+    fetchMedalData(true);
+
+    const interval = setInterval(() => {
+      fetchMedalData(true);
+    }, 10000);
+
+    return () => clearInterval(interval);
   }, [idKompetisi]);
 
   const countUniqueParticipants = (matches: any[]): number => {
-  const participants = new Set<number>();
-  matches.forEach(match => {
-    if (match.participant1?.id) participants.add(match.participant1.id);
-    if (match.participant2?.id) participants.add(match.participant2.id);
-  });
-  return participants.size;
-};
+    const participants = new Set<number>();
+    matches.forEach(match => {
+      if (match.participant1?.id) participants.add(match.participant1.id);
+      if (match.participant2?.id) participants.add(match.participant2.id);
+    });
+    return participants.size;
+  };
 
-  const fetchMedalData = async () => {
+  const fetchMedalData = async (forceRefresh = false) => {
     if (!idKompetisi) return;
 
     try {
-      setLoading(true);
+      if (!forceRefresh) {
+        setLoading(true);
+      }
       
-      console.log('Fetching medal data for kompetisi:', idKompetisi);
+      const timestamp = forceRefresh ? `?_t=${Date.now()}` : '';
+      const url = `/api/public/kompetisi/${idKompetisi}/medal-tally${timestamp}`;
       
-      const response = await fetch(`/api/public/kompetisi/${idKompetisi}/medal-tally`);
-      
-      console.log('Response status:', response.status);
+      const response = await fetch(url, {
+        cache: 'no-cache',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache',
+        },
+      });
       
       if (!response.ok) {
         throw new Error(`Failed to fetch medal data: ${response.status} ${response.statusText}`);
       }
       
       const result = await response.json();
-      console.log('Medal data response:', result);
       
       if (!result.success) {
         throw new Error('Failed to fetch medal data');
@@ -107,31 +126,22 @@ const MedalTallyPage: React.FC<{ idKompetisi?: number }> = ({ idKompetisi }) => 
       const kelasWithLeaderboard = result.data.kelas
         .filter((kelas: any) => {
           if (!kelas.bracket || !kelas.bracket.matches.length) {
-            console.log(`❌ Kelas ${kelas.id_kelas_kejuaraan} - ${kelas.nama_kelas}: Tidak ada bracket/matches`);
             return false;
           }
           
           const participantCount = countUniqueParticipants(kelas.bracket.matches);
+          const isPemula = kelas.kategori_event?.nama_kategori?.toLowerCase().includes('pemula') || false;
+          const isPoomsae = kelas.cabang === 'POOMSAE';
           
-          if (participantCount >= 4) {
-            console.log(`✅ Kelas ${kelas.id_kelas_kejuaraan} - ${kelas.nama_kelas}: ${participantCount} peserta (TAMPIL)`);
-            return true;
-          } else {
-            console.log(`⚠️ Kelas ${kelas.id_kelas_kejuaraan} - ${kelas.nama_kelas}: ${participantCount} peserta (SKIP - kurang dari 4)`);
-            return false;
+          if (isPoomsae && !isPemula) {
+            return participantCount >= 3;
           }
+          
+          return participantCount >= 4;
         })
         .map((kelas: any) => {
-          console.log(`Processing kelas: ${kelas.id_kelas_kejuaraan}`);
-          
           const isPemula = kelas.kategori_event?.nama_kategori?.toLowerCase().includes('pemula') || false;
-          
-          console.log(`Type: ${isPemula ? 'PEMULA' : 'PRESTASI'}`);
-          console.log(`Total matches: ${kelas.bracket.matches.length}`);
-          
           const leaderboard = transformLeaderboard(kelas.bracket.matches, isPemula);
-          
-          console.log(`Leaderboard:`, leaderboard);
           
           return {
             id_kelas_kejuaraan: kelas.id_kelas_kejuaraan,
@@ -145,7 +155,6 @@ const MedalTallyPage: React.FC<{ idKompetisi?: number }> = ({ idKompetisi }) => 
           };
         });
 
-      console.log(`Total kelas dengan medali: ${kelasWithLeaderboard.length}`);
       setKelasList(kelasWithLeaderboard);
 
     } catch (err: any) {
@@ -157,14 +166,12 @@ const MedalTallyPage: React.FC<{ idKompetisi?: number }> = ({ idKompetisi }) => 
   };
 
   const transformLeaderboard = (matches: any[], isPemula: boolean) => {
-    const leaderboard = {
-      gold: [] as Array<{ id: number; name: string; dojo: string }>,
-      silver: [] as Array<{ id: number; name: string; dojo: string }>,
-      bronze: [] as Array<{ id: number; name: string; dojo: string }>
-    };
-
     if (!matches || matches.length === 0) {
-      return leaderboard;
+      return {
+        gold: [] as Array<{ id: number; name: string; dojo: string }>,
+        silver: [] as Array<{ id: number; name: string; dojo: string }>,
+        bronze: [] as Array<{ id: number; name: string; dojo: string }>
+      };
     }
 
     if (isPemula) {
@@ -189,8 +196,6 @@ const MedalTallyPage: React.FC<{ idKompetisi?: number }> = ({ idKompetisi }) => 
     const round2Matches = matches.filter(m => m.round === 2);
     const hasAdditionalMatch = round2Matches.length > 0;
 
-    console.log(`Round 1: ${round1Matches.length}, Round 2: ${round2Matches.length}`);
-
     if (!hasAdditionalMatch) {
       round1Matches.forEach(match => {
         if ((match.scoreA > 0 || match.scoreB > 0) && match.participant1 && match.participant2) {
@@ -198,20 +203,12 @@ const MedalTallyPage: React.FC<{ idKompetisi?: number }> = ({ idKompetisi }) => 
           const loser = match.scoreA > match.scoreB ? match.participant2 : match.participant1;
 
           if (!processedGold.has(winner.id)) {
-            leaderboard.gold.push({
-              id: winner.id,
-              name: winner.name,
-              dojo: winner.dojo || ''
-            });
+            leaderboard.gold.push({ id: winner.id, name: winner.name, dojo: winner.dojo || '' });
             processedGold.add(winner.id);
           }
 
           if (!processedSilver.has(loser.id)) {
-            leaderboard.silver.push({
-              id: loser.id,
-              name: loser.name,
-              dojo: loser.dojo || ''
-            });
+            leaderboard.silver.push({ id: loser.id, name: loser.name, dojo: loser.dojo || '' });
             processedSilver.add(loser.id);
           }
         }
@@ -221,28 +218,16 @@ const MedalTallyPage: React.FC<{ idKompetisi?: number }> = ({ idKompetisi }) => 
       const lastRound1Match = round1Matches[round1Matches.length - 1];
 
       if (additionalMatch && (additionalMatch.scoreA > 0 || additionalMatch.scoreB > 0)) {
-        const winner = additionalMatch.scoreA > additionalMatch.scoreB 
-          ? additionalMatch.participant1 
-          : additionalMatch.participant2;
-        const loser = additionalMatch.scoreA > additionalMatch.scoreB 
-          ? additionalMatch.participant2 
-          : additionalMatch.participant1;
+        const winner = additionalMatch.scoreA > additionalMatch.scoreB ? additionalMatch.participant1 : additionalMatch.participant2;
+        const loser = additionalMatch.scoreA > additionalMatch.scoreB ? additionalMatch.participant2 : additionalMatch.participant1;
 
         if (winner) {
-          leaderboard.gold.push({
-            id: winner.id,
-            name: winner.name,
-            dojo: winner.dojo || ''
-          });
+          leaderboard.gold.push({ id: winner.id, name: winner.name, dojo: winner.dojo || '' });
           processedGold.add(winner.id);
         }
 
         if (loser) {
-          leaderboard.silver.push({
-            id: loser.id,
-            name: loser.name,
-            dojo: loser.dojo || ''
-          });
+          leaderboard.silver.push({ id: loser.id, name: loser.name, dojo: loser.dojo || '' });
           processedSilver.add(loser.id);
         }
       }
@@ -257,29 +242,17 @@ const MedalTallyPage: React.FC<{ idKompetisi?: number }> = ({ idKompetisi }) => 
 
           if (isLastMatch) {
             if (!processedBronze.has(loser.id)) {
-              leaderboard.bronze.push({
-                id: loser.id,
-                name: loser.name,
-                dojo: loser.dojo || ''
-              });
+              leaderboard.bronze.push({ id: loser.id, name: loser.name, dojo: loser.dojo || '' });
               processedBronze.add(loser.id);
             }
           } else {
             if (!processedGold.has(winner.id)) {
-              leaderboard.gold.push({
-                id: winner.id,
-                name: winner.name,
-                dojo: winner.dojo || ''
-              });
+              leaderboard.gold.push({ id: winner.id, name: winner.name, dojo: winner.dojo || '' });
               processedGold.add(winner.id);
             }
 
             if (!processedSilver.has(loser.id)) {
-              leaderboard.silver.push({
-                id: loser.id,
-                name: loser.name,
-                dojo: loser.dojo || ''
-              });
+              leaderboard.silver.push({ id: loser.id, name: loser.name, dojo: loser.dojo || '' });
               processedSilver.add(loser.id);
             }
           }
@@ -290,95 +263,49 @@ const MedalTallyPage: React.FC<{ idKompetisi?: number }> = ({ idKompetisi }) => 
     return leaderboard;
   };
 
-const transformPrestasiLeaderboard = (matches: any[]) => {
-  console.log(`\n🔍 === DEBUG KELAS ===`);
-  console.log(`Total Matches: ${matches.length}`);
-  
-  // Group by round
-  const matchesByRound = matches.reduce((acc, m) => {
-    acc[m.round] = (acc[m.round] || 0) + 1;
-    return acc;
-  }, {} as Record<number, number>);
-  
-  console.log(`Matches per Round:`, matchesByRound);
-  
-  const leaderboard = {
-    gold: [],
-    silver: [],
-    bronze: []
-  };
+  const transformPrestasiLeaderboard = (matches: any[]) => {
+    const leaderboard = {
+      gold: [] as Array<{ id: number; name: string; dojo: string }>,
+      silver: [] as Array<{ id: number; name: string; dojo: string }>,
+      bronze: [] as Array<{ id: number; name: string; dojo: string }>
+    };
 
-  const totalRounds = Math.max(...matches.map(m => m.round));
-  console.log(`Total Rounds: ${totalRounds}`);
-  
-  const finalMatch = matches.find(m => m.round === totalRounds);
-  console.log(`Final Match (Round ${totalRounds}):`, {
-    participant1: finalMatch?.participant1?.name,
-    participant2: finalMatch?.participant2?.name,
-    scoreA: finalMatch?.scoreA,
-    scoreB: finalMatch?.scoreB
-  });
+    const totalRounds = Math.max(...matches.map(m => m.round));
+    const finalMatch = matches.find(m => m.round === totalRounds);
 
     if (finalMatch && (finalMatch.scoreA > 0 || finalMatch.scoreB > 0)) {
-      const winner = finalMatch.scoreA > finalMatch.scoreB 
-        ? finalMatch.participant1 
-        : finalMatch.participant2;
-      const loser = finalMatch.scoreA > finalMatch.scoreB 
-        ? finalMatch.participant2 
-        : finalMatch.participant1;
+      const winner = finalMatch.scoreA > finalMatch.scoreB ? finalMatch.participant1 : finalMatch.participant2;
+      const loser = finalMatch.scoreA > finalMatch.scoreB ? finalMatch.participant2 : finalMatch.participant1;
 
       if (winner) {
-        leaderboard.gold.push({
-          id: winner.id,
-          name: winner.name,
-          dojo: winner.dojo || ''
-        });
+        leaderboard.gold.push({ id: winner.id, name: winner.name, dojo: winner.dojo || '' });
       }
 
       if (loser) {
-        leaderboard.silver.push({
-          id: loser.id,
-          name: loser.name,
-          dojo: loser.dojo || ''
-        });
+        leaderboard.silver.push({ id: loser.id, name: loser.name, dojo: loser.dojo || '' });
       }
     }
 
-  const semiRound = totalRounds - 1;
-  const semiMatches = matches.filter(m => m.round === semiRound);
-  console.log(`\nSemi-Final (Round ${semiRound}): ${semiMatches.length} matches`);
+    const semiRound = totalRounds - 1;
+    const semiMatches = matches.filter(m => m.round === semiRound);
+    const dojangBronzeSet = new Set<string>();
 
-  semiMatches.forEach((match, idx) => {
-    console.log(`  Match ${idx + 1}:`, {
-      participant1: match.participant1?.name,
-      participant2: match.participant2?.name,
-      scoreA: match.scoreA,
-      scoreB: match.scoreB
+    semiMatches.forEach((match) => {
+      if ((match.scoreA > 0 || match.scoreB > 0) && match.participant1 && match.participant2) {
+        const loser = match.scoreA > match.scoreB ? match.participant2 : match.participant1;
+        const loserDojo = loser?.dojo || '';
+
+        if (loser && !leaderboard.bronze.find(p => p.id === loser.id)) {
+          if (!dojangBronzeSet.has(loserDojo)) {
+            leaderboard.bronze.push({ id: loser.id, name: loser.name, dojo: loserDojo });
+            dojangBronzeSet.add(loserDojo);
+          }
+        }
+      }
     });
 
-    if ((match.scoreA > 0 || match.scoreB > 0) && match.participant1 && match.participant2) {
-      const loser = match.scoreA > match.scoreB ? match.participant2 : match.participant1;
-
-      if (loser && !leaderboard.bronze.find(p => p.id === loser.id)) {
-        console.log(`    ✅ Bronze: ${loser.name}`);
-        leaderboard.bronze.push({
-          id: loser.id,
-          name: loser.name,
-          dojo: loser.dojo || ''
-        });
-      } else {
-        console.log(`    ⚠️ Skipped (duplicate or no loser)`);
-      }
-    } else {
-      console.log(`    ⚠️ Skipped (no score or missing participant)`);
-    }
-  });
-
-  console.log(`\n📊 Final Count: Gold=${leaderboard.gold.length}, Silver=${leaderboard.silver.length}, Bronze=${leaderboard.bronze.length}`);
-  console.log(`=== END DEBUG ===\n`);
-
-  return leaderboard;
-};
+    return leaderboard;
+  };
 
   const extractLevel = (kelas: KelasKejuaraan): string => {
     const kelompokName = kelas.kelompok?.nama_kelompok?.toUpperCase() || '';
@@ -519,6 +446,141 @@ const transformPrestasiLeaderboard = (matches: any[]) => {
     }
   };
 
+  const getDojoMedalDetail = (dojoName: string) => {
+    const filteredKelas = getFilteredKelasList();
+    const medals: {
+      gold: Array<{ kelasName: string; athleteName: string }>;
+      silver: Array<{ kelasName: string; athleteName: string }>;
+      bronze: Array<{ kelasName: string; athleteName: string }>;
+    } = {
+      gold: [],
+      silver: [],
+      bronze: []
+    };
+
+    filteredKelas.forEach(kelas => {
+      const kelasName = generateNamaKelas(kelas);
+
+      kelas.leaderboard.gold.forEach(participant => {
+        if (participant.dojo === dojoName) {
+          medals.gold.push({ kelasName, athleteName: participant.name });
+        }
+      });
+
+      kelas.leaderboard.silver.forEach(participant => {
+        if (participant.dojo === dojoName) {
+          medals.silver.push({ kelasName, athleteName: participant.name });
+        }
+      });
+
+      kelas.leaderboard.bronze.forEach(participant => {
+        if (participant.dojo === dojoName) {
+          medals.bronze.push({ kelasName, athleteName: participant.name });
+        }
+      });
+    });
+
+    return medals;
+  };
+
+  const handleDojoClick = (dojoName: string) => {
+    setSelectedDojang(dojoName);
+    setShowDojoDetailModal(true);
+  };
+
+  const exportToExcel = () => {
+    const workbook = XLSX.utils.book_new();
+    const juaraUmumData = calculateJuaraUmum();
+
+    const overallData = [
+      ['PEROLEHAN MEDALI JUARA UMUM'],
+      [`${kompetisi?.nama_event} - ${getLevelFilterLabel()}`],
+      [''],
+      ['Peringkat', 'Dojang', 'Emas (🥇)', 'Perak (🥈)', 'Perunggu (🥉)', 'Total Medali'],
+      ...juaraUmumData.map((dojo, index) => [
+        index + 1,
+        dojo.dojo,
+        dojo.gold,
+        dojo.silver,
+        dojo.bronze,
+        dojo.total
+      ])
+    ];
+
+    const ws1 = XLSX.utils.aoa_to_sheet(overallData);
+    ws1['!cols'] = [
+      { wch: 12 },
+      { wch: 35 },
+      { wch: 12 },
+      { wch: 12 },
+      { wch: 15 },
+      { wch: 15 }
+    ];
+    ws1['!merges'] = [
+      { s: { r: 0, c: 0 }, e: { r: 0, c: 5 } },
+      { s: { r: 1, c: 0 }, e: { r: 1, c: 5 } }
+    ];
+    XLSX.utils.book_append_sheet(workbook, ws1, 'Overall Leaderboard');
+
+    const detailData: any[] = [
+      ['DETAIL PEROLEHAN MEDALI PER DOJANG'],
+      [`${kompetisi?.nama_event} - ${getLevelFilterLabel()}`],
+      ['']
+    ];
+
+    juaraUmumData.forEach((dojo, dojoIndex) => {
+      const medalDetail = getDojoMedalDetail(dojo.dojo);
+      const totalMedals = medalDetail.gold.length + medalDetail.silver.length + medalDetail.bronze.length;
+
+      detailData.push([
+        `${dojoIndex + 1}. ${dojo.dojo.toUpperCase()}`,
+        '',
+        `Total: ${totalMedals} Medali (🥇${dojo.gold} 🥈${dojo.silver} 🥉${dojo.bronze})`
+      ]);
+      detailData.push(['']);
+
+      if (medalDetail.gold.length > 0) {
+        detailData.push(['🥇 MEDALI EMAS', '', '']);
+        detailData.push(['No', 'Nama Atlet', 'Kelas Kejuaraan']);
+        medalDetail.gold.forEach((medal, idx) => {
+          detailData.push([idx + 1, medal.athleteName, medal.kelasName]);
+        });
+        detailData.push(['']);
+      }
+
+      if (medalDetail.silver.length > 0) {
+        detailData.push(['🥈 MEDALI PERAK', '', '']);
+        detailData.push(['No', 'Nama Atlet', 'Kelas Kejuaraan']);
+        medalDetail.silver.forEach((medal, idx) => {
+          detailData.push([idx + 1, medal.athleteName, medal.kelasName]);
+        });
+        detailData.push(['']);
+      }
+
+      if (medalDetail.bronze.length > 0) {
+        detailData.push(['🥉 MEDALI PERUNGGU', '', '']);
+        detailData.push(['No', 'Nama Atlet', 'Kelas Kejuaraan']);
+        medalDetail.bronze.forEach((medal, idx) => {
+          detailData.push([idx + 1, medal.athleteName, medal.kelasName]);
+        });
+        detailData.push(['']);
+      }
+
+      detailData.push(['', '', '']);
+    });
+
+    const ws2 = XLSX.utils.aoa_to_sheet(detailData);
+    ws2['!cols'] = [{ wch: 8 }, { wch: 30 }, { wch: 60 }];
+    ws2['!merges'] = [
+      { s: { r: 0, c: 0 }, e: { r: 0, c: 2 } },
+      { s: { r: 1, c: 0 }, e: { r: 1, c: 2 } }
+    ];
+    XLSX.utils.book_append_sheet(workbook, ws2, 'Detail per Dojang');
+
+    const fileName = `Medal_Tally_${kompetisi?.nama_event.replace(/\s+/g, '_')}_${getLevelFilterLabel().replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.xlsx`;
+    XLSX.writeFile(workbook, fileName);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#F5FBEF' }}>
@@ -610,9 +672,25 @@ const transformPrestasiLeaderboard = (matches: any[]) => {
 
           {/* Event Info Card */}
           <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-lg border-2 p-4 sm:p-6" style={{ borderColor: '#990D35' }}>
-            <h2 className="text-xl sm:text-2xl font-bebas mb-3 sm:mb-4" style={{ color: '#990D35' }}>
-              {kompetisi.nama_event}
-            </h2>
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <h2 className="text-xl sm:text-2xl font-bebas" style={{ color: '#990D35' }}>
+                {kompetisi.nama_event}
+              </h2>
+              
+              {/* ⭐ NEW: Export Excel Button */}
+              {juaraUmumData.length > 0 && (
+                <button
+                  onClick={exportToExcel}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-sm transition-all hover:shadow-lg"
+                  style={{ backgroundColor: '#28a745', color: 'white' }}
+                  title="Export ke Excel"
+                >
+                  <Download size={18} />
+                  <span className="hidden sm:inline">Export Excel</span>
+                </button>
+              )}
+            </div>
+
             <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 text-xs sm:text-sm" style={{ color: '#050505', opacity: 0.7 }}>
               <div className="flex items-center gap-2">
                 <Calendar size={14} className="sm:w-4 sm:h-4" />
@@ -746,8 +824,15 @@ const transformPrestasiLeaderboard = (matches: any[]) => {
                           <td className="px-4 py-4 font-bold text-lg">
                             {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}`}
                           </td>
-                          <td className="px-4 py-4 font-semibold" style={{ color: '#050505' }}>
-                            {dojo.dojo}
+                          {/* ⭐ NEW: Dojang name clickable */}
+                          <td className="px-4 py-4">
+                            <button
+                              onClick={() => handleDojoClick(dojo.dojo)}
+                              className="font-semibold hover:underline text-left transition-all hover:text-opacity-80"
+                              style={{ color: '#990D35' }}
+                            >
+                              {dojo.dojo} 
+                            </button>
                           </td>
                           <td className="px-4 py-4 text-center font-bold text-yellow-600">
                             {dojo.gold}
@@ -769,8 +854,24 @@ const transformPrestasiLeaderboard = (matches: any[]) => {
               </div>
 
               {juaraUmumData.length > 0 && (
-                <div className="mt-6 text-center text-xs sm:text-sm" style={{ color: '#050505', opacity: 0.6 }}>
-                  * Peringkat berdasarkan: Emas tertinggi → Perak → Perunggu → Total
+                <div className="mt-6 space-y-2">
+                  <div className="text-center text-xs sm:text-sm" style={{ color: '#050505', opacity: 0.6 }}>
+                    * Peringkat berdasarkan: Emas tertinggi → Perak → Perunggu → Total
+                    <br />
+                    <strong>Klik nama dojang untuk melihat detail perolehan medali</strong>
+                  </div>
+                  
+                  {/* ⭐ NEW: Export Button in Table Footer */}
+                  <div className="text-center pt-4">
+                    <button
+                      onClick={exportToExcel}
+                      className="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-bold text-sm transition-all hover:shadow-lg"
+                      style={{ backgroundColor: '#28a745', color: 'white' }}
+                    >
+                      <Download size={20} />
+                      Export Laporan ke Excel (Overall + Detail)
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
@@ -827,6 +928,145 @@ const transformPrestasiLeaderboard = (matches: any[]) => {
               </div>
             )}
           </>
+        )}
+
+        {/* ⭐ NEW: Modal Detail Dojang */}
+        {showDojoDetailModal && selectedDojang && (
+          <div 
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 backdrop-blur-sm"
+            onClick={() => setShowDojoDetailModal(false)}
+          >
+            <div 
+              className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[80vh] overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+              style={{ borderWidth: '3px', borderColor: '#990D35' }}
+            >
+              {/* Modal Header */}
+              <div className="p-6 border-b-2" style={{ backgroundColor: '#990D35', borderColor: '#990D35' }}>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-2xl font-bebas" style={{ color: '#F5FBEF' }}>
+                      Detail Perolehan Medali
+                    </h3>
+                    <p className="text-sm mt-1" style={{ color: '#F5FBEF', opacity: 0.9 }}>
+                      {selectedDojang} - {getLevelFilterLabel()}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setShowDojoDetailModal(false)}
+                    className="p-2 rounded-lg hover:bg-white/10 transition-all"
+                    style={{ color: '#F5FBEF' }}
+                  >
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M18 6L6 18M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              {/* Modal Body */}
+              <div className="p-6 overflow-y-auto max-h-[calc(80vh-120px)]">
+                {(() => {
+                  const medalDetail = getDojoMedalDetail(selectedDojang);
+                  const totalMedals = medalDetail.gold.length + medalDetail.silver.length + medalDetail.bronze.length;
+
+                  return (
+                    <>
+                      {/* Summary */}
+                      <div className="grid grid-cols-3 gap-4 mb-6">
+                        <div className="text-center p-4 rounded-xl bg-yellow-50 border-2 border-yellow-400">
+                          <div className="text-3xl mb-2">🥇</div>
+                          <div className="text-2xl font-bold text-yellow-600">{medalDetail.gold.length}</div>
+                          <div className="text-xs text-gray-600">EMAS</div>
+                        </div>
+                        <div className="text-center p-4 rounded-xl bg-gray-50 border-2 border-gray-400">
+                          <div className="text-3xl mb-2">🥈</div>
+                          <div className="text-2xl font-bold text-gray-600">{medalDetail.silver.length}</div>
+                          <div className="text-xs text-gray-600">PERAK</div>
+                        </div>
+                        <div className="text-center p-4 rounded-xl border-2" style={{ backgroundColor: 'rgba(205, 127, 50, 0.1)', borderColor: '#CD7F32' }}>
+                          <div className="text-3xl mb-2">🥉</div>
+                          <div className="text-2xl font-bold" style={{ color: '#CD7F32' }}>{medalDetail.bronze.length}</div>
+                          <div className="text-xs text-gray-600">PERUNGGU</div>
+                        </div>
+                      </div>
+
+                      {totalMedals === 0 ? (
+                        <div className="text-center py-8 text-gray-500">
+                          Tidak ada data medali untuk dojang ini
+                        </div>
+                      ) : (
+                        <div className="space-y-6">
+                          {/* Gold Medals */}
+                          {medalDetail.gold.length > 0 && (
+                            <div>
+                              <h4 className="text-lg font-bold mb-3 flex items-center gap-2 text-yellow-600">
+                                🥇 MEDALI EMAS ({medalDetail.gold.length})
+                              </h4>
+                              <div className="space-y-2">
+                                {medalDetail.gold.map((medal, idx) => (
+                                  <div key={idx} className="p-3 rounded-lg bg-yellow-50 border border-yellow-200">
+                                    <div className="font-semibold" style={{ color: '#050505' }}>
+                                      {medal.athleteName}
+                                    </div>
+                                    <div className="text-sm text-gray-600 mt-1">
+                                      {medal.kelasName}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Silver Medals */}
+                          {medalDetail.silver.length > 0 && (
+                            <div>
+                              <h4 className="text-lg font-bold mb-3 flex items-center gap-2 text-gray-600">
+                                🥈 MEDALI PERAK ({medalDetail.silver.length})
+                              </h4>
+                              <div className="space-y-2">
+                                {medalDetail.silver.map((medal, idx) => (
+                                  <div key={idx} className="p-3 rounded-lg bg-gray-50 border border-gray-200">
+                                    <div className="font-semibold" style={{ color: '#050505' }}>
+                                      {medal.athleteName}
+                                    </div>
+                                    <div className="text-sm text-gray-600 mt-1">
+                                      {medal.kelasName}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Bronze Medals */}
+                          {medalDetail.bronze.length > 0 && (
+                            <div>
+                              <h4 className="text-lg font-bold mb-3 flex items-center gap-2" style={{ color: '#CD7F32' }}>
+                                🥉 MEDALI PERUNGGU ({medalDetail.bronze.length})
+                              </h4>
+                              <div className="space-y-2">
+                                {medalDetail.bronze.map((medal, idx) => (
+                                  <div key={idx} className="p-3 rounded-lg border" style={{ backgroundColor: 'rgba(205, 127, 50, 0.1)', borderColor: '#CD7F32' }}>
+                                    <div className="font-semibold" style={{ color: '#050505' }}>
+                                      {medal.athleteName}
+                                    </div>
+                                    <div className="text-sm text-gray-600 mt-1">
+                                      {medal.kelasName}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </section>

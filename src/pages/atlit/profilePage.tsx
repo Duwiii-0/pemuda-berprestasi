@@ -1334,7 +1334,7 @@ const Profile = () => {
         <IDCardGenerator atlet={formData} isEditing={isEditing} />
 
         {/* Certificate Generator */}
-        {/* <CertificateGenerator atlet={formData} isEditing={isEditing} /> */}
+        <CertificateGenerator atlet={formData} isEditing={isEditing} />
 
         {/* Document Uploader */}
         <AtletDocumentUploader
