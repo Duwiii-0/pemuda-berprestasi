@@ -130,11 +130,9 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
   viewOnly = false, // ⭐ TAMBAHKAN
 }) => {
   const { token } = useAuth();
-  const [viewMode, setViewMode] = useState<"bracket" | "schedule" | "list">(
+  const [viewMode, setViewMode] = useState<"bracket" | "list">(
     "bracket"
   );
-  const [globalSchedule, setGlobalSchedule] = useState<Match[]>([]);
-  const [isScheduleLoading, setIsScheduleLoading] = useState(false);
 
   const gender = kelasData.jenis_kelamin;
 
@@ -477,152 +475,6 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
     }
   };
 
-  const fetchGlobalSchedule = async () => {
-    // Prevent refetching if data is already loaded
-    if (globalSchedule.length > 0) return;
-
-    const kompetisiId = kelasData.kompetisi.id_kompetisi;
-    setIsScheduleLoading(true);
-    try {
-      const response = await fetch(
-        `${apiBaseUrl}/kompetisi/${kompetisiId}/schedule/global`,
-        {
-          headers: {
-            ...(token && { Authorization: `Bearer ${token}` }),
-          },
-        }
-      );
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(
-          errorData.message || "Failed to fetch global schedule"
-        );
-      }
-      const result = await response.json();
-      console.log("🗓️ Global schedule data fetched:", result);
-      // The backend now returns the sorted data directly in `result.data`
-      setGlobalSchedule(result.data || []);
-    } catch (error: any) {
-      console.error("❌ Error fetching global schedule:", error);
-      showNotification(
-        "error",
-        "Gagal Memuat Jadwal",
-        error.message || "Tidak dapat memuat jadwal global.",
-        () => setShowModal(false)
-      );
-    } finally {
-      setIsScheduleLoading(false);
-    }
-  };
-
-  const renderScheduleView = () => {
-    if (isScheduleLoading) {
-      return (
-        <div className="text-center py-20 px-6">
-          <RefreshCw size={48} className="mx-auto animate-spin text-gray-400" />
-          <p className="mt-4 text-lg font-semibold text-gray-600">
-            Memuat Jadwal Global...
-          </p>
-        </div>
-      );
-    }
-
-    if (globalSchedule.length === 0) {
-      return (
-        <div className="text-center py-20 px-6">
-          <AlertTriangle size={48} className="mx-auto text-yellow-500" />
-          <p className="mt-4 text-lg font-semibold text-gray-700">
-            Jadwal Global Belum Tersedia
-          </p>
-          <p className="text-gray-500 mt-2">
-            Tidak ada pertandingan yang ditemukan atau bracket belum dibuat
-            untuk kompetisi ini.
-          </p>
-        </div>
-      );
-    }
-
-    return (
-      <div className="p-4 sm:p-6">
-        <div className="bg-white rounded-lg shadow-lg overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-100">
-              <tr>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider"
-                >
-                  Partai
-                </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider"
-                >
-                  Stage
-                </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider"
-                >
-                  Kelas Pertandingan
-                </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider"
-                >
-                  Peserta
-                </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider"
-                >
-                  Venue
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {globalSchedule.map((match) => (
-                <tr key={match.id_match} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-lg font-extrabold text-red-700">
-                      {match.nomor_partai || "-"}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                      {match.stageName?.replace("ROUND_OF_", "R")}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-medium">
-                    {/* The class name would ideally come from a relation in the query */}
-                    {`Kelas ID: ${match.kelasKejuaraanId}`}
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="text-sm font-semibold text-blue-600">
-                      {getParticipantName(match.peserta_a) || "TBD"}
-                    </div>
-                    <div className="text-xs text-gray-500">
-                      {getDojoName(match.peserta_a)}
-                    </div>
-                    <div className="text-sm font-semibold text-red-600 mt-1">
-                      {getParticipantName(match.peserta_b) || "TBD"}
-                    </div>
-                    <div className="text-xs text-gray-500">
-                      {getDojoName(match.peserta_b)}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-semibold">
-                    {match.venue?.nama_venue || "-"}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    );
-  };
-
   const renderListView = () => {
     // Sort matches by nomor_partai (as numbers) if nomor_partai exists
     const sortedMatches = [...matches]
@@ -676,6 +528,12 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                   scope="col"
                   className="px-6 py-3 text-center text-xs font-bold text-gray-600 uppercase tracking-wider"
                 >
+                  Skor
+                </th>
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-center text-xs font-bold text-gray-600 uppercase tracking-wider"
+                >
                   Aksi
                 </th>
               </tr>
@@ -708,6 +566,9 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                     <div className="text-xs text-gray-500">
                       {getDojoName(match.peserta_b)}
                     </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-center">
+                    <span className="text-sm font-semibold text-blue-600">{match.skor_a}</span> - <span className="text-sm font-semibold text-red-600">{match.skor_b}</span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-center">
                     <button
@@ -2809,19 +2670,6 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                 }`}
               >
                 Bracket
-              </button>
-              <button
-                onClick={() => {
-                  setViewMode("schedule");
-                  fetchGlobalSchedule(); // Fetch data when switching to schedule view
-                }}
-                className={`px-4 py-2 text-sm font-semibold rounded-md ${
-                  viewMode === "schedule"
-                    ? "bg-white shadow"
-                    : "bg-transparent text-gray-600"
-                }`}
-              >
-                Jadwal
               </button>
               {!viewOnly && (
                 <button

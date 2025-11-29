@@ -430,6 +430,12 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
                   scope="col"
                   className="px-6 py-3 text-center text-xs font-bold text-gray-600 uppercase tracking-wider"
                 >
+                  Skor
+                </th>
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-center text-xs font-bold text-gray-600 uppercase tracking-wider"
+                >
                   Aksi
                 </th>
               </tr>
@@ -462,6 +468,9 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
                     <div className="text-xs text-gray-500">
                       {getDojoName(match.peserta_b)}
                     </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-center">
+                    <span className="text-sm font-semibold text-blue-600">{match.skor_a}</span> - <span className="text-sm font-semibold text-red-600">{match.skor_b}</span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-center">
                     <button
