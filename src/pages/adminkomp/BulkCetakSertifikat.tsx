@@ -53,10 +53,11 @@ const BulkCetakSertifikat: React.FC = () => {
     }
   }, [kompetisiId]);
 
-  // Fetch when filters change (FIXED: Gabungan filter)
+  // Fetch when filters change (ONLY when user changes, NOT on mount)
   useEffect(() => {
-    if (kompetisiId && atletPagination.limit > 0) {
-      console.log(`🔄 Applying filters: dojang=${selectedDojang}, kelas=${selectedKelas}, limit=${atletPagination.limit}`);
+    // Skip initial render by checking if we already have data
+    if (kompetisiId && pesertaList.length > 0) {
+      console.log(`🔄 [BulkCetak] Filter changed: dojang=${selectedDojang}, kelas=${selectedKelas}`);
       setAtletPage(1); // Reset to page 1
       setSelectedAtlets(new Set()); // Clear selection when filter changes
       fetchAtletByKompetisi(
@@ -67,12 +68,12 @@ const BulkCetakSertifikat: React.FC = () => {
         "APPROVED"
       );
     }
-  }, [selectedDojang, selectedKelas, kompetisiId, atletPagination.limit]);
+  }, [selectedDojang, selectedKelas]);
 
-  // Fetch when pagination changes (page only, NOT limit to avoid double fetch)
+  // Fetch when pagination changes (ONLY when page > 1, NOT on mount)
   useEffect(() => {
-    if (kompetisiId && atletPagination.limit > 0) {
-      console.log(`🔄 Loading page ${atletPagination.page}, limit ${atletPagination.limit}...`);
+    if (kompetisiId && atletPagination.page > 1) {
+      console.log(`🔄 [BulkCetak] Page changed to ${atletPagination.page}`);
       setSelectedAtlets(new Set()); // Clear selection when page changes
       fetchAtletByKompetisi(
         kompetisiId, 
@@ -82,7 +83,7 @@ const BulkCetakSertifikat: React.FC = () => {
         "APPROVED"
       );
     }
-  }, [atletPagination.page, kompetisiId]);
+  }, [atletPagination.page]);
 
   // Build filter options from allPesertaList
   useEffect(() => {
