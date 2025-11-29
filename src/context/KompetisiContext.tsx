@@ -107,6 +107,7 @@ export interface PesertaKompetisi {
     tinggi_badan: number;
     jenis_kelamin: "LAKI_LAKI" | "PEREMPUAN";
     umur?: number;
+    pas_foto?: string; // ✅ ADDED: Photo field from database
     dojang: {
       id_dojang: number;
       nama_dojang: string;

@@ -749,20 +749,88 @@ static async deleteFile(id_atlet: number, fileType: keyof AtletFileInfo) {
         skip: offset,
         take: limit,
         select: {
-          atlet: true,
-          status: true
+          id_peserta_kompetisi: true,
+          status: true,
+          is_team: true,
+          id_kelas_kejuaraan: true,
+          atlet: {
+            select: {
+              id_atlet: true,
+              nama_atlet: true,
+              tanggal_lahir: true,
+              nik: true,
+              berat_badan: true,
+              provinsi: true,
+              kota: true,
+              belt: true,
+              alamat: true,
+              no_telp: true,
+              tinggi_badan: true,
+              jenis_kelamin: true,
+              umur: true,
+              pas_foto: true, // ✅ CRITICAL: Include photo field!
+              dojang: {
+                select: {
+                  id_dojang: true,
+                  nama_dojang: true,
+                  email: true,
+                  no_telp: true,
+                  founder: true,
+                  negara: true,
+                  provinsi: true,
+                  kota: true
+                }
+              }
+            }
+          },
+          kelas_kejuaraan: {
+            select: {
+              id_kelas_kejuaraan: true,
+              id_kategori_event: true,
+              id_kelompok: true,
+              id_kelas_berat: true,
+              id_poomsae: true,
+              id_kompetisi: true,
+              cabang: true,
+              kategori_event: {
+                select: {
+                  id_kategori_event: true,
+                  nama_kategori: true
+                }
+              },
+              kelompok: {
+                select: {
+                  id_kelompok: true,
+                  nama_kelompok: true,
+                  usia_min: true,
+                  usia_max: true
+                }
+              },
+              kelas_berat: {
+                select: {
+                  id_kelas_berat: true,
+                  jenis_kelamin: true,
+                  batas_min: true,
+                  batas_max: true,
+                  nama_kelas: true
+                }
+              },
+              poomsae: {
+                select: {
+                  id_poomsae: true,
+                  nama_kelas: true
+                }
+              }
+            }
+          }
         }
       }),
       prisma.tb_peserta_kompetisi.count({ where: whereCondition })
     ]);
   
-    const atletFlat = peserta.map(p => ({
-      ...p.atlet,
-      status: p.status
-    }));
-  
+    // Return complete peserta data with all relations
     return {
-      data: atletFlat,
+      data: peserta,
       pagination: {
         currentPage: page,
         totalPages: Math.ceil(total / limit),

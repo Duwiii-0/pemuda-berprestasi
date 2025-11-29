@@ -183,9 +183,13 @@ export const generateIdCardPdfBytes = async (atlet: Atlet, pesertaList: any[]): 
     const helveticaFont = await pdfDoc.embedFont('Helvetica-Bold');
     const mmToPt = (mm: number) => mm * 2.83465;
 
-    if (atlet.pas_foto_path) {
+    // FIXED: Use pas_foto (from database) instead of pas_foto_path
+    const photoField = (atlet as any).pas_foto || (atlet as any).pas_foto_path;
+    
+    if (photoField) {
         try {
-            const photoUrl = getPhotoUrl(atlet.pas_foto_path);
+            const photoUrl = getPhotoUrl(photoField);
+            console.log(`📸 Loading photo for ${atlet.nama_atlet}: ${photoUrl}`);
             const roundedImageBase64 = await createRoundedImage(photoUrl, COORDS_MM_IDCARD.photo.borderRadius);
             const imageBytes = base64ToArrayBuffer(roundedImageBase64);
             const image = await pdfDoc.embedPng(imageBytes);
@@ -196,9 +200,12 @@ export const generateIdCardPdfBytes = async (atlet: Atlet, pesertaList: any[]): 
             const height = mmToPt(COORDS_MM_IDCARD.photo.height);
 
             firstPage.drawImage(image, { x, y, width, height });
+            console.log(`✅ Photo embedded successfully for ${atlet.nama_atlet}`);
         } catch (error) {
-            console.error("Failed to embed photo:", error);
+            console.error(`❌ Failed to embed photo for ${atlet.nama_atlet}:`, error);
         }
+    } else {
+        console.warn(`⚠️ No photo found for ${atlet.nama_atlet}`);
     }
 
     const textColor = rgb(0.04, 0.13, 0.41);

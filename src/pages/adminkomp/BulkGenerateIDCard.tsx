@@ -105,6 +105,10 @@ const BulkGenerateIDCard: React.FC = () => {
   const totalPages = atletPagination.totalPages;
   const itemsPerPage = atletPagination.limit;
 
+  // FIXED: Use actual pesertaList length if pagination meta is 0
+  const actualTotal = atletPagination.total > 0 ? atletPagination.total : pesertaList.length;
+  const actualTotalPages = totalPages > 0 ? totalPages : Math.ceil(pesertaList.length / itemsPerPage);
+
   // Selection handlers
   const handleSelectAll = () => {
     if (selectedAtlets.size === pesertaList.length) {
@@ -131,9 +135,10 @@ const BulkGenerateIDCard: React.FC = () => {
   const getPageNumbers = () => {
     const pageNumbers: (number | string)[] = [];
     const maxVisiblePages = 5;
+    const pages = actualTotalPages; // Use actualTotalPages instead
     
-    if (totalPages <= maxVisiblePages) {
-      for (let i = 1; i <= totalPages; i++) {
+    if (pages <= maxVisiblePages) {
+      for (let i = 1; i <= pages; i++) {
         pageNumbers.push(i);
       }
     } else {
@@ -142,11 +147,11 @@ const BulkGenerateIDCard: React.FC = () => {
           pageNumbers.push(i);
         }
         pageNumbers.push('...');
-        pageNumbers.push(totalPages);
-      } else if (currentPage >= totalPages - 2) {
+        pageNumbers.push(pages);
+      } else if (currentPage >= pages - 2) {
         pageNumbers.push(1);
         pageNumbers.push('...');
-        for (let i = totalPages - 3; i <= totalPages; i++) {
+        for (let i = pages - 3; i <= pages; i++) {
           pageNumbers.push(i);
         }
       } else {
@@ -156,7 +161,7 @@ const BulkGenerateIDCard: React.FC = () => {
           pageNumbers.push(i);
         }
         pageNumbers.push('...');
-        pageNumbers.push(totalPages);
+        pageNumbers.push(pages);
       }
     }
     
@@ -200,8 +205,10 @@ const BulkGenerateIDCard: React.FC = () => {
           };
           
           console.log(`🔍 Generating ID card for ${peserta.atlet.nama_atlet}:`, {
-            has_photo: !!(peserta.atlet as any).pas_foto_path,
-            photo_path: (peserta.atlet as any).pas_foto_path,
+            has_pas_foto: !!(peserta.atlet as any).pas_foto,
+            pas_foto: (peserta.atlet as any).pas_foto,
+            has_pas_foto_path: !!(peserta.atlet as any).pas_foto_path,
+            pas_foto_path: (peserta.atlet as any).pas_foto_path,
             kelas_kejuaraan: peserta.kelas_kejuaraan?.kategori_event?.nama_kategori,
             dojang: peserta.atlet.dojang?.nama_dojang
           });
@@ -485,7 +492,7 @@ const BulkGenerateIDCard: React.FC = () => {
                 Peserta yang Disetujui
               </h2>
               <span className="px-3 py-1 rounded-full text-sm font-medium" style={{ backgroundColor: 'rgba(153, 13, 53, 0.1)', color: '#990D35' }}>
-                Total: {atletPagination.total} peserta
+                {pesertaList.length} peserta ditampilkan
               </span>
               {pesertaList.length > 0 && (
                 <label className="flex items-center gap-2 cursor-pointer">
@@ -503,7 +510,7 @@ const BulkGenerateIDCard: React.FC = () => {
               )}
             </div>
             <p className="text-sm" style={{ color: '#050505', opacity: 0.6 }}>
-              Showing {(currentPage - 1) * itemsPerPage + 1}-{Math.min(currentPage * itemsPerPage, atletPagination.total)} of {atletPagination.total} | Page {currentPage}/{totalPages}
+              {actualTotal > 0 ? `Page ${currentPage} of ${actualTotalPages}` : `Showing ${pesertaList.length} results`}
             </p>
           </div>
 
@@ -572,7 +579,7 @@ const BulkGenerateIDCard: React.FC = () => {
           )}
 
           {/* PAGINATION */}
-          {totalPages > 1 && (
+          {actualTotalPages > 1 && (
             <div className="flex items-center justify-center gap-2 pt-4 border-t" style={{ borderColor: 'rgba(153, 13, 53, 0.1)' }}>
               <button
                 onClick={() => setAtletPage(currentPage - 1)}
@@ -606,7 +613,7 @@ const BulkGenerateIDCard: React.FC = () => {
 
               <button
                 onClick={() => setAtletPage(currentPage + 1)}
-                disabled={currentPage === totalPages || loadingAtlet}
+                disabled={currentPage === actualTotalPages || loadingAtlet}
                 className="p-2 rounded-lg transition-all disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gray-100"
                 style={{ color: '#990D35' }}
               >
