@@ -475,14 +475,21 @@ static async getEligible(
   // 1. Get IDs of athletes already registered in this specific class
   const registeredParticipants = await prisma.tb_peserta_kompetisi.findMany({
     where: { id_kelas_kejuaraan: kelasId },
-    select: { id_atlet: true, id_atlet_2: true },
+    select: { 
+      id_atlet: true,
+      anggota_tim: {
+        select: { id_atlet: true }
+      }
+    },
   });
 
-  const registeredAtletIds = registeredParticipants.flatMap(p => {
-    const ids = [];
-    if (p.id_atlet) ids.push(p.id_atlet);
-    if (p.id_atlet_2) ids.push(p.id_atlet_2);
-    return ids;
+  const registeredAtletIds: number[] = [];
+  registeredParticipants.forEach(p => {
+    if (p.id_atlet) registeredAtletIds.push(p.id_atlet);
+    // Also add team members if is_team
+    p.anggota_tim.forEach(member => {
+      if (member.id_atlet) registeredAtletIds.push(member.id_atlet);
+    });
   });
 
   console.log("🚫 Registered athlete IDs for kelasId", kelasId, ":", registeredAtletIds);
