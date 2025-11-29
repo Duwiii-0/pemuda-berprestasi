@@ -35,8 +35,14 @@ const BulkCetakSertifikat: React.FC = () => {
   // FIXED: Set limit ONCE on mount before any fetch
   useEffect(() => {
     if (kompetisiId) {
-      console.log('🔄 Setting initial limit to 10000 for bulk operations...');
+      console.log('🔄 [BulkCetak] Setting initial limit to 10000...');
+      console.log('🔄 [BulkCetak] Current limit before set:', atletPagination.limit);
       setAtletLimit(10000); // Set very high limit to load all data (3900+)
+      // Wait a bit for state to update, then fetch
+      setTimeout(() => {
+        console.log('🔄 [BulkCetak] Fetching with limit (after set):', atletPagination.limit);
+        fetchAtletByKompetisi(kompetisiId, undefined, undefined, undefined, "APPROVED");
+      }, 100);
     }
   }, [kompetisiId]);
 

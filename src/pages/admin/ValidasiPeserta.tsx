@@ -138,8 +138,12 @@ const kelasBeratOptions = [
   // FIXED: Set limit first when kompetisi is selected
   useEffect(() => {
     if (selectedKompetisiId) {
-      console.log(`[ValidasiPeserta] Setting limit to ${itemsPerPage}...`);
+      console.log(`[ValidasiPeserta] Setting limit to ${itemsPerPage} and fetching...`);
       setAtletLimit(itemsPerPage);
+      // Wait a bit for state to update, then fetch
+      setTimeout(() => {
+        fetchAtletByKompetisi(selectedKompetisiId);
+      }, 100);
     }
   }, [selectedKompetisiId, itemsPerPage]);
 
