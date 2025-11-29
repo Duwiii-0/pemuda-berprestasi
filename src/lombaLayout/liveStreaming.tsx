@@ -1,124 +1,195 @@
-import React from "react";
+import { useState } from "react";
+import { X, Play, Clapperboard } from "lucide-react";
 
-const LiveStreaming: React.FC = () => {
+// Tipe data untuk video
+interface LiveVideo {
+  id: number;
+  title: string;
+  description: string;
+  videoId: string;
+  thumbnail: string;
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+}
+
+const LiveStreamingPage = () => {
+  const [selectedVideo, setSelectedVideo] = useState<LiveVideo | null>(null);
+
+  const videos: LiveVideo[] = [
+    {
+      id: 1,
+      title: "Live Streaming - Hari 1",
+      description:
+        "Saksikan pertandingan langsung dari Sriwijaya International Taekwondo Championship.",
+      videoId: "vyz5VKM8RRE",
+      thumbnail: `https://img.youtube.com/vi/vyz5VKM8RRE/hqdefault.jpg`,
+      icon: Clapperboard,
+    },
+    {
+      id: 2,
+      title: "Live Streaming - Hari 2",
+      description:
+        "Saksikan pertandingan langsung dari Sriwijaya International Taekwondo Championship.",
+      videoId: "LfdrEziyU_4",
+      thumbnail: `https://img.youtube.com/vi/LfdrEziyU_4/hqdefault.jpg`,
+      icon: Clapperboard,
+    },
+    {
+      id: 3,
+      title: "Live Streaming - Hari 3",
+      description:
+        "Saksikan pertandingan langsung dari Sriwijaya International Taekwondo Championship.",
+      videoId: "AFd-GyM4dpM",
+      thumbnail: `https://img.youtube.com/vi/AFd-GyM4dpM/hqdefault.jpg`,
+      icon: Clapperboard,
+    },
+    {
+      id: 4,
+      title: "Live Streaming - Hari 4",
+      description:
+        "Saksikan pertandingan langsung dari Sriwijaya International Taekwondo Championship.",
+      videoId: "bvJeOk2hQwE",
+      thumbnail: `https://img.youtube.com/vi/bvJeOk2hQwE/hqdefault.jpg`,
+      icon: Clapperboard,
+    },
+  ];
+
+  const openModal = (video: LiveVideo) => {
+    setSelectedVideo(video);
+  };
+
+  const closeModal = () => {
+    setSelectedVideo(null);
+  };
+
   return (
-    <div className="min-h-screen py-12 sm:py-16 md:py-20 pt-24 sm:pt-28 md:pt-32 lg:pt-36">
-      <div className="w-full px-6 lg:px-12 mx-auto">
-        <div className="text-center space-y-4 sm:space-y-6 md:space-y-8">
-          <div className="hidden lg:inline-block group">
-            <span className="text-red font-plex font-semibold text-xs sm:text-sm uppercase tracking-[0.2em] border-l-4 border-red pl-3 sm:pl-4 md:pl-6 relative">
-              Tonton Pertandingan
-              <div className="absolute -left-1 top-0 bottom-0 w-1 bg-red/20 group-hover:bg-red/40 transition-colors duration-300"></div>
+    <div className="min-h-screen bg-white py-16 sm:py-20 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto pt-16">
+        {/* Header */}
+        <div className="text-center mb-20">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-judul font-bebas text-red leading-none tracking-wide mb-8">
+            <span className="bg-gradient-to-r from-red via-red/90 to-red/80 bg-clip-text text-transparent">
+              Live Streaming
             </span>
-          </div>
-
-          <div className="relative">
-            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bebas leading-[0.85] tracking-wide">
-              <span className="bg-gradient-to-r from-red via-red/90 to-red/80 bg-clip-text text-transparent">
-                Live Streaming
-              </span>
-            </h1>
-            <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-12 sm:w-16 md:w-20 h-0.5 sm:h-1 bg-gradient-to-r from-red to-red/60 rounded-full"></div>
-          </div>
-
-          <p className="text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl font-plex text-black/80 max-w-4xl mx-auto leading-relaxed font-light px-2 sm:px-4">
+          </h1>
+          <div className="w-24 h-0.5 bg-red-600 mx-auto mb-8"></div>
+          <p className="text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed font-light">
             Saksikan pertandingan langsung dari arena melalui kanal YouTube
             resmi
           </p>
         </div>
 
-        <div className="mt-12 sm:mt-16 md:mt-20 grid grid-cols-2 gap-8 lg:gap-12">
-          {/* Video 1: Hari 1 */}
-          <div className="rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-shadow duration-300 ease-in-out transform hover:-translate-y-1 group">
-            <div className="aspect-w-16 aspect-h-9">
-              <iframe
-                className="w-full h-full"
-                src="https://www.youtube.com/embed/vyz5VKM8RRE?si=4OFvTmCjQoFj6wrf"
-                title="YouTube video player - Hari 1"
-                frameBorder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              ></iframe>
-            </div>
-            <div className="p-5 bg-white">
-              <h3 className="font-bebas text-2xl text-gray-800 tracking-wider group-hover:text-red transition-colors duration-300">
-                Hari 1
-              </h3>
-              <p className="font-plex text-sm text-gray-600 mt-1">
-                Sriwijaya International Taekwondo Championship
-              </p>
-            </div>
-          </div>
+        {/* Video Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-12">
+          {videos.map((video, index) => {
+            const IconComponent = video.icon;
+            return (
+              <div
+                key={video.id}
+                className="group cursor-pointer transform transition-all duration-700 hover:-translate-y-3"
+                onClick={() => openModal(video)}
+              >
+                <div className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-700 border border-gray-100 hover:border-gray-200">
+                  {/* Video Thumbnail */}
+                  <div className="relative aspect-video bg-gray-900 overflow-hidden">
+                    <img
+                      src={video.thumbnail}
+                      alt={video.title}
+                      className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src =
+                          "https://via.placeholder.com/640x360/374151/ffffff?text=Video+Streaming";
+                      }}
+                    />
 
-          {/* Video 2: Hari 2 */}
-          <div className="rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-shadow duration-300 ease-in-out transform hover:-translate-y-1 group">
-            <div className="aspect-w-16 aspect-h-9">
-              <iframe
-                className="w-full h-full"
-                src="https://www.youtube.com/embed/LfdrEziyU_4?si=LuzzQo9dVq7nQz3r"
-                title="YouTube video player - Hari 2"
-                frameBorder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              ></iframe>
-            </div>
-            <div className="p-5 bg-white">
-              <h3 className="font-bebas text-2xl text-gray-800 tracking-wider group-hover:text-red transition-colors duration-300">
-                Hari 2
-              </h3>
-              <p className="font-plex text-sm text-gray-600 mt-1">
-                Sriwijaya International Taekwondo Championship{" "}
-              </p>
-            </div>
-          </div>
+                    {/* Overlay */}
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-center justify-center">
+                      <div className="w-16 h-16 bg-white/90 rounded-full flex items-center justify-center backdrop-blur-sm transform scale-0 group-hover:scale-100 transition-transform duration-500">
+                        <Play
+                          className="w-6 h-6 text-gray-900 ml-0.5"
+                          fill="currentColor"
+                        />
+                      </div>
+                    </div>
 
-          {/* Video 3: Hari 3 */}
-          <div className="rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-shadow duration-300 ease-in-out transform hover:-translate-y-1 group">
-            <div className="aspect-w-16 aspect-h-9">
-              <iframe
-                className="w-full h-full"
-                src="https://www.youtube.com/embed/AFd-GyM4dpM?si=EaCyqxKcKWrYT3pv"
-                title="YouTube video player - Hari 3"
-                frameBorder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              ></iframe>
-            </div>
-            <div className="p-5 bg-white">
-              <h3 className="font-bebas text-2xl text-gray-800 tracking-wider group-hover:text-red transition-colors duration-300">
-                Hari 3
-              </h3>
-              <p className="font-plex text-sm text-gray-600 mt-1">
-                Sriwijaya International Taekwondo Championship{" "}
-              </p>
-            </div>
-          </div>
+                    {/* Number Badge */}
+                    <div className="absolute top-6 left-6 w-10 h-10 bg-red-600 text-white rounded-full flex items-center justify-center font-bold text-sm">
+                      {index + 1}
+                    </div>
+                  </div>
 
-          {/* Video 4: Hari 4 */}
-          <div className="rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-shadow duration-300 ease-in-out transform hover:-translate-y-1 group">
-            <div className="aspect-w-16 aspect-h-9">
-              <iframe
-                className="w-full h-full"
-                src="https://www.youtube.com/embed/bvJeOk2hQwE?si=x6aCRk8iALSDm1KB"
-                title="YouTube video player - Hari 4"
-                frameBorder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              ></iframe>
-            </div>
-            <div className="p-5 bg-white">
-              <h3 className="font-bebas text-2xl text-gray-800 tracking-wider group-hover:text-red transition-colors duration-300">
-                Hari 4
-              </h3>
-              <p className="font-plex text-sm text-gray-600 mt-1">
-                Sriwijaya International Taekwondo Championship{" "}
-              </p>
-            </div>
-          </div>
+                  {/* Content */}
+                  <div className="p-8">
+                    <div className="flex items-start space-x-4 mb-4">
+                      <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-red-50 transition-colors duration-500">
+                        <IconComponent className="w-6 h-6 text-gray-700 group-hover:text-red-600 transition-colors duration-500" />
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-bold text-gray-900 mb-2 leading-tight">
+                          {video.title}
+                        </h3>
+                      </div>
+                    </div>
+
+                    <p className="text-gray-600 leading-relaxed font-light">
+                      {video.description}
+                    </p>
+
+                    {/* Action Indicator */}
+                    <div className="mt-6 flex items-center text-red-600 font-medium text-sm opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-500">
+                      <span>Tonton Sekarang</span>
+                      <svg
+                        className="w-4 h-4 ml-2"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 5l7 7-7 7"
+                        />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
+
+      {/* Modal */}
+      {selectedVideo && (
+        <div
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          onClick={closeModal}
+        >
+          <div
+            className="relative bg-black rounded-2xl overflow-hidden w-full h-full sm:w-[80vw] sm:h-[80vh] max-w-6xl shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close Button */}
+            <button
+              onClick={closeModal}
+              className="absolute top-4 right-4 z-20 w-10 h-10 bg-white/10 hover:bg-white/20 text-white rounded-full flex items-center justify-center transition-colors duration-200 backdrop-blur-md"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            {/* Video */}
+            <iframe
+              src={`https://www.youtube.com/embed/${selectedVideo.videoId}?autoplay=1&rel=0`}
+              title={selectedVideo.title}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              className="w-full h-full rounded-2xl"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
-export default LiveStreaming;
+export default LiveStreamingPage;
