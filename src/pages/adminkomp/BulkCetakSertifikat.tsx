@@ -218,3 +218,6 @@ const BulkCetakSertifikat: React.FC = () => {
       </div>
     </div>
   );
+};
+
+export default BulkCetakSertifikat;
