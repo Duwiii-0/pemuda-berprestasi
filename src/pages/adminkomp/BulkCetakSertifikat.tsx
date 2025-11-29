@@ -7,7 +7,7 @@ import { PDFDocument } from 'pdf-lib';
 
 const BulkCetakSertifikat: React.FC = () => {
   const { user } = useAuth();
-  const { pesertaList, fetchAtletByKompetisi, loadingAtlet, atletPagination, setAtletPage, setAtletLimit } = useKompetisi();
+  const { pesertaList, fetchAtletByKompetisi, loadingAtlet, atletPagination, setAtletPage, setAtletLimit, allPesertaList, fetchAllAtletByKompetisi } = useKompetisi();
   
   const [dojangs, setDojangs] = useState<{ id: number; name: string }[]>([]);
   const [kelasKejuaraan, setKelasKejuaraan] = useState<{ id: string; name: string }[]>([]);
@@ -28,11 +28,17 @@ const BulkCetakSertifikat: React.FC = () => {
   }, [kompetisiId, fetchAtletByKompetisi, atletPagination.page, atletPagination.limit, selectedDojang, selectedKelas]);
 
   useEffect(() => {
-    if (pesertaList.length > 0) {
+    if (kompetisiId) {
+      fetchAllAtletByKompetisi(kompetisiId);
+    }
+  }, [kompetisiId, fetchAllAtletByKompetisi]);
+
+  useEffect(() => {
+    if (allPesertaList.length > 0) {
       const dojangSet = new Map<number, string>();
       const kelasSet = new Map<string, string>();
 
-      pesertaList.forEach((peserta: any) => {
+      allPesertaList.forEach((peserta: any) => {
         if (peserta.atlet?.dojang) {
           dojangSet.set(peserta.atlet.dojang.id_dojang, peserta.atlet.dojang.nama_dojang);
         }
@@ -46,7 +52,7 @@ const BulkCetakSertifikat: React.FC = () => {
       setDojangs(Array.from(dojangSet, ([id, name]) => ({ id, name })));
       setKelasKejuaraan(Array.from(kelasSet, ([id, name]) => ({ id, name })));
     }
-  }, [pesertaList]);
+  }, [allPesertaList]);
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {

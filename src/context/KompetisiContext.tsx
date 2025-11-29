@@ -186,6 +186,7 @@ export interface KompetisiContextType {
   kompetisiList: Kompetisi[];
   kompetisiDetail: KompetisiDetail | null;
   pesertaList: PesertaKompetisi[];
+  allPesertaList: PesertaKompetisi[];
   kelasKejuaraanList: KelasKejuaraan[];
   atletPagination: PaginationMeta;
 
@@ -202,8 +203,10 @@ export interface KompetisiContextType {
   fetchAtletByKompetisi: (
     id_kompetisi: number,
     cabang?: "kyorugi" | "poomsae",
-    id_dojang?: number
+    id_dojang?: number,
+    id_kelas?: string,
   ) => Promise<void>;
+  fetchAllAtletByKompetisi: (id_kompetisi: number) => Promise<void>;
   setAtletPage: (page: number) => void;
   setAtletLimit: (limit: number) => void;
 
@@ -234,6 +237,7 @@ export const KompetisiProvider = ({ children }: { children: ReactNode }) => {
   const [kompetisiDetail, setKompetisiDetail] =
     useState<KompetisiDetail | null>(null);
   const [pesertaList, setPesertaList] = useState<PesertaKompetisi[]>([]);
+  const [allPesertaList, setAllPesertaList] = useState<PesertaKompetisi[]>([]);
   const [kelasKejuaraanList, setKelasKejuaraanList] = useState<
     KelasKejuaraan[]
   >([]);
@@ -381,6 +385,19 @@ export const KompetisiProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const fetchAllAtletByKompetisi = async (id_kompetisi: number) => {
+    try {
+      const res = await apiClient.get(`/kompetisi/${id_kompetisi}/atlet?limit=10000`);
+      setAllPesertaList(
+        Array.isArray(res.data)
+          ? (res.data as PesertaKompetisi[])
+          : (res.data.data as PesertaKompetisi[]) ?? []
+      );
+    } catch (err: any) {
+      console.error("[fetchAllAtletByKompetisi] error:", err);
+    }
+  };
+
   const setAtletPage = (page: number) => {
     setAtletPagination((prev) => ({ ...prev, page }));
   };
@@ -504,6 +521,7 @@ const deleteParticipant = async (
         kompetisiList,
         kompetisiDetail,
         pesertaList,
+        allPesertaList,
         kelasKejuaraanList,
         atletPagination,
         loadingKompetisi,
@@ -516,6 +534,7 @@ const deleteParticipant = async (
         fetchKompetisiById,
         fetchKelasKejuaraanByKompetisi,
         fetchAtletByKompetisi,
+        fetchAllAtletByKompetisi,
         updatePesertaStatus,
         deleteParticipant,
         updateParticipantClass,
