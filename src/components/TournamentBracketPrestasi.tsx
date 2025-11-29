@@ -2956,7 +2956,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                   </div>
                 </div>
               )
-        : renderScheduleView()}
+        : null}
 
       {/* Participant Preview Modal, Edit Match Modal, etc. */}
       {showParticipantPreview && (
