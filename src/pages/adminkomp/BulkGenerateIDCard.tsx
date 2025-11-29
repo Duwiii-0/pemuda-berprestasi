@@ -216,3 +216,6 @@ const BulkGenerateIDCard: React.FC = () => {
       </div>
     </div>
   );
+};
+
+export default BulkGenerateIDCard;
