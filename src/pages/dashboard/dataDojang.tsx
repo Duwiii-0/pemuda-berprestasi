@@ -281,111 +281,110 @@ const Dojang = () => {
   const [hasApprovedParticipants, setHasApprovedParticipants] = useState(false);
   const [checkingParticipants, setCheckingParticipants] = useState(false);  
 
+  // ✅ FUNCTION: Generate Dojang Certificate
   const generateDojangCertificate = async () => {
-  try {
-    setLoading(true);
-    
-    // 1. Load template
-    const templatePath = `/templates/piagam.pdf`;
-    const existingPdfBytes = await fetch(templatePath)
-      .then(res => res.arrayBuffer());
-    
-    const pdfDoc = await PDFDocument.load(existingPdfBytes);
-    const pages = pdfDoc.getPages();
-    const firstPage = pages[0];
-    const { width: pageWidth, height: pageHeight } = firstPage.getSize();
+    if (!userDojang) {
+      toast.error("Data dojang tidak tersedia");
+      return;
+    }
 
-    const helveticaBold = await pdfDoc.embedFont('Helvetica-Bold');
-    const helvetica = await pdfDoc.embedFont('Helvetica');
-    const mmToPt = (mm: number) => mm * 2.83465;
-    const textColor = rgb(0, 0, 0);
+    try {
+      setLoading(true);
+      
+      const templatePath = `/templates/piagam.pdf`;
+      const existingPdfBytes = await fetch(templatePath)
+        .then(res => res.arrayBuffer());
+      
+      const pdfDoc = await PDFDocument.load(existingPdfBytes);
+      const pages = pdfDoc.getPages();
+      const firstPage = pages[0];
+      const { width: pageWidth, height: pageHeight } = firstPage.getSize();
 
-    // 2. NAMA DOJANG (centered)
-    const dojangName = userDojang.nama_dojang.toUpperCase();
-    const nameWidth = helveticaBold.widthOfTextAtSize(dojangName, 24);
-    firstPage.drawText(dojangName, {
-      x: (pageWidth - nameWidth) / 2,
-      y: pageHeight - mmToPt(140),
-      size: 24,
-      font: helveticaBold,
-      color: textColor,
-    });
+      const helveticaBold = await pdfDoc.embedFont('Helvetica-Bold');
+      const helvetica = await pdfDoc.embedFont('Helvetica');
+      const mmToPt = (mm: number) => mm * 2.83465;
+      const textColor = rgb(0, 0, 0);
 
-    // 3. ACHIEVEMENT TEXT (centered)
-    const achievementText = "PARTICIPANT"; // Fixed text
-    const achievementWidth = helvetica.widthOfTextAtSize(
-      achievementText, 
-      20
-    );
-    firstPage.drawText(achievementText, {
-      x: (pageWidth - achievementWidth) / 2,
-      y: pageHeight - mmToPt(158),
-      size: 20,
-      font: helvetica,
-      color: textColor,
-    });
+      // NAMA DOJANG (centered)
+      const dojangName = userDojang.nama_dojang.toUpperCase();
+      const nameWidth = helveticaBold.widthOfTextAtSize(dojangName, 24);
+      firstPage.drawText(dojangName, {
+        x: (pageWidth - nameWidth) / 2,
+        y: pageHeight - mmToPt(140),
+        size: 24,
+        font: helveticaBold,
+        color: textColor,
+      });
 
-    // 4. Generate & Download
-    const pdfBytes = await pdfDoc.save();
-    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-    const url = URL.createObjectURL(blob);
+      // ACHIEVEMENT TEXT (centered)
+      const achievementText = "PARTICIPANT";
+      const achievementWidth = helvetica.widthOfTextAtSize(achievementText, 20);
+      firstPage.drawText(achievementText, {
+        x: (pageWidth - achievementWidth) / 2,
+        y: pageHeight - mmToPt(158),
+        size: 20,
+        font: helvetica,
+        color: textColor,
+      });
 
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `Sertifikat-Dojang-${userDojang.nama_dojang
-      .replace(/\s/g, '-')}.pdf`;
-    link.click();
-    
-    URL.revokeObjectURL(url);
-    toast.success("Sertifikat dojang berhasil didownload!");
-    
-  } catch (error: any) {
-    console.error('Error generating dojang certificate:', error);
-    toast.error('Gagal generate sertifikat dojang');
-  } finally {
-    setLoading(false);
-  }
-};
+      // Generate & Download
+      const pdfBytes = await pdfDoc.save();
+      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
 
-// ✅ CHECK APPROVED PARTICIPANTS
-const checkApprovedParticipants = async () => {
-  if (!userDojang?.id_dojang) return;
-  
-  try {
-    setCheckingParticipants(true);
-    console.log('🔍 Checking approved participants for dojang:', userDojang.id_dojang);
-    
-    // Fetch atlet dari dojang ini
-    const response = await apiClient.get(`/atlet/by-dojang/${userDojang.id_dojang}`);
-    const atletList = response.data || response || [];
-    
-    console.log('👥 Atlet list:', atletList);
-    
-    // Check apakah ada atlet yang punya peserta_kompetisi dengan status APPROVED
-    const hasApproved = atletList.some((atlet: any) => {
-      const approvedPeserta = atlet.peserta_kompetisi?.some(
-        (p: any) => p.status === 'APPROVED'
-      );
-      return approvedPeserta;
-    });
-    
-    console.log('✅ Has approved participants:', hasApproved);
-    setHasApprovedParticipants(hasApproved);
-    
-  } catch (error: any) {
-    console.error('❌ Error checking participants:', error);
-    setHasApprovedParticipants(false);
-  } finally {
-    setCheckingParticipants(false);
-  }
-};
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `Sertifikat-Dojang-${userDojang.nama_dojang.replace(/\s/g, '-')}.pdf`;
+      link.click();
+      
+      URL.revokeObjectURL(url);
+      toast.success("Sertifikat dojang berhasil didownload!");
+      
+    } catch (error: any) {
+      console.error('Error generating dojang certificate:', error);
+      toast.error('Gagal generate sertifikat dojang');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  // Set token global sekali aja
+  // ✅ FUNCTION: Check Approved Participants
+  const checkApprovedParticipants = async () => {
+    if (!userDojang?.id_dojang) return;
+    
+    try {
+      setCheckingParticipants(true);
+      console.log('🔍 Checking approved participants for dojang:', userDojang.id_dojang);
+      
+      const response = await apiClient.get(`/atlet/by-dojang/${userDojang.id_dojang}`);
+      const atletList = response.data || response || [];
+      
+      console.log('👥 Atlet list:', atletList);
+      
+      const hasApproved = atletList.some((atlet: any) => {
+        const approvedPeserta = atlet.peserta_kompetisi?.some(
+          (p: any) => p.status === 'APPROVED'
+        );
+        return approvedPeserta;
+      });
+      
+      console.log('✅ Has approved participants:', hasApproved);
+      setHasApprovedParticipants(hasApproved);
+      
+    } catch (error: any) {
+      console.error('❌ Error checking participants:', error);
+      setHasApprovedParticipants(false);
+    } finally {
+      setCheckingParticipants(false);
+    }
+  };
+
+  // ✅ useEffect: Token handling
   useEffect(() => {
     // Token handled by apiClient automatically
   }, [token]);
 
-  // Close mobile sidebar on window resize
+  // ✅ useEffect: Close mobile sidebar on resize
   useEffect(() => {
     const onResize = () => {
       if (window.innerWidth >= 1024) setSidebarOpen(false);
@@ -394,147 +393,83 @@ const checkApprovedParticipants = async () => {
     return () => window.removeEventListener('resize', onResize);
   }, []);
 
-// ✅ PISAHKAN jadi 2 useEffect terpisah
-
-// 🔹 Fetch data my-dojang
-useEffect(() => {
-  if (!user) {
-    toast.error("Anda harus login dulu");
-    navigate("/", { replace: true });
-    return;
-  }
-
-  const fetchDojang = async () => {
-    try {
-      setLoading(true);
-      console.log('🔄 Fetching dojang data...');
-      
-      const response = await apiClient.get("/dojang/my-dojang");
-      console.log('📋 Raw API Response:', response);
-      
-      const dojangData = response.data || response;
-      console.log('📊 Dojang data:', dojangData);
-      
-      if (!dojangData || !dojangData.id_dojang || !dojangData.nama_dojang) {
-        console.log('⚠️ Invalid dojang data:', dojangData);
-        toast.error("Data dojang tidak valid atau belum ada");
-        setUserDojang(null);
-        setFormData(null);
-        return;
-      }
-      
-      console.log('✅ Valid dojang data:', dojangData.nama_dojang);
-      
-      setUserDojang(dojangData);
-      setFormData({
-        name: dojangData.nama_dojang || "",
-        email: dojangData.email || "",
-        phone: dojangData.no_telp || "",
-        negara: dojangData.negara || "",
-        provinsi: dojangData.provinsi || "",
-        kota: dojangData.kota || "",
-        kecamatan: dojangData.kecamatan || "",
-        kelurahan: dojangData.kelurahan || "",
-        alamat: dojangData.alamat || "",
-      });
-      
-      if (dojangData.logo) {
-        setLogoPreview(`/uploads/dojang/logos/${dojangData.logo}`);
-      } else if (dojangData.logo_url) {
-        setLogoPreview(dojangData.logo_url);
-      }
-      
-    } catch (err: any) {
-      console.error('❌ Error fetching dojang:', err);
-      
-      if (err.response?.status === 404) {
-        toast.error("Pelatih belum memiliki dojang");
-      } else if (err.response?.status === 401) {
-        toast.error("Sesi login telah berakhir");
-      } else {
-        toast.error(err.response?.data?.message || "Gagal mengambil data dojang");
-      }
-      
-      setUserDojang(null);
-      setFormData(null);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  fetchDojang();
-}, [user, navigate]);
-
-// ✅ Pisahkan useEffect untuk check participants
-useEffect(() => {
-  if (userDojang?.id_dojang) {
-    checkApprovedParticipants();
-  }
-}, [userDojang?.id_dojang]);
-const fetchDojang = async () => {
-  try {
-    setLoading(true);
-    console.log('🔄 Fetching dojang data...');
-    
-    const response = await apiClient.get("/dojang/my-dojang");
-    console.log('📋 Raw API Response:', response);
-    
-    // PERBAIKAN: Response langsung adalah data dojang, bukan nested
-    const dojangData = response.data || response;
-    console.log('📊 Dojang data:', dojangData);
-    
-    // PERBAIKAN: Validate dojang data
-    if (!dojangData || !dojangData.id_dojang || !dojangData.nama_dojang) {
-      console.log('⚠️ Invalid dojang data:', dojangData);
-      toast.error("Data dojang tidak valid atau belum ada");
-      setUserDojang(null);
-      setFormData(null);
+  // ✅ useEffect: Fetch dojang data
+  useEffect(() => {
+    if (!user) {
+      toast.error("Anda harus login dulu");
+      navigate("/", { replace: true });
       return;
     }
-    
-    console.log('✅ Valid dojang data:', dojangData.nama_dojang);
-    
-    setUserDojang(dojangData);
-    setFormData({
-      name: dojangData.nama_dojang || "",
-      email: dojangData.email || "",
-      phone: dojangData.no_telp || "",
-      negara: dojangData.negara || "",
-      provinsi: dojangData.provinsi || "",
-      kota: dojangData.kota || "",
-      kecamatan: dojangData.kecamatan || "",
-      kelurahan: dojangData.kelurahan || "",
-      alamat: dojangData.alamat || "",
-    });
-    
-    // Set logo preview dari existing data
-if (dojangData.logo) {
-  setLogoPreview(`/uploads/dojang/logos/${dojangData.logo}`);
-} else if (dojangData.logo_url) {
-  setLogoPreview(dojangData.logo_url);
-}
-    
-  } catch (err: any) {
-    console.error('❌ Error fetching dojang:', err);
-    
-    // Handle error responses
-    if (err.response?.status === 404) {
-      toast.error("Pelatih belum memiliki dojang");
-    } else if (err.response?.status === 401) {
-      toast.error("Sesi login telah berakhir");
-    } else {
-      toast.error(err.response?.data?.message || "Gagal mengambil data dojang");
-    }
-    
-    setUserDojang(null);
-    setFormData(null);
-  } finally {
-    setLoading(false);
-  }
-};
 
-  fetchDojang();
-}, [user, navigate]);
+    const fetchDojang = async () => {
+      try {
+        setLoading(true);
+        console.log('🔄 Fetching dojang data...');
+        
+        const response = await apiClient.get("/dojang/my-dojang");
+        console.log('📋 Raw API Response:', response);
+        
+        const dojangData = response.data || response;
+        console.log('📊 Dojang data:', dojangData);
+        
+        if (!dojangData || !dojangData.id_dojang || !dojangData.nama_dojang) {
+          console.log('⚠️ Invalid dojang data:', dojangData);
+          toast.error("Data dojang tidak valid atau belum ada");
+          setUserDojang(null);
+          setFormData(null);
+          return;
+        }
+        
+        console.log('✅ Valid dojang data:', dojangData.nama_dojang);
+        
+        setUserDojang(dojangData);
+        setFormData({
+          name: dojangData.nama_dojang || "",
+          email: dojangData.email || "",
+          phone: dojangData.no_telp || "",
+          negara: dojangData.negara || "",
+          provinsi: dojangData.provinsi || "",
+          kota: dojangData.kota || "",
+          kecamatan: dojangData.kecamatan || "",
+          kelurahan: dojangData.kelurahan || "",
+          alamat: dojangData.alamat || "",
+        });
+        
+        if (dojangData.logo) {
+          setLogoPreview(`/uploads/dojang/logos/${dojangData.logo}`);
+        } else if (dojangData.logo_url) {
+          setLogoPreview(dojangData.logo_url);
+        }
+        
+      } catch (err: any) {
+        console.error('❌ Error fetching dojang:', err);
+        
+        if (err.response?.status === 404) {
+          toast.error("Pelatih belum memiliki dojang");
+        } else if (err.response?.status === 401) {
+          toast.error("Sesi login telah berakhir");
+        } else {
+          toast.error(err.response?.data?.message || "Gagal mengambil data dojang");
+        }
+        
+        setUserDojang(null);
+        setFormData(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDojang();
+  }, [user, navigate]);
+
+  // ✅ useEffect: Check approved participants after dojang loaded
+  useEffect(() => {
+    if (userDojang?.id_dojang) {
+      checkApprovedParticipants();
+    }
+  }, [userDojang?.id_dojang]);
+
+  // ... rest of the component (handleCancel, handleLogoChange, removeLogo, handleUpdate, return JSX)
 
   const handleCancel = () => {
   setIsEditing(false);
