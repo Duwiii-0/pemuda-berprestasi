@@ -27,6 +27,9 @@ const ValidasiPeserta: React.FC = () => {
     fetchAtletByKompetisi,
     loadingAtlet,
     updatePesertaStatus,
+    atletPagination,
+    setAtletPage,
+    setAtletLimit,
   } = useKompetisi();
 
   const [processing, setProcessing] = useState<number | null>(null);
@@ -43,6 +46,7 @@ const ValidasiPeserta: React.FC = () => {
   const [filterLevel, setFilterLevel] = useState<"ALL" | "pemula" | "prestasi" | null>(null);
   const [filterDojang, setFilterDojang] = useState<string>("ALL");
   const [filterKelasBerat, setFilterKelasBerat] = useState<"ALL" | string>("ALL");
+  const [itemsPerPage, setItemsPerPage] = useState<number>(25);
   const { dojangOptions, refreshDojang, isLoading } = useDojang();
 
 const kelasBeratOptions = [
@@ -134,11 +138,12 @@ const kelasBeratOptions = [
   useEffect(() => {
     if (selectedKompetisiId) {
       console.log(
-        `[ValidasiPeserta] Kompetisi dipilih, fetching peserta...`
+        `[ValidasiPeserta] Kompetisi dipilih, fetching peserta with limit ${itemsPerPage}...`
       );
+      setAtletLimit(itemsPerPage); // Set limit before fetch
       fetchAtletByKompetisi(selectedKompetisiId);
     }
-  }, [selectedKompetisiId]);
+  }, [selectedKompetisiId, itemsPerPage]);
 
   // FIX: Ganti atletList dengan pesertaList
   useEffect(() => {
@@ -652,11 +657,27 @@ const handleRejection = async (id: number) => {
             />
           </div>
         </div>
-        {/* Count Peserta */}
-        <p className="text-black/70 text-sm sm:text-base font-inter mb-4">
-          Menampilkan <span className="font-semibold">{displayedPesertas.length}</span>{" "}
-          peserta dari total <span className="font-semibold">{pesertaList.length}</span>
-        </p>
+        {/* Count Peserta & Items Per Page */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+          <p className="text-black/70 text-sm sm:text-base font-inter">
+            Menampilkan <span className="font-semibold">{displayedPesertas.length}</span>{" "}
+            dari <span className="font-semibold">{atletPagination.total || pesertaList.length}</span> peserta
+          </p>
+          <div className="flex items-center gap-2">
+            <label className="text-black/60 text-sm font-medium font-inter">Tampilkan:</label>
+            <select
+              value={itemsPerPage}
+              onChange={(e) => setItemsPerPage(parseInt(e.target.value))}
+              className="px-3 py-2 border border-black/20 rounded-lg text-sm font-inter focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+            >
+              <option value={25}>25 per halaman</option>
+              <option value={50}>50 per halaman</option>
+              <option value={100}>100 per halaman</option>
+              <option value={250}>250 per halaman</option>
+              <option value={500}>500 per halaman</option>
+            </select>
+          </div>
+        </div>
       </div>
     </div>
 
