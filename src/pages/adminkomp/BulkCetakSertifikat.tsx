@@ -30,17 +30,19 @@ const BulkCetakSertifikat: React.FC = () => {
     overscan: 5,
   });
 
-  useEffect(() => {
-    if (kompetisiId) {
-      fetchAllAtletByKompetisi(kompetisiId);
-    }
-  }, [kompetisiId, fetchAllAtletByKompetisi]);
+  const isInitialMount = useRef(true);
 
   useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+
     if (kompetisiId) {
+      fetchAllAtletByKompetisi(kompetisiId);
       fetchAtletByKompetisi(kompetisiId, undefined, selectedDojang === "ALL" ? undefined : parseInt(selectedDojang), selectedKelas === "ALL" ? undefined : selectedKelas);
     }
-  }, [kompetisiId, fetchAtletByKompetisi, atletPagination.page, atletPagination.limit, selectedDojang, selectedKelas]);
+  }, [kompetisiId, fetchAllAtletByKompetisi, fetchAtletByKompetisi, atletPagination.page, atletPagination.limit, selectedDojang, selectedKelas]);
 
   useEffect(() => {
     if (allPesertaList.length > 0) {
