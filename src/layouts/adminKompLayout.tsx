@@ -88,6 +88,20 @@ const AdminKompetisiLayout: React.FC = () => {
       active: location.pathname === "/admin-kompetisi/penimbangan",
       description: "Input hasil penimbangan berat badan",
     },
+    {
+      icon: Award,
+      label: "Bulk Cetak Sertifikat",
+      path: "/admin-kompetisi/bulk-cetak-sertifikat",
+      active: location.pathname === "/admin-kompetisi/bulk-cetak-sertifikat",
+      description: "Cetak sertifikat untuk banyak peserta",
+    },
+    {
+      icon: CreditCard,
+      label: "Bulk Generate ID Card",
+      path: "/admin-kompetisi/bulk-generate-id-card",
+      active: location.pathname === "/admin-kompetisi/bulk-generate-id-card",
+      description: "Generate ID card untuk banyak peserta",
+    },
   ];
 
   const displayName =
