@@ -239,7 +239,7 @@ export const KompetisiProvider = ({ children }: { children: ReactNode }) => {
   >([]);
   const [atletPagination, setAtletPagination] = useState<PaginationMeta>({
     page: 1,
-    limit: 10000,
+    limit: 100,
     total: 0,
     totalPages: 0,
   });

@@ -6,6 +6,7 @@ import { useAuth } from "../../context/authContext";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { apiClient } from "../../config/api";
+import { PDFDocument, rgb } from "pdf-lib";
 
 // Types untuk components
 interface TextInputProps {
@@ -172,72 +173,6 @@ const FilePreview = ({
     return null;
   };
 
-    const generateDojangCertificate = async () => {
-  try {
-    setLoading(true);
-    
-    // 1. Load template
-    const templatePath = `/templates/piagam.pdf`;
-    const existingPdfBytes = await fetch(templatePath)
-      .then(res => res.arrayBuffer());
-    
-    const pdfDoc = await PDFDocument.load(existingPdfBytes);
-    const pages = pdfDoc.getPages();
-    const firstPage = pages[0];
-    const { width: pageWidth, height: pageHeight } = firstPage.getSize();
-
-    const helveticaBold = await pdfDoc.embedFont('Helvetica-Bold');
-    const helvetica = await pdfDoc.embedFont('Helvetica');
-    const mmToPt = (mm: number) => mm * 2.83465;
-    const textColor = rgb(0, 0, 0);
-
-    // 2. NAMA DOJANG (centered)
-    const dojangName = userDojang.nama_dojang.toUpperCase();
-    const nameWidth = helveticaBold.widthOfTextAtSize(dojangName, 24);
-    firstPage.drawText(dojangName, {
-      x: (pageWidth - nameWidth) / 2,
-      y: pageHeight - mmToPt(140),
-      size: 24,
-      font: helveticaBold,
-      color: textColor,
-    });
-
-    // 3. ACHIEVEMENT TEXT (centered)
-    const achievementText = "Participant"; // Fixed text
-    const achievementWidth = helvetica.widthOfTextAtSize(
-      achievementText, 
-      14
-    );
-    firstPage.drawText(achievementText, {
-      x: (pageWidth - achievementWidth) / 2,
-      y: pageHeight - mmToPt(158),
-      size: 14,
-      font: helvetica,
-      color: textColor,
-    });
-
-    // 4. Generate & Download
-    const pdfBytes = await pdfDoc.save();
-    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-    const url = URL.createObjectURL(blob);
-
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `Sertifikat-Dojang-${userDojang.nama_dojang
-      .replace(/\s/g, '-')}.pdf`;
-    link.click();
-    
-    URL.revokeObjectURL(url);
-    toast.success("Sertifikat dojang berhasil didownload!");
-    
-  } catch (error: any) {
-    console.error('Error generating dojang certificate:', error);
-    toast.error('Gagal generate sertifikat dojang');
-  } finally {
-    setLoading(false);
-  }
-};
-
   const isImageFile = () => {
     if (file) return file.type.startsWith('image/');
     if (existingPath) {
@@ -343,6 +278,72 @@ const Dojang = () => {
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+      const generateDojangCertificate = async () => {
+  try {
+    setLoading(true);
+    
+    // 1. Load template
+    const templatePath = `/templates/piagam.pdf`;
+    const existingPdfBytes = await fetch(templatePath)
+      .then(res => res.arrayBuffer());
+    
+    const pdfDoc = await PDFDocument.load(existingPdfBytes);
+    const pages = pdfDoc.getPages();
+    const firstPage = pages[0];
+    const { width: pageWidth, height: pageHeight } = firstPage.getSize();
+
+    const helveticaBold = await pdfDoc.embedFont('Helvetica-Bold');
+    const helvetica = await pdfDoc.embedFont('Helvetica');
+    const mmToPt = (mm: number) => mm * 2.83465;
+    const textColor = rgb(0, 0, 0);
+
+    // 2. NAMA DOJANG (centered)
+    const dojangName = userDojang.nama_dojang.toUpperCase();
+    const nameWidth = helveticaBold.widthOfTextAtSize(dojangName, 24);
+    firstPage.drawText(dojangName, {
+      x: (pageWidth - nameWidth) / 2,
+      y: pageHeight - mmToPt(140),
+      size: 24,
+      font: helveticaBold,
+      color: textColor,
+    });
+
+    // 3. ACHIEVEMENT TEXT (centered)
+    const achievementText = "Participant"; // Fixed text
+    const achievementWidth = helvetica.widthOfTextAtSize(
+      achievementText, 
+      14
+    );
+    firstPage.drawText(achievementText, {
+      x: (pageWidth - achievementWidth) / 2,
+      y: pageHeight - mmToPt(158),
+      size: 14,
+      font: helvetica,
+      color: textColor,
+    });
+
+    // 4. Generate & Download
+    const pdfBytes = await pdfDoc.save();
+    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `Sertifikat-Dojang-${userDojang.nama_dojang
+      .replace(/\s/g, '-')}.pdf`;
+    link.click();
+    
+    URL.revokeObjectURL(url);
+    toast.success("Sertifikat dojang berhasil didownload!");
+    
+  } catch (error: any) {
+    console.error('Error generating dojang certificate:', error);
+    toast.error('Gagal generate sertifikat dojang');
+  } finally {
+    setLoading(false);
+  }
+};
 
   // Set token global sekali aja
   useEffect(() => {
