@@ -32,15 +32,15 @@ const BulkGenerateIDCard: React.FC = () => {
 
   useEffect(() => {
     if (kompetisiId) {
-      fetchAtletByKompetisi(kompetisiId, undefined, selectedDojang === "ALL" ? undefined : parseInt(selectedDojang), selectedKelas === "ALL" ? undefined : selectedKelas);
-    }
-  }, [kompetisiId, fetchAtletByKompetisi, atletPagination.page, atletPagination.limit, selectedDojang, selectedKelas]);
-
-  useEffect(() => {
-    if (kompetisiId) {
       fetchAllAtletByKompetisi(kompetisiId);
     }
   }, [kompetisiId, fetchAllAtletByKompetisi]);
+
+  useEffect(() => {
+    if (kompetisiId) {
+      fetchAtletByKompetisi(kompetisiId, undefined, selectedDojang === "ALL" ? undefined : parseInt(selectedDojang), selectedKelas === "ALL" ? undefined : selectedKelas);
+    }
+  }, [kompetisiId, fetchAtletByKompetisi, atletPagination.page, atletPagination.limit, selectedDojang, selectedKelas]);
 
   useEffect(() => {
     if (allPesertaList.length > 0) {
