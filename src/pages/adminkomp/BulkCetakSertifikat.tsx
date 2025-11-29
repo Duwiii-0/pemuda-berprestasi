@@ -1,18 +1,27 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useKompetisi } from '../../context/KompetisiContext';
 import { useAuth } from '../../context/authContext';
-import { Atlet } from '../../types';
-import { generateCertificatePdfBytes, getKelasKejuaraan, MedalStatus } from '../../utils/pdfGenerators';
+import { generateCertificatePdfBytes, getKelasKejuaraan } from '../../utils/pdfGenerators';
+import type { MedalStatus } from '../../utils/pdfGenerators';
 import { PDFDocument } from 'pdf-lib';
-import { useVirtualizer } from '@tanstack/react-virtual';
+import { Award, Loader, ChevronLeft, ChevronRight, Download, Printer } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 const BulkCetakSertifikat: React.FC = () => {
   const { user } = useAuth();
-  const { pesertaList, fetchAtletByKompetisi, loadingAtlet, atletPagination, setAtletPage, setAtletLimit, allPesertaList, fetchAllAtletByKompetisi } = useKompetisi();
+  const { 
+    pesertaList, 
+    fetchAtletByKompetisi, 
+    loadingAtlet, 
+    atletPagination, 
+    setAtletPage, 
+    setAtletLimit,
+    allPesertaList,
+    fetchAllAtletByKompetisi 
+  } = useKompetisi();
   
   const [dojangs, setDojangs] = useState<{ id: number; name: string }[]>([]);
   const [kelasKejuaraan, setKelasKejuaraan] = useState<{ id: string; name: string }[]>([]);
-
   const [selectedDojang, setSelectedDojang] = useState<string>("ALL");
   const [selectedKelas, setSelectedKelas] = useState<string>("ALL");
   const [isGenerating, setIsGenerating] = useState(false);
@@ -20,66 +29,62 @@ const BulkCetakSertifikat: React.FC = () => {
   const kompetisiId = user?.role === "ADMIN_KOMPETISI"
     ? user?.admin_kompetisi?.id_kompetisi
     : null;
-    
-  const parentRef = useRef<HTMLDivElement>(null);
 
-  const rowVirtualizer = useVirtualizer({
-    count: pesertaList.length,
-    getScrollElement: () => parentRef.current,
-    estimateSize: () => 100,
-    overscan: 5,
-  });
-
-  const isInitialMount = useRef(true);
-  const hasLoadedFilters = useRef(false);
-
-  // ✅ PERBAIKAN: Load initial data (25 atlet pertama) saat mount
+  // Load initial data on mount
   useEffect(() => {
-    if (isInitialMount.current && kompetisiId) {
-      isInitialMount.current = false;
-      console.log('🔄 Initial load: Fetching first 25 athletes...');
-      fetchAtletByKompetisi(kompetisiId, undefined, undefined, undefined);
+    if (kompetisiId) {
+      console.log('🔄 Initial load: Fetching athletes...');
+      fetchAtletByKompetisi(kompetisiId, undefined, undefined, undefined, "APPROVED");
     }
   }, [kompetisiId]);
 
-  // ✅ PERBAIKAN: Load filter data HANYA saat user interact dengan dropdown
+  // Load all data for filter options
   useEffect(() => {
-    if (!hasLoadedFilters.current && kompetisiId && (selectedDojang !== "ALL" || selectedKelas !== "ALL")) {
-      console.log('🔄 Loading filter data...');
-      hasLoadedFilters.current = true;
+    if (kompetisiId) {
       fetchAllAtletByKompetisi(kompetisiId);
     }
-  }, [selectedDojang, selectedKelas, kompetisiId]);
+  }, [kompetisiId]);
 
-  // ✅ PERBAIKAN: Handle pagination dan filter changes
+  // Fetch when filters change
   useEffect(() => {
-    if (isInitialMount.current) return;
-
-    if (kompetisiId) {
-      console.log(`🔄 Fetching page ${atletPagination.page} with filters...`);
+    if (kompetisiId && (selectedDojang !== "ALL" || selectedKelas !== "ALL")) {
+      console.log(`🔄 Applying filters: dojang=${selectedDojang}, kelas=${selectedKelas}`);
+      setAtletPage(1); // Reset to page 1
       fetchAtletByKompetisi(
         kompetisiId, 
         undefined, 
         selectedDojang === "ALL" ? undefined : parseInt(selectedDojang), 
-        selectedKelas === "ALL" ? undefined : selectedKelas
+        selectedKelas === "ALL" ? undefined : selectedKelas,
+        "APPROVED"
       );
     }
-  }, [atletPagination.page, atletPagination.limit, selectedDojang, selectedKelas]);
+  }, [selectedDojang, selectedKelas]);
 
-  // ✅ PERBAIKAN: Build filter options dari data yang tersedia
+  // Fetch when pagination changes
   useEffect(() => {
-    // Gunakan allPesertaList jika sudah loaded, atau pesertaList current page
-    const dataSource = allPesertaList.length > 0 ? allPesertaList : pesertaList;
-    
-    if (dataSource.length > 0) {
+    if (kompetisiId && atletPagination.page > 1) {
+      console.log(`🔄 Loading page ${atletPagination.page}...`);
+      fetchAtletByKompetisi(
+        kompetisiId, 
+        undefined, 
+        selectedDojang === "ALL" ? undefined : parseInt(selectedDojang), 
+        selectedKelas === "ALL" ? undefined : selectedKelas,
+        "APPROVED"
+      );
+    }
+  }, [atletPagination.page]);
+
+  // Build filter options from allPesertaList
+  useEffect(() => {
+    if (allPesertaList.length > 0) {
       const dojangSet = new Map<number, string>();
       const kelasSet = new Map<string, string>();
 
-      dataSource.forEach((peserta: any) => {
-        if (peserta.atlet?.dojang) {
+      allPesertaList.forEach((peserta: any) => {
+        if (peserta.atlet?.dojang && peserta.status === "APPROVED") {
           dojangSet.set(peserta.atlet.dojang.id_dojang, peserta.atlet.dojang.nama_dojang);
         }
-        if (peserta.kelas_kejuaraan) {
+        if (peserta.kelas_kejuaraan && peserta.status === "APPROVED") {
           const kelas = peserta.kelas_kejuaraan;
           const kelasName = `${kelas.kategori_event.nama_kategori} - ${kelas.kelompok.nama_kelompok} - ${kelas.jenis_kelamin === "LAKI_LAKI" ? "Putra" : "Putri"} ${kelas.kelas_berat ? `- ${kelas.kelas_berat.nama_kelas}` : ''}${kelas.poomsae ? `- ${kelas.poomsae.nama_kelas}` : ''}`;
           kelasSet.set(kelas.id_kelas_kejuaraan, kelasName);
@@ -89,26 +94,67 @@ const BulkCetakSertifikat: React.FC = () => {
       setDojangs(Array.from(dojangSet, ([id, name]) => ({ id, name })));
       setKelasKejuaraan(Array.from(kelasSet, ([id, name]) => ({ id, name })));
       
-      console.log(`📊 Filter options loaded: ${dojangSet.size} dojangs, ${kelasSet.size} kelas`);
+      console.log(`📊 Filter options: ${dojangSet.size} dojangs, ${kelasSet.size} kelas`);
     }
-  }, [allPesertaList, pesertaList]);
+  }, [allPesertaList]);
 
+  const currentPage = atletPagination.page;
   const totalPages = atletPagination.totalPages;
+  const itemsPerPage = atletPagination.limit;
+
+  // Pagination helper
+  const getPageNumbers = () => {
+    const pageNumbers: (number | string)[] = [];
+    const maxVisiblePages = 5;
+    
+    if (totalPages <= maxVisiblePages) {
+      for (let i = 1; i <= totalPages; i++) {
+        pageNumbers.push(i);
+      }
+    } else {
+      if (currentPage <= 3) {
+        for (let i = 1; i <= 4; i++) {
+          pageNumbers.push(i);
+        }
+        pageNumbers.push('...');
+        pageNumbers.push(totalPages);
+      } else if (currentPage >= totalPages - 2) {
+        pageNumbers.push(1);
+        pageNumbers.push('...');
+        for (let i = totalPages - 3; i <= totalPages; i++) {
+          pageNumbers.push(i);
+        }
+      } else {
+        pageNumbers.push(1);
+        pageNumbers.push('...');
+        for (let i = currentPage - 1; i <= currentPage + 1; i++) {
+          pageNumbers.push(i);
+        }
+        pageNumbers.push('...');
+        pageNumbers.push(totalPages);
+      }
+    }
+    
+    return pageNumbers;
+  };
 
   const handleBulkDownload = async () => {
     if (pesertaList.length === 0) {
-      alert("No athletes selected.");
+      toast.error("Tidak ada peserta yang tersedia");
       return;
     }
+
+    const toastId = toast.loading(`Generating ${pesertaList.length} certificates...`);
     setIsGenerating(true);
 
     try {
       const mergedPdf = await PDFDocument.create();
+      let successCount = 0;
+      let errorCount = 0;
 
       for (const peserta of pesertaList) {
         if (!peserta.atlet) continue;
         try {
-          // TODO: Implement proper medal status detection for bulk generation
           const medalStatus: MedalStatus = "PARTICIPANT"; 
           const kelasName = getKelasKejuaraan(peserta, pesertaList);
 
@@ -116,146 +162,291 @@ const BulkCetakSertifikat: React.FC = () => {
           const pdfToMerge = await PDFDocument.load(pdfBytes);
           const copiedPages = await mergedPdf.copyPages(pdfToMerge, pdfToMerge.getPageIndices());
           copiedPages.forEach((page) => mergedPdf.addPage(page));
+          successCount++;
         } catch (error) {
-            console.error(`Failed to generate certificate for ${peserta.atlet.nama_atlet}:`, error);
+          console.error(`Failed to generate certificate for ${peserta.atlet.nama_atlet}:`, error);
+          errorCount++;
         }
       }
 
       const mergedPdfBytes = await mergedPdf.save();
-      const blob = new Blob([mergedPdfBytes], { type: 'application/pdf' });
+      const blob = new Blob([mergedPdfBytes as BlobPart], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = 'Certificates-Bulk.pdf';
+      link.download = `Certificates-Bulk-Page${currentPage}.pdf`;
       link.click();
       URL.revokeObjectURL(url);
+
+      toast.success(`${successCount} certificates generated! ${errorCount > 0 ? `(${errorCount} failed)` : ''}`, { id: toastId });
     } catch (error) {
-        console.error("Failed to generate bulk certificates:", error);
-        alert("Failed to generate bulk certificates. See console for details.");
+      console.error("Failed to generate bulk certificates:", error);
+      toast.error("Failed to generate certificates", { id: toastId });
     } finally {
-        setIsGenerating(false);
+      setIsGenerating(false);
     }
   };
 
   const handleBulkPrint = () => {
-    alert("Print functionality is not implemented yet for bulk operations.");
+    toast('Print functionality coming soon!');
   };
 
+  if (loadingAtlet && pesertaList.length === 0) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#F5FBEF' }}>
+        <div className="flex flex-col items-center gap-3">
+          <Loader className="animate-spin" style={{ color: '#990D35' }} size={32} />
+          <p style={{ color: '#050505', opacity: 0.6 }}>Memuat data peserta...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Bulk Cetak Sertifikat</h1>
-      <div className="bg-white p-6 rounded-lg shadow-md">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label htmlFor="dojang" className="block text-sm font-medium text-gray-700">
-              Filter by Dojang
-            </label>
-            <select
-              id="dojang"
-              name="dojang"
-              value={selectedDojang}
-              onChange={(e) => setSelectedDojang(e.target.value)}
-              className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm rounded-md"
-              disabled={loadingAtlet}
-            >
-              <option value="ALL">All Dojang</option>
-              {dojangs.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
-            </select>
-          </div>
-          <div>
-            <label htmlFor="kelas" className="block text-sm font-medium text-gray-700">
-              Filter by Kelas Kejuaraan
-            </label>
-            <select
-              id="kelas"
-              name="kelas"
-              value={selectedKelas}
-              onChange={(e) => setSelectedKelas(e.target.value)}
-              className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm rounded-md"
-              disabled={loadingAtlet}
-            >
-              <option value="ALL">All Kelas</option>
-              {kelasKejuaraan.map(k => <option key={k.id} value={k.id}>{k.name}</option>)}
-            </select>
-          </div>
-          <div>
-            <label htmlFor="limit" className="block text-sm font-medium text-gray-700">
-              Items per Page
-            </label>
-            <select
-              id="limit"
-              name="limit"
-              value={atletPagination.limit}
-              onChange={(e) => setAtletLimit(parseInt(e.target.value))}
-              className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm rounded-md"
-              disabled={loadingAtlet}
-            >
-              <option value={25}>25</option>
-              <option value={50}>50</option>
-              <option value={100}>100</option>
-            </select>
-          </div>
-        </div>
-        <div className="mt-6 flex justify-end gap-3">
-          <button
-            type="button"
-            onClick={handleBulkPrint}
-            disabled={isGenerating}
-            className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-          >
-            Print
-          </button>
-          <button
-            type="button"
-            onClick={handleBulkDownload}
-            disabled={isGenerating || loadingAtlet}
-            className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700"
-            style={{ backgroundColor: "#990D35" }}
-          >
-            {isGenerating ? 'Generating...' : `Download ${atletPagination.total} Certificates`}
-          </button>
-        </div>
+    <div className="min-h-screen" style={{ backgroundColor: '#F5FBEF' }}>
+      <div className="p-4 sm:p-6 lg:p-8 max-w-full">
         
-        <div className="mt-8">
-            <h2 className="text-xl font-bold mb-4">Peserta ({atletPagination.total})</h2>
+        {/* HEADER */}
+        <div className="mb-8">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
+            <div 
+              className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center shadow-lg"
+              style={{ 
+                background: 'linear-gradient(135deg, #990D35 0%, #7A0A2B 100%)'
+              }}
+            >
+              <Award 
+                size={32} 
+                className="sm:w-8 sm:h-8" 
+                style={{ color: 'white' }}
+              />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bebas leading-tight mb-1" style={{ color: '#050505' }}>
+                BULK CETAK SERTIFIKAT
+              </h1>
+              <p className="text-sm sm:text-base" style={{ color: '#050505', opacity: 0.6 }}>
+                Generate sertifikat untuk peserta yang sudah disetujui
+              </p>
+            </div>
+          </div>
+        </div>
 
-            <div className="flex justify-between items-center mb-4">
-                <p className="text-sm text-gray-700">Page {atletPagination.page} of {totalPages}</p>
-                <div className="flex gap-2">
-                    <button 
-                        onClick={() => setAtletPage(atletPagination.page - 1)}
-                        disabled={atletPagination.page <= 1 || isGenerating || loadingAtlet}
-                        className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
-                    >
-                        Previous
-                    </button>
-                    <button 
-                        onClick={() => setAtletPage(atletPagination.page + 1)}
-                        disabled={atletPagination.page >= totalPages || isGenerating || loadingAtlet}
-                        className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
-                    >
-                        Next
-                    </button>
-                </div>
+        {/* FILTERS & ACTIONS */}
+        <div 
+          className="rounded-2xl shadow-md border p-6 mb-6"
+          style={{ 
+            backgroundColor: 'white', 
+            borderColor: 'rgba(153, 13, 53, 0.1)'
+          }}
+        >
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            {/* Filter Dojang */}
+            <div>
+              <label className="block text-sm font-medium mb-2" style={{ color: '#050505' }}>
+                Filter by Dojang
+              </label>
+              <select
+                value={selectedDojang}
+                onChange={(e) => setSelectedDojang(e.target.value)}
+                disabled={loadingAtlet}
+                className="w-full px-4 py-2.5 rounded-lg border focus:outline-none focus:ring-2 transition-all"
+                style={{ 
+                  borderColor: 'rgba(153, 13, 53, 0.2)',
+                  color: '#050505'
+                }}
+              >
+                <option value="ALL">Semua Dojang</option>
+                {dojangs.map(d => (
+                  <option key={d.id} value={d.id}>{d.name}</option>
+                ))}
+              </select>
             </div>
 
-            <div ref={parentRef} className="list" style={{ height: `500px`, overflow: 'auto' }}>
-                <div style={{ height: `${rowVirtualizer.getTotalSize()}px`, width: '100%', position: 'relative' }}>
-                    {loadingAtlet ? (
-                        <p>Loading...</p>
-                    ) : (
-                        rowVirtualizer.getVirtualItems().map(virtualItem => {
-                            const peserta = pesertaList[virtualItem.index];
-                            return (
-                                <div key={virtualItem.key} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: `${virtualItem.size}px`, transform: `translateY(${virtualItem.start}px)` }} className="bg-gray-50 p-4 rounded-lg shadow-sm">
-                                   <p className="font-bold">{peserta.atlet?.nama_atlet}</p>
-                                   <p className="text-sm text-gray-500">{peserta.atlet?.dojang?.nama_dojang}</p>
-                                </div>
-                            )
-                        })
-                    )}
-                </div>
+            {/* Filter Kelas */}
+            <div>
+              <label className="block text-sm font-medium mb-2" style={{ color: '#050505' }}>
+                Filter by Kelas
+              </label>
+              <select
+                value={selectedKelas}
+                onChange={(e) => setSelectedKelas(e.target.value)}
+                disabled={loadingAtlet}
+                className="w-full px-4 py-2.5 rounded-lg border focus:outline-none focus:ring-2 transition-all"
+                style={{ 
+                  borderColor: 'rgba(153, 13, 53, 0.2)',
+                  color: '#050505'
+                }}
+              >
+                <option value="ALL">Semua Kelas</option>
+                {kelasKejuaraan.map(k => (
+                  <option key={k.id} value={k.id}>{k.name}</option>
+                ))}
+              </select>
             </div>
+
+            {/* Items per page */}
+            <div>
+              <label className="block text-sm font-medium mb-2" style={{ color: '#050505' }}>
+                Items per Page
+              </label>
+              <select
+                value={itemsPerPage}
+                onChange={(e) => setAtletLimit(parseInt(e.target.value))}
+                disabled={loadingAtlet}
+                className="w-full px-4 py-2.5 rounded-lg border focus:outline-none focus:ring-2 transition-all"
+                style={{ 
+                  borderColor: 'rgba(153, 13, 53, 0.2)',
+                  color: '#050505'
+                }}
+              >
+                <option value={21}>21</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex flex-wrap gap-3 justify-end">
+            <button
+              type="button"
+              onClick={handleBulkPrint}
+              disabled={isGenerating || pesertaList.length === 0}
+              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg font-medium transition-all shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ 
+                backgroundColor: 'white',
+                color: '#050505',
+                border: '1px solid rgba(153, 13, 53, 0.2)'
+              }}
+            >
+              <Printer size={18} />
+              Print
+            </button>
+            <button
+              type="button"
+              onClick={handleBulkDownload}
+              disabled={isGenerating || loadingAtlet || pesertaList.length === 0}
+              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg font-medium text-white transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ 
+                background: isGenerating ? '#7A0A2B' : 'linear-gradient(135deg, #990D35 0%, #7A0A2B 100%)'
+              }}
+            >
+              <Download size={18} />
+              {isGenerating ? `Generating...` : `Download ${pesertaList.length} Sertifikat (Page ${currentPage})`}
+            </button>
+          </div>
+        </div>
+
+        {/* PESERTA LIST */}
+        <div 
+          className="rounded-2xl shadow-md border p-6"
+          style={{ 
+            backgroundColor: 'white', 
+            borderColor: 'rgba(153, 13, 53, 0.1)'
+          }}
+        >
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-bold" style={{ color: '#050505' }}>
+              Peserta yang Disetujui ({atletPagination.total})
+            </h2>
+            <p className="text-sm" style={{ color: '#050505', opacity: 0.6 }}>
+              Page {currentPage} of {totalPages}
+            </p>
+          </div>
+
+          {/* Grid List */}
+          {loadingAtlet ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader className="animate-spin" style={{ color: '#990D35' }} size={32} />
+            </div>
+          ) : pesertaList.length === 0 ? (
+            <div className="text-center py-12">
+              <Award size={48} style={{ color: '#990D35', opacity: 0.3 }} className="mx-auto mb-3" />
+              <p style={{ color: '#050505', opacity: 0.6 }}>
+                Tidak ada peserta yang disetujui
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+              {pesertaList.map((peserta, idx) => (
+                <div
+                  key={peserta.id_peserta_kompetisi || idx}
+                  className="rounded-xl border p-4 hover:shadow-md transition-all"
+                  style={{ 
+                    backgroundColor: '#F5FBEF',
+                    borderColor: 'rgba(153, 13, 53, 0.1)'
+                  }}
+                >
+                  <div className="flex items-start gap-3">
+                    <div 
+                      className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                      style={{ background: 'linear-gradient(135deg, #990D35 0%, #7A0A2B 100%)' }}
+                    >
+                      <Award size={20} style={{ color: 'white' }} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-sm mb-1 truncate" style={{ color: '#050505' }}>
+                        {peserta.atlet?.nama_atlet || 'N/A'}
+                      </p>
+                      <p className="text-xs truncate" style={{ color: '#050505', opacity: 0.6 }}>
+                        {peserta.atlet?.dojang?.nama_dojang || 'N/A'}
+                      </p>
+                      {peserta.kelas_kejuaraan && (
+                        <p className="text-xs mt-1 truncate" style={{ color: '#990D35' }}>
+                          {peserta.kelas_kejuaraan.kategori_event?.nama_kategori}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* PAGINATION */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2 pt-4 border-t" style={{ borderColor: 'rgba(153, 13, 53, 0.1)' }}>
+              <button
+                onClick={() => setAtletPage(currentPage - 1)}
+                disabled={currentPage === 1 || loadingAtlet}
+                className="p-2 rounded-lg transition-all disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gray-100"
+                style={{ color: '#990D35' }}
+              >
+                <ChevronLeft size={20} />
+              </button>
+
+              {getPageNumbers().map((pageNum, idx) => (
+                <React.Fragment key={idx}>
+                  {pageNum === '...' ? (
+                    <span className="px-2" style={{ color: '#050505', opacity: 0.3 }}>...</span>
+                  ) : (
+                    <button
+                      onClick={() => setAtletPage(pageNum as number)}
+                      disabled={loadingAtlet}
+                      className="w-10 h-10 rounded-lg font-medium transition-all disabled:cursor-not-allowed"
+                      style={{
+                        backgroundColor: currentPage === pageNum ? '#990D35' : 'transparent',
+                        color: currentPage === pageNum ? 'white' : '#050505',
+                        opacity: currentPage === pageNum ? 1 : 0.6
+                      }}
+                    >
+                      {pageNum}
+                    </button>
+                  )}
+                </React.Fragment>
+              ))}
+
+              <button
+                onClick={() => setAtletPage(currentPage + 1)}
+                disabled={currentPage === totalPages || loadingAtlet}
+                className="p-2 rounded-lg transition-all disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gray-100"
+                style={{ color: '#990D35' }}
+              >
+                <ChevronRight size={20} />
+              </button>
+            </div>
+          )}
         </div>
 
       </div>
