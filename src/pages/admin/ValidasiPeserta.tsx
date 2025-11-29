@@ -46,7 +46,7 @@ const ValidasiPeserta: React.FC = () => {
   const [filterLevel, setFilterLevel] = useState<"ALL" | "pemula" | "prestasi" | null>(null);
   const [filterDojang, setFilterDojang] = useState<string>("ALL");
   const [filterKelasBerat, setFilterKelasBerat] = useState<"ALL" | string>("ALL");
-  const [itemsPerPage, setItemsPerPage] = useState<number>(500); // FIXED: Default 500 instead of 25
+  const [itemsPerPage, setItemsPerPage] = useState<number>(10000); // FIXED: Default 10000 to load all 3900+ data
   const { dojangOptions, refreshDojang, isLoading } = useDojang();
 
 const kelasBeratOptions = [
@@ -683,6 +683,8 @@ const handleRejection = async (id: number) => {
               <option value={100}>100 per halaman</option>
               <option value={250}>250 per halaman</option>
               <option value={500}>500 per halaman</option>
+              <option value={1000}>1000 per halaman</option>
+              <option value={10000}>Semua (10000)</option>
             </select>
           </div>
         </div>

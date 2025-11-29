@@ -35,8 +35,8 @@ const BulkCetakSertifikat: React.FC = () => {
   // FIXED: Set limit ONCE on mount before any fetch
   useEffect(() => {
     if (kompetisiId) {
-      console.log('🔄 Setting initial limit to 1000 for bulk operations...');
-      setAtletLimit(1000); // Set high limit for bulk pages
+      console.log('🔄 Setting initial limit to 10000 for bulk operations...');
+      setAtletLimit(10000); // Set very high limit to load all data (3900+)
     }
   }, [kompetisiId]);
 
