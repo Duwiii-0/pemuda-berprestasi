@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Trophy, Users, Search, Clock, CheckCircle, Menu, ChevronLeft, ChevronRight, Edit, Trash, Upload } from 'lucide-react';
+import { Trophy, Users, Search, Clock, CheckCircle, Menu, ChevronLeft, ChevronRight, Edit, Trash, Upload, FileDown } from 'lucide-react';
 import toast from "react-hot-toast";
+import * as XLSX from 'xlsx';
 import NavbarDashboard from "../../components/navbar/navbarDashboard";
 import { useAuth } from "../../context/authContext";
 import { useKompetisi } from "../../context/KompetisiContext";
@@ -97,6 +98,71 @@ const DataKompetisi = () => {
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(100);
+
+  const handleExportExcel = () => {
+    const approvedPeserta = pesertaList.filter((p: any) => p.status === 'APPROVED');
+
+    if (approvedPeserta.length === 0) {
+      toast.error("Tidak ada peserta yang berstatus APPROVED untuk diexport.");
+      return;
+    }
+
+    const groupedData: { [key: string]: any[] } = {};
+
+    approvedPeserta.forEach((peserta: any) => {
+      const isTeam = peserta.is_team;
+      const cabang = peserta.kelas_kejuaraan?.cabang || "Lainnya";
+      const level = peserta.kelas_kejuaraan?.kategori_event?.nama_kategori || "Lainnya";
+      
+      const sheetName = `${cabang}_${level}`.replace(/ /g, "_");
+
+      if (!groupedData[sheetName]) {
+        groupedData[sheetName] = [];
+      }
+      
+      const namaPeserta = isTeam
+        ? peserta.anggota_tim?.map((m: any) => m.atlet.nama_atlet).join(", ")
+        : peserta.atlet?.nama_atlet || "-";
+      
+      const dojang = isTeam && peserta.anggota_tim?.length
+        ? peserta.anggota_tim[0]?.atlet?.dojang?.nama_dojang || "-"
+        : peserta.atlet?.dojang?.nama_dojang || "-";
+
+      const jenisKelamin = isTeam ? "Tim" : (peserta.atlet?.jenis_kelamin || "-");
+
+      const kelasTanding = [
+        peserta.kelas_kejuaraan?.kelompok?.nama_kelompok,
+        peserta.kelas_kejuaraan?.kelas_berat?.nama_kelas,
+        peserta.kelas_kejuaraan?.poomsae?.nama_kelas,
+      ].filter(Boolean).join(" - ") || "-";
+
+      groupedData[sheetName].push({
+        "Nama Peserta": namaPeserta,
+        "Dojang": dojang,
+        "Jenis Kelamin": jenisKelamin,
+        "Kelas Tanding": kelasTanding,
+      });
+    });
+
+    const wb = XLSX.utils.book_new();
+    for (const sheetName in groupedData) {
+      if (Object.prototype.hasOwnProperty.call(groupedData, sheetName)) {
+        const sortedSheetData = groupedData[sheetName].sort((a, b) => a["Kelas Tanding"].localeCompare(b["Kelas Tanding"]));
+        
+        // Add a "No." column
+        const finalSheetData = sortedSheetData.map((row, index) => ({
+          "No.": index + 1,
+          ...row,
+        }));
+
+        const ws = XLSX.utils.json_to_sheet(finalSheetData);
+        XLSX.utils.book_append_sheet(wb, ws, sheetName);
+      }
+    }
+
+    XLSX.writeFile(wb, `Daftar_Peserta_${selectedKompetisi?.nama_event || 'Kompetisi'}.xlsx`);
+    toast.success("Berhasil mengunduh data peserta!");
+  };
 
 
     // Function untuk mendapatkan data dojang user
@@ -932,6 +998,33 @@ const handleEditSuccess = () => {
                       >
                         <Upload size={20} />
                         <span>Upload Bukti</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Export to Excel Button */}
+            <div className="mb-6">
+              <div className="bg-gradient-to-r from-green-500/5 via-green-500/5 to-green-500/5 rounded-2xl border border-green-500/20 shadow-sm overflow-hidden">
+                <div className="p-4 lg:p-6">
+                  <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                    <div className="text-center lg:text-left">
+                      <h3 className="font-bebas text-xl lg:text-2xl text-black/80 mb-1">
+                        Export Data Peserta
+                      </h3>
+                      <p className="font-plex text-sm lg:text-base text-black/60">
+                        Unduh data peserta yang sudah disetujui dalam format Excel.
+                      </p>
+                    </div>
+                    <div className="flex justify-center lg:justify-end">
+                      <button
+                        onClick={handleExportExcel}
+                        className="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-600 text-white font-plex font-semibold px-6 lg:px-8 py-3 rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-105 flex items-center gap-2 min-w-[180px] lg:min-w-[200px] justify-center"
+                      >
+                        <FileDown size={20} />
+                        <span>Export ke Excel</span>
                       </button>
                     </div>
                   </div>
