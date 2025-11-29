@@ -395,13 +395,14 @@ static async update(req: Request, res: Response) {
       const limit = Math.min(parseInt(req.query.limit as string) || 1000, 1000);
       const id_dojang = req.query.id_dojang ? parseInt(req.query.id_dojang as string) : undefined;
       const id_kelas = req.query.id_kelas as string | undefined;
+      const status = req.query.status as "PENDING" | "APPROVED" | "REJECTED" | undefined;
 
       if (isNaN(id_kompetisi)) {
         return sendError(res, 'ID kompetisi tidak valid', 400);
       }
 
       // Panggil service
-      const result = await AtletService.getAtletByKompetisi(id_kompetisi, cabang, page, limit, id_dojang, id_kelas);
+      const result = await AtletService.getAtletByKompetisi(id_kompetisi, cabang, page, limit, id_dojang, id_kelas, status);
 
       return sendSuccess(
         res,

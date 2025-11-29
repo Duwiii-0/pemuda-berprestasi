@@ -693,7 +693,7 @@ static async deleteFile(id_atlet: number, fileType: keyof AtletFileInfo) {
   return { message: `${fileType} deleted successfully` }
 }
 
-  static async getAtletByKompetisi(id_kompetisi: number, cabang: "KYORUGI" | "POOMSAE" | undefined, page: number, limit: number, id_dojang?: number, id_kelas?: string) {
+  static async getAtletByKompetisi(id_kompetisi: number, cabang: "KYORUGI" | "POOMSAE" | undefined, page: number, limit: number, id_dojang?: number, id_kelas?: string, status?: "PENDING" | "APPROVED" | "REJECTED") {
     const offset = (page - 1) * limit;
 
     const whereCondition: any = {
@@ -711,6 +711,10 @@ static async deleteFile(id_atlet: number, fileType: keyof AtletFileInfo) {
 
     if (id_kelas) {
         whereCondition.id_kelas_kejuaraan = parseInt(id_kelas);
+    }
+
+    if (status) {
+        whereCondition.status = status;
     }
 
     const [peserta, total] = await Promise.all([

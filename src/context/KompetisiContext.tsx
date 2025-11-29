@@ -205,6 +205,7 @@ export interface KompetisiContextType {
     cabang?: "kyorugi" | "poomsae",
     id_dojang?: number,
     id_kelas?: string,
+    status?: "PENDING" | "APPROVED" | "REJECTED",
   ) => Promise<void>;
   fetchAllAtletByKompetisi: (id_kompetisi: number) => Promise<void>;
   setAtletPage: (page: number) => void;
@@ -351,6 +352,7 @@ export const KompetisiProvider = ({ children }: { children: ReactNode }) => {
     cabang?: "kyorugi" | "poomsae",
     id_dojang?: number,
     id_kelas?: string,
+    status?: "PENDING" | "APPROVED" | "REJECTED",
   ) => {
     setLoadingAtlet(true);
     setErrorAtlet(null);
@@ -359,6 +361,7 @@ export const KompetisiProvider = ({ children }: { children: ReactNode }) => {
       if (cabang) url += `&cabang=${cabang}`;
       if (id_dojang) url += `&id_dojang=${id_dojang}`;
       if (id_kelas) url += `&id_kelas=${id_kelas}`;
+      if (status) url += `&status=${status}`;
 
       const res = await apiClient.get(url);
 

@@ -348,37 +348,6 @@ const Dojang = () => {
     }
   };
 
-  // ✅ FUNCTION: Check Approved Participants
-  const checkApprovedParticipants = async () => {
-    if (!userDojang?.id_dojang) return;
-    
-    try {
-      setCheckingParticipants(true);
-      console.log('🔍 Checking approved participants for dojang:', userDojang.id_dojang);
-      
-      const response = await apiClient.get(`/atlet/by-dojang/${userDojang.id_dojang}`);
-      const atletList = response.data || response || [];
-      
-      console.log('👥 Atlet list:', atletList);
-      
-      const hasApproved = atletList.some((atlet: any) => {
-        const approvedPeserta = atlet.peserta_kompetisi?.some(
-          (p: any) => p.status === 'APPROVED'
-        );
-        return approvedPeserta;
-      });
-      
-      console.log('✅ Has approved participants:', hasApproved);
-      setHasApprovedParticipants(hasApproved);
-      
-    } catch (error: any) {
-      console.error('❌ Error checking participants:', error);
-      setHasApprovedParticipants(false);
-    } finally {
-      setCheckingParticipants(false);
-    }
-  };
-
   // ✅ useEffect: Token handling
   useEffect(() => {
     // Token handled by apiClient automatically
