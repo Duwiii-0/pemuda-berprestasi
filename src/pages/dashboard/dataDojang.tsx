@@ -159,7 +159,20 @@ const FilePreview = ({
     }
   };
 
-  const generateDojangCertificate = async () => {
+  const getPreviewUrl = () => {
+    if (file && previewUrl) return previewUrl;
+    
+    if (existingPath) {
+      const baseUrl = 'https://cjvmanagementevent.com';
+      const staticUrl = `${baseUrl}${existingPath}`;
+      console.log("🌐 Logo Preview URL:", staticUrl);
+      return staticUrl;
+    }
+    
+    return null;
+  };
+
+    const generateDojangCertificate = async () => {
   try {
     setLoading(true);
     
@@ -224,19 +237,6 @@ const FilePreview = ({
     setLoading(false);
   }
 };
-
-  const getPreviewUrl = () => {
-    if (file && previewUrl) return previewUrl;
-    
-    if (existingPath) {
-      const baseUrl = 'https://cjvmanagementevent.com';
-      const staticUrl = `${baseUrl}${existingPath}`;
-      console.log("🌐 Logo Preview URL:", staticUrl);
-      return staticUrl;
-    }
-    
-    return null;
-  };
 
   const isImageFile = () => {
     if (file) return file.type.startsWith('image/');
@@ -648,47 +648,46 @@ if (updatedData.logo) {
               </div>
               
               {/* Action Buttons */}
-              <div className="flex gap-2 lg:gap-3">
-                {user?.role === 'ADMIN' ? (
-                  <></> // kosongkan tombol untuk admin
-                ) : (
-                  !isEditing ? (
-                    <GeneralButton
-                      label="Ubah Data Dojang"
-                      className="text-white bg-gradient-to-r from-red to-red/80 hover:from-red/90 hover:to-red/70 border-0 shadow-lg flex items-center gap-2 w-full sm:w-auto text-sm lg:text-base px-4 lg:px-6 py-2.5 lg:py-3"
-                      onClick={() => setIsEditing(true)}
-                    />
-                              {/* NEW: Dojang Certificate Button */}
-          <GeneralButton
-            label="Download Sertifikat Dojang"
-            className="text-white bg-gradient-to-r from-yellow-600 to-yellow-500 hover:from-yellow-700 hover:to-yellow-600 border-0 shadow-lg flex items-center gap-2 text-sm lg:text-base px-4 lg:px-6 py-2.5 lg:py-3"
-            onClick={generateDojangCertificate}
-            disabled={loading}
-          />
-          
-          <GeneralButton
-            label="Ubah Data Dojang"
-            className="text-white bg-gradient-to-r from-red to-red/80 hover:from-red/90 hover:to-red/70 border-0 shadow-lg flex items-center gap-2 w-full sm:w-auto text-sm lg:text-base px-4 lg:px-6 py-2.5 lg:py-3"
-            onClick={() => setIsEditing(true)}
-          />
-                  ) : (
-                    <div className="flex gap-2 lg:gap-3 w-full sm:w-auto">
-                      <GeneralButton
-                        label="Batal"
-                        className="text-red bg-white hover:bg-red/5 border-2 border-red/30 hover:border-red/50 flex-1 sm:flex-none text-sm lg:text-base px-4 lg:px-6 py-2.5 lg:py-3"
-                        onClick={handleCancel}
-                        disabled={loading}
-                      />
-                      <GeneralButton
-                        label={loading ? "Menyimpan..." : "Simpan"}
-                        className="text-white bg-gradient-to-r from-red to-red/80 hover:from-red/90 hover:to-red/70 border-0 shadow-lg flex items-center gap-2 flex-1 sm:flex-none text-sm lg:text-base px-4 lg:px-6 py-2.5 lg:py-3 disabled:opacity-50 disabled:cursor-not-allowed"
-                        onClick={handleUpdate}
-                        disabled={loading}
-                      />
-                    </div>
-                  )
-                )}
-              </div>
+{/* Action Buttons */}
+<div className="flex gap-2 lg:gap-3">
+  {user?.role === 'ADMIN' ? (
+    <></> // kosongkan tombol untuk admin
+  ) : (
+    !isEditing ? (
+      <>
+        {/* Download Sertifikat Dojang Button */}
+        <GeneralButton
+          label="Download Sertifikat Dojang"
+          className="text-white bg-gradient-to-r from-yellow-600 to-yellow-500 hover:from-yellow-700 hover:to-yellow-600 border-0 shadow-lg flex items-center gap-2 text-sm lg:text-base px-4 lg:px-6 py-2.5 lg:py-3"
+          onClick={generateDojangCertificate}
+          disabled={loading}
+        />
+        
+        {/* Ubah Data Dojang Button */}
+        <GeneralButton
+          label="Ubah Data Dojang"
+          className="text-white bg-gradient-to-r from-red to-red/80 hover:from-red/90 hover:to-red/70 border-0 shadow-lg flex items-center gap-2 w-full sm:w-auto text-sm lg:text-base px-4 lg:px-6 py-2.5 lg:py-3"
+          onClick={() => setIsEditing(true)}
+        />
+      </>
+    ) : (
+      <div className="flex gap-2 lg:gap-3 w-full sm:w-auto">
+        <GeneralButton
+          label="Batal"
+          className="text-red bg-white hover:bg-red/5 border-2 border-red/30 hover:border-red/50 flex-1 sm:flex-none text-sm lg:text-base px-4 lg:px-6 py-2.5 lg:py-3"
+          onClick={handleCancel}
+          disabled={loading}
+        />
+        <GeneralButton
+          label={loading ? "Menyimpan..." : "Simpan"}
+          className="text-white bg-gradient-to-r from-red to-red/80 hover:from-red/90 hover:to-red/70 border-0 shadow-lg flex items-center gap-2 flex-1 sm:flex-none text-sm lg:text-base px-4 lg:px-6 py-2.5 lg:py-3 disabled:opacity-50 disabled:cursor-not-allowed"
+          onClick={handleUpdate}
+          disabled={loading}
+        />
+      </div>
+    )
+  )}
+</div>
             </div>
 
             {/* Loading State */}
