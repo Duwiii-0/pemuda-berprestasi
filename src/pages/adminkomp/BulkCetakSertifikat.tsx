@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useKompetisi } from '../../context/KompetisiContext';
 import { useAuth } from '../../context/authContext';
-import { CertificateGenerator } from '../../components/CertificateGenerator';
-import { Atlet } from '../../types'; // Assuming you have a types file
+import { Atlet } from '../../types';
+import { generateCertificatePdfBytes, getKelasKejuaraan, MedalStatus } from '../../utils/pdfGenerators';
+import { PDFDocument } from 'pdf-lib';
 
 const BulkCetakSertifikat: React.FC = () => {
   const { user } = useAuth();
@@ -10,10 +11,11 @@ const BulkCetakSertifikat: React.FC = () => {
   
   const [dojangs, setDojangs] = useState<{ id: number; name: string }[]>([]);
   const [kelasKejuaraan, setKelasKejuaraan] = useState<{ id: string; name: string }[]>([]);
-  const [filteredPeserta, setFilteredPeserta] = useState<Atlet[]>([]);
+  const [filteredPeserta, setFilteredPeserta] = useState<any[]>([]);
 
   const [selectedDojang, setSelectedDojang] = useState<string>("ALL");
   const [selectedKelas, setSelectedKelas] = useState<string>("ALL");
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const kompetisiId = user?.role === "ADMIN_KOMPETISI"
     ? user?.admin_kompetisi?.id_kompetisi
@@ -57,20 +59,53 @@ const BulkCetakSertifikat: React.FC = () => {
       filtered = filtered.filter((p: any) => p.kelas_kejuaraan?.id_kelas_kejuaraan === selectedKelas);
     }
 
-    setFilteredPeserta(filtered.filter((p: any) => p.atlet).map((p: any) => p.atlet));
+    setFilteredPeserta(filtered);
   }, [selectedDojang, selectedKelas, pesertaList]);
 
-  const handleBulkDownload = () => {
-    // This is a placeholder for the bulk download logic.
-    // For now, it just logs the filtered athletes.
-    console.log("Bulk downloading certificates for:", filteredPeserta);
-    alert(`Bulk download for ${filteredPeserta.length} athletes. See console for details.`);
+  const handleBulkDownload = async () => {
+    if (filteredPeserta.length === 0) {
+      alert("No athletes selected.");
+      return;
+    }
+    setIsGenerating(true);
+
+    try {
+      const mergedPdf = await PDFDocument.create();
+
+      for (const peserta of filteredPeserta) {
+        if (!peserta.atlet) continue;
+        try {
+          // TODO: Implement proper medal status detection for bulk generation
+          const medalStatus: MedalStatus = "PARTICIPANT"; 
+          const kelasName = getKelasKejuaraan(peserta, pesertaList);
+
+          const pdfBytes = await generateCertificatePdfBytes(peserta.atlet, medalStatus, kelasName);
+          const pdfToMerge = await PDFDocument.load(pdfBytes);
+          const copiedPages = await mergedPdf.copyPages(pdfToMerge, pdfToMerge.getPageIndices());
+          copiedPages.forEach((page) => mergedPdf.addPage(page));
+        } catch (error) {
+            console.error(`Failed to generate certificate for ${peserta.atlet.nama_atlet}:`, error);
+        }
+      }
+
+      const mergedPdfBytes = await mergedPdf.save();
+      const blob = new Blob([mergedPdfBytes], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'Certificates-Bulk.pdf';
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+        console.error("Failed to generate bulk certificates:", error);
+        alert("Failed to generate bulk certificates. See console for details.");
+    } finally {
+        setIsGenerating(false);
+    }
   };
-  
+
   const handleBulkPrint = () => {
-    // This is a placeholder for the bulk print logic.
-    console.log("Bulk printing certificates for:", filteredPeserta);
-    alert(`Bulk print for ${filteredPeserta.length} athletes. See console for details.`);
+    alert("Print functionality is not implemented yet for bulk operations.");
   };
 
   return (
@@ -88,6 +123,7 @@ const BulkCetakSertifikat: React.FC = () => {
               value={selectedDojang}
               onChange={(e) => setSelectedDojang(e.target.value)}
               className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm rounded-md"
+              disabled={loadingAtlet}
             >
               <option value="ALL">All Dojang</option>
               {dojangs.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
@@ -103,6 +139,7 @@ const BulkCetakSertifikat: React.FC = () => {
               value={selectedKelas}
               onChange={(e) => setSelectedKelas(e.target.value)}
               className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm rounded-md"
+              disabled={loadingAtlet}
             >
               <option value="ALL">All Kelas</option>
               {kelasKejuaraan.map(k => <option key={k.id} value={k.id}>{k.name}</option>)}
@@ -113,6 +150,7 @@ const BulkCetakSertifikat: React.FC = () => {
           <button
             type="button"
             onClick={handleBulkPrint}
+            disabled={isGenerating}
             className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
           >
             Print
@@ -120,10 +158,11 @@ const BulkCetakSertifikat: React.FC = () => {
           <button
             type="button"
             onClick={handleBulkDownload}
+            disabled={isGenerating}
             className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700"
             style={{ backgroundColor: "#990D35" }}
           >
-            Download PDF
+            {isGenerating ? 'Generating...' : 'Download PDF'}
           </button>
         </div>
         
@@ -133,9 +172,10 @@ const BulkCetakSertifikat: React.FC = () => {
                 {loadingAtlet ? (
                     <p>Loading...</p>
                 ) : (
-                    filteredPeserta.map(atlet => (
-                        <div key={atlet.id_atlet} className="bg-gray-50 p-4 rounded-lg shadow-sm">
-                            <CertificateGenerator atlet={atlet} isEditing={false} />
+                    filteredPeserta.map(peserta => (
+                        <div key={peserta.id_peserta_kompetisi} className="bg-gray-50 p-4 rounded-lg shadow-sm">
+                           <p className="font-bold">{peserta.atlet?.nama_atlet}</p>
+                           <p className="text-sm text-gray-500">{peserta.atlet?.dojang?.nama_dojang}</p>
                         </div>
                     ))
                 )}

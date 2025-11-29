@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useKompetisi } from '../../context/KompetisiContext';
 import { useAuth } from '../../context/authContext';
-import { IDCardGenerator } from '../../components/IDCardGenerator';
-import { Atlet } from '../../types'; // Assuming you have a types file
+import { Atlet } from '../../types';
+import { generateIdCardPdfBytes } from '../../utils/pdfGenerators';
+import { PDFDocument } from 'pdf-lib';
 
 const BulkGenerateIDCard: React.FC = () => {
   const { user } = useAuth();
@@ -14,6 +15,7 @@ const BulkGenerateIDCard: React.FC = () => {
 
   const [selectedDojang, setSelectedDojang] = useState<string>("ALL");
   const [selectedKelas, setSelectedKelas] = useState<string>("ALL");
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const kompetisiId = user?.role === "ADMIN_KOMPETISI"
     ? user?.admin_kompetisi?.id_kompetisi
@@ -60,16 +62,45 @@ const BulkGenerateIDCard: React.FC = () => {
     setFilteredPeserta(filtered.filter((p: any) => p.atlet).map((p: any) => p.atlet));
   }, [selectedDojang, selectedKelas, pesertaList]);
 
-  const handleBulkDownload = () => {
-    // This is a placeholder for the bulk download logic.
-    console.log("Bulk downloading ID cards for:", filteredPeserta);
-    alert(`Bulk download for ${filteredPeserta.length} athletes. See console for details.`);
+  const handleBulkDownload = async () => {
+    if (filteredPeserta.length === 0) {
+      alert("No athletes selected.");
+      return;
+    }
+    setIsGenerating(true);
+
+    try {
+      const mergedPdf = await PDFDocument.create();
+
+      for (const atlet of filteredPeserta) {
+        try {
+          const pdfBytes = await generateIdCardPdfBytes(atlet, pesertaList);
+          const pdfToMerge = await PDFDocument.load(pdfBytes);
+          const copiedPages = await mergedPdf.copyPages(pdfToMerge, pdfToMerge.getPageIndices());
+          copiedPages.forEach((page) => mergedPdf.addPage(page));
+        } catch (error) {
+            console.error(`Failed to generate ID card for ${atlet.nama_atlet}:`, error);
+        }
+      }
+
+      const mergedPdfBytes = await mergedPdf.save();
+      const blob = new Blob([mergedPdfBytes], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'ID-Cards-Bulk.pdf';
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+        console.error("Failed to generate bulk ID cards:", error);
+        alert("Failed to generate bulk ID cards. See console for details.");
+    } finally {
+        setIsGenerating(false);
+    }
   };
 
   const handleBulkPrint = () => {
-    // This is a placeholder for the bulk print logic.
-    console.log("Bulk printing ID cards for:", filteredPeserta);
-    alert(`Bulk print for ${filteredPeserta.length} athletes. See console for details.`);
+    alert("Print functionality is not implemented yet for bulk operations.");
   };
 
 
@@ -88,6 +119,7 @@ const BulkGenerateIDCard: React.FC = () => {
               value={selectedDojang}
               onChange={(e) => setSelectedDojang(e.target.value)}
               className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm rounded-md"
+              disabled={loadingAtlet}
             >
               <option value="ALL">All Dojang</option>
               {dojangs.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
@@ -103,6 +135,7 @@ const BulkGenerateIDCard: React.FC = () => {
               value={selectedKelas}
               onChange={(e) => setSelectedKelas(e.target.value)}
               className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm rounded-md"
+              disabled={loadingAtlet}
             >
               <option value="ALL">All Kelas</option>
               {kelasKejuaraan.map(k => <option key={k.id} value={k.id}>{k.name}</option>)}
@@ -113,6 +146,7 @@ const BulkGenerateIDCard: React.FC = () => {
             <button
                 type="button"
                 onClick={handleBulkPrint}
+                disabled={isGenerating}
                 className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
             >
                 Print
@@ -120,13 +154,14 @@ const BulkGenerateIDCard: React.FC = () => {
             <button
                 type="button"
                 onClick={handleBulkDownload}
+                disabled={isGenerating}
                 className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700"
                 style={{ backgroundColor: "#990D35" }}
             >
-                Download PDF
+                {isGenerating ? 'Generating...' : 'Download PDF'}
             </button>
         </div>
-
+        
         <div className="mt-8">
             <h2 className="text-xl font-bold mb-4">Filtered Peserta ({filteredPeserta.length})</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -135,7 +170,8 @@ const BulkGenerateIDCard: React.FC = () => {
                 ) : (
                     filteredPeserta.map(atlet => (
                         <div key={atlet.id_atlet} className="bg-gray-50 p-4 rounded-lg shadow-sm">
-                            <IDCardGenerator atlet={atlet} isEditing={false} />
+                           <p className="font-bold">{atlet.nama_atlet}</p>
+                           <p className="text-sm text-gray-500">{atlet.dojang?.nama_dojang}</p>
                         </div>
                     ))
                 )}
