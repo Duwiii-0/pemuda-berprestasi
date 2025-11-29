@@ -391,8 +391,7 @@ static async update(req: Request, res: Response) {
     try {
       const id_kompetisi = parseInt(req.params.id_kompetisi);
       const cabang = (req.query.cabang as 'KYORUGI' | 'POOMSAE') || undefined;
-      const page = parseInt(req.query.page as string) || 1;
-      const limit = parseInt(req.query.limit as string) || 1000;
+      const limit = Math.min(parseInt(req.query.limit as string) || 1000, 1000);
 
       if (isNaN(id_kompetisi)) {
         return sendError(res, 'ID kompetisi tidak valid', 400);
