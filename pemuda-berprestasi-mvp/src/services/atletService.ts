@@ -693,7 +693,7 @@ static async deleteFile(id_atlet: number, fileType: keyof AtletFileInfo) {
   return { message: `${fileType} deleted successfully` }
 }
 
-  static async getAtletByKompetisi(id_kompetisi: number, cabang: "KYORUGI" | "POOMSAE" | undefined, page: number, limit: number) {
+  static async getAtletByKompetisi(id_kompetisi: number, cabang: "KYORUGI" | "POOMSAE" | undefined, page: number, limit: number, id_dojang?: number, id_kelas?: string) {
     const offset = (page - 1) * limit;
 
     const whereCondition: any = {
@@ -702,6 +702,16 @@ static async deleteFile(id_atlet: number, fileType: keyof AtletFileInfo) {
         ...(cabang ? { cabang } : {})
       }
     };
+
+    if (id_dojang) {
+        whereCondition.atlet = {
+            id_dojang: id_dojang
+        };
+    }
+
+    if (id_kelas) {
+        whereCondition.id_kelas_kejuaraan = parseInt(id_kelas);
+    }
 
     const [peserta, total] = await Promise.all([
       prisma.tb_peserta_kompetisi.findMany({

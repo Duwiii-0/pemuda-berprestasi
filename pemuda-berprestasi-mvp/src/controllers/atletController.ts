@@ -393,13 +393,15 @@ static async update(req: Request, res: Response) {
       const cabang = (req.query.cabang as 'KYORUGI' | 'POOMSAE') || undefined;
       const page = parseInt(req.query.page as string) || 1;
       const limit = Math.min(parseInt(req.query.limit as string) || 1000, 1000);
+      const id_dojang = req.query.id_dojang ? parseInt(req.query.id_dojang as string) : undefined;
+      const id_kelas = req.query.id_kelas as string | undefined;
 
       if (isNaN(id_kompetisi)) {
         return sendError(res, 'ID kompetisi tidak valid', 400);
       }
 
       // Panggil service
-      const result = await AtletService.getAtletByKompetisi(id_kompetisi, cabang, page, limit);
+      const result = await AtletService.getAtletByKompetisi(id_kompetisi, cabang, page, limit, id_dojang, id_kelas);
 
       return sendSuccess(
         res,

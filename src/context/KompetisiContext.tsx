@@ -239,7 +239,7 @@ export const KompetisiProvider = ({ children }: { children: ReactNode }) => {
   >([]);
   const [atletPagination, setAtletPagination] = useState<PaginationMeta>({
     page: 1,
-    limit: 100,
+    limit: 25,
     total: 0,
     totalPages: 0,
   });
@@ -345,7 +345,8 @@ export const KompetisiProvider = ({ children }: { children: ReactNode }) => {
   const fetchAtletByKompetisi = async (
     id_kompetisi: number,
     cabang?: "kyorugi" | "poomsae",
-    id_dojang?: number
+    id_dojang?: number,
+    id_kelas?: string,
   ) => {
     setLoadingAtlet(true);
     setErrorAtlet(null);
@@ -353,6 +354,7 @@ export const KompetisiProvider = ({ children }: { children: ReactNode }) => {
       let url = `/kompetisi/${id_kompetisi}/atlet?page=${atletPagination.page}&limit=${atletPagination.limit}`;
       if (cabang) url += `&cabang=${cabang}`;
       if (id_dojang) url += `&id_dojang=${id_dojang}`;
+      if (id_kelas) url += `&id_kelas=${id_kelas}`;
 
       const res = await apiClient.get(url);
 

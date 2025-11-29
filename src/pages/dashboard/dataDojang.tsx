@@ -310,15 +310,15 @@ const Dojang = () => {
     });
 
     // 3. ACHIEVEMENT TEXT (centered)
-    const achievementText = "Participant"; // Fixed text
+    const achievementText = "PARTICIPANT"; // Fixed text
     const achievementWidth = helvetica.widthOfTextAtSize(
       achievementText, 
-      14
+      20
     );
     firstPage.drawText(achievementText, {
       x: (pageWidth - achievementWidth) / 2,
       y: pageHeight - mmToPt(158),
-      size: 14,
+      size: 20,
       font: helvetica,
       color: textColor,
     });
