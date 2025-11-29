@@ -472,10 +472,29 @@ static async getEligible(
 ) {
   console.log("🔍 Service filter received:", filter);
 
-  // Build where condition dynamically
+  // 1. Get IDs of athletes already registered in this specific class
+  const registeredParticipants = await prisma.tb_peserta_kompetisi.findMany({
+    where: { id_kelas_kejuaraan: kelasId },
+    select: { id_atlet: true, id_atlet_2: true },
+  });
+
+  const registeredAtletIds = registeredParticipants.flatMap(p => {
+    const ids = [];
+    if (p.id_atlet) ids.push(p.id_atlet);
+    if (p.id_atlet_2) ids.push(p.id_atlet_2);
+    return ids;
+  });
+
+  console.log("🚫 Registered athlete IDs for kelasId", kelasId, ":", registeredAtletIds);
+
+  // 2. Build where condition for eligible athletes
   const whereCondition: any = {
     id_dojang: filter.id_dojang,
     jenis_kelamin: filter.jenis_kelamin,
+    // Add the exclusion for already registered athletes
+    id_atlet: {
+      notIn: registeredAtletIds,
+    },
   };
 
   // ✅ FIXED: Handle kelompok usia filter
@@ -512,7 +531,7 @@ static async getEligible(
 
   console.log("🎯 Final where condition:", JSON.stringify(whereCondition, null, 2));
 
-  // Cari atlet yang eligible
+  // 3. Find athletes who are eligible AND not yet registered
   const atletEligible = await prisma.tb_atlet.findMany({
     where: whereCondition,
     include: {
@@ -520,7 +539,7 @@ static async getEligible(
     }
   });
 
-  console.log("👥 Found athletes:", atletEligible.length);
+  console.log("👥 Found eligible and unregistered athletes:", atletEligible.length);
   console.log("🔍 Sample athlete data:", atletEligible[0] || "No athletes found");
 
   return atletEligible;
