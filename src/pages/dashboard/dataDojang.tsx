@@ -704,7 +704,7 @@ if (updatedData.logo) {
             checkingParticipants 
               ? "Checking..." 
               : hasApprovedParticipants 
-                ? "Download Sertifikat Dojang" 
+                ? "Download Sertifikat Partisipasi Kejuaraan" 
                 : "Belum Ada Peserta"
           }
           className={`${
