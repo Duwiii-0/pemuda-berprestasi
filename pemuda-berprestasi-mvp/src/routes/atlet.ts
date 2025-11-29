@@ -111,7 +111,7 @@ router.post(
 );
 
 router.get('/', AtletController.getAll);
-router.get('/dojang/:id_dojang', AtletController.getByDojang);
+router.get('/by-dojang/:id_dojang', AtletController.getByDojang);
 router.post("/eligible", authenticate, AtletController.getEligible);
 router.get('/:id', AtletController.getById);
 router.delete('/:id', AtletController.delete);
