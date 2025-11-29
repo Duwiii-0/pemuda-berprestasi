@@ -183,9 +183,30 @@ const BulkGenerateIDCard: React.FC = () => {
       let errorCount = 0;
 
       for (const peserta of atletToGenerate) {
-        if (!peserta.atlet) continue;
+        if (!peserta.atlet) {
+          console.warn(`Peserta ${peserta.id_peserta_kompetisi} tidak memiliki data atlet`);
+          errorCount++;
+          continue;
+        }
         try {
-          const pdfBytes = await generateIdCardPdfBytes(peserta.atlet, pesertaList);
+          // CRITICAL FIX: Pass the complete peserta object with atlet relation
+          // Create enhanced atlet object with full peserta_kompetisi data
+          const enhancedAtlet = {
+            ...peserta.atlet,
+            peserta_kompetisi: [{
+              ...peserta,
+              kelas_kejuaraan: peserta.kelas_kejuaraan
+            }]
+          };
+          
+          console.log(`🔍 Generating ID card for ${peserta.atlet.nama_atlet}:`, {
+            has_photo: !!(peserta.atlet as any).pas_foto_path,
+            photo_path: (peserta.atlet as any).pas_foto_path,
+            kelas_kejuaraan: peserta.kelas_kejuaraan?.kategori_event?.nama_kategori,
+            dojang: peserta.atlet.dojang?.nama_dojang
+          });
+          
+          const pdfBytes = await generateIdCardPdfBytes(enhancedAtlet as any, atletToGenerate);
           const pdfToMerge = await PDFDocument.load(pdfBytes);
           const copiedPages = await mergedPdf.copyPages(pdfToMerge, pdfToMerge.getPageIndices());
           copiedPages.forEach((page) => mergedPdf.addPage(page));
@@ -244,9 +265,21 @@ const BulkGenerateIDCard: React.FC = () => {
       const mergedPdf = await PDFDocument.create();
 
       for (const peserta of atletToPrint) {
-        if (!peserta.atlet) continue;
+        if (!peserta.atlet) {
+          console.warn(`Peserta ${peserta.id_peserta_kompetisi} tidak memiliki data atlet`);
+          continue;
+        }
         try {
-          const pdfBytes = await generateIdCardPdfBytes(peserta.atlet, pesertaList);
+          // CRITICAL FIX: Pass the complete peserta object with atlet relation
+          const enhancedAtlet = {
+            ...peserta.atlet,
+            peserta_kompetisi: [{
+              ...peserta,
+              kelas_kejuaraan: peserta.kelas_kejuaraan
+            }]
+          };
+          
+          const pdfBytes = await generateIdCardPdfBytes(enhancedAtlet as any, atletToPrint);
           const pdfToMerge = await PDFDocument.load(pdfBytes);
           const copiedPages = await mergedPdf.copyPages(pdfToMerge, pdfToMerge.getPageIndices());
           copiedPages.forEach((page) => mergedPdf.addPage(page));
@@ -449,8 +482,11 @@ const BulkGenerateIDCard: React.FC = () => {
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-4">
               <h2 className="text-xl font-bold" style={{ color: '#050505' }}>
-                Peserta yang Disetujui ({atletPagination.total})
+                Peserta yang Disetujui
               </h2>
+              <span className="px-3 py-1 rounded-full text-sm font-medium" style={{ backgroundColor: 'rgba(153, 13, 53, 0.1)', color: '#990D35' }}>
+                Total: {atletPagination.total} peserta
+              </span>
               {pesertaList.length > 0 && (
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
@@ -467,7 +503,7 @@ const BulkGenerateIDCard: React.FC = () => {
               )}
             </div>
             <p className="text-sm" style={{ color: '#050505', opacity: 0.6 }}>
-              Page {currentPage} of {totalPages}
+              Showing {(currentPage - 1) * itemsPerPage + 1}-{Math.min(currentPage * itemsPerPage, atletPagination.total)} of {atletPagination.total} | Page {currentPage}/{totalPages}
             </p>
           </div>
 
