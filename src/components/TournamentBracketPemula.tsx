@@ -2856,7 +2856,31 @@ const generateLeaderboard = () => {
 
             <div
               className="p-6 border-t flex gap-3 sticky bottom-0 bg-white z-10"
-              style={{ borderColor: "#990D3Dojang Separation Modal */}
+              style={{ borderColor: "#990D35" }}
+            >
+              <button
+                onClick={() => setShowParticipantPreview(false)}
+                className="flex-1 py-3 px-4 rounded-lg border-2 font-medium transition-all hover:bg-gray-100"
+                style={{ borderColor: "#990D35", color: "#990D35" }}
+              >
+                Batal
+              </button>
+              <button
+                onClick={generateBracket}
+                disabled={loading || approvedParticipants.length < 2}
+                className="flex-1 py-3 px-4 rounded-lg font-bold transition-all hover:opacity-90 shadow-lg"
+                style={{ backgroundColor: "#990D35", color: "#F5FBEF" }}
+              >
+                {loading
+                  ? "Generating..."
+                  : `Generate Bracket (${approvedParticipants.length} Peserta)`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Dojang Separation Modal */}
       {showDojangModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
