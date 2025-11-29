@@ -159,6 +159,72 @@ const FilePreview = ({
     }
   };
 
+  const generateDojangCertificate = async () => {
+  try {
+    setLoading(true);
+    
+    // 1. Load template
+    const templatePath = `/templates/piagam.pdf`;
+    const existingPdfBytes = await fetch(templatePath)
+      .then(res => res.arrayBuffer());
+    
+    const pdfDoc = await PDFDocument.load(existingPdfBytes);
+    const pages = pdfDoc.getPages();
+    const firstPage = pages[0];
+    const { width: pageWidth, height: pageHeight } = firstPage.getSize();
+
+    const helveticaBold = await pdfDoc.embedFont('Helvetica-Bold');
+    const helvetica = await pdfDoc.embedFont('Helvetica');
+    const mmToPt = (mm: number) => mm * 2.83465;
+    const textColor = rgb(0, 0, 0);
+
+    // 2. NAMA DOJANG (centered)
+    const dojangName = userDojang.nama_dojang.toUpperCase();
+    const nameWidth = helveticaBold.widthOfTextAtSize(dojangName, 24);
+    firstPage.drawText(dojangName, {
+      x: (pageWidth - nameWidth) / 2,
+      y: pageHeight - mmToPt(140),
+      size: 24,
+      font: helveticaBold,
+      color: textColor,
+    });
+
+    // 3. ACHIEVEMENT TEXT (centered)
+    const achievementText = "Participant"; // Fixed text
+    const achievementWidth = helvetica.widthOfTextAtSize(
+      achievementText, 
+      14
+    );
+    firstPage.drawText(achievementText, {
+      x: (pageWidth - achievementWidth) / 2,
+      y: pageHeight - mmToPt(158),
+      size: 14,
+      font: helvetica,
+      color: textColor,
+    });
+
+    // 4. Generate & Download
+    const pdfBytes = await pdfDoc.save();
+    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `Sertifikat-Dojang-${userDojang.nama_dojang
+      .replace(/\s/g, '-')}.pdf`;
+    link.click();
+    
+    URL.revokeObjectURL(url);
+    toast.success("Sertifikat dojang berhasil didownload!");
+    
+  } catch (error: any) {
+    console.error('Error generating dojang certificate:', error);
+    toast.error('Gagal generate sertifikat dojang');
+  } finally {
+    setLoading(false);
+  }
+};
+
   const getPreviewUrl = () => {
     if (file && previewUrl) return previewUrl;
     
@@ -592,6 +658,19 @@ if (updatedData.logo) {
                       className="text-white bg-gradient-to-r from-red to-red/80 hover:from-red/90 hover:to-red/70 border-0 shadow-lg flex items-center gap-2 w-full sm:w-auto text-sm lg:text-base px-4 lg:px-6 py-2.5 lg:py-3"
                       onClick={() => setIsEditing(true)}
                     />
+                              {/* NEW: Dojang Certificate Button */}
+          <GeneralButton
+            label="Download Sertifikat Dojang"
+            className="text-white bg-gradient-to-r from-yellow-600 to-yellow-500 hover:from-yellow-700 hover:to-yellow-600 border-0 shadow-lg flex items-center gap-2 text-sm lg:text-base px-4 lg:px-6 py-2.5 lg:py-3"
+            onClick={generateDojangCertificate}
+            disabled={loading}
+          />
+          
+          <GeneralButton
+            label="Ubah Data Dojang"
+            className="text-white bg-gradient-to-r from-red to-red/80 hover:from-red/90 hover:to-red/70 border-0 shadow-lg flex items-center gap-2 w-full sm:w-auto text-sm lg:text-base px-4 lg:px-6 py-2.5 lg:py-3"
+            onClick={() => setIsEditing(true)}
+          />
                   ) : (
                     <div className="flex gap-2 lg:gap-3 w-full sm:w-auto">
                       <GeneralButton
