@@ -394,21 +394,83 @@ const checkApprovedParticipants = async () => {
     return () => window.removeEventListener('resize', onResize);
   }, []);
 
-  // 🔹 Fetch data my-dojang
-  useEffect(() => {
+// ✅ PISAHKAN jadi 2 useEffect terpisah
+
+// 🔹 Fetch data my-dojang
+useEffect(() => {
   if (!user) {
     toast.error("Anda harus login dulu");
     navigate("/", { replace: true });
     return;
   }
 
-  // 🔹 Check approved participants setelah dojang loaded
+  const fetchDojang = async () => {
+    try {
+      setLoading(true);
+      console.log('🔄 Fetching dojang data...');
+      
+      const response = await apiClient.get("/dojang/my-dojang");
+      console.log('📋 Raw API Response:', response);
+      
+      const dojangData = response.data || response;
+      console.log('📊 Dojang data:', dojangData);
+      
+      if (!dojangData || !dojangData.id_dojang || !dojangData.nama_dojang) {
+        console.log('⚠️ Invalid dojang data:', dojangData);
+        toast.error("Data dojang tidak valid atau belum ada");
+        setUserDojang(null);
+        setFormData(null);
+        return;
+      }
+      
+      console.log('✅ Valid dojang data:', dojangData.nama_dojang);
+      
+      setUserDojang(dojangData);
+      setFormData({
+        name: dojangData.nama_dojang || "",
+        email: dojangData.email || "",
+        phone: dojangData.no_telp || "",
+        negara: dojangData.negara || "",
+        provinsi: dojangData.provinsi || "",
+        kota: dojangData.kota || "",
+        kecamatan: dojangData.kecamatan || "",
+        kelurahan: dojangData.kelurahan || "",
+        alamat: dojangData.alamat || "",
+      });
+      
+      if (dojangData.logo) {
+        setLogoPreview(`/uploads/dojang/logos/${dojangData.logo}`);
+      } else if (dojangData.logo_url) {
+        setLogoPreview(dojangData.logo_url);
+      }
+      
+    } catch (err: any) {
+      console.error('❌ Error fetching dojang:', err);
+      
+      if (err.response?.status === 404) {
+        toast.error("Pelatih belum memiliki dojang");
+      } else if (err.response?.status === 401) {
+        toast.error("Sesi login telah berakhir");
+      } else {
+        toast.error(err.response?.data?.message || "Gagal mengambil data dojang");
+      }
+      
+      setUserDojang(null);
+      setFormData(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchDojang();
+}, [user, navigate]);
+
+// ✅ Pisahkan useEffect untuk check participants
 useEffect(() => {
   if (userDojang?.id_dojang) {
     checkApprovedParticipants();
   }
 }, [userDojang?.id_dojang]);
-
 const fetchDojang = async () => {
   try {
     setLoading(true);
