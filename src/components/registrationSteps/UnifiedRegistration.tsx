@@ -8,7 +8,7 @@ import { useRegistration } from "../../context/RegistrationContext";
 import GeneralButton from "../../components/generalButton";
 import toast from "react-hot-toast";
 import { apiClient } from "../../config/api";
-import type { Atlit } from "../../context/RegistrationContext";
+import type { Atlit, RegistrationType } from "../../context/RegistrationContext";
 import { useAuth } from "../../context/authContext";
 
 type UnifiedRegistrationProps = {
@@ -20,13 +20,6 @@ type UnifiedRegistrationProps = {
 };
 
 type OptionType = { value: string; label: string };
-
-// Type untuk registration object
-type RegistrationType = {
-  atlitId: number;
-  kompetisiId: number;
-  // tambahkan properti lain sesuai kebutuhan
-};
 
 const UnifiedRegistration = ({
   isOpen,
@@ -102,7 +95,7 @@ const UnifiedRegistration = ({
     getSelectedAthletes, // ✅ ADD THIS
   } = useRegistration();
 
-  const [, setExistingRegistrations] = useState<RegistrationType[]>([]);
+  const [existingRegistrations, setExistingRegistrations] = useState<RegistrationType[]>([]);
 
   useEffect(() => {
     if (isOpen) {
@@ -565,10 +558,12 @@ const UnifiedRegistration = ({
       console.log("💡 Debug before validation:", {
         kelasKejuaraanId,
         selectedAthletes,
+        existingRegistrations,
       });
       const validation = validateRegistration(
         kelasKejuaraanId,
-        selectedAthletes
+        selectedAthletes,
+        existingRegistrations
       );
       console.log("📋 Validation result:", validation);
 

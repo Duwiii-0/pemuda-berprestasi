@@ -91,7 +91,11 @@
     fetchKelasPoomsae: (kelompokId: number, gender: 'LAKI_LAKI' | 'PEREMPUAN') => Promise<void>;
     
     // Registration functions
-    validateRegistration: (kelasKejuaraanId: number | null, selectedAthletes: Atlit[]) => ValidationResult;
+    validateRegistration: (
+      kelasKejuaraanId: number | null, 
+      selectedAthletes: Atlit[], 
+      existingRegistrations: RegistrationType[]
+    ) => ValidationResult;
     registerAtlet: (kompetisiId: number, kelasKejuaraanId: number | null) => Promise<RegistrationResponse | null>;
     getRegistrationsByKompetisi: (kompetisiId: number) => Promise<RegistrationType[]>; // ✅ ADD THIS
 
@@ -475,12 +479,26 @@
 
     // ✅ UPDATED: Enhanced validation that checks for duplicate registrations
     const validateRegistration = useCallback(
-    (kelasKejuaraanId: number | null, selectedAthletes: Atlit[]): ValidationResult => {
+    (kelasKejuaraanId: number | null, selectedAthletes: Atlit[], existingRegistrations: RegistrationType[]): ValidationResult => {
       const errors: string[] = [];
       const warnings: string[] = [];
 
       if (!kelasKejuaraanId) {
         errors.push("Kelas kejuaraan tidak ditemukan");
+      }
+
+      // Check for duplicate registrations
+      if (kelasKejuaraanId && existingRegistrations.length > 0) {
+        for (const athlete of selectedAthletes) {
+          const isAlreadyRegistered = existingRegistrations.some(
+            (reg) =>
+              reg.kelasKejuaraanId === kelasKejuaraanId &&
+              (reg.atlitId === athlete.id || reg.atlitId2 === athlete.id)
+          );
+          if (isAlreadyRegistered) {
+            errors.push(`Atlet ${athlete.nama} sudah terdaftar di kelas ini.`);
+          }
+        }
       }
 
       if (!formData.styleType) {
@@ -553,11 +571,7 @@
 
         const selectedAthletes = getSelectedAthletes();
 
-        // Validasi langsung pakai kelasKejuaraanId dan selectedAthletes
-        const validation = validateRegistration(kelasKejuaraanId, selectedAthletes);
-        if (!validation.isValid) {
-          throw new Error(`Validasi gagal: ${validation.errors.join(', ')}`);
-        }
+        // Validasi sekarang ditangani oleh komponen sebelum memanggil fungsi ini
 
         const payload: RegistrationPayload = {
           atlitId: Number(selectedAthletes[0].id),
@@ -588,7 +602,7 @@
         setIsLoading(false);
       }
     },
-    [getSelectedAthletes, requiresTwoAthletes, resetForm, validateRegistration]
+    [getSelectedAthletes, requiresTwoAthletes, resetForm]
   );
 
 
