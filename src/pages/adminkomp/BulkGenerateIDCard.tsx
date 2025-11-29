@@ -5,6 +5,8 @@ import { Atlet } from '../../types';
 import { generateIdCardPdfBytes } from '../../utils/pdfGenerators';
 import { PDFDocument } from 'pdf-lib';
 
+const ITEMS_PER_PAGE = 100;
+
 const BulkGenerateIDCard: React.FC = () => {
   const { user } = useAuth();
   const { pesertaList, fetchAtletByKompetisi, loadingAtlet } = useKompetisi();
@@ -16,6 +18,7 @@ const BulkGenerateIDCard: React.FC = () => {
   const [selectedDojang, setSelectedDojang] = useState<string>("ALL");
   const [selectedKelas, setSelectedKelas] = useState<string>("ALL");
   const [isGenerating, setIsGenerating] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const kompetisiId = user?.role === "ADMIN_KOMPETISI"
     ? user?.admin_kompetisi?.id_kompetisi
@@ -60,7 +63,14 @@ const BulkGenerateIDCard: React.FC = () => {
     }
 
     setFilteredPeserta(filtered.filter((p: any) => p.atlet).map((p: any) => p.atlet));
+    setCurrentPage(1);
   }, [selectedDojang, selectedKelas, pesertaList]);
+
+  const paginatedPeserta = filteredPeserta.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+  const totalPages = Math.ceil(filteredPeserta.length / ITEMS_PER_PAGE);
 
   const handleBulkDownload = async () => {
     if (filteredPeserta.length === 0) {
@@ -158,17 +168,38 @@ const BulkGenerateIDCard: React.FC = () => {
                 className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700"
                 style={{ backgroundColor: "#990D35" }}
             >
-                {isGenerating ? 'Generating...' : 'Download PDF'}
+                {isGenerating ? 'Generating...' : `Download ${filteredPeserta.length} ID Cards`}
             </button>
         </div>
         
         <div className="mt-8">
             <h2 className="text-xl font-bold mb-4">Filtered Peserta ({filteredPeserta.length})</h2>
+
+            <div className="flex justify-between items-center mb-4">
+                <p className="text-sm text-gray-700">Page {currentPage} of {totalPages}</p>
+                <div className="flex gap-2">
+                    <button 
+                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                        disabled={currentPage === 1 || isGenerating}
+                        className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                    >
+                        Previous
+                    </button>
+                    <button 
+                        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                        disabled={currentPage === totalPages || isGenerating}
+                        className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                    >
+                        Next
+                    </button>
+                </div>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {loadingAtlet ? (
                     <p>Loading...</p>
                 ) : (
-                    filteredPeserta.map(atlet => (
+                    paginatedPeserta.map(atlet => (
                         <div key={atlet.id_atlet} className="bg-gray-50 p-4 rounded-lg shadow-sm">
                            <p className="font-bold">{atlet.nama_atlet}</p>
                            <p className="text-sm text-gray-500">{atlet.dojang?.nama_dojang}</p>
