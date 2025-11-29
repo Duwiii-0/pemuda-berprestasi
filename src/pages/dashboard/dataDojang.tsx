@@ -278,8 +278,10 @@ const Dojang = () => {
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [hasApprovedParticipants, setHasApprovedParticipants] = useState(false);
+  const [checkingParticipants, setCheckingParticipants] = useState(false);  
 
-      const generateDojangCertificate = async () => {
+  const generateDojangCertificate = async () => {
   try {
     setLoading(true);
     
@@ -345,6 +347,39 @@ const Dojang = () => {
   }
 };
 
+// ✅ CHECK APPROVED PARTICIPANTS
+const checkApprovedParticipants = async () => {
+  if (!userDojang?.id_dojang) return;
+  
+  try {
+    setCheckingParticipants(true);
+    console.log('🔍 Checking approved participants for dojang:', userDojang.id_dojang);
+    
+    // Fetch atlet dari dojang ini
+    const response = await apiClient.get(`/atlet/by-dojang/${userDojang.id_dojang}`);
+    const atletList = response.data || response || [];
+    
+    console.log('👥 Atlet list:', atletList);
+    
+    // Check apakah ada atlet yang punya peserta_kompetisi dengan status APPROVED
+    const hasApproved = atletList.some((atlet: any) => {
+      const approvedPeserta = atlet.peserta_kompetisi?.some(
+        (p: any) => p.status === 'APPROVED'
+      );
+      return approvedPeserta;
+    });
+    
+    console.log('✅ Has approved participants:', hasApproved);
+    setHasApprovedParticipants(hasApproved);
+    
+  } catch (error: any) {
+    console.error('❌ Error checking participants:', error);
+    setHasApprovedParticipants(false);
+  } finally {
+    setCheckingParticipants(false);
+  }
+};
+
   // Set token global sekali aja
   useEffect(() => {
     // Token handled by apiClient automatically
@@ -366,6 +401,13 @@ const Dojang = () => {
     navigate("/", { replace: true });
     return;
   }
+
+  // 🔹 Check approved participants setelah dojang loaded
+useEffect(() => {
+  if (userDojang?.id_dojang) {
+    checkApprovedParticipants();
+  }
+}, [userDojang?.id_dojang]);
 
 const fetchDojang = async () => {
   try {
@@ -658,10 +700,20 @@ if (updatedData.logo) {
       <>
         {/* Download Sertifikat Dojang Button */}
         <GeneralButton
-          label="Download Sertifikat Dojang"
-          className="text-white bg-gradient-to-r from-yellow-600 to-yellow-500 hover:from-yellow-700 hover:to-yellow-600 border-0 shadow-lg flex items-center gap-2 text-sm lg:text-base px-4 lg:px-6 py-2.5 lg:py-3"
+          label={
+            checkingParticipants 
+              ? "Checking..." 
+              : hasApprovedParticipants 
+                ? "Download Sertifikat Dojang" 
+                : "Belum Ada Peserta"
+          }
+          className={`${
+            hasApprovedParticipants
+              ? "text-white bg-gradient-to-r from-yellow-600 to-yellow-500 hover:from-yellow-700 hover:to-yellow-600"
+              : "text-gray-400 bg-gray-200 cursor-not-allowed"
+          } border-0 shadow-lg flex items-center gap-2 text-sm lg:text-base px-4 lg:px-6 py-2.5 lg:py-3`}
           onClick={generateDojangCertificate}
-          disabled={loading}
+          disabled={loading || checkingParticipants || !hasApprovedParticipants}
         />
         
         {/* Ubah Data Dojang Button */}

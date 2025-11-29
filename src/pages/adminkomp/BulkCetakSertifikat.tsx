@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useKompetisi } from '../../context/KompetisiContext';
 import { useAuth } from '../../context/authContext';
 import { Atlet } from '../../types';
 import { generateCertificatePdfBytes, getKelasKejuaraan, MedalStatus } from '../../utils/pdfGenerators';
 import { PDFDocument } from 'pdf-lib';
+import { useVirtual } from '@tanstack/react-virtual';
 
 const BulkCetakSertifikat: React.FC = () => {
   const { user } = useAuth();
@@ -15,11 +16,19 @@ const BulkCetakSertifikat: React.FC = () => {
   const [selectedDojang, setSelectedDojang] = useState<string>("ALL");
   const [selectedKelas, setSelectedKelas] = useState<string>("ALL");
   const [isGenerating, setIsGenerating] = useState(false);
-  const [deferredPesertaList, setDeferredPesertaList] = useState<any[]>([]);
 
   const kompetisiId = user?.role === "ADMIN_KOMPETISI"
     ? user?.admin_kompetisi?.id_kompetisi
     : null;
+    
+  const parentRef = useRef<HTMLDivElement>(null);
+
+  const rowVirtualizer = useVirtual({
+    size: pesertaList.length,
+    parentRef,
+    estimateSize: 100,
+    overscan: 5,
+  });
 
   useEffect(() => {
     if (kompetisiId) {
@@ -53,13 +62,6 @@ const BulkCetakSertifikat: React.FC = () => {
       setKelasKejuaraan(Array.from(kelasSet, ([id, name]) => ({ id, name })));
     }
   }, [allPesertaList]);
-
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      setDeferredPesertaList(pesertaList);
-    }, 0);
-    return () => clearTimeout(timeoutId);
-  }, [pesertaList]);
 
   const totalPages = atletPagination.totalPages;
 
@@ -207,17 +209,22 @@ const BulkCetakSertifikat: React.FC = () => {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {loadingAtlet ? (
-                    <p>Loading...</p>
-                ) : (
-                    deferredPesertaList.map(peserta => (
-                        <div key={peserta.id_peserta_kompetisi} className="bg-gray-50 p-4 rounded-lg shadow-sm">
-                           <p className="font-bold">{peserta.atlet?.nama_atlet}</p>
-                           <p className="text-sm text-gray-500">{peserta.atlet?.dojang?.nama_dojang}</p>
-                        </div>
-                    ))
-                )}
+            <div ref={parentRef} className="list" style={{ height: `500px`, overflow: 'auto' }}>
+                <div style={{ height: `${rowVirtualizer.totalSize}px`, width: '100%', position: 'relative' }}>
+                    {loadingAtlet ? (
+                        <p>Loading...</p>
+                    ) : (
+                        rowVirtualizer.virtualItems.map(virtualItem => {
+                            const peserta = pesertaList[virtualItem.index];
+                            return (
+                                <div key={virtualItem.key} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: `${virtualItem.size}px`, transform: `translateY(${virtualItem.start}px)` }} className="bg-gray-50 p-4 rounded-lg shadow-sm">
+                                   <p className="font-bold">{peserta.atlet?.nama_atlet}</p>
+                                   <p className="text-sm text-gray-500">{peserta.atlet?.dojang?.nama_dojang}</p>
+                                </div>
+                            )
+                        })
+                    )}
+                </div>
             </div>
         </div>
 
