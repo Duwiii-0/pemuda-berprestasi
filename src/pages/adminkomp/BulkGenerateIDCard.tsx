@@ -31,25 +31,51 @@ const BulkGenerateIDCard: React.FC = () => {
   });
 
   const isInitialMount = useRef(true);
+  const hasLoadedFilters = useRef(false);
 
+  // ✅ PERBAIKAN: Load initial data (25 atlet pertama) saat mount
   useEffect(() => {
-    if (isInitialMount.current) {
+    if (isInitialMount.current && kompetisiId) {
       isInitialMount.current = false;
-      return;
+      console.log('🔄 Initial load: Fetching first 25 athletes...');
+      fetchAtletByKompetisi(kompetisiId, undefined, undefined, undefined);
     }
+  }, [kompetisiId]);
+
+  // ✅ PERBAIKAN: Load filter data HANYA saat user interact dengan dropdown
+  useEffect(() => {
+    if (!hasLoadedFilters.current && kompetisiId && (selectedDojang !== "ALL" || selectedKelas !== "ALL")) {
+      console.log('🔄 Loading filter data...');
+      hasLoadedFilters.current = true;
+      fetchAllAtletByKompetisi(kompetisiId);
+    }
+  }, [selectedDojang, selectedKelas, kompetisiId]);
+
+  // ✅ PERBAIKAN: Handle pagination dan filter changes
+  useEffect(() => {
+    if (isInitialMount.current) return;
 
     if (kompetisiId) {
-      fetchAllAtletByKompetisi(kompetisiId);
-      fetchAtletByKompetisi(kompetisiId, undefined, selectedDojang === "ALL" ? undefined : parseInt(selectedDojang), selectedKelas === "ALL" ? undefined : selectedKelas);
+      console.log(`🔄 Fetching page ${atletPagination.page} with filters...`);
+      fetchAtletByKompetisi(
+        kompetisiId, 
+        undefined, 
+        selectedDojang === "ALL" ? undefined : parseInt(selectedDojang), 
+        selectedKelas === "ALL" ? undefined : selectedKelas
+      );
     }
-  }, [kompetisiId, fetchAllAtletByKompetisi, fetchAtletByKompetisi, atletPagination.page, atletPagination.limit, selectedDojang, selectedKelas]);
+  }, [atletPagination.page, atletPagination.limit, selectedDojang, selectedKelas]);
 
+  // ✅ PERBAIKAN: Build filter options dari data yang tersedia
   useEffect(() => {
-    if (allPesertaList.length > 0) {
+    // Gunakan allPesertaList jika sudah loaded, atau pesertaList current page
+    const dataSource = allPesertaList.length > 0 ? allPesertaList : pesertaList;
+    
+    if (dataSource.length > 0) {
       const dojangSet = new Map<number, string>();
       const kelasSet = new Map<string, string>();
 
-      allPesertaList.forEach((peserta: any) => {
+      dataSource.forEach((peserta: any) => {
         if (peserta.atlet?.dojang) {
           dojangSet.set(peserta.atlet.dojang.id_dojang, peserta.atlet.dojang.nama_dojang);
         }
@@ -62,8 +88,10 @@ const BulkGenerateIDCard: React.FC = () => {
 
       setDojangs(Array.from(dojangSet, ([id, name]) => ({ id, name })));
       setKelasKejuaraan(Array.from(kelasSet, ([id, name]) => ({ id, name })));
+      
+      console.log(`📊 Filter options loaded: ${dojangSet.size} dojangs, ${kelasSet.size} kelas`);
     }
-  }, [allPesertaList]);
+  }, [allPesertaList, pesertaList]);
 
   const totalPages = atletPagination.totalPages;
 
