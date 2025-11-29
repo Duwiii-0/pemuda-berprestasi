@@ -411,7 +411,14 @@ export class AtletService {
               },
               dojang: {
                 select: {
-                  provinsi: true // <-- tambahkan ini
+                  provinsi: true
+                }
+              },
+              peserta_kompetisi: {
+                select: {
+                  id_peserta_kompetisi: true,
+                  status: true,
+                  id_kelas_kejuaraan: true
                 }
               },
               _count: {

@@ -409,6 +409,67 @@ const Dojang = () => {
         } else if (dojangData.logo_url) {
           setLogoPreview(dojangData.logo_url);
         }
+
+        // After loading dojang, check if there are any approved participants
+        try {
+          setCheckingParticipants(true);
+          console.log('🔎 Checking approved participants for dojang:', dojangData.id_dojang);
+          
+          // ✅ OPTIMIZED: Use dedicated endpoint for checking approved participants
+          const checkResp = await apiClient.get(`/dojang/${dojangData.id_dojang}/has-approved-participants`);
+          
+          console.log('📋 Approved participants check response:', checkResp);
+          
+          // Handle response structure
+          let hasApproved = false;
+          
+          if (typeof checkResp === 'boolean') {
+            hasApproved = checkResp;
+          } else if (checkResp?.hasApproved !== undefined) {
+            hasApproved = Boolean(checkResp.hasApproved);
+          } else if (checkResp?.data?.hasApproved !== undefined) {
+            hasApproved = Boolean(checkResp.data.hasApproved);
+          }
+
+          setHasApprovedParticipants(hasApproved);
+          console.log(`🎯 Final result - hasApprovedParticipants: ${hasApproved} for dojang ${dojangData.id_dojang}`);
+          
+          if (!hasApproved) {
+            console.log('ℹ️ No APPROVED participants found. Certificate button will be disabled.');
+          } else {
+            console.log('✅ Found APPROVED participants. Certificate button will be enabled.');
+          }
+          
+        } catch (errCheck: any) {
+          console.error('❌ Error checking approved participants:', errCheck);
+          console.error('❌ Error details:', errCheck?.message || errCheck);
+          
+          // Fallback: try alternative method with atlet endpoint
+          console.log('🔄 Trying fallback method with atlet endpoint...');
+          try {
+            const atletResp = await apiClient.get(`/atlet/by-dojang/${dojangData.id_dojang}`);
+            
+            let atletList: any[] = [];
+            if (Array.isArray(atletResp)) {
+              atletList = atletResp;
+            } else if (atletResp?.data && Array.isArray(atletResp.data)) {
+              atletList = atletResp.data;
+            }
+
+            const found = atletList.some((atlet: any) => {
+              const peserta = atlet?.peserta_kompetisi || [];
+              return Array.isArray(peserta) && peserta.some((p: any) => p?.status === 'APPROVED');
+            });
+
+            setHasApprovedParticipants(Boolean(found));
+            console.log(`🎯 Fallback result - hasApprovedParticipants: ${found}`);
+          } catch (fallbackErr) {
+            console.error('❌ Fallback method also failed:', fallbackErr);
+            setHasApprovedParticipants(false);
+          }
+        } finally {
+          setCheckingParticipants(false);
+        }
         
       } catch (err: any) {
         console.error('❌ Error fetching dojang:', err);
