@@ -44,4 +44,7 @@ router.delete('/:id', DojangController.delete);
 // Get dojang by ID (authenticated view - lebih detail)
 router.get('/:id', DojangController.getById);
 
+// Check if dojang has approved participants
+router.get('/:id/has-approved-participants', DojangController.hasApprovedParticipants);
+
 export default router;

@@ -155,4 +155,16 @@ export class DojangService {
     });
     return !existing;
   }
+
+  static async hasApprovedParticipants(id_dojang: number) {
+    const count = await prisma.tb_peserta_kompetisi.count({
+      where: {
+        atlet: {
+          id_dojang: id_dojang,
+        },
+        status: 'APPROVED',
+      },
+    });
+    return { hasApproved: count > 0 };
+  }
 }

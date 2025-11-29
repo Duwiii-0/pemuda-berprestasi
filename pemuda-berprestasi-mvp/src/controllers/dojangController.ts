@@ -402,4 +402,14 @@ export class DojangController {
       res.status(400).json({ message: err.message });
     }
   }
+
+  static async hasApprovedParticipants(req: Request, res: Response) {
+    try {
+      const id = parseInt(req.params.id);
+      const result = await DojangService.hasApprovedParticipants(id);
+      res.json(result);
+    } catch (err: any) {
+      res.status(400).json({ message: err.message });
+    }
+  }
 }
