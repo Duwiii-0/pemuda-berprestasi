@@ -2914,8 +2914,15 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
         ? /* PRESTASI Layout with FIXED POSITIONING */
           bracketGenerated && matches.length > 0
           ? /* Render the bracket */
-            // ... (rest of the bracket rendering logic)
-            null
+            (
+                <div ref={bracketRef} className="p-6">
+                    <div className="tournament-layout flex justify-center items-start gap-8">
+                    {renderBracketSide(getLeftMatches(), "left")}
+                    {renderCenterFinal()}
+                    {renderBracketSide(getRightMatches(), "right")}
+                    </div>
+                </div>
+            )
           : /* Empty state for bracket */
             (
                 <div className="p-6">
