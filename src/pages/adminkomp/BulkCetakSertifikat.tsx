@@ -4,7 +4,7 @@ import { useAuth } from '../../context/authContext';
 import { Atlet } from '../../types';
 import { generateCertificatePdfBytes, getKelasKejuaraan, MedalStatus } from '../../utils/pdfGenerators';
 import { PDFDocument } from 'pdf-lib';
-import { useVirtual } from '@tanstack/react-virtual';
+import { useVirtualizer } from '@tanstack/react-virtual';
 
 const BulkCetakSertifikat: React.FC = () => {
   const { user } = useAuth();
@@ -23,10 +23,10 @@ const BulkCetakSertifikat: React.FC = () => {
     
   const parentRef = useRef<HTMLDivElement>(null);
 
-  const rowVirtualizer = useVirtual({
-    size: pesertaList.length,
-    parentRef,
-    estimateSize: 100,
+  const rowVirtualizer = useVirtualizer({
+    count: pesertaList.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 100,
     overscan: 5,
   });
 
@@ -210,11 +210,11 @@ const BulkCetakSertifikat: React.FC = () => {
             </div>
 
             <div ref={parentRef} className="list" style={{ height: `500px`, overflow: 'auto' }}>
-                <div style={{ height: `${rowVirtualizer.totalSize}px`, width: '100%', position: 'relative' }}>
+                <div style={{ height: `${rowVirtualizer.getTotalSize()}px`, width: '100%', position: 'relative' }}>
                     {loadingAtlet ? (
                         <p>Loading...</p>
                     ) : (
-                        rowVirtualizer.virtualItems.map(virtualItem => {
+                        rowVirtualizer.getVirtualItems().map(virtualItem => {
                             const peserta = pesertaList[virtualItem.index];
                             return (
                                 <div key={virtualItem.key} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: `${virtualItem.size}px`, transform: `translateY(${virtualItem.start}px)` }} className="bg-gray-50 p-4 rounded-lg shadow-sm">
