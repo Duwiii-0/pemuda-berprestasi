@@ -3100,6 +3100,100 @@ const generateLeaderboard = () => {
     transition: all 0.2s ease;
   }
 `}</style>
+      {editingMatch && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-lg w-full">
+            <div className="p-6 border-b" style={{ borderColor: "#990D35" }}>
+                <h3 className="text-xl font-bold" style={{ color: "#050505" }}>
+                Input Hasil Pertandingan
+                </h3>
+                <p className="text-sm mt-1" style={{ color: "#050505", opacity: 0.6 }}>
+                Partai {editingMatch.nomor_partai}
+                </p>
+            </div>
+            <div className="p-6">
+                <div className="grid grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700">
+                        {getParticipantName(editingMatch.peserta_a)}
+                        </label>
+                        <input
+                        type="number"
+                        id="scoreA"
+                        defaultValue={editingMatch.skor_a}
+                        className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700">
+                        {getParticipantName(editingMatch.peserta_b)}
+                        </label>
+                        <input
+                        type="number"
+                        id="scoreB"
+                        defaultValue={editingMatch.skor_b}
+                        className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm"
+                        />
+                    </div>
+                </div>
+                <div className="mt-4">
+                    <label htmlFor="tanggalPertandingan" className="block text-sm font-medium text-gray-700">
+                        Tanggal Pertandingan
+                    </label>
+                    <input
+                        type="date"
+                        id="tanggalPertandingan"
+                        defaultValue={editingMatch.tanggal_pertandingan?.split('T')[0]}
+                        className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm"
+                    />
+                </div>
+                <div className="grid grid-cols-2 gap-4 mt-4">
+                    <div>
+                        <label htmlFor="nomorAntrian" className="block text-sm font-medium text-gray-700">
+                        Nomor Antrian
+                        </label>
+                        <input
+                        type="number"
+                        id="nomorAntrian"
+                        defaultValue={editingMatch.nomor_antrian}
+                        className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm"
+                        />
+                    </div>
+                    <div>
+                        <label htmlFor="nomorLapangan" className="block text-sm font-medium text-gray-700">
+                        Nomor Lapangan
+                        </label>
+                        <input
+                        type="text"
+                        id="nomorLapangan"
+                        defaultValue={editingMatch.nomor_lapangan}
+                        className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm"
+                        />
+                    </div>
+                </div>
+            </div>
+            <div className="p-6 bg-gray-50 flex justify-end gap-3">
+                <button
+                onClick={() => setEditingMatch(null)}
+                className="px-4 py-2 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+                >
+                Batal
+                </button>
+                <button
+                onClick={() => {
+                    const scoreA = parseInt((document.getElementById("scoreA") as HTMLInputElement).value) || 0;
+                    const scoreB = parseInt((document.getElementById("scoreB") as HTMLInputElement).value) || 0;
+                    updateMatchResult(editingMatch.id_match, scoreA, scoreB);
+                }}
+                className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700"
+                style={{ backgroundColor: "#990D35" }}
+                >
+                Simpan Hasil
+                </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
