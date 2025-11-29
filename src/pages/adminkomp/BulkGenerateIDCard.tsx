@@ -671,8 +671,8 @@ const BulkGenerateIDCard: React.FC = () => {
                     key={peserta.id_peserta_kompetisi || idx}
                     className="flex items-center gap-3 p-3 rounded-lg border"
                     style={{ 
-                      backgroundColor: '#F5FBEF',
-                      borderColor: 'rgba(153, 13, 53, 0.1)'
+                      backgroundColor: 'white',
+                      borderColor: 'rgba(153, 13, 53, 0.2)'
                     }}
                   >
                     <div 

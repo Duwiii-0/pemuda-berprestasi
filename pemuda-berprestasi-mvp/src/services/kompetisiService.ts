@@ -451,15 +451,12 @@ static async getAtletsByKompetisi(
   limit?: number, 
   idDojang?: number // <-- tambahkan optional filter
 ) {
-  const queryOptions: {
-    skip?: number;
-    take?: number;
-  } = {};
-
-  if (limit && page) {
-    queryOptions.skip = (page - 1) * limit;
-    queryOptions.take = limit;
-  }
+  // FIXED: Always set pagination, default to 25 if limit not provided
+  const actualLimit = limit || 25;
+  const queryOptions = {
+    skip: (page - 1) * actualLimit,
+    take: actualLimit,
+  };
 
   const peserta = await prisma.tb_peserta_kompetisi.findMany({
   where: {
