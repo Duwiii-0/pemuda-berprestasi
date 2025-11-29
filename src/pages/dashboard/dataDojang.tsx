@@ -431,13 +431,6 @@ const Dojang = () => {
     fetchDojang();
   }, [user, navigate]);
 
-  // ✅ useEffect: Check approved participants after dojang loaded
-  useEffect(() => {
-    if (userDojang?.id_dojang) {
-      checkApprovedParticipants();
-    }
-  }, [userDojang?.id_dojang]);
-
   // ... rest of the component (handleCancel, handleLogoChange, removeLogo, handleUpdate, return JSX)
 
   const handleCancel = () => {
