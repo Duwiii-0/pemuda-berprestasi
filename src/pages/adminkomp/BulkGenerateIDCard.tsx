@@ -57,7 +57,7 @@ const BulkGenerateIDCard: React.FC = () => {
       filtered = filtered.filter((p: any) => p.kelas_kejuaraan?.id_kelas_kejuaraan === selectedKelas);
     }
 
-    setFilteredPeserta(filtered.map((p: any) => p.atlet));
+    setFilteredPeserta(filtered.filter((p: any) => p.atlet).map((p: any) => p.atlet));
   }, [selectedDojang, selectedKelas, pesertaList]);
 
   const handleBulkDownload = () => {
