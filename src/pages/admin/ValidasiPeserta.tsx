@@ -46,7 +46,7 @@ const ValidasiPeserta: React.FC = () => {
   const [filterLevel, setFilterLevel] = useState<"ALL" | "pemula" | "prestasi" | null>(null);
   const [filterDojang, setFilterDojang] = useState<string>("ALL");
   const [filterKelasBerat, setFilterKelasBerat] = useState<"ALL" | string>("ALL");
-  const [itemsPerPage, setItemsPerPage] = useState<number>(25);
+  const [itemsPerPage, setItemsPerPage] = useState<number>(500); // FIXED: Default 500 instead of 25
   const { dojangOptions, refreshDojang, isLoading } = useDojang();
 
 const kelasBeratOptions = [
@@ -135,15 +135,23 @@ const kelasBeratOptions = [
   useEffect(() => {
   }, [kompetisiList]);
 
+  // FIXED: Set limit first when kompetisi is selected
   useEffect(() => {
     if (selectedKompetisiId) {
-      console.log(
-        `[ValidasiPeserta] Kompetisi dipilih, fetching peserta with limit ${itemsPerPage}...`
-      );
-      setAtletLimit(itemsPerPage); // Set limit before fetch
-      fetchAtletByKompetisi(selectedKompetisiId);
+      console.log(`[ValidasiPeserta] Setting limit to ${itemsPerPage}...`);
+      setAtletLimit(itemsPerPage);
     }
   }, [selectedKompetisiId, itemsPerPage]);
+
+  // FIXED: Fetch after limit is set (wait for atletPagination.limit to update)
+  useEffect(() => {
+    if (selectedKompetisiId && atletPagination.limit > 0) {
+      console.log(
+        `[ValidasiPeserta] Fetching peserta with limit ${atletPagination.limit}...`
+      );
+      fetchAtletByKompetisi(selectedKompetisiId);
+    }
+  }, [selectedKompetisiId, atletPagination.limit]);
 
   // FIX: Ganti atletList dengan pesertaList
   useEffect(() => {

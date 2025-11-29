@@ -31,11 +31,11 @@ const BulkGenerateIDCard: React.FC = () => {
     ? user?.admin_kompetisi?.id_kompetisi
     : null;
 
-  // Load initial data on mount
+  // FIXED: Set limit ONCE on mount before any fetch
   useEffect(() => {
     if (kompetisiId) {
-      console.log('🔄 Initial load: Fetching athletes...');
-      fetchAtletByKompetisi(kompetisiId, undefined, undefined, undefined, "APPROVED");
+      console.log('🔄 Setting initial limit to 1000 for bulk operations...');
+      setAtletLimit(1000); // Set high limit for bulk pages
     }
   }, [kompetisiId]);
 
@@ -48,8 +48,8 @@ const BulkGenerateIDCard: React.FC = () => {
 
   // Fetch when filters change (FIXED: Gabungan filter)
   useEffect(() => {
-    if (kompetisiId) {
-      console.log(`🔄 Applying filters: dojang=${selectedDojang}, kelas=${selectedKelas}`);
+    if (kompetisiId && atletPagination.limit > 0) {
+      console.log(`🔄 Applying filters: dojang=${selectedDojang}, kelas=${selectedKelas}, limit=${atletPagination.limit}`);
       setAtletPage(1); // Reset to page 1
       setSelectedAtlets(new Set()); // Clear selection when filter changes
       fetchAtletByKompetisi(
@@ -60,11 +60,11 @@ const BulkGenerateIDCard: React.FC = () => {
         "APPROVED"
       );
     }
-  }, [selectedDojang, selectedKelas, kompetisiId]);
+  }, [selectedDojang, selectedKelas, kompetisiId, atletPagination.limit]);
 
-  // Fetch when pagination changes (FIXED: Includes limit)
+  // Fetch when pagination changes (page only, NOT limit to avoid double fetch)
   useEffect(() => {
-    if (kompetisiId) {
+    if (kompetisiId && atletPagination.limit > 0) {
       console.log(`🔄 Loading page ${atletPagination.page}, limit ${atletPagination.limit}...`);
       setSelectedAtlets(new Set()); // Clear selection when page changes
       fetchAtletByKompetisi(
@@ -75,7 +75,7 @@ const BulkGenerateIDCard: React.FC = () => {
         "APPROVED"
       );
     }
-  }, [atletPagination.page, atletPagination.limit, kompetisiId]);
+  }, [atletPagination.page, kompetisiId]);
 
   // Build filter options from allPesertaList
   useEffect(() => {
@@ -367,7 +367,7 @@ const BulkGenerateIDCard: React.FC = () => {
             borderColor: 'rgba(153, 13, 53, 0.1)'
           }}
         >
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             {/* Filter Dojang */}
             <div>
               <label className="block text-sm font-medium mb-2" style={{ color: '#050505' }}>
@@ -409,27 +409,6 @@ const BulkGenerateIDCard: React.FC = () => {
                 {kelasKejuaraan.map(k => (
                   <option key={k.id} value={k.id}>{k.name}</option>
                 ))}
-              </select>
-            </div>
-
-            {/* Items per page */}
-            <div>
-              <label className="block text-sm font-medium mb-2" style={{ color: '#050505' }}>
-                Items per Page
-              </label>
-              <select
-                value={itemsPerPage}
-                onChange={(e) => setAtletLimit(parseInt(e.target.value))}
-                disabled={loadingAtlet}
-                className="w-full px-4 py-2.5 rounded-lg border focus:outline-none focus:ring-2 transition-all"
-                style={{ 
-                  borderColor: 'rgba(153, 13, 53, 0.2)',
-                  color: '#050505'
-                }}
-              >
-                <option value={21}>21</option>
-                <option value={50}>50</option>
-                <option value={100}>100</option>
               </select>
             </div>
           </div>
