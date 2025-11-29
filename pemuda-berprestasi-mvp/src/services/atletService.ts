@@ -693,31 +693,43 @@ static async deleteFile(id_atlet: number, fileType: keyof AtletFileInfo) {
   return { message: `${fileType} deleted successfully` }
 }
 
-  static async getAtletByKompetisi(id_kompetisi: number, cabang?: "KYORUGI" | "POOMSAE") {
-    const kelasKejuaraan = await prisma.tb_kelas_kejuaraan.findMany({
-      where: {
+  static async getAtletByKompetisi(id_kompetisi: number, cabang: "KYORUGI" | "POOMSAE" | undefined, page: number, limit: number) {
+    const offset = (page - 1) * limit;
+
+    const whereCondition: any = {
+      kelas_kejuaraan: {
         id_kompetisi,
         ...(cabang ? { cabang } : {})
-      },
-      select: {
-        peserta_kompetisi: {
-          select: {
-            atlet: true,
-            status: true
-          }
-        }
       }
-    });
+    };
+
+    const [peserta, total] = await Promise.all([
+      prisma.tb_peserta_kompetisi.findMany({
+        where: whereCondition,
+        skip: offset,
+        take: limit,
+        select: {
+          atlet: true,
+          status: true
+        }
+      }),
+      prisma.tb_peserta_kompetisi.count({ where: whereCondition })
+    ]);
   
-    // flatten all peserta into one array
-    const atletFlat = kelasKejuaraan.flatMap(kelas =>
-      kelas.peserta_kompetisi.map(p => ({
-        ...p.atlet,
-        status: p.status
-      }))
-    );
+    const atletFlat = peserta.map(p => ({
+      ...p.atlet,
+      status: p.status
+    }));
   
-    return atletFlat;
+    return {
+      data: atletFlat,
+      pagination: {
+        currentPage: page,
+        totalPages: Math.ceil(total / limit),
+        totalItems: total,
+        itemsPerPage: limit
+      }
+    };
   }
 
 }
