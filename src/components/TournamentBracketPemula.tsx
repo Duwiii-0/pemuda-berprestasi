@@ -127,6 +127,7 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
   viewOnly = false,
 }) => {
   const { token } = useAuth();
+  const [viewMode, setViewMode] = useState<"bracket" | "list">("bracket");
 
   const gender = kelasData.jenis_kelamin;
 
@@ -374,6 +375,111 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
     } finally {
       setLoading(false);
     }
+  };
+
+  const renderListView = () => {
+    // Sort matches by nomor_partai (as numbers) if nomor_partai exists
+    const sortedMatches = [...matches]
+      .filter((match) => match.nomor_partai) // Only include matches that have a nomor_partai
+      .sort((a, b) => {
+        const numA = parseInt(a.nomor_partai!, 10);
+        const numB = parseInt(b.nomor_partai!, 10);
+        return numA - numB;
+      });
+
+    if (sortedMatches.length === 0) {
+      return (
+        <div className="text-center py-20 px-6">
+          <AlertTriangle size={48} className="mx-auto text-yellow-500" />
+          <p className="mt-4 text-lg font-semibold text-gray-700">
+            Belum Ada Jadwal Pertandingan
+          </p>
+          <p className="text-gray-500 mt-2">
+            Nomor partai untuk kelas ini belum dibuat. Silakan generate
+            scheduling terlebih dahulu.
+          </p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="p-4 sm:p-6">
+        <div className="bg-white rounded-lg shadow-lg overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-100">
+              <tr>
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider"
+                >
+                  Partai
+                </th>
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider"
+                >
+                  Atlet Sudut Biru
+                </th>
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider"
+                >
+                  Atlet Sudut Merah
+                </th>
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-center text-xs font-bold text-gray-600 uppercase tracking-wider"
+                >
+                  Aksi
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {sortedMatches.map((match) => (
+                <tr key={match.id_match} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-lg font-extrabold text-red-700">
+                      {match.nomor_partai || "-"}
+                    </div>
+                    <div className="text-xs text-gray-500 font-semibold">
+                      {match.nomor_lapangan
+                        ? `Lap. ${match.nomor_lapangan}`
+                        : ""}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="text-sm font-semibold text-blue-600">
+                      {getParticipantName(match.peserta_a) || "TBD"}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {getDojoName(match.peserta_a)}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="text-sm font-semibold text-red-600">
+                      {getParticipantName(match.peserta_b) || "TBD"}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {getDojoName(match.peserta_b)}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-center">
+                    <button
+                      onClick={() => setEditingMatch(match)}
+                      className="px-4 py-2 text-sm font-semibold rounded-md text-white transition-colors hover:bg-red-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                      style={{ backgroundColor: "#990D35" }}
+                      disabled={viewOnly}
+                    >
+                      Input Skor
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
   };
 
   const transformParticipantFromAPI = (participant: any): Peserta => {
@@ -1286,179 +1392,234 @@ const generateLeaderboard = () => {
               </div>
             </div>
 
-            {/* Action Buttons */}
-            {!viewOnly && (
-              <div className="flex flex-wrap gap-2">
-                {/* ROW 1: Primary Actions */}
-                <div className="flex gap-2">
-                  {/* Export Peserta Button */}
+            <div className="flex items-center gap-4">
+              {/* View Mode Toggle */}
+              <div className="flex items-center bg-gray-200 rounded-lg p-1">
+                <button
+                  onClick={() => setViewMode("bracket")}
+                  className={`px-4 py-2 text-sm font-semibold rounded-md ${
+                    viewMode === "bracket"
+                      ? "bg-white shadow"
+                      : "bg-transparent text-gray-600"
+                  }`}
+                >
+                  Bracket
+                </button>
+                {!viewOnly && (
                   <button
-                    onClick={exportPesertaToExcel}
-                    className="flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all hover:opacity-90 shadow-md"
-                    style={{ backgroundColor: "#16a34a", color: "#F5FBEF" }}
-                    title="Export daftar peserta ke Excel"
-                  >
-                    <Download size={16} />
-                    <span className="hidden sm:inline">Export Peserta</span>
-                    <span className="sm:hidden">Excel</span>
-                  </button>
-
-                  {/* Clear Scheduling Button */}
-                  <button
-                    onClick={clearScheduling}
-                    disabled={!bracketGenerated || clearingScheduling}
-                    className="flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 shadow-md"
-                    style={{ backgroundColor: "#8B5CF6", color: "#F5FBEF" }}
-                    title="Hapus semua nomor partai (scheduling) - skor tetap"
-                  >
-                    {clearingScheduling ? (
-                      <>
-                        <RefreshCw size={16} className="animate-spin" />
-                        <span className="hidden sm:inline">Clearing...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Calendar size={16} />
-                        <span className="hidden sm:inline">
-                          Clear Scheduling
-                        </span>
-                        <span className="sm:hidden">📅🗑️</span>
-                      </>
-                    )}
-                  </button>
-
-                  {/* Dojang Separation Button */}
-                  <button
-                    onClick={() => setShowDojangModal(true)}
-                    disabled={loading || approvedParticipants.length < 2}
-                    className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
-                      dojangSeparation.enabled ? "ring-2 ring-offset-1" : ""
+                    onClick={() => setViewMode("list")}
+                    className={`px-4 py-2 text-sm font-semibold rounded-md ${
+                      viewMode === "list"
+                        ? "bg-white shadow"
+                        : "bg-transparent text-gray-600"
                     }`}
-                    style={{
-                      backgroundColor: dojangSeparation.enabled
-                        ? "#10B981"
-                        : "#6366F1",
-                      color: "#F5FBEF",
-                    }}
-                    title={
-                      dojangSeparation.enabled
-                        ? "Dojang separation aktif (STRICT mode)"
-                        : "Aktifkan dojang separation"
-                    }
                   >
-                    <Users size={16} />
-                    <span className="hidden md:inline">
-                      {dojangSeparation.enabled
-                        ? "✓ Dojang Separated"
-                        : "Dojang Separation"}
-                    </span>
-                    <span className="md:hidden">
-                      {dojangSeparation.enabled ? "✓ Dojang" : "Dojang"}
-                    </span>
+                    Input Hasil
                   </button>
-                </div>
-
-                {/* ROW 2: Bracket Actions */}
-                <div className="flex gap-2">
-                  {/* Shuffle Button */}
-                  <button
-                    onClick={shuffleBracket}
-                    disabled={
-                      loading ||
-                      approvedParticipants.length < 2 ||
-                      !bracketGenerated
-                    }
-                    className="flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 shadow-md"
-                    style={{ backgroundColor: "#6366F1", color: "#F5FBEF" }}
-                    title="Acak ulang susunan bracket"
-                  >
-                    {loading ? (
-                      <>
-                        <RefreshCw size={16} className="animate-spin" />
-                        <span className="hidden sm:inline">Processing...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Shuffle size={16} />
-                        <span className="hidden sm:inline">Shuffle</span>
-                        <span className="sm:hidden">🔀</span>
-                      </>
-                    )}
-                  </button>
-
-                  {/* Clear Results Button */}
-                  <button
-                    onClick={clearBracketResults}
-                    disabled={!bracketGenerated || clearing}
-                    className="flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 shadow-md"
-                    style={{ backgroundColor: "#F97316", color: "#F5FBEF" }}
-                    title="Reset semua skor ke 0 (struktur bracket tetap)"
-                  >
-                    {clearing ? (
-                      <>
-                        <RefreshCw size={16} className="animate-spin" />
-                        <span className="hidden sm:inline">Clearing...</span>
-                      </>
-                    ) : (
-                      <>
-                        <AlertTriangle size={16} />
-                        <span className="hidden sm:inline">Clear Results</span>
-                        <span className="sm:hidden">🗑️</span>
-                      </>
-                    )}
-                  </button>
-
-                  {/* Delete Bracket Button */}
-                  <button
-                    onClick={deleteBracketPermanent}
-                    disabled={!bracketGenerated || deleting}
-                    className="flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 shadow-md"
-                    style={{ backgroundColor: "#DC2626", color: "#F5FBEF" }}
-                    title="Hapus bracket secara permanen (TIDAK BISA dibatalkan!)"
-                  >
-                    {deleting ? (
-                      <>
-                        <RefreshCw size={16} className="animate-spin" />
-                        <span className="hidden sm:inline">Deleting...</span>
-                      </>
-                    ) : (
-                      <>
-                        <AlertTriangle size={16} />
-                        <span className="hidden sm:inline">Delete Bracket</span>
-                        <span className="sm:hidden">❌</span>
-                      </>
-                    )}
-                  </button>
-
-                  {/* Download PDF Button */}
-                  <button
-                    onClick={handleExportPDF}
-                    disabled={
-                      !bracketGenerated || exportingPDF || matches.length === 0
-                    }
-                    className="flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 shadow-md"
-                    style={{ backgroundColor: "#10B981", color: "#F5FBEF" }}
-                    title="Download bracket sebagai PDF"
-                  >
-                    {exportingPDF ? (
-                      <>
-                        <RefreshCw size={16} className="animate-spin" />
-                        <span className="hidden sm:inline">
-                          Generating PDF...
-                        </span>
-                        <span className="sm:hidden">⏳</span>
-                      </>
-                    ) : (
-                      <>
-                        <Download size={16} />
-                        <span className="hidden sm:inline">Download PDF</span>
-                        <span className="sm:hidden">PDF</span>
-                      </>
-                    )}
-                  </button>
-                </div>
+                )}
               </div>
-            )}
+
+              {/* Action Buttons */}
+              {!viewOnly && (
+                <div className="flex flex-wrap gap-2">
+                  {/* ROW 1: Primary Actions */}
+                  <div className="flex gap-2">
+                    {/* Export Peserta Button */}
+                    <button
+                      onClick={exportPesertaToExcel}
+                      className="flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all hover:opacity-90 shadow-md"
+                      style={{ backgroundColor: "#16a34a", color: "#F5FBEF" }}
+                      title="Export daftar peserta ke Excel"
+                    >
+                      <Download size={16} />
+                      <span className="hidden sm:inline">Export Peserta</span>
+                      <span className="sm:hidden">Excel</span>
+                    </button>
+
+                    {/* Clear Scheduling Button */}
+                    <button
+                      onClick={clearScheduling}
+                      disabled={!bracketGenerated || clearingScheduling}
+                      className="flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 shadow-md"
+                      style={{
+                        backgroundColor: "#8B5CF6",
+                        color: "#F5FBEF",
+                      }}
+                      title="Hapus semua nomor partai (scheduling) - skor tetap"
+                    >
+                      {clearingScheduling ? (
+                        <>
+                          <RefreshCw size={16} className="animate-spin" />
+                          <span className="hidden sm:inline">Clearing...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Calendar size={16} />
+                          <span className="hidden sm:inline">
+                            Clear Scheduling
+                          </span>
+                          <span className="sm:hidden">📅🗑️</span>
+                        </>
+                      )}
+                    </button>
+
+                    {/* Dojang Separation Button */}
+                    <button
+                      onClick={() => setShowDojangModal(true)}
+                      disabled={loading || approvedParticipants.length < 2}
+                      className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
+                        dojangSeparation.enabled
+                          ? "ring-2 ring-offset-1"
+                          : ""
+                      }`}
+                      style={{
+                        backgroundColor: dojangSeparation.enabled
+                          ? "#10B981"
+                          : "#6366F1",
+                        color: "#F5FBEF",
+                      }}
+                      title={
+                        dojangSeparation.enabled
+                          ? "Dojang separation aktif (STRICT mode)"
+                          : "Aktifkan dojang separation"
+                      }
+                    >
+                      <Users size={16} />
+                      <span className="hidden md:inline">
+                        {dojangSeparation.enabled
+                          ? "✓ Dojang Separated"
+                          : "Dojang Separation"}
+                      </span>
+                      <span className="md:hidden">
+                        {dojangSeparation.enabled ? "✓ Dojang" : "Dojang"}
+                      </span>
+                    </button>
+                  </div>
+
+                  {/* ROW 2: Bracket Actions */}
+                  <div className="flex gap-2">
+                    {/* Shuffle Button */}
+                    <button
+                      onClick={shuffleBracket}
+                      disabled={
+                        loading ||
+                        approvedParticipants.length < 2 ||
+                        !bracketGenerated
+                      }
+                      className="flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 shadow-md"
+                      style={{
+                        backgroundColor: "#6366F1",
+                        color: "#F5FBEF",
+                      }}
+                      title="Acak ulang susunan bracket"
+                    >
+                      {loading ? (
+                        <>
+                          <RefreshCw size={16} className="animate-spin" />
+                          <span className="hidden sm:inline">
+                            Processing...
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <Shuffle size={16} />
+                          <span className="hidden sm:inline">Shuffle</span>
+                          <span className="sm:hidden">🔀</span>
+                        </>
+                      )}
+                    </button>
+
+                    {/* Clear Results Button */}
+                    <button
+                      onClick={clearBracketResults}
+                      disabled={!bracketGenerated || clearing}
+                      className="flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 shadow-md"
+                      style={{
+                        backgroundColor: "#F97316",
+                        color: "#F5FBEF",
+                      }}
+                      title="Reset semua skor ke 0 (struktur bracket tetap)"
+                    >
+                      {clearing ? (
+                        <>
+                          <RefreshCw size={16} className="animate-spin" />
+                          <span className="hidden sm:inline">Clearing...</span>
+                        </>
+                      ) : (
+                        <>
+                          <AlertTriangle size={16} />
+                          <span className="hidden sm:inline">
+                            Clear Results
+                          </span>
+                          <span className="sm:hidden">🗑️</span>
+                        </>
+                      )}
+                    </button>
+
+                    {/* Delete Bracket Button */}
+                    <button
+                      onClick={deleteBracketPermanent}
+                      disabled={!bracketGenerated || deleting}
+                      className="flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 shadow-md"
+                      style={{
+                        backgroundColor: "#DC2626",
+                        color: "#F5FBEF",
+                      }}
+                      title="Hapus bracket secara permanen (TIDAK BISA dibatalkan!)"
+                    >
+                      {deleting ? (
+                        <>
+                          <RefreshCw size={16} className="animate-spin" />
+                          <span className="hidden sm:inline">Deleting...</span>
+                        </>
+                      ) : (
+                        <>
+                          <AlertTriangle size={16} />
+                          <span className="hidden sm:inline">
+                            Delete Bracket
+                          </span>
+                          <span className="sm:hidden">❌</span>
+                        </>
+                      )}
+                    </button>
+
+                    {/* Download PDF Button */}
+                    <button
+                      onClick={handleExportPDF}
+                      disabled={
+                        !bracketGenerated ||
+                        exportingPDF ||
+                        matches.length === 0
+                      }
+                      className="flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 shadow-md"
+                      style={{
+                        backgroundColor: "#10B981",
+                        color: "#F5FBEF",
+                      }}
+                      title="Download bracket sebagai PDF"
+                    >
+                      {exportingPDF ? (
+                        <>
+                          <RefreshCw size={16} className="animate-spin" />
+                          <span className="hidden sm:inline">
+                            Generating PDF...
+                          </span>
+                          <span className="sm:hidden">⏳</span>
+                        </>
+                      ) : (
+                        <>
+                          <Download size={16} />
+                          <span className="hidden sm:inline">
+                            Download PDF
+                          </span>
+                          <span className="sm:hidden">PDF</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Competition details */}
@@ -1482,1099 +1643,1149 @@ const generateLeaderboard = () => {
         </div>
       </div>
 
-      {/* PEMULA Layout */}
-      {bracketGenerated && matches.length > 0 ? (
-        <div className="p-6">
-          <div
-            className="flex flex-col items-center gap-8 mx-auto"
-            style={{ maxWidth: "1600px" }}
-          >
-            {/* CENTER: Bracket Container */}
-            <div className="w-full">
-              {/* Header Sederhana - Tanpa Border */}
-              <div className="mb-4">
-                {/* Header 3 Kolom - Compact */}
-                <div className="flex items-start justify-between gap-4 mb-3">
-                  {/* KOLOM KIRI - Logo PBTI */}
-                  <div className="flex-shrink-0 w-20">
-                    <img
-                      src={taekwondo}
-                      alt="PBTI Logo"
-                      className="h-16 w-auto object-contain"
-                    />
-                  </div>
-
-                  {/* KOLOM TENGAH - Info Kejuaraan */}
-                  <div className="flex-1 text-center px-3">
-                    <h2
-                      className="text-xl font-bold mb-1"
-                      style={{ color: "#990D35" }}
-                    >
-                      {kelasData.kompetisi.nama_event}
-                    </h2>
-
-                    <p
-                      className="text-base font-semibold mb-1"
-                      style={{ color: "#050505" }}
-                    >
-                      {kelasData.kelompok?.nama_kelompok} {displayGender}{" "}
-                      {kelasData.kelas_berat?.nama_kelas ||
-                        kelasData.poomsae?.nama_kelas}
-                    </p>
-
-                    <input
-                      type="date"
-                      id="tournament-date-display"
-                      value={tanggalPertandingan || ""}
-                      onChange={(e) => setTanggalPertandingan(e.target.value)}
-                      className="text-sm px-2 py-1 rounded border text-center mb-1"
-                      style={{ borderColor: "#990D35", color: "#050505" }}
-                    />
-
-                    <p
-                      className="text-sm mb-1"
-                      style={{ color: "#050505", opacity: 0.7 }}
-                    >
-                      {kelasData.kompetisi.lokasi}
-                    </p>
-
-                    <p
-                      className="text-sm font-medium"
-                      style={{ color: "#990D35" }}
-                    >
-                      {approvedParticipants.length} Kompetitor
-                    </p>
-                  </div>
-
-                  {/* KOLOM KANAN - Logo Event */}
-                  <div className="flex-shrink-0 w-20">
-                    <img
-                      src={sriwijaya}
-                      alt="Event Logo"
-                      className="h-16 w-auto object-contain"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* ============================================
-            🆕 RENDER BRACKET dengan ADDITIONAL MATCH
-            ============================================ */}
+      {/* Main Content */}
+      {viewMode === "list"
+        ? renderListView()
+        : bracketGenerated && matches.length > 0
+        ? // PEMULA Layout
+          // ... (rest of the bracket rendering logic)
+          // The following is the original bracket rendering logic
+          (
+            <div className="p-6">
               <div
-                ref={bracketRef}
-                className="tournament-layout bg-white p-6 rounded-lg"
+                className="flex flex-col items-center gap-8 mx-auto"
+                style={{ maxWidth: "1600px" }}
               >
-                {(() => {
-                  const round1Matches = matches.filter((m) => m.ronde === 1);
-                  const round2Matches = matches.filter((m) => m.ronde === 2);
-                  const hasAdditionalMatch = round2Matches.length > 0;
-                  const additionalMatch = hasAdditionalMatch
-                    ? round2Matches[0]
-                    : null;
-
-                  const CARD_HEIGHT = 180;
-                  const CARD_WIDTH = 320;
-                  const COLUMN_GAP = 120;
-
-                  // 🆕 SMART COLUMN BALANCING LOGIC
-                  const MIN_MATCHES_PER_COL = 5;
-                  const MAX_MATCHES_PER_COL = 5;
-
-                  let columns: Match[][] = [];
-                  let byeMatch: Match | null = null;
-                  let lastNormalFightMatch: Match | null = null;
-                  let lastNormalFightIndex = -1;
-                  let byeMatchIndex = -1;
-
-                  let lastFightColumnIndex = -1;
-                  let byeColumnIndex = -1;
-                  let lastFightColumn = -1;
-                  let byeColumn = -1;
-
-                  if (hasAdditionalMatch) {
-                    // ═══════════════════════════════════════════════════════════
-                    // SCENARIO GANJIL - Ada Additional Match
-                    // ═══════════════════════════════════════════════════════════
-
-                    // 🎯 STEP 1: Find BYE match & Last Fight BEFORE any splitting
-                    byeMatch =
-                      round1Matches.find((m) => m.peserta_a && !m.peserta_b) ||
-                      null;
-
-                    const byeMatchGlobalIndex = byeMatch
-                      ? round1Matches.findIndex(
-                          (m) => m.id_match === byeMatch!.id_match
-                        )
-                      : -1;
-
-                    // Last normal fight = match TEPAT SEBELUM BYE
-                    const lastNormalFightGlobalIndex =
-                      byeMatchGlobalIndex > 0 ? byeMatchGlobalIndex - 1 : -1;
-
-                    lastNormalFightMatch =
-                      lastNormalFightGlobalIndex >= 0
-                        ? round1Matches[lastNormalFightGlobalIndex]
-                        : null;
-
-                    console.log(
-                      "🔍 BYE Match Index (global):",
-                      byeMatchGlobalIndex
-                    );
-                    console.log(
-                      "🔍 Last Fight Index (global):",
-                      lastNormalFightGlobalIndex
-                    );
-                    console.log(
-                      "🔍 Last Fight Nomor Partai:",
-                      lastNormalFightMatch?.nomor_partai
-                    );
-
-                    // 🎯 STEP 2: Get NORMAL matches (exclude Last Fight & BYE)
-                    const normalMatches = round1Matches.filter(
-                      (m, idx) =>
-                        idx !== lastNormalFightGlobalIndex &&
-                        idx !== byeMatchGlobalIndex
-                    );
-
-                    console.log(
-                      `📊 Normal matches (excluding Last Fight & BYE): ${normalMatches.length}`
-                    );
-
-                    // 🎯 STEP 3: Calculate balanced split for NORMAL matches only
-                    const numColumns = Math.max(
-                      2,
-                      Math.ceil(normalMatches.length / MAX_MATCHES_PER_COL)
-                    );
-                    const matchesPerCol = Math.ceil(
-                      normalMatches.length / numColumns
-                    );
-
-                    console.log(
-                      `📊 Split Strategy: ${normalMatches.length} normal matches → ${numColumns} columns (${matchesPerCol} matches/col)`
-                    );
-
-                    // 🎯 STEP 4: Build columns from NORMAL matches
-                    for (
-                      let i = 0;
-                      i < normalMatches.length;
-                      i += matchesPerCol
-                    ) {
-                      columns.push(normalMatches.slice(i, i + matchesPerCol));
-                    }
-
-                    // 🎯 STEP 5: FORCE Last Fight & BYE to LAST column
-                    if (lastNormalFightMatch && byeMatch) {
-                      // ✅ PERBAIKAN: Pastikan columns tidak kosong
-                      if (columns.length === 0) {
-                        // Jika belum ada column sama sekali, buat column baru
-                        columns.push([lastNormalFightMatch, byeMatch]);
-                        lastFightColumn = 0;
-                        lastFightColumnIndex = 0;
-                        byeColumn = 0;
-                        byeColumnIndex = 1;
-                      } else {
-                        // Jika sudah ada columns, append ke column terakhir
-                        const lastColumnIndex = columns.length - 1;
-
-                        // ✅ SAFETY CHECK: Pastikan column terakhir adalah array
-                        if (!Array.isArray(columns[lastColumnIndex])) {
-                          columns[lastColumnIndex] = [];
-                        }
-
-                        columns[lastColumnIndex].push(lastNormalFightMatch);
-                        columns[lastColumnIndex].push(byeMatch);
-
-                        // Calculate indices within that column
-                        lastFightColumn = lastColumnIndex;
-                        lastFightColumnIndex =
-                          columns[lastColumnIndex].length - 2; // Second to last
-
-                        byeColumn = lastColumnIndex;
-                        byeColumnIndex = columns[lastColumnIndex].length - 1; // Last position
-                      }
-
-                      console.log("✅ FORCED Last Fight & BYE to same column!");
-                      console.log("   📍 Column:", lastFightColumn);
-                      console.log(
-                        "   📍 Last Fight Index:",
-                        lastFightColumnIndex
-                      );
-                      console.log("   📍 BYE Index:", byeColumnIndex);
-                      console.log(
-                        "   📦 Column size:",
-                        columns[lastFightColumn]?.length || 0,
-                        "matches"
-                      );
-                    }
-                  } else {
-                    // ═══════════════════════════════════════════════════════════
-                    // SCENARIO GENAP - No Additional Match
-                    // ═══════════════════════════════════════════════════════════
-                    console.log(
-                      "ℹ️ No Additional Match - Using balanced split"
-                    );
-
-                    const numColumns = Math.max(
-                      2,
-                      Math.ceil(round1Matches.length / MAX_MATCHES_PER_COL)
-                    );
-                    const matchesPerCol = Math.ceil(
-                      round1Matches.length / numColumns
-                    );
-
-                    console.log(
-                      `📊 Balanced Split: ${round1Matches.length} matches → ${numColumns} columns (${matchesPerCol} matches/col)`
-                    );
-
-                    for (
-                      let i = 0;
-                      i < round1Matches.length;
-                      i += matchesPerCol
-                    ) {
-                      columns.push(round1Matches.slice(i, i + matchesPerCol));
-                    }
-                  }
-
-                  console.log(
-                    "📦 Final Columns:",
-                    columns.map((col) => col.length)
-                  );
-
-                  // ═══════════════════════════════════════════════════════════
-                  // CONNECTOR CALCULATIONS
-                  // ═══════════════════════════════════════════════════════════
-                  const OFFSET_CONNECTOR = 140;
-
-                  const lastFightY =
-                    lastFightColumnIndex >= 0
-                      ? lastFightColumnIndex * CARD_HEIGHT + OFFSET_CONNECTOR
-                      : OFFSET_CONNECTOR;
-
-                  const byeMatchY =
-                    byeColumnIndex >= 0
-                      ? byeColumnIndex * CARD_HEIGHT + OFFSET_CONNECTOR
-                      : OFFSET_CONNECTOR;
-
-                  const ADDITIONAL_CARD_OFFSET = -70;
-                  const additionalMatchY = (lastFightY + byeMatchY) / 2;
-
-                  console.log("📏 Last Fight Y:", lastFightY);
-                  console.log("📏 BYE Y:", byeMatchY);
-                  console.log("📏 Additional Y:", additionalMatchY);
-
-                  // ═══════════════════════════════════════════════════════════
-                  // RENDER BRACKET
-                  // ═══════════════════════════════════════════════════════════
-                  return (
-                    <div
-                      style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: "40px",
-                      }}
-                    >
-                      <div
-                        style={{
-                          position: "relative",
-                          display: "flex",
-                          gap: `${COLUMN_GAP}px`,
-                          alignItems: "flex-start",
-                        }}
-                      >
-                        {/* ═══════════════════════════════════════════════════════════
-            ROUND 1 MATCHES GRID
-            ═══════════════════════════════════════════════════════════ */}
-                        <div
-                          className="grid gap-6"
-                          style={{
-                            gridTemplateColumns: `repeat(${columns.length}, ${CARD_WIDTH}px)`,
-                            columnGap: "24px",
-                          }}
-                        >
-                          {columns.map((columnMatches, colIndex) => (
-                            <div key={colIndex} className="space-y-4">
-                              {columnMatches.map((match, matchIndex) => {
-                                const isByeMatch =
-                                  byeMatch &&
-                                  match.id_match === byeMatch.id_match;
-                                const isLastFightMatch =
-                                  lastNormalFightMatch &&
-                                  match.id_match ===
-                                    lastNormalFightMatch.id_match;
-
-                                return (
-                                  <div
-                                    key={match.id_match}
-                                    style={{ position: "relative" }}
-                                    id={`match-${match.id_match}`}
-                                  >
-                                    {/* MATCH CARD (sama seperti sebelumnya) */}
-                                    <div
-                                      className="bg-white rounded-lg shadow-md border overflow-hidden"
-                                      style={{
-                                        borderColor: "#DC143C",
-                                        borderWidth: "1px",
-                                        position: "relative",
-                                        zIndex: 10,
-                                        background: "white",
-                                      }}
-                                    >
-                                      {/* Header */}
-                                      <div
-                                        className="px-3 py-2 border-b flex items-center justify-between"
-                                        style={{
-                                          backgroundColor: "#FFF5F5",
-                                          borderColor: "#DC143C",
-                                        }}
-                                      >
-                                        <div className="flex items-center gap-2 flex-1">
-                                          {match.nomor_partai && (
-                                            <span
-                                              className="text-xs px-2 py-1 rounded-full font-bold"
-                                              style={{
-                                                backgroundColor: "#990D35",
-                                                color: "white",
-                                              }}
-                                            >
-                                              No.Partai: {match.nomor_partai}
-                                            </span>
-                                          )}
-                                        </div>
-
-                                        <div className="flex items-center gap-2">
-                                          <button
-                                            onClick={() =>
-                                              setEditingMatch(match)
-                                            }
-                                            className="p-1 rounded hover:bg-black/5 transition-all"
-                                            disabled={viewOnly}
-                                            style={{
-                                              opacity: viewOnly ? 0.3 : 1,
-                                              cursor: viewOnly
-                                                ? "not-allowed"
-                                                : "pointer",
-                                            }}
-                                            title="Edit match scores and details"
-                                          >
-                                            <FilePenLine
-                                              size={14}
-                                              style={{ color: "#3B82F6" }}
-                                            />
-                                          </button>
-
-                                          <button
-                                            onClick={() => {
-                                              const hasScores =
-                                                match.skor_a > 0 ||
-                                                match.skor_b > 0;
-                                              if (hasScores) {
-                                                showNotification(
-                                                  "warning",
-                                                  "Match Sudah Dimulai",
-                                                  "Tidak dapat mengubah peserta karena match sudah memiliki skor.",
-                                                  () => setShowModal(false)
-                                                );
-                                                return;
-                                              }
-                                              setEditAthleteModal({
-                                                show: true,
-                                                match: match,
-                                                slot: null,
-                                              });
-                                            }}
-                                            className="p-1 rounded hover:bg-black/5 transition-all"
-                                            disabled={
-                                              viewOnly ||
-                                              match.skor_a > 0 ||
-                                              match.skor_b > 0
-                                            }
-                                            style={{
-                                              opacity:
-                                                viewOnly ||
-                                                match.skor_a > 0 ||
-                                                match.skor_b > 0
-                                                  ? 0.3
-                                                  : 1,
-                                              cursor:
-                                                viewOnly ||
-                                                match.skor_a > 0 ||
-                                                match.skor_b > 0
-                                                  ? "not-allowed"
-                                                  : "pointer",
-                                            }}
-                                            title={
-                                              match.skor_a > 0 ||
-                                              match.skor_b > 0
-                                                ? "Match sudah dimulai - tidak dapat diubah"
-                                                : "Edit athletes"
-                                            }
-                                          >
-                                            <Edit3
-                                              size={14}
-                                              style={{ color: "#DC143C" }}
-                                            />
-                                          </button>
-                                        </div>
-                                      </div>
-
-                                      {/* Participants */}
-                                      <div className="flex flex-col">
-                                        <div
-                                          className="px-3 py-3 border-b flex items-start justify-between gap-2"
-                                          style={{
-                                            borderColor: "#F0F0F0",
-                                            minHeight: "70px",
-                                          }}
-                                        >
-                                          {match.peserta_a ? (
-                                            <>
-                                              <div className="flex-1 min-w-0">
-                                                <p
-                                                  className="font-bold text-lg leading-tight mb-1"
-                                                  style={{
-                                                    color: "#000",
-                                                    wordBreak: "break-word",
-                                                  }}
-                                                >
-                                                  {getParticipantName(
-                                                    match.peserta_a
-                                                  )}
-                                                </p>
-                                                <p
-                                                  className="text-base leading-tight"
-                                                  style={{
-                                                    color: "#DC143C",
-                                                    opacity: 0.7,
-                                                  }}
-                                                >
-                                                  {getDojoName(match.peserta_a)}
-                                                </p>
-                                              </div>
-                                              {(match.skor_a > 0 ||
-                                                match.skor_b > 0) && (
-                                                <div
-                                                  className="w-8 h-8 rounded flex items-center justify-center font-bold text-sm flex-shrink-0"
-                                                  style={{
-                                                    backgroundColor:
-                                                      match.skor_a >
-                                                      match.skor_b
-                                                        ? "#22c55e"
-                                                        : "#F0F0F0",
-                                                    color:
-                                                      match.skor_a >
-                                                      match.skor_b
-                                                        ? "white"
-                                                        : "#6b7280",
-                                                  }}
-                                                >
-                                                  {match.skor_a}
-                                                </div>
-                                              )}
-                                            </>
-                                          ) : (
-                                            <div className="w-full text-center">
-                                              <span className="text-sm text-gray-400">
-                                                TBD
-                                              </span>
-                                            </div>
-                                          )}
-                                        </div>
-
-                                        <div
-                                          className="px-3 py-3 flex items-center justify-center"
-                                          style={{
-                                            minHeight: "70px",
-                                            backgroundColor: match.peserta_b
-                                              ? "transparent"
-                                              : "#FFFBEA",
-                                          }}
-                                        >
-                                          {match.peserta_b ? (
-                                            <div className="w-full flex items-start justify-between gap-2">
-                                              <div className="flex-1 min-w-0">
-                                                <p
-                                                  className="font-bold text-lg leading-tight mb-1"
-                                                  style={{
-                                                    color: "#000",
-                                                    wordBreak: "break-word",
-                                                  }}
-                                                >
-                                                  {getParticipantName(
-                                                    match.peserta_b
-                                                  )}
-                                                </p>
-                                                <p
-                                                  className="text-base leading-tight"
-                                                  style={{
-                                                    color: "#EF4444",
-                                                    opacity: 0.7,
-                                                  }}
-                                                >
-                                                  {getDojoName(match.peserta_b)}
-                                                </p>
-                                              </div>
-                                              {(match.skor_a > 0 ||
-                                                match.skor_b > 0) && (
-                                                <div
-                                                  className="w-8 h-8 rounded flex items-center justify-center font-bold text-sm flex-shrink-0"
-                                                  style={{
-                                                    backgroundColor:
-                                                      match.skor_b >
-                                                      match.skor_a
-                                                        ? "#22c55e"
-                                                        : "#F0F0F0",
-                                                    color:
-                                                      match.skor_b >
-                                                      match.skor_a
-                                                        ? "white"
-                                                        : "#6b7280",
-                                                  }}
-                                                >
-                                                  {match.skor_b}
-                                                </div>
-                                              )}
-                                            </div>
-                                          ) : (
-                                            <span
-                                              className="text-xs font-bold px-3 py-1 rounded"
-                                              style={{
-                                                backgroundColor: "#DC143C",
-                                                color: "white",
-                                              }}
-                                            >
-                                              BYE
-                                            </span>
-                                          )}
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          ))}
-                        </div>
-
-                        {/* ═══════════════════════════════════════════════════════════
-            ADDITIONAL MATCH (jika ada)
-            ═══════════════════════════════════════════════════════════ */}
-                        {hasAdditionalMatch && additionalMatch && (
-                          <div style={{ position: "relative" }}>
-                            {/* SVG Connectors */}
-                            <svg
-                              style={{
-                                position: "absolute",
-                                left: `-${COLUMN_GAP}px`,
-                                top: 0,
-                                width: `${COLUMN_GAP}px`,
-                                height: "800px",
-                                pointerEvents: "none",
-                                zIndex: 5,
-                                overflow: "visible",
-                              }}
-                            >
-                              {/* Line dari Last Fight Match */}
-                              {lastNormalFightMatch && (
-                                <g>
-                                  <line
-                                    x1="0"
-                                    y1={lastFightY}
-                                    x2={COLUMN_GAP / 2}
-                                    y2={lastFightY}
-                                    stroke="#DC143C"
-                                    strokeWidth="3"
-                                  />
-                                  <line
-                                    x1={COLUMN_GAP / 2}
-                                    y1={lastFightY}
-                                    x2={COLUMN_GAP / 2}
-                                    y2={additionalMatchY}
-                                    stroke="#DC143C"
-                                    strokeWidth="3"
-                                  />
-                                  <line
-                                    x1={COLUMN_GAP / 2}
-                                    y1={additionalMatchY}
-                                    x2={COLUMN_GAP}
-                                    y2={additionalMatchY}
-                                    stroke="#DC143C"
-                                    strokeWidth="3"
-                                  />
-                                </g>
-                              )}
-
-                              {/* Line dari BYE Match */}
-                              {byeMatch && (
-                                <g>
-                                  <line
-                                    x1="0"
-                                    y1={byeMatchY}
-                                    x2={COLUMN_GAP / 2}
-                                    y2={byeMatchY}
-                                    stroke="#DC143C"
-                                    strokeWidth="3"
-                                  />
-                                  <line
-                                    x1={COLUMN_GAP / 2}
-                                    y1={byeMatchY}
-                                    x2={COLUMN_GAP / 2}
-                                    y2={additionalMatchY}
-                                    stroke="#DC143C"
-                                    strokeWidth="3"
-                                  />
-                                </g>
-                              )}
-                            </svg>
-
-                            {/* Additional Match Card - (code sama seperti sebelumnya) */}
-                            <div
-                              className="bg-white rounded-lg shadow-md border overflow-hidden"
-                              style={{
-                                borderColor: "#FFFBEA",
-                                borderWidth: "3px",
-                                position: "relative",
-                                zIndex: 10,
-                                width: `${CARD_WIDTH}px`,
-                                top: `${
-                                  additionalMatchY + ADDITIONAL_CARD_OFFSET
-                                }px`,
-                              }}
-                            >
-                              <div
-                                className="px-3 py-2 border-b flex items-center justify-between"
-                                style={{
-                                  backgroundColor: "#FFFBEA",
-                                  borderColor: "#DC143C",
-                                }}
-                              >
-                                <div className="flex items-center gap-2 flex-1">
-                                  {additionalMatch.nomor_partai && (
-                                    <span
-                                      className="text-xs px-2 py-1 rounded-full font-bold"
-                                      style={{
-                                        backgroundColor: "#DC143C",
-                                        color: "white",
-                                      }}
-                                    >
-                                      No.Partai: {additionalMatch.nomor_partai}
-                                    </span>
-                                  )}
-                                </div>
-
-                                <div className="flex items-center gap-2">
-                                  {/* Edit match scores/details button */}
-                                  <button
-                                    onClick={() =>
-                                      setEditingMatch(additionalMatch)
-                                    }
-                                    className="p-1 rounded hover:bg-black/5 transition-all"
-                                    disabled={viewOnly}
-                                    style={{
-                                      opacity: viewOnly ? 0.3 : 1,
-                                      cursor: viewOnly
-                                        ? "not-allowed"
-                                        : "pointer",
-                                    }}
-                                    title="Edit match scores and details"
-                                  >
-                                    <FilePenLine
-                                      size={14}
-                                      style={{ color: "#3B82F6" }}
-                                    />
-                                  </button>
-
-                                  {/* Edit athletes button */}
-                                  <button
-                                    onClick={() => {
-                                      const hasScores =
-                                        additionalMatch.skor_a > 0 ||
-                                        additionalMatch.skor_b > 0;
-                                      if (hasScores) {
-                                        showNotification(
-                                          "warning",
-                                          "Match Sudah Dimulai",
-                                          "Tidak dapat mengubah peserta karena match sudah memiliki skor.",
-                                          () => setShowModal(false)
-                                        );
-                                        return;
-                                      }
-                                      setEditAthleteModal({
-                                        show: true,
-                                        match: additionalMatch,
-                                        slot: null,
-                                      });
-                                    }}
-                                    className="p-1 rounded hover:bg-black/5 transition-all"
-                                    disabled={
-                                      viewOnly ||
-                                      additionalMatch.skor_a > 0 ||
-                                      additionalMatch.skor_b > 0
-                                    }
-                                    style={{
-                                      opacity:
-                                        viewOnly ||
-                                        additionalMatch.skor_a > 0 ||
-                                        additionalMatch.skor_b > 0
-                                          ? 0.3
-                                          : 1,
-                                      cursor:
-                                        viewOnly ||
-                                        additionalMatch.skor_a > 0 ||
-                                        additionalMatch.skor_b > 0
-                                          ? "not-allowed"
-                                          : "pointer",
-                                    }}
-                                    title={
-                                      additionalMatch.skor_a > 0 ||
-                                      additionalMatch.skor_b > 0
-                                        ? "Match sudah dimulai - tidak dapat diubah"
-                                        : "Edit athletes"
-                                    }
-                                  >
-                                    <Edit3
-                                      size={14}
-                                      style={{ color: "#DC143C" }}
-                                    />
-                                  </button>
-                                </div>
-                              </div>
-
-                              <div className="flex flex-col">
-                                <div
-                                  className="px-3 py-3 border-b flex items-start justify-between gap-2"
-                                  style={{
-                                    borderColor: "#F0F0F0",
-                                    minHeight: "70px",
-                                  }}
-                                >
-                                  {additionalMatch.peserta_a ? (
-                                    <>
-                                      <div className="flex-1 min-w-0">
-                                        <p
-                                          className="font-bold text-lg leading-tight mb-1"
-                                          style={{
-                                            color: "#000",
-                                            wordBreak: "break-word",
-                                          }}
-                                        >
-                                          {getParticipantName(
-                                            additionalMatch.peserta_a
-                                          )}
-                                        </p>
-                                        <p
-                                          className="text-base leading-tight"
-                                          style={{
-                                            color: "#DC143C",
-                                            opacity: 0.7,
-                                          }}
-                                        >
-                                          {getDojoName(
-                                            additionalMatch.peserta_a
-                                          )}
-                                        </p>
-                                      </div>
-                                      {(additionalMatch.skor_a > 0 ||
-                                        additionalMatch.skor_b > 0) && (
-                                        <div
-                                          className="w-8 h-8 rounded flex items-center justify-center font-bold text-sm flex-shrink-0"
-                                          style={{
-                                            backgroundColor:
-                                              additionalMatch.skor_a >
-                                              additionalMatch.skor_b
-                                                ? "#22c55e"
-                                                : "#F0F0F0",
-                                            color:
-                                              additionalMatch.skor_a >
-                                              additionalMatch.skor_b
-                                                ? "white"
-                                                : "#6b7280",
-                                          }}
-                                        >
-                                          {additionalMatch.skor_a}
-                                        </div>
-                                      )}
-                                    </>
-                                  ) : (
-                                    <div className="w-full text-center">
-                                      <span
-                                        className="text-xs font-bold px-3 py-1 rounded"
-                                        style={{
-                                          backgroundColor: "#DC143C",
-                                          color: "white",
-                                        }}
-                                      >
-                                        ⏳ Waiting for Match{" "}
-                                        {lastNormalFightMatch?.nomor_partai ||
-                                          "TBD"}
-                                      </span>
-                                    </div>
-                                  )}
-                                </div>
-
-                                <div
-                                  className="px-3 py-3 flex items-center justify-center"
-                                  style={{
-                                    minHeight: "70px",
-                                    backgroundColor: "#FFFBEA",
-                                  }}
-                                >
-                                  {additionalMatch.peserta_b ? (
-                                    <div className="w-full flex items-start justify-between gap-2">
-                                      <div className="flex-1 min-w-0">
-                                        <p
-                                          className="font-bold text-lg leading-tight mb-1"
-                                          style={{
-                                            color: "#000",
-                                            wordBreak: "break-word",
-                                          }}
-                                        >
-                                          {getParticipantName(
-                                            additionalMatch.peserta_b
-                                          )}
-                                        </p>
-                                        <p
-                                          className="text-base leading-tight"
-                                          style={{
-                                            color: "#EF4444",
-                                            opacity: 0.7,
-                                          }}
-                                        >
-                                          {getDojoName(
-                                            additionalMatch.peserta_b
-                                          )}
-                                        </p>
-                                      </div>
-                                      {(additionalMatch.skor_a > 0 ||
-                                        additionalMatch.skor_b > 0) && (
-                                        <div
-                                          className="w-8 h-8 rounded flex items-center justify-center font-bold text-sm flex-shrink-0"
-                                          style={{
-                                            backgroundColor:
-                                              additionalMatch.skor_b >
-                                              additionalMatch.skor_a
-                                                ? "#22c55e"
-                                                : "#F0F0F0",
-                                            color:
-                                              additionalMatch.skor_b >
-                                              additionalMatch.skor_a
-                                                ? "white"
-                                                : "#6b7280",
-                                          }}
-                                        >
-                                          {additionalMatch.skor_b}
-                                        </div>
-                                      )}
-                                    </div>
-                                  ) : (
-                                    <span className="text-sm text-gray-400">
-                                      TBD
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        )}
+                {/* CENTER: Bracket Container */}
+                <div className="w-full">
+                  {/* Header Sederhana - Tanpa Border */}
+                  <div className="mb-4">
+                    {/* Header 3 Kolom - Compact */}
+                    <div className="flex items-start justify-between gap-4 mb-3">
+                      {/* KOLOM KIRI - Logo PBTI */}
+                      <div className="flex-shrink-0 w-20">
+                        <img
+                          src={taekwondo}
+                          alt="PBTI Logo"
+                          className="h-16 w-auto object-contain"
+                        />
                       </div>
 
-                      <div className="w-full">
+                      {/* KOLOM TENGAH - Info Kejuaraan */}
+                      <div className="flex-1 text-center px-3">
+                        <h2
+                          className="text-xl font-bold mb-1"
+                          style={{ color: "#990D35" }}
+                        >
+                          {kelasData.kompetisi.nama_event}
+                        </h2>
+
+                        <p
+                          className="text-base font-semibold mb-1"
+                          style={{ color: "#050505" }}
+                        >
+                          {kelasData.kelompok?.nama_kelompok} {displayGender}{" "}
+                          {kelasData.kelas_berat?.nama_kelas ||
+                            kelasData.poomsae?.nama_kelas}
+                        </p>
+
+                        <input
+                          type="date"
+                          id="tournament-date-display"
+                          value={tanggalPertandingan || ""}
+                          onChange={(e) =>
+                            setTanggalPertandingan(e.target.value)
+                          }
+                          className="text-sm px-2 py-1 rounded border text-center mb-1"
+                          style={{
+                            borderColor: "#990D35",
+                            color: "#050505",
+                          }}
+                        />
+
+                        <p
+                          className="text-sm mb-1"
+                          style={{ color: "#050505", opacity: 0.7 }}
+                        >
+                          {kelasData.kompetisi.lokasi}
+                        </p>
+
+                        <p
+                          className="text-sm font-medium"
+                          style={{ color: "#990D35" }}
+                        >
+                          {approvedParticipants.length} Kompetitor
+                        </p>
+                      </div>
+
+                      {/* KOLOM KANAN - Logo Event */}
+                      <div className="flex-shrink-0 w-20">
+                        <img
+                          src={sriwijaya}
+                          alt="Event Logo"
+                          className="h-16 w-auto object-contain"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* ============================================
+            🆕 RENDER BRACKET dengan ADDITIONAL MATCH
+            ============================================ */}
+                  <div
+                    ref={bracketRef}
+                    className="tournament-layout bg-white p-6 rounded-lg"
+                  >
+                    {(() => {
+                      const round1Matches = matches.filter(
+                        (m) => m.ronde === 1
+                      );
+                      const round2Matches = matches.filter(
+                        (m) => m.ronde === 2
+                      );
+                      const hasAdditionalMatch = round2Matches.length > 0;
+                      const additionalMatch = hasAdditionalMatch
+                        ? round2Matches[0]
+                        : null;
+
+                      const CARD_HEIGHT = 180;
+                      const CARD_WIDTH = 320;
+                      const COLUMN_GAP = 120;
+
+                      // 🆕 SMART COLUMN BALANCING LOGIC
+                      const MIN_MATCHES_PER_COL = 5;
+                      const MAX_MATCHES_PER_COL = 5;
+
+                      let columns: Match[][] = [];
+                      let byeMatch: Match | null = null;
+                      let lastNormalFightMatch: Match | null = null;
+                      let lastNormalFightIndex = -1;
+                      let byeMatchIndex = -1;
+
+                      let lastFightColumnIndex = -1;
+                      let byeColumnIndex = -1;
+                      let lastFightColumn = -1;
+                      let byeColumn = -1;
+
+                      if (hasAdditionalMatch) {
+                        // ═══════════════════════════════════════════════════════════
+                        // SCENARIO GANJIL - Ada Additional Match
+                        // ═══════════════════════════════════════════════════════════
+
+                        // 🎯 STEP 1: Find BYE match & Last Fight BEFORE any splitting
+                        byeMatch =
+                          round1Matches.find(
+                            (m) => m.peserta_a && !m.peserta_b
+                          ) || null;
+
+                        const byeMatchGlobalIndex = byeMatch
+                          ? round1Matches.findIndex(
+                              (m) => m.id_match === byeMatch!.id_match
+                            )
+                          : -1;
+
+                        // Last normal fight = match TEPAT SEBELUM BYE
+                        const lastNormalFightGlobalIndex =
+                          byeMatchGlobalIndex > 0 ? byeMatchGlobalIndex - 1 : -1;
+
+                        lastNormalFightMatch =
+                          lastNormalFightGlobalIndex >= 0
+                            ? round1Matches[lastNormalFightGlobalIndex]
+                            : null;
+
+                        console.log(
+                          "🔍 BYE Match Index (global):",
+                          byeMatchGlobalIndex
+                        );
+                        console.log(
+                          "🔍 Last Fight Index (global):",
+                          lastNormalFightGlobalIndex
+                        );
+                        console.log(
+                          "🔍 Last Fight Nomor Partai:",
+                          lastNormalFightMatch?.nomor_partai
+                        );
+
+                        // 🎯 STEP 2: Get NORMAL matches (exclude Last Fight & BYE)
+                        const normalMatches = round1Matches.filter(
+                          (m, idx) =>
+                            idx !== lastNormalFightGlobalIndex &&
+                            idx !== byeMatchGlobalIndex
+                        );
+
+                        console.log(
+                          `📊 Normal matches (excluding Last Fight & BYE): ${normalMatches.length}`
+                        );
+
+                        // 🎯 STEP 3: Calculate balanced split for NORMAL matches only
+                        const numColumns = Math.max(
+                          2,
+                          Math.ceil(normalMatches.length / MAX_MATCHES_PER_COL)
+                        );
+                        const matchesPerCol = Math.ceil(
+                          normalMatches.length / numColumns
+                        );
+
+                        console.log(
+                          `📊 Split Strategy: ${normalMatches.length} normal matches → ${numColumns} columns (${matchesPerCol} matches/col)`
+                        );
+
+                        // 🎯 STEP 4: Build columns from NORMAL matches
+                        for (
+                          let i = 0;
+                          i < normalMatches.length;
+                          i += matchesPerCol
+                        ) {
+                          columns.push(
+                            normalMatches.slice(i, i + matchesPerCol)
+                          );
+                        }
+
+                        // 🎯 STEP 5: FORCE Last Fight & BYE to LAST column
+                        if (lastNormalFightMatch && byeMatch) {
+                          // ✅ PERBAIKAN: Pastikan columns tidak kosong
+                          if (columns.length === 0) {
+                            // Jika belum ada column sama sekali, buat column baru
+                            columns.push([lastNormalFightMatch, byeMatch]);
+                            lastFightColumn = 0;
+                            lastFightColumnIndex = 0;
+                            byeColumn = 0;
+                            byeColumnIndex = 1;
+                          } else {
+                            // Jika sudah ada columns, append ke column terakhir
+                            const lastColumnIndex = columns.length - 1;
+
+                            // ✅ SAFETY CHECK: Pastikan column terakhir adalah array
+                            if (!Array.isArray(columns[lastColumnIndex])) {
+                              columns[lastColumnIndex] = [];
+                            }
+
+                            columns[lastColumnIndex].push(lastNormalFightMatch);
+                            columns[lastColumnIndex].push(byeMatch);
+
+                            // Calculate indices within that column
+                            lastFightColumn = lastColumnIndex;
+                            lastFightColumnIndex =
+                              columns[lastColumnIndex].length - 2; // Second to last
+
+                            byeColumn = lastColumnIndex;
+                            byeColumnIndex =
+                              columns[lastColumnIndex].length - 1; // Last position
+                          }
+
+                          console.log(
+                            "✅ FORCED Last Fight & BYE to same column!"
+                          );
+                          console.log("   📍 Column:", lastFightColumn);
+                          console.log(
+                            "   📍 Last Fight Index:",
+                            lastFightColumnIndex
+                          );
+                          console.log("   📍 BYE Index:", byeColumnIndex);
+                          console.log(
+                            "   📦 Column size:",
+                            columns[lastFightColumn]?.length || 0,
+                            "matches"
+                          );
+                        }
+                      } else {
+                        // ═══════════════════════════════════════════════════════════
+                        // SCENARIO GENAP - No Additional Match
+                        // ═══════════════════════════════════════════════════════════
+                        console.log(
+                          "ℹ️ No Additional Match - Using balanced split"
+                        );
+
+                        const numColumns = Math.max(
+                          2,
+                          Math.ceil(round1Matches.length / MAX_MATCHES_PER_COL)
+                        );
+                        const matchesPerCol = Math.ceil(
+                          round1Matches.length / numColumns
+                        );
+
+                        console.log(
+                          `📊 Balanced Split: ${round1Matches.length} matches → ${numColumns} columns (${matchesPerCol} matches/col)`
+                        );
+
+                        for (
+                          let i = 0;
+                          i < round1Matches.length;
+                          i += matchesPerCol
+                        ) {
+                          columns.push(
+                            round1Matches.slice(i, i + matchesPerCol)
+                          );
+                        }
+                      }
+
+                      console.log(
+                        "📦 Final Columns:",
+                        columns.map((col) => col.length)
+                      );
+
+                      // ═══════════════════════════════════════════════════════════
+                      // CONNECTOR CALCULATIONS
+                      // ═══════════════════════════════════════════════════════════
+                      const OFFSET_CONNECTOR = 140;
+
+                      const lastFightY =
+                        lastFightColumnIndex >= 0
+                          ? lastFightColumnIndex * CARD_HEIGHT +
+                            OFFSET_CONNECTOR
+                          : OFFSET_CONNECTOR;
+
+                      const byeMatchY =
+                        byeColumnIndex >= 0
+                          ? byeColumnIndex * CARD_HEIGHT + OFFSET_CONNECTOR
+                          : OFFSET_CONNECTOR;
+
+                      const ADDITIONAL_CARD_OFFSET = -70;
+                      const additionalMatchY = (lastFightY + byeMatchY) / 2;
+
+                      console.log("📏 Last Fight Y:", lastFightY);
+                      console.log("📏 BYE Y:", byeMatchY);
+                      console.log("📏 Additional Y:", additionalMatchY);
+
+                      // ═══════════════════════════════════════════════════════════
+                      // RENDER BRACKET
+                      // ═══════════════════════════════════════════════════════════
+                      return (
                         <div
-                          className="bg-white rounded-lg shadow-md border overflow-hidden"
-                          style={{ borderColor: "#DC143C" }}
+                          style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: "40px",
+                          }}
                         >
                           <div
-                            className="px-4 py-3 border-b"
                             style={{
-                              backgroundColor: "#FFF5F5",
-                              borderColor: "#DC143C",
+                              position: "relative",
+                              display: "flex",
+                              gap: `${COLUMN_GAP}px`,
+                              alignItems: "flex-start",
                             }}
                           >
-                            <div className="flex items-center gap-2 justify-center">
-                              <Trophy size={24} style={{ color: "#DC143C" }} />
-                              <h3
-                                className="text-xl font-bold"
-                                style={{ color: "#DC143C" }}
-                              >
-                                LEADERBOARD
-                              </h3>
-                            </div>
-                          </div>
+                            {/* ═══════════════════════════════════════════════════════════
+            ROUND 1 MATCHES GRID
+            ═══════════════════════════════════════════════════════════ */}
+                            <div
+                              className="grid gap-6"
+                              style={{
+                                gridTemplateColumns: `repeat(${columns.length}, ${CARD_WIDTH}px)`,
+                                columnGap: "24px",
+                              }}
+                            >
+                              {columns.map((columnMatches, colIndex) => (
+                                <div key={colIndex} className="space-y-4">
+                                  {columnMatches.map((match, matchIndex) => {
+                                    const isByeMatch =
+                                      byeMatch &&
+                                      match.id_match === byeMatch.id_match;
+                                    const isLastFightMatch =
+                                      lastNormalFightMatch &&
+                                      match.id_match ===
+                                        lastNormalFightMatch.id_match;
 
-                          <div className="p-4">
-                            {/* GOLD MEDALS */}
-                            {leaderboard && leaderboard.gold.length > 0 && (
-                              <div className="mb-6">
-                                <div className="flex items-center gap-2 mb-3 px-2">
-                                  <h4
-                                    className="font-bold text-base"
-                                    style={{ color: "#000" }}
-                                  >
-                                    GOLD MEDALS ({leaderboard.gold.length})
-                                  </h4>
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-                                  {leaderboard.gold.map((participant, idx) => (
-                                    <div
-                                      key={participant.id}
-                                      className="p-2 rounded border"
-                                      style={{
-                                        backgroundColor: "#FFFBEA",
-                                        borderColor: "#F5B700",
-                                      }}
-                                    >
-                                      <div className="flex items-start gap-2">
-                                        <span
-                                          className="text-xs font-bold flex-shrink-0"
-                                          style={{ color: "#F5B700" }}
+                                    return (
+                                      <div
+                                        key={match.id_match}
+                                        style={{ position: "relative" }}
+                                        id={`match-${match.id_match}`}
+                                      >
+                                        {/* MATCH CARD (sama seperti sebelumnya) */}
+                                        <div
+                                          className="bg-white rounded-lg shadow-md border overflow-hidden"
+                                          style={{
+                                            borderColor: "#DC143C",
+                                            borderWidth: "1px",
+                                            position: "relative",
+                                            zIndex: 10,
+                                            background: "white",
+                                          }}
                                         >
-                                          {idx + 1}.
-                                        </span>
-                                        <div className="flex-1 min-w-0">
-                                          <p
-                                            className="font-bold text-xs leading-tight truncate"
-                                            style={{ color: "#000" }}
-                                            title={participant.name}
-                                          >
-                                            {participant.name}
-                                          </p>
-                                          <p
-                                            className="text-xs leading-tight truncate"
+                                          {/* Header */}
+                                          <div
+                                            className="px-3 py-2 border-b flex items-center justify-between"
                                             style={{
-                                              color: "#DC143C",
-                                              opacity: 0.7,
+                                              backgroundColor: "#FFF5F5",
+                                              borderColor: "#DC143C",
                                             }}
-                                            title={participant.dojo}
                                           >
-                                            {participant.dojo}
-                                          </p>
+                                            <div className="flex items-center gap-2 flex-1">
+                                              {match.nomor_partai && (
+                                                <span
+                                                  className="text-xs px-2 py-1 rounded-full font-bold"
+                                                  style={{
+                                                    backgroundColor: "#990D35",
+                                                    color: "white",
+                                                  }}
+                                                >
+                                                  No.Partai:{" "}
+                                                  {match.nomor_partai}
+                                                </span>
+                                              )}
+                                            </div>
+
+                                            <div className="flex items-center gap-2">
+                                              <button
+                                                onClick={() =>
+                                                  setEditingMatch(match)
+                                                }
+                                                className="p-1 rounded hover:bg-black/5 transition-all"
+                                                disabled={viewOnly}
+                                                style={{
+                                                  opacity: viewOnly ? 0.3 : 1,
+                                                  cursor: viewOnly
+                                                    ? "not-allowed"
+                                                    : "pointer",
+                                                }}
+                                                title="Edit match scores and details"
+                                              >
+                                                <FilePenLine
+                                                  size={14}
+                                                  style={{ color: "#3B82F6" }}
+                                                />
+                                              </button>
+
+                                              <button
+                                                onClick={() => {
+                                                  const hasScores =
+                                                    match.skor_a > 0 ||
+                                                    match.skor_b > 0;
+                                                  if (hasScores) {
+                                                    showNotification(
+                                                      "warning",
+                                                      "Match Sudah Dimulai",
+                                                      "Tidak dapat mengubah peserta karena match sudah memiliki skor.",
+                                                      () => setShowModal(false)
+                                                    );
+                                                    return;
+                                                  }
+                                                  setEditAthleteModal({
+                                                    show: true,
+                                                    match: match,
+                                                    slot: null,
+                                                  });
+                                                }}
+                                                className="p-1 rounded hover:bg-black/5 transition-all"
+                                                disabled={
+                                                  viewOnly ||
+                                                  match.skor_a > 0 ||
+                                                  match.skor_b > 0
+                                                }
+                                                style={{
+                                                  opacity:
+                                                    viewOnly ||
+                                                    match.skor_a > 0 ||
+                                                    match.skor_b > 0
+                                                      ? 0.3
+                                                      : 1,
+                                                  cursor:
+                                                    viewOnly ||
+                                                    match.skor_a > 0 ||
+                                                    match.skor_b > 0
+                                                      ? "not-allowed"
+                                                      : "pointer",
+                                                }}
+                                                title={
+                                                  match.skor_a > 0 ||
+                                                  match.skor_b > 0
+                                                    ? "Match sudah dimulai - tidak dapat diubah"
+                                                    : "Edit athletes"
+                                                }
+                                              >
+                                                <Edit3
+                                                  size={14}
+                                                  style={{ color: "#DC143C" }}
+                                                />
+                                              </button>
+                                            </div>
+                                          </div>
+
+                                          {/* Participants */}
+                                          <div className="flex flex-col">
+                                            <div
+                                              className="px-3 py-3 border-b flex items-start justify-between gap-2"
+                                              style={{
+                                                borderColor: "#F0F0F0",
+                                                minHeight: "70px",
+                                              }}
+                                            >
+                                              {match.peserta_a ? (
+                                                <>
+                                                  <div className="flex-1 min-w-0">
+                                                    <p
+                                                      className="font-bold text-lg leading-tight mb-1"
+                                                      style={{
+                                                        color: "#000",
+                                                        wordBreak: "break-word",
+                                                      }}
+                                                    >
+                                                      {getParticipantName(
+                                                        match.peserta_a
+                                                      )}
+                                                    </p>
+                                                    <p
+                                                      className="text-base leading-tight"
+                                                      style={{
+                                                        color: "#DC143C",
+                                                        opacity: 0.7,
+                                                      }}
+                                                    >
+                                                      {getDojoName(
+                                                        match.peserta_a
+                                                      )}
+                                                    </p>
+                                                  </div>
+                                                  {(match.skor_a > 0 ||
+                                                    match.skor_b > 0) && (
+                                                    <div
+                                                      className="w-8 h-8 rounded flex items-center justify-center font-bold text-sm flex-shrink-0"
+                                                      style={{
+                                                        backgroundColor:
+                                                          match.skor_a >
+                                                          match.skor_b
+                                                            ? "#22c55e"
+                                                            : "#F0F0F0",
+                                                        color:
+                                                          match.skor_a >
+                                                          match.skor_b
+                                                            ? "white"
+                                                            : "#6b7280",
+                                                      }}
+                                                    >
+                                                      {match.skor_a}
+                                                    </div>
+                                                  )}
+                                                </>
+                                              ) : (
+                                                <div className="w-full text-center">
+                                                  <span className="text-sm text-gray-400">
+                                                    TBD
+                                                  </span>
+                                                </div>
+                                              )}
+                                            </div>
+
+                                            <div
+                                              className="px-3 py-3 flex items-center justify-center"
+                                              style={{
+                                                minHeight: "70px",
+                                                backgroundColor: match.peserta_b
+                                                  ? "transparent"
+                                                  : "#FFFBEA",
+                                              }}
+                                            >
+                                              {match.peserta_b ? (
+                                                <div className="w-full flex items-start justify-between gap-2">
+                                                  <div className="flex-1 min-w-0">
+                                                    <p
+                                                      className="font-bold text-lg leading-tight mb-1"
+                                                      style={{
+                                                        color: "#000",
+                                                        wordBreak: "break-word",
+                                                      }}
+                                                    >
+                                                      {getParticipantName(
+                                                        match.peserta_b
+                                                      )}
+                                                    </p>
+                                                    <p
+                                                      className="text-base leading-tight"
+                                                      style={{
+                                                        color: "#EF4444",
+                                                        opacity: 0.7,
+                                                      }}
+                                                    >
+                                                      {getDojoName(
+                                                        match.peserta_b
+                                                      )}
+                                                    </p>
+                                                  </div>
+                                                  {(match.skor_a > 0 ||
+                                                    match.skor_b > 0) && (
+                                                    <div
+                                                      className="w-8 h-8 rounded flex items-center justify-center font-bold text-sm flex-shrink-0"
+                                                      style={{
+                                                        backgroundColor:
+                                                          match.skor_b >
+                                                          match.skor_a
+                                                            ? "#22c55e"
+                                                            : "#F0F0F0",
+                                                        color:
+                                                          match.skor_b >
+                                                          match.skor_a
+                                                            ? "white"
+                                                            : "#6b7280",
+                                                      }}
+                                                    >
+                                                      {match.skor_b}
+                                                    </div>
+                                                  )}
+                                                </div>
+                                              ) : (
+                                                <span
+                                                  className="text-xs font-bold px-3 py-1 rounded"
+                                                  style={{
+                                                    backgroundColor: "#DC143C",
+                                                    color: "white",
+                                                  }}
+                                                >
+                                                  BYE
+                                                </span>
+                                              )}
+                                            </div>
+                                          </div>
                                         </div>
                                       </div>
-                                    </div>
-                                  ))}
+                                    );
+                                  })}
                                 </div>
-                              </div>
-                            )}
+                              ))}
+                            </div>
 
-                            {/* SILVER MEDALS */}
-                            {leaderboard && leaderboard.silver.length > 0 && (
-                              <div className="mb-6">
-                                <div className="flex items-center gap-2 mb-3 px-2">
-                                  <h4
-                                    className="font-bold text-base"
-                                    style={{ color: "#000" }}
+                            {/* ═══════════════════════════════════════════════════════════
+            ADDITIONAL MATCH (jika ada)
+            ═══════════════════════════════════════════════════════════ */}
+                            {hasAdditionalMatch && additionalMatch && (
+                              <div style={{ position: "relative" }}>
+                                {/* SVG Connectors */}
+                                <svg
+                                  style={{
+                                    position: "absolute",
+                                    left: `-${COLUMN_GAP}px`,
+                                    top: 0,
+                                    width: `${COLUMN_GAP}px`,
+                                    height: "800px",
+                                    pointerEvents: "none",
+                                    zIndex: 5,
+                                    overflow: "visible",
+                                  }}
+                                >
+                                  {/* Line dari Last Fight Match */}
+                                  {lastNormalFightMatch && (
+                                    <g>
+                                      <line
+                                        x1="0"
+                                        y1={lastFightY}
+                                        x2={COLUMN_GAP / 2}
+                                        y2={lastFightY}
+                                        stroke="#DC143C"
+                                        strokeWidth="3"
+                                      />
+                                      <line
+                                        x1={COLUMN_GAP / 2}
+                                        y1={lastFightY}
+                                        x2={COLUMN_GAP / 2}
+                                        y2={additionalMatchY}
+                                        stroke="#DC143C"
+                                        strokeWidth="3"
+                                      />
+                                      <line
+                                        x1={COLUMN_GAP / 2}
+                                        y1={additionalMatchY}
+                                        x2={COLUMN_GAP}
+                                        y2={additionalMatchY}
+                                        stroke="#DC143C"
+                                        strokeWidth="3"
+                                      />
+                                    </g>
+                                  )}
+
+                                  {/* Line dari BYE Match */}
+                                  {byeMatch && (
+                                    <g>
+                                      <line
+                                        x1="0"
+                                        y1={byeMatchY}
+                                        x2={COLUMN_GAP / 2}
+                                        y2={byeMatchY}
+                                        stroke="#DC143C"
+                                        strokeWidth="3"
+                                      />
+                                      <line
+                                        x1={COLUMN_GAP / 2}
+                                        y1={byeMatchY}
+                                        x2={COLUMN_GAP / 2}
+                                        y2={additionalMatchY}
+                                        stroke="#DC143C"
+                                        strokeWidth="3"
+                                      />
+                                    </g>
+                                  )}
+                                </svg>
+
+                                {/* Additional Match Card - (code sama seperti sebelumnya) */}
+                                <div
+                                  className="bg-white rounded-lg shadow-md border overflow-hidden"
+                                  style={{
+                                    borderColor: "#FFFBEA",
+                                    borderWidth: "3px",
+                                    position: "relative",
+                                    zIndex: 10,
+                                    width: `${CARD_WIDTH}px`,
+                                    top: `${
+                                      additionalMatchY +
+                                      ADDITIONAL_CARD_OFFSET
+                                    }px`,
+                                  }}
+                                >
+                                  <div
+                                    className="px-3 py-2 border-b flex items-center justify-between"
+                                    style={{
+                                      backgroundColor: "#FFFBEA",
+                                      borderColor: "#DC143C",
+                                    }}
                                   >
-                                    SILVER MEDALS ({leaderboard.silver.length})
-                                  </h4>
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-                                  {leaderboard.silver.map(
-                                    (participant, idx) => (
-                                      <div
-                                        key={participant.id}
-                                        className="p-2 rounded border"
+                                    <div className="flex items-center gap-2 flex-1">
+                                      {additionalMatch.nomor_partai && (
+                                        <span
+                                          className="text-xs px-2 py-1 rounded-full font-bold"
+                                          style={{
+                                            backgroundColor: "#DC143C",
+                                            color: "white",
+                                          }}
+                                        >
+                                          No.Partai:{" "}
+                                          {additionalMatch.nomor_partai}
+                                        </span>
+                                      )}
+                                    </div>
+
+                                    <div className="flex items-center gap-2">
+                                      {/* Edit match scores/details button */}
+                                      <button
+                                        onClick={() =>
+                                          setEditingMatch(additionalMatch)
+                                        }
+                                        className="p-1 rounded hover:bg-black/5 transition-all"
+                                        disabled={viewOnly}
                                         style={{
-                                          backgroundColor: "#F5F5F5",
-                                          borderColor: "#C0C0C0",
+                                          opacity: viewOnly ? 0.3 : 1,
+                                          cursor: viewOnly
+                                            ? "not-allowed"
+                                            : "pointer",
                                         }}
+                                        title="Edit match scores and details"
                                       >
-                                        <div className="flex items-start gap-2">
-                                          <span
-                                            className="text-xs font-bold flex-shrink-0"
-                                            style={{ color: "#9CA3AF" }}
-                                          >
-                                            {idx + 1}.
-                                          </span>
+                                        <FilePenLine
+                                          size={14}
+                                          style={{ color: "#3B82F6" }}
+                                        />
+                                      </button>
+
+                                      {/* Edit athletes button */}
+                                      <button
+                                        onClick={() => {
+                                          const hasScores =
+                                            additionalMatch.skor_a > 0 ||
+                                            additionalMatch.skor_b > 0;
+                                          if (hasScores) {
+                                            showNotification(
+                                              "warning",
+                                              "Match Sudah Dimulai",
+                                              "Tidak dapat mengubah peserta karena match sudah memiliki skor.",
+                                              () => setShowModal(false)
+                                            );
+                                            return;
+                                          }
+                                          setEditAthleteModal({
+                                            show: true,
+                                            match: additionalMatch,
+                                            slot: null,
+                                          });
+                                        }}
+                                        className="p-1 rounded hover:bg-black/5 transition-all"
+                                        disabled={
+                                          viewOnly ||
+                                          additionalMatch.skor_a > 0 ||
+                                          additionalMatch.skor_b > 0
+                                        }
+                                        style={{
+                                          opacity:
+                                            viewOnly ||
+                                            additionalMatch.skor_a > 0 ||
+                                            additionalMatch.skor_b > 0
+                                              ? 0.3
+                                              : 1,
+                                          cursor:
+                                            viewOnly ||
+                                            additionalMatch.skor_a > 0 ||
+                                            additionalMatch.skor_b > 0
+                                              ? "not-allowed"
+                                              : "pointer",
+                                        }}
+                                        title={
+                                          additionalMatch.skor_a > 0 ||
+                                          additionalMatch.skor_b > 0
+                                            ? "Match sudah dimulai - tidak dapat diubah"
+                                            : "Edit athletes"
+                                        }
+                                      >
+                                        <Edit3
+                                          size={14}
+                                          style={{ color: "#DC143C" }}
+                                        />
+                                      </button>
+                                    </div>
+                                  </div>
+
+                                  <div className="flex flex-col">
+                                    <div
+                                      className="px-3 py-3 border-b flex items-start justify-between gap-2"
+                                      style={{
+                                        borderColor: "#F0F0F0",
+                                        minHeight: "70px",
+                                      }}
+                                    >
+                                      {additionalMatch.peserta_a ? (
+                                        <>
                                           <div className="flex-1 min-w-0">
                                             <p
-                                              className="font-bold text-xs leading-tight truncate"
-                                              style={{ color: "#000" }}
-                                              title={participant.name}
+                                              className="font-bold text-lg leading-tight mb-1"
+                                              style={{
+                                                color: "#000",
+                                                wordBreak: "break-word",
+                                              }}
                                             >
-                                              {participant.name}
+                                              {getParticipantName(
+                                                additionalMatch.peserta_a
+                                              )}
                                             </p>
                                             <p
-                                              className="text-xs leading-tight truncate"
+                                              className="text-base leading-tight"
                                               style={{
                                                 color: "#DC143C",
                                                 opacity: 0.7,
                                               }}
-                                              title={participant.dojo}
                                             >
-                                              {participant.dojo}
+                                              {getDojoName(
+                                                additionalMatch.peserta_a
+                                              )}
                                             </p>
                                           </div>
+                                          {(additionalMatch.skor_a > 0 ||
+                                            additionalMatch.skor_b > 0) && (
+                                            <div
+                                              className="w-8 h-8 rounded flex items-center justify-center font-bold text-sm flex-shrink-0"
+                                              style={{
+                                                backgroundColor:
+                                                  additionalMatch.skor_a >
+                                                  additionalMatch.skor_b
+                                                    ? "#22c55e"
+                                                    : "#F0F0F0",
+                                                color:
+                                                  additionalMatch.skor_a >
+                                                  additionalMatch.skor_b
+                                                    ? "white"
+                                                    : "#6b7280",
+                                              }}
+                                            >
+                                              {additionalMatch.skor_a}
+                                            </div>
+                                          )}
+                                        </>
+                                      ) : (
+                                        <div className="w-full text-center">
+                                          <span
+                                            className="text-xs font-bold px-3 py-1 rounded"
+                                            style={{
+                                              backgroundColor: "#DC143C",
+                                              color: "white",
+                                            }}
+                                          >
+                                            ⏳ Waiting for Match{" "}
+                                            {lastNormalFightMatch?.nomor_partai ||
+                                              "TBD"}
+                                          </span>
                                         </div>
-                                      </div>
-                                    )
-                                  )}
+                                      )}
+                                    </div>
+
+                                    <div
+                                      className="px-3 py-3 flex items-center justify-center"
+                                      style={{
+                                        minHeight: "70px",
+                                        backgroundColor: "#FFFBEA",
+                                      }}
+                                    >
+                                      {additionalMatch.peserta_b ? (
+                                        <div className="w-full flex items-start justify-between gap-2">
+                                          <div className="flex-1 min-w-0">
+                                            <p
+                                              className="font-bold text-lg leading-tight mb-1"
+                                              style={{
+                                                color: "#000",
+                                                wordBreak: "break-word",
+                                              }}
+                                            >
+                                              {getParticipantName(
+                                                additionalMatch.peserta_b
+                                              )}
+                                            </p>
+                                            <p
+                                              className="text-base leading-tight"
+                                              style={{
+                                                color: "#EF4444",
+                                                opacity: 0.7,
+                                              }}
+                                            >
+                                              {getDojoName(
+                                                additionalMatch.peserta_b
+                                              )}
+                                            </p>
+                                          </div>
+                                          {(additionalMatch.skor_a > 0 ||
+                                            additionalMatch.skor_b > 0) && (
+                                            <div
+                                              className="w-8 h-8 rounded flex items-center justify-center font-bold text-sm flex-shrink-0"
+                                              style={{
+                                                backgroundColor:
+                                                  additionalMatch.skor_b >
+                                                  additionalMatch.skor_a
+                                                    ? "#22c55e"
+                                                    : "#F0F0F0",
+                                                color:
+                                                  additionalMatch.skor_b >
+                                                  additionalMatch.skor_a
+                                                    ? "white"
+                                                    : "#6b7280",
+                                              }}
+                                            >
+                                              {additionalMatch.skor_b}
+                                            </div>
+                                          )}
+                                        </div>
+                                      ) : (
+                                        <span className="text-sm text-gray-400">
+                                          TBD
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
                                 </div>
                               </div>
                             )}
+                          </div>
 
-                            {/* Empty State */}
-                            {leaderboard && leaderboard.gold.length === 0 && (
-                              <div className="text-center py-6">
-                                <Trophy
-                                  size={40}
-                                  style={{ color: "#DC143C", opacity: 0.3 }}
-                                  className="mx-auto mb-2"
-                                />
-                                <p
-                                  className="text-sm"
-                                  style={{ color: "#050505", opacity: 0.5 }}
-                                >
-                                  Belum ada hasil pertandingan
-                                </p>
+                          <div className="w-full">
+                            <div
+                              className="bg-white rounded-lg shadow-md border overflow-hidden"
+                              style={{ borderColor: "#DC143C" }}
+                            >
+                              <div
+                                className="px-4 py-3 border-b"
+                                style={{
+                                  backgroundColor: "#FFF5F5",
+                                  borderColor: "#DC143C",
+                                }}
+                              >
+                                <div className="flex items-center gap-2 justify-center">
+                                  <Trophy
+                                    size={24}
+                                    style={{ color: "#DC143C" }}
+                                  />
+                                  <h3
+                                    className="text-xl font-bold"
+                                    style={{ color: "#DC143C" }}
+                                  >
+                                    LEADERBOARD
+                                  </h3>
+                                </div>
                               </div>
-                            )}
+
+                              <div className="p-4">
+                                {/* GOLD MEDALS */}
+                                {leaderboard &&
+                                  leaderboard.gold.length > 0 && (
+                                    <div className="mb-6">
+                                      <div className="flex items-center gap-2 mb-3 px-2">
+                                        <h4
+                                          className="font-bold text-base"
+                                          style={{ color: "#000" }}
+                                        >
+                                          GOLD MEDALS (
+                                          {leaderboard.gold.length})
+                                        </h4>
+                                      </div>
+                                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                                        {leaderboard.gold.map(
+                                          (participant, idx) => (
+                                            <div
+                                              key={participant.id}
+                                              className="p-2 rounded border"
+                                              style={{
+                                                backgroundColor: "#FFFBEA",
+                                                borderColor: "#F5B700",
+                                              }}
+                                            >
+                                              <div className="flex items-start gap-2">
+                                                <span
+                                                  className="text-xs font-bold flex-shrink-0"
+                                                  style={{ color: "#F5B700" }}
+                                                >
+                                                  {idx + 1}.
+                                                </span>
+                                                <div className="flex-1 min-w-0">
+                                                  <p
+                                                    className="font-bold text-xs leading-tight truncate"
+                                                    style={{ color: "#000" }}
+                                                    title={participant.name}
+                                                  >
+                                                    {participant.name}
+                                                  </p>
+                                                  <p
+                                                    className="text-xs leading-tight truncate"
+                                                    style={{
+                                                      color: "#DC143C",
+                                                      opacity: 0.7,
+                                                    }}
+                                                    title={participant.dojo}
+                                                  >
+                                                    {participant.dojo}
+                                                  </p>
+                                                </div>
+                                              </div>
+                                            </div>
+                                          )
+                                        )}
+                                      </div>
+                                    </div>
+                                  )}
+
+                                {/* SILVER MEDALS */}
+                                {leaderboard &&
+                                  leaderboard.silver.length > 0 && (
+                                    <div className="mb-6">
+                                      <div className="flex items-center gap-2 mb-3 px-2">
+                                        <h4
+                                          className="font-bold text-base"
+                                          style={{ color: "#000" }}
+                                        >
+                                          SILVER MEDALS (
+                                          {leaderboard.silver.length})
+                                        </h4>
+                                      </div>
+                                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                                        {leaderboard.silver.map(
+                                          (participant, idx) => (
+                                            <div
+                                              key={participant.id}
+                                              className="p-2 rounded border"
+                                              style={{
+                                                backgroundColor: "#F5F5F5",
+                                                borderColor: "#C0C0C0",
+                                              }}
+                                            >
+                                              <div className="flex items-start gap-2">
+                                                <span
+                                                  className="text-xs font-bold flex-shrink-0"
+                                                  style={{ color: "#9CA3AF" }}
+                                                >
+                                                  {idx + 1}.
+                                                </span>
+                                                <div className="flex-1 min-w-0">
+                                                  <p
+                                                    className="font-bold text-xs leading-tight truncate"
+                                                    style={{ color: "#000" }}
+                                                    title={participant.name}
+                                                  >
+                                                    {participant.name}
+                                                  </p>
+                                                  <p
+                                                    className="text-xs leading-tight truncate"
+                                                    style={{
+                                                      color: "#DC143C",
+                                                      opacity: 0.7,
+                                                    }}
+                                                    title={participant.dojo}
+                                                  >
+                                                    {participant.dojo}
+                                                  </p>
+                                                </div>
+                                              </div>
+                                            </div>
+                                          )
+                                        )}
+                                      </div>
+                                    </div>
+                                  )}
+
+                                {/* Empty State */}
+                                {leaderboard &&
+                                  leaderboard.gold.length === 0 && (
+                                    <div className="text-center py-6">
+                                      <Trophy
+                                        size={40}
+                                        style={{
+                                          color: "#DC143C",
+                                          opacity: 0.3,
+                                        }}
+                                        className="mx-auto mb-2"
+                                      />
+                                      <p
+                                        className="text-sm"
+                                        style={{
+                                          color: "#050505",
+                                          opacity: 0.5,
+                                        }}
+                                      >
+                                        Belum ada hasil pertandingan
+                                      </p>
+                                    </div>
+                                  )}
+                              </div>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </div>
-                  );
-                })()}
+                      );
+                    })()}
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
-      ) : (
-        // Empty state
-        <div className="p-6">
-          <div className="text-center py-16">
-            <Trophy
-              size={64}
-              style={{ color: "#990D35", opacity: 0.4 }}
-              className="mx-auto mb-4"
-            />
-            <h3
-              className="text-xl font-semibold mb-2"
-              style={{ color: "#050505" }}
-            >
-              {approvedParticipants.length < 2
-                ? "Insufficient Participants"
-                : "Tournament Bracket Not Generated"}
-            </h3>
-            <p
-              className="text-base mb-6"
-              style={{ color: "#050505", opacity: 0.6 }}
-            >
-              {approvedParticipants.length < 2
-                ? `Need at least 2 approved participants. Currently have ${approvedParticipants.length}.`
-                : 'Click "Generate" to create the tournament bracket'}
-            </p>
-            {approvedParticipants.length >= 2 && (
-              <button
-                onClick={openParticipantPreview}
-                disabled={loading}
-                className="px-6 py-3 rounded-lg font-medium transition-all disabled:opacity-50 hover:opacity-90"
-                style={{ backgroundColor: "#F5B700", color: "#F5FBEF" }}
-              >
-                {loading ? "Processing..." : "Preview & Generate Bracket"}
-              </button>
-            )}
-          </div>
-        </div>
-      )}
+          )
+        : // Empty state
+          (
+            <div className="p-6">
+              <div className="text-center py-16">
+                <Trophy
+                  size={64}
+                  style={{ color: "#990D35", opacity: 0.4 }}
+                  className="mx-auto mb-4"
+                />
+                <h3
+                  className="text-xl font-semibold mb-2"
+                  style={{ color: "#050505" }}
+                >
+                  {approvedParticipants.length < 2
+                    ? "Insufficient Participants"
+                    : "Tournament Bracket Not Generated"}
+                </h3>
+                <p
+                  className="text-base mb-6"
+                  style={{ color: "#050505", opacity: 0.6 }}
+                >
+                  {approvedParticipants.length < 2
+                    ? `Need at least 2 approved participants. Currently have ${approvedParticipants.length}.`
+                    : 'Click "Generate" to create the tournament bracket'}
+                </p>
+                {approvedParticipants.length >= 2 && (
+                  <button
+                    onClick={openParticipantPreview}
+                    disabled={loading}
+                    className="px-6 py-3 rounded-lg font-medium transition-all disabled:opacity-50 hover:opacity-90"
+                    style={{ backgroundColor: "#F5B700", color: "#F5FBEF" }}
+                  >
+                    {loading
+                      ? "Processing..."
+                      : "Preview & Generate Bracket"}
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
 
       {/* Participant Preview Modal */}
       {showParticipantPreview && (
@@ -2645,527 +2856,7 @@ const generateLeaderboard = () => {
 
             <div
               className="p-6 border-t flex gap-3 sticky bottom-0 bg-white z-10"
-              style={{ borderColor: "#990D35" }}
-            >
-              <button
-                onClick={() => setShowParticipantPreview(false)}
-                className="flex-1 py-3 px-4 rounded-lg border-2 font-medium transition-all hover:bg-gray-50"
-                style={{ borderColor: "#990D35", color: "#990D35" }}
-              >
-                Batal
-              </button>
-              <button
-                onClick={generateBracket}
-                className="flex-1 py-3 px-4 rounded-lg font-medium transition-all hover:opacity-90 shadow-lg"
-                style={{ backgroundColor: "#990D35", color: "#F5FBEF" }}
-              >
-                Generate Bracket Otomatis
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ============================================
-    🆕 EDIT ATHLETE MODAL
-    ============================================ */}
-      {editAthleteModal.show && editAthleteModal.match && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
-            {/* Header */}
-            <div className="p-6 border-b" style={{ borderColor: "#990D35" }}>
-              <h3 className="text-xl font-bold" style={{ color: "#050505" }}>
-                Edit Match #
-                {matches.findIndex(
-                  (m) => m.id_match === editAthleteModal.match?.id_match
-                ) + 1}{" "}
-                Athletes
-              </h3>
-              <p
-                className="text-sm mt-1"
-                style={{ color: "#050505", opacity: 0.6 }}
-              >
-                Round {editAthleteModal.match?.ronde ?? "N/A"}
-              </p>
-            </div>
-
-            <div className="p-6 space-y-4">
-              {/* Current Participants Display */}
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <p
-                  className="text-xs font-bold mb-2"
-                  style={{ color: "#050505", opacity: 0.6 }}
-                >
-                  Current Match:
-                </p>
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <span
-                      className="text-xs px-2 py-1 rounded"
-                      style={{ backgroundColor: "#3B82F6", color: "white" }}
-                    >
-                      A
-                    </span>
-                    <p
-                      className="text-sm font-medium"
-                      style={{ color: "#050505" }}
-                    >
-                      {editAthleteModal.match.peserta_a
-                        ? getParticipantName(editAthleteModal.match.peserta_a)
-                        : "TBD"}
-                    </p>
-                  </div>
-
-                  {/* ⭐ Show BYE label or Participant B */}
-                  {!editAthleteModal.match.peserta_b &&
-                  editAthleteModal.match.ronde === 1 ? (
-                    <div className="flex items-center gap-2">
-                      <span
-                        className="text-xs px-2 py-1 rounded"
-                        style={{ backgroundColor: "#F5B700", color: "white" }}
-                      >
-                        BYE
-                      </span>
-                      <p
-                        className="text-sm font-medium"
-                        style={{ color: "#050505", opacity: 0.5 }}
-                      >
-                        (Cannot edit BYE slot)
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <span
-                        className="text-xs px-2 py-1 rounded"
-                        style={{ backgroundColor: "#EF4444", color: "white" }}
-                      >
-                        B
-                      </span>
-                      <p
-                        className="text-sm font-medium"
-                        style={{ color: "#050505" }}
-                      >
-                        {editAthleteModal.match.peserta_b
-                          ? getParticipantName(editAthleteModal.match.peserta_b)
-                          : "TBD"}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Slot Selection */}
-              <div>
-                <label
-                  className="block text-sm font-bold mb-2"
-                  style={{ color: "#050505" }}
-                >
-                  Select Slot to Edit:
-                </label>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() =>
-                      setEditAthleteModal((prev) => ({ ...prev, slot: "A" }))
-                    }
-                    className={`flex-1 py-2 px-4 rounded-lg border-2 font-medium transition-all ${
-                      editAthleteModal.slot === "A"
-                        ? "ring-2 ring-offset-1"
-                        : ""
-                    }`}
-                    style={{
-                      borderColor: "#3B82F6",
-                      backgroundColor:
-                        editAthleteModal.slot === "A" ? "#3B82F6" : "white",
-                      color:
-                        editAthleteModal.slot === "A" ? "white" : "#3B82F6",
-                    }}
-                  >
-                    Participant A
-                  </button>
-
-                  <button
-                    onClick={() =>
-                      setEditAthleteModal((prev) => ({ ...prev, slot: "B" }))
-                    }
-                    disabled={
-                      !editAthleteModal.match.peserta_b &&
-                      editAthleteModal.match.ronde === 1
-                    }
-                    className={`flex-1 py-2 px-4 rounded-lg border-2 font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
-                      editAthleteModal.slot === "B"
-                        ? "ring-2 ring-offset-1"
-                        : ""
-                    }`}
-                    style={{
-                      borderColor: "#EF4444",
-                      backgroundColor:
-                        editAthleteModal.slot === "B" ? "#EF4444" : "white",
-                      color:
-                        editAthleteModal.slot === "B" ? "white" : "#EF4444",
-                    }}
-                  >
-                    Participant B
-                  </button>
-                </div>
-              </div>
-
-              {/* Athlete Selection */}
-              {editAthleteModal.slot && (
-                <div>
-                  <label
-                    className="block text-sm font-bold mb-2"
-                    style={{ color: "#050505" }}
-                  >
-                    Select New Athlete:
-                  </label>
-                  <select
-                    className="w-full px-3 py-2 rounded-lg border-2 focus:ring-2"
-                    style={{ borderColor: "#990D35" }}
-                    onChange={(e) => {
-                      const participantId = parseInt(e.target.value);
-                      if (isNaN(participantId)) return;
-
-                      // ✅ PERBAIKAN: Validasi null sebelum call function
-                      if (!editAthleteModal.match || !editAthleteModal.slot) {
-                        console.error("Match or slot is null");
-                        return;
-                      }
-
-                      handleAssignAthlete(
-                        editAthleteModal.match.id_match,
-                        editAthleteModal.slot,
-                        participantId
-                      );
-                    }}
-                  >
-                    <option value="">-- Select Athlete --</option>
-                    {approvedParticipants
-                      .filter((p) => {
-                        // Don't show participants already in THIS match
-                        return (
-                          p.id_peserta_kompetisi !==
-                            editAthleteModal.match?.id_peserta_a &&
-                          p.id_peserta_kompetisi !==
-                            editAthleteModal.match?.id_peserta_b
-                        );
-                      })
-                      .map((p) => (
-                        <option
-                          key={p.id_peserta_kompetisi}
-                          value={p.id_peserta_kompetisi}
-                        >
-                          {getParticipantName(p)} ({getDojoName(p)})
-                        </option>
-                      ))}
-                  </select>
-                </div>
-              )}
-            </div>
-
-            <div className="p-6 border-t flex gap-3 bg-gray-50">
-              <button
-                onClick={() =>
-                  setEditAthleteModal({ show: false, match: null, slot: null })
-                }
-                className="flex-1 py-2.5 px-4 rounded-lg border-2 font-medium transition-all hover:bg-white"
-                style={{ borderColor: "#990D35", color: "#990D35" }}
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Edit Match Modal */}
-      {editingMatch && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
-            <div className="p-6 border-b" style={{ borderColor: "#990D35" }}>
-              <h3 className="text-xl font-bold" style={{ color: "#050505" }}>
-                Update Match Result
-              </h3>
-            </div>
-
-            <div className="p-6 space-y-4">
-              {/* METADATA SECTION */}
-              <div
-                className="space-y-3 pb-4 border-b"
-                style={{ borderColor: "rgba(153, 13, 53, 0.1)" }}
-              >
-                <div>
-                  <label className="block text-sm font-medium mb-2 flex items-center gap-2">
-                    📅 Tanggal Pertandingan
-                  </label>
-                  <input
-                    type="date"
-                    className="w-full px-3 py-2 rounded-lg border focus:ring-2"
-                    style={{ borderColor: "#990D35" }}
-                    defaultValue={
-                      editingMatch.tanggal_pertandingan
-                        ? new Date(editingMatch.tanggal_pertandingan)
-                            .toISOString()
-                            .split("T")[0]
-                        : ""
-                    }
-                    id="tanggalPertandingan"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-sm font-medium mb-2 flex items-center gap-2">
-                      🔢 Nomor Antrian
-                    </label>
-                    <input
-                      type="number"
-                      min="1"
-                      className="w-full px-3 py-2 rounded-lg border focus:ring-2"
-                      style={{ borderColor: "#990D35" }}
-                      defaultValue={editingMatch.nomor_antrian || ""}
-                      id="nomorAntrian"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-2 flex items-center gap-2">
-                      📍 Nomor Lapangan
-                    </label>
-                    <input
-                      type="text"
-                      maxLength={1}
-                      className="w-full px-3 py-2 rounded-lg border uppercase focus:ring-2"
-                      style={{ borderColor: "#990D35" }}
-                      defaultValue={editingMatch.nomor_lapangan || ""}
-                      id="nomorLapangan"
-                      onInput={(e) => {
-                        const input = e.target as HTMLInputElement;
-                        input.value = input.value
-                          .toUpperCase()
-                          .replace(/[^A-Z]/g, "");
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* SCORE SECTION */}
-              <div className="pt-2">
-                <div className="flex items-center justify-between mb-3">
-                  <label
-                    className="text-sm font-bold"
-                    style={{ color: "#050505" }}
-                  >
-                    Hasil Pertandingan
-                  </label>
-                </div>
-
-                {editingMatch.peserta_a && (
-                  <div className="mb-3">
-                    <label className="block text-lg font-medium mb-2">
-                      🔵 {getParticipantName(editingMatch.peserta_a)}
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      className="w-full px-3 py-2 rounded-lg border"
-                      style={{ borderColor: "#990D35" }}
-                      defaultValue={editingMatch.skor_a || 0}
-                      id="scoreA"
-                      placeholder="0"
-                    />
-                  </div>
-                )}
-
-                {editingMatch.peserta_b && (
-                  <div>
-                    <label className="block text-lg font-medium mb-2">
-                      🔴 {getParticipantName(editingMatch.peserta_b)}
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      className="w-full px-3 py-2 rounded-lg border"
-                      style={{ borderColor: "#990D35" }}
-                      defaultValue={editingMatch.skor_b || 0}
-                      id="scoreB"
-                      placeholder="0"
-                    />
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="p-6 border-t flex gap-3">
-              <button
-                onClick={() => setEditingMatch(null)}
-                className="flex-1 py-2 px-4 rounded-lg border"
-                style={{ borderColor: "#990D35", color: "#990D35" }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  const scoreA = parseInt(
-                    (document.getElementById("scoreA") as HTMLInputElement)
-                      ?.value || "0"
-                  );
-                  const scoreB = parseInt(
-                    (document.getElementById("scoreB") as HTMLInputElement)
-                      ?.value || "0"
-                  );
-                  updateMatchResult(editingMatch.id_match, scoreA, scoreB);
-                }}
-                className="flex-1 py-2 px-4 rounded-lg"
-                style={{ backgroundColor: "#990D35", color: "#F5FBEF" }}
-              >
-                💾 Save Result
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Notification Modal - Animated */}
-      {showModal && (
-        <div
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
-          style={{
-            animation: "fadeIn 0.2s ease-out",
-          }}
-        >
-          <style>
-            {`
-            @keyframes fadeIn {
-              from { opacity: 0; }
-              to { opacity: 1; }
-            }
-            @keyframes slideUp {
-              from { 
-                opacity: 0;
-                transform: translateY(20px) scale(0.95);
-              }
-              to { 
-                opacity: 1;
-                transform: translateY(0) scale(1);
-              }
-            }
-            @keyframes bounceIn {
-              0% { transform: scale(0.3); opacity: 0; }
-              50% { transform: scale(1.05); }
-              70% { transform: scale(0.9); }
-              100% { transform: scale(1); opacity: 1; }
-            }
-          `}
-          </style>
-
-          <div
-            className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden"
-            style={{
-              animation: "slideUp 0.3s ease-out",
-            }}
-          >
-            {/* Icon Header with Color */}
-            <div
-              className="p-6 flex flex-col items-center"
-              style={{
-                backgroundColor:
-                  modalConfig.type === "success"
-                    ? "rgba(34, 197, 94, 0.1)"
-                    : modalConfig.type === "error"
-                    ? "rgba(239, 68, 68, 0.1)"
-                    : modalConfig.type === "warning"
-                    ? "rgba(245, 183, 0, 0.1)"
-                    : "rgba(153, 13, 53, 0.1)",
-              }}
-            >
-              <div
-                className="w-20 h-20 rounded-full flex items-center justify-center mb-4"
-                style={{
-                  backgroundColor:
-                    modalConfig.type === "success"
-                      ? "#22c55e"
-                      : modalConfig.type === "error"
-                      ? "#ef4444"
-                      : modalConfig.type === "warning"
-                      ? "#F5B700"
-                      : "#990D35",
-                  animation: "bounceIn 0.5s ease-out",
-                }}
-              >
-                {modalConfig.type === "success" && (
-                  <CheckCircle size={40} style={{ color: "white" }} />
-                )}
-                {modalConfig.type === "error" && (
-                  <AlertTriangle size={40} style={{ color: "white" }} />
-                )}
-                {modalConfig.type === "warning" && (
-                  <AlertTriangle size={40} style={{ color: "white" }} />
-                )}
-                {modalConfig.type === "info" && (
-                  <Trophy size={40} style={{ color: "white" }} />
-                )}
-              </div>
-
-              <h3
-                className="text-2xl font-bold text-center mb-2"
-                style={{ color: "#050505" }}
-              >
-                {modalConfig.title}
-              </h3>
-
-              <p
-                className="text-center text-base leading-relaxed"
-                style={{ color: "#050505", opacity: 0.7 }}
-              >
-                {modalConfig.message}
-              </p>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="p-6 bg-gray-50 flex gap-3">
-              {modalConfig.cancelText && (
-                <button
-                  onClick={() => {
-                    if (modalConfig.onCancel) modalConfig.onCancel();
-                    setShowModal(false);
-                  }}
-                  className="flex-1 py-3 px-4 rounded-xl font-semibold transition-all hover:bg-white border-2"
-                  style={{
-                    borderColor: "#990D35",
-                    color: "#990D35",
-                    backgroundColor: "white",
-                  }}
-                >
-                  {modalConfig.cancelText}
-                </button>
-              )}
-              <button
-                onClick={() => {
-                  if (modalConfig.onConfirm) modalConfig.onConfirm();
-                  setShowModal(false);
-                }}
-                className="flex-1 py-3 px-4 rounded-xl font-semibold transition-all hover:opacity-90 shadow-lg"
-                style={{
-                  backgroundColor:
-                    modalConfig.type === "success"
-                      ? "#22c55e"
-                      : modalConfig.type === "error"
-                      ? "#ef4444"
-                      : modalConfig.type === "warning"
-                      ? "#F5B700"
-                      : "#990D35",
-                  color: "white",
-                }}
-              >
-                {modalConfig.confirmText || "OK"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Dojang Separation Modal */}
+              style={{ borderColor: "#990D3Dojang Separation Modal */}
       {showDojangModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-xl max-w-md w-full">

@@ -67,6 +67,7 @@ interface Match {
   positionY?: number;
   verticalCenter?: number;
   stageName?: string;
+  kelasKejuaraanId?: number;
 }
 
 interface KelasKejuaraan {
@@ -129,7 +130,9 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
   viewOnly = false, // ⭐ TAMBAHKAN
 }) => {
   const { token } = useAuth();
-  const [viewMode, setViewMode] = useState<"bracket" | "schedule">("bracket");
+  const [viewMode, setViewMode] = useState<"bracket" | "schedule" | "list">(
+    "bracket"
+  );
   const [globalSchedule, setGlobalSchedule] = useState<Match[]>([]);
   const [isScheduleLoading, setIsScheduleLoading] = useState(false);
 
@@ -397,82 +400,82 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
     }
   }, [kelasData?.id_kelas_kejuaraan]);
 
-const fetchBracketData = async (
-  kompetisiId: number,
-  kelasKejuaraanId: number
-) => {
-  try {
-    setLoading(true);
+  const fetchBracketData = async (
+    kompetisiId: number,
+    kelasKejuaraanId: number
+  ) => {
+    try {
+      setLoading(true);
 
-    const response = await fetch(
-      `${apiBaseUrl}/kompetisi/${kompetisiId}/brackets/${kelasKejuaraanId}`,
-      {
-        headers: {
-          ...(token && { Authorization: `Bearer ${token}` }),
-        },
-      }
-    );
-
-    if (!response.ok) {
-      if (response.status === 404) {
-        console.log("ℹ️ Bracket not yet generated for this class");
-        setBracketGenerated(false);
-        setMatches([]);
-        return;
-      }
-      throw new Error("Failed to fetch bracket data");
-    }
-
-    const result = await response.json();
-    console.log("📊 PRESTASI Bracket data fetched:", result);
-
-    if (result.data && result.data.matches) {
-      const transformedMatches: Match[] = result.data.matches.map(
-        (m: any) => ({
-          id_match: m.id,
-          ronde: m.round,
-          id_peserta_a: m.participant1?.id,
-          id_peserta_b: m.participant2?.id,
-          skor_a: m.scoreA || 0,
-          skor_b: m.scoreB || 0,
-          peserta_a: m.participant1
-            ? transformParticipantFromAPI(m.participant1)
-            : undefined,
-          peserta_b: m.participant2
-            ? transformParticipantFromAPI(m.participant2)
-            : undefined,
-          venue: m.venue ? { nama_venue: m.venue } : undefined,
-          tanggal_pertandingan: m.tanggalPertandingan,
-          nomor_partai: m.nomorPartai,
-          nomor_antrian: m.nomorAntrian,
-          nomor_lapangan: m.nomorLapangan,
-          // ⭐ TAMBAHKAN INI - Map stageName dari API
-          stageName: m.stageName,
-        })
+      const response = await fetch(
+        `${apiBaseUrl}/kompetisi/${kompetisiId}/brackets/${kelasKejuaraanId}`,
+        {
+          headers: {
+            ...(token && { Authorization: `Bearer ${token}` }),
+          },
+        }
       );
 
-      setMatches(transformedMatches);
-      setBracketGenerated(true);
-      console.log(`✅ Loaded ${transformedMatches.length} PRESTASI matches`);
-      
-      // ⭐ Debug: Log stage names untuk verifikasi
-      console.log("📊 Stage names per round:");
-      const roundsMap = new Map<number, string>();
-      transformedMatches.forEach(m => {
-        if (!roundsMap.has(m.ronde)) {
-          roundsMap.set(m.ronde, (m as any).stageName || 'NO_STAGE');
+      if (!response.ok) {
+        if (response.status === 404) {
+          console.log("ℹ️ Bracket not yet generated for this class");
+          setBracketGenerated(false);
+          setMatches([]);
+          return;
         }
-      });
-      roundsMap.forEach((stage, round) => {
-        console.log(`   Round ${round}: ${stage}`);
-      });
+        throw new Error("Failed to fetch bracket data");
+      }
+
+      const result = await response.json();
+      console.log("📊 PRESTASI Bracket data fetched:", result);
+
+      if (result.data && result.data.matches) {
+        const transformedMatches: Match[] = result.data.matches.map(
+          (m: any) => ({
+            id_match: m.id,
+            ronde: m.round,
+            id_peserta_a: m.participant1?.id,
+            id_peserta_b: m.participant2?.id,
+            skor_a: m.scoreA || 0,
+            skor_b: m.scoreB || 0,
+            peserta_a: m.participant1
+              ? transformParticipantFromAPI(m.participant1)
+              : undefined,
+            peserta_b: m.participant2
+              ? transformParticipantFromAPI(m.participant2)
+              : undefined,
+            venue: m.venue ? { nama_venue: m.venue } : undefined,
+            tanggal_pertandingan: m.tanggalPertandingan,
+            nomor_partai: m.nomorPartai,
+            nomor_antrian: m.nomorAntrian,
+            nomor_lapangan: m.nomorLapangan,
+            // ⭐ TAMBAHKAN INI - Map stageName dari API
+            stageName: m.stageName,
+          })
+        );
+
+        setMatches(transformedMatches);
+        setBracketGenerated(true);
+        console.log(`✅ Loaded ${transformedMatches.length} PRESTASI matches`);
+
+        // ⭐ Debug: Log stage names untuk verifikasi
+        console.log("📊 Stage names per round:");
+        const roundsMap = new Map<number, string>();
+        transformedMatches.forEach((m) => {
+          if (!roundsMap.has(m.ronde)) {
+            roundsMap.set(m.ronde, (m as any).stageName || "NO_STAGE");
+          }
+        });
+        roundsMap.forEach((stage, round) => {
+          console.log(`   Round ${round}: ${stage}`);
+        });
+      }
+    } catch (error: any) {
+      console.error("❌ Error fetching PRESTASI bracket:", error);
+    } finally {
+      setLoading(false);
     }
-  } catch (error: any) {
-    console.error("❌ Error fetching PRESTASI bracket:", error);
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   const fetchGlobalSchedule = async () => {
     // Prevent refetching if data is already loaded
@@ -491,7 +494,9 @@ const fetchBracketData = async (
       );
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to fetch global schedule");
+        throw new Error(
+          errorData.message || "Failed to fetch global schedule"
+        );
       }
       const result = await response.json();
       console.log("🗓️ Global schedule data fetched:", result);
@@ -580,7 +585,7 @@ const fetchBracketData = async (
                 <tr key={match.id_match} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-lg font-extrabold text-red-700">
-                      {match.nomorPartai || "-"}
+                      {match.nomor_partai || "-"}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -608,6 +613,111 @@ const fetchBracketData = async (
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-semibold">
                     {match.venue?.nama_venue || "-"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  };
+
+  const renderListView = () => {
+    // Sort matches by nomor_partai (as numbers) if nomor_partai exists
+    const sortedMatches = [...matches]
+      .filter((match) => match.nomor_partai) // Only include matches that have a nomor_partai
+      .sort((a, b) => {
+        const numA = parseInt(a.nomor_partai!, 10);
+        const numB = parseInt(b.nomor_partai!, 10);
+        return numA - numB;
+      });
+
+    if (sortedMatches.length === 0) {
+      return (
+        <div className="text-center py-20 px-6">
+          <AlertTriangle size={48} className="mx-auto text-yellow-500" />
+          <p className="mt-4 text-lg font-semibold text-gray-700">
+            Belum Ada Jadwal Pertandingan
+          </p>
+          <p className="text-gray-500 mt-2">
+            Nomor partai untuk kelas ini belum dibuat. Silakan generate
+            scheduling terlebih dahulu.
+          </p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="p-4 sm:p-6">
+        <div className="bg-white rounded-lg shadow-lg overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-100">
+              <tr>
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider"
+                >
+                  Partai
+                </th>
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider"
+                >
+                  Atlet Sudut Biru
+                </th>
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider"
+                >
+                  Atlet Sudut Merah
+                </th>
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-center text-xs font-bold text-gray-600 uppercase tracking-wider"
+                >
+                  Aksi
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {sortedMatches.map((match) => (
+                <tr key={match.id_match} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-lg font-extrabold text-red-700">
+                      {match.nomor_partai || "-"}
+                    </div>
+                    <div className="text-xs text-gray-500 font-semibold">
+                      {match.nomor_lapangan
+                        ? `Lap. ${match.nomor_lapangan}`
+                        : ""}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="text-sm font-semibold text-blue-600">
+                      {getParticipantName(match.peserta_a) || "TBD"}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {getDojoName(match.peserta_a)}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="text-sm font-semibold text-red-600">
+                      {getParticipantName(match.peserta_b) || "TBD"}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {getDojoName(match.peserta_b)}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-center">
+                    <button
+                      onClick={() => setEditingMatch(match)}
+                      className="px-4 py-2 text-sm font-semibold rounded-md text-white transition-colors hover:bg-red-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                      style={{ backgroundColor: "#990D35" }}
+                      disabled={viewOnly}
+                    >
+                      Input Skor
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -1276,7 +1386,9 @@ const fetchBracketData = async (
     if (!peserta) return "";
     if (peserta.is_team) {
       return (
-        peserta.anggota_tim?.map((t) => t.atlet.nama_atlet.toUpperCase()).join(", ") || "Team"
+        peserta.anggota_tim
+          ?.map((t) => t.atlet.nama_atlet.toUpperCase())
+          .join(", ") || "Team"
       );
     }
     return peserta.atlet?.nama_atlet.toUpperCase() || "";
@@ -1313,138 +1425,153 @@ const fetchBracketData = async (
     return rounds;
   };
 
-const getRoundName = (round: number, totalRounds: number): string => {
-  const roundMatches = getMatchesByRound(round);
-  
-  // ⭐ PRIORITAS 1: Gunakan stageName dari backend jika ada
-  if (roundMatches.length > 0) {
-    const matchWithStageName = roundMatches.find(m => m.stageName);
-    
-    if (matchWithStageName && matchWithStageName.stageName) {
-      const stageName = matchWithStageName.stageName;
-      
-      switch (stageName) {
-        case 'ROUND_OF_64': return 'Round of 64';
-        case 'ROUND_OF_32': return 'Round of 32';
-        case 'ROUND_OF_16': return 'Round of 16';
-        case 'QUARTER_FINAL': return 'Quarter Final';
-        case 'SEMI_FINAL': return 'Semi Final';
-        case 'FINAL': return 'Final';
-        default:
-          return stageName.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase());
+  const getRoundName = (round: number, totalRounds: number): string => {
+    const roundMatches = getMatchesByRound(round);
+
+    // ⭐ PRIORITAS 1: Gunakan stageName dari backend jika ada
+    if (roundMatches.length > 0) {
+      const matchWithStageName = roundMatches.find((m) => m.stageName);
+
+      if (matchWithStageName && matchWithStageName.stageName) {
+        const stageName = matchWithStageName.stageName;
+
+        switch (stageName) {
+          case "ROUND_OF_64":
+            return "Round of 64";
+          case "ROUND_OF_32":
+            return "Round of 32";
+          case "ROUND_OF_16":
+            return "Round of 16";
+          case "QUARTER_FINAL":
+            return "Quarter Final";
+          case "SEMI_FINAL":
+            return "Semi Final";
+          case "FINAL":
+            return "Final";
+          default:
+            return stageName
+              .replace(/_/g, " ")
+              .replace(/\b\w/g, (l: string) => l.toUpperCase());
+        }
       }
     }
-  }
-  
-  // ⭐⭐⭐ PRIORITAS 2: HARDCODE untuk 3 peserta ⭐⭐⭐
-  if (approvedParticipants.length === 3) {
-    if (round === 1) return "Semi Final";
-    if (round === 2) return "Final";
-  }
-  
-  // ⭐ PRIORITAS 3: Fallback - Hitung berdasarkan match count
-  const matchCount = roundMatches.length;
 
-  switch (matchCount) {
-    case 32: return "Round of 64";
-    case 16: return "Round of 32";
-    case 8: return "Round of 16";
-    case 4: return "Quarter Final";
-    case 2: return "Semi Final";
-    case 1: return "Final";
-    default:
-      if (matchCount > 32) return "Round of 64";
-      if (matchCount > 16) return "Round of 32";
-      if (matchCount > 8) return "Round of 16";
-      if (matchCount > 4) return "Quarter Final";
-      if (matchCount > 2) return "Semi Final";
-      return "Final";
-  }
-};
+    // ⭐⭐⭐ PRIORITAS 2: HARDCODE untuk 3 peserta ⭐⭐⭐
+    if (approvedParticipants.length === 3) {
+      if (round === 1) return "Semi Final";
+      if (round === 2) return "Final";
+    }
+
+    // ⭐ PRIORITAS 3: Fallback - Hitung berdasarkan match count
+    const matchCount = roundMatches.length;
+
+    switch (matchCount) {
+      case 32:
+        return "Round of 64";
+      case 16:
+        return "Round of 32";
+      case 8:
+        return "Round of 16";
+      case 4:
+        return "Quarter Final";
+      case 2:
+        return "Semi Final";
+      case 1:
+        return "Final";
+      default:
+        if (matchCount > 32) return "Round of 64";
+        if (matchCount > 16) return "Round of 32";
+        if (matchCount > 8) return "Round of 16";
+        if (matchCount > 4) return "Quarter Final";
+        if (matchCount > 2) return "Semi Final";
+        return "Final";
+    }
+  };
 
   const getMatchesByRound = (round: number) => {
     return matches.filter((match) => match.ronde === round);
   };
 
-// ...existing code...
+  // ...existing code...
 
-const generatePrestasiLeaderboard = () => {
-  if (matches.length === 0) return null;
+  const generatePrestasiLeaderboard = () => {
+    if (matches.length === 0) return null;
 
-  const leaderboard: {
-    first: { name: string; dojo: string; id: number } | null;
-    second: { name: string; dojo: string; id: number }[];
-    third: { name: string; dojo: string; id: number }[];
-  } = {
-    first: null,
-    second: [],
-    third: [],
-  };
+    const leaderboard: {
+      first: { name: string; dojo: string; id: number } | null;
+      second: { name: string; dojo: string; id: number }[];
+      third: { name: string; dojo: string; id: number }[];
+    } = {
+      first: null,
+      second: [],
+      third: [],
+    };
 
-  const totalRounds = getTotalRounds();
-  const processedSilver = new Set<number>();
-  const processedBronze = new Set<number>();
+    const totalRounds = getTotalRounds();
+    const processedSilver = new Set<number>();
+    const processedBronze = new Set<number>();
 
-  // ═══════════════════════════════════════════════════════════════
-  // FINAL: Winner = GOLD, Loser = SILVER
-  // ═══════════════════════════════════════════════════════════════
-  const finalMatch = matches.find((m) => m.ronde === totalRounds);
+    // ═══════════════════════════════════════════════════════════════
+    // FINAL: Winner = GOLD, Loser = SILVER
+    // ═══════════════════════════════════════════════════════════════
+    const finalMatch = matches.find((m) => m.ronde === totalRounds);
 
-  if (finalMatch && (finalMatch.skor_a > 0 || finalMatch.skor_b > 0)) {
-    const winner = finalMatch.skor_a > finalMatch.skor_b
-      ? finalMatch.peserta_a
-      : finalMatch.peserta_b;
+    if (finalMatch && (finalMatch.skor_a > 0 || finalMatch.skor_b > 0)) {
+      const winner =
+        finalMatch.skor_a > finalMatch.skor_b
+          ? finalMatch.peserta_a
+          : finalMatch.peserta_b;
 
-    const loser = finalMatch.skor_a > finalMatch.skor_b
-      ? finalMatch.peserta_b
-      : finalMatch.peserta_a;
+      const loser =
+        finalMatch.skor_a > finalMatch.skor_b
+          ? finalMatch.peserta_b
+          : finalMatch.peserta_a;
 
-    // Winner Final → GOLD
-    if (winner) {
-      leaderboard.first = {
-        name: getParticipantName(winner),
-        dojo: getDojoName(winner),
-        id: winner.id_peserta_kompetisi,
-      };
-    }
+      // Winner Final → GOLD
+      if (winner) {
+        leaderboard.first = {
+          name: getParticipantName(winner),
+          dojo: getDojoName(winner),
+          id: winner.id_peserta_kompetisi,
+        };
+      }
 
-    // Loser Final → SILVER
-    if (loser) {
-      leaderboard.second.push({
-        name: getParticipantName(loser),
-        dojo: getDojoName(loser),
-        id: loser.id_peserta_kompetisi,
-      });
-      processedSilver.add(loser.id_peserta_kompetisi);
-    }
-  }
-
-  // ═══════════════════════════════════════════════════════════════
-  // ⭐ PERBAIKAN: SEMI-FINAL - Loser = BRONZE (bukan SILVER!)
-  // ═══════════════════════════════════════════════════════════════
-  const semiRound = totalRounds - 1;
-  const semiMatches = matches.filter((m) => m.ronde === semiRound);
-
-  semiMatches.forEach((match) => {
-    if (match.skor_a > 0 || match.skor_b > 0) {
-      const loser = match.skor_a > match.skor_b 
-        ? match.peserta_b 
-        : match.peserta_a;
-
-      // ⭐ FIX: Semua loser semi-final langsung dapat BRONZE
-      if (loser && !processedBronze.has(loser.id_peserta_kompetisi)) {
-        leaderboard.third.push({
+      // Loser Final → SILVER
+      if (loser) {
+        leaderboard.second.push({
           name: getParticipantName(loser),
           dojo: getDojoName(loser),
           id: loser.id_peserta_kompetisi,
         });
-        processedBronze.add(loser.id_peserta_kompetisi);
+        processedSilver.add(loser.id_peserta_kompetisi);
       }
     }
-  });
 
-  return leaderboard;
-};
+    // ═══════════════════════════════════════════════════════════════
+    // ⭐ PERBAIKAN: SEMI-FINAL - Loser = BRONZE (bukan SILVER!)
+    // ═══════════════════════════════════════════════════════════════
+    const semiRound = totalRounds - 1;
+    const semiMatches = matches.filter((m) => m.ronde === semiRound);
+
+    semiMatches.forEach((match) => {
+      if (match.skor_a > 0 || match.skor_b > 0) {
+        const loser =
+          match.skor_a > match.skor_b ? match.peserta_b : match.peserta_a;
+
+        // ⭐ FIX: Semua loser semi-final langsung dapat BRONZE
+        if (loser && !processedBronze.has(loser.id_peserta_kompetisi)) {
+          leaderboard.third.push({
+            name: getParticipantName(loser),
+            dojo: getDojoName(loser),
+            id: loser.id_peserta_kompetisi,
+          });
+          processedBronze.add(loser.id_peserta_kompetisi);
+        }
+      }
+    });
+
+    return leaderboard;
+  };
 
   const renderMatchCard = (
     match: Match,
@@ -1751,363 +1878,383 @@ const generatePrestasiLeaderboard = () => {
     return positions;
   };
 
-const renderCenterFinal = () => {
-  const finalMatch = getFinalMatch();
-  const leftMatches = getLeftMatches();
-  const rightMatches = getRightMatches();
+  const renderCenterFinal = () => {
+    const finalMatch = getFinalMatch();
+    const leftMatches = getLeftMatches();
+    const rightMatches = getRightMatches();
 
-  // ⭐ PERBAIKAN: Deteksi berbagai kasus special
-  const isDirectFinal = approvedParticipants.length === 2;
-  const isThreeParticipants = approvedParticipants.length === 3;
+    // ⭐ PERBAIKAN: Deteksi berbagai kasus special
+    const isDirectFinal = approvedParticipants.length === 2;
+    const isThreeParticipants = approvedParticipants.length === 3;
 
-  // Calculate positions
-  const leftPositions = calculateVerticalPositions(leftMatches);
-  const rightPositions = calculateVerticalPositions(rightMatches);
+    // Calculate positions
+    const leftPositions = calculateVerticalPositions(leftMatches);
+    const rightPositions = calculateVerticalPositions(rightMatches);
 
-  // Get semi-final Y positions
-  let finalYPosition = 0;
-  
-  if (isDirectFinal || isThreeParticipants) {
-    // Untuk 2 atau 3 peserta, posisi final di tengah
-    finalYPosition = 100;
-  } else {
-    const leftSemiY = leftPositions[leftPositions.length - 1]?.[0] || 0;
-    const rightSemiY = rightPositions[rightPositions.length - 1]?.[0] || 0;
-    finalYPosition = (leftSemiY + rightSemiY) / 2;
-  }
-  
-  const lineLength = CENTER_GAP / 2 + 60;
+    // Get semi-final Y positions
+    let finalYPosition = 0;
 
-  return (
-    <div
-      style={{
-        position: "relative",
-        width: `${CARD_WIDTH}px`,
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-      }}
-    >
-      {/* Round Header */}
+    if (isDirectFinal || isThreeParticipants) {
+      // Untuk 2 atau 3 peserta, posisi final di tengah
+      finalYPosition = 100;
+    } else {
+      const leftSemiY = leftPositions[leftPositions.length - 1]?.[0] || 0;
+      const rightSemiY = rightPositions[rightPositions.length - 1]?.[0] || 0;
+      finalYPosition = (leftSemiY + rightSemiY) / 2;
+    }
+
+    const lineLength = CENTER_GAP / 2 + 60;
+
+    return (
       <div
-        className="round-header"
         style={{
-          width: `${CARD_WIDTH}px`,
-          textAlign: "center",
           position: "relative",
-          zIndex: 20,
-          background: "#F5FBEF",
-          padding: "8px 12px",
+          width: `${CARD_WIDTH}px`,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
         }}
       >
+        {/* Round Header */}
         <div
-          className="px-4 py-2 rounded-lg font-bold text-sm shadow-md mb-5"
-          style={{ backgroundColor: "#990D35", color: "#F5FBEF" }}
-        >
-          Final
-        </div>
-      </div>
-
-      {/* Container untuk card + connectors */}
-      <div
-        style={{ position: "relative", width: "100%", minHeight: "600px" }}
-      >
-        {/* ⭐ HANYA RENDER CONNECTOR JIKA ADA SEMI-FINAL (> 3 peserta) */}
-        {!isDirectFinal && !isThreeParticipants && (
-          <>
-            {/* LEFT CONNECTOR ke Final */}
-            <svg
-              style={{
-                position: "absolute",
-                left: -lineLength,
-                top: `${finalYPosition + CARD_HEIGHT / 2 - 1}px`,
-                width: lineLength,
-                height: 2,
-                pointerEvents: "none",
-                zIndex: 1,
-              }}
-            >
-              <line
-                x1="0"
-                y1="1"
-                x2={lineLength}
-                y2="1"
-                stroke="#990D35"
-                strokeWidth="2.5"
-                opacity="0.8"
-              />
-            </svg>
-
-            {/* RIGHT CONNECTOR ke Final */}
-            <svg
-              style={{
-                position: "absolute",
-                right: -lineLength,
-                top: `${finalYPosition + CARD_HEIGHT / 2 - 1}px`,
-                width: lineLength,
-                height: 2,
-                pointerEvents: "none",
-                zIndex: 1,
-              }}
-            >
-              <line
-                x1="0"
-                y1="1"
-                x2={lineLength}
-                y2="1"
-                stroke="#990D35"
-                strokeWidth="2.5"
-                opacity="0.8"
-              />
-            </svg>
-          </>
-        )}
-
-        {/* Final Match Card */}
-        <div
+          className="round-header"
           style={{
-            position: "absolute",
-            top: `${finalYPosition}px`,
-            left: 0,
             width: `${CARD_WIDTH}px`,
+            textAlign: "center",
+            position: "relative",
+            zIndex: 20,
+            background: "#F5FBEF",
+            padding: "8px 12px",
           }}
         >
-          {finalMatch ? (
-            renderMatchCard(
-              finalMatch,
-              `final-${finalMatch.id_match}`,
-              matches.findIndex((m) => m.id_match === finalMatch.id_match)
-            )
-          ) : (
-            <div
-              className="w-full p-6 rounded-xl border-2 text-center"
-              style={{
-                borderColor: "#990D35",
-                backgroundColor: "rgba(153, 13, 53, 0.05)",
-              }}
-            >
-              <Trophy
-                size={48}
-                style={{ color: "#990D35", opacity: 0.3 }}
-                className="mx-auto mb-2"
-              />
-              <p
-                className="text-sm font-medium"
-                style={{ color: "#050505", opacity: 0.6 }}
-              >
-                Waiting for finalists
-              </p>
-            </div>
-          )}
-        </div>
-      </div>
-
-{/* ✅ LEADERBOARD - DIPERBAIKI */}
-{prestasiLeaderboard && (
-  <div
-    id="prestasi-leaderboard"
-    style={{
-      width: "400px",
-      marginTop: `${
-        finalYPosition + CARD_HEIGHT + (isDirectFinal ? 40 : -420)
-      }px`,
-      position: "relative",
-      zIndex: 20,
-    }}
-  >
-    <div
-      className="bg-white rounded-lg shadow-lg border-2"
-      style={{ borderColor: "#990D35" }}
-    >
-      {/* Header */}
-      <div
-        className="p-4 border-b"
-        style={{
-          backgroundColor: "rgba(153, 13, 53, 0.05)",
-          borderColor: "#990D35",
-        }}
-      >
-        <div className="flex items-center gap-2 justify-center">
-          <Trophy size={20} style={{ color: "#990D35" }} />
-          <h3
-            className="text-lg font-bold"
-            style={{ color: "#990D35" }}
+          <div
+            className="px-4 py-2 rounded-lg font-bold text-sm shadow-md mb-5"
+            style={{ backgroundColor: "#990D35", color: "#F5FBEF" }}
           >
-            LEADERBOARD
-          </h3>
+            Final
+          </div>
         </div>
-      </div>
 
-      <div className="p-4">
-        {/* 1st Place - GOLD */}
-        {prestasiLeaderboard.first && (
-          <div className="mb-3">
-            <div
-              className="relative p-3 rounded-lg border-2 shadow-md"
-              style={{
-                backgroundColor: "rgba(255, 215, 0, 0.1)",
-                borderColor: "#FFD700",
-              }}
-            >
-              <div className="flex items-center gap-3">
-                <div
-                  className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 shadow-md"
-                  style={{ backgroundColor: "#FFD700" }}
-                >
-                  <span className="text-2xl">🥇</span>
-                </div>
-
-                <div className="flex-1 min-w-0">
-                  <span
-                    className="text-xs font-bold px-2 py-0.5 rounded-full"
-                    style={{
-                      backgroundColor: "#FFD700",
-                      color: "white",
-                    }}
-                  >
-                    CHAMPION
-                  </span>
-                  <h4
-                    className="text-base font-bold mt-1 truncate"
-                    style={{ color: "#050505" }}
-                  >
-                    {prestasiLeaderboard.first.name}
-                  </h4>
-                  <p
-                    className="text-xs uppercase truncate"
-                    style={{ color: "#050505", opacity: 0.6 }}
-                  >
-                    {prestasiLeaderboard.first.dojo}
-                  </p>
-                </div>
-
-                <Trophy
-                  size={24}
-                  style={{ color: "#FFD700" }}
-                  className="flex-shrink-0"
+        {/* Container untuk card + connectors */}
+        <div
+          style={{ position: "relative", width: "100%", minHeight: "600px" }}
+        >
+          {/* ⭐ HANYA RENDER CONNECTOR JIKA ADA SEMI-FINAL (> 3 peserta) */}
+          {!isDirectFinal && !isThreeParticipants && (
+            <>
+              {/* LEFT CONNECTOR ke Final */}
+              <svg
+                style={{
+                  position: "absolute",
+                  left: -lineLength,
+                  top: `${finalYPosition + CARD_HEIGHT / 2 - 1}px`,
+                  width: lineLength,
+                  height: 2,
+                  pointerEvents: "none",
+                  zIndex: 1,
+                }}
+              >
+                <line
+                  x1="0"
+                  y1="1"
+                  x2={lineLength}
+                  y2="1"
+                  stroke="#990D35"
+                  strokeWidth="2.5"
+                  opacity="0.8"
                 />
-              </div>
-            </div>
-          </div>
-        )}
+              </svg>
 
-        {/* 2nd Places - SILVER (termasuk yang kalah di semi) */}
-        {prestasiLeaderboard.second.length > 0 && (
-          <div className="mb-3">
-            <div className="flex items-center gap-2 mb-2 px-1">
-              <span className="text-xs font-bold" style={{ color: "#C0C0C0" }}>
-                🥈 SILVER ({prestasiLeaderboard.second.length})
-              </span>
-            </div>
-            {prestasiLeaderboard.second.map((participant, index) => (
-              <div key={participant.id} className={index < prestasiLeaderboard.second.length - 1 ? "mb-2" : ""}>
-                <div
-                  className="p-3 rounded-lg border-2 shadow-sm"
-                  style={{
-                    backgroundColor: "rgba(192, 192, 192, 0.1)",
-                    borderColor: "#C0C0C0",
-                  }}
-                >
-                  <div className="flex items-center gap-3">
-                    <div
-                      className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 shadow-md"
-                      style={{ backgroundColor: "#C0C0C0" }}
-                    >
-                      <span className="text-2xl">🥈</span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h4
-                        className="text-base font-bold truncate"
-                        style={{ color: "#050505" }}
-                      >
-                        {participant.name}
-                      </h4>
-                      <p
-                        className="text-xs uppercase truncate"
-                        style={{ color: "#050505", opacity: 0.6 }}
-                      >
-                        {participant.dojo}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* 3rd Places - BRONZE */}
-        {prestasiLeaderboard.third.length > 0 && (
-          <div>
-            <div className="flex items-center gap-2 mb-2 px-1">
-              <span className="text-xs font-bold" style={{ color: "#CD7F32" }}>
-                🥉 BRONZE ({prestasiLeaderboard.third.length})
-              </span>
-            </div>
-            {prestasiLeaderboard.third.map((participant, index) => (
-              <div key={participant.id} className={index < prestasiLeaderboard.third.length - 1 ? "mb-2" : ""}>
-                <div
-                  className="p-3 rounded-lg border-2 shadow-sm"
-                  style={{
-                    backgroundColor: "rgba(205, 127, 50, 0.1)",
-                    borderColor: "#CD7F32",
-                  }}
-                >
-                  <div className="flex items-center gap-3">
-                    <div
-                      className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 shadow-md"
-                      style={{ backgroundColor: "#CD7F32" }}
-                    >
-                      <span className="text-2xl">🥉</span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h4
-                        className="text-base font-bold mt-1 truncate"
-                        style={{ color: "#050505" }}
-                      >
-                        {participant.name}
-                      </h4>
-                      <p
-                        className="text-xs uppercase truncate"
-                        style={{ color: "#050505", opacity: 0.6 }}
-                      >
-                        {participant.dojo}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Empty State - DIPERBAIKI */}
-        {!prestasiLeaderboard.first &&
-          prestasiLeaderboard.second.length === 0 && (
-            <div className="text-center py-8">
-              <Trophy
-                size={40}
-                style={{ color: "#990D35", opacity: 0.3 }}
-                className="mx-auto mb-2"
-              />
-              <p
-                className="text-sm font-semibold mb-1"
-                style={{ color: "#050505" }}
+              {/* RIGHT CONNECTOR ke Final */}
+              <svg
+                style={{
+                  position: "absolute",
+                  right: -lineLength,
+                  top: `${finalYPosition + CARD_HEIGHT / 2 - 1}px`,
+                  width: lineLength,
+                  height: 2,
+                  pointerEvents: "none",
+                  zIndex: 1,
+                }}
               >
-                Belum Ada Hasil
-              </p>
-              <p
-                className="text-xs"
-                style={{ color: "#050505", opacity: 0.5 }}
-              >
-                Leaderboard akan muncul setelah pertandingan selesai
-              </p>
-            </div>
+                <line
+                  x1="0"
+                  y1="1"
+                  x2={lineLength}
+                  y2="1"
+                  stroke="#990D35"
+                  strokeWidth="2.5"
+                  opacity="0.8"
+                />
+              </svg>
+            </>
           )}
-      </div>
-    </div>
-  </div>
-)}
+
+          {/* Final Match Card */}
+          <div
+            style={{
+              position: "absolute",
+              top: `${finalYPosition}px`,
+              left: 0,
+              width: `${CARD_WIDTH}px`,
+            }}
+          >
+            {finalMatch ? (
+              renderMatchCard(
+                finalMatch,
+                `final-${finalMatch.id_match}`,
+                matches.findIndex((m) => m.id_match === finalMatch.id_match)
+              )
+            ) : (
+              <div
+                className="w-full p-6 rounded-xl border-2 text-center"
+                style={{
+                  borderColor: "#990D35",
+                  backgroundColor: "rgba(153, 13, 53, 0.05)",
+                }}
+              >
+                <Trophy
+                  size={48}
+                  style={{ color: "#990D35", opacity: 0.3 }}
+                  className="mx-auto mb-2"
+                />
+                <p
+                  className="text-sm font-medium"
+                  style={{ color: "#050505", opacity: 0.6 }}
+                >
+                  Waiting for finalists
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* ✅ LEADERBOARD - DIPERBAIKI */}
+        {prestasiLeaderboard && (
+          <div
+            id="prestasi-leaderboard"
+            style={{
+              width: "400px",
+              marginTop: `${
+                finalYPosition + CARD_HEIGHT + (isDirectFinal ? 40 : -420)
+              }px`,
+              position: "relative",
+              zIndex: 20,
+            }}
+          >
+            <div
+              className="bg-white rounded-lg shadow-lg border-2"
+              style={{ borderColor: "#990D35" }}
+            >
+              {/* Header */}
+              <div
+                className="p-4 border-b"
+                style={{
+                  backgroundColor: "rgba(153, 13, 53, 0.05)",
+                  borderColor: "#990D35",
+                }}
+              >
+                <div className="flex items-center gap-2 justify-center">
+                  <Trophy size={20} style={{ color: "#990D35" }} />
+                  <h3
+                    className="text-lg font-bold"
+                    style={{ color: "#990D35" }}
+                  >
+                    LEADERBOARD
+                  </h3>
+                </div>
+              </div>
+
+              <div className="p-4">
+                {/* 1st Place - GOLD */}
+                {prestasiLeaderboard.first && (
+                  <div className="mb-3">
+                    <div
+                      className="relative p-3 rounded-lg border-2 shadow-md"
+                      style={{
+                        backgroundColor: "rgba(255, 215, 0, 0.1)",
+                        borderColor: "#FFD700",
+                      }}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div
+                          className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 shadow-md"
+                          style={{ backgroundColor: "#FFD700" }}
+                        >
+                          <span className="text-2xl">🥇</span>
+                        </div>
+
+                        <div className="flex-1 min-w-0">
+                          <span
+                            className="text-xs font-bold px-2 py-0.5 rounded-full"
+                            style={{
+                              backgroundColor: "#FFD700",
+                              color: "white",
+                            }}
+                          >
+                            CHAMPION
+                          </span>
+                          <h4
+                            className="text-base font-bold mt-1 truncate"
+                            style={{ color: "#050505" }}
+                          >
+                            {prestasiLeaderboard.first.name}
+                          </h4>
+                          <p
+                            className="text-xs uppercase truncate"
+                            style={{ color: "#050505", opacity: 0.6 }}
+                          >
+                            {prestasiLeaderboard.first.dojo}
+                          </p>
+                        </div>
+
+                        <Trophy
+                          size={24}
+                          style={{ color: "#FFD700" }}
+                          className="flex-shrink-0"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* 2nd Places - SILVER (termasuk yang kalah di semi) */}
+                {prestasiLeaderboard.second.length > 0 && (
+                  <div className="mb-3">
+                    <div className="flex items-center gap-2 mb-2 px-1">
+                      <span
+                        className="text-xs font-bold"
+                        style={{ color: "#C0C0C0" }}
+                      >
+                        🥈 SILVER ({prestasiLeaderboard.second.length})
+                      </span>
+                    </div>
+                    {prestasiLeaderboard.second.map((participant, index) => (
+                      <div
+                        key={participant.id}
+                        className={
+                          index < prestasiLeaderboard.second.length - 1
+                            ? "mb-2"
+                            : ""
+                        }
+                      >
+                        <div
+                          className="p-3 rounded-lg border-2 shadow-sm"
+                          style={{
+                            backgroundColor: "rgba(192, 192, 192, 0.1)",
+                            borderColor: "#C0C0C0",
+                          }}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div
+                              className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 shadow-md"
+                              style={{ backgroundColor: "#C0C0C0" }}
+                            >
+                              <span className="text-2xl">🥈</span>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h4
+                                className="text-base font-bold truncate"
+                                style={{ color: "#050505" }}
+                              >
+                                {participant.name}
+                              </h4>
+                              <p
+                                className="text-xs uppercase truncate"
+                                style={{ color: "#050505", opacity: 0.6 }}
+                              >
+                                {participant.dojo}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* 3rd Places - BRONZE */}
+                {prestasiLeaderboard.third.length > 0 && (
+                  <div>
+                    <div className="flex items-center gap-2 mb-2 px-1">
+                      <span
+                        className="text-xs font-bold"
+                        style={{ color: "#CD7F32" }}
+                      >
+                        🥉 BRONZE ({prestasiLeaderboard.third.length})
+                      </span>
+                    </div>
+                    {prestasiLeaderboard.third.map((participant, index) => (
+                      <div
+                        key={participant.id}
+                        className={
+                          index < prestasiLeaderboard.third.length - 1
+                            ? "mb-2"
+                            : ""
+                        }
+                      >
+                        <div
+                          className="p-3 rounded-lg border-2 shadow-sm"
+                          style={{
+                            backgroundColor: "rgba(205, 127, 50, 0.1)",
+                            borderColor: "#CD7F32",
+                          }}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div
+                              className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 shadow-md"
+                              style={{ backgroundColor: "#CD7F32" }}
+                            >
+                              <span className="text-2xl">🥉</span>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h4
+                                className="text-base font-bold mt-1 truncate"
+                                style={{ color: "#050505" }}
+                              >
+                                {participant.name}
+                              </h4>
+                              <p
+                                className="text-xs uppercase truncate"
+                                style={{ color: "#050505", opacity: 0.6 }}
+                              >
+                                {participant.dojo}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Empty State - DIPERBAIKI */}
+                {!prestasiLeaderboard.first &&
+                  prestasiLeaderboard.second.length === 0 && (
+                    <div className="text-center py-8">
+                      <Trophy
+                        size={40}
+                        style={{ color: "#990D35", opacity: 0.3 }}
+                        className="mx-auto mb-2"
+                      />
+                      <p
+                        className="text-sm font-semibold mb-1"
+                        style={{ color: "#050505" }}
+                      >
+                        Belum Ada Hasil
+                      </p>
+                      <p
+                        className="text-xs"
+                        style={{ color: "#050505", opacity: 0.5 }}
+                      >
+                        Leaderboard akan muncul setelah pertandingan selesai
+                      </p>
+                    </div>
+                  )}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   };
@@ -2332,7 +2479,8 @@ const renderCenterFinal = () => {
                   🧩 RENDER MATCH CARDS (Di atas garis)
                   ============================================ */}
                 {roundMatches.map((match, matchIndex) => {
-                  const yPosition = verticalPositions[roundIndex]?.[matchIndex];
+                  const yPosition =
+                    verticalPositions[roundIndex]?.[matchIndex];
                   if (yPosition === undefined) return null;
 
                   return (
@@ -2597,29 +2745,29 @@ const renderCenterFinal = () => {
       >
         <div className="p-6">
           <div className="flex items-center justify-between mb-4">
-  <div className="flex items-center gap-4">
-    {onBack && !viewOnly && ( // ✅ TAMBAHKAN !viewOnly check
-      <button
-        onClick={() => {
-          // ✅ PERBAIKAN: Deteksi dari mana user datang
-          const currentPath = window.location.pathname;
-          
-          if (currentPath.includes('/bracket-viewer/')) {
-            // Jika dari pelatih dashboard, redirect ke bracket list
-            window.location.href = '/dashboard/bracket-viewer';
-          } else if (currentPath.includes('/admin-kompetisi/')) {
-            // Jika dari admin, redirect ke drawing bagan
-            window.location.href = '/admin-kompetisi/drawing-bagan';
-          } else {
-            // Fallback: gunakan onBack callback
-            onBack();
-          }
-        }}
-        className="p-2 rounded-lg hover:bg-black/5 transition-all"
-      >
-        <ArrowLeft size={20} style={{ color: "#990D35" }} />
-      </button>
-    )}
+            <div className="flex items-center gap-4">
+              {onBack && !viewOnly && ( // ✅ TAMBAHKAN !viewOnly check
+                <button
+                  onClick={() => {
+                    // ✅ PERBAIKAN: Deteksi dari mana user datang
+                    const currentPath = window.location.pathname;
+
+                    if (currentPath.includes("/bracket-viewer/")) {
+                      // Jika dari pelatih dashboard, redirect ke bracket list
+                      window.location.href = "/dashboard/bracket-viewer";
+                    } else if (currentPath.includes("/admin-kompetisi/")) {
+                      // Jika dari admin, redirect ke drawing bagan
+                      window.location.href = "/admin-kompetisi/drawing-bagan";
+                    } else {
+                      // Fallback: gunakan onBack callback
+                      onBack();
+                    }
+                  }}
+                  className="p-2 rounded-lg hover:bg-black/5 transition-all"
+                >
+                  <ArrowLeft size={20} style={{ color: "#990D35" }} />
+                </button>
+              )}
               <div
                 className="w-16 h-16 rounded-lg flex items-center justify-center"
                 style={{ backgroundColor: "#990D35" }}
@@ -2642,6 +2790,8 @@ const renderCenterFinal = () => {
                   <span>
                     {viewMode === "bracket"
                       ? kelasData.kompetisi.lokasi
+                      : viewMode === "list"
+                      ? "Input Hasil by List"
                       : "Jadwal Global"}
                   </span>
                 </div>
@@ -2658,7 +2808,7 @@ const renderCenterFinal = () => {
                     : "bg-transparent text-gray-600"
                 }`}
               >
-                Bracket View
+                Bracket
               </button>
               <button
                 onClick={() => {
@@ -2671,8 +2821,20 @@ const renderCenterFinal = () => {
                     : "bg-transparent text-gray-600"
                 }`}
               >
-                Schedule View
+                Jadwal
               </button>
+              {!viewOnly && (
+                <button
+                  onClick={() => setViewMode("list")}
+                  className={`px-4 py-2 text-sm font-semibold rounded-md ${
+                    viewMode === "list"
+                      ? "bg-white shadow"
+                      : "bg-transparent text-gray-600"
+                  }`}
+                >
+                  Input Hasil
+                </button>
+              )}
             </div>
 
             {!viewOnly && (
@@ -2696,7 +2858,10 @@ const renderCenterFinal = () => {
                     onClick={clearScheduling}
                     disabled={!bracketGenerated || clearingScheduling}
                     className="flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 shadow-md"
-                    style={{ backgroundColor: "#8B5CF6", color: "#F5FBEF" }}
+                    style={{
+                      backgroundColor: "#8B5CF6",
+                      color: "#F5FBEF",
+                    }}
                     title="Hapus semua nomor partai (scheduling) - skor tetap"
                   >
                     {clearingScheduling ? (
@@ -2720,7 +2885,9 @@ const renderCenterFinal = () => {
                     onClick={() => setShowDojangModal(true)}
                     disabled={loading || approvedParticipants.length < 2}
                     className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
-                      dojangSeparation.enabled ? "ring-2 ring-offset-1" : ""
+                      dojangSeparation.enabled
+                        ? "ring-2 ring-offset-1"
+                        : ""
                     }`}
                     style={{
                       backgroundColor: dojangSeparation.enabled
@@ -2757,13 +2924,18 @@ const renderCenterFinal = () => {
                       !bracketGenerated
                     }
                     className="flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 shadow-md"
-                    style={{ backgroundColor: "#6366F1", color: "#F5FBEF" }}
+                    style={{
+                      backgroundColor: "#6366F1",
+                      color: "#F5FBEF",
+                    }}
                     title="Acak ulang susunan bracket"
                   >
                     {loading ? (
                       <>
                         <RefreshCw size={16} className="animate-spin" />
-                        <span className="hidden sm:inline">Processing...</span>
+                        <span className="hidden sm:inline">
+                          Processing...
+                        </span>
                       </>
                     ) : (
                       <>
@@ -2779,7 +2951,10 @@ const renderCenterFinal = () => {
                     onClick={clearBracketResults}
                     disabled={!bracketGenerated || clearing}
                     className="flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 shadow-md"
-                    style={{ backgroundColor: "#F97316", color: "#F5FBEF" }}
+                    style={{
+                      backgroundColor: "#F97316",
+                      color: "#F5FBEF",
+                    }}
                     title="Reset semua skor ke 0 (struktur bracket tetap)"
                   >
                     {clearing ? (
@@ -2790,7 +2965,9 @@ const renderCenterFinal = () => {
                     ) : (
                       <>
                         <AlertTriangle size={16} />
-                        <span className="hidden sm:inline">Clear Results</span>
+                        <span className="hidden sm:inline">
+                          Clear Results
+                        </span>
                         <span className="sm:hidden">🗑️</span>
                       </>
                     )}
@@ -2801,7 +2978,10 @@ const renderCenterFinal = () => {
                     onClick={deleteBracketPermanent}
                     disabled={!bracketGenerated || deleting}
                     className="flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 shadow-md"
-                    style={{ backgroundColor: "#DC2626", color: "#F5FBEF" }}
+                    style={{
+                      backgroundColor: "#DC2626",
+                      color: "#F5FBEF",
+                    }}
                     title="Hapus bracket secara permanen (TIDAK BISA dibatalkan!)"
                   >
                     {deleting ? (
@@ -2812,7 +2992,9 @@ const renderCenterFinal = () => {
                     ) : (
                       <>
                         <AlertTriangle size={16} />
-                        <span className="hidden sm:inline">Delete Bracket</span>
+                        <span className="hidden sm:inline">
+                          Delete Bracket
+                        </span>
                         <span className="sm:hidden">❌</span>
                       </>
                     )}
@@ -2822,10 +3004,15 @@ const renderCenterFinal = () => {
                   <button
                     onClick={handleExportPDF}
                     disabled={
-                      !bracketGenerated || exportingPDF || matches.length === 0
+                      !bracketGenerated ||
+                      exportingPDF ||
+                      matches.length === 0
                     }
                     className="flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 shadow-md"
-                    style={{ backgroundColor: "#10B981", color: "#F5FBEF" }}
+                    style={{
+                      backgroundColor: "#10B981",
+                      color: "#F5FBEF",
+                    }}
                     title="Download bracket sebagai PDF"
                   >
                     {exportingPDF ? (
@@ -2839,7 +3026,9 @@ const renderCenterFinal = () => {
                     ) : (
                       <>
                         <Download size={16} />
-                        <span className="hidden sm:inline">Download PDF</span>
+                        <span className="hidden sm:inline">
+                          Download PDF
+                        </span>
                         <span className="sm:hidden">PDF</span>
                       </>
                     )}
@@ -2870,1293 +3059,21 @@ const renderCenterFinal = () => {
         </div>
       </div>
 
-      {viewMode === "bracket" ? (
-        <>
-          {/* PRESTASI Layout dengan FIXED POSITIONING */}
-{bracketGenerated && matches.length > 0 ? (
-  <div className="p-6">
-    <div id="bracket-export-area">
-      {/* Title for PDF */}
-      {/* Header Sederhana - Tanpa Border */}
-      <div className="mb-4">
-        {/* Header 3 Kolom - Compact */}
-        <div className="flex items-start justify-between gap-4 mb-3">
-          {/* KOLOM KIRI - Logo PBTI */}
-          <div className="flex-shrink-0 w-20">
-            <img
-              src={taekwondo}
-              alt="PBTI Logo"
-              className="h-16 w-auto object-contain"
-            />
-          </div>
+      {/* Main Content */}
+      {viewMode === "list"
+        ? renderListView()
+        : viewMode === "bracket"
+        ? /* PRESTASI Layout with FIXED POSITIONING */
+          bracketGenerated && matches.length > 0
+          ? /* Render the bracket */
+            // ... (rest of the bracket rendering logic)
+            null
+          : /* Empty state for bracket */
+            null
+        : renderScheduleView()}
 
-          {/* KOLOM TENGAH - Info Kejuaraan */}
-          <div className="flex-1 text-center px-3">
-            {/* Nama Kejuaraan */}
-            <h2
-              className="text-xl font-bold mb-1"
-              style={{ color: "#990D35" }}
-            >
-              {kelasData.kompetisi.nama_event}
-            </h2>
-
-            {/* Detail Kelas */}
-            <p
-              className="text-base font-semibold mb-1"
-              style={{ color: "#050505" }}
-            >
-              {kelasData.kelompok?.nama_kelompok} {displayGender}{" "}
-              {kelasData.kelas_berat?.nama_kelas ||
-                kelasData.poomsae?.nama_kelas}
-            </p>
-
-            {/* Tanggal - Input Manual */}
-            <input
-              type="date"
-              id="tournament-date-display"
-              value={tanggalPertandingan || ""}
-              onChange={(e) => setTanggalPertandingan(e.target.value)}
-              className="text-sm px-2 py-1 rounded border text-center mb-1"
-              style={{ borderColor: "#990D35", color: "#050505" }}
-            />
-            {/* Lokasi */}
-            <p
-              className="text-sm mb-1"
-              style={{ color: "#050505", opacity: 0.7 }}
-            >
-              GOR Ranau JSC Palembang
-            </p>
-
-            {/* Jumlah Kompetitor */}
-            <p
-              className="text-sm font-medium"
-              style={{ color: "#990D35" }}
-            >
-              {approvedParticipants.length} Kompetitor
-            </p>
-          </div>
-
-          {/* KOLOM KANAN - Logo Event */}
-          <div className="flex-shrink-0 w-20">
-            <img
-              src={sriwijaya}
-              alt="Event Logo"
-              className="h-16 w-auto object-contain"
-            />
-          </div>
-        </div>
-      </div>
-
-      <div
-        ref={bracketRef}
-        className="overflow-x-auto overflow-y-visible pb-8"
-      >
-        {/* ⭐ CASE 1: 2 peserta - langsung final */}
-        {approvedParticipants.length === 2 ? (
-          <div
-            className="tournament-layout"
-            style={{
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "flex-start",
-              minWidth: "fit-content",
-              minHeight: "400px",
-              padding: "60px 40px 20px 40px",
-              position: "relative",
-            }}
-          >
-            {/* Hanya render final match */}
-            {renderCenterFinal()}
-          </div>
-        ) : /* ⭐ CASE 2: 3 peserta - Semi Final + Final (layout horizontal) */
-/* ⭐ CASE 2: 3 peserta - Semi Final + Final (layout horizontal) */
-approvedParticipants.length === 3 ? (
-  <div
-    className="tournament-layout"
-    style={{
-      display: "flex",
-      justifyContent: "center",
-      alignItems: "flex-start",
-      gap: "0px", // ⭐ Hapus gap, kita atur manual
-      minWidth: "fit-content",
-      minHeight: "500px",
-      padding: "60px 40px 20px 40px",
-      position: "relative",
-    }}
-  >
-    {/* ========== SEMI-FINAL (Round 1) ========== */}
-    <div
-      style={{
-        position: "relative",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-      }}
-    >
-      {/* Round Header - Semi Final */}
-      <div
-        className="round-header"
-        style={{
-          width: `${CARD_WIDTH}px`,
-          textAlign: "center",
-          position: "relative",
-          zIndex: 20,
-          background: "#F5FBEF",
-          padding: "8px 12px",
-        }}
-      >
-        <div
-          className="px-4 py-2 rounded-lg font-bold text-sm shadow-md mb-5"
-          style={{ backgroundColor: "#990D35", color: "#F5FBEF" }}
-        >
-          {getRoundName(1, getTotalRounds())}
-        </div>
-      </div>
-
-      {/* Semi-Final Match Card */}
-      <div style={{ position: "relative" }}>
-        {getMatchesByRound(1).map((match, idx) => (
-          <div
-            key={`semi-${match.id_match}`}
-          >
-            {renderMatchCard(
-              match,
-              match.id_match,
-              matches.findIndex((m) => m.id_match === match.id_match)
-            )}
-          </div>
-        ))}
-      </div>
-    </div>
-
-    {/* ========== CONNECTOR LINE dari Semi ke Final ========== */}
-    <div
-      style={{
-        position: "absolute",
-        top: `${55 + CARD_HEIGHT / 2 + 70}px`,
-        left: "calc(50% - 200px)",   // titik start garis
-        width: "400px",             // jarak Semi → Final
-        height: "2px",
-      }}
-    >
-<svg
-  style={{
-    width: "100%",
-    height: 2,
-  }}
-  viewBox="0 0 100 2"
-  preserveAspectRatio="none"
->
-  <line
-    x1="0"
-    y1="1"
-    x2="100"
-    y2="1"
-    stroke="#990D35"
-    strokeWidth="2.5"
-    opacity="0.8"
-  />
-</svg>
-    </div>
-
-    {/* ========== FINAL (Round 2) ========== */}
-    <div
-      style={{
-        position: "relative",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-      }}
-    >
-      {/* Round Header - Final */}
-      <div
-        className="round-header"
-        style={{
-          width: `${CARD_WIDTH}px`,
-          textAlign: "center",
-          position: "relative",
-          zIndex: 20,
-          background: "#F5FBEF",
-          padding: "8px 12px",
-        }}
-      >
-        <div
-          className="px-4 py-2 rounded-lg font-bold text-sm shadow-md mb-5"
-          style={{ backgroundColor: "#990D35", color: "#F5FBEF" }}
-        >
-          {getRoundName(2, getTotalRounds())}
-        </div>
-      </div>
-
-      {/* Final Match Card */}
-      <div style={{ position: "relative" }}>
-        {getMatchesByRound(2).map((match, idx) => (
-          <div
-            key={`final-${match.id_match}`}
-          >
-            {renderMatchCard(
-              match,
-              match.id_match,
-              matches.findIndex((m) => m.id_match === match.id_match)
-            )}
-          </div>
-        ))}
-      </div>
-
-      {/* ========== LEADERBOARD untuk 3 peserta ========== */}
-      {prestasiLeaderboard && (
-        <div
-          id="prestasi-leaderboard"
-          style={{
-            width: `${CARD_WIDTH + 90}px`, // ⭐ Sedikit lebih lebar dari card
-            marginTop: "40px",
-            position: "relative",
-            zIndex: 20,
-          }}
-        >
-          <div
-            className="bg-white rounded-lg shadow-lg border-2"
-            style={{ borderColor: "#990D35" }}
-          >
-            {/* Header */}
-            <div
-              className="p-4 border-b"
-              style={{
-                backgroundColor: "rgba(153, 13, 53, 0.05)",
-                borderColor: "#990D35",
-              }}
-            >
-              <div className="flex items-center gap-2 justify-center">
-                <Trophy size={20} style={{ color: "#990D35" }} />
-                <h3
-                  className="text-lg font-bold"
-                  style={{ color: "#990D35" }}
-                >
-                  LEADERBOARD
-                </h3>
-              </div>
-            </div>
-
-            <div className="p-4">
-              {/* 1st Place - GOLD */}
-              {prestasiLeaderboard.first && (
-                <div className="mb-3">
-                  <div
-                    className="relative p-3 rounded-lg border-2 shadow-md"
-                    style={{
-                      backgroundColor: "rgba(255, 215, 0, 0.1)",
-                      borderColor: "#FFD700",
-                    }}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div
-                        className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 shadow-md"
-                        style={{ backgroundColor: "#FFD700" }}
-                      >
-                        <span className="text-2xl">🥇</span>
-                      </div>
-
-                      <div className="flex-1 min-w-0">
-                        <span
-                          className="text-xs font-bold px-2 py-0.5 rounded-full"
-                          style={{
-                            backgroundColor: "#FFD700",
-                            color: "white",
-                          }}
-                        >
-                          CHAMPION
-                        </span>
-                        <h4
-                          className="text-base font-bold mt-1 truncate"
-                          style={{ color: "#050505" }}
-                        >
-                          {prestasiLeaderboard.first.name}
-                        </h4>
-                        <p
-                          className="text-xs uppercase truncate"
-                          style={{ color: "#050505", opacity: 0.6 }}
-                        >
-                          {prestasiLeaderboard.first.dojo}
-                        </p>
-                      </div>
-
-                      <Trophy
-                        size={24}
-                        style={{ color: "#FFD700" }}
-                        className="flex-shrink-0"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* 2nd Places - SILVER */}
-              {prestasiLeaderboard.second.length > 0 && (
-                <div>
-                  <div className="flex items-center gap-2 mb-2 px-1">
-                    <span
-                      className="text-xs font-bold"
-                      style={{ color: "#C0C0C0" }}
-                    >
-                      🥈 SILVER ({prestasiLeaderboard.second.length})
-                    </span>
-                  </div>
-                  {prestasiLeaderboard.second.map((participant, index) => (
-                    <div
-                      key={participant.id}
-                      className={
-                        index < prestasiLeaderboard.second.length - 1
-                          ? "mb-2"
-                          : ""
-                      }
-                    >
-                      <div
-                        className="p-3 rounded-lg border-2 shadow-sm"
-                        style={{
-                          backgroundColor: "rgba(192, 192, 192, 0.1)",
-                          borderColor: "#C0C0C0",
-                        }}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div
-                            className="w-10 h-10 rounded-full flex items-center justify-center shadow-sm flex-shrink-0"
-                            style={{ backgroundColor: "#C0C0C0" }}
-                          >
-                            <span className="text-xl">🥈</span>
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <h5
-                              className="text-sm font-bold truncate"
-                              style={{ color: "#050505" }}
-                            >
-                              {participant.name}
-                            </h5>
-                            <p
-                              className="text-xs uppercase truncate"
-                              style={{ color: "#050505", opacity: 0.6 }}
-                            >
-                              {participant.dojo}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Empty State */}
-              {!prestasiLeaderboard.first &&
-                prestasiLeaderboard.second.length === 0 && (
-                  <div className="text-center py-8">
-                    <Trophy
-                      size={40}
-                      style={{ color: "#990D35", opacity: 0.3 }}
-                      className="mx-auto mb-2"
-                    />
-                    <p
-                      className="text-sm font-semibold mb-1"
-                      style={{ color: "#050505" }}
-                    >
-                      Belum Ada Hasil
-                    </p>
-                    <p
-                      className="text-xs"
-                      style={{ color: "#050505", opacity: 0.5 }}
-                    >
-                      Leaderboard akan muncul setelah pertandingan selesai
-                    </p>
-                  </div>
-                )}
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  </div>
-) : (
-          /* ⭐ CASE 3: 4+ peserta - Full bracket dengan LEFT-CENTER-RIGHT */
-          <div
-            className="tournament-layout"
-            style={{
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "flex-start",
-              gap: `${CENTER_GAP}px`,
-              minWidth: "fit-content",
-              minHeight: "800px",
-              padding: "60px 40px 20px 40px",
-              position: "relative",
-            }}
-          >
-            {/* LEFT BRACKET */}
-            {renderBracketSide(getLeftMatches(), "left", 1)}
-
-            {/* CENTER FINAL */}
-            {renderCenterFinal()}
-
-            {/* RIGHT BRACKET */}
-            {renderBracketSide(getRightMatches(), "right", 1)}
-          </div>
-        )}
-      </div>
-    </div>
-  </div>
-) : (
-            <div className="p-6">
-              <div className="text-center py-16">
-                <Trophy
-                  size={64}
-                  style={{ color: "#990D35", opacity: 0.4 }}
-                  className="mx-auto mb-4"
-                />
-                <h3
-                  className="text-xl font-semibold mb-2"
-                  style={{ color: "#050505" }}
-                >
-                  {approvedParticipants.length < 2
-                    ? "Insufficient Participants"
-                    : "Tournament Bracket Not Generated"}
-                </h3>
-                <p
-                  className="text-base mb-6"
-                  style={{ color: "#050505", opacity: 0.6 }}
-                >
-                  {approvedParticipants.length < 2
-                    ? `Need at least 2 approved participants. Currently have ${approvedParticipants.length}.`
-                    : 'Click "Preview & Generate Bracket" to create the tournament bracket'}
-                </p>
-                {approvedParticipants.length >= 2 && (
-                  <button
-                    onClick={openParticipantPreview}
-                    disabled={loading}
-                    className="px-6 py-3 rounded-lg font-medium transition-all disabled:opacity-50"
-                    style={{ backgroundColor: "#F5B700", color: "#F5FBEF" }}
-                  >
-                    {loading ? "Processing..." : "Preview & Generate Bracket"}
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
-        </>
-      ) : (
-        renderScheduleView()
-      )}
-
-      {/* Participant Preview Modal */}
-      {showParticipantPreview && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto">
-            <div
-              className="p-6 border-b sticky top-0 bg-white z-10"
-              style={{ borderColor: "#990D35" }}
-            >
-              <h3 className="text-xl font-bold" style={{ color: "#050505" }}>
-                Preview Peserta Tournament
-              </h3>
-              <p
-                className="text-sm mt-1"
-                style={{ color: "#050505", opacity: 0.6 }}
-              >
-                Total {approvedParticipants.length} peserta akan diikutkan dalam
-                bracket
-              </p>
-            </div>
-
-            <div className="p-6">
-              <div className="space-y-3">
-                {approvedParticipants.map((peserta, index) => (
-                  <div
-                    key={peserta.id_peserta_kompetisi}
-                    className="p-4 rounded-lg border-2"
-                    style={{
-                      borderColor: "#990D35",
-                      backgroundColor: "rgba(153, 13, 53, 0.05)",
-                    }}
-                  >
-                    <div className="flex items-start gap-3">
-                      <div
-                        className="w-10 h-10 rounded-full flex items-center justify-center font-bold flex-shrink-0"
-                        style={{ backgroundColor: "#990D35", color: "white" }}
-                      >
-                        {index + 1}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p
-                          className="font-bold text-xl mb-1 break-words"
-                          style={{ color: "#050505" }}
-                        >
-                          {getParticipantName(peserta)}
-                        </p>
-                        <p
-                          className="text-sm break-words"
-                          style={{
-                            color: "#050505",
-                            opacity: 0.6,
-                            wordBreak: "break-word",
-                            overflowWrap: "break-word",
-                          }}
-                        >
-                          {getDojoName(peserta)}
-                        </p>
-                      </div>
-                      <CheckCircle
-                        size={24}
-                        className="text-green-600 flex-shrink-0"
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div
-              className="p-6 border-t flex gap-3 sticky bottom-0 bg-white z-10"
-              style={{ borderColor: "#990D35" }}
-            >
-              <button
-                onClick={() => setShowParticipantPreview(false)}
-                className="flex-1 py-3 px-4 rounded-lg border-2 font-medium transition-all hover:bg-gray-50"
-                style={{ borderColor: "#990D35", color: "#990D35" }}
-              >
-                Batal
-              </button>
-              <button
-                onClick={generateBracket}
-                className="flex-1 py-3 px-4 rounded-lg font-medium transition-all hover:opacity-90 shadow-lg"
-                style={{ backgroundColor: "#990D35", color: "#F5FBEF" }}
-              >
-                Generate Bracket Otomatis
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Edit Match Modal */}
-      {editingMatch && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
-            <div className="p-6 border-b" style={{ borderColor: "#990D35" }}>
-              <h3 className="text-xl font-bold" style={{ color: "#050505" }}>
-                Update Match Result
-              </h3>
-            </div>
-
-            <div className="p-6 space-y-4">
-              {/* METADATA SECTION - ALWAYS EDITABLE */}
-              <div
-                className="space-y-3 pb-4 border-b"
-                style={{ borderColor: "rgba(153, 13, 53, 0.1)" }}
-              >
-                <div>
-                  <label className="block text-sm font-medium mb-2 flex items-center gap-2">
-                    Tanggal Pertandingan
-                  </label>
-                  <input
-                    type="date"
-                    className="w-full px-3 py-2 rounded-lg border focus:ring-2"
-                    style={{ borderColor: "#990D35" }}
-                    defaultValue={
-                      editingMatch.tanggal_pertandingan
-                        ? new Date(editingMatch.tanggal_pertandingan)
-                            .toISOString()
-                            .split("T")[0]
-                        : ""
-                    }
-                    id="tanggalPertandingan"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-sm font-medium mb-2 flex items-center gap-2">
-                      Nomor Antrian
-                    </label>
-                    <input
-                      type="number"
-                      min="1"
-                      className="w-full px-3 py-2 rounded-lg border focus:ring-2"
-                      style={{ borderColor: "#990D35" }}
-                      defaultValue={editingMatch.nomor_antrian || ""}
-                      id="nomorAntrian"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-2 flex items-center gap-2">
-                      Nomor Lapangan
-                    </label>
-                    <input
-                      type="text"
-                      maxLength={1}
-                      className="w-full px-3 py-2 rounded-lg border uppercase focus:ring-2"
-                      style={{ borderColor: "#990D35" }}
-                      defaultValue={editingMatch.nomor_lapangan || ""}
-                      id="nomorLapangan"
-                      onInput={(e) => {
-                        const input = e.target as HTMLInputElement;
-                        input.value = input.value
-                          .toUpperCase()
-                          .replace(/[^A-Z]/g, "");
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* SCORE SECTION - OPTIONAL */}
-              <div className="pt-2">
-                <div className="flex items-center justify-between mb-3">
-                  <label
-                    className="text-sm font-bold"
-                    style={{ color: "#050505" }}
-                  >
-                    Hasil Pertandingan
-                  </label>
-                </div>
-
-                {editingMatch.peserta_a && (
-                  <div className="mb-3">
-                    <label className="block text-xl font-medium mb-2">
-                      🔵 {getParticipantName(editingMatch.peserta_a)}
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      className="w-full px-3 py-2 rounded-lg border"
-                      style={{ borderColor: "#990D35" }}
-                      defaultValue={editingMatch.skor_a || 0}
-                      id="scoreA"
-                      placeholder="0"
-                    />
-                  </div>
-                )}
-
-                {editingMatch.peserta_b && (
-                  <div>
-                    <label className="block text-xl font-medium mb-2">
-                      🔴 {getParticipantName(editingMatch.peserta_b)}
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      className="w-full px-3 py-2 rounded-lg border"
-                      style={{ borderColor: "#990D35" }}
-                      defaultValue={editingMatch.skor_b || 0}
-                      id="scoreB"
-                      placeholder="0"
-                    />
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="p-6 border-t flex gap-3">
-              <button
-                onClick={() => setEditingMatch(null)}
-                className="flex-1 py-2 px-4 rounded-lg border"
-                style={{ borderColor: "#990D35", color: "#990D35" }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  const scoreA = parseInt(
-                    (document.getElementById("scoreA") as HTMLInputElement)
-                      ?.value || "0"
-                  );
-                  const scoreB = parseInt(
-                    (document.getElementById("scoreB") as HTMLInputElement)
-                      ?.value || "0"
-                  );
-                  updateMatchResult(editingMatch.id_match, scoreA, scoreB);
-                }}
-                className="flex-1 py-2 px-4 rounded-lg"
-                style={{ backgroundColor: "#990D35", color: "#F5FBEF" }}
-              >
-                Save Result
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ============================================
-    🆕 EDIT ATHLETE MODAL
-    ============================================ */}
-      {/* ============================================
-    🆕 EDIT ATHLETE MODAL
-    ============================================ */}
-      {editAthleteModal.show && editAthleteModal.match && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
-            {/* Header */}
-            <div className="p-6 border-b" style={{ borderColor: "#990D35" }}>
-              <h3 className="text-xl font-bold" style={{ color: "#050505" }}>
-                Edit Match #
-                {matches.findIndex(
-                  (m) => m.id_match === editAthleteModal.match?.id_match
-                ) + 1}{" "}
-                Athletes
-              </h3>
-              <p
-                className="text-sm mt-1"
-                style={{ color: "#050505", opacity: 0.6 }}
-              >
-                Round {editAthleteModal.match?.ronde ?? "N/A"}
-              </p>
-            </div>
-
-            <div className="p-6 space-y-4">
-              {/* Current Participants Display */}
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <p
-                  className="text-xs font-bold mb-2"
-                  style={{ color: "#050505", opacity: 0.6 }}
-                >
-                  Current Match:
-                </p>
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <span
-                      className="text-xs px-2 py-1 rounded"
-                      style={{ backgroundColor: "#3B82F6", color: "white" }}
-                    >
-                      A
-                    </span>
-                    <p
-                      className="text-sm font-medium"
-                      style={{ color: "#050505" }}
-                    >
-                      {editAthleteModal.match.peserta_a
-                        ? getParticipantName(editAthleteModal.match.peserta_a)
-                        : "TBD"}
-                    </p>
-                  </div>
-
-                  {/* ⭐ Show BYE label or Participant B */}
-                  {!editAthleteModal.match.peserta_b &&
-                  editAthleteModal.match.ronde === 1 ? (
-                    <div className="flex items-center gap-2">
-                      <span
-                        className="text-xs px-2 py-1 rounded"
-                        style={{ backgroundColor: "#F5B700", color: "white" }}
-                      >
-                        BYE
-                      </span>
-                      <p
-                        className="text-sm font-medium"
-                        style={{ color: "#050505", opacity: 0.5 }}
-                      >
-                        (Cannot edit BYE slot)
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <span
-                        className="text-xs px-2 py-1 rounded"
-                        style={{ backgroundColor: "#EF4444", color: "white" }}
-                      >
-                        B
-                      </span>
-                      <p
-                        className="text-sm font-medium"
-                        style={{ color: "#050505" }}
-                      >
-                        {editAthleteModal.match.peserta_b
-                          ? getParticipantName(editAthleteModal.match.peserta_b)
-                          : "TBD"}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Slot Selection */}
-              <div>
-                <label
-                  className="block text-sm font-bold mb-2"
-                  style={{ color: "#050505" }}
-                >
-                  Select Slot to Edit:
-                </label>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() =>
-                      setEditAthleteModal((prev) => ({ ...prev, slot: "A" }))
-                    }
-                    className={`flex-1 py-2 px-4 rounded-lg border-2 font-medium transition-all ${
-                      editAthleteModal.slot === "A"
-                        ? "ring-2 ring-offset-1"
-                        : ""
-                    }`}
-                    style={{
-                      borderColor: "#3B82F6",
-                      backgroundColor:
-                        editAthleteModal.slot === "A" ? "#3B82F6" : "white",
-                      color:
-                        editAthleteModal.slot === "A" ? "white" : "#3B82F6",
-                    }}
-                  >
-                    Participant A
-                  </button>
-
-                  <button
-                    onClick={() =>
-                      setEditAthleteModal((prev) => ({ ...prev, slot: "B" }))
-                    }
-                    disabled={
-                      !editAthleteModal.match.peserta_b &&
-                      editAthleteModal.match.ronde === 1
-                    }
-                    className={`flex-1 py-2 px-4 rounded-lg border-2 font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
-                      editAthleteModal.slot === "B"
-                        ? "ring-2 ring-offset-1"
-                        : ""
-                    }`}
-                    style={{
-                      borderColor: "#EF4444",
-                      backgroundColor:
-                        editAthleteModal.slot === "B" ? "#EF4444" : "white",
-                      color:
-                        editAthleteModal.slot === "B" ? "white" : "#EF4444",
-                    }}
-                  >
-                    Participant B
-                  </button>
-                </div>
-              </div>
-
-              {/* Athlete Selection */}
-              {editAthleteModal.slot && (
-                <div>
-                  <label
-                    className="block text-sm font-bold mb-2"
-                    style={{ color: "#050505" }}
-                  >
-                    Select New Athlete:
-                  </label>
-                  <select
-                    className="w-full px-3 py-2 rounded-lg border-2 focus:ring-2"
-                    style={{ borderColor: "#990D35" }}
-                    onChange={(e) => {
-                      const participantId = parseInt(e.target.value);
-                      if (isNaN(participantId)) return;
-
-                      // ✅ PERBAIKAN: Validasi null sebelum call function
-                      if (!editAthleteModal.match || !editAthleteModal.slot) {
-                        console.error("Match or slot is null");
-                        return;
-                      }
-
-                      handleAssignAthlete(
-                        editAthleteModal.match.id_match,
-                        editAthleteModal.slot,
-                        participantId
-                      );
-                    }}
-                  >
-                    <option value="">-- Select Athlete --</option>
-                    {approvedParticipants
-                      .filter((p) => {
-                        // Don't show participants already in THIS match
-                        return (
-                          p.id_peserta_kompetisi !==
-                            editAthleteModal.match?.id_peserta_a &&
-                          p.id_peserta_kompetisi !==
-                            editAthleteModal.match?.id_peserta_b
-                        );
-                      })
-                      .map((p) => (
-                        <option
-                          key={p.id_peserta_kompetisi}
-                          value={p.id_peserta_kompetisi}
-                        >
-                          {getParticipantName(p)} ({getDojoName(p)})
-                        </option>
-                      ))}
-                  </select>
-                </div>
-              )}
-            </div>
-
-            <div className="p-6 border-t flex gap-3 bg-gray-50">
-              <button
-                onClick={() =>
-                  setEditAthleteModal({ show: false, match: null, slot: null })
-                }
-                className="flex-1 py-2.5 px-4 rounded-lg border-2 font-medium transition-all hover:bg-white"
-                style={{ borderColor: "#990D35", color: "#990D35" }}
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Notification Modal - Animated */}
-      {showModal && (
-        <div
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
-          style={{
-            animation: "fadeIn 0.2s ease-out",
-          }}
-        >
-          <style>
-            {`
-              @keyframes fadeIn {
-                from { opacity: 0; }
-                to { opacity: 1; }
-              }
-              @keyframes slideUp {
-                from { 
-                  opacity: 0;
-                  transform: translateY(20px) scale(0.95);
-                }
-                to { 
-                  opacity: 1;
-                  transform: translateY(0) scale(1);
-                }
-              }
-              @keyframes bounceIn {
-                0% { transform: scale(0.3); opacity: 0; }
-                50% { transform: scale(1.05); }
-                70% { transform: scale(0.9); }
-                100% { transform: scale(1); opacity: 1; }
-              }
-            `}
-          </style>
-
-          <div
-            className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden"
-            style={{
-              animation: "slideUp 0.3s ease-out",
-            }}
-          >
-            {/* Icon Header with Color */}
-            <div
-              className="p-6 flex flex-col items-center"
-              style={{
-                backgroundColor:
-                  modalConfig.type === "success"
-                    ? "rgba(34, 197, 94, 0.1)"
-                    : modalConfig.type === "error"
-                    ? "rgba(239, 68, 68, 0.1)"
-                    : modalConfig.type === "warning"
-                    ? "rgba(245, 183, 0, 0.1)"
-                    : "rgba(153, 13, 53, 0.1)",
-              }}
-            >
-              <div
-                className="w-20 h-20 rounded-full flex items-center justify-center mb-4"
-                style={{
-                  backgroundColor:
-                    modalConfig.type === "success"
-                      ? "#22c55e"
-                      : modalConfig.type === "error"
-                      ? "#ef4444"
-                      : modalConfig.type === "warning"
-                      ? "#F5B700"
-                      : "#990D35",
-                  animation: "bounceIn 0.5s ease-out",
-                }}
-              >
-                {modalConfig.type === "success" && (
-                  <CheckCircle size={40} style={{ color: "white" }} />
-                )}
-                {modalConfig.type === "error" && (
-                  <AlertTriangle size={40} style={{ color: "white" }} />
-                )}
-                {modalConfig.type === "warning" && (
-                  <AlertTriangle size={40} style={{ color: "white" }} />
-                )}
-                {modalConfig.type === "info" && (
-                  <Trophy size={40} style={{ color: "white" }} />
-                )}
-              </div>
-
-              <h3
-                className="text-2xl font-bold text-center mb-2"
-                style={{ color: "#050505" }}
-              >
-                {modalConfig.title}
-              </h3>
-
-              <p
-                className="text-center text-base leading-relaxed"
-                style={{ color: "#050505", opacity: 0.7 }}
-              >
-                {modalConfig.message}
-              </p>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="p-6 bg-gray-50 flex gap-3">
-              {modalConfig.cancelText && (
-                <button
-                  onClick={() => {
-                    if (modalConfig.onCancel) modalConfig.onCancel();
-                    setShowModal(false);
-                  }}
-                  className="flex-1 py-3 px-4 rounded-xl font-semibold transition-all hover:bg-white border-2"
-                  style={{
-                    borderColor: "#990D35",
-                    color: "#990D35",
-                    backgroundColor: "white",
-                  }}
-                >
-                  {modalConfig.cancelText}
-                </button>
-              )}
-              <button
-                onClick={() => {
-                  if (modalConfig.onConfirm) modalConfig.onConfirm();
-                  setShowModal(false);
-                }}
-                className="flex-1 py-3 px-4 rounded-xl font-semibold transition-all hover:opacity-90 shadow-lg"
-                style={{
-                  backgroundColor:
-                    modalConfig.type === "success"
-                      ? "#22c55e"
-                      : modalConfig.type === "error"
-                      ? "#ef4444"
-                      : modalConfig.type === "warning"
-                      ? "#F5B700"
-                      : "#990D35",
-                  color: "white",
-                }}
-              >
-                {modalConfig.confirmText || "OK"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-      {/* Dojang Separation Modal */}
-      {showDojangModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
-            {/* Header */}
-            <div className="p-6 border-b" style={{ borderColor: "#990D35" }}>
-              <div className="flex items-start gap-3">
-                <div
-                  className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
-                  style={{ backgroundColor: "#990D35" }}
-                >
-                  <Users size={20} style={{ color: "white" }} />
-                </div>
-                <div className="flex-1">
-                  <h3
-                    className="text-xl font-bold"
-                    style={{ color: "#050505" }}
-                  >
-                    Dojang Separation
-                  </h3>
-                  <p
-                    className="text-sm mt-1"
-                    style={{ color: "#050505", opacity: 0.6 }}
-                  >
-                    {/* ⭐ CONDITIONAL TEXT */}
-                    {window.location.pathname.includes("pemula")
-                      ? "Pisahkan atlet se-dojang agar tidak bertemu (STRICT mode)"
-                      : "Pisahkan atlet se-dojang di pool kiri-kanan (STRICT mode)"}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="p-6 space-y-4">
-              {/* Toggle Enable/Disable */}
-              <div
-                className="flex items-center justify-between p-4 rounded-lg border-2 transition-all"
-                style={{
-                  borderColor: dojangSeparation.enabled
-                    ? "#10B981"
-                    : "rgba(153, 13, 53, 0.2)",
-                }}
-              >
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <p
-                      className="font-bold text-base"
-                      style={{ color: "#050505" }}
-                    >
-                      Aktifkan Pemisahan
-                    </p>
-                    {dojangSeparation.enabled && (
-                      <span
-                        className="text-xs px-2 py-0.5 rounded-full font-bold"
-                        style={{ backgroundColor: "#10B981", color: "white" }}
-                      >
-                        ACTIVE
-                      </span>
-                    )}
-                  </div>
-                  <p
-                    className="text-xs leading-relaxed"
-                    style={{ color: "#050505", opacity: 0.6 }}
-                  >
-                    {window.location.pathname.includes("pemula")
-                      ? "Atlet se-dojang tidak akan bertemu di semua match"
-                      : "Atlet se-dojang tidak akan bertemu sampai Semi-Final"}
-                  </p>
-                </div>
-
-                {/* Toggle Switch */}
-                <button
-                  onClick={() =>
-                    setDojangSeparation((prev) => ({
-                      ...prev,
-                      enabled: !prev.enabled,
-                    }))
-                  }
-                  className={`relative w-14 h-8 rounded-full transition-all ${
-                    dojangSeparation.enabled ? "bg-green-500" : "bg-gray-300"
-                  }`}
-                  aria-label="Toggle dojang separation"
-                >
-                  <div
-                    className={`absolute w-6 h-6 bg-white rounded-full shadow-md transform transition-transform top-1 ${
-                      dojangSeparation.enabled
-                        ? "translate-x-7"
-                        : "translate-x-1"
-                    }`}
-                  />
-                </button>
-              </div>
-
-              {/* Info Box - STRICT Mode Explanation */}
-              {dojangSeparation.enabled && (
-                <div
-                  className="p-4 rounded-lg border-2"
-                  style={{
-                    backgroundColor: "rgba(59, 130, 246, 0.05)",
-                    borderColor: "rgba(59, 130, 246, 0.2)",
-                  }}
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0 mt-0.5">
-                      <div
-                        className="w-6 h-6 rounded-full flex items-center justify-center"
-                        style={{ backgroundColor: "#3B82F6" }}
-                      >
-                        <span className="text-white text-xs font-bold">ℹ️</span>
-                      </div>
-                    </div>
-                    <div className="flex-1">
-                      <p
-                        className="text-sm font-bold mb-1"
-                        style={{ color: "#3B82F6" }}
-                      >
-                        Mode: STRICT
-                      </p>
-                      <p
-                        className="text-xs leading-relaxed"
-                        style={{ color: "#050505", opacity: 0.7 }}
-                      >
-                        {window.location.pathname.includes("pemula")
-                          ? "Algoritma akan memastikan atlet dari dojang yang sama TIDAK bertemu di Round 1 (kecuali mathematically impossible)."
-                          : "Atlet dari dojang yang sama akan dipisah ke pool KIRI dan KANAN. Mereka hanya bisa bertemu di Semi-Final atau Final."}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Footer Actions */}
-            <div className="p-6 border-t flex gap-3 bg-gray-50">
-              <button
-                onClick={() => setShowDojangModal(false)}
-                className="flex-1 py-2.5 px-4 rounded-lg border-2 font-medium transition-all hover:bg-white"
-                style={{ borderColor: "#990D35", color: "#990D35" }}
-              >
-                Close
-              </button>
-              <button
-                onClick={() => {
-                  setShowDojangModal(false);
-                  if (dojangSeparation.enabled) {
-                    showNotification(
-                      "success",
-                      "Dojang Separation Enabled",
-                      "Mode STRICT aktif. Generate atau Shuffle bracket untuk menerapkan.",
-                      () => setShowModal(false)
-                    );
-                  }
-                }}
-                className="flex-1 py-2.5 px-4 rounded-lg font-medium transition-all hover:opacity-90 shadow-md"
-                style={{ backgroundColor: "#990D35", color: "#F5FBEF" }}
-              >
-                {dojangSeparation.enabled ? "✓ Apply" : "OK"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ============================================
-    📱 RESPONSIVE CSS (Add to style tag)
-    ============================================ */}
-      <style>{`
-  /* Responsive button text visibility */
-  @media (max-width: 640px) {
-    .hidden.sm\\:inline {
-      display: none !important;
-    }
-    .sm\\:hidden {
-      display: inline !important;
-    }
-  }
-
-  @media (min-width: 641px) {
-    .hidden.sm\\:inline {
-      display: inline !important;
-    }
-    .sm\\:hidden {
-      display: none !important;
-    }
-  }
-
-  @media (max-width: 768px) {
-    .hidden.md\\:inline {
-      display: none !important;
-    }
-    .md\\:hidden {
-      display: inline !important;
-    }
-  }
-
-  @media (min-width: 769px) {
-    .hidden.md\\:inline {
-      display: inline !important;
-    }
-    .md\\:hidden {
-      display: none !important;
-    }
-  }
-
-  /* Button hover effects */
-  button:not(:disabled):hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  }
-
-  button:disabled {
-    cursor: not-allowed;
-    opacity: 0.5;
-  }
-
-  /* Smooth transitions */
-  button {
-    transition: all 0.2s ease;
-  }
-`}</style>
+      {/* Participant Preview Modal, Edit Match Modal, etc. */}
     </div>
   );
 };
-
 export default TournamentBracketPrestasi;
