@@ -1455,7 +1455,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
         className="match-card"
         style={{
           width: `${CARD_WIDTH}px`,
-          minHeight: `${CARD_HEIGHT}px`,
+          height: `${CARD_HEIGHT}px`,
           position: "relative",
           zIndex: 10,
           background: "transparent",
@@ -1467,12 +1467,11 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
         {/* Participant A - TOP (Merah) */}
         <div
           style={{
-            flex: 1,
+            height: "70px",
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "flex-end",
-            minHeight: "50px",
             position: "relative",
           }}
         >
@@ -1509,7 +1508,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
         {/* Main Center Line dengan Nomor Partai */}
         <div
           style={{
-            height: "60px",
+            height: "40px",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -1524,6 +1523,8 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
               height: "5px",
               backgroundColor: "#990D35",
               zIndex: 0,
+              top: "50%",
+              transform: "translateY(-50%)",
             }}
           />
 
@@ -1533,13 +1534,13 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
               position: "relative",
               zIndex: 1,
               backgroundColor: "#F5FBEF",
-              padding: "8px 14px",
+              padding: "4px 12px",
             }}
           >
             {match.nomor_partai ? (
               <span
                 className="font-bold"
-                style={{ color: "#000000", fontSize: "18px" }}
+                style={{ color: "#000000", fontSize: "16px" }}
               >
                 Partai {match.nomor_partai}
               </span>
@@ -1548,7 +1549,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                 (!match.peserta_a && match.peserta_b)) ? (
               <span
                 className="font-bold"
-                style={{ color: "#F5B700", fontSize: "18px" }}
+                style={{ color: "#F5B700", fontSize: "16px" }}
               >
                 BYE
               </span>
@@ -1559,12 +1560,11 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
         {/* Participant B - BOTTOM (Biru) */}
         <div
           style={{
-            flex: 1,
+            height: "70px",
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "flex-start",
-            minHeight: "50px",
             position: "relative",
           }}
         >
