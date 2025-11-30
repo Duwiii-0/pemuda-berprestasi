@@ -1452,180 +1452,162 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
 
     return (
       <div
-        className="match-card bg-white rounded-xl shadow-lg border-2 overflow-hidden hover:shadow-xl transition-all"
+        className="match-card"
         style={{
-          borderColor: winner ? "#22c55e" : "#990D35",
           width: `${CARD_WIDTH}px`,
           minHeight: `${CARD_HEIGHT}px`,
           position: "relative",
           zIndex: 10,
-          background: "white",
+          background: "transparent",
           display: "flex",
           flexDirection: "column",
+          justifyContent: "space-around",
         }}
       >
-        {/* Participant A - TOP */}
+        {/* Participant A - TOP (Merah) */}
         <div
-          className={`flex-1 px-3 py-2 flex items-center justify-between gap-2 border-b ${
-            match.skor_a > match.skor_b && hasScores
-              ? "bg-gradient-to-r from-green-50 to-green-100"
-              : ""
-          }`}
+          className="flex-1 flex flex-col items-center justify-center"
           style={{
-            minHeight: "50px",
-            borderColor: "#990D35",
+            minHeight: "45px",
           }}
         >
           {match.peserta_a ? (
             <>
-              <div className="flex-1 min-w-0">
-                <p
-                  className="font-bold text-sm leading-tight truncate"
-                  style={{ color: "#DC143C" }}
-                >
-                  {getParticipantName(match.peserta_a)}
-                </p>
-                <p
-                  className="text-xs truncate mt-0.5"
-                  style={{ color: "#666", opacity: 0.7 }}
-                >
-                  {getDojoName(match.peserta_a)}
-                </p>
-              </div>
+              <p
+                className="font-bold text-xs leading-tight text-center truncate w-full"
+                style={{ color: "#DC143C" }}
+              >
+                {getParticipantName(match.peserta_a)}
+              </p>
               {hasScores && (
-                <div
-                  className="w-8 h-8 rounded-lg flex items-center justify-center font-bold shadow-sm text-xs"
-                  style={{
-                    backgroundColor:
-                      match.skor_a > match.skor_b ? "#22c55e" : "#e5e7eb",
-                    color: match.skor_a > match.skor_b ? "white" : "#6b7280",
-                  }}
+                <span
+                  className="text-2xs font-bold text-center"
+                  style={{ color: "#DC143C", marginTop: "2px" }}
                 >
                   {match.skor_a}
-                </div>
+                </span>
               )}
             </>
           ) : (
-            <span className="text-xs text-gray-400 w-full text-center">
-              TBD
-            </span>
+            <span className="text-xs text-gray-400 text-center">TBD</span>
           )}
+        </div>
+
+        {/* Dividing Line - MERAH */}
+        <div
+          style={{
+            height: "2px",
+            backgroundColor: "#DC143C",
+            width: "100%",
+            margin: "4px 0",
+          }}
+        />
+
+        {/* Dojo A */}
+        <div
+          className="flex-1 flex items-center justify-center"
+          style={{
+            minHeight: "20px",
+          }}
+        >
+          {match.peserta_a ? (
+            <p
+              className="text-xs text-center truncate w-full"
+              style={{ color: "#666", opacity: 0.7 }}
+            >
+              {getDojoName(match.peserta_a)}
+            </p>
+          ) : null}
         </div>
 
         {/* Match Number - CENTER */}
         <div
-          className="px-3 py-1 flex items-center justify-center border-b border-t"
+          className="flex items-center justify-center"
           style={{
-            backgroundColor: "rgba(153, 13, 53, 0.05)",
-            borderColor: "#990D35",
-            minHeight: "40px",
+            minHeight: "30px",
           }}
         >
           <div className="flex items-center gap-2">
             {match.nomor_partai ? (
-              <span className="text-lg font-bold" style={{ color: "#990D35" }}>
+              <span className="text-sm font-bold" style={{ color: "#990D35" }}>
                 Partai {match.nomor_partai}
               </span>
             ) : match.ronde === 1 &&
               ((match.peserta_a && !match.peserta_b) ||
                 (!match.peserta_a && match.peserta_b)) ? (
               <span
-                className="text-sm font-bold"
+                className="text-xs font-bold"
                 style={{
                   color: "#F5B700",
                 }}
               >
                 BYE
               </span>
-            ) : (
-              <div className="flex items-center gap-2 text-xs">
-                {match.tanggal_pertandingan && (
-                  <span style={{ color: "#050505", opacity: 0.7 }}>
-                    {new Date(match.tanggal_pertandingan).toLocaleDateString(
-                      "id-ID",
-                      {
-                        day: "2-digit",
-                        month: "short",
-                      }
-                    )}
-                  </span>
-                )}
-              </div>
-            )}
+            ) : null}
           </div>
         </div>
 
-        {/* Participant B - BOTTOM */}
+        {/* Dojo B */}
         <div
-          className={`flex-1 px-3 py-2 flex items-center justify-between gap-2 ${
-            match.skor_b > match.skor_a && hasScores
-              ? "bg-gradient-to-r from-green-50 to-green-100"
-              : ""
-          }`}
-          style={{ minHeight: "50px" }}
+          className="flex-1 flex items-center justify-center"
+          style={{
+            minHeight: "20px",
+          }}
+        >
+          {match.peserta_b ? (
+            <p
+              className="text-xs text-center truncate w-full"
+              style={{ color: "#666", opacity: 0.7 }}
+            >
+              {getDojoName(match.peserta_b)}
+            </p>
+          ) : null}
+        </div>
+
+        {/* Dividing Line - BIRU */}
+        <div
+          style={{
+            height: "2px",
+            backgroundColor: "#3B82F6",
+            width: "100%",
+            margin: "4px 0",
+          }}
+        />
+
+        {/* Participant B - BOTTOM (Biru) */}
+        <div
+          className="flex-1 flex flex-col items-center justify-center"
+          style={{
+            minHeight: "45px",
+          }}
         >
           {match.peserta_b ? (
             <>
-              <div className="flex-1 min-w-0">
-                <p
-                  className="font-bold text-sm leading-tight truncate"
-                  style={{ color: "#3B82F6" }}
-                >
-                  {getParticipantName(match.peserta_b)}
-                </p>
-                <p
-                  className="text-xs truncate mt-0.5"
-                  style={{ color: "#666", opacity: 0.7 }}
-                >
-                  {getDojoName(match.peserta_b)}
-                </p>
-              </div>
               {hasScores && (
-                <div
-                  className="w-8 h-8 rounded-lg flex items-center justify-center font-bold shadow-sm text-xs"
-                  style={{
-                    backgroundColor:
-                      match.skor_b > match.skor_a ? "#22c55e" : "#e5e7eb",
-                    color: match.skor_b > match.skor_a ? "white" : "#6b7280",
-                  }}
+                <span
+                  className="text-2xs font-bold text-center"
+                  style={{ color: "#3B82F6", marginBottom: "2px" }}
                 >
                   {match.skor_b}
-                </div>
+                </span>
               )}
+              <p
+                className="font-bold text-xs leading-tight text-center truncate w-full"
+                style={{ color: "#3B82F6" }}
+              >
+                {getParticipantName(match.peserta_b)}
+              </p>
             </>
           ) : (
-            <div className="w-full flex justify-center">
-              {match.ronde === 1 ? (
-                <span
-                  className="text-xs px-2 py-1 rounded-full font-medium"
-                  style={{
-                    backgroundColor: "rgba(245, 183, 0, 0.15)",
-                    color: "#F5B700",
-                  }}
-                >
-                  BYE
-                </span>
-              ) : (
-                <span
-                  className="text-xs px-2 py-1 rounded-full font-medium"
-                  style={{
-                    backgroundColor: "rgba(192, 192, 192, 0.15)",
-                    color: "#6b7280",
-                  }}
-                >
-                  TBD
-                </span>
-              )}
-            </div>
+            <span className="text-xs text-gray-400 text-center">TBD</span>
           )}
         </div>
 
         {/* Action Buttons - BOTTOM */}
         <div
-          className="px-3 py-2 border-t flex items-center justify-end gap-2"
+          className="flex items-center justify-center gap-2 mt-2"
           style={{
-            backgroundColor: "rgba(153, 13, 53, 0.03)",
-            borderColor: "#990D35",
+            minHeight: "30px",
           }}
         >
           {/* Edit match scores/details button */}
@@ -1639,7 +1621,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
             }}
             title="Edit match scores and details"
           >
-            <FilePenLine size={14} style={{ color: "#3B82F6" }} />
+            <FilePenLine size={12} style={{ color: "#3B82F6" }} />
           </button>
 
           {/* Edit athletes button */}
@@ -1670,7 +1652,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                   : "Edit athletes"
               }
             >
-              <Edit3 size={14} style={{ color: "#DC143C" }} />
+              <Edit3 size={12} style={{ color: "#DC143C" }} />
             </button>
           )}
         </div>
