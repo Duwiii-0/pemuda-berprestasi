@@ -210,9 +210,9 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
 
   const CARD_WIDTH = 380;
   const CARD_HEIGHT = 180;
-  const ROUND_GAP = 150; // Naikkan dari 100 ke 150 - gap antar round
+  const ROUND_GAP = 150;
   const BASE_VERTICAL_GAP = 100;
-  const CENTER_GAP = 200; // Naikkan dari 100 ke 200 - gap antara semi-final dan final
+  const CENTER_GAP = 280; // Perbesar dari 200 ke 280 - lebih banyak gap antara semi-final dan final
 
   const showNotification = (
     type: "success" | "error" | "warning" | "info",
@@ -2281,18 +2281,18 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                                 <svg
                                   style={{
                                     position: "absolute",
-                                    left: `${verticalLineX}px`,
+                                    left: `${verticalLineX - 3}px`,
                                     top: `${topY}px`,
-                                    width: 2,
+                                    width: 6,
                                     height: verticalHeight,
                                     pointerEvents: "none",
                                     zIndex: 4,
                                   }}
                                 >
                                   <line
-                                    x1="1"
+                                    x1="3"
                                     y1="0"
-                                    x2="1"
+                                    x2="3"
                                     y2={verticalHeight}
                                     stroke="#990D35"
                                     strokeWidth="6"
