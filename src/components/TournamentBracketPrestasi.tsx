@@ -1441,8 +1441,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
   const renderMatchCard = (
     match: Match,
     key: string | number,
-    matchIndex: number,
-    side?: "left" | "right"
+    matchIndex: number
   ) => {
     const hasScores = match.skor_a > 0 || match.skor_b > 0;
     const winner = hasScores
@@ -1460,13 +1459,32 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
           position: "relative",
           zIndex: 10,
           background: "transparent",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "space-between",
-          textAlign:
-            side === "right" ? "right" : side === "left" ? "left" : "center",
         }}
       >
+        {/* SVG Layer - Kontinyu Line dari A ke B */}
+        <svg
+          style={{
+            position: "absolute",
+            width: "100%",
+            height: "100%",
+            top: 0,
+            left: 0,
+            pointerEvents: "none",
+            zIndex: 1,
+          }}
+        >
+          {/* Continuous horizontal line dari atas ke bawah */}
+          <line
+            x1="50%"
+            y1="0"
+            x2="50%"
+            y2="100%"
+            stroke="#990D35"
+            strokeWidth="5"
+            opacity="0.8"
+          />
+        </svg>
+
         {/* Participant A - TOP (Merah) */}
         <div
           style={{
@@ -1476,6 +1494,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
             alignItems: "center",
             justifyContent: "flex-end",
             position: "relative",
+            zIndex: 2,
           }}
         >
           {match.peserta_a ? (
@@ -1492,7 +1511,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                   color: "#666",
                   opacity: 0.7,
                   marginTop: "2px",
-                  fontSize: "16px",
+                  fontSize: "14px",
                 }}
               >
                 {getDojoName(match.peserta_a)}
@@ -1501,63 +1520,47 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
           ) : (
             <span
               className="text-gray-400 text-center"
-              style={{ fontSize: "16px" }}
+              style={{ fontSize: "14px" }}
             >
               TBD
             </span>
           )}
         </div>
 
-        {/* Main Center Line dengan Nomor Partai */}
+        {/* Match Number Badge - Center */}
         <div
           style={{
-            height: "40px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            position: "relative",
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            backgroundColor: "#F5FBEF",
+            padding: "4px 12px",
+            zIndex: 3,
+            borderRadius: "4px",
           }}
         >
-          {/* Horizontal Main Line */}
-          <div
-            style={{
-              position: "absolute",
-              width: "100%",
-              height: "5px",
-              backgroundColor: "#990D35",
-              zIndex: 0,
-              top: "50%",
-              transform: "translateY(-50%)",
-            }}
-          />
-
-          {/* Match Number Badge */}
-          <div
-            style={{
-              position: "relative",
-              zIndex: 1,
-              backgroundColor: "#F5FBEF",
-              padding: "4px 12px",
-            }}
-          >
-            {match.nomor_partai ? (
-              <span
-                className="font-bold"
-                style={{ color: "#000000", fontSize: "16px" }}
-              >
-                Partai {match.nomor_partai}
-              </span>
-            ) : match.ronde === 1 &&
-              ((match.peserta_a && !match.peserta_b) ||
-                (!match.peserta_a && match.peserta_b)) ? (
-              <span
-                className="font-bold"
-                style={{ color: "#F5B700", fontSize: "16px" }}
-              >
-                BYE
-              </span>
-            ) : null}
-          </div>
+          {match.nomor_partai ? (
+            <span
+              className="font-bold"
+              style={{
+                color: "#000000",
+                fontSize: "14px",
+                whiteSpace: "nowrap",
+              }}
+            >
+              Partai {match.nomor_partai}
+            </span>
+          ) : match.ronde === 1 &&
+            ((match.peserta_a && !match.peserta_b) ||
+              (!match.peserta_a && match.peserta_b)) ? (
+            <span
+              className="font-bold"
+              style={{ color: "#F5B700", fontSize: "14px" }}
+            >
+              BYE
+            </span>
+          ) : null}
         </div>
 
         {/* Participant B - BOTTOM (Biru) */}
@@ -1569,6 +1572,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
             alignItems: "center",
             justifyContent: "flex-start",
             position: "relative",
+            zIndex: 2,
           }}
         >
           {match.peserta_b ? (
@@ -2346,8 +2350,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                       {renderMatchCard(
                         match,
                         match.id_match,
-                        matches.findIndex((m) => m.id_match === match.id_match),
-                        side
+                        matches.findIndex((m) => m.id_match === match.id_match)
                       )}
                     </div>
                   );
