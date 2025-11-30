@@ -1797,7 +1797,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                 style={{
                   position: "absolute",
                   left: -lineLength,
-                  top: `${finalYPosition + CARD_HEIGHT / 2 - 2.5}px`,
+                  top: `${finalYPosition + 70 + 20 - 2.5}px`,
                   width: lineLength,
                   height: 5,
                   pointerEvents: "none",
@@ -1820,7 +1820,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                 style={{
                   position: "absolute",
                   right: -lineLength,
-                  top: `${finalYPosition + CARD_HEIGHT / 2 - 2.5}px`,
+                  top: `${finalYPosition + 70 + 20 - 2.5}px`,
                   width: lineLength,
                   height: 5,
                   pointerEvents: "none",
