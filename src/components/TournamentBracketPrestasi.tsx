@@ -1459,6 +1459,8 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
           position: "relative",
           zIndex: 10,
           background: "transparent",
+          margin: 0, // ✅ TAMBAHKAN
+          padding: 0, // ✅ TAMBAHKAN
         }}
       >
         {/* Participant A - TOP (Merah) */}
@@ -1754,6 +1756,8 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
     }
 
     const lineLength = CENTER_GAP / 2 + 60;
+    const finalCardCenterY = finalYPosition + CARD_HEIGHT / 2; // Center vertikal card final
+    const lineYPosition = finalCardCenterY - 3; // SVG line position (karena line ada di y=3)
 
     return (
       <div
@@ -1797,7 +1801,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                 style={{
                   position: "absolute",
                   left: -lineLength,
-                  top: `${finalYPosition + CARD_HEIGHT / 2 - 3}px`, // ✅ PERBAIKAN: gunakan center card
+                  top: `${lineYPosition}px`, // ✅ Gunakan variable yang sudah dihitung
                   width: lineLength,
                   height: 6,
                   pointerEvents: "none",
@@ -1820,7 +1824,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                 style={{
                   position: "absolute",
                   right: -lineLength,
-                  top: `${finalYPosition + 70 + 20 - 3}px`,
+                  top: `${lineYPosition}px`, // ✅ Gunakan variable yang sudah dihitung
                   width: lineLength,
                   height: 6,
                   pointerEvents: "none",
@@ -1861,6 +1865,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                 style={{
                   borderColor: "#990D35",
                   backgroundColor: "rgba(153, 13, 53, 0.05)",
+                  height: `${CARD_HEIGHT}px`, // ✅ TAMBAHKAN height explicit
                 }}
               >
                 <Trophy
