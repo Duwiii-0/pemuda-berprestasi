@@ -1504,18 +1504,6 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
               TBD
             </span>
           )}
-          {/* Garis ke pusat dari atlet A */}
-          <div
-            style={{
-              position: "absolute",
-              bottom: "-30px",
-              left: "50%",
-              transform: "translateX(-50%)",
-              width: "3px",
-              height: "30px",
-              backgroundColor: "#3B82F6",
-            }}
-          />
         </div>
 
         {/* Main Center Line dengan Nomor Partai */}
@@ -1533,8 +1521,8 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
             style={{
               position: "absolute",
               width: "100%",
-              height: "3px",
-              backgroundColor: "#3B82F6",
+              height: "5px",
+              backgroundColor: "#990D35",
               zIndex: 0,
             }}
           />
@@ -1552,7 +1540,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
             {match.nomor_partai ? (
               <span
                 className="font-bold"
-                style={{ color: "#3B82F6", fontSize: "14px" }}
+                style={{ color: "#000000", fontSize: "18px" }}
               >
                 Partai {match.nomor_partai}
               </span>
@@ -1561,7 +1549,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                 (!match.peserta_a && match.peserta_b)) ? (
               <span
                 className="font-bold"
-                style={{ color: "#F5B700", fontSize: "14px" }}
+                style={{ color: "#F5B700", fontSize: "18px" }}
               >
                 BYE
               </span>
@@ -1581,19 +1569,6 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
             position: "relative",
           }}
         >
-          {/* Garis ke pusat dari atlet B */}
-          <div
-            style={{
-              position: "absolute",
-              top: "-30px",
-              left: "50%",
-              transform: "translateX(-50%)",
-              width: "3px",
-              height: "30px",
-              backgroundColor: "#3B82F6",
-            }}
-          />
-
           {match.peserta_b ? (
             <>
               <p
