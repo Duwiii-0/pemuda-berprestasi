@@ -1489,7 +1489,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                   color: "#666",
                   opacity: 0.7,
                   marginTop: "2px",
-                  fontSize: "16px",
+                  fontSize: "18px",
                 }}
               >
                 {getDojoName(match.peserta_a)}
@@ -1542,7 +1542,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                 className="font-bold"
                 style={{
                   color: "#000000",
-                  fontSize: "14px",
+                  fontSize: "18px",
                   whiteSpace: "nowrap",
                 }}
               >
@@ -1587,7 +1587,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                   color: "#666",
                   opacity: 0.7,
                   marginTop: "2px",
-                  fontSize: "16px",
+                  fontSize: "18px",
                 }}
               >
                 {getDojoName(match.peserta_b)}
