@@ -1480,7 +1480,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
             <>
               <p
                 className="font-bold leading-tight text-center truncate w-full"
-                style={{ color: "#DC143C", fontSize: "16px" }}
+                style={{ color: "#DC143C", fontSize: "22px" }}
               >
                 {getParticipantName(match.peserta_a)}
               </p>
@@ -1490,7 +1490,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                   color: "#666",
                   opacity: 0.7,
                   marginTop: "2px",
-                  fontSize: "14px",
+                  fontSize: "16px",
                 }}
               >
                 {getDojoName(match.peserta_a)}
@@ -1499,7 +1499,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
           ) : (
             <span
               className="text-gray-400 text-center"
-              style={{ fontSize: "14px" }}
+              style={{ fontSize: "16px" }}
             >
               TBD
             </span>
@@ -1572,7 +1572,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
             <>
               <p
                 className="font-bold leading-tight text-center truncate w-full"
-                style={{ color: "#3B82F6", fontSize: "16px" }}
+                style={{ color: "#3B82F6", fontSize: "22px" }}
               >
                 {getParticipantName(match.peserta_b)}
               </p>
@@ -1582,7 +1582,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                   color: "#666",
                   opacity: 0.7,
                   marginTop: "2px",
-                  fontSize: "14px",
+                  fontSize: "16px",
                 }}
               >
                 {getDojoName(match.peserta_b)}
@@ -1591,7 +1591,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
           ) : (
             <span
               className="text-gray-400 text-center"
-              style={{ fontSize: "14px" }}
+              style={{ fontSize: "16px" }}
             >
               TBD
             </span>
