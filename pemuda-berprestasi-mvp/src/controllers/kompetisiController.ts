@@ -184,7 +184,14 @@ export class KompetisiController {
   static async getAtletsByKompetisi(req: Request, res: Response) {
     try {
       const { id } = req.params;
-      const { page = "1", limit, id_dojang: idDojangQuery } = req.query; // ⬅️ ambil query
+      const { 
+        page = "1", 
+        limit, 
+        id_dojang: idDojangQuery,
+        id_kelas: idKelasQuery,
+        status: statusQuery 
+      } = req.query;
+      
       let idDojang: number | undefined = undefined;
 
       const kompetisiId = parseInt(id, 10);
@@ -194,7 +201,8 @@ export class KompetisiController {
       if (isNaN(kompetisiId)) {
         return res.status(400).json({ message: "Invalid kompetisiId" });
       }
-      console.log("Role:", req.user?.role, "idDojang:", idDojang);
+
+      console.log("🔍 [Controller] Role:", req.user?.role, "Query dojang:", idDojangQuery);
 
       // role PELATIH → selalu pakai id_dojang dari token
       if (req.user?.role === "PELATIH" && req.user.id_dojang) {
@@ -205,13 +213,18 @@ export class KompetisiController {
         idDojang = parseInt(idDojangQuery as string, 10);
       }
 
+      console.log("🎯 [Controller] Final idDojang:", idDojang);
 
       const result = await KompetisiService.getAtletsByKompetisi(
         kompetisiId,
         pageNum,
         limitNum,
-        idDojang
+        idDojang,
+        idKelasQuery as string,
+        statusQuery as string
       );
+
+      console.log("✅ [Controller] Returning", result.peserta.length, "peserta, total:", result.total);
 
       return res.status(200).json({
         success: true,
@@ -221,7 +234,7 @@ export class KompetisiController {
         limit: limitNum,
       });
     } catch (error: any) {
-      console.error("Error getAtletsByKompetisi:", error);
+      console.error("❌ [Controller] Error getAtletsByKompetisi:", error);
       return res.status(500).json({
         success: false,
         message: "Failed to fetch atlet by kompetisi",

@@ -729,6 +729,16 @@ static async deleteFile(id_atlet: number, fileType: keyof AtletFileInfo) {
   static async getAtletByKompetisi(id_kompetisi: number, cabang: "KYORUGI" | "POOMSAE" | undefined, page: number, limit: number, id_dojang?: number, id_kelas?: string, status?: "PENDING" | "APPROVED" | "REJECTED") {
     const offset = (page - 1) * limit;
 
+    console.log('🔍 [Backend] getAtletByKompetisi called with:', {
+      id_kompetisi,
+      cabang,
+      page,
+      limit,
+      id_dojang,
+      id_kelas,
+      status
+    });
+
     const whereCondition: any = {
       kelas_kejuaraan: {
         id_kompetisi,
@@ -749,6 +759,9 @@ static async deleteFile(id_atlet: number, fileType: keyof AtletFileInfo) {
     if (status) {
         whereCondition.status = status;
     }
+
+    console.log('🔍 [Backend] whereCondition:', JSON.stringify(whereCondition, null, 2));
+    console.log('🔍 [Backend] skip:', offset, 'take:', limit);
 
     const [peserta, total] = await Promise.all([
       prisma.tb_peserta_kompetisi.findMany({
@@ -834,6 +847,12 @@ static async deleteFile(id_atlet: number, fileType: keyof AtletFileInfo) {
       }),
       prisma.tb_peserta_kompetisi.count({ where: whereCondition })
     ]);
+
+    console.log('🔍 [Backend] Query result:', {
+      fetchedRecords: peserta.length,
+      totalInDB: total,
+      totalPages: Math.ceil(total / limit)
+    });
   
     // Return complete peserta data with all relations
     return {
