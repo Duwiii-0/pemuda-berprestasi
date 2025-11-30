@@ -1757,8 +1757,11 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
     }
 
     const lineLength = CENTER_GAP / 2 + 60;
-    const finalCardCenterY = finalYPosition + CARD_HEIGHT / 2; // Center vertikal card final
-    const lineYPosition = finalCardCenterY - 10; // SVG line position (karena line ada di y=3)
+    const STROKE_WIDTH = 6;
+    // Garis horizontal berada di tengah card (70 + 40 + 70 = 180px height)
+    // Garis horizontal card: posisi 70px (tengah) dari top card
+    const centerLineY = finalYPosition + 70; // Garis horizontal card berada di y = finalYPosition + 70
+    const connectorTop = centerLineY - STROKE_WIDTH / 2; // Connector SVG top harus di -3 dari garis
 
     return (
       <div
@@ -1802,7 +1805,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                 style={{
                   position: "absolute",
                   left: -lineLength,
-                  top: `${lineYPosition}px`, // ✅ Gunakan variable yang sudah dihitung
+                  top: `${connectorTop}px`, // Aligned dengan garis horizontal card final
                   width: lineLength,
                   height: 6,
                   pointerEvents: "none",
@@ -1825,7 +1828,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                 style={{
                   position: "absolute",
                   right: -lineLength,
-                  top: `${lineYPosition}px`, // ✅ Gunakan variable yang sudah dihitung
+                  top: `${connectorTop}px`, // Aligned dengan garis horizontal card final
                   width: lineLength,
                   height: 6,
                   pointerEvents: "none",
