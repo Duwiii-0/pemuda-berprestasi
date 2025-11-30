@@ -2,8 +2,9 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Trophy, Users, Search, Clock, CheckCircle, Menu, ChevronLeft, ChevronRight, Edit, Trash, Upload, FileDown } from 'lucide-react';
 import toast from "react-hot-toast";
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+import { PDFDocument, rgb } from "pdf-lib";
+import taekwondo from "../../assets/logo/taekwondo.png";
+import sriwijaya from "../../assets/logo/sriwijaya.png";
 import NavbarDashboard from "../../components/navbar/navbarDashboard";
 import { useAuth } from "../../context/authContext";
 import { useKompetisi } from "../../context/KompetisiContext";
@@ -100,7 +101,7 @@ const DataKompetisi = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(100);
 
-  const handleExportPdf = () => {
+  const handleExportPdf = async () => {
     const approvedPeserta = displayedPesertas.filter((p: any) => p.status === 'APPROVED');
 
     if (approvedPeserta.length === 0) {
@@ -122,7 +123,7 @@ const DataKompetisi = () => {
         ? peserta.anggota_tim[0]?.atlet?.dojang?.nama_dojang || "-"
         : peserta.atlet?.dojang?.nama_dojang || "-";
 
-      const jenisKelamin = isTeam ? "Tim" : (peserta.atlet?.jenis_kelamin || "-");
+      const jenisKelamin = isTeam ? "Tim" : (peserta.atlet?.jenis_kelamin || "-").replace("LAKI_LAKI", "Laki-laki");
 
       const kelasTanding = [
         peserta.kelas_kejuaraan?.kelas_berat?.nama_kelas,
@@ -149,37 +150,155 @@ const DataKompetisi = () => {
       };
     });
 
-    // Sort data based on the new structure
     dataForSheet.sort((a, b) => {
       const compareA = `${a["Tipe Kejuaraan"]}-${a["Level"]}-${a["Tipe Poomsae"]}-${a["Kelompok Usia"]}-${a["Kelas Tanding"]}`;
       const compareB = `${b["Tipe Kejuaraan"]}-${b["Level"]}-${b["Tipe Poomsae"]}-${b["Kelompok Usia"]}-${b["Kelas Tanding"]}`;
       return compareA.localeCompare(compareB);
     });
 
-    // Add a "No." column after sorting
     const finalSheetData = dataForSheet.map((row, index) => ({
       "No.": index + 1,
       ...row,
     }));
 
-    const doc = new jsPDF({
-      orientation: "landscape",
-    });
+    const pdfDoc = await PDFDocument.create();
+    const helveticaBold = await pdfDoc.embedFont('Helvetica-Bold');
+    const helvetica = await pdfDoc.embedFont('Helvetica');
+    const mmToPt = (mm: number) => mm * 2.83465;
+
+    let logoPBTIImage, logoEventImage;
+    try {
+      const pbtiResponse = await fetch(taekwondo);
+      const pbtiBytes = await pbtiResponse.arrayBuffer();
+      logoPBTIImage = await pdfDoc.embedPng(pbtiBytes);
+    } catch (e) { console.warn('Gagal memuat logo PBTI'); }
+
+    try {
+      const eventResponse = await fetch(sriwijaya);
+      const eventBytes = await eventResponse.arrayBuffer();
+      logoEventImage = await pdfDoc.embedPng(eventBytes);
+    } catch (e) { console.warn('Gagal memuat logo Event'); }
+
+    let page = pdfDoc.addPage([mmToPt(297), mmToPt(210)]);
+    const { width: pageWidth, height: pageHeight } = page.getSize();
+    let currentY = pageHeight - mmToPt(15);
+
+    if (logoPBTIImage) {
+      page.drawImage(logoPBTIImage, {
+        x: mmToPt(15),
+        y: pageHeight - mmToPt(30),
+        width: mmToPt(20),
+        height: mmToPt(20),
+      });
+    }
+    if (logoEventImage) {
+      page.drawImage(logoEventImage, {
+        x: pageWidth - mmToPt(35),
+        y: pageHeight - mmToPt(30),
+        width: mmToPt(20),
+        height: mmToPt(20),
+      });
+    }
+
+    const titleText = selectedKompetisi?.nama_event.toUpperCase() || "DAFTAR PESERTA";
+    const titleFontSize = 11;
+    const titleWidth = helveticaBold.widthOfTextAtSize(titleText, titleFontSize);
+    const maxWidth = pageWidth - mmToPt(80);
+
+    if (titleWidth > maxWidth) {
+      const words = titleText.split(' ');
+      const midPoint = Math.ceil(words.length / 2);
+      const line1 = words.slice(0, midPoint).join(' ');
+      const line2 = words.slice(midPoint).join(' ');
+      const line1Width = helveticaBold.widthOfTextAtSize(line1, titleFontSize);
+      const line2Width = helveticaBold.widthOfTextAtSize(line2, titleFontSize);
+      page.drawText(line1, { x: (pageWidth - line1Width) / 2, y: pageHeight - mmToPt(16), size: titleFontSize, font: helveticaBold, color: rgb(0.6, 0.05, 0.21) });
+      page.drawText(line2, { x: (pageWidth - line2Width) / 2, y: pageHeight - mmToPt(21), size: titleFontSize, font: helveticaBold, color: rgb(0.6, 0.05, 0.21) });
+      currentY = pageHeight - mmToPt(28);
+    } else {
+      page.drawText(titleText, { x: (pageWidth - titleWidth) / 2, y: pageHeight - mmToPt(18), size: titleFontSize, font: helveticaBold, color: rgb(0.6, 0.05, 0.21) });
+      currentY = pageHeight - mmToPt(25);
+    }
+
+    const subtitleText = 'DAFTAR PESERTA';
+    const subtitleWidth = helveticaBold.widthOfTextAtSize(subtitleText, 11);
+    page.drawText(subtitleText, { x: (pageWidth - subtitleWidth) / 2, y: currentY, size: 11, font: helveticaBold, color: rgb(0, 0, 0) });
+    currentY -= mmToPt(15);
 
     const tableHeaders = Object.keys(finalSheetData[0]);
     const tableBody = finalSheetData.map(row => Object.values(row));
+    const tableStartX = mmToPt(15);
+    const rowHeight = mmToPt(7);
+    const tableWidth = pageWidth - mmToPt(30);
 
-    autoTable(doc, {
-      head: [tableHeaders],
-      body: tableBody,
-      startY: 20,
-      didDrawPage: (data: any) => {
-        doc.setFontSize(18);
-        doc.text(`Daftar Peserta - ${selectedKompetisi?.nama_event || 'Kompetisi'}`, data.settings.margin.left, 15);
+    const colWidths = [
+      mmToPt(10), // No
+      mmToPt(45), // Nama
+      mmToPt(40), // Dojang
+      mmToPt(25), // Jenis Kelamin
+      mmToPt(25), // Tipe Kejuaraan
+      mmToPt(25), // Level
+      mmToPt(25), // Tipe Poomsae
+      mmToPt(30), // Kelompok Usia
+      mmToPt(42), // Kelas Tanding
+    ];
+
+    let currentXHeader = tableStartX;
+    page.drawRectangle({ x: tableStartX, y: currentY - mmToPt(1.5), width: tableWidth, height: rowHeight, color: rgb(0.6, 0.05, 0.21) });
+    tableHeaders.forEach((header, i) => {
+      page.drawText(header, { x: currentXHeader + mmToPt(2), y: currentY, size: 8, font: helveticaBold, color: rgb(1, 1, 1) });
+      currentXHeader += colWidths[i];
+    });
+    currentY -= rowHeight;
+
+    tableBody.forEach((row, rowIndex) => {
+      if (currentY < mmToPt(20)) {
+        page = pdfDoc.addPage([mmToPt(297), mmToPt(210)]);
+        currentY = page.getHeight() - mmToPt(20);
+        let currentXHeader = tableStartX;
+        page.drawRectangle({ x: tableStartX, y: currentY - mmToPt(1.5), width: tableWidth, height: rowHeight, color: rgb(0.6, 0.05, 0.21) });
+        tableHeaders.forEach((header, i) => {
+          page.drawText(header, { x: currentXHeader + mmToPt(2), y: currentY, size: 8, font: helveticaBold, color: rgb(1, 1, 1) });
+          currentXHeader += colWidths[i];
+        });
+        currentY -= rowHeight;
       }
+
+      if (rowIndex % 2 === 1) {
+        page.drawRectangle({
+          x: tableStartX,
+          y: currentY - mmToPt(1.5),
+          width: tableWidth,
+          height: rowHeight,
+          color: rgb(0.95, 0.95, 0.95),
+        });
+      }
+      
+      let currentXRow = tableStartX;
+      row.forEach((cell, cellIndex) => {
+        const text = String(cell);
+        page.drawText(text, {
+          x: currentXRow + mmToPt(2),
+          y: currentY,
+          size: 7,
+          font: helvetica,
+          color: rgb(0, 0, 0),
+        });
+        currentXRow += colWidths[cellIndex];
+      });
+      
+      currentY -= rowHeight;
     });
 
-    doc.save(`Daftar_Peserta_${selectedKompetisi?.nama_event || 'Kompetisi'}.pdf`);
+    const pdfBytes = await pdfDoc.save();
+    const blob = new Blob([new Uint8Array(pdfBytes)], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `Daftar_Peserta_${selectedKompetisi?.nama_event || 'Kompetisi'}.pdf`;
+    link.click();
+    URL.revokeObjectURL(url);
+
     toast.success("Berhasil mengunduh data peserta!");
   };
 
