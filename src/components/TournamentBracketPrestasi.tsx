@@ -1758,8 +1758,8 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
 
     const lineLength = CENTER_GAP / 2 + 60;
     const STROKE_WIDTH = 6;
-    // Garis horizontal card final berada di y = finalYPosition + 70
-    const centerLineY = finalYPosition + 70;
+    // Garis horizontal card final berada di: finalYPosition + 70 (peserta_a) + 20 (tengah center section)
+    const centerLineY = finalYPosition + 90;
     const connectorTop = centerLineY - STROKE_WIDTH / 2;
 
     return (
