@@ -1760,7 +1760,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
     const STROKE_WIDTH = 6;
     // Garis horizontal berada di tengah card (70 + 40 + 70 = 180px height)
     // Garis horizontal card: posisi 70px (tengah) dari top card
-    const centerLineY = finalYPosition + 70; // Garis horizontal card berada di y = finalYPosition + 70
+    const centerLineY = finalYPosition + 1; // Garis horizontal card berada di y = finalYPosition + 70
     const connectorTop = centerLineY - STROKE_WIDTH / 2; // Connector SVG top harus di -3 dari garis
 
     return (
