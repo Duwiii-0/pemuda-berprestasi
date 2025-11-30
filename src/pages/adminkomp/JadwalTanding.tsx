@@ -106,7 +106,8 @@ const JadwalPertandingan: React.FC = () => {
     number[]
   >([]);
   const [showPesertaListModal, setShowPesertaListModal] = useState(false);
-  const [selectedPesertaKelas, setSelectedPesertaKelas] = useState<number | null>(null);
+  const [selectedPesertaHari, setSelectedPesertaHari] = useState<string>("");
+  const [selectedPesertaLapangan, setSelectedPesertaLapangan] = useState<number[]>([]);
   const [exportingPesertaPDF, setExportingPesertaPDF] = useState(false);
   const [autoResetBeforeGenerate, setAutoResetBeforeGenerate] = useState(true); // Default true = selalu reset
   const [exportingPDF, setExportingPDF] = useState(false);
@@ -1333,72 +1334,155 @@ const handleResetAndUpdateAntrian = async (
     }
   };
 
-  // ⭐ NEW: Handler for exporting peserta list (simple table)
+  // ⭐ NEW: Handler for exporting peserta list per lapangan (multiple kelas)
   const handleExportPesertaList = async () => {
-    if (!selectedPesertaKelas || !idKompetisi) return;
+    if (!idKompetisi || selectedPesertaLapangan.length === 0) return;
 
     setExportingPesertaPDF(true);
     setErrorMessage("");
     setSuccessMessage("");
 
     try {
-      // Find kelas data
-      const kelasData = sortedKelasKejuaraanList.find(
-        (k) => k.id_kelas_kejuaraan === selectedPesertaKelas
-      );
+      const selectedHari = hariList.find((h) => h.tanggal === selectedPesertaHari);
+      if (!selectedHari) throw new Error("Hari tidak ditemukan");
 
-      if (!kelasData) {
-        throw new Error("Kelas tidak ditemukan");
+      const failedKelas: string[] = [];
+      let totalExported = 0;
+
+      for (const lapanganId of selectedPesertaLapangan) {
+        const lapangan = selectedHari.lapangan.find(
+          (l) => l.id_lapangan === lapanganId
+        );
+        if (!lapangan) continue;
+
+        console.log(`\n📍 Processing Lapangan ${lapangan.nama_lapangan}`);
+        console.log(`   Total kelas: ${lapangan.kelasDipilih.length}`);
+
+        // Get all kelas in this lapangan
+        const kelasList = lapangan.kelasDipilih
+          .map((kelasId) => {
+            const kelas = kelasKejuaraanList.find(
+              (k) => k.id_kelas_kejuaraan === kelasId
+            );
+            if (!kelas) return null;
+
+            const isPemula = kelas.kategori_event.nama_kategori
+              .toLowerCase()
+              .includes("pemula");
+            const jumlahPeserta = pesertaList.filter(
+              (p) =>
+                p.status === "APPROVED" &&
+                p.kelas_kejuaraan?.id_kelas_kejuaraan === kelasId
+            ).length;
+
+            return {
+              kelasId,
+              kelasData: kelas,
+              isPemula,
+              jumlahPeserta,
+              namaKelas: generateNamaKelas(kelas),
+            };
+          })
+          .filter((item): item is NonNullable<typeof item> => item !== null);
+
+        // Sort: PEMULA first, then by jumlah peserta DESC
+        const sortedKelas = kelasList.sort((a, b) => {
+          if (a.isPemula && !b.isPemula) return -1;
+          if (!a.isPemula && b.isPemula) return 1;
+          return b.jumlahPeserta - a.jumlahPeserta;
+        });
+
+        // Export each kelas
+        for (const kelas of sortedKelas) {
+          const kelasId = kelas.kelasId;
+          const kelasData = kelas.kelasData;
+
+          try {
+            const pesertaKelas = pesertaList.filter(
+              (p) =>
+                p.status === "APPROVED" &&
+                p.kelas_kejuaraan?.id_kelas_kejuaraan === kelasId
+            );
+
+            if (pesertaKelas.length === 0) {
+              failedKelas.push(`${kelas.namaKelas} (${lapangan.nama_lapangan}) - Tidak ada peserta`);
+              console.warn(`   ⚠️ ${kelas.namaKelas}: No participants`);
+              continue;
+            }
+
+            // Prepare data
+            const dataToExport = {
+              ...kelasData,
+              peserta_kompetisi: pesertaKelas.map((p) => ({
+                id_peserta_kompetisi: p.id_peserta_kompetisi,
+                id_atlet: p.atlet?.id_atlet,
+                is_team: p.is_team,
+                status: p.status,
+                atlet: p.atlet
+                  ? {
+                      nama_atlet: p.atlet.nama_atlet,
+                      dojang: {
+                        nama_dojang: p.atlet.dojang?.nama_dojang || "",
+                      },
+                    }
+                  : undefined,
+                anggota_tim: p.anggota_tim?.map((at) => ({
+                  atlet: {
+                    nama_atlet: at.atlet.nama_atlet,
+                    dojang: {
+                      nama_dojang: at.atlet.dojang?.nama_dojang || "",
+                    },
+                  },
+                })),
+              })),
+            };
+
+            // Export this kelas
+            await exportPesertaList(dataToExport, {
+              namaKejuaraan: "Sriwijaya International Taekwondo Championship 2025",
+              logoPBTI: taekwondo,
+              logoEvent: sriwijaya,
+              lapanganNama: lapangan.nama_lapangan,
+              tanggal: selectedPesertaHari,
+            });
+
+            totalExported++;
+            console.log(`   ✅ Exported: ${kelas.namaKelas}`);
+          } catch (kelasError: any) {
+            console.error(`   ❌ Error:`, kelasError);
+            failedKelas.push(`${kelas.namaKelas} (${lapangan.nama_lapangan})`);
+          }
+        }
       }
 
-      // Get approved peserta for this kelas
-      const pesertaKelas = pesertaList.filter(
-        (p) =>
-          p.status === "APPROVED" &&
-          p.kelas_kejuaraan?.id_kelas_kejuaraan === selectedPesertaKelas
-      );
+      console.log(`\n📦 EXPORT SUMMARY`);
+      console.log(`   Total exported: ${totalExported}`);
+      console.log(`   Failed/skipped: ${failedKelas.length}`);
 
-      if (pesertaKelas.length === 0) {
-        throw new Error("Tidak ada peserta yang terdaftar di kelas ini");
+      if (totalExported === 0) {
+        if (failedKelas.length > 0) {
+          throw new Error(
+            `Tidak ada daftar peserta yang berhasil di-export.\n\n` +
+              `Kelas yang di-skip:\n${failedKelas.slice(0, 5).join("\n")}` +
+              (failedKelas.length > 5 ? `\n... dan ${failedKelas.length - 5} lainnya` : "")
+          );
+        } else {
+          throw new Error("Tidak ada daftar peserta yang berhasil di-export");
+        }
       }
 
-      // Prepare data for export
-      const dataToExport = {
-        ...kelasData,
-        peserta_kompetisi: pesertaKelas.map((p) => ({
-          id_peserta_kompetisi: p.id_peserta_kompetisi,
-          id_atlet: p.atlet?.id_atlet,
-          is_team: p.is_team,
-          status: p.status,
-          atlet: p.atlet
-            ? {
-                nama_atlet: p.atlet.nama_atlet,
-                dojang: {
-                  nama_dojang: p.atlet.dojang?.nama_dojang || "",
-                },
-              }
-            : undefined,
-          anggota_tim: p.anggota_tim?.map((at) => ({
-            atlet: {
-              nama_atlet: at.atlet.nama_atlet,
-              dojang: {
-                nama_dojang: at.atlet.dojang?.nama_dojang || "",
-              },
-            },
-          })),
-        })),
-      };
+      let message = `✅ Berhasil export ${totalExported} daftar peserta!`;
+      if (failedKelas.length > 0) {
+        message += `\n\n⚠️ ${failedKelas.length} kelas di-skip:\n${failedKelas.slice(0, 3).join("\n")}`;
+        if (failedKelas.length > 3) {
+          message += `\n... dan ${failedKelas.length - 3} lainnya`;
+        }
+      }
 
-      // Call export function
-      await exportPesertaList(dataToExport, {
-        namaKejuaraan: "Sriwijaya International Taekwondo Championship 2025",
-        logoPBTI: taekwondo,
-        logoEvent: sriwijaya,
-      });
-
-      setSuccessMessage(`✅ Berhasil export daftar peserta ${generateNamaKelas(kelasData)}!`);
+      setSuccessMessage(message);
       setShowPesertaListModal(false);
-      setSelectedPesertaKelas(null);
+      setSelectedPesertaHari("");
+      setSelectedPesertaLapangan([]);
 
       setTimeout(() => setSuccessMessage(""), 5000);
     } catch (err: any) {
@@ -2074,7 +2158,9 @@ const handleResetAndUpdateAntrian = async (
                   <Download size={16} />
                   Export Bracket per Lapangan
                 </button>
-                {/* 🆕 BUTTON EXPORT DAFTAR PESERTA */}
+              </div>
+              {/* 🆕 BUTTON EXPORT DAFTAR PESERTA */}
+              <div className="mb-6">
                 <button
                   onClick={() => setShowPesertaListModal(true)}
                   disabled={sortedKelasKejuaraanList.length === 0}
@@ -2606,58 +2692,139 @@ const handleResetAndUpdateAntrian = async (
               style={{ borderColor: "#4F46E5" }}
             >
               <h3 className="text-xl font-bold" style={{ color: "#050505" }}>
-                📋 Export Daftar Peserta
+                📋 Export Daftar Peserta per Lapangan
               </h3>
               <p
                 className="text-sm mt-1"
                 style={{ color: "#050505", opacity: 0.6 }}
               >
-                Pilih kelas kejuaraan untuk export daftar peserta (tanpa bracket)
+                Pilih hari dan lapangan yang ingin di-export daftar pesertanya
               </p>
             </div>
 
             <div className="p-6 space-y-4">
-              {/* Pilih Kelas */}
+              {/* Pilih Hari */}
               <div>
                 <label
                   className="block text-sm font-medium mb-2"
                   style={{ color: "#050505" }}
                 >
-                  Pilih Kelas Kejuaraan
+                  Pilih Hari Pertandingan
                 </label>
                 <select
-                  value={selectedPesertaKelas || ""}
-                  onChange={(e) =>
-                    setSelectedPesertaKelas(
-                      e.target.value ? Number(e.target.value) : null
-                    )
-                  }
+                  value={selectedPesertaHari}
+                  onChange={(e) => {
+                    setSelectedPesertaHari(e.target.value);
+                    setSelectedPesertaLapangan([]);
+                  }}
                   className="w-full px-3 py-2 rounded-lg border"
                   style={{ borderColor: "#4F46E5" }}
                 >
-                  <option value="">-- Pilih Kelas --</option>
-                  {sortedKelasKejuaraanList.map((kelas) => {
-                    const pesertaCount = pesertaList.filter(
-                      (p) =>
-                        p.status === "APPROVED" &&
-                        p.kelas_kejuaraan?.id_kelas_kejuaraan ===
-                          kelas.id_kelas_kejuaraan
-                    ).length;
-
-                    return (
-                      <option
-                        key={kelas.id_kelas_kejuaraan}
-                        value={kelas.id_kelas_kejuaraan}
-                      >
-                        {generateNamaKelas(kelas)} ({pesertaCount} peserta)
-                      </option>
-                    );
-                  })}
+                  <option value="">-- Pilih Hari --</option>
+                  {hariList.map((hari, idx) => (
+                    <option key={hari.tanggal} value={hari.tanggal}>
+                      Hari ke-{idx + 1} -{" "}
+                      {new Date(hari.tanggal).toLocaleDateString("id-ID", {
+                        weekday: "long",
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      })}
+                    </option>
+                  ))}
                 </select>
               </div>
 
+              {/* Pilih Lapangan */}
+              {selectedPesertaHari && (
+                <div>
+                  <label
+                    className="block text-sm font-medium mb-2"
+                    style={{ color: "#050505" }}
+                  >
+                    Pilih Lapangan (bisa pilih lebih dari 1)
+                  </label>
+                  <div
+                    className="space-y-2 max-h-64 overflow-y-auto border rounded-lg p-3"
+                    style={{ backgroundColor: "#F5FBEF" }}
+                  >
+                    {hariList
+                      .find((h) => h.tanggal === selectedPesertaHari)
+                      ?.lapangan.map((lap) => {
+                        const isSelected = selectedPesertaLapangan.includes(
+                          lap.id_lapangan
+                        );
+                        const kelasCount = lap.kelasDipilih.length;
+                        
+                        // Count total peserta in this lapangan
+                        const totalPeserta = lap.kelasDipilih.reduce((sum, kelasId) => {
+                          const count = pesertaList.filter(
+                            (p) =>
+                              p.status === "APPROVED" &&
+                              p.kelas_kejuaraan?.id_kelas_kejuaraan === kelasId
+                          ).length;
+                          return sum + count;
+                        }, 0);
+
+                        return (
+                          <label
+                            key={lap.id_lapangan}
+                            className={`flex items-center justify-between p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                              isSelected ? "bg-white" : "hover:bg-white"
+                            }`}
+                            style={{
+                              borderColor: isSelected
+                                ? "#4F46E5"
+                                : "rgba(79,70,229,0.3)",
+                            }}
+                          >
+                            <div className="flex items-center gap-3">
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setSelectedPesertaLapangan([
+                                      ...selectedPesertaLapangan,
+                                      lap.id_lapangan,
+                                    ]);
+                                  } else {
+                                    setSelectedPesertaLapangan(
+                                      selectedPesertaLapangan.filter(
+                                        (id) => id !== lap.id_lapangan
+                                      )
+                                    );
+                                  }
+                                }}
+                                className="w-5 h-5 accent-[#4F46E5]"
+                              />
+                              <div>
+                                <p
+                                  className="font-bold"
+                                  style={{ color: "#050505" }}
+                                >
+                                  Lapangan {lap.nama_lapangan}
+                                </p>
+                                <p
+                                  className="text-xs"
+                                  style={{ color: "#050505", opacity: 0.6 }}
+                                >
+                                  {kelasCount} Kelas • {totalPeserta} Peserta
+                                </p>
+                              </div>
+                            </div>
+                            {isSelected && (
+                              <Check size={20} style={{ color: "#4F46E5" }} />
+                            )}
+                          </label>
+                        );
+                      })}
+                  </div>
+                </div>
+              )}
+
               {/* Info terpilih */}
-              {selectedPesertaKelas && (
+              {selectedPesertaLapangan.length > 0 && (
                 <div
                   className="p-3 rounded-lg"
                   style={{ backgroundColor: "rgba(79,70,229,0.1)" }}
@@ -2666,7 +2833,7 @@ const handleResetAndUpdateAntrian = async (
                     className="text-sm font-medium"
                     style={{ color: "#4F46E5" }}
                   >
-                    ℹ️ PDF akan berisi tabel daftar nama peserta dan dojang
+                    {selectedPesertaLapangan.length} lapangan terpilih
                   </p>
                 </div>
               )}
@@ -2676,7 +2843,8 @@ const handleResetAndUpdateAntrian = async (
               <button
                 onClick={() => {
                   setShowPesertaListModal(false);
-                  setSelectedPesertaKelas(null);
+                  setSelectedPesertaHari("");
+                  setSelectedPesertaLapangan([]);
                 }}
                 className="flex-1 py-3 px-4 rounded-lg border-2 font-medium"
                 style={{ borderColor: "#4F46E5", color: "#4F46E5" }}
@@ -2685,7 +2853,7 @@ const handleResetAndUpdateAntrian = async (
               </button>
               <button
                 onClick={handleExportPesertaList}
-                disabled={!selectedPesertaKelas || exportingPesertaPDF}
+                disabled={selectedPesertaLapangan.length === 0 || exportingPesertaPDF}
                 className="flex-1 py-3 px-4 rounded-lg font-medium disabled:opacity-50"
                 style={{ backgroundColor: "#4F46E5", color: "#F5FBEF" }}
               >
