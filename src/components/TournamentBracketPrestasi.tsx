@@ -210,9 +210,9 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
 
   const CARD_WIDTH = 380;
   const CARD_HEIGHT = 180;
-  const ROUND_GAP = 100;
+  const ROUND_GAP = 150; // Naikkan dari 100 ke 150 - gap antar round
   const BASE_VERTICAL_GAP = 100;
-  const CENTER_GAP = 100;
+  const CENTER_GAP = 200; // Naikkan dari 100 ke 200 - gap antara semi-final dan final
 
   const showNotification = (
     type: "success" | "error" | "warning" | "info",
@@ -1542,18 +1542,18 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                 className="font-bold"
                 style={{
                   color: "#000000",
-                  fontSize: "18px",
+                  fontSize: "26px",
                   whiteSpace: "nowrap",
                 }}
               >
-                Partai {match.nomor_partai}
+                {match.nomor_partai}
               </span>
             ) : match.ronde === 1 &&
               ((match.peserta_a && !match.peserta_b) ||
                 (!match.peserta_a && match.peserta_b)) ? (
               <span
                 className="font-bold"
-                style={{ color: "#F5B700", fontSize: "14px" }}
+                style={{ color: "#F5B700", fontSize: "26px" }}
               >
                 BYE
               </span>
