@@ -135,27 +135,18 @@ const kelasBeratOptions = [
   useEffect(() => {
   }, [kompetisiList]);
 
-  // FIXED: Set limit first when kompetisi is selected
+  // FIXED: Set limit ONCE on mount and fetch
   useEffect(() => {
     if (selectedKompetisiId) {
-      console.log(`[ValidasiPeserta] Setting limit to ${itemsPerPage} and fetching...`);
+      console.log(`🔄 [ValidasiPeserta] Setting limit to ${itemsPerPage}...`);
       setAtletLimit(itemsPerPage);
       // Wait a bit for state to update, then fetch
       setTimeout(() => {
+        console.log(`🔄 [ValidasiPeserta] Fetching with limit ${itemsPerPage}...`);
         fetchAtletByKompetisi(selectedKompetisiId);
       }, 100);
     }
-  }, [selectedKompetisiId, itemsPerPage]);
-
-  // FIXED: Fetch after limit is set (wait for atletPagination.limit to update)
-  useEffect(() => {
-    if (selectedKompetisiId && atletPagination.limit > 0) {
-      console.log(
-        `[ValidasiPeserta] Fetching peserta with limit ${atletPagination.limit}...`
-      );
-      fetchAtletByKompetisi(selectedKompetisiId);
-    }
-  }, [selectedKompetisiId, atletPagination.limit]);
+  }, [selectedKompetisiId]);
 
   // FIX: Ganti atletList dengan pesertaList
   useEffect(() => {
