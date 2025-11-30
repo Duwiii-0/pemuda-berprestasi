@@ -1,12 +1,12 @@
-import jsPDF from 'jspdf';
-import * as htmlToImage from 'html-to-image';
-import ReactDOM from 'react-dom/client';
-import React from 'react';
-import BracketRenderer from '../components/BracketRenderer';
-import { AuthProvider } from '../context/authContext';
-import { KompetisiProvider } from '../context/KompetisiContext';
-import BracketExportWrapper from '../components/BracketExportWrapper';
-import { components } from 'react-select';
+import jsPDF from "jspdf";
+import * as htmlToImage from "html-to-image";
+import ReactDOM from "react-dom/client";
+import React from "react";
+import BracketRenderer from "../components/BracketRenderer";
+import { AuthProvider } from "../context/authContext";
+import { KompetisiProvider } from "../context/KompetisiContext";
+import BracketExportWrapper from "../components/BracketExportWrapper";
+import { components } from "react-select";
 
 // =================================================================================================
 // CONFIGURATION & CONSTANTS
@@ -55,23 +55,23 @@ const PAGE_CONFIGS = {
     marginRight: 12,
     headerHeight: 32,
     footerHeight: 10,
-  }
+  },
 };
 
 const THEME = {
-  primary: '#990D35',
-  background: '#F5FBEF',
-  text: '#050505',
-  textSecondary: '#6B7280',
-  border: '#E5E7EB',
-  white: '#FFFFFF',
+  primary: "#990D35",
+  background: "#F5FBEF",
+  text: "#050505",
+  textSecondary: "#6B7280",
+  border: "#E5E7EB",
+  white: "#FFFFFF",
 };
 
 const getScaleFactor = (participantCount: number): number => {
   if (participantCount > 16) return 1.65;
   else if (participantCount > 8) return 1.75;
-  else if (participantCount > 4) return 1.80;
-  else return 2.00;
+  else if (participantCount > 4) return 1.8;
+  else return 2.0;
 };
 
 // =================================================================================================
@@ -81,7 +81,7 @@ const getScaleFactor = (participantCount: number): number => {
 const loadImage = (src: string): Promise<HTMLImageElement> => {
   return new Promise((resolve, reject) => {
     const img = new Image();
-    img.crossOrigin = 'anonymous';
+    img.crossOrigin = "anonymous";
     img.onload = () => resolve(img);
     img.onerror = reject;
     img.src = src;
@@ -96,18 +96,18 @@ const compressImage = async (dataUrl: string): Promise<HTMLImageElement> => {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d')!;
-      
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d")!;
+
       canvas.width = img.width;
       canvas.height = img.height;
-      
-      ctx.fillStyle = '#FFFFFF';
+
+      ctx.fillStyle = "#FFFFFF";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(img, 0, 0);
-      
-      const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
-      
+
+      const compressedDataUrl = canvas.toDataURL("image/jpeg", 0.85);
+
       const compressedImg = new Image();
       compressedImg.onload = () => resolve(compressedImg);
       compressedImg.onerror = reject;
@@ -135,9 +135,18 @@ const addHeaderAndFooter = async (
   if (config.logoPBTI) {
     try {
       const pbtiImg = await loadImage(config.logoPBTI);
-      doc.addImage(pbtiImg, 'PNG', pageDims.marginLeft + 2, logoY, logoSize, logoSize, undefined, 'FAST');
+      doc.addImage(
+        pbtiImg,
+        "PNG",
+        pageDims.marginLeft + 2,
+        logoY,
+        logoSize,
+        logoSize,
+        undefined,
+        "FAST"
+      );
     } catch (error) {
-      console.warn('⚠️ Failed to load PBTI logo:', error);
+      console.warn("⚠️ Failed to load PBTI logo:", error);
     }
   }
 
@@ -145,9 +154,18 @@ const addHeaderAndFooter = async (
   if (config.logoEvent) {
     try {
       const eventImg = await loadImage(config.logoEvent);
-      doc.addImage(eventImg, 'PNG', pageDims.width - pageDims.marginRight - logoSize - 2, logoY, logoSize, logoSize, undefined, 'FAST');
+      doc.addImage(
+        eventImg,
+        "PNG",
+        pageDims.width - pageDims.marginRight - logoSize - 2,
+        logoY,
+        logoSize,
+        logoSize,
+        undefined,
+        "FAST"
+      );
     } catch (error) {
-      console.warn('⚠️ Failed to load Event logo:', error);
+      console.warn("⚠️ Failed to load Event logo:", error);
     }
   }
 
@@ -156,29 +174,34 @@ const addHeaderAndFooter = async (
   let textY = headerY + 6;
 
   // Nama Event
-  doc.setFont('helvetica', 'bold');
+  doc.setFont("helvetica", "bold");
   doc.setFontSize(14);
   doc.setTextColor(THEME.primary);
-  doc.text(config.eventName, centerX, textY, { align: 'center' });
+  doc.text(config.eventName, centerX, textY, { align: "center" });
   textY += 6;
 
   // Kategori
-  doc.setFont('helvetica', 'bold');
+  doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
   doc.setTextColor(THEME.text);
-  doc.text(config.categoryName, centerX, textY, { align: 'center' });
+  doc.text(config.categoryName, centerX, textY, { align: "center" });
   textY += 5;
 
   // Tanggal
-  doc.setFont('helvetica', 'normal');
+  doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   doc.setTextColor(THEME.textSecondary);
-  doc.text(config.dateRange, centerX, textY, { align: 'center' });
+  doc.text(config.dateRange, centerX, textY, { align: "center" });
   textY += 4;
 
   // Lokasi & Kompetitor
   doc.setFontSize(9);
-  doc.text(`${config.location}  •  ${config.totalParticipants} Kompetitor`, centerX, textY, { align: 'center' });
+  doc.text(
+    `${config.location}  •  ${config.totalParticipants} Kompetitor`,
+    centerX,
+    textY,
+    { align: "center" }
+  );
 };
 
 // =================================================================================================
@@ -188,144 +211,162 @@ const addHeaderAndFooter = async (
 const convertElementToImage = async (
   element: HTMLElement,
   scaleFactor: number,
-  bracketType: 'PRESTASI' | 'PEMULA'
+  bracketType: "PRESTASI" | "PEMULA"
 ): Promise<HTMLImageElement> => {
   console.log(`🎯 Starting bracket capture for ${bracketType}...`);
-  
+
   let bracketVisual: HTMLElement | null = null;
-  
-  if (bracketType === 'PEMULA') {
-    if (element.classList.contains('tournament-layout')) {
+
+  if (bracketType === "PEMULA") {
+    if (element.classList.contains("tournament-layout")) {
       bracketVisual = element;
     } else {
-      bracketVisual = element.querySelector('.tournament-layout') as HTMLElement;
+      bracketVisual = element.querySelector(
+        ".tournament-layout"
+      ) as HTMLElement;
     }
   } else {
-    const relativeContainer = element.querySelector('.relative') as HTMLElement;
-    if (relativeContainer && relativeContainer.querySelector('svg')) {
-      bracketVisual = relativeContainer;
-    } else {
-      const allRelatives = element.querySelectorAll('.relative');
-      for (const rel of allRelatives) {
-        if (rel.querySelector('svg')) {
-          bracketVisual = rel as HTMLElement;
-          break;
-        }
+    // PRESTASI: Cari tournament-layout di dalamnya
+    bracketVisual = element.querySelector(".tournament-layout") as HTMLElement;
+
+    // Jika tidak ketemu, coba relative container dengan SVG
+    if (!bracketVisual) {
+      const relativeContainer = element.querySelector(
+        ".relative"
+      ) as HTMLElement;
+      if (relativeContainer && relativeContainer.querySelector("svg")) {
+        bracketVisual = relativeContainer;
       }
     }
   }
-  
+
   if (!bracketVisual && element.children.length > 0) {
     bracketVisual = element;
   }
-  
+
   if (!bracketVisual) {
-    throw new Error('Bracket visual container not found');
+    console.warn("⚠️ Bracket visual container not found, using entire element");
+    bracketVisual = element;
   }
-  
+
   console.log(`✅ Found bracket (${bracketType})`);
 
-  const hiddenElements: Array<{ el: HTMLElement; originalDisplay: string; originalVisibility: string }> = [];
-  
+  const hiddenElements: Array<{
+    el: HTMLElement;
+    originalDisplay: string;
+    originalVisibility: string;
+  }> = [];
+
   const leaderboards = document.querySelectorAll('[id$="-leaderboard"]');
-  leaderboards.forEach(el => {
+  leaderboards.forEach((el) => {
     const htmlEl = el as HTMLElement;
     const isInsideBracket = bracketVisual!.contains(htmlEl);
-    const isInsideExportArea = document.getElementById('bracket-export-area')?.contains(htmlEl);
-    
+    const isInsideExportArea = document
+      .getElementById("bracket-export-area")
+      ?.contains(htmlEl);
+
     if (!isInsideBracket && !isInsideExportArea) {
       hiddenElements.push({
         el: htmlEl,
         originalDisplay: htmlEl.style.display,
-        originalVisibility: htmlEl.style.visibility
+        originalVisibility: htmlEl.style.visibility,
       });
-      htmlEl.style.display = 'none';
-      htmlEl.style.visibility = 'hidden';
+      htmlEl.style.display = "none";
+      htmlEl.style.visibility = "hidden";
     }
   });
 
-  const headerWithLogos = element.querySelector('.flex.items-start.justify-between.gap-4.mb-3') as HTMLElement;
+  const headerWithLogos = element.querySelector(
+    ".flex.items-start.justify-between.gap-4.mb-3"
+  ) as HTMLElement;
   if (headerWithLogos) {
     hiddenElements.push({
       el: headerWithLogos,
       originalDisplay: headerWithLogos.style.display,
-      originalVisibility: headerWithLogos.style.visibility
+      originalVisibility: headerWithLogos.style.visibility,
     });
-    headerWithLogos.style.display = 'none';
-    headerWithLogos.style.visibility = 'hidden';
+    headerWithLogos.style.display = "none";
+    headerWithLogos.style.visibility = "hidden";
   }
 
-  const allButtons = document.querySelectorAll('button');
-  allButtons.forEach(btn => {
+  const allButtons = document.querySelectorAll("button");
+  allButtons.forEach((btn) => {
     const htmlBtn = btn as HTMLElement;
     if (!bracketVisual!.contains(htmlBtn)) {
       hiddenElements.push({
         el: htmlBtn,
         originalDisplay: htmlBtn.style.display,
-        originalVisibility: htmlBtn.style.visibility
+        originalVisibility: htmlBtn.style.visibility,
       });
-      htmlBtn.style.display = 'none';
+      htmlBtn.style.display = "none";
     }
   });
 
-  if (bracketType === 'PEMULA') {
-    const editButtons = bracketVisual.querySelectorAll('button');
-    editButtons.forEach(btn => {
+  if (bracketType === "PEMULA") {
+    const editButtons = bracketVisual.querySelectorAll("button");
+    editButtons.forEach((btn) => {
       const htmlBtn = btn as HTMLElement;
       hiddenElements.push({
         el: htmlBtn,
         originalDisplay: htmlBtn.style.display,
-        originalVisibility: htmlBtn.style.visibility
+        originalVisibility: htmlBtn.style.visibility,
       });
-      htmlBtn.style.display = 'none';
+      htmlBtn.style.display = "none";
     });
   }
 
   console.log(`🙈 Hidden ${hiddenElements.length} elements`);
 
-  await new Promise(resolve => setTimeout(resolve, 100));
+  await new Promise((resolve) => setTimeout(resolve, 100));
 
   const width = Math.max(bracketVisual.scrollWidth, bracketVisual.offsetWidth);
-  const height = Math.max(bracketVisual.scrollHeight, bracketVisual.offsetHeight);
+  const height = Math.max(
+    bracketVisual.scrollHeight,
+    bracketVisual.offsetHeight
+  );
 
-  console.log('📐 Dimensions:', { width, height });
+  console.log("📐 Dimensions:", { width, height });
 
   const pixelRatio = 2;
 
-  console.log('📸 Capturing with pixelRatio:', pixelRatio);
-  
+  console.log("📸 Capturing with pixelRatio:", pixelRatio);
+
+  // ✅ Wait longer untuk SVG render
+  await new Promise((resolve) => setTimeout(resolve, 500));
+
   const dataUrl = await htmlToImage.toPng(bracketVisual, {
     quality: 0.92,
     pixelRatio: pixelRatio,
     width: width,
     height: height,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     cacheBust: true,
-    skipFonts: true,
+    skipFonts: false,
     style: {
-      transform: 'scale(1.0)',
-      transformOrigin: 'center center',
-      margin: '0',
+      transform: "scale(1.0)",
+      transformOrigin: "center center",
+      margin: "0",
     },
     filter: (node) => {
-      if (node.nodeName === 'BUTTON') return false;
-      if ((node as HTMLElement).classList?.contains('sticky')) return false;
-      if ((node as HTMLElement).tagName === 'svg' && 
-          (node as HTMLElement).parentElement?.tagName === 'BUTTON') return false;
+      if (node.nodeName === "BUTTON") return false;
+      if ((node as HTMLElement).classList?.contains("sticky")) return false;
+      if (
+        (node as HTMLElement).tagName === "svg" &&
+        (node as HTMLElement).parentElement?.tagName === "BUTTON"
+      )
+        return false;
       return true;
-    }
+    },
   });
 
-  hiddenElements.forEach(({ el, originalDisplay, originalVisibility }) => {
-    el.style.display = originalDisplay;
-    el.style.visibility = originalVisibility;
-  });
-
-  console.log('✅ Image captured, compressing...');
+  console.log("✅ Capture result:", { dataUrlLength: dataUrl.length });
 
   const compressedImg = await compressImage(dataUrl);
-  console.log('✅ Compressed:', { width: compressedImg.width, height: compressedImg.height });
-  
+  console.log("✅ Compressed:", {
+    width: compressedImg.width,
+    height: compressedImg.height,
+  });
+
   return compressedImg;
 };
 
@@ -334,112 +375,138 @@ const convertElementToImage = async (
 // =================================================================================================
 
 export const exportBracketFromData = async (
-  kelasData: any, 
+  kelasData: any,
   bracketElement: HTMLElement,
   metadata?: {
     logoPBTI?: string;
     logoEvent?: string;
     namaKejuaraan?: string;
     kelas?: string;
-    tanggalTanding?: string; 
+    tanggalTanding?: string;
     jumlahKompetitor?: number;
     lokasi?: string;
   },
   customZoom?: number
 ): Promise<void> => {
-  console.log('🚀 Starting PDF export with A3 support...');
-  
-  const approvedParticipants = kelasData.peserta_kompetisi.filter((p: any) => p.status === 'APPROVED');
+  console.log("🚀 Starting PDF export with A3 support...");
+
+  const approvedParticipants = kelasData.peserta_kompetisi.filter(
+    (p: any) => p.status === "APPROVED"
+  );
   const participantCount = approvedParticipants.length;
   const scaleFactor = getScaleFactor(participantCount);
-  
+
   console.log(`👥 Participants: ${participantCount}, Scale: ${scaleFactor}`);
-  
-  const isPemula = !kelasData?.kategori_event?.nama_kategori?.toLowerCase().includes('prestasi');
-  const bracketType: 'PRESTASI' | 'PEMULA' = isPemula ? 'PEMULA' : 'PRESTASI';
-  
+
+  const isPemula = !kelasData?.kategori_event?.nama_kategori
+    ?.toLowerCase()
+    .includes("prestasi");
+  const bracketType: "PRESTASI" | "PEMULA" = isPemula ? "PEMULA" : "PRESTASI";
+
   const useA3 = !isPemula && participantCount > 32;
   const pageDims = useA3 ? PAGE_CONFIGS.A3 : PAGE_CONFIGS.A4;
-  
-  console.log(`📄 Format: ${useA3 ? 'A3' : 'A4'} (Bracket Type: ${bracketType})`);
-  
+
+  console.log(
+    `📄 Format: ${useA3 ? "A3" : "A4"} (Bracket Type: ${bracketType})`
+  );
+
   const config: ExportConfig = {
     eventName: metadata?.namaKejuaraan || kelasData.kompetisi.nama_event,
-    categoryName: metadata?.kelas || `${kelasData.kelompok?.nama_kelompok || ''} ${
-      kelasData.kelas_berat?.jenis_kelamin === 'LAKI_LAKI' ? 'Male' : 'Female'
-    } ${kelasData.kelas_berat?.nama_kelas || kelasData.poomsae?.nama_kelas || ''}`.trim(),
+    categoryName:
+      metadata?.kelas ||
+      `${kelasData.kelompok?.nama_kelompok || ""} ${
+        kelasData.kelas_berat?.jenis_kelamin === "LAKI_LAKI" ? "Male" : "Female"
+      } ${
+        kelasData.kelas_berat?.nama_kelas || kelasData.poomsae?.nama_kelas || ""
+      }`.trim(),
     location: metadata?.lokasi || kelasData.kompetisi.lokasi,
-    dateRange: metadata?.tanggalTanding || new Date(kelasData.kompetisi.tanggal_mulai).toLocaleDateString('id-ID', {
-      day: 'numeric', month: 'long', year: 'numeric'
-    }),
+    dateRange:
+      metadata?.tanggalTanding ||
+      new Date(kelasData.kompetisi.tanggal_mulai).toLocaleDateString("id-ID", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      }),
     totalParticipants: metadata?.jumlahKompetitor || participantCount,
     logoPBTI: metadata?.logoPBTI,
     logoEvent: metadata?.logoEvent,
   };
 
   try {
-    const doc = new jsPDF({ 
-      orientation: 'landscape', 
-      unit: 'mm', 
-      format: useA3 ? 'a3' : 'a4',
-      compress: true 
+    const doc = new jsPDF({
+      orientation: "landscape",
+      unit: "mm",
+      format: useA3 ? "a3" : "a4",
+      compress: true,
     });
 
     if (isPemula && participantCount > 70) {
-      console.log('📄 Multi-page export untuk Pemula...');
-      
-      const allMatchCards = bracketElement.querySelectorAll('.bg-white.rounded-lg.shadow-md.border');
+      console.log("📄 Multi-page export untuk Pemula...");
+
+      const allMatchCards = bracketElement.querySelectorAll(
+        ".bg-white.rounded-lg.shadow-md.border"
+      );
       const totalMatches = allMatchCards.length;
       const matchesPerPage = 50;
       const totalPages = Math.ceil(totalMatches / (matchesPerPage / 2));
-      
-      console.log(`📊 Total matches: ${totalMatches}, Pages needed: ${totalPages}`);
-      
+
+      console.log(
+        `📊 Total matches: ${totalMatches}, Pages needed: ${totalPages}`
+      );
+
       for (let pageNum = 0; pageNum < totalPages; pageNum++) {
         if (pageNum > 0) {
           doc.addPage();
         }
-        
+
         console.log(`📄 Processing page ${pageNum + 1}/${totalPages}...`);
-        
+
         const clonedBracket = bracketElement.cloneNode(true) as HTMLElement;
-        
-        const clonedCards = clonedBracket.querySelectorAll('.bg-white.rounded-lg.shadow-md.border');
+
+        const clonedCards = clonedBracket.querySelectorAll(
+          ".bg-white.rounded-lg.shadow-md.border"
+        );
         clonedCards.forEach((card: any) => {
-          card.style.display = 'none';
+          card.style.display = "none";
         });
-        
+
         const startIdx = pageNum * (matchesPerPage / 2);
-        const endIdx = Math.min(startIdx + (matchesPerPage / 2), totalMatches);
-        
+        const endIdx = Math.min(startIdx + matchesPerPage / 2, totalMatches);
+
         for (let i = startIdx; i < endIdx; i++) {
           if (clonedCards[i]) {
-            (clonedCards[i] as HTMLElement).style.display = 'block';
+            (clonedCards[i] as HTMLElement).style.display = "block";
           }
         }
-        
-        clonedBracket.style.position = 'absolute';
-        clonedBracket.style.left = '-9999px';
+
+        clonedBracket.style.position = "absolute";
+        clonedBracket.style.left = "-9999px";
         document.body.appendChild(clonedBracket);
-        
+
         try {
-          const bracketImg = await convertElementToImage(clonedBracket, scaleFactor, bracketType);
-          
+          const bracketImg = await convertElementToImage(
+            clonedBracket,
+            scaleFactor,
+            bracketType
+          );
+
           await addHeaderAndFooter(doc, config, pageDims);
-          
-          doc.setFont('helvetica', 'bold');
+
+          doc.setFont("helvetica", "bold");
           doc.setFontSize(10);
           doc.setTextColor(THEME.primary);
           doc.text(
-            `Halaman ${pageNum + 1} dari ${totalPages}`, 
-            pageDims.width - pageDims.marginRight - 30, 
-            pageDims.headerHeight + 5, 
-            { align: 'right' }
+            `Halaman ${pageNum + 1} dari ${totalPages}`,
+            pageDims.width - pageDims.marginRight - 30,
+            pageDims.headerHeight + 5,
+            { align: "right" }
           );
 
           const contentStartY = pageDims.headerHeight + pageDims.marginTop;
-          const contentEndY = pageDims.height - pageDims.footerHeight - pageDims.marginBottom;
-          const maxWidth = pageDims.width - pageDims.marginLeft - pageDims.marginRight;
+          const contentEndY =
+            pageDims.height - pageDims.footerHeight - pageDims.marginBottom;
+          const maxWidth =
+            pageDims.width - pageDims.marginLeft - pageDims.marginRight;
           const maxHeight = contentEndY - contentStartY;
 
           const imgAspectRatio = bracketImg.width / bracketImg.height;
@@ -461,34 +528,40 @@ export const exportBracketFromData = async (
 
           doc.addImage(
             bracketImg.src,
-            'JPEG',
+            "JPEG",
             x,
             y,
             displayWidth,
             displayHeight,
             undefined,
-            'FAST'
+            "FAST"
           );
-          
-          console.log(`✅ Page ${pageNum + 1} added (matches ${startIdx + 1}-${endIdx})`);
-          
+
+          console.log(
+            `✅ Page ${pageNum + 1} added (matches ${startIdx + 1}-${endIdx})`
+          );
         } finally {
           if (document.body.contains(clonedBracket)) {
             document.body.removeChild(clonedBracket);
           }
         }
       }
-      
     } else {
-      console.log('📄 Single-page export...');
-      
-      const bracketImg = await convertElementToImage(bracketElement, scaleFactor, bracketType);
-      
+      console.log("📄 Single-page export...");
+
+      const bracketImg = await convertElementToImage(
+        bracketElement,
+        scaleFactor,
+        bracketType
+      );
+
       await addHeaderAndFooter(doc, config, pageDims);
 
       const contentStartY = pageDims.headerHeight + pageDims.marginTop;
-      const contentEndY = pageDims.height - pageDims.footerHeight - pageDims.marginBottom;
-      const maxWidth = pageDims.width - pageDims.marginLeft - pageDims.marginRight;
+      const contentEndY =
+        pageDims.height - pageDims.footerHeight - pageDims.marginBottom;
+      const maxWidth =
+        pageDims.width - pageDims.marginLeft - pageDims.marginRight;
       const maxHeight = contentEndY - contentStartY;
 
       const imgAspectRatio = bracketImg.width / bracketImg.height;
@@ -498,11 +571,11 @@ export const exportBracketFromData = async (
       const totalPeserta = kelasData?.peserta_kompetisi?.length || 0;
 
       let zoom = customZoom || 1.0;
-      
+
       if (!customZoom) {
         if (isPemula) {
           if (totalPeserta <= 8) zoom = 0.85;
-          else if (totalPeserta <= 16) zoom = 0.80;
+          else if (totalPeserta <= 16) zoom = 0.8;
           else if (totalPeserta <= 60) zoom = 0.75;
           else zoom = 0.95;
         } else {
@@ -517,8 +590,10 @@ export const exportBracketFromData = async (
           }
         }
       }
-      
-      console.log(`🔍 Final zoom: ${zoom} (Custom: ${customZoom ? 'YES' : 'NO'})`);
+
+      console.log(
+        `🔍 Final zoom: ${zoom} (Custom: ${customZoom ? "YES" : "NO"})`
+      );
 
       const HEADER_MARGIN_BOTTOM = 5;
       displayWidth *= zoom;
@@ -529,24 +604,26 @@ export const exportBracketFromData = async (
 
       doc.addImage(
         bracketImg.src,
-        'JPEG',
+        "JPEG",
         x,
         y,
         displayWidth,
         displayHeight,
         undefined,
-        'FAST'
+        "FAST"
       );
     }
 
-    const dateStr = new Date().toISOString().split('T')[0];
-    const filename = `Bracket_${config.eventName.replace(/[^a-z0-9]/gi, '_')}_${config.categoryName.replace(/ /g, '_')}_${dateStr}.pdf`;
-    
-    doc.save(filename);
-    console.log(`✅ PDF saved: ${filename} (Format: ${useA3 ? 'A3' : 'A4'})`);
+    const dateStr = new Date().toISOString().split("T")[0];
+    const filename = `Bracket_${config.eventName.replace(
+      /[^a-z0-9]/gi,
+      "_"
+    )}_${config.categoryName.replace(/ /g, "_")}_${dateStr}.pdf`;
 
+    doc.save(filename);
+    console.log(`✅ PDF saved: ${filename} (Format: ${useA3 ? "A3" : "A4"})`);
   } catch (error) {
-    console.error('❌ Error exporting PDF:', error);
+    console.error("❌ Error exporting PDF:", error);
     throw error;
   }
 };
@@ -571,24 +648,33 @@ export const exportMultipleBracketsByLapangan = async (
   }
 ): Promise<void> => {
   console.log(`🚀 Starting bulk export for ${brackets.length} brackets...`);
-  
-  const maxParticipants = Math.max(...brackets.map(b => 
-    b.kelasData.peserta_kompetisi?.filter((p: any) => p.status === 'APPROVED').length || 0
-  ));
-  const hasPrestasiOver32 = brackets.some(b => 
-    !b.isPemula && (b.kelasData.peserta_kompetisi?.filter((p: any) => p.status === 'APPROVED').length || 0) > 32
+
+  const maxParticipants = Math.max(
+    ...brackets.map(
+      (b) =>
+        b.kelasData.peserta_kompetisi?.filter(
+          (p: any) => p.status === "APPROVED"
+        ).length || 0
+    )
   );
-  
+  const hasPrestasiOver32 = brackets.some(
+    (b) =>
+      !b.isPemula &&
+      (b.kelasData.peserta_kompetisi?.filter(
+        (p: any) => p.status === "APPROVED"
+      ).length || 0) > 32
+  );
+
   const useA3 = hasPrestasiOver32;
   const pageDims = useA3 ? PAGE_CONFIGS.A3 : PAGE_CONFIGS.A4;
-  
-  console.log(`📄 Bulk export format: ${useA3 ? 'A3' : 'A4'}`);
-  
-  const doc = new jsPDF({ 
-    orientation: 'landscape', 
-    unit: 'mm', 
-    format: useA3 ? 'a3' : 'a4',
-    compress: true
+
+  console.log(`📄 Bulk export format: ${useA3 ? "A3" : "A4"}`);
+
+  const doc = new jsPDF({
+    orientation: "landscape",
+    unit: "mm",
+    format: useA3 ? "a3" : "a4",
+    compress: true,
   });
 
   const bracketsByLapangan = brackets.reduce((acc, bracket) => {
@@ -601,79 +687,111 @@ export const exportMultipleBracketsByLapangan = async (
 
   let pageIndex = 0;
 
-  for (const [lapanganNama, lapanganBrackets] of Object.entries(bracketsByLapangan)) {
-    console.log(`\n📍 Processing Lapangan ${lapanganNama} (${lapanganBrackets.length} brackets)...`);
+  for (const [lapanganNama, lapanganBrackets] of Object.entries(
+    bracketsByLapangan
+  )) {
+    console.log(
+      `\n📍 Processing Lapangan ${lapanganNama} (${lapanganBrackets.length} brackets)...`
+    );
 
     for (let i = 0; i < lapanganBrackets.length; i++) {
       const { kelasData, isPemula, tanggal, namaKelas } = lapanganBrackets[i];
-      
-      console.log(`  📄 Bracket ${i + 1}/${lapanganBrackets.length}: ${namaKelas}`);
-      
+
+      console.log(
+        `  📄 Bracket ${i + 1}/${lapanganBrackets.length}: ${namaKelas}`
+      );
+
       if (pageIndex > 0) {
         doc.addPage();
       }
       pageIndex++;
 
-      const tempContainer = document.createElement('div');
+      const tempContainer = document.createElement("div");
       tempContainer.id = `bracket-container-${pageIndex}`;
       document.body.appendChild(tempContainer);
 
       try {
-        const bracketType: 'PRESTASI' | 'PEMULA' = isPemula ? 'PEMULA' : 'PRESTASI';
-        
-        const bracketElement = await new Promise<HTMLElement>((resolve, reject) => {
-          const root = ReactDOM.createRoot(tempContainer);
-          
-          const handleRenderComplete = (element: HTMLElement) => {
-            console.log('  ✅ Bracket render complete');
-            resolve(element);
-          };
+        const bracketType: "PRESTASI" | "PEMULA" = isPemula
+          ? "PEMULA"
+          : "PRESTASI";
 
-          root.render(
-            React.createElement(BracketExportWrapper, null,
-              React.createElement(BracketRenderer, {
-                kelasData: kelasData,
-                isPemula: isPemula,
-                onRenderComplete: handleRenderComplete
-              })
-            )
-          );
+        const bracketElement = await new Promise<HTMLElement>(
+          (resolve, reject) => {
+            const root = ReactDOM.createRoot(tempContainer);
 
-          setTimeout(() => {
-            reject(new Error('Render timeout, Pastikan Seluruh Bracket Sudah Tergenerate'));
-          }, 10000);
-        });
-        
-        console.log('  📸 Capturing bracket screenshot...');
+            const handleRenderComplete = (element: HTMLElement) => {
+              console.log("  ✅ Bracket render complete");
+              resolve(element);
+            };
 
-        const approvedParticipants = kelasData.peserta_kompetisi?.filter((p: any) => p.status === 'APPROVED') || [];
+            root.render(
+              React.createElement(
+                BracketExportWrapper,
+                null,
+                React.createElement(BracketRenderer, {
+                  kelasData: kelasData,
+                  isPemula: isPemula,
+                  onRenderComplete: handleRenderComplete,
+                })
+              )
+            );
+
+            setTimeout(() => {
+              reject(
+                new Error(
+                  "Render timeout, Pastikan Seluruh Bracket Sudah Tergenerate"
+                )
+              );
+            }, 10000);
+          }
+        );
+
+        console.log("  📸 Capturing bracket screenshot...");
+
+        const approvedParticipants =
+          kelasData.peserta_kompetisi?.filter(
+            (p: any) => p.status === "APPROVED"
+          ) || [];
         const participantCount = approvedParticipants.length;
         const scaleFactor = getScaleFactor(participantCount);
 
         const config: ExportConfig = {
           eventName: eventMetadata.namaKejuaraan,
           categoryName: namaKelas,
-          location: kelasData.kompetisi?.lokasi || 'GOR Ranau JSC Palembang',
-          dateRange: new Date(tanggal).toLocaleDateString('id-ID', {
-            day: 'numeric', month: 'long', year: 'numeric'
+          location: kelasData.kompetisi?.lokasi || "GOR Ranau JSC Palembang",
+          dateRange: new Date(tanggal).toLocaleDateString("id-ID", {
+            day: "numeric",
+            month: "long",
+            year: "numeric",
           }),
           totalParticipants: participantCount,
           logoPBTI: eventMetadata.logoPBTI,
           logoEvent: eventMetadata.logoEvent,
         };
 
-        const bracketImg = await convertElementToImage(bracketElement, scaleFactor, bracketType);
-        
+        const bracketImg = await convertElementToImage(
+          bracketElement,
+          scaleFactor,
+          bracketType
+        );
+
         await addHeaderAndFooter(doc, config, pageDims);
 
-        doc.setFont('helvetica', 'bold');
+        doc.setFont("helvetica", "bold");
         doc.setFontSize(12);
         doc.setTextColor(THEME.primary);
-        doc.text(`Lapangan ${lapanganNama}`, pageDims.width - pageDims.marginRight - 25, pageDims.headerHeight + 5, { align: 'right' });
+        doc.text(
+          `Lapangan ${lapanganNama}`,
+          pageDims.width - pageDims.marginRight - 25,
+          pageDims.headerHeight + 5,
+          { align: "right" }
+        );
 
         const contentStartY = pageDims.headerHeight + pageDims.marginTop;
-        const contentEndY = pageDims.height - pageDims.footerHeight - pageDims.marginBottom;
-        const maxWidth = pageDims.width - pageDims.marginLeft - pageDims.marginRight;
+        const contentEndY =
+          pageDims.height - pageDims.footerHeight - pageDims.marginBottom;
+        const maxWidth =
+          pageDims.width - pageDims.marginLeft - pageDims.marginRight;
         const maxHeight = contentEndY - contentStartY;
 
         const imgAspectRatio = bracketImg.width / bracketImg.height;
@@ -685,24 +803,23 @@ export const exportMultipleBracketsByLapangan = async (
           displayWidth = displayHeight * imgAspectRatio;
         }
 
-        const centerX = pageDims.marginLeft + (maxWidth / 2);
-        const centerY = contentStartY + (maxHeight / 2);
-        const x = centerX - (displayWidth / 2);
-        const y = centerY - (displayHeight / 2);
+        const centerX = pageDims.marginLeft + maxWidth / 2;
+        const centerY = contentStartY + maxHeight / 2;
+        const x = centerX - displayWidth / 2;
+        const y = centerY - displayHeight / 2;
 
         doc.addImage(
-          bracketImg.src, 
-          'JPEG', 
-          x, 
-          y, 
-          displayWidth, 
-          displayHeight, 
-          undefined, 
-          'FAST'
+          bracketImg.src,
+          "JPEG",
+          x,
+          y,
+          displayWidth,
+          displayHeight,
+          undefined,
+          "FAST"
         );
 
         console.log(`  ✅ Added to PDF`);
-
       } catch (error) {
         console.error(`  ❌ Error rendering bracket:`, error);
         throw error;
@@ -715,9 +832,16 @@ export const exportMultipleBracketsByLapangan = async (
   }
 
   // ✅ FIXED: MISSING doc.save() - INI YANG HILANG!
-  const dateStr = new Date().toISOString().split('T')[0];
-  const filename = `Brackets_Lapangan_${eventMetadata.namaKejuaraan.replace(/[^a-z0-9]/gi, '_')}_${dateStr}.pdf`;
-  
+  const dateStr = new Date().toISOString().split("T")[0];
+  const filename = `Brackets_Lapangan_${eventMetadata.namaKejuaraan.replace(
+    /[^a-z0-9]/gi,
+    "_"
+  )}_${dateStr}.pdf`;
+
   doc.save(filename);
-  console.log(`\n✅ PDF saved: ${filename} (${pageIndex} pages, Format: ${useA3 ? 'A3' : 'A4'})`);
+  console.log(
+    `\n✅ PDF saved: ${filename} (${pageIndex} pages, Format: ${
+      useA3 ? "A3" : "A4"
+    })`
+  );
 };
