@@ -1461,30 +1461,6 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
           background: "transparent",
         }}
       >
-        {/* SVG Layer - Kontinyu Line dari A ke B */}
-        <svg
-          style={{
-            position: "absolute",
-            width: "100%",
-            height: "100%",
-            top: 0,
-            left: 0,
-            pointerEvents: "none",
-            zIndex: 1,
-          }}
-        >
-          {/* Continuous horizontal line dari atas ke bawah */}
-          <line
-            x1="50%"
-            y1="0"
-            x2="50%"
-            y2="100%"
-            stroke="#990D35"
-            strokeWidth="5"
-            opacity="0.8"
-          />
-        </svg>
-
         {/* Participant A - TOP (Merah) */}
         <div
           style={{
@@ -1527,40 +1503,60 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
           )}
         </div>
 
-        {/* Match Number Badge - Center */}
+        {/* Center Line Section - Horizontal Line dengan Badge */}
         <div
           style={{
-            position: "absolute",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            backgroundColor: "#F5FBEF",
-            padding: "4px 12px",
-            zIndex: 3,
-            borderRadius: "4px",
+            height: "40px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            position: "relative",
+            zIndex: 2,
           }}
         >
-          {match.nomor_partai ? (
-            <span
-              className="font-bold"
-              style={{
-                color: "#000000",
-                fontSize: "14px",
-                whiteSpace: "nowrap",
-              }}
-            >
-              Partai {match.nomor_partai}
-            </span>
-          ) : match.ronde === 1 &&
-            ((match.peserta_a && !match.peserta_b) ||
-              (!match.peserta_a && match.peserta_b)) ? (
-            <span
-              className="font-bold"
-              style={{ color: "#F5B700", fontSize: "14px" }}
-            >
-              BYE
-            </span>
-          ) : null}
+          {/* Horizontal Main Line - Background */}
+          <div
+            style={{
+              position: "absolute",
+              width: "100%",
+              height: "5px",
+              backgroundColor: "#990D35",
+              zIndex: 0,
+            }}
+          />
+
+          {/* Match Number Badge - Center */}
+          <div
+            style={{
+              position: "relative",
+              zIndex: 1,
+              backgroundColor: "#F5FBEF",
+              padding: "4px 12px",
+              borderRadius: "4px",
+            }}
+          >
+            {match.nomor_partai ? (
+              <span
+                className="font-bold"
+                style={{
+                  color: "#000000",
+                  fontSize: "14px",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                Partai {match.nomor_partai}
+              </span>
+            ) : match.ronde === 1 &&
+              ((match.peserta_a && !match.peserta_b) ||
+                (!match.peserta_a && match.peserta_b)) ? (
+              <span
+                className="font-bold"
+                style={{ color: "#F5B700", fontSize: "14px" }}
+              >
+                BYE
+              </span>
+            ) : null}
+          </div>
         </div>
 
         {/* Participant B - BOTTOM (Biru) */}
