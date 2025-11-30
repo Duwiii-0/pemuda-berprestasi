@@ -1472,7 +1472,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "flex-end",
-            minHeight: "70px",
+            minHeight: "50px",
             position: "relative",
           }}
         >
@@ -1509,7 +1509,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
         {/* Main Center Line dengan Nomor Partai */}
         <div
           style={{
-            height: "80px",
+            height: "60px",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -1521,7 +1521,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
             style={{
               position: "absolute",
               width: "100%",
-              height: "8px",
+              height: "5px",
               backgroundColor: "#990D35",
               zIndex: 0,
             }}
@@ -1533,13 +1533,13 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
               position: "relative",
               zIndex: 1,
               backgroundColor: "#F5FBEF",
-              padding: "10px 16px",
+              padding: "8px 14px",
             }}
           >
             {match.nomor_partai ? (
               <span
                 className="font-bold"
-                style={{ color: "#000000", fontSize: "20px" }}
+                style={{ color: "#000000", fontSize: "18px" }}
               >
                 Partai {match.nomor_partai}
               </span>
@@ -1548,7 +1548,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                 (!match.peserta_a && match.peserta_b)) ? (
               <span
                 className="font-bold"
-                style={{ color: "#F5B700", fontSize: "20px" }}
+                style={{ color: "#F5B700", fontSize: "18px" }}
               >
                 BYE
               </span>
@@ -1564,7 +1564,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "flex-start",
-            minHeight: "70px",
+            minHeight: "50px",
             position: "relative",
           }}
         >
@@ -1807,7 +1807,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                   x2={lineLength}
                   y2="1"
                   stroke="#990D35"
-                  strokeWidth="8"
+                  strokeWidth="5"
                   opacity="0.8"
                 />
               </svg>
@@ -1830,7 +1830,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                   x2={lineLength}
                   y2="1"
                   stroke="#990D35"
-                  strokeWidth="8"
+                  strokeWidth="5"
                   opacity="0.8"
                 />
               </svg>
@@ -2228,7 +2228,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                             x2={isRight ? 0 : halfGap}
                             y2="1"
                             stroke="#990D35"
-                            strokeWidth="8"
+                            strokeWidth="5"
                             opacity="0.8"
                           />
                         </svg>
@@ -2284,7 +2284,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                                     x2="1"
                                     y2={verticalHeight}
                                     stroke="#990D35"
-                                    strokeWidth="8"
+                                    strokeWidth="5"
                                     opacity="0.8"
                                   />
                                 </svg>
@@ -2311,7 +2311,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                                     x2={isRight ? 0 : halfGap}
                                     y2="1"
                                     stroke="#990D35"
-                                    strokeWidth="8"
+                                    strokeWidth="5"
                                     opacity="0.8"
                                   />
                                 </svg>
