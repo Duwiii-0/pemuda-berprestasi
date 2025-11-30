@@ -1757,7 +1757,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
     }
 
     const lineLength = CENTER_GAP / 2 + 60;
-    const centerLineY = finalYPosition + 70 + 20; // Center line of final match card
+    const centerLineY = finalYPosition + CARD_HEIGHT / 2 - 3; // Center line of final match card, perfectly centered
 
     return (
       <div
