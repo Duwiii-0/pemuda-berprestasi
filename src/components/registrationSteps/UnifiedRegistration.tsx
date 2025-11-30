@@ -97,6 +97,11 @@ const UnifiedRegistration = ({
 
   const [existingRegistrations, setExistingRegistrations] = useState<RegistrationType[]>([]);
 
+  // ID Tracker to debug state changes
+  useEffect(() => {
+    console.log(`[ID TRACKER] kelasKejuaraanId is now: ${formData.kelasKejuaraanId}`);
+  }, [formData.kelasKejuaraanId]);
+
   useEffect(() => {
     if (isOpen) {
       fetchAgeOptions();
@@ -550,9 +555,9 @@ const UnifiedRegistration = ({
           selectedWeight: null,
           selectedAtlit: null,
           selectedAtlit2:
-            formData.styleType === "POOMSAE" && formData.selectedPoomsae
+            prevData.styleType === "POOMSAE" && prevData.selectedPoomsae
               ? null
-              : formData.selectedAtlit2,
+              : prevData.selectedAtlit2,
           selectedPoomsae: null,
         }));
       }
@@ -577,6 +582,7 @@ const UnifiedRegistration = ({
         selectedAthletes,
         existingRegistrations,
       });
+      console.log("Full formData at submission:", JSON.stringify(formData, null, 2));
       const validation = validateRegistration(
         kelasKejuaraanId,
         selectedAthletes,
@@ -848,7 +854,7 @@ const UnifiedRegistration = ({
                   </label>
                   <LockedSelect
                     unstyled
-                    options={[{ value: "Individu", label: "Individu" }]}
+                    options={poomsaeOptions}
                     value={formData.selectedPoomsae}
                     onChange={(value: OptionType | null) =>
                       setFormData(prevData => ({
