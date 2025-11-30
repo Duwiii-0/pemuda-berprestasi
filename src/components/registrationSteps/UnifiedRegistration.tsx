@@ -240,10 +240,10 @@ const UnifiedRegistration = ({
           console.log("✅ Kelas kejuaraan didapat:", kelasId);
 
           // Update formData untuk kelasKejuaraanId
-          setFormData({
-            ...formData,
+          setFormData(prevData => ({
+            ...prevData,
             kelasKejuaraanId: kelasId,
-          });
+          }));
         }
       } catch (err) {
         console.error("❌ Gagal fetch kelas kejuaraan:", err);
@@ -513,8 +513,8 @@ const UnifiedRegistration = ({
       // Reset field step sebelumnya
       if (currentStep === 2) {
         // Step 1 → reset styleType & categoryType
-        setFormData({
-          ...formData,
+        setFormData(prevData => ({
+          ...prevData,
           styleType: null,
           categoryType: null,
           selectedAge: null,
@@ -523,11 +523,11 @@ const UnifiedRegistration = ({
           selectedAtlit: null,
           selectedAtlit2: null, // ✅ ADDED
           selectedPoomsae: null,
-        });
+        }));
       } else if (currentStep === 3) {
         // Step 2 → reset gender, age, weight, poomsae
-        setFormData({
-          ...formData,
+        setFormData(prevData => ({
+          ...prevData,
           selectedGender: null,
           selectedAge: null,
           selectedWeight: null,
@@ -537,7 +537,7 @@ const UnifiedRegistration = ({
               ? null
               : formData.selectedAtlit2,
           selectedPoomsae: null,
-        });
+        }));
       }
 
       setCurrentStep(currentStep - 1);
@@ -679,14 +679,14 @@ const UnifiedRegistration = ({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <button
                     onClick={() =>
-                      setFormData({
-                        ...formData,
+                      setFormData(prevData => ({
+                        ...prevData,
                         styleType: "KYORUGI",
                         selectedAge: null,
                         selectedWeight: null,
                         selectedPoomsae: null,
-                        selectedAtlit2: null, // ✅ ADDED
-                      })
+                        selectedAtlit2: null,
+                      }))
                     }
                     className={`p-8 rounded-xl border-2 transition-all duration-300 font-bebas text-4xl ${
                       formData.styleType === "KYORUGI"
@@ -701,13 +701,13 @@ const UnifiedRegistration = ({
                   </button>
                   <button
                     onClick={() =>
-                      setFormData({
-                        ...formData,
+                      setFormData(prevData => ({
+                        ...prevData,
                         styleType: "POOMSAE",
                         selectedWeight: null,
                         selectedPoomsae: null,
-                        selectedAtlit2: null, // ✅ ADDED
-                      })
+                        selectedAtlit2: null,
+                      }))
                     }
                     className={`p-8 rounded-xl border-2 transition-all duration-300 font-bebas text-4xl ${
                       formData.styleType === "POOMSAE"
@@ -728,7 +728,7 @@ const UnifiedRegistration = ({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <button
                     onClick={() =>
-                      setFormData({ ...formData, categoryType: "prestasi" })
+                      setFormData(prevData => ({ ...prevData, categoryType: "prestasi" }))
                     }
                     className={`p-8 rounded-xl border-2 transition-all duration-300 font-bebas text-4xl ${
                       formData.categoryType === "prestasi"
@@ -743,14 +743,14 @@ const UnifiedRegistration = ({
                   </button>
                   <button
                     onClick={() =>
-                      setFormData({
-                        ...formData,
+                      setFormData(prevData => ({
+                        ...prevData,
                         categoryType: "pemula",
                         selectedAge: null,
                         selectedWeight: null,
                         selectedPoomsae: null,
-                        selectedAtlit2: null, // ✅ ADDED
-                      })
+                        selectedAtlit2: null,
+                      }))
                     }
                     className={`p-8 rounded-xl border-2 transition-all duration-300 font-bebas text-4xl ${
                       formData.categoryType === "pemula"
@@ -803,16 +803,16 @@ const UnifiedRegistration = ({
                     options={getAgeOptions()}
                     value={formData.selectedAge}
                     onChange={(value: OptionType | null) =>
-                      setFormData({
-                        ...formData,
+                      setFormData(prevData => ({
+                        ...prevData,
                         selectedAge: value,
                         // Reset subsequent fields when age changes
                         selectedWeight: null,
                         selectedPoomsae: null,
                         selectedGender: null,
                         selectedAtlit: null,
-                        selectedAtlit2: null, // ✅ ADDED
-                      })
+                        selectedAtlit2: null,
+                      }))
                     }
                     placeholder="Pilih kelas umur..."
                     isSearchable
@@ -834,12 +834,12 @@ const UnifiedRegistration = ({
                     options={[{ value: "Individu", label: "Individu" }]}
                     value={formData.selectedPoomsae}
                     onChange={(value: OptionType | null) =>
-                      setFormData({
-                        ...formData,
+                      setFormData(prevData => ({
+                        ...prevData,
                         selectedPoomsae: value,
                         selectedAtlit: null,
-                        selectedAtlit2: null, // ✅ ADDED
-                      })
+                        selectedAtlit2: null,
+                      }))
                     }
                     placeholder="Pilih kelas poomsae..."
                     isSearchable
@@ -870,10 +870,10 @@ const UnifiedRegistration = ({
                       options={poomsaeTypeOptions}
                       value={formData.selectedPoomsaeType}
                       onChange={(value: OptionType | null) =>
-                        setFormData({
-                          ...formData,
+                        setFormData(prevData => ({
+                          ...prevData,
                           selectedPoomsaeType: value,
-                        })
+                        }))
                       }
                       placeholder="Pilih tipe poomsae..."
                       isSearchable={false}
@@ -900,14 +900,14 @@ const UnifiedRegistration = ({
                     options={genderOptions}
                     value={formData.selectedGender}
                     onChange={(value: OptionType | null) =>
-                      setFormData({
-                        ...formData,
+                      setFormData(prevData => ({
+                        ...prevData,
                         selectedGender: value,
                         // Reset subsequent fields when gender changes
                         selectedWeight: null,
                         selectedAtlit: null,
-                        selectedAtlit2: null, // ✅ ADDED
-                      })
+                        selectedAtlit2: null,
+                      }))
                     }
                     placeholder="Pilih jenis kelamin..."
                     isSearchable={false}
@@ -937,12 +937,12 @@ const UnifiedRegistration = ({
                     options={weightOptions}
                     value={formData.selectedWeight}
                     onChange={(value: OptionType | null) =>
-                      setFormData({
-                        ...formData,
+                      setFormData(prevData => ({
+                        ...prevData,
                         selectedWeight: value,
                         selectedAtlit: null,
                         selectedAtlit2: null,
-                      })
+                      }))
                     }
                     placeholder="Pilih kelas berat..."
                     isSearchable={false}
@@ -1033,14 +1033,14 @@ const UnifiedRegistration = ({
                       options={atlitOptions}
                       value={formData.selectedAtlit}
                       onChange={(value: OptionType | null) =>
-                        setFormData({
-                          ...formData,
+                        setFormData(prevData => ({
+                          ...prevData,
                           selectedAtlit: value,
                           selectedAtlit2:
-                            formData.selectedAtlit2?.value === value?.value
+                            prevData.selectedAtlit2?.value === value?.value
                               ? null
-                              : formData.selectedAtlit2,
-                        })
+                              : prevData.selectedAtlit2,
+                        }))
                       }
                       placeholder="Pilih nama atlit..."
                       isSearchable
@@ -1064,7 +1064,7 @@ const UnifiedRegistration = ({
                         )}
                         value={formData.selectedAtlit2}
                         onChange={(value: OptionType | null) =>
-                          setFormData({ ...formData, selectedAtlit2: value })
+                          setFormData(prevData => ({ ...prevData, selectedAtlit2: value }))
                         }
                         placeholder="Pilih atlet kedua..."
                         isSearchable
