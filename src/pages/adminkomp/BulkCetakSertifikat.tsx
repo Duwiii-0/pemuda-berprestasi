@@ -4,8 +4,9 @@ import { useAuth } from '../../context/authContext';
 import { generateCertificatePdfBytes, getKelasKejuaraan } from '../../utils/pdfGenerators';
 import type { MedalStatus } from '../../utils/pdfGenerators';
 import { PDFDocument } from 'pdf-lib';
-import { Award, Loader, ChevronLeft, ChevronRight, Download, Printer } from 'lucide-react';
+import { Award, Loader, ChevronLeft, ChevronRight, Download, Printer, Search } from 'lucide-react';
 import toast from 'react-hot-toast';
+import Select from 'react-select';
 
 const BulkCetakSertifikat: React.FC = () => {
   const { user } = useAuth();
@@ -14,7 +15,6 @@ const BulkCetakSertifikat: React.FC = () => {
     fetchAtletByKompetisi, 
     loadingAtlet, 
     atletPagination, 
-    setAtletPage, 
     setAtletLimit,
     allPesertaList,
     fetchAllAtletByKompetisi 
@@ -27,6 +27,77 @@ const BulkCetakSertifikat: React.FC = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [selectedAtlets, setSelectedAtlets] = useState<Set<number>>(new Set());
   const [showPrintPreview, setShowPrintPreview] = useState(false);
+  const [currentDisplayPage, setCurrentDisplayPage] = useState(1); // Visual pagination
+  const [itemsPerDisplayPage] = useState(25); // Show 25 items per page visually
+  
+  // Additional filters like ValidasiPeserta
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterStatus, setFilterStatus] = useState<"ALL" | "PENDING" | "APPROVED" | "REJECTED">("APPROVED");
+  const [filterCategory, setFilterCategory] = useState<"ALL" | "KYORUGI" | "POOMSAE">("ALL");
+  const [filterKelompokUsia, setFilterKelompokUsia] = useState<"ALL" | "Super Pra-cadet" | "Pracadet" | "Cadet" | "Junior" | "Senior">("ALL");
+  const [filterLevel, setFilterLevel] = useState<"ALL" | "pemula" | "prestasi">("ALL");
+  const [filterKelasBerat, setFilterKelasBerat] = useState<"ALL" | string>("ALL");
+
+  const kelasBeratOptions = [
+    { value: "ALL", label: "Semua Kelas Berat" },
+    { value: "Under 18 kg", label: "Under 18 kg" },
+    { value: "Under 19 kg", label: "Under 19 kg" },
+    { value: "Under 20 kg", label: "Under 20 kg" },
+    { value: "Under 21 kg", label: "Under 21 kg" },
+    { value: "Under 22 kg", label: "Under 22 kg" },
+    { value: "Under 23 kg", label: "Under 23 kg" },
+    { value: "Under 24 kg", label: "Under 24 kg" },
+    { value: "Under 25 kg", label: "Under 25 kg" },
+    { value: "Under 26 kg", label: "Under 26 kg" },
+    { value: "Under 27 kg", label: "Under 27 kg" },
+    { value: "Under 28 kg", label: "Under 28 kg" },
+    { value: "Under 29 kg", label: "Under 29 kg" },
+    { value: "Under 30 kg", label: "Under 30 kg" },
+    { value: "Under 32 kg", label: "Under 32 kg" },
+    { value: "Under 33 kg", label: "Under 33 kg" },
+    { value: "Under 35 kg", label: "Under 35 kg" },
+    { value: "Under 36 kg", label: "Under 36 kg" },
+    { value: "Under 37 kg", label: "Under 37 kg" },
+    { value: "Under 38 kg", label: "Under 38 kg" },
+    { value: "Under 39 kg", label: "Under 39 kg" },
+    { value: "Under 41 kg", label: "Under 41 kg" },
+    { value: "Under 42 kg", label: "Under 42 kg" },
+    { value: "Under 44 kg", label: "Under 44 kg" },
+    { value: "Under 45 kg", label: "Under 45 kg" },
+    { value: "Under 46 kg", label: "Under 46 kg" },
+    { value: "Under 47 kg", label: "Under 47 kg" },
+    { value: "Under 48 kg", label: "Under 48 kg" },
+    { value: "Under 49 kg", label: "Under 49 kg" },
+    { value: "Under 51 kg", label: "Under 51 kg" },
+    { value: "Under 52 kg", label: "Under 52 kg" },
+    { value: "Under 53 kg", label: "Under 53 kg" },
+    { value: "Under 54 kg", label: "Under 54 kg" },
+    { value: "Under 55 kg", label: "Under 55 kg" },
+    { value: "Under 57 kg", label: "Under 57 kg" },
+    { value: "Under 59 kg", label: "Under 59 kg" },
+    { value: "Under 61 kg", label: "Under 61 kg" },
+    { value: "Under 62 kg", label: "Under 62 kg" },
+    { value: "Under 63 kg", label: "Under 63 kg" },
+    { value: "Under 65 kg", label: "Under 65 kg" },
+    { value: "Under 67 kg", label: "Under 67 kg" },
+    { value: "Under 68 kg", label: "Under 68 kg" },
+    { value: "Under 73 kg", label: "Under 73 kg" },
+    { value: "Under 74 kg", label: "Under 74 kg" },
+    { value: "Under 78 kg", label: "Under 78 kg" },
+    { value: "Under 80 kg", label: "Under 80 kg" },
+    { value: "Under 87 kg", label: "Under 87 kg" },
+    { value: "Over 32 kg", label: "Over 32 kg" },
+    { value: "Over 33 kg", label: "Over 33 kg" },
+    { value: "Over 38 kg", label: "Over 38 kg" },
+    { value: "Over 39 kg", label: "Over 39 kg" },
+    { value: "Over 59 kg", label: "Over 59 kg" },
+    { value: "Over 65 kg", label: "Over 65 kg" },
+    { value: "Over 68 kg", label: "Over 68 kg" },
+    { value: "Over 73 kg", label: "Over 73 kg" },
+    { value: "Over 78 kg", label: "Over 78 kg" },
+    { value: "Over 87 kg", label: "Over 87 kg" },
+    { value: "Over 200 kg", label: "Over 200 kg" },
+  ];
 
   const kompetisiId = user?.role === "ADMIN_KOMPETISI"
     ? user?.admin_kompetisi?.id_kompetisi
@@ -58,7 +129,7 @@ const BulkCetakSertifikat: React.FC = () => {
     // Skip initial render by checking if we already have data
     if (kompetisiId && pesertaList.length > 0) {
       console.log(`🔄 [BulkCetak] Filter changed: dojang=${selectedDojang}, kelas=${selectedKelas}`);
-      setAtletPage(1); // Reset to page 1
+      setCurrentDisplayPage(1); // Reset to page 1
       setSelectedAtlets(new Set()); // Clear selection when filter changes
       fetchAtletByKompetisi(
         kompetisiId, 
@@ -109,20 +180,49 @@ const BulkCetakSertifikat: React.FC = () => {
     }
   }, [allPesertaList]);
 
-  const currentPage = atletPagination.page;
-  const totalPages = atletPagination.totalPages;
-  const itemsPerPage = atletPagination.limit;
-  
-  // FIXED: Use actual pesertaList length if pagination meta is 0
-  const actualTotal = atletPagination.total > 0 ? atletPagination.total : pesertaList.length;
-  const actualTotalPages = totalPages > 0 ? totalPages : Math.ceil(pesertaList.length / itemsPerPage);
+  // Apply all filters to pesertaList (same as ValidasiPeserta)
+  const filteredPeserta = pesertaList.filter((peserta) => {
+    const namaPeserta = peserta.is_team
+      ? peserta.anggota_tim?.map((a: any) => a.atlet.nama_atlet).join(" ") || ""
+      : peserta.atlet?.nama_atlet || "";
 
-  // Selection handlers
+    const matchesSearch = namaPeserta.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = filterStatus === "ALL" || peserta.status === filterStatus;
+
+    const kategori = peserta.kelas_kejuaraan?.cabang?.toUpperCase() || "";
+    const matchesCategory = filterCategory === "ALL" || kategori === filterCategory.toUpperCase();
+
+    const level = peserta.kelas_kejuaraan?.kategori_event?.nama_kategori?.toLowerCase() || "";
+    const matchesLevel = filterLevel === "ALL" || level === filterLevel;
+
+    const matchesKelompok =
+      filterKelompokUsia === "ALL" ||
+      peserta.kelas_kejuaraan?.kelompok?.nama_kelompok.toLowerCase().includes(filterKelompokUsia.toLowerCase());
+
+    const pesertaDojang = peserta.is_team
+      ? peserta.anggota_tim?.[0]?.atlet?.dojang?.id_dojang?.toString() || ""
+      : peserta.atlet?.dojang?.id_dojang?.toString() || "";
+    const matchesDojang = selectedDojang === "ALL" || pesertaDojang === selectedDojang;
+
+    const kelasBerat = peserta.kelas_kejuaraan?.kelas_berat?.nama_kelas || (peserta.atlet?.berat_badan ? `${peserta.atlet.berat_badan} kg` : "-");
+    const matchesKelasBerat = filterKelasBerat === "ALL" || kelasBerat === filterKelasBerat;
+
+    return matchesSearch && matchesStatus && matchesCategory && matchesLevel && matchesKelompok && matchesDojang && matchesKelasBerat;
+  });
+
+  // Calculate visual pagination (25 per page from FILTERED data)
+  const totalItems = filteredPeserta.length;
+  const totalDisplayPages = Math.ceil(totalItems / itemsPerDisplayPage);
+  const startIndex = (currentDisplayPage - 1) * itemsPerDisplayPage;
+  const endIndex = startIndex + itemsPerDisplayPage;
+  const displayedPeserta = filteredPeserta.slice(startIndex, endIndex);
+
+  // Selection handlers - UPDATE to use displayedPeserta
   const handleSelectAll = () => {
-    if (selectedAtlets.size === pesertaList.length) {
+    if (selectedAtlets.size === displayedPeserta.length) {
       setSelectedAtlets(new Set());
     } else {
-      const allIds = new Set(pesertaList.map(p => p.id_peserta_kompetisi));
+      const allIds = new Set(displayedPeserta.map(p => p.id_peserta_kompetisi));
       setSelectedAtlets(allIds);
     }
   };
@@ -137,39 +237,38 @@ const BulkCetakSertifikat: React.FC = () => {
     setSelectedAtlets(newSelected);
   };
 
-  const isAllSelected = pesertaList.length > 0 && selectedAtlets.size === pesertaList.length;
+  const isAllSelected = displayedPeserta.length > 0 && selectedAtlets.size === displayedPeserta.length;
 
-  // Pagination helper
-  const getPageNumbers = () => {
+  // Pagination helper for visual pages
+  const getDisplayPageNumbers = () => {
     const pageNumbers: (number | string)[] = [];
     const maxVisiblePages = 5;
-    const pages = actualTotalPages; // Use actualTotalPages instead
     
-    if (pages <= maxVisiblePages) {
-      for (let i = 1; i <= pages; i++) {
+    if (totalDisplayPages <= maxVisiblePages) {
+      for (let i = 1; i <= totalDisplayPages; i++) {
         pageNumbers.push(i);
       }
     } else {
-      if (currentPage <= 3) {
+      if (currentDisplayPage <= 3) {
         for (let i = 1; i <= 4; i++) {
           pageNumbers.push(i);
         }
         pageNumbers.push('...');
-        pageNumbers.push(pages);
-      } else if (currentPage >= pages - 2) {
+        pageNumbers.push(totalDisplayPages);
+      } else if (currentDisplayPage >= totalDisplayPages - 2) {
         pageNumbers.push(1);
         pageNumbers.push('...');
-        for (let i = pages - 3; i <= pages; i++) {
+        for (let i = totalDisplayPages - 3; i <= totalDisplayPages; i++) {
           pageNumbers.push(i);
         }
       } else {
         pageNumbers.push(1);
         pageNumbers.push('...');
-        for (let i = currentPage - 1; i <= currentPage + 1; i++) {
+        for (let i = currentDisplayPage - 1; i <= currentDisplayPage + 1; i++) {
           pageNumbers.push(i);
         }
         pageNumbers.push('...');
-        pageNumbers.push(pages);
+        pageNumbers.push(totalDisplayPages);
       }
     }
     
@@ -230,7 +329,7 @@ const BulkCetakSertifikat: React.FC = () => {
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `Certificates-Bulk-Page${currentPage}.pdf`;
+      link.download = `Certificates-Bulk-Page${currentDisplayPage}.pdf`;
       link.click();
       URL.revokeObjectURL(url);
 
@@ -371,49 +470,217 @@ const BulkCetakSertifikat: React.FC = () => {
             borderColor: 'rgba(153, 13, 53, 0.1)'
           }}
         >
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          {/* Search Bar */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-2" style={{ color: '#050505' }}>
+              <Search size={16} className="inline mr-1" />
+              Cari Peserta
+            </label>
+            <input
+              type="text"
+              placeholder="Cari nama peserta..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#990D35]"
+              style={{ 
+                borderColor: 'rgba(153, 13, 53, 0.2)'
+              }}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            {/* Filter Status */}
+            <div>
+              <label className="block text-sm font-medium mb-2" style={{ color: '#050505' }}>
+                Status
+              </label>
+              <Select
+                value={{ 
+                  value: filterStatus, 
+                  label: filterStatus === "ALL" ? "Semua Status" : filterStatus 
+                }}
+                onChange={(selected) => setFilterStatus(selected?.value as any || "ALL")}
+                options={[
+                  { value: "ALL", label: "Semua Status" },
+                  { value: "PENDING", label: "PENDING" },
+                  { value: "APPROVED", label: "APPROVED" },
+                  { value: "REJECTED", label: "REJECTED" }
+                ]}
+                isSearchable={false}
+                className="w-full"
+                styles={{
+                  control: (base) => ({
+                    ...base,
+                    borderColor: 'rgba(153, 13, 53, 0.2)',
+                    '&:hover': { borderColor: 'rgba(153, 13, 53, 0.4)' }
+                  })
+                }}
+              />
+            </div>
+
+            {/* Filter Kategori */}
+            <div>
+              <label className="block text-sm font-medium mb-2" style={{ color: '#050505' }}>
+                Kategori
+              </label>
+              <Select
+                value={{ 
+                  value: filterCategory, 
+                  label: filterCategory === "ALL" ? "Semua Kategori" : filterCategory 
+                }}
+                onChange={(selected) => setFilterCategory(selected?.value as any || "ALL")}
+                options={[
+                  { value: "ALL", label: "Semua Kategori" },
+                  { value: "KYORUGI", label: "KYORUGI" },
+                  { value: "POOMSAE", label: "POOMSAE" }
+                ]}
+                isSearchable={false}
+                className="w-full"
+                styles={{
+                  control: (base) => ({
+                    ...base,
+                    borderColor: 'rgba(153, 13, 53, 0.2)',
+                    '&:hover': { borderColor: 'rgba(153, 13, 53, 0.4)' }
+                  })
+                }}
+              />
+            </div>
+
+            {/* Filter Kelompok Usia */}
+            <div>
+              <label className="block text-sm font-medium mb-2" style={{ color: '#050505' }}>
+                Kelompok Usia
+              </label>
+              <Select
+                value={{ 
+                  value: filterKelompokUsia, 
+                  label: filterKelompokUsia === "ALL" ? "Semua Kelompok" : filterKelompokUsia 
+                }}
+                onChange={(selected) => setFilterKelompokUsia(selected?.value as any || "ALL")}
+                options={[
+                  { value: "ALL", label: "Semua Kelompok" },
+                  { value: "Super Pra-cadet", label: "Super Pra-cadet" },
+                  { value: "Pracadet", label: "Pracadet" },
+                  { value: "Cadet", label: "Cadet" },
+                  { value: "Junior", label: "Junior" },
+                  { value: "Senior", label: "Senior" }
+                ]}
+                isSearchable
+                className="w-full"
+                styles={{
+                  control: (base) => ({
+                    ...base,
+                    borderColor: 'rgba(153, 13, 53, 0.2)',
+                    '&:hover': { borderColor: 'rgba(153, 13, 53, 0.4)' }
+                  })
+                }}
+              />
+            </div>
+
+            {/* Filter Level */}
+            <div>
+              <label className="block text-sm font-medium mb-2" style={{ color: '#050505' }}>
+                Level
+              </label>
+              <Select
+                value={{ 
+                  value: filterLevel, 
+                  label: filterLevel === "ALL" ? "Semua Level" : filterLevel.charAt(0).toUpperCase() + filterLevel.slice(1)
+                }}
+                onChange={(selected) => setFilterLevel(selected?.value as any || "ALL")}
+                options={[
+                  { value: "ALL", label: "Semua Level" },
+                  { value: "pemula", label: "Pemula" },
+                  { value: "prestasi", label: "Prestasi" }
+                ]}
+                isSearchable={false}
+                className="w-full"
+                styles={{
+                  control: (base) => ({
+                    ...base,
+                    borderColor: 'rgba(153, 13, 53, 0.2)',
+                    '&:hover': { borderColor: 'rgba(153, 13, 53, 0.4)' }
+                  })
+                }}
+              />
+            </div>
+
+            {/* Filter Kelas Berat */}
+            <div>
+              <label className="block text-sm font-medium mb-2" style={{ color: '#050505' }}>
+                Kelas Berat
+              </label>
+              <Select
+                value={{ 
+                  value: filterKelasBerat, 
+                  label: filterKelasBerat === "ALL" ? "Semua Kelas Berat" : filterKelasBerat 
+                }}
+                onChange={(selected) => setFilterKelasBerat(selected?.value || "ALL")}
+                options={kelasBeratOptions}
+                isSearchable
+                className="w-full"
+                styles={{
+                  control: (base) => ({
+                    ...base,
+                    borderColor: 'rgba(153, 13, 53, 0.2)',
+                    '&:hover': { borderColor: 'rgba(153, 13, 53, 0.4)' }
+                  })
+                }}
+              />
+            </div>
+
             {/* Filter Dojang */}
             <div>
               <label className="block text-sm font-medium mb-2" style={{ color: '#050505' }}>
-                Filter by Dojang
+                Dojang
               </label>
-              <select
-                value={selectedDojang}
-                onChange={(e) => setSelectedDojang(e.target.value)}
-                disabled={loadingAtlet}
-                className="w-full px-4 py-2.5 rounded-lg border focus:outline-none focus:ring-2 transition-all"
-                style={{ 
-                  borderColor: 'rgba(153, 13, 53, 0.2)',
-                  color: '#050505'
+              <Select
+                value={{ value: selectedDojang, label: selectedDojang === "ALL" ? "Semua Dojang" : dojangs.find(d => d.id.toString() === selectedDojang)?.name || "Semua Dojang" }}
+                onChange={(selected) => setSelectedDojang(selected?.value || "ALL")}
+                options={[
+                  { value: "ALL", label: "Semua Dojang" },
+                  ...dojangs.map(d => ({ value: d.id.toString(), label: d.name }))
+                ]}
+                isDisabled={loadingAtlet}
+                isSearchable
+                placeholder="Pilih Dojang..."
+                className="w-full"
+                styles={{
+                  control: (base) => ({
+                    ...base,
+                    borderColor: 'rgba(153, 13, 53, 0.2)',
+                    '&:hover': { borderColor: 'rgba(153, 13, 53, 0.4)' }
+                  })
                 }}
-              >
-                <option value="ALL">Semua Dojang</option>
-                {dojangs.map(d => (
-                  <option key={d.id} value={d.id}>{d.name}</option>
-                ))}
-              </select>
+              />
             </div>
+          </div>
 
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             {/* Filter Kelas */}
             <div>
               <label className="block text-sm font-medium mb-2" style={{ color: '#050505' }}>
-                Filter by Kelas
+                Kelas
               </label>
-              <select
-                value={selectedKelas}
-                onChange={(e) => setSelectedKelas(e.target.value)}
-                disabled={loadingAtlet}
-                className="w-full px-4 py-2.5 rounded-lg border focus:outline-none focus:ring-2 transition-all"
-                style={{ 
-                  borderColor: 'rgba(153, 13, 53, 0.2)',
-                  color: '#050505'
+              <Select
+                value={{ value: selectedKelas, label: selectedKelas === "ALL" ? "Semua Kelas" : kelasKejuaraan.find(k => k.id === selectedKelas)?.name || "Semua Kelas" }}
+                onChange={(selected) => setSelectedKelas(selected?.value || "ALL")}
+                options={[
+                  { value: "ALL", label: "Semua Kelas" },
+                  ...kelasKejuaraan.map(k => ({ value: k.id, label: k.name }))
+                ]}
+                isDisabled={loadingAtlet}
+                isSearchable
+                placeholder="Pilih Kelas..."
+                className="w-full"
+                styles={{
+                  control: (base) => ({
+                    ...base,
+                    borderColor: 'rgba(153, 13, 53, 0.2)',
+                    '&:hover': { borderColor: 'rgba(153, 13, 53, 0.4)' }
+                  })
                 }}
-              >
-                <option value="ALL">Semua Kelas</option>
-                {kelasKejuaraan.map(k => (
-                  <option key={k.id} value={k.id}>{k.name}</option>
-                ))}
-              </select>
+              />
             </div>
           </div>
 
@@ -422,11 +689,11 @@ const BulkCetakSertifikat: React.FC = () => {
             <div className="text-sm" style={{ color: '#050505', opacity: 0.7 }}>
               {selectedAtlets.size > 0 ? (
                 <span className="font-medium" style={{ color: '#990D35' }}>
-                  {selectedAtlets.size} dipilih dari {pesertaList.length} peserta
+                  {selectedAtlets.size} dipilih dari {totalItems} peserta
                 </span>
               ) : (
                 <span>
-                  Tidak ada yang dipilih (akan generate semua: {pesertaList.length} peserta)
+                  Menampilkan {startIndex + 1}-{Math.min(endIndex, totalItems)} dari {totalItems} peserta
                 </span>
               )}
             </div>
@@ -475,9 +742,9 @@ const BulkCetakSertifikat: React.FC = () => {
                 Peserta yang Disetujui
               </h2>
               <span className="px-3 py-1 rounded-full text-sm font-medium" style={{ backgroundColor: 'rgba(153, 13, 53, 0.1)', color: '#990D35' }}>
-                {pesertaList.length} peserta ditampilkan
+                {totalItems} peserta (filtered)
               </span>
-              {pesertaList.length > 0 && (
+              {displayedPeserta.length > 0 && (
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"
@@ -493,7 +760,7 @@ const BulkCetakSertifikat: React.FC = () => {
               )}
             </div>
             <p className="text-sm" style={{ color: '#050505', opacity: 0.6 }}>
-              {actualTotal > 0 ? `Page ${currentPage} of ${actualTotalPages}` : `Showing ${pesertaList.length} results`}
+              Menampilkan {startIndex + 1}-{Math.min(endIndex, totalItems)} dari {totalItems} peserta
             </p>
           </div>
 
@@ -502,16 +769,16 @@ const BulkCetakSertifikat: React.FC = () => {
             <div className="flex items-center justify-center py-12">
               <Loader className="animate-spin" style={{ color: '#990D35' }} size={32} />
             </div>
-          ) : pesertaList.length === 0 ? (
+          ) : displayedPeserta.length === 0 ? (
             <div className="text-center py-12">
               <Award size={48} style={{ color: '#990D35', opacity: 0.3 }} className="mx-auto mb-3" />
               <p style={{ color: '#050505', opacity: 0.6 }}>
-                Tidak ada peserta yang disetujui
+                Tidak ada peserta yang disetujui atau sesuai filter
               </p>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-              {pesertaList.map((peserta, idx) => {
+              {displayedPeserta.map((peserta, idx) => {
                 const isSelected = selectedAtlets.has(peserta.id_peserta_kompetisi);
                 return (
                   <div
@@ -561,31 +828,30 @@ const BulkCetakSertifikat: React.FC = () => {
             </div>
           )}
 
-          {/* PAGINATION */}
-          {actualTotalPages > 1 && (
+          {/* VISUAL PAGINATION */}
+          {totalDisplayPages > 1 && (
             <div className="flex items-center justify-center gap-2 pt-4 border-t" style={{ borderColor: 'rgba(153, 13, 53, 0.1)' }}>
               <button
-                onClick={() => setAtletPage(currentPage - 1)}
-                disabled={currentPage === 1 || loadingAtlet}
+                onClick={() => setCurrentDisplayPage(currentDisplayPage - 1)}
+                disabled={currentDisplayPage === 1}
                 className="p-2 rounded-lg transition-all disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gray-100"
                 style={{ color: '#990D35' }}
               >
                 <ChevronLeft size={20} />
               </button>
 
-              {getPageNumbers().map((pageNum, idx) => (
+              {getDisplayPageNumbers().map((pageNum, idx) => (
                 <React.Fragment key={idx}>
                   {pageNum === '...' ? (
                     <span className="px-2" style={{ color: '#050505', opacity: 0.3 }}>...</span>
                   ) : (
                     <button
-                      onClick={() => setAtletPage(pageNum as number)}
-                      disabled={loadingAtlet}
-                      className="w-10 h-10 rounded-lg font-medium transition-all disabled:cursor-not-allowed"
+                      onClick={() => setCurrentDisplayPage(pageNum as number)}
+                      className="w-10 h-10 rounded-lg font-medium transition-all"
                       style={{
-                        backgroundColor: currentPage === pageNum ? '#990D35' : 'transparent',
-                        color: currentPage === pageNum ? 'white' : '#050505',
-                        opacity: currentPage === pageNum ? 1 : 0.6
+                        backgroundColor: currentDisplayPage === pageNum ? '#990D35' : 'transparent',
+                        color: currentDisplayPage === pageNum ? 'white' : '#050505',
+                        opacity: currentDisplayPage === pageNum ? 1 : 0.6
                       }}
                     >
                       {pageNum}
@@ -595,8 +861,8 @@ const BulkCetakSertifikat: React.FC = () => {
               ))}
 
               <button
-                onClick={() => setAtletPage(currentPage + 1)}
-                disabled={currentPage === actualTotalPages || loadingAtlet}
+                onClick={() => setCurrentDisplayPage(currentDisplayPage + 1)}
+                disabled={currentDisplayPage === totalDisplayPages}
                 className="p-2 rounded-lg transition-all disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gray-100"
                 style={{ color: '#990D35' }}
               >
