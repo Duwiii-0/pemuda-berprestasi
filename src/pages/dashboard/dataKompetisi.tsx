@@ -130,11 +130,9 @@ const DataKompetisi = () => {
 
       let poomsaeType = "-";
       if (cabang.toUpperCase() === "POOMSAE" && level.toLowerCase() === "prestasi") {
-        const poomsaeKelasName = peserta.kelas_kejuaraan?.poomsae?.nama_kelas?.toLowerCase() || "";
-        if (poomsaeKelasName.includes("recognized")) {
-          poomsaeType = "Recognized";
-        } else if (poomsaeKelasName.includes("freestyle")) {
-          poomsaeType = "Freestyle";
+        const dbPoomsaeType = peserta.kelas_kejuaraan?.poomsae_type;
+        if (dbPoomsaeType) {
+            poomsaeType = dbPoomsaeType.charAt(0).toUpperCase() + dbPoomsaeType.slice(1);
         }
       }
 
