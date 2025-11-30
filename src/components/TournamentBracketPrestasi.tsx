@@ -1477,7 +1477,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
             <>
               <p
                 className="font-bold leading-tight text-center truncate w-full"
-                style={{ color: "#DC143C", fontSize: "22px" }}
+                style={{ color: "#DC143C", fontSize: "26px" }}
               >
                 {getParticipantName(match.peserta_a)}
               </p>
@@ -1487,7 +1487,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                   color: "#666",
                   opacity: 0.7,
                   marginTop: "2px",
-                  fontSize: "14px",
+                  fontSize: "16px",
                 }}
               >
                 {getDojoName(match.peserta_a)}
@@ -1519,7 +1519,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
             style={{
               position: "absolute",
               width: "100%",
-              height: "5px",
+              height: "6px",
               backgroundColor: "#990D35",
               zIndex: 0,
             }}
@@ -1575,7 +1575,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
             <>
               <p
                 className="font-bold leading-tight text-center truncate w-full"
-                style={{ color: "#3B82F6", fontSize: "22px" }}
+                style={{ color: "#3B82F6", fontSize: "26px" }}
               >
                 {getParticipantName(match.peserta_b)}
               </p>
@@ -1797,20 +1797,20 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                 style={{
                   position: "absolute",
                   left: -lineLength,
-                  top: `${finalYPosition + 70 + 20 - 2.5}px`,
+                  top: `${finalYPosition + 70 + 20 - 3}px`,
                   width: lineLength,
-                  height: 5,
+                  height: 6,
                   pointerEvents: "none",
                   zIndex: 1,
                 }}
               >
                 <line
                   x1="0"
-                  y1="2.5"
+                  y1="3"
                   x2={lineLength}
-                  y2="2.5"
+                  y2="3"
                   stroke="#990D35"
-                  strokeWidth="5"
+                  strokeWidth="6"
                   opacity="0.8"
                 />
               </svg>
@@ -1820,20 +1820,20 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                 style={{
                   position: "absolute",
                   right: -lineLength,
-                  top: `${finalYPosition + 70 + 20 - 2.5}px`,
+                  top: `${finalYPosition + 70 + 20 - 3}px`,
                   width: lineLength,
-                  height: 5,
+                  height: 6,
                   pointerEvents: "none",
                   zIndex: 1,
                 }}
               >
                 <line
                   x1="0"
-                  y1="2.5"
+                  y1="3"
                   x2={lineLength}
-                  y2="2.5"
+                  y2="3"
                   stroke="#990D35"
-                  strokeWidth="5"
+                  strokeWidth="6"
                   opacity="0.8"
                 />
               </svg>
@@ -2218,20 +2218,20 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                           style={{
                             position: "absolute",
                             left: isRight ? `${-halfGap}px` : `${CARD_WIDTH}px`,
-                            top: `${cardCenterY - 1}px`,
+                            top: `${cardCenterY - 3}px`,
                             width: halfGap,
-                            height: 2,
+                            height: 6,
                             pointerEvents: "none",
                             zIndex: 5,
                           }}
                         >
                           <line
                             x1={isRight ? halfGap : 0}
-                            y1="1"
+                            y1="3"
                             x2={isRight ? 0 : halfGap}
-                            y2="1"
+                            y2="3"
                             stroke="#990D35"
-                            strokeWidth="5"
+                            strokeWidth="6"
                             opacity="0.8"
                           />
                         </svg>
@@ -2287,7 +2287,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                                     x2="1"
                                     y2={verticalHeight}
                                     stroke="#990D35"
-                                    strokeWidth="5"
+                                    strokeWidth="6"
                                     opacity="0.8"
                                   />
                                 </svg>
@@ -2301,20 +2301,20 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                                     left: isRight
                                       ? `${-ROUND_GAP}px` // Start dari next card edge
                                       : `${CARD_WIDTH + halfGap}px`, // Start dari vertical line
-                                    top: `${midPointY - 1}px`, // Tengah-tengah vertical line
+                                    top: `${midPointY - 3}px`, // Tengah-tengah vertical line
                                     width: halfGap,
-                                    height: 2,
+                                    height: 6,
                                     pointerEvents: "none",
                                     zIndex: 5,
                                   }}
                                 >
                                   <line
                                     x1={isRight ? halfGap : 0}
-                                    y1="1"
+                                    y1="3"
                                     x2={isRight ? 0 : halfGap}
-                                    y2="1"
+                                    y2="3"
                                     stroke="#990D35"
-                                    strokeWidth="5"
+                                    strokeWidth="6"
                                     opacity="0.8"
                                   />
                                 </svg>
