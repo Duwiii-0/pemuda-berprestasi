@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Trophy, Users, Search, Clock, CheckCircle, Menu, ChevronLeft, ChevronRight, Edit, Trash, Upload, FileDown } from 'lucide-react';
 import toast from "react-hot-toast";
-import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 import NavbarDashboard from "../../components/navbar/navbarDashboard";
 import { useAuth } from "../../context/authContext";
 import { useKompetisi } from "../../context/KompetisiContext";
@@ -99,7 +100,7 @@ const DataKompetisi = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(100);
 
-  const handleExportExcel = () => {
+  const handleExportPdf = () => {
     const approvedPeserta = displayedPesertas.filter((p: any) => p.status === 'APPROVED');
 
     if (approvedPeserta.length === 0) {
@@ -127,7 +128,7 @@ const DataKompetisi = () => {
         peserta.kelas_kejuaraan?.kelas_berat?.nama_kelas,
         peserta.kelas_kejuaraan?.poomsae?.nama_kelas,
       ].filter(Boolean).join(" - ") || "-";
-
+      
       let poomsaeType = "-";
       if (cabang.toUpperCase() === "POOMSAE" && level.toLowerCase() === "prestasi") {
         const dbPoomsaeType = peserta.kelas_kejuaraan?.poomsae_type;
@@ -161,30 +162,24 @@ const DataKompetisi = () => {
       ...row,
     }));
 
-    // Calculate column widths to prevent overlapping text
-    const columnWidths = Object.keys(finalSheetData[0]).map(key => {
-      const maxLength = Math.max(
-        key.length,
-        ...finalSheetData.map(row => (row[key] ? String(row[key]).length : 0))
-      );
-      return { wch: maxLength + 2 }; // wch = character width, adding padding
+    const doc = new jsPDF({
+      orientation: "landscape",
     });
 
-    const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.json_to_sheet(finalSheetData);
-    
-    // Apply the calculated widths to the worksheet
-    ws['!cols'] = columnWidths;
+    const tableHeaders = Object.keys(finalSheetData[0]);
+    const tableBody = finalSheetData.map(row => Object.values(row));
 
-    // Add AutoFilter capability to the table
-    if (ws['!ref']) {
-      const range = XLSX.utils.decode_range(ws['!ref']);
-      ws['!autofilter'] = { ref: XLSX.utils.encode_range(range) };
-    }
+    (doc as any).autoTable({
+      head: [tableHeaders],
+      body: tableBody,
+      startY: 20,
+      didDrawPage: (data: any) => {
+        doc.setFontSize(18);
+        doc.text(`Daftar Peserta - ${selectedKompetisi?.nama_event || 'Kompetisi'}`, data.settings.margin.left, 15);
+      }
+    });
 
-    XLSX.utils.book_append_sheet(wb, ws, "Daftar Peserta");
-
-    XLSX.writeFile(wb, `Daftar_Peserta_${selectedKompetisi?.nama_event || 'Kompetisi'}.xlsx`);
+    doc.save(`Daftar_Peserta_${selectedKompetisi?.nama_event || 'Kompetisi'}.pdf`);
     toast.success("Berhasil mengunduh data peserta!");
   };
 
@@ -1029,9 +1024,9 @@ const handleEditSuccess = () => {
               </div>
             </div>
 
-            {/* Export to Excel Button */}
+            {/* Export to PDF Button */}
             <div className="mb-6">
-              <div className="bg-gradient-to-r from-green-500/5 via-green-500/5 to-green-500/5 rounded-2xl border border-green-500/20 shadow-sm overflow-hidden">
+              <div className="bg-gradient-to-r from-red-500/5 via-red-500/5 to-red-500/5 rounded-2xl border border-red-500/20 shadow-sm overflow-hidden">
                 <div className="p-4 lg:p-6">
                   <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                     <div className="text-center lg:text-left">
@@ -1039,16 +1034,16 @@ const handleEditSuccess = () => {
                         Export Data Peserta
                       </h3>
                       <p className="font-plex text-sm lg:text-base text-black/60">
-                        Unduh data peserta yang sudah disetujui dalam format Excel.
+                        Unduh data peserta yang sudah disetujui dalam format PDF.
                       </p>
                     </div>
                     <div className="flex justify-center lg:justify-end">
                       <button
-                        onClick={handleExportExcel}
-                        className="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-600 text-white font-plex font-semibold px-6 lg:px-8 py-3 rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-105 flex items-center gap-2 min-w-[180px] lg:min-w-[200px] justify-center"
+                        onClick={handleExportPdf}
+                        className="bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-600 text-white font-plex font-semibold px-6 lg:px-8 py-3 rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-105 flex items-center gap-2 min-w-[180px] lg:min-w-[200px] justify-center"
                       >
                         <FileDown size={20} />
-                        <span>Export ke Excel</span>
+                        <span>Export ke PDF</span>
                       </button>
                     </div>
                   </div>
