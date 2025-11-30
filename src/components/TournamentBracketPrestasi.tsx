@@ -130,9 +130,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
   viewOnly = false, // ⭐ TAMBAHKAN
 }) => {
   const { token } = useAuth();
-  const [viewMode, setViewMode] = useState<"bracket" | "list">(
-    "bracket"
-  );
+  const [viewMode, setViewMode] = useState<"bracket" | "list">("bracket");
 
   const gender = kelasData.jenis_kelamin;
 
@@ -568,7 +566,13 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-center">
-                    <span className="text-sm font-semibold text-blue-600">{match.skor_a}</span> - <span className="text-sm font-semibold text-red-600">{match.skor_b}</span>
+                    <span className="text-sm font-semibold text-blue-600">
+                      {match.skor_a}
+                    </span>{" "}
+                    -{" "}
+                    <span className="text-sm font-semibold text-red-600">
+                      {match.skor_b}
+                    </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-center">
                     <button
@@ -1456,213 +1460,219 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
           position: "relative",
           zIndex: 10,
           background: "white",
+          display: "flex",
+          flexDirection: "column",
         }}
       >
-        {/* Header */}
+        {/* Participant A - TOP */}
         <div
-          className="px-3 py-2 border-b flex items-center justify-between"
+          className={`flex-1 px-3 py-2 flex items-center justify-between gap-2 border-b ${
+            match.skor_a > match.skor_b && hasScores
+              ? "bg-gradient-to-r from-green-50 to-green-100"
+              : ""
+          }`}
+          style={{
+            minHeight: "50px",
+            borderColor: "#990D35",
+          }}
+        >
+          {match.peserta_a ? (
+            <>
+              <div className="flex-1 min-w-0">
+                <p
+                  className="font-bold text-sm leading-tight truncate"
+                  style={{ color: "#DC143C" }}
+                >
+                  {getParticipantName(match.peserta_a)}
+                </p>
+                <p
+                  className="text-xs truncate mt-0.5"
+                  style={{ color: "#666", opacity: 0.7 }}
+                >
+                  {getDojoName(match.peserta_a)}
+                </p>
+              </div>
+              {hasScores && (
+                <div
+                  className="w-8 h-8 rounded-lg flex items-center justify-center font-bold shadow-sm text-xs"
+                  style={{
+                    backgroundColor:
+                      match.skor_a > match.skor_b ? "#22c55e" : "#e5e7eb",
+                    color: match.skor_a > match.skor_b ? "white" : "#6b7280",
+                  }}
+                >
+                  {match.skor_a}
+                </div>
+              )}
+            </>
+          ) : (
+            <span className="text-xs text-gray-400 w-full text-center">
+              TBD
+            </span>
+          )}
+        </div>
+
+        {/* Match Number - CENTER */}
+        <div
+          className="px-3 py-1 flex items-center justify-center border-b border-t"
           style={{
             backgroundColor: "rgba(153, 13, 53, 0.05)",
             borderColor: "#990D35",
+            minHeight: "40px",
           }}
         >
           <div className="flex items-center gap-2">
             {match.nomor_partai ? (
-              <span
-                className="text-2xl p1-2 rounded-full font-bold"
-                style={{ color: "#990D35" }}
-              >
-                {match.nomor_partai}
+              <span className="text-lg font-bold" style={{ color: "#990D35" }}>
+                Partai {match.nomor_partai}
               </span>
             ) : match.ronde === 1 &&
               ((match.peserta_a && !match.peserta_b) ||
                 (!match.peserta_a && match.peserta_b)) ? (
               <span
-                className="text-2xl px-1 rounded-full font-medium"
+                className="text-sm font-bold"
                 style={{
                   color: "#F5B700",
                 }}
               >
                 BYE
               </span>
-            ) : null}
-          </div>
-
-          <div className="flex items-center gap-2">
-            {match.tanggal_pertandingan && (
-              <span
-                className="text-xs"
-                style={{ color: "#050505", opacity: 0.7 }}
-              >
-                {new Date(match.tanggal_pertandingan).toLocaleDateString(
-                  "id-ID",
-                  {
-                    day: "2-digit",
-                    month: "short",
-                  }
-                )}
-              </span>
-            )}
-
-            {/* Edit match scores/details button */}
-            <button
-              onClick={() => setEditingMatch(match)}
-              className="p-1 rounded hover:bg-black/5 transition-all"
-              disabled={viewOnly}
-              style={{
-                opacity: viewOnly ? 0.3 : 1,
-                cursor: viewOnly ? "not-allowed" : "pointer",
-              }}
-              title="Edit match scores and details"
-            >
-              <FilePenLine size={14} style={{ color: "#3B82F6" }} />
-            </button>
-
-            {/* Edit athletes button */}
-            {match.ronde === 1 && (
-              <button
-                onClick={() => {
-                  // ⭐ Check if match has scores (already started)
-                  if (hasScores) {
-                    showNotification(
-                      "warning",
-                      "Match Sudah Dimulai",
-                      "Tidak dapat mengubah peserta karena match sudah memiliki skor.",
-                      () => setShowModal(false)
-                    );
-                    return;
-                  }
-                  setEditAthleteModal({ show: true, match: match, slot: null });
-                }}
-                className="p-1 rounded hover:bg-black/5 transition-all"
-                disabled={viewOnly || hasScores}
-                style={{
-                  opacity: viewOnly || hasScores ? 0.3 : 1,
-                  cursor: viewOnly || hasScores ? "not-allowed" : "pointer",
-                }}
-                title={
-                  hasScores
-                    ? "Match sudah dimulai - tidak dapat diubah"
-                    : "Edit athletes"
-                }
-              >
-                <Edit3 size={14} style={{ color: "#DC143C" }} />
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Participants */}
-        <div className="flex flex-col">
-          {/* Participant A */}
-          <div
-            className={`flex-1 px-3 py-2 border-b flex items-center justify-between gap-2 ${
-              match.skor_a > match.skor_b && hasScores
-                ? "bg-gradient-to-r from-green-50 to-green-100"
-                : ""
-            }`}
-            style={{ minHeight: "70px" }}
-          >
-            {match.peserta_a ? (
-              <>
-                <div className="flex-1 min-w-0">
-                  <p
-                    className="font-bold text-xl leading-tight truncate"
-                    style={{ color: "#050505" }}
-                  >
-                    {getParticipantName(match.peserta_a)}
-                  </p>
-                  <p
-                    className="text-lg truncate mt-0.5"
-                    style={{ color: "#3B82F6", opacity: 0.7 }}
-                  >
-                    {getDojoName(match.peserta_a)}
-                  </p>
-                </div>
-                {hasScores && (
-                  <div
-                    className="w-10 h-10 rounded-lg flex items-center justify-center font-bold shadow-sm"
-                    style={{
-                      backgroundColor:
-                        match.skor_a > match.skor_b ? "#22c55e" : "#e5e7eb",
-                      color: match.skor_a > match.skor_b ? "white" : "#6b7280",
-                    }}
-                  >
-                    {match.skor_a}
-                  </div>
-                )}
-              </>
             ) : (
-              <span className="text-sm text-gray-400 w-full text-center">
-                TBD
-              </span>
-            )}
-          </div>
-
-          {/* Participant B */}
-          <div
-            className={`flex-1 px-3 py-2 flex items-center justify-between gap-2 ${
-              match.skor_b > match.skor_a && hasScores
-                ? "bg-gradient-to-r from-green-50 to-green-100"
-                : ""
-            }`}
-            style={{ minHeight: "70px" }}
-          >
-            {match.peserta_b ? (
-              <>
-                <div className="flex-1 min-w-0">
-                  <p
-                    className="font-bold text-xl leading-tight truncate"
-                    style={{ color: "#050505" }}
-                  >
-                    {getParticipantName(match.peserta_b)}
-                  </p>
-                  <p
-                    className="text-lg truncate mt-0.5"
-                    style={{ color: "#EF4444", opacity: 0.7 }}
-                  >
-                    {getDojoName(match.peserta_b)}
-                  </p>
-                </div>
-                {hasScores && (
-                  <div
-                    className="w-10 h-10 rounded-lg flex items-center justify-center font-bold shadow-sm"
-                    style={{
-                      backgroundColor:
-                        match.skor_b > match.skor_a ? "#22c55e" : "#e5e7eb",
-                      color: match.skor_b > match.skor_a ? "white" : "#6b7280",
-                    }}
-                  >
-                    {match.skor_b}
-                  </div>
-                )}
-              </>
-            ) : (
-              <div className="w-full flex justify-center">
-                {match.ronde === 1 ? (
-                  <span
-                    className="text-xs px-2 py-1 rounded-full font-medium"
-                    style={{
-                      backgroundColor: "rgba(245, 183, 0, 0.15)",
-                      color: "#F5B700",
-                    }}
-                  >
-                    BYE
-                  </span>
-                ) : (
-                  <span
-                    className="text-xs px-2 py-1 rounded-full font-medium"
-                    style={{
-                      backgroundColor: "rgba(192, 192, 192, 0.15)",
-                      color: "#6b7280",
-                    }}
-                  >
-                    TBD
+              <div className="flex items-center gap-2 text-xs">
+                {match.tanggal_pertandingan && (
+                  <span style={{ color: "#050505", opacity: 0.7 }}>
+                    {new Date(match.tanggal_pertandingan).toLocaleDateString(
+                      "id-ID",
+                      {
+                        day: "2-digit",
+                        month: "short",
+                      }
+                    )}
                   </span>
                 )}
               </div>
             )}
           </div>
+        </div>
+
+        {/* Participant B - BOTTOM */}
+        <div
+          className={`flex-1 px-3 py-2 flex items-center justify-between gap-2 ${
+            match.skor_b > match.skor_a && hasScores
+              ? "bg-gradient-to-r from-green-50 to-green-100"
+              : ""
+          }`}
+          style={{ minHeight: "50px" }}
+        >
+          {match.peserta_b ? (
+            <>
+              <div className="flex-1 min-w-0">
+                <p
+                  className="font-bold text-sm leading-tight truncate"
+                  style={{ color: "#3B82F6" }}
+                >
+                  {getParticipantName(match.peserta_b)}
+                </p>
+                <p
+                  className="text-xs truncate mt-0.5"
+                  style={{ color: "#666", opacity: 0.7 }}
+                >
+                  {getDojoName(match.peserta_b)}
+                </p>
+              </div>
+              {hasScores && (
+                <div
+                  className="w-8 h-8 rounded-lg flex items-center justify-center font-bold shadow-sm text-xs"
+                  style={{
+                    backgroundColor:
+                      match.skor_b > match.skor_a ? "#22c55e" : "#e5e7eb",
+                    color: match.skor_b > match.skor_a ? "white" : "#6b7280",
+                  }}
+                >
+                  {match.skor_b}
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="w-full flex justify-center">
+              {match.ronde === 1 ? (
+                <span
+                  className="text-xs px-2 py-1 rounded-full font-medium"
+                  style={{
+                    backgroundColor: "rgba(245, 183, 0, 0.15)",
+                    color: "#F5B700",
+                  }}
+                >
+                  BYE
+                </span>
+              ) : (
+                <span
+                  className="text-xs px-2 py-1 rounded-full font-medium"
+                  style={{
+                    backgroundColor: "rgba(192, 192, 192, 0.15)",
+                    color: "#6b7280",
+                  }}
+                >
+                  TBD
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Action Buttons - BOTTOM */}
+        <div
+          className="px-3 py-2 border-t flex items-center justify-end gap-2"
+          style={{
+            backgroundColor: "rgba(153, 13, 53, 0.03)",
+            borderColor: "#990D35",
+          }}
+        >
+          {/* Edit match scores/details button */}
+          <button
+            onClick={() => setEditingMatch(match)}
+            className="p-1 rounded hover:bg-black/5 transition-all"
+            disabled={viewOnly}
+            style={{
+              opacity: viewOnly ? 0.3 : 1,
+              cursor: viewOnly ? "not-allowed" : "pointer",
+            }}
+            title="Edit match scores and details"
+          >
+            <FilePenLine size={14} style={{ color: "#3B82F6" }} />
+          </button>
+
+          {/* Edit athletes button */}
+          {match.ronde === 1 && (
+            <button
+              onClick={() => {
+                // ⭐ Check if match has scores (already started)
+                if (hasScores) {
+                  showNotification(
+                    "warning",
+                    "Match Sudah Dimulai",
+                    "Tidak dapat mengubah peserta karena match sudah memiliki skor.",
+                    () => setShowModal(false)
+                  );
+                  return;
+                }
+                setEditAthleteModal({ show: true, match: match, slot: null });
+              }}
+              className="p-1 rounded hover:bg-black/5 transition-all"
+              disabled={viewOnly || hasScores}
+              style={{
+                opacity: viewOnly || hasScores ? 0.3 : 1,
+                cursor: viewOnly || hasScores ? "not-allowed" : "pointer",
+              }}
+              title={
+                hasScores
+                  ? "Match sudah dimulai - tidak dapat diubah"
+                  : "Edit athletes"
+              }
+            >
+              <Edit3 size={14} style={{ color: "#DC143C" }} />
+            </button>
+          )}
         </div>
       </div>
     );
@@ -2340,8 +2350,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                   🧩 RENDER MATCH CARDS (Di atas garis)
                   ============================================ */}
                 {roundMatches.map((match, matchIndex) => {
-                  const yPosition =
-                    verticalPositions[roundIndex]?.[matchIndex];
+                  const yPosition = verticalPositions[roundIndex]?.[matchIndex];
                   if (yPosition === undefined) return null;
 
                   return (
@@ -2607,28 +2616,29 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
         <div className="p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-4">
-              {onBack && !viewOnly && ( // ✅ TAMBAHKAN !viewOnly check
-                <button
-                  onClick={() => {
-                    // ✅ PERBAIKAN: Deteksi dari mana user datang
-                    const currentPath = window.location.pathname;
+              {onBack &&
+                !viewOnly && ( // ✅ TAMBAHKAN !viewOnly check
+                  <button
+                    onClick={() => {
+                      // ✅ PERBAIKAN: Deteksi dari mana user datang
+                      const currentPath = window.location.pathname;
 
-                    if (currentPath.includes("/bracket-viewer/")) {
-                      // Jika dari pelatih dashboard, redirect ke bracket list
-                      window.location.href = "/dashboard/bracket-viewer";
-                    } else if (currentPath.includes("/admin-kompetisi/")) {
-                      // Jika dari admin, redirect ke drawing bagan
-                      window.location.href = "/admin-kompetisi/drawing-bagan";
-                    } else {
-                      // Fallback: gunakan onBack callback
-                      onBack();
-                    }
-                  }}
-                  className="p-2 rounded-lg hover:bg-black/5 transition-all"
-                >
-                  <ArrowLeft size={20} style={{ color: "#990D35" }} />
-                </button>
-              )}
+                      if (currentPath.includes("/bracket-viewer/")) {
+                        // Jika dari pelatih dashboard, redirect ke bracket list
+                        window.location.href = "/dashboard/bracket-viewer";
+                      } else if (currentPath.includes("/admin-kompetisi/")) {
+                        // Jika dari admin, redirect ke drawing bagan
+                        window.location.href = "/admin-kompetisi/drawing-bagan";
+                      } else {
+                        // Fallback: gunakan onBack callback
+                        onBack();
+                      }
+                    }}
+                    className="p-2 rounded-lg hover:bg-black/5 transition-all"
+                  >
+                    <ArrowLeft size={20} style={{ color: "#990D35" }} />
+                  </button>
+                )}
               <div
                 className="w-16 h-16 rounded-lg flex items-center justify-center"
                 style={{ backgroundColor: "#990D35" }}
@@ -2733,9 +2743,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                     onClick={() => setShowDojangModal(true)}
                     disabled={loading || approvedParticipants.length < 2}
                     className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
-                      dojangSeparation.enabled
-                        ? "ring-2 ring-offset-1"
-                        : ""
+                      dojangSeparation.enabled ? "ring-2 ring-offset-1" : ""
                     }`}
                     style={{
                       backgroundColor: dojangSeparation.enabled
@@ -2781,9 +2789,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                     {loading ? (
                       <>
                         <RefreshCw size={16} className="animate-spin" />
-                        <span className="hidden sm:inline">
-                          Processing...
-                        </span>
+                        <span className="hidden sm:inline">Processing...</span>
                       </>
                     ) : (
                       <>
@@ -2813,9 +2819,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                     ) : (
                       <>
                         <AlertTriangle size={16} />
-                        <span className="hidden sm:inline">
-                          Clear Results
-                        </span>
+                        <span className="hidden sm:inline">Clear Results</span>
                         <span className="sm:hidden">🗑️</span>
                       </>
                     )}
@@ -2840,9 +2844,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                     ) : (
                       <>
                         <AlertTriangle size={16} />
-                        <span className="hidden sm:inline">
-                          Delete Bracket
-                        </span>
+                        <span className="hidden sm:inline">Delete Bracket</span>
                         <span className="sm:hidden">❌</span>
                       </>
                     )}
@@ -2852,9 +2854,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                   <button
                     onClick={handleExportPDF}
                     disabled={
-                      !bracketGenerated ||
-                      exportingPDF ||
-                      matches.length === 0
+                      !bracketGenerated || exportingPDF || matches.length === 0
                     }
                     className="flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 shadow-md"
                     style={{
@@ -2874,9 +2874,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                     ) : (
                       <>
                         <Download size={16} />
-                        <span className="hidden sm:inline">
-                          Download PDF
-                        </span>
+                        <span className="hidden sm:inline">Download PDF</span>
                         <span className="sm:hidden">PDF</span>
                       </>
                     )}
@@ -2908,62 +2906,58 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
       </div>
 
       {/* Main Content */}
-      {viewMode === "list"
-        ? renderListView()
-        : viewMode === "bracket"
-        ? /* PRESTASI Layout with FIXED POSITIONING */
-          bracketGenerated && matches.length > 0
-          ? /* Render the bracket */
-            (
-                <div ref={bracketRef} className="p-6">
-                    <div className="tournament-layout flex justify-center items-start gap-8">
-                    {renderBracketSide(getLeftMatches(), "left")}
-                    {renderCenterFinal()}
-                    {renderBracketSide(getRightMatches(), "right")}
-                    </div>
-                </div>
-            )
-          : /* Empty state for bracket */
-            (
-                <div className="p-6">
-                  <div className="text-center py-16">
-                    <Trophy
-                      size={64}
-                      style={{ color: "#990D35", opacity: 0.4 }}
-                      className="mx-auto mb-4"
-                    />
-                    <h3
-                      className="text-xl font-semibold mb-2"
-                      style={{ color: "#050505" }}
-                    >
-                      {approvedParticipants.length < 2
-                        ? "Insufficient Participants"
-                        : "Tournament Bracket Not Generated"}
-                    </h3>
-                    <p
-                      className="text-base mb-6"
-                      style={{ color: "#050505", opacity: 0.6 }}
-                    >
-                      {approvedParticipants.length < 2
-                        ? `Need at least 2 approved participants. Currently have ${approvedParticipants.length}.`
-                        : 'Click "Generate" to create the tournament bracket'}
-                    </p>
-                    {approvedParticipants.length >= 2 && (
-                      <button
-                        onClick={openParticipantPreview}
-                        disabled={loading}
-                        className="px-6 py-3 rounded-lg font-medium transition-all disabled:opacity-50 hover:opacity-90"
-                        style={{ backgroundColor: "#F5B700", color: "#F5FBEF" }}
-                      >
-                        {loading
-                          ? "Processing..."
-                          : "Preview & Generate Bracket"}
-                      </button>
-                    )}
-                  </div>
-                </div>
-              )
-        : null}
+      {viewMode === "list" ? (
+        renderListView()
+      ) : viewMode === "bracket" ? (
+        /* PRESTASI Layout with FIXED POSITIONING */
+        bracketGenerated && matches.length > 0 ? (
+          /* Render the bracket */
+          <div ref={bracketRef} className="p-6">
+            <div className="tournament-layout flex justify-center items-start gap-8">
+              {renderBracketSide(getLeftMatches(), "left")}
+              {renderCenterFinal()}
+              {renderBracketSide(getRightMatches(), "right")}
+            </div>
+          </div>
+        ) : (
+          /* Empty state for bracket */
+          <div className="p-6">
+            <div className="text-center py-16">
+              <Trophy
+                size={64}
+                style={{ color: "#990D35", opacity: 0.4 }}
+                className="mx-auto mb-4"
+              />
+              <h3
+                className="text-xl font-semibold mb-2"
+                style={{ color: "#050505" }}
+              >
+                {approvedParticipants.length < 2
+                  ? "Insufficient Participants"
+                  : "Tournament Bracket Not Generated"}
+              </h3>
+              <p
+                className="text-base mb-6"
+                style={{ color: "#050505", opacity: 0.6 }}
+              >
+                {approvedParticipants.length < 2
+                  ? `Need at least 2 approved participants. Currently have ${approvedParticipants.length}.`
+                  : 'Click "Generate" to create the tournament bracket'}
+              </p>
+              {approvedParticipants.length >= 2 && (
+                <button
+                  onClick={openParticipantPreview}
+                  disabled={loading}
+                  className="px-6 py-3 rounded-lg font-medium transition-all disabled:opacity-50 hover:opacity-90"
+                  style={{ backgroundColor: "#F5B700", color: "#F5FBEF" }}
+                >
+                  {loading ? "Processing..." : "Preview & Generate Bracket"}
+                </button>
+              )}
+            </div>
+          </div>
+        )
+      ) : null}
 
       {/* Participant Preview Modal, Edit Match Modal, etc. */}
       {showParticipantPreview && (
@@ -3061,92 +3055,114 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-xl max-w-lg w-full">
             <div className="p-6 border-b" style={{ borderColor: "#990D35" }}>
-                <h3 className="text-xl font-bold" style={{ color: "#050505" }}>
+              <h3 className="text-xl font-bold" style={{ color: "#050505" }}>
                 Input Hasil Pertandingan
-                </h3>
-                <p className="text-sm mt-1" style={{ color: "#050505", opacity: 0.6 }}>
+              </h3>
+              <p
+                className="text-sm mt-1"
+                style={{ color: "#050505", opacity: 0.6 }}
+              >
                 Partai {editingMatch.nomor_partai}
-                </p>
+              </p>
             </div>
             <div className="p-6">
-                <div className="grid grid-cols-2 gap-4">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700">
-                        {getParticipantName(editingMatch.peserta_a)}
-                        </label>
-                        <input
-                        type="number"
-                        id="scoreA"
-                        defaultValue={editingMatch.skor_a}
-                        className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm"
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700">
-                        {getParticipantName(editingMatch.peserta_b)}
-                        </label>
-                        <input
-                        type="number"
-                        id="scoreB"
-                        defaultValue={editingMatch.skor_b}
-                        className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm"
-                        />
-                    </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    {getParticipantName(editingMatch.peserta_a)}
+                  </label>
+                  <input
+                    type="number"
+                    id="scoreA"
+                    defaultValue={editingMatch.skor_a}
+                    className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm"
+                  />
                 </div>
-                <div className="mt-4">
-                    <label htmlFor="tanggalPertandingan" className="block text-sm font-medium text-gray-700">
-                        Tanggal Pertandingan
-                    </label>
-                    <input
-                        type="date"
-                        id="tanggalPertandingan"
-                        defaultValue={editingMatch.tanggal_pertandingan?.split('T')[0]}
-                        className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm"
-                    />
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    {getParticipantName(editingMatch.peserta_b)}
+                  </label>
+                  <input
+                    type="number"
+                    id="scoreB"
+                    defaultValue={editingMatch.skor_b}
+                    className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm"
+                  />
                 </div>
-                <div className="grid grid-cols-2 gap-4 mt-4">
-                    <div>
-                        <label htmlFor="nomorAntrian" className="block text-sm font-medium text-gray-700">
-                        Nomor Antrian
-                        </label>
-                        <input
-                        type="number"
-                        id="nomorAntrian"
-                        defaultValue={editingMatch.nomor_antrian}
-                        className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm"
-                        />
-                    </div>
-                    <div>
-                        <label htmlFor="nomorLapangan" className="block text-sm font-medium text-gray-700">
-                        Nomor Lapangan
-                        </label>
-                        <input
-                        type="text"
-                        id="nomorLapangan"
-                        defaultValue={editingMatch.nomor_lapangan}
-                        className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm"
-                        />
-                    </div>
+              </div>
+              <div className="mt-4">
+                <label
+                  htmlFor="tanggalPertandingan"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  Tanggal Pertandingan
+                </label>
+                <input
+                  type="date"
+                  id="tanggalPertandingan"
+                  defaultValue={
+                    editingMatch.tanggal_pertandingan?.split("T")[0]
+                  }
+                  className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4 mt-4">
+                <div>
+                  <label
+                    htmlFor="nomorAntrian"
+                    className="block text-sm font-medium text-gray-700"
+                  >
+                    Nomor Antrian
+                  </label>
+                  <input
+                    type="number"
+                    id="nomorAntrian"
+                    defaultValue={editingMatch.nomor_antrian}
+                    className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm"
+                  />
                 </div>
+                <div>
+                  <label
+                    htmlFor="nomorLapangan"
+                    className="block text-sm font-medium text-gray-700"
+                  >
+                    Nomor Lapangan
+                  </label>
+                  <input
+                    type="text"
+                    id="nomorLapangan"
+                    defaultValue={editingMatch.nomor_lapangan}
+                    className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm"
+                  />
+                </div>
+              </div>
             </div>
             <div className="p-6 bg-gray-50 flex justify-end gap-3">
-                <button
+              <button
                 onClick={() => setEditingMatch(null)}
                 className="px-4 py-2 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
-                >
+              >
                 Batal
-                </button>
-                <button
+              </button>
+              <button
                 onClick={() => {
-                    const scoreA = parseInt((document.getElementById("scoreA") as HTMLInputElement).value) || 0;
-                    const scoreB = parseInt((document.getElementById("scoreB") as HTMLInputElement).value) || 0;
-                    updateMatchResult(editingMatch.id_match, scoreA, scoreB);
+                  const scoreA =
+                    parseInt(
+                      (document.getElementById("scoreA") as HTMLInputElement)
+                        .value
+                    ) || 0;
+                  const scoreB =
+                    parseInt(
+                      (document.getElementById("scoreB") as HTMLInputElement)
+                        .value
+                    ) || 0;
+                  updateMatchResult(editingMatch.id_match, scoreA, scoreB);
                 }}
                 className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700"
                 style={{ backgroundColor: "#990D35" }}
-                >
+              >
                 Simpan Hasil
-                </button>
+              </button>
             </div>
           </div>
         </div>
