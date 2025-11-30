@@ -276,10 +276,10 @@ const BulkCetakSertifikat: React.FC = () => {
   };
 
   const handleBulkDownload = async () => {
-    // Determine which athletes to generate
+    // Determine which athletes to generate - USE FILTERED DATA
     const atletToGenerate = selectedAtlets.size > 0 
-      ? pesertaList.filter(p => selectedAtlets.has(p.id_peserta_kompetisi))
-      : pesertaList;
+      ? filteredPeserta.filter(p => selectedAtlets.has(p.id_peserta_kompetisi))
+      : filteredPeserta; // Use filtered data when nothing is selected
 
     if (atletToGenerate.length === 0) {
       toast.error("Tidak ada peserta yang tersedia");
@@ -344,8 +344,8 @@ const BulkCetakSertifikat: React.FC = () => {
 
   const handlePrintPreview = () => {
     const atletToPreview = selectedAtlets.size > 0 
-      ? pesertaList.filter(p => selectedAtlets.has(p.id_peserta_kompetisi))
-      : pesertaList;
+      ? filteredPeserta.filter(p => selectedAtlets.has(p.id_peserta_kompetisi))
+      : filteredPeserta; // Use filtered data when nothing is selected
 
     if (atletToPreview.length === 0) {
       toast.error("Tidak ada peserta yang tersedia");
@@ -357,8 +357,8 @@ const BulkCetakSertifikat: React.FC = () => {
 
   const handlePrint = async () => {
     const atletToPrint = selectedAtlets.size > 0 
-      ? pesertaList.filter(p => selectedAtlets.has(p.id_peserta_kompetisi))
-      : pesertaList;
+      ? filteredPeserta.filter(p => selectedAtlets.has(p.id_peserta_kompetisi))
+      : filteredPeserta; // Use filtered data when nothing is selected
 
     if (atletToPrint.length === 0) {
       toast.error("Tidak ada peserta yang tersedia");
@@ -701,7 +701,7 @@ const BulkCetakSertifikat: React.FC = () => {
               <button
                 type="button"
                 onClick={handlePrintPreview}
-                disabled={isGenerating || pesertaList.length === 0}
+                disabled={isGenerating || filteredPeserta.length === 0}
                 className="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg font-medium transition-all shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{ 
                   backgroundColor: 'white',
@@ -715,14 +715,14 @@ const BulkCetakSertifikat: React.FC = () => {
               <button
                 type="button"
                 onClick={handleBulkDownload}
-                disabled={isGenerating || loadingAtlet || pesertaList.length === 0}
+                disabled={isGenerating || loadingAtlet || filteredPeserta.length === 0}
                 className="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg font-medium text-white transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{ 
                   background: isGenerating ? '#7A0A2B' : 'linear-gradient(135deg, #990D35 0%, #7A0A2B 100%)'
                 }}
               >
                 <Download size={18} />
-                {isGenerating ? `Generating...` : `Download ${selectedAtlets.size > 0 ? selectedAtlets.size : pesertaList.length} Sertifikat`}
+                {isGenerating ? `Generating...` : `Download ${selectedAtlets.size > 0 ? selectedAtlets.size : filteredPeserta.length} Sertifikat`}
               </button>
             </div>
           </div>
@@ -896,7 +896,7 @@ const BulkCetakSertifikat: React.FC = () => {
                 <p className="text-sm mt-1" style={{ color: '#050505', opacity: 0.6 }}>
                   {selectedAtlets.size > 0 
                     ? `${selectedAtlets.size} sertifikat yang dipilih` 
-                    : `${pesertaList.length} sertifikat (semua di halaman ini)`}
+                    : `${filteredPeserta.length} sertifikat (semua data ter-filter)`}
                 </p>
               </div>
               <button
@@ -913,8 +913,8 @@ const BulkCetakSertifikat: React.FC = () => {
             <div className="p-6 overflow-y-auto max-h-[60vh]">
               <div className="space-y-3">
                 {(selectedAtlets.size > 0 
-                  ? pesertaList.filter(p => selectedAtlets.has(p.id_peserta_kompetisi))
-                  : pesertaList
+                  ? filteredPeserta.filter(p => selectedAtlets.has(p.id_peserta_kompetisi))
+                  : filteredPeserta
                 ).map((peserta, idx) => (
                   <div
                     key={peserta.id_peserta_kompetisi || idx}
