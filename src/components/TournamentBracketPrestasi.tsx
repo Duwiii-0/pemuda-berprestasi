@@ -1472,7 +1472,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "flex-end",
-            minHeight: "60px",
+            minHeight: "70px",
             position: "relative",
           }}
         >
@@ -1480,7 +1480,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
             <>
               <p
                 className="font-bold leading-tight text-center truncate w-full"
-                style={{ color: "#DC143C", fontSize: "14px" }}
+                style={{ color: "#DC143C", fontSize: "16px" }}
               >
                 {getParticipantName(match.peserta_a)}
               </p>
@@ -1490,7 +1490,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                   color: "#666",
                   opacity: 0.7,
                   marginTop: "2px",
-                  fontSize: "12px",
+                  fontSize: "14px",
                 }}
               >
                 {getDojoName(match.peserta_a)}
@@ -1499,7 +1499,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
           ) : (
             <span
               className="text-gray-400 text-center"
-              style={{ fontSize: "12px" }}
+              style={{ fontSize: "14px" }}
             >
               TBD
             </span>
@@ -1509,7 +1509,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
         {/* Main Center Line dengan Nomor Partai */}
         <div
           style={{
-            height: "60px",
+            height: "80px",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -1521,7 +1521,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
             style={{
               position: "absolute",
               width: "100%",
-              height: "5px",
+              height: "6px",
               backgroundColor: "#990D35",
               zIndex: 0,
             }}
@@ -1533,14 +1533,13 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
               position: "relative",
               zIndex: 1,
               backgroundColor: "#F5FBEF",
-              paddingX: "12px",
-              paddingY: "6px",
+              padding: "10px 16px",
             }}
           >
             {match.nomor_partai ? (
               <span
                 className="font-bold"
-                style={{ color: "#000000", fontSize: "18px" }}
+                style={{ color: "#000000", fontSize: "20px" }}
               >
                 Partai {match.nomor_partai}
               </span>
@@ -1549,7 +1548,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                 (!match.peserta_a && match.peserta_b)) ? (
               <span
                 className="font-bold"
-                style={{ color: "#F5B700", fontSize: "18px" }}
+                style={{ color: "#F5B700", fontSize: "20px" }}
               >
                 BYE
               </span>
@@ -1565,7 +1564,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "flex-start",
-            minHeight: "60px",
+            minHeight: "70px",
             position: "relative",
           }}
         >
@@ -1573,7 +1572,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
             <>
               <p
                 className="font-bold leading-tight text-center truncate w-full"
-                style={{ color: "#3B82F6", fontSize: "14px" }}
+                style={{ color: "#3B82F6", fontSize: "16px" }}
               >
                 {getParticipantName(match.peserta_b)}
               </p>
@@ -1583,7 +1582,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                   color: "#666",
                   opacity: 0.7,
                   marginTop: "2px",
-                  fontSize: "12px",
+                  fontSize: "14px",
                 }}
               >
                 {getDojoName(match.peserta_b)}
@@ -1592,7 +1591,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
           ) : (
             <span
               className="text-gray-400 text-center"
-              style={{ fontSize: "12px" }}
+              style={{ fontSize: "14px" }}
             >
               TBD
             </span>
@@ -1808,7 +1807,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                   x2={lineLength}
                   y2="1"
                   stroke="#990D35"
-                  strokeWidth="2.5"
+                  strokeWidth="6"
                   opacity="0.8"
                 />
               </svg>
@@ -1831,7 +1830,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                   x2={lineLength}
                   y2="1"
                   stroke="#990D35"
-                  strokeWidth="2.5"
+                  strokeWidth="6"
                   opacity="0.8"
                 />
               </svg>
@@ -2229,7 +2228,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                             x2={isRight ? 0 : halfGap}
                             y2="1"
                             stroke="#990D35"
-                            strokeWidth="2"
+                            strokeWidth="5"
                             opacity="0.8"
                           />
                         </svg>
@@ -2285,7 +2284,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                                     x2="1"
                                     y2={verticalHeight}
                                     stroke="#990D35"
-                                    strokeWidth="2"
+                                    strokeWidth="5"
                                     opacity="0.8"
                                   />
                                 </svg>
@@ -2312,7 +2311,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                                     x2={isRight ? 0 : halfGap}
                                     y2="1"
                                     stroke="#990D35"
-                                    strokeWidth="2"
+                                    strokeWidth="5"
                                     opacity="0.8"
                                   />
                                 </svg>
