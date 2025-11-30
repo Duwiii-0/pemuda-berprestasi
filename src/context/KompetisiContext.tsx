@@ -245,7 +245,7 @@ export const KompetisiProvider = ({ children }: { children: ReactNode }) => {
   >([]);
   const [atletPagination, setAtletPagination] = useState<PaginationMeta>({
     page: 1,
-    limit: 25,
+    limit: 10000, // ✅ FIX: Default 10000 to load all data
     total: 0,
     totalPages: 0,
   });
@@ -358,24 +358,39 @@ export const KompetisiProvider = ({ children }: { children: ReactNode }) => {
     setLoadingAtlet(true);
     setErrorAtlet(null);
     try {
+      console.log(`🔄 [Context] Fetching with limit: ${atletPagination.limit}, page: ${atletPagination.page}`);
+      
       let url = `/kompetisi/${id_kompetisi}/atlet?page=${atletPagination.page}&limit=${atletPagination.limit}`;
       if (cabang) url += `&cabang=${cabang}`;
       if (id_dojang) url += `&id_dojang=${id_dojang}`;
       if (id_kelas) url += `&id_kelas=${id_kelas}`;
       if (status) url += `&status=${status}`;
 
+      console.log(`🌐 [Context] API URL: ${url}`);
+
       const res = await apiClient.get(url);
 
-      setPesertaList(
-        Array.isArray(res.data)
-          ? (res.data as PesertaKompetisi[])
-          : (res.data.data as PesertaKompetisi[]) ?? []
-      );
+      console.log(`✅ [Context] Received data structure:`, {
+        isArray: Array.isArray(res),
+        hasData: !!res.data,
+        dataLength: res.data?.length || res.length,
+        total: res.total,
+        page: res.page,
+        limit: res.limit
+      });
+
+      // Parse response - backend returns { success, data, total, page, limit }
+      const pesertaData = Array.isArray(res) ? res : (res.data || []);
+      
+      setPesertaList(pesertaData as PesertaKompetisi[]);
+      
       setAtletPagination((prev) => ({
         ...prev,
-        total: res.data?.meta?.total || 0,
-        totalPages: res.data?.meta?.totalPages || 0,
+        total: res.total || pesertaData.length,
+        totalPages: Math.ceil((res.total || pesertaData.length) / atletPagination.limit),
       }));
+
+      console.log(`📊 [Context] Set ${pesertaData.length} items, total: ${res.total || pesertaData.length}`);
     } catch (err: any) {
       console.error("[fetchAtletByKompetisi] error:", err);
       setErrorAtlet(
