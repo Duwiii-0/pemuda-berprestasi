@@ -1521,7 +1521,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
             style={{
               position: "absolute",
               width: "100%",
-              height: "5px",
+              height: "8px",
               backgroundColor: "#990D35",
               zIndex: 0,
             }}
@@ -1807,7 +1807,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                   x2={lineLength}
                   y2="1"
                   stroke="#990D35"
-                  strokeWidth="5"
+                  strokeWidth="8"
                   opacity="0.8"
                 />
               </svg>
@@ -1830,7 +1830,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                   x2={lineLength}
                   y2="1"
                   stroke="#990D35"
-                  strokeWidth="5"
+                  strokeWidth="8"
                   opacity="0.8"
                 />
               </svg>
@@ -2228,7 +2228,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                             x2={isRight ? 0 : halfGap}
                             y2="1"
                             stroke="#990D35"
-                            strokeWidth="5"
+                            strokeWidth="8"
                             opacity="0.8"
                           />
                         </svg>
@@ -2284,7 +2284,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                                     x2="1"
                                     y2={verticalHeight}
                                     stroke="#990D35"
-                                    strokeWidth="5"
+                                    strokeWidth="8"
                                     opacity="0.8"
                                   />
                                 </svg>
@@ -2311,7 +2311,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                                     x2={isRight ? 0 : halfGap}
                                     y2="1"
                                     stroke="#990D35"
-                                    strokeWidth="5"
+                                    strokeWidth="8"
                                     opacity="0.8"
                                   />
                                 </svg>
@@ -2388,9 +2388,9 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
     }
 
     .match-card:hover {
-      transform: translateY(-2px) !important;  /* ✅ Only Y translation */
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-      z-index: 15;
+      transform: none !important;
+      box-shadow: none;
+      z-index: 10;
     }
 
     .round-header {
