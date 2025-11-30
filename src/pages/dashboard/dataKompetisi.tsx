@@ -100,10 +100,12 @@ const DataKompetisi = () => {
   const [itemsPerPage] = useState(100);
 
   const handleExportExcel = () => {
-    const approvedPeserta = pesertaList.filter((p: any) => p.status === 'APPROVED');
+    // Gunakan `displayedPesertas` agar ekspor sesuai dengan filter yang aktif di UI.
+    // Kemudian, filter lagi untuk memastikan hanya status 'APPROVED' yang diekspor.
+    const approvedPeserta = displayedPesertas.filter((p: any) => p.status === 'APPROVED');
 
     if (approvedPeserta.length === 0) {
-      toast.error("Tidak ada peserta yang berstatus APPROVED untuk diexport.");
+      toast.error("Tidak ada peserta berstatus 'APPROVED' yang cocok dengan filter aktif untuk diekspor.");
       return;
     }
 
@@ -113,8 +115,17 @@ const DataKompetisi = () => {
       const isTeam = peserta.is_team;
       const cabang = peserta.kelas_kejuaraan?.cabang || "Lainnya";
       const level = peserta.kelas_kejuaraan?.kategori_event?.nama_kategori || "Lainnya";
+      const kelompokUsia = peserta.kelas_kejuaraan?.kelompok?.nama_kelompok || "Umum";
       
-      const sheetName = `${cabang}_${level}`.replace(/ /g, "_");
+      let detailKelas = "";
+      if (cabang === "KYORUGI") {
+        detailKelas = peserta.kelas_kejuaraan?.kelas_berat?.nama_kelas || "Tanpa Kelas";
+      } else if (cabang === "POOMSAE") {
+        detailKelas = peserta.kelas_kejuaraan?.poomsae?.nama_kelas || "Tanpa Kelas";
+      }
+
+      // Buat nama sheet yang lebih granular sesuai permintaan
+      const sheetName = `${cabang}_${level}_${kelompokUsia}_${detailKelas}`.replace(/[ /]/g, "_").replace(/__/g, "_");
 
       if (!groupedData[sheetName]) {
         groupedData[sheetName] = [];
@@ -145,19 +156,22 @@ const DataKompetisi = () => {
     });
 
     const wb = XLSX.utils.book_new();
-    for (const sheetName in groupedData) {
-      if (Object.prototype.hasOwnProperty.call(groupedData, sheetName)) {
-        const sortedSheetData = groupedData[sheetName].sort((a, b) => a["Kelas Tanding"].localeCompare(b["Kelas Tanding"]));
-        
-        // Add a "No." column
-        const finalSheetData = sortedSheetData.map((row, index) => ({
-          "No.": index + 1,
-          ...row,
-        }));
+    // Urutkan nama sheet untuk urutan file excel yang lebih baik
+    const sortedSheetNames = Object.keys(groupedData).sort();
 
-        const ws = XLSX.utils.json_to_sheet(finalSheetData);
-        XLSX.utils.book_append_sheet(wb, ws, sheetName);
-      }
+    for (const sheetName of sortedSheetNames) {
+      const sortedSheetData = groupedData[sheetName].sort((a, b) => a["Kelas Tanding"].localeCompare(b["Kelas Tanding"]));
+      
+      const finalSheetData = sortedSheetData.map((row, index) => ({
+        "No.": index + 1,
+        ...row,
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(finalSheetData);
+
+      // Batasi panjang nama sheet hingga 31 karakter, yang merupakan batas Excel
+      const validSheetName = sheetName.substring(0, 31);
+      XLSX.utils.book_append_sheet(wb, ws, validSheetName);
     }
 
     XLSX.writeFile(wb, `Daftar_Peserta_${selectedKompetisi?.nama_event || 'Kompetisi'}.xlsx`);
