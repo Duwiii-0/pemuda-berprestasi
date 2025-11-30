@@ -1521,7 +1521,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
             style={{
               position: "absolute",
               width: "100%",
-              height: "6px",
+              height: "5px",
               backgroundColor: "#990D35",
               zIndex: 0,
             }}
@@ -1807,7 +1807,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                   x2={lineLength}
                   y2="1"
                   stroke="#990D35"
-                  strokeWidth="6"
+                  strokeWidth="5"
                   opacity="0.8"
                 />
               </svg>
@@ -1830,7 +1830,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                   x2={lineLength}
                   y2="1"
                   stroke="#990D35"
-                  strokeWidth="6"
+                  strokeWidth="5"
                   opacity="0.8"
                 />
               </svg>
