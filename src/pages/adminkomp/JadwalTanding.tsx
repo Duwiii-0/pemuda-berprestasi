@@ -17,6 +17,7 @@ import { useKompetisi } from "../../context/KompetisiContext";
 import { useAuth } from "../../context/authContext";
 import { useNavigate } from "react-router-dom";
 import { exportMultipleBracketsByLapangan } from "../../utils/exportBracketPDF";
+import { exportPesertaListPerLapangan } from "../../utils/pdfGenerators";
 import taekwondo from "../../assets/logo/taekwondo.png";
 import sriwijaya from "../../assets/logo/sriwijaya.png";
 
@@ -104,6 +105,10 @@ const JadwalPertandingan: React.FC = () => {
   const [selectedExportLapangan, setSelectedExportLapangan] = useState<
     number[]
   >([]);
+  const [showPesertaListModal, setShowPesertaListModal] = useState(false);
+  const [selectedPesertaHari, setSelectedPesertaHari] = useState<string>("");
+  const [selectedPesertaLapangan, setSelectedPesertaLapangan] = useState<number[]>([]);
+  const [exportingPesertaPDF, setExportingPesertaPDF] = useState(false);
   const [autoResetBeforeGenerate, setAutoResetBeforeGenerate] = useState(true); // Default true = selalu reset
   const [exportingPDF, setExportingPDF] = useState(false);
   const [lapanganSearchTerms, setLapanganSearchTerms] = useState<
@@ -1329,6 +1334,176 @@ const handleResetAndUpdateAntrian = async (
     }
   };
 
+  // ⭐ NEW: Handler for exporting peserta list per lapangan (multiple kelas in ONE PDF)
+  const handleExportPesertaList = async () => {
+    if (!idKompetisi || selectedPesertaLapangan.length === 0) return;
+
+    setExportingPesertaPDF(true);
+    setErrorMessage("");
+    setSuccessMessage("");
+
+    try {
+      const selectedHari = hariList.find((h) => h.tanggal === selectedPesertaHari);
+      if (!selectedHari) throw new Error("Hari tidak ditemukan");
+
+      let totalLapanganExported = 0;
+      const failedLapangan: string[] = [];
+
+      for (const lapanganId of selectedPesertaLapangan) {
+        const lapangan = selectedHari.lapangan.find(
+          (l) => l.id_lapangan === lapanganId
+        );
+        if (!lapangan) continue;
+
+        console.log(`\n📍 Processing Lapangan ${lapangan.nama_lapangan}`);
+        console.log(`   Total kelas: ${lapangan.kelasDipilih.length}`);
+
+        // Collect all kelas data for this lapangan
+        const kelasListForThisLapangan: Array<{
+          kelasData: any;
+          namaKelas: string;
+        }> = [];
+
+        // Get all kelas in this lapangan
+        const kelasList = lapangan.kelasDipilih
+          .map((kelasId) => {
+            const kelas = kelasKejuaraanList.find(
+              (k) => k.id_kelas_kejuaraan === kelasId
+            );
+            if (!kelas) return null;
+
+            const isPemula = kelas.kategori_event.nama_kategori
+              .toLowerCase()
+              .includes("pemula");
+            const jumlahPeserta = pesertaList.filter(
+              (p) =>
+                p.status === "APPROVED" &&
+                p.kelas_kejuaraan?.id_kelas_kejuaraan === kelasId
+            ).length;
+
+            return {
+              kelasId,
+              kelasData: kelas,
+              isPemula,
+              jumlahPeserta,
+              namaKelas: generateNamaKelas(kelas),
+            };
+          })
+          .filter((item): item is NonNullable<typeof item> => item !== null);
+
+        // Sort: PEMULA first, then by jumlah peserta DESC
+        const sortedKelas = kelasList.sort((a, b) => {
+          if (a.isPemula && !b.isPemula) return -1;
+          if (!a.isPemula && b.isPemula) return 1;
+          return b.jumlahPeserta - a.jumlahPeserta;
+        });
+
+        // Prepare data for each kelas
+        for (const kelas of sortedKelas) {
+          const kelasId = kelas.kelasId;
+          const kelasData = kelas.kelasData;
+
+          const pesertaKelas = pesertaList.filter(
+            (p) =>
+              p.status === "APPROVED" &&
+              p.kelas_kejuaraan?.id_kelas_kejuaraan === kelasId
+          );
+
+          if (pesertaKelas.length === 0) {
+            console.warn(`   ⚠️ ${kelas.namaKelas}: No participants, skipping`);
+            continue;
+          }
+
+          // Add to list with participant data
+          kelasListForThisLapangan.push({
+            kelasData: {
+              ...kelasData,
+              peserta_kompetisi: pesertaKelas.map((p) => ({
+                id_peserta_kompetisi: p.id_peserta_kompetisi,
+                id_atlet: p.atlet?.id_atlet,
+                is_team: p.is_team,
+                status: p.status,
+                atlet: p.atlet
+                  ? {
+                      nama_atlet: p.atlet.nama_atlet,
+                      dojang: {
+                        nama_dojang: p.atlet.dojang?.nama_dojang || "",
+                      },
+                    }
+                  : undefined,
+                anggota_tim: p.anggota_tim?.map((at) => ({
+                  atlet: {
+                    nama_atlet: at.atlet.nama_atlet,
+                    dojang: {
+                      nama_dojang: at.atlet.dojang?.nama_dojang || "",
+                    },
+                  },
+                })),
+              })),
+            },
+            namaKelas: kelas.namaKelas,
+          });
+
+          console.log(`   ✅ Added: ${kelas.namaKelas} (${pesertaKelas.length} peserta)`);
+        }
+
+        // Export ONE PDF for this lapangan (with all kelas)
+        if (kelasListForThisLapangan.length > 0) {
+          try {
+            await exportPesertaListPerLapangan(kelasListForThisLapangan, {
+              namaKejuaraan: "Sriwijaya International Taekwondo Championship 2025",
+              logoPBTI: taekwondo,
+              logoEvent: sriwijaya,
+              lapanganNama: lapangan.nama_lapangan,
+              tanggal: selectedPesertaHari,
+            });
+
+            totalLapanganExported++;
+            console.log(`   ✅ Exported PDF: Lapangan ${lapangan.nama_lapangan} (${kelasListForThisLapangan.length} kelas)`);
+          } catch (exportError: any) {
+            console.error(`   ❌ Export error:`, exportError);
+            failedLapangan.push(lapangan.nama_lapangan);
+          }
+        } else {
+          console.warn(`   ⚠️ No kelas with participants in Lapangan ${lapangan.nama_lapangan}`);
+          failedLapangan.push(`${lapangan.nama_lapangan} (tidak ada peserta)`);
+        }
+      }
+
+      console.log(`\n📦 EXPORT SUMMARY`);
+      console.log(`   Total lapangan exported: ${totalLapanganExported}`);
+      console.log(`   Failed/skipped: ${failedLapangan.length}`);
+
+      if (totalLapanganExported === 0) {
+        if (failedLapangan.length > 0) {
+          throw new Error(
+            `Tidak ada daftar peserta yang berhasil di-export.\n\n` +
+              `Lapangan yang di-skip:\n${failedLapangan.join("\n")}`
+          );
+        } else {
+          throw new Error("Tidak ada daftar peserta yang berhasil di-export");
+        }
+      }
+
+      let message = `✅ Berhasil export ${totalLapanganExported} PDF daftar peserta!`;
+      if (failedLapangan.length > 0) {
+        message += `\n\n⚠️ ${failedLapangan.length} lapangan di-skip:\n${failedLapangan.join(", ")}`;
+      }
+
+      setSuccessMessage(message);
+      setShowPesertaListModal(false);
+      setSelectedPesertaHari("");
+      setSelectedPesertaLapangan([]);
+
+      setTimeout(() => setSuccessMessage(""), 5000);
+    } catch (err: any) {
+      console.error("❌ Error exporting peserta list:", err);
+      setErrorMessage(err.message || "Gagal export daftar peserta");
+    } finally {
+      setExportingPesertaPDF(false);
+    }
+  };
+
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#F5FBEF" }}>
       <div className="p-4 sm:p-6 lg:p-8 max-w-full">
@@ -1995,6 +2170,18 @@ const handleResetAndUpdateAntrian = async (
                   Export Bracket per Lapangan
                 </button>
               </div>
+              {/* 🆕 BUTTON EXPORT DAFTAR PESERTA */}
+              <div className="mb-6">
+                <button
+                  onClick={() => setShowPesertaListModal(true)}
+                  disabled={sortedKelasKejuaraanList.length === 0}
+                  className="flex items-center gap-2 px-4 py-3 rounded-xl font-medium"
+                  style={{ backgroundColor: "#4F46E5", color: "#F5FBEF" }}
+                >
+                  <ClipboardList size={16} />
+                  Export Daftar Peserta
+                </button>
+              </div>
               {/* 🆕 BUTTON AUTO-GENERATE */}
               <div className="mb-6 flex gap-3">
                 <button
@@ -2490,6 +2677,198 @@ const handleResetAndUpdateAntrian = async (
                 style={{ backgroundColor: "#990D35", color: "#F5FBEF" }}
               >
                 {exportingPDF ? (
+                  <>
+                    <Loader size={16} className="animate-spin inline mr-2" />
+                    Generating PDF...
+                  </>
+                ) : (
+                  <>
+                    <Download size={16} className="inline mr-2" />
+                    Export PDF
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* ============================================================================ */}
+      {/* MODAL EXPORT DAFTAR PESERTA */}
+      {/* ============================================================================ */}
+      {showPesertaListModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+            <div
+              className="p-6 border-b sticky top-0 bg-white z-10"
+              style={{ borderColor: "#4F46E5" }}
+            >
+              <h3 className="text-xl font-bold" style={{ color: "#050505" }}>
+                📋 Export Daftar Peserta per Lapangan
+              </h3>
+              <p
+                className="text-sm mt-1"
+                style={{ color: "#050505", opacity: 0.6 }}
+              >
+                Pilih hari dan lapangan yang ingin di-export daftar pesertanya
+              </p>
+            </div>
+
+            <div className="p-6 space-y-4">
+              {/* Pilih Hari */}
+              <div>
+                <label
+                  className="block text-sm font-medium mb-2"
+                  style={{ color: "#050505" }}
+                >
+                  Pilih Hari Pertandingan
+                </label>
+                <select
+                  value={selectedPesertaHari}
+                  onChange={(e) => {
+                    setSelectedPesertaHari(e.target.value);
+                    setSelectedPesertaLapangan([]);
+                  }}
+                  className="w-full px-3 py-2 rounded-lg border"
+                  style={{ borderColor: "#4F46E5" }}
+                >
+                  <option value="">-- Pilih Hari --</option>
+                  {hariList.map((hari, idx) => (
+                    <option key={hari.tanggal} value={hari.tanggal}>
+                      Hari ke-{idx + 1} -{" "}
+                      {new Date(hari.tanggal).toLocaleDateString("id-ID", {
+                        weekday: "long",
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      })}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Pilih Lapangan */}
+              {selectedPesertaHari && (
+                <div>
+                  <label
+                    className="block text-sm font-medium mb-2"
+                    style={{ color: "#050505" }}
+                  >
+                    Pilih Lapangan (bisa pilih lebih dari 1)
+                  </label>
+                  <div
+                    className="space-y-2 max-h-64 overflow-y-auto border rounded-lg p-3"
+                    style={{ backgroundColor: "#F5FBEF" }}
+                  >
+                    {hariList
+                      .find((h) => h.tanggal === selectedPesertaHari)
+                      ?.lapangan.map((lap) => {
+                        const isSelected = selectedPesertaLapangan.includes(
+                          lap.id_lapangan
+                        );
+                        const kelasCount = lap.kelasDipilih.length;
+                        
+                        // Count total peserta in this lapangan
+                        const totalPeserta = lap.kelasDipilih.reduce((sum, kelasId) => {
+                          const count = pesertaList.filter(
+                            (p) =>
+                              p.status === "APPROVED" &&
+                              p.kelas_kejuaraan?.id_kelas_kejuaraan === kelasId
+                          ).length;
+                          return sum + count;
+                        }, 0);
+
+                        return (
+                          <label
+                            key={lap.id_lapangan}
+                            className={`flex items-center justify-between p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                              isSelected ? "bg-white" : "hover:bg-white"
+                            }`}
+                            style={{
+                              borderColor: isSelected
+                                ? "#4F46E5"
+                                : "rgba(79,70,229,0.3)",
+                            }}
+                          >
+                            <div className="flex items-center gap-3">
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setSelectedPesertaLapangan([
+                                      ...selectedPesertaLapangan,
+                                      lap.id_lapangan,
+                                    ]);
+                                  } else {
+                                    setSelectedPesertaLapangan(
+                                      selectedPesertaLapangan.filter(
+                                        (id) => id !== lap.id_lapangan
+                                      )
+                                    );
+                                  }
+                                }}
+                                className="w-5 h-5 accent-[#4F46E5]"
+                              />
+                              <div>
+                                <p
+                                  className="font-bold"
+                                  style={{ color: "#050505" }}
+                                >
+                                  Lapangan {lap.nama_lapangan}
+                                </p>
+                                <p
+                                  className="text-xs"
+                                  style={{ color: "#050505", opacity: 0.6 }}
+                                >
+                                  {kelasCount} Kelas • {totalPeserta} Peserta
+                                </p>
+                              </div>
+                            </div>
+                            {isSelected && (
+                              <Check size={20} style={{ color: "#4F46E5" }} />
+                            )}
+                          </label>
+                        );
+                      })}
+                  </div>
+                </div>
+              )}
+
+              {/* Info terpilih */}
+              {selectedPesertaLapangan.length > 0 && (
+                <div
+                  className="p-3 rounded-lg"
+                  style={{ backgroundColor: "rgba(79,70,229,0.1)" }}
+                >
+                  <p
+                    className="text-sm font-medium"
+                    style={{ color: "#4F46E5" }}
+                  >
+                    {selectedPesertaLapangan.length} lapangan terpilih
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <div className="p-6 border-t flex gap-3 sticky bottom-0 bg-white z-10">
+              <button
+                onClick={() => {
+                  setShowPesertaListModal(false);
+                  setSelectedPesertaHari("");
+                  setSelectedPesertaLapangan([]);
+                }}
+                className="flex-1 py-3 px-4 rounded-lg border-2 font-medium"
+                style={{ borderColor: "#4F46E5", color: "#4F46E5" }}
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleExportPesertaList}
+                disabled={selectedPesertaLapangan.length === 0 || exportingPesertaPDF}
+                className="flex-1 py-3 px-4 rounded-lg font-medium disabled:opacity-50"
+                style={{ backgroundColor: "#4F46E5", color: "#F5FBEF" }}
+              >
+                {exportingPesertaPDF ? (
                   <>
                     <Loader size={16} className="animate-spin inline mr-2" />
                     Generating PDF...

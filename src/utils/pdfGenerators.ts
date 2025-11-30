@@ -1,5 +1,5 @@
 import { PDFDocument, rgb } from "pdf-lib";
-import { Atlet } from "../types";
+import type { Atlet } from "../types";
 
 const COORDS_MM_IDCARD = {
   photo: {
@@ -183,9 +183,13 @@ export const generateIdCardPdfBytes = async (atlet: Atlet, pesertaList: any[]): 
     const helveticaFont = await pdfDoc.embedFont('Helvetica-Bold');
     const mmToPt = (mm: number) => mm * 2.83465;
 
-    if (atlet.pas_foto_path) {
+    // FIXED: Use pas_foto (from database) instead of pas_foto_path
+    const photoField = (atlet as any).pas_foto || (atlet as any).pas_foto_path;
+    
+    if (photoField) {
         try {
-            const photoUrl = getPhotoUrl(atlet.pas_foto_path);
+            const photoUrl = getPhotoUrl(photoField);
+            console.log(`📸 Loading photo for ${atlet.nama_atlet}: ${photoUrl}`);
             const roundedImageBase64 = await createRoundedImage(photoUrl, COORDS_MM_IDCARD.photo.borderRadius);
             const imageBytes = base64ToArrayBuffer(roundedImageBase64);
             const image = await pdfDoc.embedPng(imageBytes);
@@ -196,9 +200,12 @@ export const generateIdCardPdfBytes = async (atlet: Atlet, pesertaList: any[]): 
             const height = mmToPt(COORDS_MM_IDCARD.photo.height);
 
             firstPage.drawImage(image, { x, y, width, height });
+            console.log(`✅ Photo embedded successfully for ${atlet.nama_atlet}`);
         } catch (error) {
-            console.error("Failed to embed photo:", error);
+            console.error(`❌ Failed to embed photo for ${atlet.nama_atlet}:`, error);
         }
+    } else {
+        console.warn(`⚠️ No photo found for ${atlet.nama_atlet}`);
     }
 
     const textColor = rgb(0.04, 0.13, 0.41);
@@ -323,4 +330,749 @@ export const generateCertificatePdfBytes = async (atlet: Atlet, medalStatus: Med
     });
 
     return await pdfDoc.save();
+};
+
+/**
+ * 🆕 Export Detail Peserta per Lapangan (Multiple Kelas in One PDF)
+ * Format: Table with participant names and dojang (matching bracket export style)
+ */
+export const exportPesertaListPerLapangan = async (
+  kelasListData: Array<{
+    kelasData: any;
+    namaKelas: string;
+  }>,
+  options: {
+    namaKejuaraan: string;
+    logoPBTI: string;
+    logoEvent: string;
+    lapanganNama: string;
+    tanggal: string;
+  }
+) => {
+  const pdfDoc = await PDFDocument.create();
+  const helveticaBold = await pdfDoc.embedFont('Helvetica-Bold');
+  const helvetica = await pdfDoc.embedFont('Helvetica');
+
+  // Helper function
+  const mmToPt = (mm: number) => mm * 2.83465;
+
+  // Load logos
+  let logoPBTIImage;
+  let logoEventImage;
+  
+  try {
+    const pbtiResponse = await fetch(options.logoPBTI);
+    const pbtiBytes = await pbtiResponse.arrayBuffer();
+    logoPBTIImage = await pdfDoc.embedPng(pbtiBytes);
+  } catch (e) {
+    console.warn('Failed to load PBTI logo');
+  }
+
+  try {
+    const eventResponse = await fetch(options.logoEvent);
+    const eventBytes = await eventResponse.arrayBuffer();
+    logoEventImage = await pdfDoc.embedPng(eventBytes);
+  } catch (e) {
+    console.warn('Failed to load Event logo');
+  }
+
+  // Format tanggal
+  const formattedDate = new Date(options.tanggal).toLocaleDateString('id-ID', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+
+  // Loop through each kelas and add to the same PDF
+  for (let kelasIndex = 0; kelasIndex < kelasListData.length; kelasIndex++) {
+    const { kelasData, namaKelas } = kelasListData[kelasIndex];
+    const pesertaList = kelasData.peserta_kompetisi || [];
+
+    // Add page for this kelas
+    const page = pdfDoc.addPage([mmToPt(210), mmToPt(297)]); // A4
+    const { width: pageWidth, height: pageHeight } = page.getSize();
+
+    let currentY = pageHeight - mmToPt(15);
+
+    // ========== HEADER SECTION ==========
+    
+    // Logo PBTI (kiri) - SMALLER SIZE
+    if (logoPBTIImage) {
+      page.drawImage(logoPBTIImage, {
+        x: mmToPt(15),
+        y: pageHeight - mmToPt(30),
+        width: mmToPt(20),
+        height: mmToPt(20),
+      });
+    }
+
+    // Logo Event (kanan) - SMALLER SIZE
+    if (logoEventImage) {
+      page.drawImage(logoEventImage, {
+        x: pageWidth - mmToPt(35),
+        y: pageHeight - mmToPt(30),
+        width: mmToPt(20),
+        height: mmToPt(20),
+      });
+    }
+
+    // Nama Kejuaraan (center) - SMALLER FONT & SPLIT IF TOO LONG
+    const titleText = options.namaKejuaraan.toUpperCase();
+    const titleFontSize = 11;
+    const titleWidth = helveticaBold.widthOfTextAtSize(titleText, titleFontSize);
+    const maxWidth = pageWidth - mmToPt(80); // Space for logos
+
+    if (titleWidth > maxWidth) {
+      // Split into 2 lines
+      const words = titleText.split(' ');
+      const midPoint = Math.ceil(words.length / 2);
+      const line1 = words.slice(0, midPoint).join(' ');
+      const line2 = words.slice(midPoint).join(' ');
+
+      const line1Width = helveticaBold.widthOfTextAtSize(line1, titleFontSize);
+      const line2Width = helveticaBold.widthOfTextAtSize(line2, titleFontSize);
+
+      page.drawText(line1, {
+        x: (pageWidth - line1Width) / 2,
+        y: pageHeight - mmToPt(16),
+        size: titleFontSize,
+        font: helveticaBold,
+        color: rgb(0.6, 0.05, 0.21),
+      });
+
+      page.drawText(line2, {
+        x: (pageWidth - line2Width) / 2,
+        y: pageHeight - mmToPt(21),
+        size: titleFontSize,
+        font: helveticaBold,
+        color: rgb(0.6, 0.05, 0.21),
+      });
+
+      currentY = pageHeight - mmToPt(28);
+    } else {
+      // Single line
+      page.drawText(titleText, {
+        x: (pageWidth - titleWidth) / 2,
+        y: pageHeight - mmToPt(18),
+        size: titleFontSize,
+        font: helveticaBold,
+        color: rgb(0.6, 0.05, 0.21),
+      });
+
+      currentY = pageHeight - mmToPt(25);
+    }
+
+    // "DAFTAR PESERTA" subtitle
+    const subtitleText = 'DAFTAR PESERTA';
+    const subtitleWidth = helveticaBold.widthOfTextAtSize(subtitleText, 11);
+    page.drawText(subtitleText, {
+      x: (pageWidth - subtitleWidth) / 2,
+      y: currentY,
+      size: 11,
+      font: helveticaBold,
+      color: rgb(0, 0, 0),
+    });
+
+    currentY -= mmToPt(10);
+
+    // ========== INFO BOX (Kelas, Lapangan, Tanggal) ==========
+    const infoBoxY = currentY;
+    
+    page.drawRectangle({
+      x: mmToPt(15),
+      y: infoBoxY - mmToPt(18),
+      width: mmToPt(180),
+      height: mmToPt(18),
+      borderColor: rgb(0.6, 0.05, 0.21),
+      borderWidth: 1,
+    });
+
+    // Line separator
+    page.drawLine({
+      start: { x: mmToPt(15), y: infoBoxY - mmToPt(6) },
+      end: { x: mmToPt(195), y: infoBoxY - mmToPt(6) },
+      thickness: 1,
+      color: rgb(0.6, 0.05, 0.21),
+    });
+
+    page.drawLine({
+      start: { x: mmToPt(15), y: infoBoxY - mmToPt(12) },
+      end: { x: mmToPt(195), y: infoBoxY - mmToPt(12) },
+      thickness: 1,
+      color: rgb(0.6, 0.05, 0.21),
+    });
+
+    // Kelas Kejuaraan
+    page.drawText('Kelas:', {
+      x: mmToPt(18),
+      y: infoBoxY - mmToPt(4.5),
+      size: 9,
+      font: helveticaBold,
+      color: rgb(0.6, 0.05, 0.21),
+    });
+    page.drawText(namaKelas, {
+      x: mmToPt(35),
+      y: infoBoxY - mmToPt(4.5),
+      size: 9,
+      font: helvetica,
+      color: rgb(0, 0, 0),
+    });
+
+    // Lapangan
+    page.drawText('Lapangan:', {
+      x: mmToPt(18),
+      y: infoBoxY - mmToPt(10),
+      size: 9,
+      font: helveticaBold,
+      color: rgb(0.6, 0.05, 0.21),
+    });
+    page.drawText(options.lapanganNama, {
+      x: mmToPt(40),
+      y: infoBoxY - mmToPt(10),
+      size: 9,
+      font: helvetica,
+      color: rgb(0, 0, 0),
+    });
+
+    // Tanggal
+    page.drawText('Tanggal:', {
+      x: mmToPt(18),
+      y: infoBoxY - mmToPt(15.5),
+      size: 9,
+      font: helveticaBold,
+      color: rgb(0.6, 0.05, 0.21),
+    });
+    page.drawText(formattedDate, {
+      x: mmToPt(35),
+      y: infoBoxY - mmToPt(15.5),
+      size: 9,
+      font: helvetica,
+      color: rgb(0, 0, 0),
+    });
+
+    currentY = infoBoxY - mmToPt(25);
+
+    // Jumlah Peserta
+    page.drawText(`Jumlah Peserta: ${pesertaList.length}`, {
+      x: mmToPt(18),
+      y: currentY,
+      size: 10,
+      font: helveticaBold,
+      color: rgb(0.3, 0.3, 0.3),
+    });
+    currentY -= mmToPt(8);
+
+    // ========== TABLE HEADER ==========
+    const tableStartX = mmToPt(15);
+    const colNo = tableStartX + mmToPt(2);
+    const colNama = colNo + mmToPt(15);
+    const colDojang = colNama + mmToPt(80);
+    const rowHeight = mmToPt(7);
+
+    // Draw header background
+    page.drawRectangle({
+      x: tableStartX,
+      y: currentY - mmToPt(1.5),
+      width: mmToPt(180),
+      height: mmToPt(7),
+      color: rgb(0.6, 0.05, 0.21), // Maroon
+    });
+
+    // Header text
+    page.drawText('No', {
+      x: colNo + mmToPt(2),
+      y: currentY,
+      size: 10,
+      font: helveticaBold,
+      color: rgb(1, 1, 1),
+    });
+
+    page.drawText('Nama Peserta', {
+      x: colNama + mmToPt(2),
+      y: currentY,
+      size: 10,
+      font: helveticaBold,
+      color: rgb(1, 1, 1),
+    });
+
+    page.drawText('Dojang', {
+      x: colDojang + mmToPt(2),
+      y: currentY,
+      size: 10,
+      font: helveticaBold,
+      color: rgb(1, 1, 1),
+    });
+
+    currentY -= mmToPt(8);
+
+    // ========== TABLE ROWS ==========
+    let currentPage = page;
+    
+    pesertaList.forEach((peserta: any, index: number) => {
+      // Check if need new page
+      if (currentY < mmToPt(30)) {
+        currentPage = pdfDoc.addPage([mmToPt(210), mmToPt(297)]);
+        currentY = currentPage.getHeight() - mmToPt(20);
+        
+        // Redraw header on new page
+        currentPage.drawRectangle({
+          x: tableStartX,
+          y: currentY - mmToPt(1.5),
+          width: mmToPt(180),
+          height: mmToPt(7),
+          color: rgb(0.6, 0.05, 0.21),
+        });
+
+        currentPage.drawText('No', {
+          x: colNo + mmToPt(2),
+          y: currentY,
+          size: 10,
+          font: helveticaBold,
+          color: rgb(1, 1, 1),
+        });
+
+        currentPage.drawText('Nama Peserta', {
+          x: colNama + mmToPt(2),
+          y: currentY,
+          size: 10,
+          font: helveticaBold,
+          color: rgb(1, 1, 1),
+        });
+
+        currentPage.drawText('Dojang', {
+          x: colDojang + mmToPt(2),
+          y: currentY,
+          size: 10,
+          font: helveticaBold,
+          color: rgb(1, 1, 1),
+        });
+
+        currentY -= mmToPt(8);
+      }
+
+      // Alternate row background
+      if (index % 2 === 1) {
+        currentPage.drawRectangle({
+          x: tableStartX,
+          y: currentY - mmToPt(1.5),
+          width: mmToPt(180),
+          height: rowHeight,
+          color: rgb(0.95, 0.95, 0.95),
+        });
+      }
+
+      // Row data
+      const namaPeserta = peserta.is_team
+        ? `Tim ${peserta.anggota_tim?.[0]?.atlet?.dojang?.nama_dojang || 'Unknown'}`
+        : peserta.atlet?.nama_atlet || 'Unknown';
+      
+      const dojangName = peserta.is_team
+        ? peserta.anggota_tim?.[0]?.atlet?.dojang?.nama_dojang || '-'
+        : peserta.atlet?.dojang?.nama_dojang || '-';
+
+      currentPage.drawText(`${index + 1}`, {
+        x: colNo + mmToPt(2),
+        y: currentY,
+        size: 9,
+        font: helvetica,
+        color: rgb(0, 0, 0),
+      });
+
+      currentPage.drawText(namaPeserta, {
+        x: colNama + mmToPt(2),
+        y: currentY,
+        size: 9,
+        font: helvetica,
+        color: rgb(0, 0, 0),
+      });
+
+      currentPage.drawText(dojangName, {
+        x: colDojang + mmToPt(2),
+        y: currentY,
+        size: 9,
+        font: helvetica,
+        color: rgb(0, 0, 0),
+      });
+
+      currentY -= rowHeight;
+    });
+
+  }
+
+  // Save and download ONE PDF with all kelas
+  const pdfBytes = await pdfDoc.save();
+  const blob = new Blob([new Uint8Array(pdfBytes)], { type: 'application/pdf' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  
+  // Format tanggal untuk nama file (Hari_DD-MM-YYYY)
+  const dateObj = new Date(options.tanggal);
+  const dayName = dateObj.toLocaleDateString('id-ID', { weekday: 'long' });
+  const dateFormatted = dateObj.toLocaleDateString('id-ID', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+  }).replace(/\//g, '-');
+  
+  link.download = `Daftar_Peserta_Lapangan_${options.lapanganNama}_${dayName}_${dateFormatted}.pdf`;
+  link.click();
+  URL.revokeObjectURL(url);
+};
+
+/**
+ * 🆕 Export Detail Peserta per Kelas Kejuaraan (Single Kelas - DEPRECATED, use exportPesertaListPerLapangan)
+ * Format: Table with participant names and dojang (matching bracket export style)
+ */
+export const exportPesertaList = async (
+  kelasData: any,
+  options: {
+    namaKejuaraan: string;
+    logoPBTI: string;
+    logoEvent: string;
+    lapanganNama: string;
+    tanggal: string;
+  }
+) => {
+  const pdfDoc = await PDFDocument.create();
+  const helveticaBold = await pdfDoc.embedFont('Helvetica-Bold');
+  const helvetica = await pdfDoc.embedFont('Helvetica');
+
+  // Helper function
+  const mmToPt = (mm: number) => mm * 2.83465;
+
+  // Load logos
+  let logoPBTIImage;
+  let logoEventImage;
+  
+  try {
+    const pbtiResponse = await fetch(options.logoPBTI);
+    const pbtiBytes = await pbtiResponse.arrayBuffer();
+    logoPBTIImage = await pdfDoc.embedPng(pbtiBytes);
+  } catch (e) {
+    console.warn('Failed to load PBTI logo');
+  }
+
+  try {
+    const eventResponse = await fetch(options.logoEvent);
+    const eventBytes = await eventResponse.arrayBuffer();
+    logoEventImage = await pdfDoc.embedPng(eventBytes);
+  } catch (e) {
+    console.warn('Failed to load Event logo');
+  }
+
+  // Prepare peserta data
+  const pesertaList = kelasData.peserta_kompetisi || [];
+  
+  // Generate nama kelas
+  const parts = [];
+  if (kelasData.cabang) parts.push(kelasData.cabang);
+  if (kelasData.kategori_event?.nama_kategori) parts.push(kelasData.kategori_event.nama_kategori);
+  if (kelasData.kelompok?.nama_kelompok) parts.push(kelasData.kelompok.nama_kelompok);
+  
+  if (kelasData.kelas_berat) {
+    const gender = kelasData.kelas_berat.jenis_kelamin === 'LAKI_LAKI' ? 'Putra' : 'Putri';
+    parts.push(gender);
+  }
+  
+  if (kelasData.kelas_berat?.nama_kelas) parts.push(kelasData.kelas_berat.nama_kelas);
+  if (kelasData.poomsae?.nama_kelas) parts.push(kelasData.poomsae.nama_kelas);
+  if (kelasData.poomsae_type) parts.push(kelasData.poomsae_type);
+  
+  const namaKelas = parts.join(' - ');
+
+  // Format tanggal
+  const formattedDate = new Date(options.tanggal).toLocaleDateString('id-ID', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+
+  // Add page
+  const page = pdfDoc.addPage([mmToPt(210), mmToPt(297)]); // A4
+  const { width: pageWidth, height: pageHeight } = page.getSize();
+
+  let currentY = pageHeight - mmToPt(15);
+
+  // ========== HEADER SECTION (sama seperti bracket) ==========
+  
+  // Logo PBTI (kiri)
+  if (logoPBTIImage) {
+    page.drawImage(logoPBTIImage, {
+      x: mmToPt(15),
+      y: pageHeight - mmToPt(35),
+      width: mmToPt(25),
+      height: mmToPt(25),
+    });
+  }
+
+  // Logo Event (kanan)
+  if (logoEventImage) {
+    page.drawImage(logoEventImage, {
+      x: pageWidth - mmToPt(40),
+      y: pageHeight - mmToPt(35),
+      width: mmToPt(25),
+      height: mmToPt(25),
+    });
+  }
+
+  // Nama Kejuaraan (center)
+  const titleWidth = helveticaBold.widthOfTextAtSize(
+    options.namaKejuaraan.toUpperCase(),
+    14
+  );
+  page.drawText(options.namaKejuaraan.toUpperCase(), {
+    x: (pageWidth - titleWidth) / 2,
+    y: pageHeight - mmToPt(18),
+    size: 14,
+    font: helveticaBold,
+    color: rgb(0.6, 0.05, 0.21), // Maroon
+  });
+
+  // "DAFTAR PESERTA" subtitle
+  const subtitleText = 'DAFTAR PESERTA';
+  const subtitleWidth = helveticaBold.widthOfTextAtSize(subtitleText, 12);
+  page.drawText(subtitleText, {
+    x: (pageWidth - subtitleWidth) / 2,
+    y: pageHeight - mmToPt(25),
+    size: 12,
+    font: helveticaBold,
+    color: rgb(0, 0, 0),
+  });
+
+  currentY = pageHeight - mmToPt(40);
+
+  // ========== INFO BOX (Kelas, Lapangan, Tanggal) ==========
+  const infoBoxY = currentY;
+  
+  page.drawRectangle({
+    x: mmToPt(15),
+    y: infoBoxY - mmToPt(18),
+    width: mmToPt(180),
+    height: mmToPt(18),
+    borderColor: rgb(0.6, 0.05, 0.21),
+    borderWidth: 1,
+  });
+
+  // Line separator
+  page.drawLine({
+    start: { x: mmToPt(15), y: infoBoxY - mmToPt(6) },
+    end: { x: mmToPt(195), y: infoBoxY - mmToPt(6) },
+    thickness: 1,
+    color: rgb(0.6, 0.05, 0.21),
+  });
+
+  page.drawLine({
+    start: { x: mmToPt(15), y: infoBoxY - mmToPt(12) },
+    end: { x: mmToPt(195), y: infoBoxY - mmToPt(12) },
+    thickness: 1,
+    color: rgb(0.6, 0.05, 0.21),
+  });
+
+  // Kelas Kejuaraan
+  page.drawText('Kelas:', {
+    x: mmToPt(18),
+    y: infoBoxY - mmToPt(4.5),
+    size: 9,
+    font: helveticaBold,
+    color: rgb(0.6, 0.05, 0.21),
+  });
+  page.drawText(namaKelas, {
+    x: mmToPt(35),
+    y: infoBoxY - mmToPt(4.5),
+    size: 9,
+    font: helvetica,
+    color: rgb(0, 0, 0),
+  });
+
+  // Lapangan
+  page.drawText('Lapangan:', {
+    x: mmToPt(18),
+    y: infoBoxY - mmToPt(10),
+    size: 9,
+    font: helveticaBold,
+    color: rgb(0.6, 0.05, 0.21),
+  });
+  page.drawText(options.lapanganNama, {
+    x: mmToPt(40),
+    y: infoBoxY - mmToPt(10),
+    size: 9,
+    font: helvetica,
+    color: rgb(0, 0, 0),
+  });
+
+  // Tanggal
+  page.drawText('Tanggal:', {
+    x: mmToPt(18),
+    y: infoBoxY - mmToPt(15.5),
+    size: 9,
+    font: helveticaBold,
+    color: rgb(0.6, 0.05, 0.21),
+  });
+  page.drawText(formattedDate, {
+    x: mmToPt(35),
+    y: infoBoxY - mmToPt(15.5),
+    size: 9,
+    font: helvetica,
+    color: rgb(0, 0, 0),
+  });
+
+  currentY = infoBoxY - mmToPt(25);
+
+  // Jumlah Peserta
+  page.drawText(`Jumlah Peserta: ${pesertaList.length}`, {
+    x: mmToPt(18),
+    y: currentY,
+    size: 10,
+    font: helveticaBold,
+    color: rgb(0.3, 0.3, 0.3),
+  });
+  currentY -= mmToPt(8);
+
+  // ========== TABLE HEADER ==========
+  const tableStartX = mmToPt(15);
+  const colNo = tableStartX + mmToPt(2);
+  const colNama = colNo + mmToPt(15);
+  const colDojang = colNama + mmToPt(80);
+  const rowHeight = mmToPt(7);
+
+  // Draw header background
+  page.drawRectangle({
+    x: tableStartX,
+    y: currentY - mmToPt(1.5),
+    width: mmToPt(180),
+    height: mmToPt(7),
+    color: rgb(0.6, 0.05, 0.21), // Maroon
+  });
+
+  // Header text
+  page.drawText('No', {
+    x: colNo + mmToPt(2),
+    y: currentY,
+    size: 10,
+    font: helveticaBold,
+    color: rgb(1, 1, 1),
+  });
+
+  page.drawText('Nama Peserta', {
+    x: colNama + mmToPt(2),
+    y: currentY,
+    size: 10,
+    font: helveticaBold,
+    color: rgb(1, 1, 1),
+  });
+
+  page.drawText('Dojang', {
+    x: colDojang + mmToPt(2),
+    y: currentY,
+    size: 10,
+    font: helveticaBold,
+    color: rgb(1, 1, 1),
+  });
+
+  currentY -= mmToPt(8);
+
+  // ========== TABLE ROWS ==========
+  let currentPage = page;
+  
+  pesertaList.forEach((peserta: any, index: number) => {
+    // Check if need new page
+    if (currentY < mmToPt(30)) {
+      currentPage = pdfDoc.addPage([mmToPt(210), mmToPt(297)]);
+      currentY = currentPage.getHeight() - mmToPt(20);
+      
+      // Redraw header on new page
+      currentPage.drawRectangle({
+        x: tableStartX,
+        y: currentY - mmToPt(1.5),
+        width: mmToPt(180),
+        height: mmToPt(7),
+        color: rgb(0.6, 0.05, 0.21),
+      });
+
+      currentPage.drawText('No', {
+        x: colNo + mmToPt(2),
+        y: currentY,
+        size: 10,
+        font: helveticaBold,
+        color: rgb(1, 1, 1),
+      });
+
+      currentPage.drawText('Nama Peserta', {
+        x: colNama + mmToPt(2),
+        y: currentY,
+        size: 10,
+        font: helveticaBold,
+        color: rgb(1, 1, 1),
+      });
+
+      currentPage.drawText('Dojang', {
+        x: colDojang + mmToPt(2),
+        y: currentY,
+        size: 10,
+        font: helveticaBold,
+        color: rgb(1, 1, 1),
+      });
+
+      currentY -= mmToPt(8);
+    }
+
+    // Alternate row background
+    if (index % 2 === 1) {
+      currentPage.drawRectangle({
+        x: tableStartX,
+        y: currentY - mmToPt(1.5),
+        width: mmToPt(180),
+        height: rowHeight,
+        color: rgb(0.95, 0.95, 0.95),
+      });
+    }
+
+    // Row data
+    const namaPeserta = peserta.is_team
+      ? `Tim ${peserta.anggota_tim?.[0]?.atlet?.dojang?.nama_dojang || 'Unknown'}`
+      : peserta.atlet?.nama_atlet || 'Unknown';
+    
+    const dojangName = peserta.is_team
+      ? peserta.anggota_tim?.[0]?.atlet?.dojang?.nama_dojang || '-'
+      : peserta.atlet?.dojang?.nama_dojang || '-';
+
+    currentPage.drawText(`${index + 1}`, {
+      x: colNo + mmToPt(2),
+      y: currentY,
+      size: 9,
+      font: helvetica,
+      color: rgb(0, 0, 0),
+    });
+
+    currentPage.drawText(namaPeserta, {
+      x: colNama + mmToPt(2),
+      y: currentY,
+      size: 9,
+      font: helvetica,
+      color: rgb(0, 0, 0),
+    });
+
+    currentPage.drawText(dojangName, {
+      x: colDojang + mmToPt(2),
+      y: currentY,
+      size: 9,
+      font: helvetica,
+      color: rgb(0, 0, 0),
+    });
+
+    currentY -= rowHeight;
+  });
+
+  // Save and download
+  const pdfBytes = await pdfDoc.save();
+  const blob = new Blob([new Uint8Array(pdfBytes)], { type: 'application/pdf' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `Daftar_Peserta_${options.lapanganNama}_${namaKelas.replace(/\s+/g, '_')}.pdf`;
+  link.click();
+  URL.revokeObjectURL(url);
 };

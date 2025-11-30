@@ -27,6 +27,9 @@ const ValidasiPeserta: React.FC = () => {
     fetchAtletByKompetisi,
     loadingAtlet,
     updatePesertaStatus,
+    atletPagination,
+    setAtletPage,
+    setAtletLimit,
   } = useKompetisi();
 
   const [processing, setProcessing] = useState<number | null>(null);
@@ -44,6 +47,8 @@ const ValidasiPeserta: React.FC = () => {
   const [filterDojang, setFilterDojang] = useState<string>("ALL");
   const [filterKelasBerat, setFilterKelasBerat] = useState<"ALL" | string>("ALL");
   const { dojangOptions, refreshDojang, isLoading } = useDojang();
+  const [currentDisplayPage, setCurrentDisplayPage] = useState(1); // Visual pagination
+  const [itemsPerDisplayPage] = useState(25); // Show 25 items per page visually
 
 const kelasBeratOptions = [
   { value: "ALL", label: "Semua Kelas" },
@@ -131,12 +136,17 @@ const kelasBeratOptions = [
   useEffect(() => {
   }, [kompetisiList]);
 
+  // FIXED: Set limit ONCE on mount and fetch all data
   useEffect(() => {
     if (selectedKompetisiId) {
-      console.log(
-        `[ValidasiPeserta] Kompetisi dipilih, fetching peserta...`
-      );
-      fetchAtletByKompetisi(selectedKompetisiId);
+      console.log(`🔄 [ValidasiPeserta] Setting limit to 10000...`);
+      setAtletLimit(10000); // Load ALL data
+      setCurrentDisplayPage(1); // Reset display page
+      // Wait a bit for state to update, then fetch
+      setTimeout(() => {
+        console.log(`🔄 [ValidasiPeserta] Fetching all data...`);
+        fetchAtletByKompetisi(selectedKompetisiId);
+      }, 100);
     }
   }, [selectedKompetisiId]);
 
@@ -379,7 +389,7 @@ const handleRejection = async (id: number) => {
 
 
   // FIX: Update filtering logic untuk pesertaList
-  const displayedPesertas = pesertaList.filter((peserta) => {
+  const filteredPesertas = pesertaList.filter((peserta) => {
   const namaPeserta = peserta.is_team
     ? peserta.anggota_tim?.map((a) => a.atlet.nama_atlet).join(" ") || ""
     : peserta.atlet?.nama_atlet || "";
@@ -410,6 +420,47 @@ const handleRejection = async (id: number) => {
 
     return matchesSearch && matchesStatus && matchesCategory && matchesLevel && matchesKelompok && matchesDojang && matchesKelasBerat;
 });
+
+  // Calculate visual pagination (25 per page)
+  const totalFilteredItems = filteredPesertas.length;
+  const totalDisplayPages = Math.ceil(totalFilteredItems / itemsPerDisplayPage);
+  const startIndex = (currentDisplayPage - 1) * itemsPerDisplayPage;
+  const endIndex = startIndex + itemsPerDisplayPage;
+  const displayedPesertas = filteredPesertas.slice(startIndex, endIndex);
+
+  // Pagination helper
+  const getPageNumbers = () => {
+    const pageNumbers: (number | string)[] = [];
+    const maxVisiblePages = 5;
+    
+    if (totalDisplayPages <= maxVisiblePages) {
+      for (let i = 1; i <= totalDisplayPages; i++) {
+        pageNumbers.push(i);
+      }
+    } else {
+      if (currentDisplayPage <= 3) {
+        for (let i = 1; i <= 4; i++) pageNumbers.push(i);
+        pageNumbers.push('...');
+        pageNumbers.push(totalDisplayPages);
+      } else if (currentDisplayPage >= totalDisplayPages - 2) {
+        pageNumbers.push(1);
+        pageNumbers.push('...');
+        for (let i = totalDisplayPages - 3; i <= totalDisplayPages; i++) {
+          pageNumbers.push(i);
+        }
+      } else {
+        pageNumbers.push(1);
+        pageNumbers.push('...');
+        for (let i = currentDisplayPage - 1; i <= currentDisplayPage + 1; i++) {
+          pageNumbers.push(i);
+        }
+        pageNumbers.push('...');
+        pageNumbers.push(totalDisplayPages);
+      }
+    }
+    return pageNumbers;
+  };
+
 
 
   return (
@@ -652,11 +703,13 @@ const handleRejection = async (id: number) => {
             />
           </div>
         </div>
-        {/* Count Peserta */}
-        <p className="text-black/70 text-sm sm:text-base font-inter mb-4">
-          Menampilkan <span className="font-semibold">{displayedPesertas.length}</span>{" "}
-          peserta dari total <span className="font-semibold">{pesertaList.length}</span>
-        </p>
+        {/* Count Peserta & Items Per Page */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+          <p className="text-black/70 text-sm sm:text-base font-inter">
+            Menampilkan <span className="font-semibold">{startIndex + 1}-{Math.min(endIndex, totalFilteredItems)}</span>{" "}
+            dari <span className="font-semibold">{totalFilteredItems}</span> peserta
+          </p>
+        </div>
       </div>
     </div>
 
@@ -894,6 +947,46 @@ const handleRejection = async (id: number) => {
             </div>
           </div>
         </div>
+
+        {/* Pagination Controls */}
+        {totalDisplayPages > 1 && (
+          <div className="flex justify-center items-center gap-2 mt-6 flex-wrap">
+            <button
+              onClick={() => setCurrentDisplayPage(Math.max(1, currentDisplayPage - 1))}
+              disabled={currentDisplayPage === 1}
+              className="px-4 py-2 rounded-lg border border-black/20 hover:bg-black/5 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              Previous
+            </button>
+            
+            {getPageNumbers().map((pageNum, idx) => {
+              if (pageNum === '...') {
+                return <span key={`ellipsis-${idx}`} className="px-2 text-black/40">...</span>;
+              }
+              return (
+                <button
+                  key={pageNum}
+                  onClick={() => setCurrentDisplayPage(pageNum as number)}
+                  className={`px-4 py-2 rounded-lg border transition-colors ${
+                    currentDisplayPage === pageNum
+                      ? 'bg-yellow-500 text-black border-yellow-500 font-semibold'
+                      : 'border-black/20 hover:bg-black/5'
+                  }`}
+                >
+                  {pageNum}
+                </button>
+              );
+            })}
+            
+            <button
+              onClick={() => setCurrentDisplayPage(Math.min(totalDisplayPages, currentDisplayPage + 1))}
+              disabled={currentDisplayPage === totalDisplayPages}
+              className="px-4 py-2 rounded-lg border border-black/20 hover:bg-black/5 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              Next
+            </button>
+          </div>
+        )}
       </>
     )}
 

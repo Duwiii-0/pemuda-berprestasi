@@ -475,14 +475,21 @@ static async getEligible(
   // 1. Get IDs of athletes already registered in this specific class
   const registeredParticipants = await prisma.tb_peserta_kompetisi.findMany({
     where: { id_kelas_kejuaraan: kelasId },
-    select: { id_atlet: true, id_atlet_2: true },
+    select: { 
+      id_atlet: true,
+      anggota_tim: {
+        select: { id_atlet: true }
+      }
+    },
   });
 
-  const registeredAtletIds = registeredParticipants.flatMap(p => {
-    const ids = [];
-    if (p.id_atlet) ids.push(p.id_atlet);
-    if (p.id_atlet_2) ids.push(p.id_atlet_2);
-    return ids;
+  const registeredAtletIds: number[] = [];
+  registeredParticipants.forEach(p => {
+    if (p.id_atlet) registeredAtletIds.push(p.id_atlet);
+    // Also add team members if is_team
+    p.anggota_tim.forEach(member => {
+      if (member.id_atlet) registeredAtletIds.push(member.id_atlet);
+    });
   });
 
   console.log("🚫 Registered athlete IDs for kelasId", kelasId, ":", registeredAtletIds);
@@ -722,6 +729,16 @@ static async deleteFile(id_atlet: number, fileType: keyof AtletFileInfo) {
   static async getAtletByKompetisi(id_kompetisi: number, cabang: "KYORUGI" | "POOMSAE" | undefined, page: number, limit: number, id_dojang?: number, id_kelas?: string, status?: "PENDING" | "APPROVED" | "REJECTED") {
     const offset = (page - 1) * limit;
 
+    console.log('🔍 [Backend] getAtletByKompetisi called with:', {
+      id_kompetisi,
+      cabang,
+      page,
+      limit,
+      id_dojang,
+      id_kelas,
+      status
+    });
+
     const whereCondition: any = {
       kelas_kejuaraan: {
         id_kompetisi,
@@ -743,26 +760,103 @@ static async deleteFile(id_atlet: number, fileType: keyof AtletFileInfo) {
         whereCondition.status = status;
     }
 
+    console.log('🔍 [Backend] whereCondition:', JSON.stringify(whereCondition, null, 2));
+    console.log('🔍 [Backend] skip:', offset, 'take:', limit);
+
     const [peserta, total] = await Promise.all([
       prisma.tb_peserta_kompetisi.findMany({
         where: whereCondition,
         skip: offset,
         take: limit,
         select: {
-          atlet: true,
-          status: true
+          id_peserta_kompetisi: true,
+          status: true,
+          is_team: true,
+          id_kelas_kejuaraan: true,
+          atlet: {
+            select: {
+              id_atlet: true,
+              nama_atlet: true,
+              tanggal_lahir: true,
+              nik: true,
+              berat_badan: true,
+              provinsi: true,
+              kota: true,
+              belt: true,
+              alamat: true,
+              no_telp: true,
+              tinggi_badan: true,
+              jenis_kelamin: true,
+              umur: true,
+              pas_foto: true, // ✅ CRITICAL: Include photo field!
+              dojang: {
+                select: {
+                  id_dojang: true,
+                  nama_dojang: true,
+                  email: true,
+                  no_telp: true,
+                  founder: true,
+                  negara: true,
+                  provinsi: true,
+                  kota: true
+                }
+              }
+            }
+          },
+          kelas_kejuaraan: {
+            select: {
+              id_kelas_kejuaraan: true,
+              id_kategori_event: true,
+              id_kelompok: true,
+              id_kelas_berat: true,
+              id_poomsae: true,
+              id_kompetisi: true,
+              cabang: true,
+              kategori_event: {
+                select: {
+                  id_kategori_event: true,
+                  nama_kategori: true
+                }
+              },
+              kelompok: {
+                select: {
+                  id_kelompok: true,
+                  nama_kelompok: true,
+                  usia_min: true,
+                  usia_max: true
+                }
+              },
+              kelas_berat: {
+                select: {
+                  id_kelas_berat: true,
+                  jenis_kelamin: true,
+                  batas_min: true,
+                  batas_max: true,
+                  nama_kelas: true
+                }
+              },
+              poomsae: {
+                select: {
+                  id_poomsae: true,
+                  nama_kelas: true
+                }
+              }
+            }
+          }
         }
       }),
       prisma.tb_peserta_kompetisi.count({ where: whereCondition })
     ]);
+
+    console.log('🔍 [Backend] Query result:', {
+      fetchedRecords: peserta.length,
+      totalInDB: total,
+      totalPages: Math.ceil(total / limit)
+    });
   
-    const atletFlat = peserta.map(p => ({
-      ...p.atlet,
-      status: p.status
-    }));
-  
+    // Return complete peserta data with all relations
     return {
-      data: atletFlat,
+      data: peserta,
       pagination: {
         currentPage: page,
         totalPages: Math.ceil(total / limit),
