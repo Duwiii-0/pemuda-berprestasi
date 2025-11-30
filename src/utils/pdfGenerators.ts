@@ -698,21 +698,6 @@ export const exportPesertaListPerLapangan = async (
       currentY -= rowHeight;
     });
 
-    // ========== FOOTER ==========
-    const footerY = mmToPt(15);
-    currentPage.drawText(`Generated on ${new Date().toLocaleDateString('id-ID', { 
-      day: 'numeric', 
-      month: 'long', 
-      year: 'numeric' 
-    })}`, {
-      x: mmToPt(15),
-      y: footerY,
-      size: 8,
-      font: helvetica,
-      color: rgb(0.5, 0.5, 0.5),
-    });
-
-    // Note: Continue to next kelas in the loop (will add new page)
   }
 
   // Save and download ONE PDF with all kelas
@@ -721,7 +706,17 @@ export const exportPesertaListPerLapangan = async (
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  link.download = `Daftar_Peserta_Lapangan_${options.lapanganNama}.pdf`;
+  
+  // Format tanggal untuk nama file (Hari_DD-MM-YYYY)
+  const dateObj = new Date(options.tanggal);
+  const dayName = dateObj.toLocaleDateString('id-ID', { weekday: 'long' });
+  const dateFormatted = dateObj.toLocaleDateString('id-ID', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+  }).replace(/\//g, '-');
+  
+  link.download = `Daftar_Peserta_Lapangan_${options.lapanganNama}_${dayName}_${dateFormatted}.pdf`;
   link.click();
   URL.revokeObjectURL(url);
 };
@@ -1069,20 +1064,6 @@ export const exportPesertaList = async (
     });
 
     currentY -= rowHeight;
-  });
-
-  // ========== FOOTER ==========
-  const footerY = mmToPt(15);
-  currentPage.drawText(`Generated on ${new Date().toLocaleDateString('id-ID', { 
-    day: 'numeric', 
-    month: 'long', 
-    year: 'numeric' 
-  })}`, {
-    x: mmToPt(15),
-    y: footerY,
-    size: 8,
-    font: helvetica,
-    color: rgb(0.5, 0.5, 0.5),
   });
 
   // Save and download
