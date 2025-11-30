@@ -17,7 +17,7 @@ import { useKompetisi } from "../../context/KompetisiContext";
 import { useAuth } from "../../context/authContext";
 import { useNavigate } from "react-router-dom";
 import { exportMultipleBracketsByLapangan } from "../../utils/exportBracketPDF";
-import { exportPesertaList } from "../../utils/pdfGenerators";
+import { exportPesertaListPerLapangan } from "../../utils/pdfGenerators";
 import taekwondo from "../../assets/logo/taekwondo.png";
 import sriwijaya from "../../assets/logo/sriwijaya.png";
 
@@ -1334,7 +1334,7 @@ const handleResetAndUpdateAntrian = async (
     }
   };
 
-  // ⭐ NEW: Handler for exporting peserta list per lapangan (multiple kelas)
+  // ⭐ NEW: Handler for exporting peserta list per lapangan (multiple kelas in ONE PDF)
   const handleExportPesertaList = async () => {
     if (!idKompetisi || selectedPesertaLapangan.length === 0) return;
 
@@ -1346,8 +1346,8 @@ const handleResetAndUpdateAntrian = async (
       const selectedHari = hariList.find((h) => h.tanggal === selectedPesertaHari);
       if (!selectedHari) throw new Error("Hari tidak ditemukan");
 
-      const failedKelas: string[] = [];
-      let totalExported = 0;
+      let totalLapanganExported = 0;
+      const failedLapangan: string[] = [];
 
       for (const lapanganId of selectedPesertaLapangan) {
         const lapangan = selectedHari.lapangan.find(
@@ -1357,6 +1357,12 @@ const handleResetAndUpdateAntrian = async (
 
         console.log(`\n📍 Processing Lapangan ${lapangan.nama_lapangan}`);
         console.log(`   Total kelas: ${lapangan.kelasDipilih.length}`);
+
+        // Collect all kelas data for this lapangan
+        const kelasListForThisLapangan: Array<{
+          kelasData: any;
+          namaKelas: string;
+        }> = [];
 
         // Get all kelas in this lapangan
         const kelasList = lapangan.kelasDipilih
@@ -1392,26 +1398,25 @@ const handleResetAndUpdateAntrian = async (
           return b.jumlahPeserta - a.jumlahPeserta;
         });
 
-        // Export each kelas
+        // Prepare data for each kelas
         for (const kelas of sortedKelas) {
           const kelasId = kelas.kelasId;
           const kelasData = kelas.kelasData;
 
-          try {
-            const pesertaKelas = pesertaList.filter(
-              (p) =>
-                p.status === "APPROVED" &&
-                p.kelas_kejuaraan?.id_kelas_kejuaraan === kelasId
-            );
+          const pesertaKelas = pesertaList.filter(
+            (p) =>
+              p.status === "APPROVED" &&
+              p.kelas_kejuaraan?.id_kelas_kejuaraan === kelasId
+          );
 
-            if (pesertaKelas.length === 0) {
-              failedKelas.push(`${kelas.namaKelas} (${lapangan.nama_lapangan}) - Tidak ada peserta`);
-              console.warn(`   ⚠️ ${kelas.namaKelas}: No participants`);
-              continue;
-            }
+          if (pesertaKelas.length === 0) {
+            console.warn(`   ⚠️ ${kelas.namaKelas}: No participants, skipping`);
+            continue;
+          }
 
-            // Prepare data
-            const dataToExport = {
+          // Add to list with participant data
+          kelasListForThisLapangan.push({
+            kelasData: {
               ...kelasData,
               peserta_kompetisi: pesertaKelas.map((p) => ({
                 id_peserta_kompetisi: p.id_peserta_kompetisi,
@@ -1435,10 +1440,17 @@ const handleResetAndUpdateAntrian = async (
                   },
                 })),
               })),
-            };
+            },
+            namaKelas: kelas.namaKelas,
+          });
 
-            // Export this kelas
-            await exportPesertaList(dataToExport, {
+          console.log(`   ✅ Added: ${kelas.namaKelas} (${pesertaKelas.length} peserta)`);
+        }
+
+        // Export ONE PDF for this lapangan (with all kelas)
+        if (kelasListForThisLapangan.length > 0) {
+          try {
+            await exportPesertaListPerLapangan(kelasListForThisLapangan, {
               namaKejuaraan: "Sriwijaya International Taekwondo Championship 2025",
               logoPBTI: taekwondo,
               logoEvent: sriwijaya,
@@ -1446,37 +1458,36 @@ const handleResetAndUpdateAntrian = async (
               tanggal: selectedPesertaHari,
             });
 
-            totalExported++;
-            console.log(`   ✅ Exported: ${kelas.namaKelas}`);
-          } catch (kelasError: any) {
-            console.error(`   ❌ Error:`, kelasError);
-            failedKelas.push(`${kelas.namaKelas} (${lapangan.nama_lapangan})`);
+            totalLapanganExported++;
+            console.log(`   ✅ Exported PDF: Lapangan ${lapangan.nama_lapangan} (${kelasListForThisLapangan.length} kelas)`);
+          } catch (exportError: any) {
+            console.error(`   ❌ Export error:`, exportError);
+            failedLapangan.push(lapangan.nama_lapangan);
           }
+        } else {
+          console.warn(`   ⚠️ No kelas with participants in Lapangan ${lapangan.nama_lapangan}`);
+          failedLapangan.push(`${lapangan.nama_lapangan} (tidak ada peserta)`);
         }
       }
 
       console.log(`\n📦 EXPORT SUMMARY`);
-      console.log(`   Total exported: ${totalExported}`);
-      console.log(`   Failed/skipped: ${failedKelas.length}`);
+      console.log(`   Total lapangan exported: ${totalLapanganExported}`);
+      console.log(`   Failed/skipped: ${failedLapangan.length}`);
 
-      if (totalExported === 0) {
-        if (failedKelas.length > 0) {
+      if (totalLapanganExported === 0) {
+        if (failedLapangan.length > 0) {
           throw new Error(
             `Tidak ada daftar peserta yang berhasil di-export.\n\n` +
-              `Kelas yang di-skip:\n${failedKelas.slice(0, 5).join("\n")}` +
-              (failedKelas.length > 5 ? `\n... dan ${failedKelas.length - 5} lainnya` : "")
+              `Lapangan yang di-skip:\n${failedLapangan.join("\n")}`
           );
         } else {
           throw new Error("Tidak ada daftar peserta yang berhasil di-export");
         }
       }
 
-      let message = `✅ Berhasil export ${totalExported} daftar peserta!`;
-      if (failedKelas.length > 0) {
-        message += `\n\n⚠️ ${failedKelas.length} kelas di-skip:\n${failedKelas.slice(0, 3).join("\n")}`;
-        if (failedKelas.length > 3) {
-          message += `\n... dan ${failedKelas.length - 3} lainnya`;
-        }
+      let message = `✅ Berhasil export ${totalLapanganExported} PDF daftar peserta!`;
+      if (failedLapangan.length > 0) {
+        message += `\n\n⚠️ ${failedLapangan.length} lapangan di-skip:\n${failedLapangan.join(", ")}`;
       }
 
       setSuccessMessage(message);
