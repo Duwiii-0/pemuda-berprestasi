@@ -397,51 +397,84 @@ export const exportPesertaListPerLapangan = async (
 
     // ========== HEADER SECTION ==========
     
-    // Logo PBTI (kiri)
+    // Logo PBTI (kiri) - SMALLER SIZE
     if (logoPBTIImage) {
       page.drawImage(logoPBTIImage, {
         x: mmToPt(15),
-        y: pageHeight - mmToPt(35),
-        width: mmToPt(25),
-        height: mmToPt(25),
+        y: pageHeight - mmToPt(30),
+        width: mmToPt(20),
+        height: mmToPt(20),
       });
     }
 
-    // Logo Event (kanan)
+    // Logo Event (kanan) - SMALLER SIZE
     if (logoEventImage) {
       page.drawImage(logoEventImage, {
-        x: pageWidth - mmToPt(40),
-        y: pageHeight - mmToPt(35),
-        width: mmToPt(25),
-        height: mmToPt(25),
+        x: pageWidth - mmToPt(35),
+        y: pageHeight - mmToPt(30),
+        width: mmToPt(20),
+        height: mmToPt(20),
       });
     }
 
-    // Nama Kejuaraan (center)
-    const titleWidth = helveticaBold.widthOfTextAtSize(
-      options.namaKejuaraan.toUpperCase(),
-      14
-    );
-    page.drawText(options.namaKejuaraan.toUpperCase(), {
-      x: (pageWidth - titleWidth) / 2,
-      y: pageHeight - mmToPt(18),
-      size: 14,
-      font: helveticaBold,
-      color: rgb(0.6, 0.05, 0.21), // Maroon
-    });
+    // Nama Kejuaraan (center) - SMALLER FONT & SPLIT IF TOO LONG
+    const titleText = options.namaKejuaraan.toUpperCase();
+    const titleFontSize = 11;
+    const titleWidth = helveticaBold.widthOfTextAtSize(titleText, titleFontSize);
+    const maxWidth = pageWidth - mmToPt(80); // Space for logos
+
+    if (titleWidth > maxWidth) {
+      // Split into 2 lines
+      const words = titleText.split(' ');
+      const midPoint = Math.ceil(words.length / 2);
+      const line1 = words.slice(0, midPoint).join(' ');
+      const line2 = words.slice(midPoint).join(' ');
+
+      const line1Width = helveticaBold.widthOfTextAtSize(line1, titleFontSize);
+      const line2Width = helveticaBold.widthOfTextAtSize(line2, titleFontSize);
+
+      page.drawText(line1, {
+        x: (pageWidth - line1Width) / 2,
+        y: pageHeight - mmToPt(16),
+        size: titleFontSize,
+        font: helveticaBold,
+        color: rgb(0.6, 0.05, 0.21),
+      });
+
+      page.drawText(line2, {
+        x: (pageWidth - line2Width) / 2,
+        y: pageHeight - mmToPt(21),
+        size: titleFontSize,
+        font: helveticaBold,
+        color: rgb(0.6, 0.05, 0.21),
+      });
+
+      currentY = pageHeight - mmToPt(28);
+    } else {
+      // Single line
+      page.drawText(titleText, {
+        x: (pageWidth - titleWidth) / 2,
+        y: pageHeight - mmToPt(18),
+        size: titleFontSize,
+        font: helveticaBold,
+        color: rgb(0.6, 0.05, 0.21),
+      });
+
+      currentY = pageHeight - mmToPt(25);
+    }
 
     // "DAFTAR PESERTA" subtitle
     const subtitleText = 'DAFTAR PESERTA';
-    const subtitleWidth = helveticaBold.widthOfTextAtSize(subtitleText, 12);
+    const subtitleWidth = helveticaBold.widthOfTextAtSize(subtitleText, 11);
     page.drawText(subtitleText, {
       x: (pageWidth - subtitleWidth) / 2,
-      y: pageHeight - mmToPt(25),
-      size: 12,
+      y: currentY,
+      size: 11,
       font: helveticaBold,
       color: rgb(0, 0, 0),
     });
 
-    currentY = pageHeight - mmToPt(40);
+    currentY -= mmToPt(10);
 
     // ========== INFO BOX (Kelas, Lapangan, Tanggal) ==========
     const infoBoxY = currentY;
