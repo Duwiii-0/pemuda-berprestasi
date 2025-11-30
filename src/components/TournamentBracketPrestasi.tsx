@@ -1797,7 +1797,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                 style={{
                   position: "absolute",
                   left: -lineLength,
-                  top: `${finalYPosition + 70 + 20 - 3}px`,
+                  top: `${finalYPosition + CARD_HEIGHT / 2 - 3}px`, // ✅ PERBAIKAN: gunakan center card
                   width: lineLength,
                   height: 6,
                   pointerEvents: "none",
