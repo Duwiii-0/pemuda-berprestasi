@@ -178,6 +178,12 @@ const DataKompetisi = () => {
     // Apply the calculated widths to the worksheet
     ws['!cols'] = columnWidths;
 
+    // Add AutoFilter capability to the table
+    if (ws['!ref']) {
+      const range = XLSX.utils.decode_range(ws['!ref']);
+      ws['!autofilter'] = { ref: XLSX.utils.encode_range(range) };
+    }
+
     XLSX.utils.book_append_sheet(wb, ws, "Daftar Peserta");
 
     XLSX.writeFile(wb, `Daftar_Peserta_${selectedKompetisi?.nama_event || 'Kompetisi'}.xlsx`);
