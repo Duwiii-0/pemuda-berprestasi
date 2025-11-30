@@ -369,7 +369,7 @@ const UnifiedRegistration = ({
       formData.categoryType === "prestasi" &&
       formData.selectedPoomsae
     ) {
-      filter.poomsaeId = Number(formData.selectedPoomsae.value);
+      filter.poomsaeName = formData.selectedPoomsae.value; // Send name instead of ID
       filter.beratBadanId = 0; // Not needed for POOMSAE
     }
 
@@ -854,7 +854,7 @@ const UnifiedRegistration = ({
                   </label>
                   <LockedSelect
                     unstyled
-                    options={poomsaeOptions}
+                    options={[{ value: "Individu", label: "Individu" }]}
                     value={formData.selectedPoomsae}
                     onChange={(value: OptionType | null) =>
                       setFormData(prevData => ({
