@@ -1461,14 +1461,19 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
           background: "transparent",
           display: "flex",
           flexDirection: "column",
-          justifyContent: "space-around",
+          justifyContent: "space-between",
         }}
       >
         {/* Participant A - TOP (Merah) */}
         <div
-          className="flex-1 flex flex-col items-center justify-center"
           style={{
-            minHeight: "45px",
+            flex: 1,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "flex-end",
+            minHeight: "50px",
+            position: "relative",
           }}
         >
           {match.peserta_a ? (
@@ -1479,123 +1484,113 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
               >
                 {getParticipantName(match.peserta_a)}
               </p>
-              {hasScores && (
-                <span
-                  className="text-2xs font-bold text-center"
-                  style={{ color: "#DC143C", marginTop: "2px" }}
-                >
-                  {match.skor_a}
-                </span>
-              )}
+              <p
+                className="text-xs text-center truncate w-full"
+                style={{ color: "#666", opacity: 0.7, marginTop: "2px" }}
+              >
+                {getDojoName(match.peserta_a)}
+              </p>
             </>
           ) : (
             <span className="text-xs text-gray-400 text-center">TBD</span>
           )}
+          {/* Garis ke pusat dari atlet A */}
+          <div
+            style={{
+              position: "absolute",
+              bottom: "-20px",
+              left: "50%",
+              transform: "translateX(-50%)",
+              width: "2px",
+              height: "20px",
+              backgroundColor: "#3B82F6",
+            }}
+          />
         </div>
 
-        {/* Dividing Line - MERAH */}
+        {/* Main Center Line dengan Nomor Partai */}
         <div
           style={{
-            height: "2px",
-            backgroundColor: "#DC143C",
-            width: "100%",
-            margin: "4px 0",
-          }}
-        />
-
-        {/* Dojo A */}
-        <div
-          className="flex-1 flex items-center justify-center"
-          style={{
-            minHeight: "20px",
+            height: "40px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            position: "relative",
           }}
         >
-          {match.peserta_a ? (
-            <p
-              className="text-xs text-center truncate w-full"
-              style={{ color: "#666", opacity: 0.7 }}
-            >
-              {getDojoName(match.peserta_a)}
-            </p>
-          ) : null}
-        </div>
+          {/* Horizontal Main Line */}
+          <div
+            style={{
+              position: "absolute",
+              width: "100%",
+              height: "2px",
+              backgroundColor: "#3B82F6",
+              zIndex: 0,
+            }}
+          />
 
-        {/* Match Number - CENTER */}
-        <div
-          className="flex items-center justify-center"
-          style={{
-            minHeight: "30px",
-          }}
-        >
-          <div className="flex items-center gap-2">
+          {/* Match Number Badge */}
+          <div
+            style={{
+              position: "relative",
+              zIndex: 1,
+              backgroundColor: "#F5FBEF",
+              paddingX: "8px",
+              paddingY: "4px",
+            }}
+          >
             {match.nomor_partai ? (
-              <span className="text-sm font-bold" style={{ color: "#990D35" }}>
+              <span className="text-xs font-bold" style={{ color: "#3B82F6" }}>
                 Partai {match.nomor_partai}
               </span>
             ) : match.ronde === 1 &&
               ((match.peserta_a && !match.peserta_b) ||
                 (!match.peserta_a && match.peserta_b)) ? (
-              <span
-                className="text-xs font-bold"
-                style={{
-                  color: "#F5B700",
-                }}
-              >
+              <span className="text-xs font-bold" style={{ color: "#F5B700" }}>
                 BYE
               </span>
             ) : null}
           </div>
         </div>
 
-        {/* Dojo B */}
-        <div
-          className="flex-1 flex items-center justify-center"
-          style={{
-            minHeight: "20px",
-          }}
-        >
-          {match.peserta_b ? (
-            <p
-              className="text-xs text-center truncate w-full"
-              style={{ color: "#666", opacity: 0.7 }}
-            >
-              {getDojoName(match.peserta_b)}
-            </p>
-          ) : null}
-        </div>
-
-        {/* Dividing Line - BIRU */}
-        <div
-          style={{
-            height: "2px",
-            backgroundColor: "#3B82F6",
-            width: "100%",
-            margin: "4px 0",
-          }}
-        />
-
         {/* Participant B - BOTTOM (Biru) */}
         <div
-          className="flex-1 flex flex-col items-center justify-center"
           style={{
-            minHeight: "45px",
+            flex: 1,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "flex-start",
+            minHeight: "50px",
+            position: "relative",
           }}
         >
+          {/* Garis ke pusat dari atlet B */}
+          <div
+            style={{
+              position: "absolute",
+              top: "-20px",
+              left: "50%",
+              transform: "translateX(-50%)",
+              width: "2px",
+              height: "20px",
+              backgroundColor: "#3B82F6",
+            }}
+          />
+
           {match.peserta_b ? (
             <>
-              {hasScores && (
-                <span
-                  className="text-2xs font-bold text-center"
-                  style={{ color: "#3B82F6", marginBottom: "2px" }}
-                >
-                  {match.skor_b}
-                </span>
-              )}
               <p
                 className="font-bold text-xs leading-tight text-center truncate w-full"
                 style={{ color: "#3B82F6" }}
               >
                 {getParticipantName(match.peserta_b)}
+              </p>
+              <p
+                className="text-xs text-center truncate w-full"
+                style={{ color: "#666", opacity: 0.7, marginTop: "2px" }}
+              >
+                {getDojoName(match.peserta_b)}
               </p>
             </>
           ) : (
@@ -1603,11 +1598,10 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
           )}
         </div>
 
-        {/* Action Buttons - BOTTOM */}
+        {/* Action Buttons - BOTTOM (Hidden) */}
         <div
-          className="flex items-center justify-center gap-2 mt-2"
           style={{
-            minHeight: "30px",
+            display: "none",
           }}
         >
           {/* Edit match scores/details button */}
