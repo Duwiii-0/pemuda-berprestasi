@@ -17,6 +17,7 @@ import { useKompetisi } from "../../context/KompetisiContext";
 import { useAuth } from "../../context/authContext";
 import { useNavigate } from "react-router-dom";
 import { exportMultipleBracketsByLapangan } from "../../utils/exportBracketPDF";
+import { exportPesertaList } from "../../utils/pdfGenerators";
 import taekwondo from "../../assets/logo/taekwondo.png";
 import sriwijaya from "../../assets/logo/sriwijaya.png";
 
@@ -104,6 +105,9 @@ const JadwalPertandingan: React.FC = () => {
   const [selectedExportLapangan, setSelectedExportLapangan] = useState<
     number[]
   >([]);
+  const [showPesertaListModal, setShowPesertaListModal] = useState(false);
+  const [selectedPesertaKelas, setSelectedPesertaKelas] = useState<number | null>(null);
+  const [exportingPesertaPDF, setExportingPesertaPDF] = useState(false);
   const [autoResetBeforeGenerate, setAutoResetBeforeGenerate] = useState(true); // Default true = selalu reset
   const [exportingPDF, setExportingPDF] = useState(false);
   const [lapanganSearchTerms, setLapanganSearchTerms] = useState<
@@ -1329,6 +1333,82 @@ const handleResetAndUpdateAntrian = async (
     }
   };
 
+  // ⭐ NEW: Handler for exporting peserta list (simple table)
+  const handleExportPesertaList = async () => {
+    if (!selectedPesertaKelas || !idKompetisi) return;
+
+    setExportingPesertaPDF(true);
+    setErrorMessage("");
+    setSuccessMessage("");
+
+    try {
+      // Find kelas data
+      const kelasData = sortedKelasKejuaraanList.find(
+        (k) => k.id_kelas_kejuaraan === selectedPesertaKelas
+      );
+
+      if (!kelasData) {
+        throw new Error("Kelas tidak ditemukan");
+      }
+
+      // Get approved peserta for this kelas
+      const pesertaKelas = pesertaList.filter(
+        (p) =>
+          p.status === "APPROVED" &&
+          p.kelas_kejuaraan?.id_kelas_kejuaraan === selectedPesertaKelas
+      );
+
+      if (pesertaKelas.length === 0) {
+        throw new Error("Tidak ada peserta yang terdaftar di kelas ini");
+      }
+
+      // Prepare data for export
+      const dataToExport = {
+        ...kelasData,
+        peserta_kompetisi: pesertaKelas.map((p) => ({
+          id_peserta_kompetisi: p.id_peserta_kompetisi,
+          id_atlet: p.atlet?.id_atlet,
+          is_team: p.is_team,
+          status: p.status,
+          atlet: p.atlet
+            ? {
+                nama_atlet: p.atlet.nama_atlet,
+                dojang: {
+                  nama_dojang: p.atlet.dojang?.nama_dojang || "",
+                },
+              }
+            : undefined,
+          anggota_tim: p.anggota_tim?.map((at) => ({
+            atlet: {
+              nama_atlet: at.atlet.nama_atlet,
+              dojang: {
+                nama_dojang: at.atlet.dojang?.nama_dojang || "",
+              },
+            },
+          })),
+        })),
+      };
+
+      // Call export function
+      await exportPesertaList(dataToExport, {
+        namaKejuaraan: "Sriwijaya International Taekwondo Championship 2025",
+        logoPBTI: taekwondo,
+        logoEvent: sriwijaya,
+      });
+
+      setSuccessMessage(`✅ Berhasil export daftar peserta ${generateNamaKelas(kelasData)}!`);
+      setShowPesertaListModal(false);
+      setSelectedPesertaKelas(null);
+
+      setTimeout(() => setSuccessMessage(""), 5000);
+    } catch (err: any) {
+      console.error("❌ Error exporting peserta list:", err);
+      setErrorMessage(err.message || "Gagal export daftar peserta");
+    } finally {
+      setExportingPesertaPDF(false);
+    }
+  };
+
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#F5FBEF" }}>
       <div className="p-4 sm:p-6 lg:p-8 max-w-full">
@@ -1994,6 +2074,16 @@ const handleResetAndUpdateAntrian = async (
                   <Download size={16} />
                   Export Bracket per Lapangan
                 </button>
+                {/* 🆕 BUTTON EXPORT DAFTAR PESERTA */}
+                <button
+                  onClick={() => setShowPesertaListModal(true)}
+                  disabled={sortedKelasKejuaraanList.length === 0}
+                  className="flex items-center gap-2 px-4 py-3 rounded-xl font-medium"
+                  style={{ backgroundColor: "#4F46E5", color: "#F5FBEF" }}
+                >
+                  <ClipboardList size={16} />
+                  Export Daftar Peserta
+                </button>
               </div>
               {/* 🆕 BUTTON AUTO-GENERATE */}
               <div className="mb-6 flex gap-3">
@@ -2490,6 +2580,116 @@ const handleResetAndUpdateAntrian = async (
                 style={{ backgroundColor: "#990D35", color: "#F5FBEF" }}
               >
                 {exportingPDF ? (
+                  <>
+                    <Loader size={16} className="animate-spin inline mr-2" />
+                    Generating PDF...
+                  </>
+                ) : (
+                  <>
+                    <Download size={16} className="inline mr-2" />
+                    Export PDF
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* ============================================================================ */}
+      {/* MODAL EXPORT DAFTAR PESERTA */}
+      {/* ============================================================================ */}
+      {showPesertaListModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+            <div
+              className="p-6 border-b sticky top-0 bg-white z-10"
+              style={{ borderColor: "#4F46E5" }}
+            >
+              <h3 className="text-xl font-bold" style={{ color: "#050505" }}>
+                📋 Export Daftar Peserta
+              </h3>
+              <p
+                className="text-sm mt-1"
+                style={{ color: "#050505", opacity: 0.6 }}
+              >
+                Pilih kelas kejuaraan untuk export daftar peserta (tanpa bracket)
+              </p>
+            </div>
+
+            <div className="p-6 space-y-4">
+              {/* Pilih Kelas */}
+              <div>
+                <label
+                  className="block text-sm font-medium mb-2"
+                  style={{ color: "#050505" }}
+                >
+                  Pilih Kelas Kejuaraan
+                </label>
+                <select
+                  value={selectedPesertaKelas || ""}
+                  onChange={(e) =>
+                    setSelectedPesertaKelas(
+                      e.target.value ? Number(e.target.value) : null
+                    )
+                  }
+                  className="w-full px-3 py-2 rounded-lg border"
+                  style={{ borderColor: "#4F46E5" }}
+                >
+                  <option value="">-- Pilih Kelas --</option>
+                  {sortedKelasKejuaraanList.map((kelas) => {
+                    const pesertaCount = pesertaList.filter(
+                      (p) =>
+                        p.status === "APPROVED" &&
+                        p.kelas_kejuaraan?.id_kelas_kejuaraan ===
+                          kelas.id_kelas_kejuaraan
+                    ).length;
+
+                    return (
+                      <option
+                        key={kelas.id_kelas_kejuaraan}
+                        value={kelas.id_kelas_kejuaraan}
+                      >
+                        {generateNamaKelas(kelas)} ({pesertaCount} peserta)
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
+
+              {/* Info terpilih */}
+              {selectedPesertaKelas && (
+                <div
+                  className="p-3 rounded-lg"
+                  style={{ backgroundColor: "rgba(79,70,229,0.1)" }}
+                >
+                  <p
+                    className="text-sm font-medium"
+                    style={{ color: "#4F46E5" }}
+                  >
+                    ℹ️ PDF akan berisi tabel daftar nama peserta dan dojang
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <div className="p-6 border-t flex gap-3 sticky bottom-0 bg-white z-10">
+              <button
+                onClick={() => {
+                  setShowPesertaListModal(false);
+                  setSelectedPesertaKelas(null);
+                }}
+                className="flex-1 py-3 px-4 rounded-lg border-2 font-medium"
+                style={{ borderColor: "#4F46E5", color: "#4F46E5" }}
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleExportPesertaList}
+                disabled={!selectedPesertaKelas || exportingPesertaPDF}
+                className="flex-1 py-3 px-4 rounded-lg font-medium disabled:opacity-50"
+                style={{ backgroundColor: "#4F46E5", color: "#F5FBEF" }}
+              >
+                {exportingPesertaPDF ? (
                   <>
                     <Loader size={16} className="animate-spin inline mr-2" />
                     Generating PDF...

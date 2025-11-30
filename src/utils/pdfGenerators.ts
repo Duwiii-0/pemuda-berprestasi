@@ -1,5 +1,5 @@
 import { PDFDocument, rgb } from "pdf-lib";
-import { Atlet } from "../types";
+import type { Atlet } from "../types";
 
 const COORDS_MM_IDCARD = {
   photo: {
@@ -330,4 +330,248 @@ export const generateCertificatePdfBytes = async (atlet: Atlet, medalStatus: Med
     });
 
     return await pdfDoc.save();
+};
+
+/**
+ * 🆕 Export Detail Peserta per Kelas Kejuaraan
+ * Format: Simple table with participant names and dojang
+ */
+export const exportPesertaList = async (
+  kelasData: any,
+  options: {
+    namaKejuaraan: string;
+    logoPBTI: string;
+    logoEvent: string;
+  }
+) => {
+  const pdfDoc = await PDFDocument.create();
+  const helveticaBold = await pdfDoc.embedFont('Helvetica-Bold');
+  const helvetica = await pdfDoc.embedFont('Helvetica');
+
+  // Helper function
+  const mmToPt = (mm: number) => mm * 2.83465;
+
+  // Prepare peserta data
+  const pesertaList = kelasData.peserta_kompetisi || [];
+  
+  // Generate nama kelas
+  const parts = [];
+  if (kelasData.cabang) parts.push(kelasData.cabang);
+  if (kelasData.kategori_event?.nama_kategori) parts.push(kelasData.kategori_event.nama_kategori);
+  if (kelasData.kelompok?.nama_kelompok) parts.push(kelasData.kelompok.nama_kelompok);
+  
+  if (kelasData.kelas_berat) {
+    const gender = kelasData.kelas_berat.jenis_kelamin === 'LAKI_LAKI' ? 'Putra' : 'Putri';
+    parts.push(gender);
+  }
+  
+  if (kelasData.kelas_berat?.nama_kelas) parts.push(kelasData.kelas_berat.nama_kelas);
+  if (kelasData.poomsae?.nama_kelas) parts.push(kelasData.poomsae.nama_kelas);
+  if (kelasData.poomsae_type) parts.push(kelasData.poomsae_type);
+  
+  const namaKelas = parts.join(' - ');
+
+  // Add page
+  const page = pdfDoc.addPage([mmToPt(210), mmToPt(297)]); // A4
+  const { height: pageHeight } = page.getSize();
+
+  let currentY = pageHeight - mmToPt(20);
+
+  // HEADER
+  page.drawText(options.namaKejuaraan.toUpperCase(), {
+    x: mmToPt(20),
+    y: currentY,
+    size: 16,
+    font: helveticaBold,
+    color: rgb(0.6, 0.05, 0.21), // Maroon
+  });
+  currentY -= mmToPt(7);
+
+  page.drawText('DAFTAR PESERTA', {
+    x: mmToPt(20),
+    y: currentY,
+    size: 14,
+    font: helveticaBold,
+    color: rgb(0, 0, 0),
+  });
+  currentY -= mmToPt(8);
+
+  // Nama Kelas
+  page.drawText(`Kelas: ${namaKelas}`, {
+    x: mmToPt(20),
+    y: currentY,
+    size: 11,
+    font: helvetica,
+    color: rgb(0, 0, 0),
+  });
+  currentY -= mmToPt(7);
+
+  // Total Peserta
+  page.drawText(`Jumlah Peserta: ${pesertaList.length}`, {
+    x: mmToPt(20),
+    y: currentY,
+    size: 10,
+    font: helvetica,
+    color: rgb(0.3, 0.3, 0.3),
+  });
+  currentY -= mmToPt(10);
+
+  // TABLE HEADER
+  const tableStartX = mmToPt(20);
+  const colNo = tableStartX;
+  const colNama = colNo + mmToPt(15);
+  const colDojang = colNama + mmToPt(80);
+  const rowHeight = mmToPt(7);
+
+  // Draw header background
+  page.drawRectangle({
+    x: tableStartX,
+    y: currentY - mmToPt(2),
+    width: mmToPt(170),
+    height: mmToPt(7),
+    color: rgb(0.6, 0.05, 0.21), // Maroon
+  });
+
+  // Header text
+  page.drawText('No', {
+    x: colNo + mmToPt(2),
+    y: currentY,
+    size: 10,
+    font: helveticaBold,
+    color: rgb(1, 1, 1),
+  });
+
+  page.drawText('Nama Peserta', {
+    x: colNama + mmToPt(2),
+    y: currentY,
+    size: 10,
+    font: helveticaBold,
+    color: rgb(1, 1, 1),
+  });
+
+  page.drawText('Dojang', {
+    x: colDojang + mmToPt(2),
+    y: currentY,
+    size: 10,
+    font: helveticaBold,
+    color: rgb(1, 1, 1),
+  });
+
+  currentY -= mmToPt(8);
+
+  // TABLE ROWS
+  let currentPage = page;
+  
+  pesertaList.forEach((peserta: any, index: number) => {
+    // Check if need new page
+    if (currentY < mmToPt(30)) {
+      currentPage = pdfDoc.addPage([mmToPt(210), mmToPt(297)]);
+      currentY = currentPage.getHeight() - mmToPt(20);
+      
+      // Redraw header on new page
+      currentPage.drawRectangle({
+        x: tableStartX,
+        y: currentY - mmToPt(2),
+        width: mmToPt(170),
+        height: mmToPt(7),
+        color: rgb(0.6, 0.05, 0.21),
+      });
+
+      currentPage.drawText('No', {
+        x: colNo + mmToPt(2),
+        y: currentY,
+        size: 10,
+        font: helveticaBold,
+        color: rgb(1, 1, 1),
+      });
+
+      currentPage.drawText('Nama Peserta', {
+        x: colNama + mmToPt(2),
+        y: currentY,
+        size: 10,
+        font: helveticaBold,
+        color: rgb(1, 1, 1),
+      });
+
+      currentPage.drawText('Dojang', {
+        x: colDojang + mmToPt(2),
+        y: currentY,
+        size: 10,
+        font: helveticaBold,
+        color: rgb(1, 1, 1),
+      });
+
+      currentY -= mmToPt(8);
+    }
+
+    // Alternate row background
+    if (index % 2 === 1) {
+      currentPage.drawRectangle({
+        x: tableStartX,
+        y: currentY - mmToPt(1.5),
+        width: mmToPt(170),
+        height: rowHeight,
+        color: rgb(0.95, 0.95, 0.95),
+      });
+    }
+
+    // Row data
+    const namaPeserta = peserta.is_team
+      ? `Tim ${peserta.anggota_tim?.[0]?.atlet?.dojang?.nama_dojang || 'Unknown'}`
+      : peserta.atlet?.nama_atlet || 'Unknown';
+    
+    const dojangName = peserta.is_team
+      ? peserta.anggota_tim?.[0]?.atlet?.dojang?.nama_dojang || '-'
+      : peserta.atlet?.dojang?.nama_dojang || '-';
+
+    currentPage.drawText(`${index + 1}`, {
+      x: colNo + mmToPt(2),
+      y: currentY,
+      size: 9,
+      font: helvetica,
+      color: rgb(0, 0, 0),
+    });
+
+    currentPage.drawText(namaPeserta, {
+      x: colNama + mmToPt(2),
+      y: currentY,
+      size: 9,
+      font: helvetica,
+      color: rgb(0, 0, 0),
+    });
+
+    currentPage.drawText(dojangName, {
+      x: colDojang + mmToPt(2),
+      y: currentY,
+      size: 9,
+      font: helvetica,
+      color: rgb(0, 0, 0),
+    });
+
+    currentY -= rowHeight;
+  });
+
+  // Footer on last page
+  const footerY = mmToPt(15);
+  currentPage.drawText(`Generated on ${new Date().toLocaleDateString('id-ID', { 
+    day: 'numeric', 
+    month: 'long', 
+    year: 'numeric' 
+  })}`, {
+    x: mmToPt(20),
+    y: footerY,
+    size: 8,
+    font: helvetica,
+    color: rgb(0.5, 0.5, 0.5),
+  });
+
+  // Save and download
+  const pdfBytes = await pdfDoc.save();
+  const blob = new Blob([new Uint8Array(pdfBytes)], { type: 'application/pdf' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `Daftar_Peserta_${namaKelas.replace(/\s+/g, '_')}.pdf`;
+  link.click();
+  URL.revokeObjectURL(url);
 };
