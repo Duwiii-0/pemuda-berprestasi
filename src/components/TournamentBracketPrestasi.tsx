@@ -1745,14 +1745,15 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
 
     // Get semi-final Y positions
     let finalYPosition = 0;
+    const HEADER_HEIGHT = 60; // Tinggi round header + margin
 
     if (isDirectFinal || isThreeParticipants) {
       // Untuk 2 atau 3 peserta, posisi final di tengah
-      finalYPosition = 100;
+      finalYPosition = 100 + HEADER_HEIGHT; // ✅ Tambahkan offset header
     } else {
       const leftSemiY = leftPositions[leftPositions.length - 1]?.[0] || 0;
       const rightSemiY = rightPositions[rightPositions.length - 1]?.[0] || 0;
-      finalYPosition = (leftSemiY + rightSemiY) / 2;
+      finalYPosition = (leftSemiY + rightSemiY) / 2 + HEADER_HEIGHT; // ✅ Tambahkan offset header
     }
 
     const lineLength = CENTER_GAP / 2 + 60;
