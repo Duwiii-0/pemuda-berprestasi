@@ -163,6 +163,8 @@ const UnifiedRegistration = ({
 
   // fetch kelas kejuaraan
   useEffect(() => {
+    let isCancelled = false;
+    
     if (
       !formData.styleType ||
       !formData.categoryType ||
@@ -238,24 +240,32 @@ const UnifiedRegistration = ({
     (async () => {
       try {
         const kelasId = await fetchKelasKejuaraan(kompetisiId, kelasFilter);
-        if (kelasId) {
-          console.log("✅ Kelas kejuaraan didapat:", kelasId);
-          // Update formData untuk kelasKejuaraanId
-          setFormData(prevData => ({
-            ...prevData,
-            kelasKejuaraanId: kelasId,
-          }));
-        } else {
-          console.warn("⚠️ fetchKelasKejuaraan returned no ID for the given filter.");
-          // Clear the ID if no class is found to prevent using a stale ID
-          setFormData(prevData => ({...prevData, kelasKejuaraanId: null}));
+        if (!isCancelled) {
+          if (kelasId) {
+            console.log("✅ Kelas kejuaraan didapat:", kelasId);
+            // Update formData untuk kelasKejuaraanId
+            setFormData(prevData => ({
+              ...prevData,
+              kelasKejuaraanId: kelasId,
+            }));
+          } else {
+            console.warn("⚠️ fetchKelasKejuaraan returned no ID for the given filter.");
+            // Clear the ID if no class is found to prevent using a stale ID
+            setFormData(prevData => ({...prevData, kelasKejuaraanId: null}));
+          }
         }
       } catch (err) {
-        console.error("❌ Gagal fetch kelas kejuaraan:", err);
-        // Also clear the ID on error
-        setFormData(prevData => ({...prevData, kelasKejuaraanId: null}));
+        if (!isCancelled) {
+          console.error("❌ Gagal fetch kelas kejuaraan:", err);
+          // Also clear the ID on error
+          setFormData(prevData => ({...prevData, kelasKejuaraanId: null}));
+        }
       }
     })();
+    
+    return () => {
+      isCancelled = true;
+    };
   }, [
     formData.styleType,
     formData.categoryType,
