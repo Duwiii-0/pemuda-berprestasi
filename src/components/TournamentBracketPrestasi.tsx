@@ -1757,7 +1757,8 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
     }
 
     const lineLength = CENTER_GAP / 2 + 60;
-    const centerLineY = finalYPosition + CARD_HEIGHT / 2 - 13; // Center line of final match card, perfectly centered
+    const finalCardCenterY = finalYPosition + CARD_HEIGHT / 2; // Center vertikal card final
+    const lineYPosition = finalCardCenterY - 10; // SVG line position (karena line ada di y=3)
 
     return (
       <div
@@ -1801,7 +1802,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                 style={{
                   position: "absolute",
                   left: -lineLength,
-                  top: `${centerLineY - 3}px`, // Gunakan centerLineY untuk zero offset
+                  top: `${lineYPosition}px`, // ✅ Gunakan variable yang sudah dihitung
                   width: lineLength,
                   height: 6,
                   pointerEvents: "none",
@@ -1824,7 +1825,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                 style={{
                   position: "absolute",
                   right: -lineLength,
-                  top: `${centerLineY - 3}px`, // Gunakan centerLineY untuk zero offset
+                  top: `${lineYPosition}px`, // ✅ Gunakan variable yang sudah dihitung
                   width: lineLength,
                   height: 6,
                   pointerEvents: "none",
