@@ -1753,7 +1753,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
     } else {
       const leftSemiY = leftPositions[leftPositions.length - 1]?.[0] || 0;
       const rightSemiY = rightPositions[rightPositions.length - 1]?.[0] || 0;
-      finalYPosition = (leftSemiY + rightSemiY) / 2 + HEADER_HEIGHT; // ✅ Tambahkan offset header
+      finalYPosition = (leftSemiY + rightSemiY) / 2 + HEADER_HEIGHT + 50; // ✅ Tambahkan offset header
     }
 
     const lineLength = CENTER_GAP / 2 + 60;
