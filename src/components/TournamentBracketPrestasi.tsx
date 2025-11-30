@@ -208,10 +208,10 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
     message: "",
   });
 
-  const CARD_WIDTH = 310;
-  const CARD_HEIGHT = 140;
-  const ROUND_GAP = 70;
-  const BASE_VERTICAL_GAP = 60;
+  const CARD_WIDTH = 380;
+  const CARD_HEIGHT = 180;
+  const ROUND_GAP = 100;
+  const BASE_VERTICAL_GAP = 80;
   const CENTER_GAP = 100;
 
   const showNotification = (
@@ -1472,37 +1472,47 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "flex-end",
-            minHeight: "50px",
+            minHeight: "60px",
             position: "relative",
           }}
         >
           {match.peserta_a ? (
             <>
               <p
-                className="font-bold text-xs leading-tight text-center truncate w-full"
-                style={{ color: "#DC143C" }}
+                className="font-bold leading-tight text-center truncate w-full"
+                style={{ color: "#DC143C", fontSize: "14px" }}
               >
                 {getParticipantName(match.peserta_a)}
               </p>
               <p
-                className="text-xs text-center truncate w-full"
-                style={{ color: "#666", opacity: 0.7, marginTop: "2px" }}
+                className="text-center truncate w-full"
+                style={{
+                  color: "#666",
+                  opacity: 0.7,
+                  marginTop: "2px",
+                  fontSize: "12px",
+                }}
               >
                 {getDojoName(match.peserta_a)}
               </p>
             </>
           ) : (
-            <span className="text-xs text-gray-400 text-center">TBD</span>
+            <span
+              className="text-gray-400 text-center"
+              style={{ fontSize: "12px" }}
+            >
+              TBD
+            </span>
           )}
           {/* Garis ke pusat dari atlet A */}
           <div
             style={{
               position: "absolute",
-              bottom: "-20px",
+              bottom: "-30px",
               left: "50%",
               transform: "translateX(-50%)",
-              width: "2px",
-              height: "20px",
+              width: "3px",
+              height: "30px",
               backgroundColor: "#3B82F6",
             }}
           />
@@ -1511,7 +1521,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
         {/* Main Center Line dengan Nomor Partai */}
         <div
           style={{
-            height: "40px",
+            height: "60px",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -1523,7 +1533,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
             style={{
               position: "absolute",
               width: "100%",
-              height: "2px",
+              height: "3px",
               backgroundColor: "#3B82F6",
               zIndex: 0,
             }}
@@ -1535,18 +1545,24 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
               position: "relative",
               zIndex: 1,
               backgroundColor: "#F5FBEF",
-              paddingX: "8px",
-              paddingY: "4px",
+              paddingX: "12px",
+              paddingY: "6px",
             }}
           >
             {match.nomor_partai ? (
-              <span className="text-xs font-bold" style={{ color: "#3B82F6" }}>
+              <span
+                className="font-bold"
+                style={{ color: "#3B82F6", fontSize: "14px" }}
+              >
                 Partai {match.nomor_partai}
               </span>
             ) : match.ronde === 1 &&
               ((match.peserta_a && !match.peserta_b) ||
                 (!match.peserta_a && match.peserta_b)) ? (
-              <span className="text-xs font-bold" style={{ color: "#F5B700" }}>
+              <span
+                className="font-bold"
+                style={{ color: "#F5B700", fontSize: "14px" }}
+              >
                 BYE
               </span>
             ) : null}
@@ -1561,7 +1577,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "flex-start",
-            minHeight: "50px",
+            minHeight: "60px",
             position: "relative",
           }}
         >
@@ -1569,11 +1585,11 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
           <div
             style={{
               position: "absolute",
-              top: "-20px",
+              top: "-30px",
               left: "50%",
               transform: "translateX(-50%)",
-              width: "2px",
-              height: "20px",
+              width: "3px",
+              height: "30px",
               backgroundColor: "#3B82F6",
             }}
           />
@@ -1581,20 +1597,30 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
           {match.peserta_b ? (
             <>
               <p
-                className="font-bold text-xs leading-tight text-center truncate w-full"
-                style={{ color: "#3B82F6" }}
+                className="font-bold leading-tight text-center truncate w-full"
+                style={{ color: "#3B82F6", fontSize: "14px" }}
               >
                 {getParticipantName(match.peserta_b)}
               </p>
               <p
-                className="text-xs text-center truncate w-full"
-                style={{ color: "#666", opacity: 0.7, marginTop: "2px" }}
+                className="text-center truncate w-full"
+                style={{
+                  color: "#666",
+                  opacity: 0.7,
+                  marginTop: "2px",
+                  fontSize: "12px",
+                }}
               >
                 {getDojoName(match.peserta_b)}
               </p>
             </>
           ) : (
-            <span className="text-xs text-gray-400 text-center">TBD</span>
+            <span
+              className="text-gray-400 text-center"
+              style={{ fontSize: "12px" }}
+            >
+              TBD
+            </span>
           )}
         </div>
 
