@@ -1441,7 +1441,8 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
   const renderMatchCard = (
     match: Match,
     key: string | number,
-    matchIndex: number
+    matchIndex: number,
+    side?: "left" | "right"
   ) => {
     const hasScores = match.skor_a > 0 || match.skor_b > 0;
     const winner = hasScores
@@ -1462,6 +1463,8 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
           display: "flex",
           flexDirection: "column",
           justifyContent: "space-between",
+          textAlign:
+            side === "right" ? "right" : side === "left" ? "left" : "center",
         }}
       >
         {/* Participant A - TOP (Merah) */}
@@ -2343,7 +2346,8 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                       {renderMatchCard(
                         match,
                         match.id_match,
-                        matches.findIndex((m) => m.id_match === match.id_match)
+                        matches.findIndex((m) => m.id_match === match.id_match),
+                        side
                       )}
                     </div>
                   );
