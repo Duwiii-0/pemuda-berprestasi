@@ -100,8 +100,6 @@ const DataKompetisi = () => {
   const [itemsPerPage] = useState(100);
 
   const handleExportExcel = () => {
-    // Gunakan `displayedPesertas` agar ekspor sesuai dengan filter yang aktif di UI.
-    // Kemudian, filter lagi untuk memastikan hanya status 'APPROVED' yang diekspor.
     const approvedPeserta = displayedPesertas.filter((p: any) => p.status === 'APPROVED');
 
     if (approvedPeserta.length === 0) {
@@ -109,27 +107,11 @@ const DataKompetisi = () => {
       return;
     }
 
-    const groupedData: { [key: string]: any[] } = {};
-
-    approvedPeserta.forEach((peserta: any) => {
+    const dataForSheet = approvedPeserta.map((peserta: any) => {
       const isTeam = peserta.is_team;
       const cabang = peserta.kelas_kejuaraan?.cabang || "Lainnya";
       const level = peserta.kelas_kejuaraan?.kategori_event?.nama_kategori || "Lainnya";
       const kelompokUsia = peserta.kelas_kejuaraan?.kelompok?.nama_kelompok || "Umum";
-      
-      let detailKelas = "";
-      if (cabang === "KYORUGI") {
-        detailKelas = peserta.kelas_kejuaraan?.kelas_berat?.nama_kelas || "Tanpa Kelas";
-      } else if (cabang === "POOMSAE") {
-        detailKelas = peserta.kelas_kejuaraan?.poomsae?.nama_kelas || "Tanpa Kelas";
-      }
-
-      // Buat nama sheet yang lebih granular sesuai permintaan
-      const sheetName = `${cabang}_${level}_${kelompokUsia}_${detailKelas}`.replace(/[ /]/g, "_").replace(/__/g, "_");
-
-      if (!groupedData[sheetName]) {
-        groupedData[sheetName] = [];
-      }
       
       const namaPeserta = isTeam
         ? peserta.anggota_tim?.map((m: any) => m.atlet.nama_atlet).join(", ")
@@ -142,37 +124,61 @@ const DataKompetisi = () => {
       const jenisKelamin = isTeam ? "Tim" : (peserta.atlet?.jenis_kelamin || "-");
 
       const kelasTanding = [
-        peserta.kelas_kejuaraan?.kelompok?.nama_kelompok,
         peserta.kelas_kejuaraan?.kelas_berat?.nama_kelas,
         peserta.kelas_kejuaraan?.poomsae?.nama_kelas,
       ].filter(Boolean).join(" - ") || "-";
 
-      groupedData[sheetName].push({
+      let poomsaeType = "-";
+      if (cabang.toUpperCase() === "POOMSAE" && level.toLowerCase() === "prestasi") {
+        const poomsaeKelasName = peserta.kelas_kejuaraan?.poomsae?.nama_kelas?.toLowerCase() || "";
+        if (poomsaeKelasName.includes("recognized")) {
+          poomsaeType = "Recognized";
+        } else if (poomsaeKelasName.includes("freestyle")) {
+          poomsaeType = "Freestyle";
+        }
+      }
+
+      return {
         "Nama Peserta": namaPeserta,
         "Dojang": dojang,
         "Jenis Kelamin": jenisKelamin,
+        "Tipe Kejuaraan": cabang,
+        "Level": level,
+        "Tipe Poomsae": poomsaeType,
+        "Kelompok Usia": kelompokUsia,
         "Kelas Tanding": kelasTanding,
-      });
+      };
+    });
+
+    // Sort data based on the new structure
+    dataForSheet.sort((a, b) => {
+      const compareA = `${a["Tipe Kejuaraan"]}-${a["Level"]}-${a["Tipe Poomsae"]}-${a["Kelompok Usia"]}-${a["Kelas Tanding"]}`;
+      const compareB = `${b["Tipe Kejuaraan"]}-${b["Level"]}-${b["Tipe Poomsae"]}-${b["Kelompok Usia"]}-${b["Kelas Tanding"]}`;
+      return compareA.localeCompare(compareB);
+    });
+
+    // Add a "No." column after sorting
+    const finalSheetData = dataForSheet.map((row, index) => ({
+      "No.": index + 1,
+      ...row,
+    }));
+
+    // Calculate column widths to prevent overlapping text
+    const columnWidths = Object.keys(finalSheetData[0]).map(key => {
+      const maxLength = Math.max(
+        key.length,
+        ...finalSheetData.map(row => (row[key] ? String(row[key]).length : 0))
+      );
+      return { wch: maxLength + 2 }; // wch = character width, adding padding
     });
 
     const wb = XLSX.utils.book_new();
-    // Urutkan nama sheet untuk urutan file excel yang lebih baik
-    const sortedSheetNames = Object.keys(groupedData).sort();
+    const ws = XLSX.utils.json_to_sheet(finalSheetData);
+    
+    // Apply the calculated widths to the worksheet
+    ws['!cols'] = columnWidths;
 
-    for (const sheetName of sortedSheetNames) {
-      const sortedSheetData = groupedData[sheetName].sort((a, b) => a["Kelas Tanding"].localeCompare(b["Kelas Tanding"]));
-      
-      const finalSheetData = sortedSheetData.map((row, index) => ({
-        "No.": index + 1,
-        ...row,
-      }));
-
-      const ws = XLSX.utils.json_to_sheet(finalSheetData);
-
-      // Batasi panjang nama sheet hingga 31 karakter, yang merupakan batas Excel
-      const validSheetName = sheetName.substring(0, 31);
-      XLSX.utils.book_append_sheet(wb, ws, validSheetName);
-    }
+    XLSX.utils.book_append_sheet(wb, ws, "Daftar Peserta");
 
     XLSX.writeFile(wb, `Daftar_Peserta_${selectedKompetisi?.nama_event || 'Kompetisi'}.xlsx`);
     toast.success("Berhasil mengunduh data peserta!");
