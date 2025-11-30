@@ -1785,7 +1785,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
           }}
         >
           <div
-            className="px-4 py-2 rounded-lg font-bold text-sm shadow-md mb-5"
+            className="px-6 py-3 rounded-lg font-bold text-2xl shadow-md mb-5"
             style={{ backgroundColor: "#990D35", color: "#F5FBEF" }}
           >
             Final
@@ -2182,7 +2182,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                 }}
               >
                 <div
-                  className="px-4 py-2 rounded-lg font-bold text-sm shadow-md mb-5"
+                  className="px-6 py-3 rounded-lg font-bold text-2xl shadow-md mb-5"
                   style={{ backgroundColor: "#990D35", color: "#F5FBEF" }}
                 >
                   {roundName}
