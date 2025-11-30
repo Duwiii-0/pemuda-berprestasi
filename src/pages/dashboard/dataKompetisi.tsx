@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Trophy, Users, Search, Clock, CheckCircle, Menu, ChevronLeft, ChevronRight, Edit, Trash, Upload, FileDown } from 'lucide-react';
 import toast from "react-hot-toast";
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import NavbarDashboard from "../../components/navbar/navbarDashboard";
 import { useAuth } from "../../context/authContext";
 import { useKompetisi } from "../../context/KompetisiContext";
@@ -169,7 +169,7 @@ const DataKompetisi = () => {
     const tableHeaders = Object.keys(finalSheetData[0]);
     const tableBody = finalSheetData.map(row => Object.values(row));
 
-    (doc as any).autoTable({
+    autoTable(doc, {
       head: [tableHeaders],
       body: tableBody,
       startY: 20,
