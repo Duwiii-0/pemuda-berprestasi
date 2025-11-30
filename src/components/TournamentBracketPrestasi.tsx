@@ -1473,7 +1473,6 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
             justifyContent: "flex-end",
             position: "relative",
             zIndex: 2,
-            paddingBottom: "8px",
           }}
         >
           {match.peserta_a ? (
@@ -1515,8 +1514,6 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
             justifyContent: "center",
             position: "relative",
             zIndex: 2,
-            marginTop: "12px",
-            marginBottom: "12px",
           }}
         >
           {/* Horizontal Main Line - Background */}
@@ -1574,7 +1571,6 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
             justifyContent: "flex-start",
             position: "relative",
             zIndex: 2,
-            paddingTop: "8px",
           }}
         >
           {match.peserta_b ? (
