@@ -1571,6 +1571,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
             justifyContent: "flex-start",
             position: "relative",
             zIndex: 2,
+            marginTop: "10px", // Added padding between blue athlete and center line
           }}
         >
           {match.peserta_b ? (
