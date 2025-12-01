@@ -1758,7 +1758,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
     } else {
       const leftSemiY = leftPositions[leftPositions.length - 1]?.[0] || 0;
       const rightSemiY = rightPositions[rightPositions.length - 1]?.[0] || 0;
-      finalYPosition = (leftSemiY + rightSemiY) / 2 + HEADER_HEIGHT - 70; // Naikkan card sedikit (dari -40 → -50)
+      finalYPosition = (leftSemiY + rightSemiY) / 2 + HEADER_HEIGHT + 30; // Naikkan card sedikit (dari -40 → -50)
     }
 
     const lineLength = CENTER_GAP / 2 + 60;
@@ -1775,7 +1775,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          marginTop: "20px",
+          marginTop: "60px",
         }}
       >
         {/* Round Header */}
