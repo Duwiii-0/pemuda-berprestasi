@@ -1481,7 +1481,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
             <>
               <p
                 className="font-bold leading-tight text-center truncate w-full"
-                style={{ color: "#DC143C", fontSize: "30px" }}
+                style={{ color: "#3B82F6", fontSize: "30px" }}
               >
                 {getParticipantName(match.peserta_a)}
               </p>
@@ -1561,7 +1561,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
           </div>
         </div>
 
-        {/* Participant B - BOTTOM (Biru) */}
+        {/* Participant B - BOTTOM (Merah) */}
         <div
           style={{
             height: "70px",
@@ -1578,7 +1578,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
             <>
               <p
                 className="font-bold leading-tight text-center truncate w-full"
-                style={{ color: "#3B82F6", fontSize: "30px" }}
+                style={{ color: "#DC143C", fontSize: "30px" }}
               >
                 {getParticipantName(match.peserta_b)}
               </p>
