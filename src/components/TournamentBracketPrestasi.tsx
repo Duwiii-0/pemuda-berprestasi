@@ -1775,7 +1775,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          marginTop: "60px",
+          marginTop: "80px",
         }}
       >
         {/* Round Header */}
