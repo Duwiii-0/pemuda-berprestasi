@@ -1474,7 +1474,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
             alignItems: "center",
             position: "relative",
             zIndex: 2,
-            marginBottom: "10px",
+            marginBottom: "20px", // Increased margin-bottom for more space above center line
             paddingTop: "10px", // Added top padding for spacing from card top
           }}
         >
