@@ -208,9 +208,8 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
     message: "",
   });
 
-  const CARD_WIDTH = 380;
-  const CARD_HEIGHT = 180;
-  const ROUND_GAP = 150;
+  const CARD_WIDTH = 400;
+  const CARD_HEIGHT = 200;  const ROUND_GAP = 150;
   const BASE_VERTICAL_GAP = 100;
   const CENTER_GAP = 500; // Perbesar dari 350 ke 500 - lebih banyak gap antara semi-final dan final
 
@@ -1463,9 +1462,9 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
     if (match.ronde > 1) {
       cardStyle.border = "2px solid #990D35";
       cardStyle.borderRadius = "12px";
-      // cardStyle.backgroundColor = "#fff"; // Removed for transparent background
+      cardStyle.backgroundColor = "#F5FBEF"; // Reintroduced background with original page background color
       cardStyle.boxShadow = "0 4px 12px rgba(0,0,0,0.1)";
-      cardStyle.padding = "10px"; // Added for larger box / more space
+      cardStyle.padding = "10px";
     }
 
     return (
