@@ -1491,7 +1491,15 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                 {getParticipantName(match.peserta_b)}
               </p>
               <p
-fontSize: "22px",
+                className="text-center truncate w-full"
+                style={{
+                  color: "#666",
+                  opacity: 0.7,
+                  marginTop: "2px",
+                  fontSize: "22px",
+                }}
+              >
+                {getDojoName(match.peserta_b)}
               </p>
             </>
           ) : (
