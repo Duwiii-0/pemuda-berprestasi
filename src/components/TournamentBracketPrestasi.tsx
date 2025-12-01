@@ -1475,6 +1475,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
             justifyContent: "flex-end",
             position: "relative",
             zIndex: 2,
+            marginBottom: "10px",
           }}
         >
           {match.peserta_a ? (
@@ -2149,7 +2150,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
           gap: `${ROUND_GAP}px`,
           position: "relative",
           minHeight: `${maxY}px`,
-          marginTop: "200px",
+          marginTop: "100px", // Ditambahkan kembali sesuai permintaan user
         }}
       >
         {matchesBySide.map((roundMatches, roundIndex) => {
