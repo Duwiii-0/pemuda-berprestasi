@@ -1472,10 +1472,10 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
-            justifyContent: "flex-end",
             position: "relative",
             zIndex: 2,
             marginBottom: "10px",
+            paddingTop: "10px", // Added top padding for spacing from card top
           }}
         >
           {match.peserta_a ? (
@@ -1774,6 +1774,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
+          marginTop: "180px",
         }}
       >
         {/* Round Header */}
