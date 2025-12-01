@@ -1450,20 +1450,26 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
         : match.peserta_b
       : null;
 
+    const cardStyle: React.CSSProperties = {
+      width: `${CARD_WIDTH}px`,
+      height: `${CARD_HEIGHT}px`,
+      position: "relative",
+      zIndex: 10,
+      background: "transparent",
+      margin: 0,
+      padding: 0,
+    };
+
+    if (match.ronde > 1) {
+      cardStyle.border = "2px solid #990D35";
+      cardStyle.borderRadius = "12px";
+      cardStyle.backgroundColor = "#fff";
+      cardStyle.boxShadow = "0 4px 12px rgba(0,0,0,0.1)";
+    }
+
     return (
-      <div
-        className="match-card"
-        style={{
-          width: `${CARD_WIDTH}px`,
-          height: `${CARD_HEIGHT}px`,
-          position: "relative",
-          zIndex: 10,
-          background: "transparent",
-          margin: 0, // ✅ TAMBAHKAN
-          padding: 0, // ✅ TAMBAHKAN
-        }}
-      >
-        {/* Participant A - TOP (Merah) */}
+      <div className="match-card" style={cardStyle}>
+        {/* Participant B - TOP (Biru) */}
         <div
           style={{
             height: "70px",
@@ -1475,13 +1481,13 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
             zIndex: 2,
           }}
         >
-          {match.peserta_a ? (
+          {match.peserta_b ? (
             <>
               <p
                 className="font-bold leading-tight text-center truncate w-full"
-                style={{ color: "#DC143C", fontSize: "26px" }}
+                style={{ color: "#3B82F6", fontSize: "26px" }}
               >
-                {getParticipantName(match.peserta_a)}
+                {getParticipantName(match.peserta_b)}
               </p>
               <p
                 className="text-center truncate w-full"
@@ -1492,13 +1498,13 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                   fontSize: "26px",
                 }}
               >
-                {getDojoName(match.peserta_a)}
+                {getDojoName(match.peserta_b)}
               </p>
             </>
           ) : (
             <span
               className="text-gray-400 text-center"
-              style={{ fontSize: "14px" }}
+              style={{ fontSize: "16px" }}
             >
               TBD
             </span>
@@ -1540,28 +1546,26 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
             {match.nomor_partai ? (
               <span
                 className="font-bold"
-                style={{
-                  color: "#000000",
-                  fontSize: "26px",
-                  whiteSpace: "nowrap",
-                }}
-              >
+                          style={{
+                            color: "#000000",
+                            fontSize: "32px",
+                            whiteSpace: "nowrap",
+                          }}              >
                 {match.nomor_partai}
               </span>
             ) : match.ronde === 1 &&
               ((match.peserta_a && !match.peserta_b) ||
                 (!match.peserta_a && match.peserta_b)) ? (
               <span
-                className="font-bold"
-                style={{ color: "#F5B700", fontSize: "26px" }}
-              >
+                          className="font-bold"
+                          style={{ color: "#F5B700", fontSize: "32px" }}              >
                 BYE
               </span>
             ) : null}
           </div>
         </div>
 
-        {/* Participant B - BOTTOM (Biru) */}
+        {/* Participant A - BOTTOM (Merah) */}
         <div
           style={{
             height: "70px",
@@ -1573,13 +1577,13 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
             zIndex: 2,
           }}
         >
-          {match.peserta_b ? (
+          {match.peserta_a ? (
             <>
               <p
                 className="font-bold leading-tight text-center truncate w-full"
-                style={{ color: "#3B82F6", fontSize: "26px" }}
+                style={{ color: "#DC143C", fontSize: "26px" }}
               >
-                {getParticipantName(match.peserta_b)}
+                {getParticipantName(match.peserta_a)}
               </p>
               <p
                 className="text-center truncate w-full"
@@ -1590,7 +1594,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                   fontSize: "26px",
                 }}
               >
-                {getDojoName(match.peserta_b)}
+                {getDojoName(match.peserta_a)}
               </p>
             </>
           ) : (
