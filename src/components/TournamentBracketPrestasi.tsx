@@ -1758,7 +1758,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
     } else {
       const leftSemiY = leftPositions[leftPositions.length - 1]?.[0] || 0;
       const rightSemiY = rightPositions[rightPositions.length - 1]?.[0] || 0;
-      finalYPosition = (leftSemiY + rightSemiY) / 2 + HEADER_HEIGHT + 0; // Naikkan card sedikit (dari -40 → -50)
+      finalYPosition = (leftSemiY + rightSemiY) / 2 + HEADER_HEIGHT - 30; // Naikkan card sedikit (dari -40 → -50)
     }
 
     const lineLength = CENTER_GAP / 2 + 60;
@@ -1792,7 +1792,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
         >
           <div
             className="px-6 py-3 rounded-lg font-bold text-2xl shadow-md mb-5"
-            style={{ backgroundColor: "#990D35", color: "#F5FBEF", marginTop: "10px" }}
+            style={{ backgroundColor: "#990D35", color: "#F5FBEF", marginTop: "20px" }}
           >
             Final
           </div>
