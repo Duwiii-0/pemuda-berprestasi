@@ -1463,8 +1463,9 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
     if (match.ronde > 1) {
       cardStyle.border = "2px solid #990D35";
       cardStyle.borderRadius = "12px";
-      cardStyle.backgroundColor = "#fff";
+      // cardStyle.backgroundColor = "#fff"; // Removed for transparent background
       cardStyle.boxShadow = "0 4px 12px rgba(0,0,0,0.1)";
+      cardStyle.padding = "10px"; // Added for larger box / more space
     }
 
     return (
