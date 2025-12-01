@@ -3123,9 +3123,9 @@ const generateLeaderboard = () => {
             <div className="p-6">
                 <div className="grid grid-cols-2 gap-4">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700">
-                        {getParticipantName(editingMatch.peserta_a)}
-                        </label>
+              <p className="text-xl font-bold text-blue-800 text-center">
+                {getParticipantName(editingMatch.peserta_a)}
+              </p>
                         <input
                         type="number"
                         id="scoreA"
@@ -3134,7 +3134,7 @@ const generateLeaderboard = () => {
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700">
+                        <label className="block text-sm font-medium text-red-800">
                         {getParticipantName(editingMatch.peserta_b)}
                         </label>
                         <input

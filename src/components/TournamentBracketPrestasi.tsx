@@ -1465,7 +1465,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
 
     return (
       <div className="match-card" style={cardStyle}>
-        {/* Participant A - TOP (Merah) */}
+        {/* Participant A - TOP (Biru) */}
         <div
           style={{
             height: "70px",
