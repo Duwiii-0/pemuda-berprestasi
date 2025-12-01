@@ -1750,11 +1750,11 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
 
     if (isDirectFinal || isThreeParticipants) {
       // Untuk 2 atau 3 peserta, posisi final di tengah
-      finalYPosition = 80 + HEADER_HEIGHT; // Naikkan card sedikit (dari 100 → 80)
+      finalYPosition = 100 + HEADER_HEIGHT; // Naikkan card sedikit (dari 100 → 80)
     } else {
       const leftSemiY = leftPositions[leftPositions.length - 1]?.[0] || 0;
       const rightSemiY = rightPositions[rightPositions.length - 1]?.[0] || 0;
-      finalYPosition = (leftSemiY + rightSemiY) / 2 + HEADER_HEIGHT - 40; // Naikkan card sedikit (dari -40 → -50)
+      finalYPosition = (leftSemiY + rightSemiY) / 2 + HEADER_HEIGHT - 20; // Naikkan card sedikit (dari -40 → -50)
     }
 
     const lineLength = CENTER_GAP / 2 + 60;
