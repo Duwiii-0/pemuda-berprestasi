@@ -1475,6 +1475,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
             justifyContent: "flex-end",
             position: "relative",
             zIndex: 2,
+            marginBottom: "10px",
           }}
         >
           {match.peserta_a ? (
