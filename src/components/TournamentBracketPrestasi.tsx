@@ -1754,16 +1754,16 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
 
     if (isDirectFinal) {
       // For 2 participants, it's just a final. Let's provide a fixed position.
-      finalYPosition = 80;
+      finalYPosition = 110;
     } else if (isThreeParticipants) {
       // For 3 participants, align the final with the single semi-final match.
       const semiFinalY = leftPositions[0]?.[0] || 0;
-      finalYPosition = semiFinalY;
+      finalYPosition = semiFinalY + 30;
     } else {
       // For 4+ participants, position the final between the two semi-finals.
       const leftSemiY = leftPositions[leftPositions.length - 1]?.[0] || 0;
       const rightSemiY = rightPositions[rightPositions.length - 1]?.[0] || 0;
-      finalYPosition = (leftSemiY + rightSemiY) / 2 + HEADER_HEIGHT - 30; // Naikkan card sedikit (dari -40 → -50)
+      finalYPosition = (leftSemiY + rightSemiY) / 2 + HEADER_HEIGHT - 40; // Naikkan card sedikit (dari -40 → -50)
     }
 
     const lineLength = CENTER_GAP / 2 + 60;
