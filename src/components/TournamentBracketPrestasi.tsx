@@ -1523,10 +1523,11 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
           <div
             style={{
               position: "absolute",
-              width: "100%",
               height: "6px",
               backgroundColor: "#990D35",
               zIndex: 0,
+              left: "-10px", // Make the line touch the card's left border
+              right: "-10px", // Make the line touch the card's right border
             }}
           />
 
