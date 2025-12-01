@@ -1754,11 +1754,11 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
 
     if (isDirectFinal) {
       // For 2 participants, it's just a final. Let's provide a fixed position.
-      finalYPosition = 110;
+      finalYPosition = 100;
     } else if (isThreeParticipants) {
       // For 3 participants, align the final with the single semi-final match.
       const semiFinalY = leftPositions[0]?.[0] || 0;
-      finalYPosition = semiFinalY + 30;
+      finalYPosition = semiFinalY + 20;
     } else {
       // For 4+ participants, position the final between the two semi-finals.
       const leftSemiY = leftPositions[leftPositions.length - 1]?.[0] || 0;
@@ -1811,15 +1811,16 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
         <div
           style={{ position: "relative", width: "100%", minHeight: "600px" }}
         >
-          {/* ⭐ HANYA RENDER CONNECTOR JIKA ADA SEMI-FINAL (> 3 peserta) */}
+          {/* ⭐ RENDER CONNECTORS */}
+          {/* Case for 4+ participants (left and right connectors) */}
           {!isDirectFinal && !isThreeParticipants && (
             <>
-              {/* LEFT CONNECTOR ke Final */}
+              {/* LEFT CONNECTOR to Final */}
               <svg
                 style={{
                   position: "absolute",
                   left: -lineLength,
-                  top: `${connectorTop}px`, // Aligned dengan garis horizontal card final
+                  top: `${connectorTop}px`,
                   width: lineLength,
                   height: 6,
                   pointerEvents: "none",
@@ -1837,12 +1838,40 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                 />
               </svg>
 
-              {/* RIGHT CONNECTOR ke Final */}
+              {/* RIGHT CONNECTOR to Final */}
               <svg
                 style={{
                   position: "absolute",
                   right: -lineLength,
-                  top: `${connectorTop}px`, // Aligned dengan garis horizontal card final
+                  top: `${connectorTop}px`,
+                  width: lineLength,
+                  height: 6,
+                  pointerEvents: "none",
+                  zIndex: 1,
+                }}
+              >
+                <line
+                  x1="0"
+                  y1="3"
+                  x2={lineLength}
+                  y2="3"
+                  stroke="#990D35"
+                  strokeWidth="6"
+                  opacity="0.8"
+                />
+              </svg>
+            </>
+          )}
+
+          {/* Case for 3 participants (left connector only) */}
+          {isThreeParticipants && (
+            <>
+              {/* LEFT CONNECTOR to Final */}
+              <svg
+                style={{
+                  position: "absolute",
+                  left: -lineLength,
+                  top: `${connectorTop}px`,
                   width: lineLength,
                   height: 6,
                   pointerEvents: "none",
