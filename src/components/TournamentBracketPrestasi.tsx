@@ -2149,7 +2149,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
           gap: `${ROUND_GAP}px`,
           position: "relative",
           minHeight: `${maxY}px`,
-          marginTop: "110px",
+          marginTop: "200px",
         }}
       >
         {matchesBySide.map((roundMatches, roundIndex) => {
