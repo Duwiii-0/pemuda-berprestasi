@@ -1542,19 +1542,21 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
             {match.nomor_partai ? (
               <span
                 className="font-bold"
-                          style={{
-                            color: "#000000",
-                            fontSize: "32px",
-                            whiteSpace: "nowrap",
-                          }}              >
+                style={{
+                  color: "#000000",
+                  fontSize: "32px",
+                  whiteSpace: "nowrap",
+                }}
+              >
                 {match.nomor_partai}
               </span>
             ) : match.ronde === 1 &&
               ((match.peserta_a && !match.peserta_b) ||
                 (!match.peserta_a && match.peserta_b)) ? (
               <span
-                          className="font-bold"
-                          style={{ color: "#F5B700", fontSize: "32px" }}              >
+                className="font-bold"
+                style={{ color: "#F5B700", fontSize: "32px" }}
+              >
                 BYE
               </span>
             ) : null}
@@ -2147,7 +2149,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
           gap: `${ROUND_GAP}px`,
           position: "relative",
           minHeight: `${maxY}px`,
-          marginTop: "100px",
+          marginTop: "110px",
         }}
       >
         {matchesBySide.map((roundMatches, roundIndex) => {
