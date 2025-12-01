@@ -208,10 +208,11 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
     message: "",
   });
 
-  const CARD_WIDTH = 400;
-  const CARD_HEIGHT = 200;  const ROUND_GAP = 150;
-  const BASE_VERTICAL_GAP = 100;
-  const CENTER_GAP = 500; // Perbesar dari 350 ke 500 - lebih banyak gap antara semi-final dan final
+  const CARD_WIDTH = 450;
+  const CARD_HEIGHT = 240;
+  const ROUND_GAP = 200;
+  const BASE_VERTICAL_GAP = 150;
+  const CENTER_GAP = 700; // Perbesar dari 350 ke 500 - lebih banyak gap antara semi-final dan final
 
   const showNotification = (
     type: "success" | "error" | "warning" | "info",
@@ -1485,20 +1486,12 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
             <>
               <p
                 className="font-bold leading-tight text-center truncate w-full"
-                style={{ color: "#3B82F6", fontSize: "26px" }}
+                style={{ color: "#3B82F6", fontSize: "30px" }}
               >
                 {getParticipantName(match.peserta_b)}
               </p>
               <p
-                className="text-center truncate w-full"
-                style={{
-                  color: "#666",
-                  opacity: 0.7,
-                  marginTop: "2px",
-                  fontSize: "26px",
-                }}
-              >
-                {getDojoName(match.peserta_b)}
+fontSize: "22px",
               </p>
             </>
           ) : (
@@ -1581,7 +1574,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
             <>
               <p
                 className="font-bold leading-tight text-center truncate w-full"
-                style={{ color: "#DC143C", fontSize: "26px" }}
+                style={{ color: "#DC143C", fontSize: "30px" }}
               >
                 {getParticipantName(match.peserta_a)}
               </p>
@@ -1591,7 +1584,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                   color: "#666",
                   opacity: 0.7,
                   marginTop: "2px",
-                  fontSize: "26px",
+                  fontSize: "22px",
                 }}
               >
                 {getDojoName(match.peserta_a)}
@@ -1896,7 +1889,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
           <div
             id="prestasi-leaderboard"
             style={{
-              width: "400px",
+              width: "450px",
               marginTop: `${
                 finalYPosition + CARD_HEIGHT + (isDirectFinal ? 40 : -420)
               }px`,
@@ -1919,7 +1912,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                 <div className="flex items-center gap-2 justify-center">
                   <Trophy size={20} style={{ color: "#990D35" }} />
                   <h3
-                    className="text-lg font-bold"
+                    className="text-xl font-bold"
                     style={{ color: "#990D35" }}
                   >
                     LEADERBOARD
@@ -1957,7 +1950,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                             CHAMPION
                           </span>
                           <h4
-                            className="text-base font-bold mt-1 truncate"
+                            className="text-lg font-bold mt-1 truncate"
                             style={{ color: "#050505" }}
                           >
                             {prestasiLeaderboard.first.name}
@@ -2016,7 +2009,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                             </div>
                             <div className="flex-1 min-w-0">
                               <h4
-                                className="text-base font-bold truncate"
+                                className="text-lg font-bold truncate"
                                 style={{ color: "#050505" }}
                               >
                                 {participant.name}
@@ -2071,7 +2064,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                             </div>
                             <div className="flex-1 min-w-0">
                               <h4
-                                className="text-base font-bold mt-1 truncate"
+                                className="text-lg font-bold mt-1 truncate"
                                 style={{ color: "#050505" }}
                               >
                                 {participant.name}
