@@ -1786,6 +1786,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
             zIndex: 20,
             background: "#F5FBEF",
             padding: "8px 12px",
+            marginTop: "20px",
           }}
         >
           <div
