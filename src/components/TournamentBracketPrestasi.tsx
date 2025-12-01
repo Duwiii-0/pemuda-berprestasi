@@ -512,7 +512,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                 </th>
                 <th
                   scope="col"
-                  className="px-6 py-3 text-left text-xs font-bold text-red-600 uppercase tracking-wider"
+                  className="px-6 py-3 text-left text-xs font-bold text-blue-600 uppercase tracking-wider"
                 >
                   Atlet Sudut Biru
                 </th>
