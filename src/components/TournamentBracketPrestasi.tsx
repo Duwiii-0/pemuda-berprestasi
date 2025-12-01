@@ -213,6 +213,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
   const ROUND_GAP = 200;
   const BASE_VERTICAL_GAP = 150;
   const CENTER_GAP = 700; // Perbesar dari 350 ke 500 - lebih banyak gap antara semi-final dan final
+  const SIDE_VERTICAL_OFFSET = 100; // OFFSET BARU: Untuk menggeser semua kartu di sisi kiri/kanan ke bawah
 
   const showNotification = (
     type: "success" | "error" | "warning" | "info",
@@ -1678,7 +1679,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
     positions[0] = [];
 
     for (let i = 0; i < round1Count; i++) {
-      const yPos = i * (CARD_HEIGHT + BASE_VERTICAL_GAP);
+      const yPos = SIDE_VERTICAL_OFFSET + i * (CARD_HEIGHT + BASE_VERTICAL_GAP);
       positions[0].push(yPos);
 
       // ✅ Tambahan penting: simpan posisi vertikal di object match
@@ -1752,11 +1753,11 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
 
     if (isDirectFinal || isThreeParticipants) {
       // Untuk 2 atau 3 peserta, posisi final di tengah
-      finalYPosition = 190 + HEADER_HEIGHT; // Naikkan card sedikit (dari 100 → 80)
+      finalYPosition = 190 + HEADER_HEIGHT + SIDE_VERTICAL_OFFSET; // Naikkan card sedikit (dari 100 → 80)
     } else {
       const leftSemiY = leftPositions[leftPositions.length - 1]?.[0] || 0;
       const rightSemiY = rightPositions[rightPositions.length - 1]?.[0] || 0;
-      finalYPosition = (leftSemiY + rightSemiY) / 2 + HEADER_HEIGHT + 70; // Naikkan card sedikit (dari -40 → -50)
+      finalYPosition = (leftSemiY + rightSemiY) / 2 + HEADER_HEIGHT + 70 + SIDE_VERTICAL_OFFSET; // Naikkan card sedikit (dari -40 → -50)
     }
 
     const lineLength = CENTER_GAP / 2 + 60;
@@ -2149,7 +2150,6 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
           gap: `${ROUND_GAP}px`,
           position: "relative",
           minHeight: `${maxY}px`,
-          marginTop: "200px",
         }}
       >
         {matchesBySide.map((roundMatches, roundIndex) => {
