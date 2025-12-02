@@ -230,8 +230,8 @@ const convertElementToImage = async (
     skipFonts: false,
     filter: (node) => {
       // Filter out buttons or other interactive elements you don't want in the PDF
-      if (node.nodeName === 'BUTTON') return false;
-      if ((node as HTMLElement).classList?.contains('no-export')) return false;
+      if (node.nodeName === "BUTTON") return false;
+      if ((node as HTMLElement).classList?.contains("no-export")) return false;
       return true;
     },
   });
@@ -682,7 +682,7 @@ export const exportMultipleBracketsByLapangan = async (
         }
 
         // Apply a scaling factor to prevent the bracket from being too large
-        const zoom = 0.9;
+        const zoom = 0.5;
         displayWidth *= zoom;
         displayHeight *= zoom;
 
