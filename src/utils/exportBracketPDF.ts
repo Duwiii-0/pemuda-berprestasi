@@ -280,7 +280,7 @@ export const exportBracketFromData = async (
     .includes("prestasi");
   const bracketType: "PRESTASI" | "PEMULA" = isPemula ? "PEMULA" : "PRESTASI";
 
-  const useA3 = !isPemula && participantCount > 32;
+  const useA3 = false; // !isPemula && participantCount > 32;
   const pageDims = useA3 ? PAGE_CONFIGS.A3 : PAGE_CONFIGS.A4;
 
   console.log(
@@ -464,6 +464,7 @@ export const exportBracketFromData = async (
             else if (totalPeserta <= 8) zoom = 1.2;
             else if (totalPeserta <= 16) zoom = 1.05;
             else if (totalPeserta <= 32) zoom = 1;
+            else if (totalPeserta <= 64) zoom = 0.75;
           }
         }
       }
