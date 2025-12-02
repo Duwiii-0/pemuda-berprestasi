@@ -613,7 +613,6 @@ export const exportMultipleBracketsByLapangan = async (
                 })
               )
             );
-            root.unmount();
 
             setTimeout(() => {
               reject(
@@ -708,6 +707,7 @@ export const exportMultipleBracketsByLapangan = async (
         console.error(`  ❌ Error rendering bracket:`, error);
         throw error;
       } finally {
+        root.unmount();
         if (document.body.contains(tempContainer)) {
           document.body.removeChild(tempContainer);
         }
