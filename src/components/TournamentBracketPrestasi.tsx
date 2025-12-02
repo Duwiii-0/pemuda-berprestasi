@@ -2765,21 +2765,12 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                   {/* Dojang Separation Button */}
                   <button
                     onClick={() => setShowDojangModal(true)}
-                    disabled={loading || approvedParticipants.length < 2}
-                    className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
-                      dojangSeparation.enabled ? "ring-2 ring-offset-1" : ""
-                    }`}
-                    style={{
-                      backgroundColor: dojangSeparation.enabled
-                        ? "#10B981"
-                        : "#6366F1",
-                      color: "#F5FBEF",
-                    }}
-                    title={
+                    disabled={approvedParticipants.length < 2}
+                    className={`flex items-center gap-2 px-3 py-2 text-sm rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
                       dojangSeparation.enabled
-                        ? "Dojang separation aktif (STRICT mode)"
-                        : "Aktifkan dojang separation"
-                    }
+                        ? "ring-2 ring-offset-2 ring-green-500"
+                        : ""
+                    }`}
                   >
                     <Users size={16} />
                     <span className="hidden md:inline">
@@ -2799,29 +2790,17 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                   <button
                     onClick={shuffleBracket}
                     disabled={
-                      loading ||
-                      approvedParticipants.length < 2 ||
-                      !bracketGenerated
+                      approvedParticipants.length < 2 || !bracketGenerated
                     }
-                    className="flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 shadow-md"
+                    className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     style={{
                       backgroundColor: "#6366F1",
                       color: "#F5FBEF",
                     }}
                     title="Acak ulang susunan bracket"
                   >
-                    {loading ? (
-                      <>
-                        <RefreshCw size={16} className="animate-spin" />
-                        <span className="hidden sm:inline">Processing...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Shuffle size={16} />
-                        <span className="hidden sm:inline">Shuffle</span>
-                        <span className="sm:hidden">🔀</span>
-                      </>
-                    )}
+                    <Shuffle size={14} />
+                    <span>Shuffle</span>
                   </button>
 
                   {/* Clear Results Button */}
@@ -2980,11 +2959,14 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
               {approvedParticipants.length >= 2 && (
                 <button
                   onClick={openParticipantPreview}
-                  disabled={loading}
-                  className="px-6 py-3 rounded-lg font-medium transition-all disabled:opacity-50 hover:opacity-90"
-                  style={{ backgroundColor: "#F5B700", color: "#F5FBEF" }}
+                  disabled={bracketGenerated}
+                  className="flex-1 px-4 py-3 text-base font-bold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{
+                    backgroundColor: "#990D35",
+                    color: "#F5FBEF",
+                  }}
                 >
-                  {loading ? "Processing..." : "Preview & Generate Bracket"}
+                  Preview & Generate Bracket
                 </button>
               )}
             </div>

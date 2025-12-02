@@ -1501,7 +1501,7 @@ const generateLeaderboard = () => {
                     {/* Dojang Separation Button */}
                     <button
                       onClick={() => setShowDojangModal(true)}
-                      disabled={loading || approvedParticipants.length < 2}
+                      disabled={approvedParticipants.length < 2}
                       className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
                         dojangSeparation.enabled
                           ? "ring-2 ring-offset-1"
@@ -1537,7 +1537,6 @@ const generateLeaderboard = () => {
                     <button
                       onClick={shuffleBracket}
                       disabled={
-                        loading ||
                         approvedParticipants.length < 2 ||
                         !bracketGenerated
                       }
@@ -1548,20 +1547,9 @@ const generateLeaderboard = () => {
                       }}
                       title="Acak ulang susunan bracket"
                     >
-                      {loading ? (
-                        <>
-                          <RefreshCw size={16} className="animate-spin" />
-                          <span className="hidden sm:inline">
-                            Processing...
-                          </span>
-                        </>
-                      ) : (
-                        <>
-                          <Shuffle size={16} />
-                          <span className="hidden sm:inline">Shuffle</span>
-                          <span className="sm:hidden">🔀</span>
-                        </>
-                      )}
+                      <Shuffle size={16} />
+                      <span className="hidden sm:inline">Shuffle</span>
+                      <span className="sm:hidden">🔀</span>
                     </button>
 
                     {/* Clear Results Button */}
@@ -2807,16 +2795,17 @@ const generateLeaderboard = () => {
                     : 'Click "Generate" to create the tournament bracket'}
                 </p>
                 {approvedParticipants.length >= 2 && (
-                  <button
-                    onClick={openParticipantPreview}
-                    disabled={loading}
-                    className="px-6 py-3 rounded-lg font-medium transition-all disabled:opacity-50 hover:opacity-90"
-                    style={{ backgroundColor: "#F5B700", color: "#F5FBEF" }}
-                  >
-                    {loading
-                      ? "Processing..."
-                      : "Preview & Generate Bracket"}
-                  </button>
+              <button
+                onClick={openParticipantPreview}
+                disabled={bracketGenerated}
+                className="flex-1 px-6 py-4 text-lg font-bold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{
+                  backgroundColor: "#990D35",
+                  color: "#F5FBEF",
+                }}
+              >
+                Preview & Generate Bracket
+              </button>
                 )}
               </div>
             </div>
