@@ -110,11 +110,9 @@ interface KelasKejuaraan {
 
 interface TournamentBracketPemulaProps {
   kelasData: KelasKejuaraan;
-  initialMatches?: Match[]; // <-- ADD THIS
   onBack?: () => void;
-  apiBaseUrl?: string; // Becomes optional
-  viewOnly?: boolean;
-  onRenderComplete?: (element: HTMLElement) => void;
+  apiBaseUrl?: string;
+  viewOnly?: boolean; // ⭐ TAMBAHKAN
 }
 
 interface DojangSeparationConfig {
@@ -124,11 +122,9 @@ interface DojangSeparationConfig {
 
 const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
   kelasData,
-  initialMatches = [], // <-- DESTRUCTURE NEW PROP
   onBack,
   apiBaseUrl = "/api",
   viewOnly = false,
-  onRenderComplete,
 }) => {
   const { token } = useAuth();
   const [viewMode, setViewMode] = useState<"bracket" | "list">("bracket");
@@ -137,11 +133,7 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
 
   const displayGender =
     gender === "LAKI_LAKI" ? "Male" : gender === "PEREMPUAN" ? "Female" : "";
-
-  // REFACTORED: Use prop directly. matches state is removed.
-  const matches = initialMatches;
-  const bracketGenerated = initialMatches.length > 0;
-
+  const [matches, setMatches] = useState<Match[]>([]);
   const [editingMatch, setEditingMatch] = useState<Match | null>(null);
   const [editAthleteModal, setEditAthleteModal] = useState<{
     show: boolean;
@@ -152,7 +144,8 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
     match: null,
     slot: null,
   });
-  // REMOVED: loading and bracketGenerated state
+  const [loading, setLoading] = useState(false);
+  const [bracketGenerated, setBracketGenerated] = useState(false);
   const [exportingPDF, setExportingPDF] = useState(false); // ✅ NEW
   const [clearing, setClearing] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -164,7 +157,6 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
     null
   );
 
-  // This useEffect is for the non-export view only, to fetch the date.
   useEffect(() => {
     const fetchTanggalPertandingan = async () => {
       if (kelasData?.kompetisi?.id_kompetisi && kelasData?.id_kelas_kejuaraan) {
@@ -195,26 +187,8 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
       }
     };
 
-    // Only run this fetch if not in export mode (onRenderComplete is not provided)
-    if (!onRenderComplete) {
-      fetchTanggalPertandingan();
-    }
-  }, [kelasData, apiBaseUrl, token, onRenderComplete]);
-
-  // REFACTORED: Simplified onRenderComplete hook.
-  useEffect(() => {
-    // onRenderComplete is only used for exporting.
-    if (onRenderComplete && bracketRef.current) {
-      setTimeout(() => {
-        if (bracketRef.current) {
-          console.log('✅ PEMULA component rendered for export, calling onRenderComplete.');
-          onRenderComplete(bracketRef.current);
-        }
-      }, 500);
-    }
-  }, [onRenderComplete]);
-
-  // REMOVED: All data fetching logic for matches has been removed.
+    fetchTanggalPertandingan();
+  }, [kelasData, apiBaseUrl, token]);
 
   const [showModal, setShowModal] = useState(false);
   const [modalConfig, setModalConfig] = useState<{
@@ -1501,7 +1475,7 @@ const generateLeaderboard = () => {
                     {/* Dojang Separation Button */}
                     <button
                       onClick={() => setShowDojangModal(true)}
-                      disabled={approvedParticipants.length < 2}
+                      disabled={loading || approvedParticipants.length < 2}
                       className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
                         dojangSeparation.enabled
                           ? "ring-2 ring-offset-1"
@@ -1537,6 +1511,7 @@ const generateLeaderboard = () => {
                     <button
                       onClick={shuffleBracket}
                       disabled={
+                        loading ||
                         approvedParticipants.length < 2 ||
                         !bracketGenerated
                       }
@@ -1547,9 +1522,20 @@ const generateLeaderboard = () => {
                       }}
                       title="Acak ulang susunan bracket"
                     >
-                      <Shuffle size={16} />
-                      <span className="hidden sm:inline">Shuffle</span>
-                      <span className="sm:hidden">🔀</span>
+                      {loading ? (
+                        <>
+                          <RefreshCw size={16} className="animate-spin" />
+                          <span className="hidden sm:inline">
+                            Processing...
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <Shuffle size={16} />
+                          <span className="hidden sm:inline">Shuffle</span>
+                          <span className="sm:hidden">🔀</span>
+                        </>
+                      )}
                     </button>
 
                     {/* Clear Results Button */}
@@ -2795,17 +2781,16 @@ const generateLeaderboard = () => {
                     : 'Click "Generate" to create the tournament bracket'}
                 </p>
                 {approvedParticipants.length >= 2 && (
-              <button
-                onClick={openParticipantPreview}
-                disabled={bracketGenerated}
-                className="flex-1 px-6 py-4 text-lg font-bold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                style={{
-                  backgroundColor: "#990D35",
-                  color: "#F5FBEF",
-                }}
-              >
-                Preview & Generate Bracket
-              </button>
+                  <button
+                    onClick={openParticipantPreview}
+                    disabled={loading}
+                    className="px-6 py-3 rounded-lg font-medium transition-all disabled:opacity-50 hover:opacity-90"
+                    style={{ backgroundColor: "#F5B700", color: "#F5FBEF" }}
+                  >
+                    {loading
+                      ? "Processing..."
+                      : "Preview & Generate Bracket"}
+                  </button>
                 )}
               </div>
             </div>

@@ -113,11 +113,9 @@ interface KelasKejuaraan {
 
 interface TournamentBracketPrestasiProps {
   kelasData: KelasKejuaraan;
-  initialMatches?: Match[]; // <-- ADD THIS
   onBack?: () => void;
-  apiBaseUrl?: string; // Becomes optional
-  viewOnly?: boolean;
-  onRenderComplete?: (element: HTMLElement) => void;
+  apiBaseUrl?: string;
+  viewOnly?: boolean; // ⭐ TAMBAHKAN
 }
 
 interface DojangSeparationConfig {
@@ -127,11 +125,9 @@ interface DojangSeparationConfig {
 
 const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
   kelasData,
-  initialMatches = [], // <-- DESTRUCTURE NEW PROP
   onBack,
   apiBaseUrl = "/api",
-  viewOnly = false,
-  onRenderComplete,
+  viewOnly = false, // ⭐ TAMBAHKAN
 }) => {
   const { token } = useAuth();
   const [viewMode, setViewMode] = useState<"bracket" | "list">("bracket");
@@ -140,11 +136,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
 
   const displayGender =
     gender === "LAKI_LAKI" ? "Male" : gender === "PEREMPUAN" ? "Female" : "";
-  
-  // REFACTORED: Use prop directly. matches state is removed.
-  const matches = initialMatches;
-  const bracketGenerated = initialMatches.length > 0;
-
+  const [matches, setMatches] = useState<Match[]>([]);
   const [editingMatch, setEditingMatch] = useState<Match | null>(null);
   const [editAthleteModal, setEditAthleteModal] = useState<{
     show: boolean;
@@ -155,7 +147,8 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
     match: null,
     slot: null,
   });
-  // REMOVED: loading and bracketGenerated state
+  const [loading, setLoading] = useState(false);
+  const [bracketGenerated, setBracketGenerated] = useState(false);
   const [clearing, setClearing] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [exportingPDF, setExportingPDF] = useState(false);
@@ -167,23 +160,38 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
     null
   );
 
-  // REFACTORED: Simplified onRenderComplete hook.
   useEffect(() => {
-    // onRenderComplete is only used for exporting.
-    // It should be called once the component has rendered with its props.
-    if (onRenderComplete && bracketRef.current) {
-      // Use a timeout to ensure the DOM is fully painted before capture.
-      setTimeout(() => {
-        if (bracketRef.current) {
-          console.log('✅ PRESTASI component rendered for export, calling onRenderComplete.');
-          onRenderComplete(bracketRef.current);
+    const fetchTanggalPertandingan = async () => {
+      if (kelasData?.kompetisi?.id_kompetisi && kelasData?.id_kelas_kejuaraan) {
+        try {
+          const response = await fetch(
+            `${apiBaseUrl}/kompetisi/${kelasData.kompetisi.id_kompetisi}/brackets/${kelasData.id_kelas_kejuaraan}/tanggal`,
+            {
+              headers: {
+                ...(token && { Authorization: `Bearer ${token}` }),
+              },
+            }
+          );
+          if (response.ok) {
+            const result = await response.json();
+            if (result.data && result.data.tanggal) {
+              setTanggalPertandingan(
+                new Date(result.data.tanggal).toISOString().split("T")[0]
+              );
+            }
+          } else {
+            console.log(
+              "Tanggal pertandingan khusus kelas tidak ditemukan, menggunakan tanggal mulai kompetisi."
+            );
+          }
+        } catch (error) {
+          console.error("Error fetching tanggal pertandingan:", error);
         }
-      }, 500); // A slightly longer timeout just in case.
-    }
-  }, [onRenderComplete]);
+      }
+    };
 
-  // REMOVED: All data fetching logic (useEffect and fetchBracketData) has been removed.
-  // The component is now purely presentational.
+    fetchTanggalPertandingan();
+  }, [kelasData, apiBaseUrl, token]);
 
   const [showModal, setShowModal] = useState(false);
   const [modalConfig, setModalConfig] = useState<{
@@ -2765,12 +2773,21 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                   {/* Dojang Separation Button */}
                   <button
                     onClick={() => setShowDojangModal(true)}
-                    disabled={approvedParticipants.length < 2}
-                    className={`flex items-center gap-2 px-3 py-2 text-sm rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
-                      dojangSeparation.enabled
-                        ? "ring-2 ring-offset-2 ring-green-500"
-                        : ""
+                    disabled={loading || approvedParticipants.length < 2}
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
+                      dojangSeparation.enabled ? "ring-2 ring-offset-1" : ""
                     }`}
+                    style={{
+                      backgroundColor: dojangSeparation.enabled
+                        ? "#10B981"
+                        : "#6366F1",
+                      color: "#F5FBEF",
+                    }}
+                    title={
+                      dojangSeparation.enabled
+                        ? "Dojang separation aktif (STRICT mode)"
+                        : "Aktifkan dojang separation"
+                    }
                   >
                     <Users size={16} />
                     <span className="hidden md:inline">
@@ -2790,17 +2807,29 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                   <button
                     onClick={shuffleBracket}
                     disabled={
-                      approvedParticipants.length < 2 || !bracketGenerated
+                      loading ||
+                      approvedParticipants.length < 2 ||
+                      !bracketGenerated
                     }
-                    className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 shadow-md"
                     style={{
                       backgroundColor: "#6366F1",
                       color: "#F5FBEF",
                     }}
                     title="Acak ulang susunan bracket"
                   >
-                    <Shuffle size={14} />
-                    <span>Shuffle</span>
+                    {loading ? (
+                      <>
+                        <RefreshCw size={16} className="animate-spin" />
+                        <span className="hidden sm:inline">Processing...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Shuffle size={16} />
+                        <span className="hidden sm:inline">Shuffle</span>
+                        <span className="sm:hidden">🔀</span>
+                      </>
+                    )}
                   </button>
 
                   {/* Clear Results Button */}
@@ -2915,16 +2944,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
         /* PRESTASI Layout with FIXED POSITIONING */
         bracketGenerated && matches.length > 0 ? (
           /* Render the bracket */
-    <div
-      ref={bracketRef}
-      className="tournament-layout" // <-- ADD THIS CLASS
-      style={{
-        width: "fit-content",
-        minWidth: "1920px",
-        backgroundColor: "#F5FBEF",
-        padding: "20px",
-      }}
-    >
+          <div ref={bracketRef} className="p-6">
             <div className="tournament-layout flex justify-center items-start gap-8">
               {renderBracketSide(getLeftMatches(), "left")}
               {renderCenterFinal()}
@@ -2959,14 +2979,11 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
               {approvedParticipants.length >= 2 && (
                 <button
                   onClick={openParticipantPreview}
-                  disabled={bracketGenerated}
-                  className="flex-1 px-4 py-3 text-base font-bold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                  style={{
-                    backgroundColor: "#990D35",
-                    color: "#F5FBEF",
-                  }}
+                  disabled={loading}
+                  className="px-6 py-3 rounded-lg font-medium transition-all disabled:opacity-50 hover:opacity-90"
+                  style={{ backgroundColor: "#F5B700", color: "#F5FBEF" }}
                 >
-                  Preview & Generate Bracket
+                  {loading ? "Processing..." : "Preview & Generate Bracket"}
                 </button>
               )}
             </div>
