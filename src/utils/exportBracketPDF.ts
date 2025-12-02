@@ -1,5 +1,5 @@
 import jsPDF from "jspdf";
-import domtoimage from "dom-to-image-more";
+import * as htmlToImage from "html-to-image";
 import ReactDOM from "react-dom/client";
 import React from "react";
 import BracketRenderer from "../components/BracketRenderer";
@@ -220,7 +220,7 @@ const convertElementToImage = async (
 
   console.log(`✅ Found bracket element directly (${bracketType})`);
 
-  const dataUrl = await domtoimage.toPng(bracketVisual, {
+  const dataUrl = await htmlToImage.toPng(bracketVisual, {
     quality: 0.95,
     pixelRatio: 2.5, // Increased pixel ratio for better quality
     width: bracketVisual.scrollWidth,

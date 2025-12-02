@@ -208,11 +208,11 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
     message: "",
   });
 
-  const CARD_WIDTH = 450;
-  const CARD_HEIGHT = 240;
-  const ROUND_GAP = 200;
-  const BASE_VERTICAL_GAP = 150;
-  const CENTER_GAP = 700; // Perbesar dari 350 ke 500 - lebih banyak gap antara semi-final dan final
+  const CARD_WIDTH = 340;
+  const CARD_HEIGHT = 180;
+  const ROUND_GAP = 150;
+  const BASE_VERTICAL_GAP = 120;
+  const CENTER_GAP = 550; // Perbesar dari 350 ke 500 - lebih banyak gap antara semi-final dan final
 
   const showNotification = (
     type: "success" | "error" | "warning" | "info",
