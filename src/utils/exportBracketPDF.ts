@@ -613,6 +613,7 @@ export const exportMultipleBracketsByLapangan = async (
                 })
               )
             );
+            root.unmount();
 
             setTimeout(() => {
               reject(
