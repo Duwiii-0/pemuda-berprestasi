@@ -1269,14 +1269,25 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
       return Math.max(...matches.map((m) => m.ronde));
     }
 
-    const numParticipants = approvedParticipants.length;
+    // ✅ PERBAIKAN: Handle 2-3 participants
+    if (approvedParticipants.length < 2) return 0;
+    if (approvedParticipants.length === 2) return 1; // Langsung final
+    if (approvedParticipants.length === 3) return 2; // 1 match + final
+    if (approvedParticipants.length === 4) return 2; // Semi + final
 
-    if (numParticipants < 2) return 0;
-    if (numParticipants === 2) return 1; // Langsung final
-    if (numParticipants === 3) return 2; // 1 match + final
+    let rounds = 2;
 
-    // For 4 or more participants, use the standard log2 formula
-    return Math.ceil(Math.log2(numParticipants));
+    if (approvedParticipants.length >= 8) {
+      rounds++;
+
+      if (approvedParticipants.length > 8) {
+        rounds++;
+      }
+    } else if (approvedParticipants.length > 4) {
+      rounds++;
+    }
+
+    return rounds;
   };
 
   const getRoundName = (round: number, totalRounds: number): string => {

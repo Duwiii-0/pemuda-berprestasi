@@ -587,7 +587,6 @@ export const exportMultipleBracketsByLapangan = async (
       tempContainer.id = `bracket-container-${pageIndex}`;
       document.body.appendChild(tempContainer);
 
-      let root: import("react-dom/client").Root | null = null;
       try {
         const bracketType: "PRESTASI" | "PEMULA" = isPemula
           ? "PEMULA"
@@ -595,7 +594,7 @@ export const exportMultipleBracketsByLapangan = async (
 
         const bracketElement = await new Promise<HTMLElement>(
           (resolve, reject) => {
-            root = ReactDOM.createRoot(tempContainer);
+            const root = ReactDOM.createRoot(tempContainer);
 
             const handleRenderComplete = (element: HTMLElement) => {
               console.log("  ✅ Bracket render complete");
@@ -708,9 +707,6 @@ export const exportMultipleBracketsByLapangan = async (
         console.error(`  ❌ Error rendering bracket:`, error);
         throw error;
       } finally {
-        if (root) {
-          root.unmount();
-        }
         if (document.body.contains(tempContainer)) {
           document.body.removeChild(tempContainer);
         }
