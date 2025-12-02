@@ -608,6 +608,7 @@ export const exportMultipleBracketsByLapangan = async (
                 React.createElement(BracketRenderer, {
                   kelasData: kelasData,
                   isPemula: isPemula,
+                  initialMatches: lapanganBrackets[i].bracketData.matches, // <-- PASS MATCH DATA
                   onRenderComplete: handleRenderComplete,
                 })
               )

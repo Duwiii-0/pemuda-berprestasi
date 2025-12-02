@@ -110,9 +110,10 @@ interface KelasKejuaraan {
 
 interface TournamentBracketPemulaProps {
   kelasData: KelasKejuaraan;
+  initialMatches?: Match[]; // <-- ADD THIS
   onBack?: () => void;
-  apiBaseUrl?: string;
-  viewOnly?: boolean; // ⭐ TAMBAHKAN
+  apiBaseUrl?: string; // Becomes optional
+  viewOnly?: boolean;
   onRenderComplete?: (element: HTMLElement) => void;
 }
 
@@ -123,6 +124,7 @@ interface DojangSeparationConfig {
 
 const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
   kelasData,
+  initialMatches = [], // <-- DESTRUCTURE NEW PROP
   onBack,
   apiBaseUrl = "/api",
   viewOnly = false,
@@ -135,7 +137,11 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
 
   const displayGender =
     gender === "LAKI_LAKI" ? "Male" : gender === "PEREMPUAN" ? "Female" : "";
-  const [matches, setMatches] = useState<Match[]>([]);
+
+  // REFACTORED: Use prop directly. matches state is removed.
+  const matches = initialMatches;
+  const bracketGenerated = initialMatches.length > 0;
+
   const [editingMatch, setEditingMatch] = useState<Match | null>(null);
   const [editAthleteModal, setEditAthleteModal] = useState<{
     show: boolean;
@@ -146,8 +152,7 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
     match: null,
     slot: null,
   });
-  const [loading, setLoading] = useState(true);
-  const [bracketGenerated, setBracketGenerated] = useState(false);
+  // REMOVED: loading and bracketGenerated state
   const [exportingPDF, setExportingPDF] = useState(false); // ✅ NEW
   const [clearing, setClearing] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -159,6 +164,7 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
     null
   );
 
+  // This useEffect is for the non-export view only, to fetch the date.
   useEffect(() => {
     const fetchTanggalPertandingan = async () => {
       if (kelasData?.kompetisi?.id_kompetisi && kelasData?.id_kelas_kejuaraan) {
@@ -189,21 +195,26 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
       }
     };
 
-    fetchTanggalPertandingan();
-  }, [kelasData, apiBaseUrl, token]);
-
-  useEffect(() => {
-    // Only try to call onRenderComplete when loading is finished.
-    if (!loading && onRenderComplete && bracketRef.current) {
-        console.log(`✅ PEMULA loading finished. Bracket generated: ${bracketGenerated}, Matches: ${matches.length}`);
-        // A short timeout to allow the DOM to paint the final state after loading.
-        setTimeout(() => {
-            if (bracketRef.current) {
-                onRenderComplete(bracketRef.current);
-            }
-        }, 100);
+    // Only run this fetch if not in export mode (onRenderComplete is not provided)
+    if (!onRenderComplete) {
+      fetchTanggalPertandingan();
     }
-  }, [loading, onRenderComplete]);
+  }, [kelasData, apiBaseUrl, token, onRenderComplete]);
+
+  // REFACTORED: Simplified onRenderComplete hook.
+  useEffect(() => {
+    // onRenderComplete is only used for exporting.
+    if (onRenderComplete && bracketRef.current) {
+      setTimeout(() => {
+        if (bracketRef.current) {
+          console.log('✅ PEMULA component rendered for export, calling onRenderComplete.');
+          onRenderComplete(bracketRef.current);
+        }
+      }, 500);
+    }
+  }, [onRenderComplete]);
+
+  // REMOVED: All data fetching logic for matches has been removed.
 
   const [showModal, setShowModal] = useState(false);
   const [modalConfig, setModalConfig] = useState<{

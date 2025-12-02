@@ -113,9 +113,10 @@ interface KelasKejuaraan {
 
 interface TournamentBracketPrestasiProps {
   kelasData: KelasKejuaraan;
+  initialMatches?: Match[]; // <-- ADD THIS
   onBack?: () => void;
-  apiBaseUrl?: string;
-  viewOnly?: boolean; // ⭐ TAMBAHKAN
+  apiBaseUrl?: string; // Becomes optional
+  viewOnly?: boolean;
   onRenderComplete?: (element: HTMLElement) => void;
 }
 
@@ -126,9 +127,10 @@ interface DojangSeparationConfig {
 
 const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
   kelasData,
+  initialMatches = [], // <-- DESTRUCTURE NEW PROP
   onBack,
   apiBaseUrl = "/api",
-  viewOnly = false, // ⭐ TAMBAHKAN
+  viewOnly = false,
   onRenderComplete,
 }) => {
   const { token } = useAuth();
@@ -138,7 +140,11 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
 
   const displayGender =
     gender === "LAKI_LAKI" ? "Male" : gender === "PEREMPUAN" ? "Female" : "";
-  const [matches, setMatches] = useState<Match[]>([]);
+  
+  // REFACTORED: Use prop directly. matches state is removed.
+  const matches = initialMatches;
+  const bracketGenerated = initialMatches.length > 0;
+
   const [editingMatch, setEditingMatch] = useState<Match | null>(null);
   const [editAthleteModal, setEditAthleteModal] = useState<{
     show: boolean;
@@ -149,13 +155,11 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
     match: null,
     slot: null,
   });
-  const [loading, setLoading] = useState(true);
-  const [bracketGenerated, setBracketGenerated] = useState(false);
+  // REMOVED: loading and bracketGenerated state
   const [clearing, setClearing] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [exportingPDF, setExportingPDF] = useState(false);
   const [showParticipantPreview, setShowParticipantPreview] = useState(false);
-  // ... existing state ...
   const bracketRef = React.useRef<HTMLDivElement>(null);
   const [showDojangModal, setShowDojangModal] = useState(false);
   const [clearingScheduling, setClearingScheduling] = useState(false);
@@ -163,51 +167,23 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
     null
   );
 
+  // REFACTORED: Simplified onRenderComplete hook.
   useEffect(() => {
-    // Only try to call onRenderComplete when loading is finished.
-    if (!loading && onRenderComplete && bracketRef.current) {
-        console.log(`✅ PRESTASI loading finished. Bracket generated: ${bracketGenerated}, Matches: ${matches.length}`);
-        // A short timeout to allow the DOM to paint the final state after loading.
-        setTimeout(() => {
-            if (bracketRef.current) {
-                onRenderComplete(bracketRef.current);
-            }
-        }, 100);
-    }
-  }, [loading, onRenderComplete]);
-
-  useEffect(() => {
-    const fetchTanggalPertandingan = async () => {
-      if (kelasData?.kompetisi?.id_kompetisi && kelasData?.id_kelas_kejuaraan) {
-        try {
-          const response = await fetch(
-            `${apiBaseUrl}/kompetisi/${kelasData.kompetisi.id_kompetisi}/brackets/${kelasData.id_kelas_kejuaraan}/tanggal`,
-            {
-              headers: {
-                ...(token && { Authorization: `Bearer ${token}` }),
-              },
-            }
-          );
-          if (response.ok) {
-            const result = await response.json();
-            if (result.data && result.data.tanggal) {
-              setTanggalPertandingan(
-                new Date(result.data.tanggal).toISOString().split("T")[0]
-              );
-            }
-          } else {
-            console.log(
-              "Tanggal pertandingan khusus kelas tidak ditemukan, menggunakan tanggal mulai kompetisi."
-            );
-          }
-        } catch (error) {
-          console.error("Error fetching tanggal pertandingan:", error);
+    // onRenderComplete is only used for exporting.
+    // It should be called once the component has rendered with its props.
+    if (onRenderComplete && bracketRef.current) {
+      // Use a timeout to ensure the DOM is fully painted before capture.
+      setTimeout(() => {
+        if (bracketRef.current) {
+          console.log('✅ PRESTASI component rendered for export, calling onRenderComplete.');
+          onRenderComplete(bracketRef.current);
         }
-      }
-    };
+      }, 500); // A slightly longer timeout just in case.
+    }
+  }, [onRenderComplete]);
 
-    fetchTanggalPertandingan();
-  }, [kelasData, apiBaseUrl, token]);
+  // REMOVED: All data fetching logic (useEffect and fetchBracketData) has been removed.
+  // The component is now purely presentational.
 
   const [showModal, setShowModal] = useState(false);
   const [modalConfig, setModalConfig] = useState<{
