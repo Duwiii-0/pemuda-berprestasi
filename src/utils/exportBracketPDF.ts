@@ -681,6 +681,11 @@ export const exportMultipleBracketsByLapangan = async (
           displayWidth = displayHeight * imgAspectRatio;
         }
 
+        // Apply a scaling factor to prevent the bracket from being too large
+        const zoom = 0.9;
+        displayWidth *= zoom;
+        displayHeight *= zoom;
+
         const centerX = pageDims.marginLeft + maxWidth / 2;
         const centerY = contentStartY + maxHeight / 2;
         const x = centerX - displayWidth / 2;
