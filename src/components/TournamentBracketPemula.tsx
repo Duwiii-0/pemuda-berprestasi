@@ -1661,13 +1661,9 @@ const generateLeaderboard = () => {
           // The following is the original bracket rendering logic
           (
             <div className="p-6">
-              <div
-                className="flex flex-col items-center gap-8 mx-auto"
-                style={{ maxWidth: "1600px" }}
-              >
-                {/* CENTER: Bracket Container */}
-                <div className="w-full">
-                  {/* Header Sederhana - Tanpa Border */}
+                          <div className="flex flex-col items-center gap-8 mx-auto">
+                            {/* CENTER: Bracket Container */}
+                            <div className="w-full">                  {/* Header Sederhana - Tanpa Border */}
                   <div className="mb-4">
                     {/* Header 3 Kolom - Compact */}
                     <div className="flex items-start justify-between gap-4 mb-3">

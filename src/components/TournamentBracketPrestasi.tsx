@@ -2944,7 +2944,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
         /* PRESTASI Layout with FIXED POSITIONING */
         bracketGenerated && matches.length > 0 ? (
           /* Render the bracket */
-          <div ref={bracketRef} className="p-6">
+          <div ref={bracketRef} className="p-6 inline-block">
             <div className="tournament-layout flex justify-center items-start gap-8">
               {renderBracketSide(getLeftMatches(), "left")}
               {renderCenterFinal()}
