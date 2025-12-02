@@ -146,7 +146,7 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
     match: null,
     slot: null,
   });
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [bracketGenerated, setBracketGenerated] = useState(false);
   const [exportingPDF, setExportingPDF] = useState(false); // ✅ NEW
   const [clearing, setClearing] = useState(false);
