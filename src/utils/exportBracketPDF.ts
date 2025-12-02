@@ -210,19 +210,35 @@ const addHeaderAndFooter = async (
 
 const convertElementToImage = async (
   element: HTMLElement,
-  scaleFactor: number,
+  participantCount: number,
   bracketType: "PRESTASI" | "PEMULA"
 ): Promise<HTMLImageElement> => {
-  console.log(`🎯 Starting bracket capture for ${bracketType}...`);
+  console.log(
+    `🎯 Starting bracket capture for ${bracketType} with ${participantCount} participants...`
+  );
 
   // The 'element' passed in is now the correct root of the bracket component.
   const bracketVisual = element;
+
+  // Dynamically adjust pixelRatio to prevent crashes on large brackets
+  let pixelRatio = 2.5;
+  if (participantCount > 32) {
+    pixelRatio = 1.2; // Use a lower ratio for very large brackets
+    console.warn(
+      `⚠️ High participant count (${participantCount}). Lowering pixelRatio to ${pixelRatio} to prevent crash.`
+    );
+  } else if (participantCount > 16) {
+    pixelRatio = 1.5; // Use a medium ratio for large brackets
+    console.log(
+      `Participant count (${participantCount}) > 16. Setting pixelRatio to ${pixelRatio}.`
+    );
+  }
 
   console.log(`✅ Found bracket element directly (${bracketType})`);
 
   const dataUrl = await htmlToImage.toPng(bracketVisual, {
     quality: 0.95,
-    pixelRatio: 2.5, // Increased pixel ratio for better quality
+    pixelRatio: pixelRatio, // Use dynamic pixel ratio
     width: bracketVisual.scrollWidth,
     height: bracketVisual.scrollHeight,
     backgroundColor: "#FFFFFF",
@@ -428,7 +444,7 @@ export const exportBracketFromData = async (
 
       const bracketImg = await convertElementToImage(
         bracketElement,
-        scaleFactor,
+        participantCount,
         bracketType
       );
 
@@ -649,7 +665,7 @@ export const exportMultipleBracketsByLapangan = async (
 
         const bracketImg = await convertElementToImage(
           bracketElement,
-          scaleFactor,
+          participantCount,
           bracketType
         );
 
