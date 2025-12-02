@@ -113,6 +113,7 @@ interface TournamentBracketPemulaProps {
   onBack?: () => void;
   apiBaseUrl?: string;
   viewOnly?: boolean; // ⭐ TAMBAHKAN
+  onRenderComplete?: (element: HTMLElement) => void;
 }
 
 interface DojangSeparationConfig {
@@ -125,6 +126,7 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
   onBack,
   apiBaseUrl = "/api",
   viewOnly = false,
+  onRenderComplete,
 }) => {
   const { token } = useAuth();
   const [viewMode, setViewMode] = useState<"bracket" | "list">("bracket");
@@ -189,6 +191,17 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
 
     fetchTanggalPertandingan();
   }, [kelasData, apiBaseUrl, token]);
+
+  useEffect(() => {
+    if (onRenderComplete && bracketRef.current && (matches.length > 0 || !bracketGenerated)) {
+      setTimeout(() => {
+        if (bracketRef.current) {
+          console.log('✅ PEMULA component finished rendering, calling onRenderComplete.');
+          onRenderComplete(bracketRef.current);
+        }
+      }, 100);
+    }
+  }, [matches, bracketGenerated, onRenderComplete]);
 
   const [showModal, setShowModal] = useState(false);
   const [modalConfig, setModalConfig] = useState<{

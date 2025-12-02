@@ -215,146 +215,23 @@ const convertElementToImage = async (
 ): Promise<HTMLImageElement> => {
   console.log(`🎯 Starting bracket capture for ${bracketType}...`);
 
-  let bracketVisual: HTMLElement | null = null;
+  // The 'element' passed in is now the correct root of the bracket component.
+  const bracketVisual = element;
 
-  if (bracketType === "PEMULA") {
-    if (element.classList.contains("tournament-layout")) {
-      bracketVisual = element;
-    } else {
-      bracketVisual = element.querySelector(
-        ".tournament-layout"
-      ) as HTMLElement;
-    }
-  } else {
-    // PRESTASI: Cari tournament-layout di dalamnya
-    bracketVisual = element.querySelector(".tournament-layout") as HTMLElement;
-
-    // Jika tidak ketemu, coba relative container dengan SVG
-    if (!bracketVisual) {
-      const relativeContainer = element.querySelector(
-        ".relative"
-      ) as HTMLElement;
-      if (relativeContainer && relativeContainer.querySelector("svg")) {
-        bracketVisual = relativeContainer;
-      }
-    }
-  }
-
-  if (!bracketVisual && element.children.length > 0) {
-    bracketVisual = element;
-  }
-
-  if (!bracketVisual) {
-    console.warn("⚠️ Bracket visual container not found, using entire element");
-    bracketVisual = element;
-  }
-
-  console.log(`✅ Found bracket (${bracketType})`);
-
-  const hiddenElements: Array<{
-    el: HTMLElement;
-    originalDisplay: string;
-    originalVisibility: string;
-  }> = [];
-
-  const leaderboards = document.querySelectorAll('[id$="-leaderboard"]');
-  leaderboards.forEach((el) => {
-    const htmlEl = el as HTMLElement;
-    const isInsideBracket = bracketVisual!.contains(htmlEl);
-    const isInsideExportArea = document
-      .getElementById("bracket-export-area")
-      ?.contains(htmlEl);
-
-    if (!isInsideBracket && !isInsideExportArea) {
-      hiddenElements.push({
-        el: htmlEl,
-        originalDisplay: htmlEl.style.display,
-        originalVisibility: htmlEl.style.visibility,
-      });
-      htmlEl.style.display = "none";
-      htmlEl.style.visibility = "hidden";
-    }
-  });
-
-  const headerWithLogos = element.querySelector(
-    ".flex.items-start.justify-between.gap-4.mb-3"
-  ) as HTMLElement;
-  if (headerWithLogos) {
-    hiddenElements.push({
-      el: headerWithLogos,
-      originalDisplay: headerWithLogos.style.display,
-      originalVisibility: headerWithLogos.style.visibility,
-    });
-    headerWithLogos.style.display = "none";
-    headerWithLogos.style.visibility = "hidden";
-  }
-
-  const allButtons = document.querySelectorAll("button");
-  allButtons.forEach((btn) => {
-    const htmlBtn = btn as HTMLElement;
-    if (!bracketVisual!.contains(htmlBtn)) {
-      hiddenElements.push({
-        el: htmlBtn,
-        originalDisplay: htmlBtn.style.display,
-        originalVisibility: htmlBtn.style.visibility,
-      });
-      htmlBtn.style.display = "none";
-    }
-  });
-
-  if (bracketType === "PEMULA") {
-    const editButtons = bracketVisual.querySelectorAll("button");
-    editButtons.forEach((btn) => {
-      const htmlBtn = btn as HTMLElement;
-      hiddenElements.push({
-        el: htmlBtn,
-        originalDisplay: htmlBtn.style.display,
-        originalVisibility: htmlBtn.style.visibility,
-      });
-      htmlBtn.style.display = "none";
-    });
-  }
-
-  console.log(`🙈 Hidden ${hiddenElements.length} elements`);
-
-  await new Promise((resolve) => setTimeout(resolve, 100));
-
-  const width = Math.max(bracketVisual.scrollWidth, bracketVisual.offsetWidth);
-  const height = Math.max(
-    bracketVisual.scrollHeight,
-    bracketVisual.offsetHeight
-  );
-
-  console.log("📐 Dimensions:", { width, height });
-
-  const pixelRatio = 2;
-
-  console.log("📸 Capturing with pixelRatio:", pixelRatio);
-
-  // ✅ Wait longer untuk SVG render
-  await new Promise((resolve) => setTimeout(resolve, 500));
+  console.log(`✅ Found bracket element directly (${bracketType})`);
 
   const dataUrl = await htmlToImage.toPng(bracketVisual, {
-    quality: 0.92,
-    pixelRatio: pixelRatio,
-    width: width,
-    height: height,
+    quality: 0.95,
+    pixelRatio: 2.5, // Increased pixel ratio for better quality
+    width: bracketVisual.scrollWidth,
+    height: bracketVisual.scrollHeight,
     backgroundColor: "#FFFFFF",
     cacheBust: true,
     skipFonts: false,
-    style: {
-      transform: "scale(1.0)",
-      transformOrigin: "center center",
-      margin: "0",
-    },
     filter: (node) => {
-      if (node.nodeName === "BUTTON") return false;
-      if ((node as HTMLElement).classList?.contains("sticky")) return false;
-      if (
-        (node as HTMLElement).tagName === "svg" &&
-        (node as HTMLElement).parentElement?.tagName === "BUTTON"
-      )
-        return false;
+      // Filter out buttons or other interactive elements you don't want in the PDF
+      if (node.nodeName === 'BUTTON') return false;
+      if ((node as HTMLElement).classList?.contains('no-export')) return false;
       return true;
     },
   });

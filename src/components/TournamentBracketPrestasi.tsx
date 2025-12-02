@@ -116,6 +116,7 @@ interface TournamentBracketPrestasiProps {
   onBack?: () => void;
   apiBaseUrl?: string;
   viewOnly?: boolean; // ⭐ TAMBAHKAN
+  onRenderComplete?: (element: HTMLElement) => void;
 }
 
 interface DojangSeparationConfig {
@@ -128,6 +129,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
   onBack,
   apiBaseUrl = "/api",
   viewOnly = false, // ⭐ TAMBAHKAN
+  onRenderComplete,
 }) => {
   const { token } = useAuth();
   const [viewMode, setViewMode] = useState<"bracket" | "list">("bracket");
@@ -153,12 +155,26 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
   const [deleting, setDeleting] = useState(false);
   const [exportingPDF, setExportingPDF] = useState(false);
   const [showParticipantPreview, setShowParticipantPreview] = useState(false);
+  // ... existing state ...
   const bracketRef = React.useRef<HTMLDivElement>(null);
   const [showDojangModal, setShowDojangModal] = useState(false);
   const [clearingScheduling, setClearingScheduling] = useState(false);
   const [tanggalPertandingan, setTanggalPertandingan] = useState<string | null>(
     null
   );
+
+  useEffect(() => {
+    // We check for `onRenderComplete` to only run this logic during export
+    if (onRenderComplete && bracketRef.current && (matches.length > 0 || !bracketGenerated)) {
+      // A small timeout to allow final DOM updates
+      setTimeout(() => {
+        if (bracketRef.current) {
+          console.log('✅ PRESTASI component finished rendering, calling onRenderComplete.');
+          onRenderComplete(bracketRef.current);
+        }
+      }, 100); // 100ms should be enough for final paints
+    }
+  }, [matches, bracketGenerated, onRenderComplete]);
 
   useEffect(() => {
     const fetchTanggalPertandingan = async () => {
@@ -2944,7 +2960,16 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
         /* PRESTASI Layout with FIXED POSITIONING */
         bracketGenerated && matches.length > 0 ? (
           /* Render the bracket */
-          <div ref={bracketRef} className="p-6">
+    <div
+      ref={bracketRef}
+      className="tournament-layout" // <-- ADD THIS CLASS
+      style={{
+        width: "fit-content",
+        minWidth: "1920px",
+        backgroundColor: "#F5FBEF",
+        padding: "20px",
+      }}
+    >
             <div className="tournament-layout flex justify-center items-start gap-8">
               {renderBracketSide(getLeftMatches(), "left")}
               {renderCenterFinal()}
