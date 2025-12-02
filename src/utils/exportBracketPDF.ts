@@ -682,7 +682,7 @@ export const exportMultipleBracketsByLapangan = async (
         }
 
         // Apply a scaling factor to prevent the bracket from being too large
-        const zoom = 0.9;
+        const zoom = 1;
         displayWidth *= zoom;
         displayHeight *= zoom;
 

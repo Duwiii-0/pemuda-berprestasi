@@ -1936,7 +1936,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
           <div
             id="prestasi-leaderboard"
             style={{
-              width: "450px",
+              width: "550px",
               marginTop: `${
                 finalYPosition + CARD_HEIGHT + (isDirectFinal ? 40 : -420)
               }px`,
@@ -1950,16 +1950,16 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
             >
               {/* Header */}
               <div
-                className="p-4 border-b"
+                className="p-6 border-b"
                 style={{
                   backgroundColor: "rgba(153, 13, 53, 0.05)",
                   borderColor: "#990D35",
                 }}
               >
-                <div className="flex items-center gap-2 justify-center">
-                  <Trophy size={20} style={{ color: "#990D35" }} />
+                <div className="flex items-center gap-3 justify-center">
+                  <Trophy size={28} style={{ color: "#990D35" }} />
                   <h3
-                    className="text-xl font-bold"
+                    className="text-3xl font-bold"
                     style={{ color: "#990D35" }}
                   >
                     LEADERBOARD
@@ -1967,28 +1967,28 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                 </div>
               </div>
 
-              <div className="p-4">
+              <div className="p-6">
                 {/* 1st Place - GOLD */}
                 {prestasiLeaderboard.first && (
-                  <div className="mb-3">
+                  <div className="mb-4">
                     <div
-                      className="relative p-3 rounded-lg border-2 shadow-md"
+                      className="relative p-4 rounded-lg border-2 shadow-md"
                       style={{
                         backgroundColor: "rgba(255, 215, 0, 0.1)",
                         borderColor: "#FFD700",
                       }}
                     >
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-4">
                         <div
-                          className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 shadow-md"
+                          className="w-16 h-16 rounded-full flex items-center justify-center flex-shrink-0 shadow-md"
                           style={{ backgroundColor: "#FFD700" }}
                         >
-                          <span className="text-2xl">🥇</span>
+                          <span className="text-4xl">🥇</span>
                         </div>
 
                         <div className="flex-1 min-w-0">
                           <span
-                            className="text-xs font-bold px-2 py-0.5 rounded-full"
+                            className="text-sm font-bold px-2 py-1 rounded-full"
                             style={{
                               backgroundColor: "#FFD700",
                               color: "white",
@@ -1997,13 +1997,13 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                             CHAMPION
                           </span>
                           <h4
-                            className="text-lg font-bold mt-1 truncate"
+                            className="text-2xl font-bold mt-1 truncate"
                             style={{ color: "#050505" }}
                           >
                             {prestasiLeaderboard.first.name}
                           </h4>
                           <p
-                            className="text-xs uppercase truncate"
+                            className="text-sm uppercase truncate"
                             style={{ color: "#050505", opacity: 0.6 }}
                           >
                             {prestasiLeaderboard.first.dojo}
@@ -2011,7 +2011,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                         </div>
 
                         <Trophy
-                          size={24}
+                          size={32}
                           style={{ color: "#FFD700" }}
                           className="flex-shrink-0"
                         />
@@ -2022,11 +2022,11 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
 
                 {/* 2nd Places - SILVER (termasuk yang kalah di semi) */}
                 {prestasiLeaderboard.second.length > 0 && (
-                  <div className="mb-3">
+                  <div className="mb-4">
                     <div className="flex items-center gap-2 mb-2 px-1">
                       <span
-                        className="text-xs font-bold"
-                        style={{ color: "#C0C0C0" }}
+                        className="text-sm font-bold"
+                        style={{ color: "#A9A9A9" }}
                       >
                         🥈 SILVER ({prestasiLeaderboard.second.length})
                       </span>
@@ -2036,33 +2036,33 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                         key={participant.id}
                         className={
                           index < prestasiLeaderboard.second.length - 1
-                            ? "mb-2"
+                            ? "mb-3"
                             : ""
                         }
                       >
                         <div
-                          className="p-3 rounded-lg border-2 shadow-sm"
+                          className="p-4 rounded-lg border-2 shadow-sm"
                           style={{
                             backgroundColor: "rgba(192, 192, 192, 0.1)",
                             borderColor: "#C0C0C0",
                           }}
                         >
-                          <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-4">
                             <div
-                              className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 shadow-md"
+                              className="w-14 h-14 rounded-full flex items-center justify-center flex-shrink-0 shadow-md"
                               style={{ backgroundColor: "#C0C0C0" }}
                             >
-                              <span className="text-2xl">🥈</span>
+                              <span className="text-3xl">🥈</span>
                             </div>
                             <div className="flex-1 min-w-0">
                               <h4
-                                className="text-lg font-bold truncate"
+                                className="text-xl font-bold truncate"
                                 style={{ color: "#050505" }}
                               >
                                 {participant.name}
                               </h4>
                               <p
-                                className="text-xs uppercase truncate"
+                                className="text-sm uppercase truncate"
                                 style={{ color: "#050505", opacity: 0.6 }}
                               >
                                 {participant.dojo}
@@ -2080,7 +2080,7 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                   <div>
                     <div className="flex items-center gap-2 mb-2 px-1">
                       <span
-                        className="text-xs font-bold"
+                        className="text-sm font-bold"
                         style={{ color: "#CD7F32" }}
                       >
                         🥉 BRONZE ({prestasiLeaderboard.third.length})
@@ -2091,33 +2091,33 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                         key={participant.id}
                         className={
                           index < prestasiLeaderboard.third.length - 1
-                            ? "mb-2"
+                            ? "mb-3"
                             : ""
                         }
                       >
                         <div
-                          className="p-3 rounded-lg border-2 shadow-sm"
+                          className="p-4 rounded-lg border-2 shadow-sm"
                           style={{
                             backgroundColor: "rgba(205, 127, 50, 0.1)",
                             borderColor: "#CD7F32",
                           }}
                         >
-                          <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-4">
                             <div
-                              className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 shadow-md"
+                              className="w-14 h-14 rounded-full flex items-center justify-center flex-shrink-0 shadow-md"
                               style={{ backgroundColor: "#CD7F32" }}
                             >
-                              <span className="text-2xl">🥉</span>
+                              <span className="text-3xl">🥉</span>
                             </div>
                             <div className="flex-1 min-w-0">
                               <h4
-                                className="text-lg font-bold mt-1 truncate"
+                                className="text-xl font-bold mt-1 truncate"
                                 style={{ color: "#050505" }}
                               >
                                 {participant.name}
                               </h4>
                               <p
-                                className="text-xs uppercase truncate"
+                                className="text-sm uppercase truncate"
                                 style={{ color: "#050505", opacity: 0.6 }}
                               >
                                 {participant.dojo}
@@ -2133,20 +2133,20 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
                 {/* Empty State - DIPERBAIKI */}
                 {!prestasiLeaderboard.first &&
                   prestasiLeaderboard.second.length === 0 && (
-                    <div className="text-center py-8">
+                    <div className="text-center py-10">
                       <Trophy
-                        size={40}
+                        size={48}
                         style={{ color: "#990D35", opacity: 0.3 }}
-                        className="mx-auto mb-2"
+                        className="mx-auto mb-3"
                       />
                       <p
-                        className="text-sm font-semibold mb-1"
+                        className="text-base font-semibold mb-1"
                         style={{ color: "#050505" }}
                       >
                         Belum Ada Hasil
                       </p>
                       <p
-                        className="text-xs"
+                        className="text-sm"
                         style={{ color: "#050505", opacity: 0.5 }}
                       >
                         Leaderboard akan muncul setelah pertandingan selesai
