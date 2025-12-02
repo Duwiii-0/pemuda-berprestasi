@@ -464,7 +464,7 @@ export const exportBracketFromData = async (
             else if (totalPeserta <= 8) zoom = 1.2;
             else if (totalPeserta <= 16) zoom = 1.05;
             else if (totalPeserta <= 32) zoom = 1;
-            else if (totalPeserta <= 64) zoom = 0.75;
+            else if (totalPeserta <= 64) zoom = 0.4;
           }
         }
       }
