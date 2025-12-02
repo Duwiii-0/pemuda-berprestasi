@@ -296,7 +296,7 @@ export const exportBracketFromData = async (
     .includes("prestasi");
   const bracketType: "PRESTASI" | "PEMULA" = isPemula ? "PEMULA" : "PRESTASI";
 
-  const useA3 = false; // !isPemula && participantCount > 32;
+  const useA3 = !isPemula && participantCount > 32;
   const pageDims = useA3 ? PAGE_CONFIGS.A3 : PAGE_CONFIGS.A4;
 
   console.log(
@@ -473,7 +473,7 @@ export const exportBracketFromData = async (
           else zoom = 0.95;
         } else {
           if (useA3) {
-            zoom = 0.82;
+            zoom = 0.75;
             console.log(`🔍 Using A3 zoom: ${zoom}`);
           } else {
             if (totalPeserta <= 4) zoom = 1.5;
