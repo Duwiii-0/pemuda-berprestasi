@@ -469,7 +469,7 @@ export const exportBracketFromData = async (
         if (isPemula) {
           if (totalPeserta <= 8) zoom = 0.85;
           else if (totalPeserta <= 16) zoom = 0.8;
-          else if (totalPeserta <= 60) zoom = 0.75;
+          else if (totalPeserta <= 60) zoom = 0.70;
           else zoom = 0.95;
         } else {
           if (useA3) {
