@@ -1,5 +1,5 @@
 import jsPDF from "jspdf";
-import * as htmlToImage from "html-to-image";
+import domtoimage from "dom-to-image-more";
 import ReactDOM from "react-dom/client";
 import React from "react";
 import BracketRenderer from "../components/BracketRenderer";
@@ -220,7 +220,7 @@ const convertElementToImage = async (
 
   console.log(`✅ Found bracket element directly (${bracketType})`);
 
-  const dataUrl = await htmlToImage.toPng(bracketVisual, {
+  const dataUrl = await domtoimage.toPng(bracketVisual, {
     quality: 0.95,
     pixelRatio: 2.5, // Increased pixel ratio for better quality
     width: bracketVisual.scrollWidth,
@@ -587,6 +587,7 @@ export const exportMultipleBracketsByLapangan = async (
       const tempContainer = document.createElement("div");
       tempContainer.id = `bracket-container-${pageIndex}`;
       document.body.appendChild(tempContainer);
+      const root = ReactDOM.createRoot(tempContainer);
 
       try {
         const bracketType: "PRESTASI" | "PEMULA" = isPemula
@@ -595,8 +596,6 @@ export const exportMultipleBracketsByLapangan = async (
 
         const bracketElement = await new Promise<HTMLElement>(
           (resolve, reject) => {
-            const root = ReactDOM.createRoot(tempContainer);
-
             const handleRenderComplete = (element: HTMLElement) => {
               console.log("  ✅ Bracket render complete");
               resolve(element);
@@ -708,6 +707,7 @@ export const exportMultipleBracketsByLapangan = async (
         console.error(`  ❌ Error rendering bracket:`, error);
         throw error;
       } finally {
+        root.unmount();
         if (document.body.contains(tempContainer)) {
           document.body.removeChild(tempContainer);
         }
