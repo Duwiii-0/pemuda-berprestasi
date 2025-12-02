@@ -193,15 +193,17 @@ const TournamentBracketPemula: React.FC<TournamentBracketPemulaProps> = ({
   }, [kelasData, apiBaseUrl, token]);
 
   useEffect(() => {
-    if (onRenderComplete && bracketRef.current && (matches.length > 0 || !bracketGenerated)) {
-      setTimeout(() => {
-        if (bracketRef.current) {
-          console.log('✅ PEMULA component finished rendering, calling onRenderComplete.');
-          onRenderComplete(bracketRef.current);
-        }
-      }, 100);
+    // Only try to call onRenderComplete when loading is finished.
+    if (!loading && onRenderComplete && bracketRef.current) {
+        console.log(`✅ PEMULA loading finished. Bracket generated: ${bracketGenerated}, Matches: ${matches.length}`);
+        // A short timeout to allow the DOM to paint the final state after loading.
+        setTimeout(() => {
+            if (bracketRef.current) {
+                onRenderComplete(bracketRef.current);
+            }
+        }, 100);
     }
-  }, [matches, bracketGenerated, onRenderComplete]);
+  }, [loading, onRenderComplete]);
 
   const [showModal, setShowModal] = useState(false);
   const [modalConfig, setModalConfig] = useState<{

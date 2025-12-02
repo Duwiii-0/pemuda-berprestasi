@@ -164,17 +164,17 @@ const TournamentBracketPrestasi: React.FC<TournamentBracketPrestasiProps> = ({
   );
 
   useEffect(() => {
-    // We check for `onRenderComplete` to only run this logic during export
-    if (onRenderComplete && bracketRef.current && (matches.length > 0 || !bracketGenerated)) {
-      // A small timeout to allow final DOM updates
-      setTimeout(() => {
-        if (bracketRef.current) {
-          console.log('✅ PRESTASI component finished rendering, calling onRenderComplete.');
-          onRenderComplete(bracketRef.current);
-        }
-      }, 100); // 100ms should be enough for final paints
+    // Only try to call onRenderComplete when loading is finished.
+    if (!loading && onRenderComplete && bracketRef.current) {
+        console.log(`✅ PRESTASI loading finished. Bracket generated: ${bracketGenerated}, Matches: ${matches.length}`);
+        // A short timeout to allow the DOM to paint the final state after loading.
+        setTimeout(() => {
+            if (bracketRef.current) {
+                onRenderComplete(bracketRef.current);
+            }
+        }, 100);
     }
-  }, [matches, bracketGenerated, onRenderComplete]);
+  }, [loading, onRenderComplete]);
 
   useEffect(() => {
     const fetchTanggalPertandingan = async () => {
